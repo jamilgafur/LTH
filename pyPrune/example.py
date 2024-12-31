@@ -4,6 +4,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
+from pyPrune.pruning import IterativeMagnitudePruning
 
 # Define a simple model for the example (e.g., a small fully connected network)
 class SimpleNN(nn.Module):
@@ -38,14 +39,16 @@ pruner = IterativeMagnitudePruning(
     X_train=X_train,
     y_train=y_train,
     final_sparsity=0.99,  # Target final sparsity (e.g., 99% sparsity)
-    prune_sparsity=0.1,  # Percentage to prune each step (e.g., 10% at each step)
-    steps=99,  # Number of pruning steps to take (e.g., 99 steps)
+    prune_step=5,  # Prune in 5 steps
     E=5,  # Fine-tuning epochs after each pruning step
-    device='cuda' if torch.cuda.is_available() else 'cpu'  # Use GPU if available
+    device='cuda' if torch.cuda.is_available() else 'cpu',  # Use GPU if available
+    is_pretrained=False,  # Not using a pretrained model
+    pretrain_epochs=20  # Number of pretraining epochs
 )
 
 # Run pruning and fine-tuning
 pruned_model = pruner.run()
 
 # Access saved checkpoints for each pruning step
+import pdb; pdb.set_trace()
 print(pruner.checkpoints)
