@@ -90,9 +90,11 @@ class IterativeMagnitudePruning:
 
         # Generate sparsity values using np.linspace for smooth transitions
         pruning_steps = np.linspace(0, self.final_sparsity, self.steps + 1)  
-        print(f"Pruning steps: {pruning_steps[1::-1]}")
+        # remove the last element as it is 0
+        pruning_steps = pruning_steps[1:]
+        print(f"Pruning percetages non-sparsity: {pruning_steps}")
 
-        for step, target_sparsity in enumerate(pruning_steps[1:], 1):  # Skip the 0% sparsity (initial state)
+        for step, target_sparsity in enumerate(pruning_steps):  # Skip the 0% sparsity (initial state)
             print(f"Step {step} of {self.steps}: Pruning to {target_sparsity * 100:.2f}% sparsity.")
             self.prune_weights(target_sparsity)
 
