@@ -1,11 +1,12 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
+import torch.nn.utils.prune as prune
+import numpy as np
 
 class IterativeMagnitudePruning:
-    def __init__(self, model, X_train, y_train, final_sparsity, prune_step, 
+    def __init__(self, model, X_train, y_train, final_sparsity, steps, 
                  E=10, pruning_criterion=None, reset_weights=True, 
-                 is_pretrained=False, device=None, pretrain_epochs=20):
+                 is_pretrained=False, pretrain_epochs=20, device=None):
         """
         Initialize the iterative magnitude pruning process with gradual pruning.
 
@@ -14,233 +15,182 @@ class IterativeMagnitudePruning:
             X_train (torch.Tensor): The training data.
             y_train (torch.Tensor): The training labels.
             final_sparsity (float): Target sparsity level (final sparsity percentage, e.g., 0.99 for 99%).
-            prune_step (int): Number of pruning steps to reach the final sparsity (e.g., 5).
+            steps (int): Number of pruning steps to gradually reach final_sparsity.
             E (int): Number of fine-tuning epochs after each pruning step (default: 10).
             pruning_criterion (function): Custom pruning criterion (default: magnitude pruning).
             reset_weights (bool): Whether to reset remaining weights after pruning (default: True).
             is_pretrained (bool): Whether the model is pretrained or not (default: False).
+            pretrain_epochs (int): Number of epochs to pretrain if the model is not pretrained.
             device (torch.device): The device to run the model on (default: None, auto-detect).
-            pretrain_epochs (int): Number of pretraining epochs (default: 20).
         """
         assert 0 < final_sparsity < 1, "final_sparsity must be between 0 and 1."
-        assert 0 < prune_step, "prune_step must be a positive integer."
-        assert isinstance(model, nn.Module), "model must be a PyTorch nn.Module."
+        assert steps > 0, "steps must be a positive integer."
 
         self.final_sparsity = final_sparsity
-        self.prune_step = prune_step
+        self.prune_sparsity = final_sparsity / steps
+        self.steps = steps
         self.E = E
         self.pruning_criterion = pruning_criterion or self.magnitude_pruning
         self.reset_weights = reset_weights
         self.is_pretrained = is_pretrained
-        self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
         self.pretrain_epochs = pretrain_epochs
+        self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
         
-        self.model = model.to(self.device)  # Move model to device
-        self.X_train = X_train.to(self.device)  # Move input data to device
-        self.y_train = y_train.to(self.device)  # Move labels to device
+        self.model = model
+        self.X_train = X_train
+        self.y_train = y_train
         
+        self.model.to(self.device)  # Move model to device
+
         # Save initial weights for reset during pruning
         self.initial_weights = self.save_initial_weights()
 
-        # Initialize current sparsity
-        self.current_sparsity = self.get_model_sparsity()
-
-        # Initialize a list to store checkpoints after each pruning step
-        self.checkpoints = []
+        self.current_sparsity = 0.0  # Current sparsity level
+        # Dictionary to store checkpoints during pruning
+        self.checkpoints = {}
 
     def run(self):
         """
         Perform the iterative magnitude pruning (IMP) with weight resetting and fine-tuning.
-        
+
         Returns:
             torch.nn.Module: The pruned model after all iterations.
         """
-        print("Starting pruning process.")
-        
         # Step 1: Train or fine-tune the model if it's not pretrained
         if not self.is_pretrained:
-            print(f"Pretraining the model for {self.pretrain_epochs} epochs.")
-            self.train_model(self.pretrain_epochs)  # Pretrain the model before pruning
+            self.pretrain_model()
 
         # Gradual pruning and fine-tuning
         self.perform_gradual_pruning()
 
         return self.model
-    
-    def train_model(self, epochs):
-        """
-        Train the model for a specified number of epochs.
 
-        Args:
-            epochs (int): Number of training epochs.
+    def pretrain_model(self):
         """
-        print(f"Training the model for {epochs} epochs.")
-        
-        optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
+        Pretrain the model if it is not already pretrained.
+        """
+        print(f"Pretraining the model for {self.pretrain_epochs} epochs.")
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
         criterion = nn.CrossEntropyLoss()
 
-        for epoch in range(epochs):
+        # move everything to device
+        self.model.to(self.device)
+        self.X_train = self.X_train.to(self.device)
+        self.y_train = self.y_train.to(self.device)
+        
+        for epoch in range(self.pretrain_epochs):  # Pretrain for the specified number of epochs
             self.model.train()
             optimizer.zero_grad()
-            output = self.model(self.X_train)
-            loss = criterion(output, self.y_train)
+            outputs = self.model(self.X_train)
+            loss = criterion(outputs, self.y_train)
             loss.backward()
             optimizer.step()
-
-            print(f"Epoch {epoch+1}/{epochs}, Loss: {loss.item()}")
+            print(f"Pretrain Epoch {epoch + 1}, Loss: {loss.item()}")
 
     def perform_gradual_pruning(self):
         """
-        Perform gradual pruning of the model weights in steps.
+        Perform gradual pruning from the current sparsity to final sparsity.
         """
-        print(f"Starting gradual pruning: current sparsity = {self.current_sparsity * 100:.2f}%")
+        
+        prune_percentage_per_step = self.prune_sparsity  # Derived pruning percentage per step
+
+        print(f"Starting gradual pruning: current sparsity = {self.current_sparsity:.2f}%")
         print(f"Target final sparsity = {self.final_sparsity * 100:.2f}%")
+        print(f"Pruning in {self.steps} steps, each pruning {prune_percentage_per_step * 100:.2f}% of weights.")
 
-        # Calculate the amount of pruning per step based on the number of steps
-        prune_per_step = (self.final_sparsity - self.current_sparsity) / self.prune_step
-        print(f"Pruning {prune_per_step * 100:.2f}% at each step")
+        for step in range(self.steps):
+            self.current_sparsity += prune_percentage_per_step
 
-        for step in range(1, self.prune_step + 1):
-            print(f"\nStep {step} of {self.prune_step}:")
+            if self.current_sparsity >= self.final_sparsity:
+                print(f"Target sparsity reached: {self.final_sparsity * 100:.2f}%")
+                break  # Stop pruning if we've reached the final sparsity
             
-            # Prune the model weights for this step
-            self.current_sparsity = self.prune_weights(prune_per_step)
-            
-            # Fine-tune the model after pruning
+            print(f"Step {step + 1} of {self.steps}:")
+            self.prune_weights(self.current_sparsity)
+
             self.fine_tune_model()
 
-            # Save checkpoint for this step
-            self.checkpoints.append(self.save_checkpoint(step))
-            print(f"Saving checkpoint for step {step}...\n")
-
-            # Skip sparsity check after each step, except the last step
-            if step == self.prune_step:
-                self.assert_mask_sparsity(self.final_sparsity)
-    
-    def prune_weights(self, prune_percentage):
-        """
-        Prune the model weights based on the specified pruning percentage.
-        """
-        print(f"Pruning weights: {prune_percentage * 100:.2f}%")
-        
-        # Flatten all the weight parameters by iterating over named parameters
-        flattened_weights = torch.cat([param.view(-1) for name, param in self.model.named_parameters() if 'weight' in name])
-        
-        total_weights = flattened_weights.numel()
-        num_pruned = int(prune_percentage * total_weights)
-
-        # Find the threshold to prune based on the smallest magnitude weights
-        abs_weights = flattened_weights.abs()
-        threshold = torch.kthvalue(abs_weights, num_pruned).values.item()
-
-        # Create a mask based on the threshold
-        mask = abs_weights > threshold
-        self.global_mask = mask  # Store the mask
-
-        # Apply the mask to each weight parameter
-        idx = 0
-        for name, param in self.model.named_parameters():
-            if 'weight' in name:
-                num_elements = param.numel()
-                mask_layer = self.global_mask[idx:idx + num_elements]
-                mask_layer = mask_layer.view_as(param.data)
-                param.data *= mask_layer  # Apply mask to the weights
-                idx += num_elements
-
-        # Calculate current sparsity
-        current_sparsity = 1.0 - float(mask.sum()) / float(total_weights)
-        print(f"After pruning: current sparsity = {current_sparsity * 100:.2f}%")
-
-        return current_sparsity
-
-    def apply_global_mask(self):
-        """
-        Apply the global mask to the model's parameters.
-        """
-        idx = 0
-        for name, param in self.model.named_parameters():
-            if 'weight' in name:
-                num_elements = param.numel()
-                param.data *= self.global_mask[idx:idx + num_elements].view_as(param.data)
-                idx += num_elements
-
-    def fine_tune_model(self):
-        """
-        Fine-tune the model for E epochs after pruning.
-        """
-        print(f"Fine-tuning the model for {self.E} epochs.")
-        
-        optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
-        criterion = nn.CrossEntropyLoss()
-
-        for epoch in range(self.E):
-            self.model.train()
-            optimizer.zero_grad()
-            output = self.model(self.X_train)
-            loss = criterion(output, self.y_train)
-            loss.backward()
-            optimizer.step()
-
-            print(f"Epoch {epoch+1}/{self.E}, Loss: {loss.item()}")
-
-    def assert_mask_sparsity(self, target_sparsity, tolerance=0.01):
-        """
-        Assert that the current sparsity is close to the target sparsity.
-        """
-        current_sparsity = self.get_model_sparsity()
-        assert abs(current_sparsity - target_sparsity) < tolerance, \
-            f"Sparsity mismatch! Target: {target_sparsity * 100}%, Actual: {current_sparsity * 100}%"
-
-    def get_model_sparsity(self):
-        """
-        Calculate the current sparsity of the model (percentage of zero weights).
-        """
-        total_params = 0
-        total_zeros = 0
-        for name, param in self.model.named_parameters():
-            if 'weight' in name:
-                total_params += param.numel()
-                total_zeros += torch.sum(param == 0).item()
-
-        sparsity = total_zeros / total_params
-        return sparsity
+            # Save checkpoint for this iteration
+            self.save_checkpoint(step)
 
     def save_initial_weights(self):
         """
-        Save the initial weights of the model.
+        Save the initial weights of the model to restore later.
         """
-        return {name: param.data.clone() for name, param in self.model.named_parameters() if 'weight' in name}
+        initial_weights = {}
+        for name, param in self.model.named_parameters():
+            initial_weights[name] = param.data.clone()
+        return initial_weights
 
-    def magnitude_pruning(self, weights, pruning_percentage):
+    def prune_weights(self, prune_percentage):
         """
-        Magnitude-based pruning: remove the smallest weights (by magnitude).
-        
-        Args:
-            weights (torch.Tensor): The tensor of model weights to prune.
-            pruning_percentage (float): The percentage of weights to prune (e.g., 0.5 for 50%).
-        
-        Returns:
-            torch.Tensor: The pruned weight tensor.
+        Prune weights based on the selected criterion (e.g., magnitude).
         """
-        num_weights = weights.numel()
-        threshold_index = int(pruning_percentage * num_weights)
-        threshold_value = torch.kthvalue(weights.abs().view(-1), threshold_index).values.item()
-        pruned_weights = torch.where(weights.abs() > threshold_value, weights, torch.zeros_like(weights))
-        return pruned_weights
+        with torch.no_grad():
+            for name, module in self.model.named_modules():
+                if isinstance(module, (nn.Linear, nn.Conv2d)):  # Apply pruning to specific layers
+                    self.pruning_criterion(module, name, prune_percentage)
+
+    def magnitude_pruning(self, module, name, p):
+        """
+        Prune weights based on their magnitude.
+        """
+        # Flatten the weights and compute the magnitude
+        weight = module.weight.data
+        flattened_weights = weight.view(-1)
+        sorted_indices = torch.argsort(torch.abs(flattened_weights))  # Sort by absolute magnitude
+
+        # Calculate number of weights to prune
+        num_to_prune = int(p * flattened_weights.numel())
+
+        # Create a mask that prunes the smallest weights
+        mask = torch.ones_like(flattened_weights)
+        mask[sorted_indices[:num_to_prune]] = 0  # Set smallest weights to 0
+
+        # Apply the mask to the weights
+        weight.view(-1).data *= mask
+
+        # Set the gradients for pruned weights to False
+        for param in module.parameters():
+            if param.requires_grad:
+                param.grad = None
+
+    def fine_tune_model(self):
+        """
+        Fine-tune the model after pruning for a given number of epochs.
+        """
+        print(f"Fine-tuning the model for {self.E} epochs.")
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
+        criterion = nn.CrossEntropyLoss()
+
+        for epoch in range(self.E):  # Fine-tune for E epochs
+            self.model.train()
+            optimizer.zero_grad()
+            outputs = self.model(self.X_train)
+            loss = criterion(outputs, self.y_train)
+            loss.backward()
+            optimizer.step()
+            print(f"Fine-tune Epoch {epoch + 1}, Loss: {loss.item()}")
+
+    def get_model_sparsity(self):
+        """
+        Calculate the current sparsity of the model (percentage of zeroed-out weights).
+        """
+        total_params = 0
+        total_zeros = 0
+        for param in self.model.parameters():
+            total_params += param.numel()
+            total_zeros += torch.sum(param == 0).item()
+        sparsity = 100 * total_zeros / total_params
+        return sparsity
 
     def save_checkpoint(self, step):
         """
-        Save a checkpoint of the model after a pruning step.
-        
-        Args:
-            step (int): The current pruning step.
-        
-        Returns:
-            dict: Checkpoint data containing model weights.
+        Save checkpoint after each pruning step (weights, masks, loss, etc.).
         """
-        checkpoint = {
-            'step': step,
-            'model_state_dict': self.model.state_dict(),
+        self.checkpoints[step] = {
+            'weights': {name: param.data.clone() for name, param in self.model.named_parameters()},
+            'masks': {name: param == 0 for name, param in self.model.named_parameters()},
+            'sparsity': self.get_model_sparsity(),
         }
-        return checkpoint
-
+        print(f"Checkpoint {step + 1} saved. Sparsity: {self.checkpoints[step]['sparsity']:.2f}%, Mask percentage: {sum([torch.sum(mask).item() for mask in self.checkpoints[step]['masks'].values()]) / sum([mask.numel() for mask in self.checkpoints[step]['masks'].values()]) * 100:.2f}%")
