@@ -1,20 +1,27 @@
 import torch
 import torch.nn as nn
 import numpy as np
+from tqdm import tqdm  # For progress bars
 
 class IterativeMagnitudePruning:
+    """
+    Class for performing Iterative Magnitude Pruning (IMP) on a neural network model.
+    """
+    
     def __init__(self, model, X_train, y_train, final_sparsity, steps, 
                  E=10, pruning_criterion=None, reset_weights=True, 
                  is_pretrained=False, pretrain_epochs=20, device=None):
         """
         Initialize the iterative magnitude pruning process with gradual pruning.
         """
+        # Validate inputs
         assert 0 < final_sparsity < 1, "final_sparsity must be between 0 and 1."
         assert steps > 0, "steps must be a positive integer."
         assert isinstance(model, nn.Module), "The model must be a subclass of nn.Module."
         assert isinstance(X_train, torch.Tensor), "X_train must be a torch tensor."
         assert isinstance(y_train, torch.Tensor), "y_train must be a torch tensor."
         
+        # Set class attributes
         self.final_sparsity = final_sparsity
         self.steps = steps
         self.E = E
@@ -34,14 +41,16 @@ class IterativeMagnitudePruning:
         # Replace layers with Pruned versions before pruning starts
         self.replace_with_pruned_layers()
 
-        # Save initial weights and masks for reset during pruning
+        # Save initial weights and zeroed masks for reset during pruning
         self.initial_weights = self.save_initial_weights()
-        self.saved_masks = {}  # Store the masks for each layer
+        self.saved_masks = {}  # Store the zeroed masks for each layer
 
         # Dictionary to store checkpoints during pruning
         self.checkpoints = {}
 
+        print(f"\n{'='*50}")
         print(f"Initialized Iterative Magnitude Pruning with {self.steps} steps.")
+        print(f"{'='*50}\n")
     
     def run(self):
         """
@@ -53,7 +62,7 @@ class IterativeMagnitudePruning:
             self.pretrain_model()
 
         # Gradual pruning and fine-tuning
-        print("Starting gradual pruning and fine-tuning process.")
+        print("\nStarting gradual pruning and fine-tuning process...\n")
         self.perform_gradual_pruning()
 
         return self.model
@@ -62,7 +71,7 @@ class IterativeMagnitudePruning:
         """
         Pretrain the model if it is not already pretrained.
         """
-        print(f"Pretraining the model for {self.pretrain_epochs} epochs.")
+        print(f"\nPretraining the model for {self.pretrain_epochs} epochs...\n")
         optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
         criterion = nn.CrossEntropyLoss()
 
@@ -77,41 +86,56 @@ class IterativeMagnitudePruning:
             outputs = self.model(self.X_train)
             loss = criterion(outputs, self.y_train)
             loss.backward()
+
+            # Apply zeroed gradients before optimizer step
+            self.apply_zeroed_gradients()
+
             optimizer.step()
-            print(f"Pretrain Epoch {epoch + 1}, Loss: {loss.item()}")
+
+            # Calculate accuracy
+            accuracy = self.calculate_accuracy(outputs, self.y_train)
+            
+            # Print training info
+            print(f"Epoch {epoch + 1}/{self.pretrain_epochs} - Loss: {loss.item():.4f} | Accuracy: {accuracy:.2f}%")
 
     def perform_gradual_pruning(self):
         """
-        Perform gradual pruning from the current sparsity to final sparsity using np.arange.
+        Perform gradual pruning from the current sparsity to final sparsity using np.linspace.
         """
-        print(f"Starting gradual pruning: current zero weights = {self.current_sparsity * 100:.2f}%")
+        print(f"\nStarting gradual pruning: current zeroed weights = {self.current_sparsity * 100:.2f}%")
         print(f"Target final non-zero weights = {(1 - self.final_sparsity) * 100:.2f}%")
-        print(f"Pruning in {self.steps} steps.")
+        print(f"Pruning in {self.steps} steps...\n")
 
         # Generate sparsity values using np.linspace for smooth transitions
-        pruning_steps = np.linspace(0, self.final_sparsity, self.steps + 1)
-        pruning_steps = pruning_steps[1:]
-        print(f"Pruning steps (zero weights): {pruning_steps}")
-
+        pruning_steps = np.linspace(self.current_sparsity, self.final_sparsity, self.steps)[1:]
+        
+        # Display the steps visually
+        print(f"Pruning steps (zeroed weights): {pruning_steps}\n")
         for step, target_sparsity in enumerate(pruning_steps):
-            print(f"Step {step} of {self.steps}: Pruning to {target_sparsity * 100:.2f}% zero weights.")
+            print(f"Step {step + 1}/{self.steps}: Pruning to {target_sparsity * 100:.2f}% zeroed weights.")
             self.prune_weights(target_sparsity)
-
             # Fine-tune the model after pruning
+            print(f"before fine_tune_model === {self.get_model_zeroed_weight_percentage()}")
             self.fine_tune_model()
+            print(f"after fine_tune_model=== {self.get_model_zeroed_weight_percentage()}")
+            
+            # Recalculate the actual zeroed weights after pruning and fine-tuning
+            actual_zeroed_weights = self.get_model_zeroed_weight_percentage()
+            print(f"\nZeroed weights after pruning and fine-tuning: {actual_zeroed_weights:.2f}%\n")
+            # Log the accuracy after pruning
+            self.log_accuracy()
 
-            # Recalculate the actual zero weights after pruning and fine-tuning
-            actual_zero_weights = self.get_model_zero_weight_percentage()
-            print(f"Zero weights after pruning and fine-tuning: {actual_zero_weights:.2f}%")
 
-            # Save checkpoint for this iteration
-            self.save_checkpoint(step)
-
-            # Stop pruning if we've reached the final zero weight percentage
-            if target_sparsity >= self.final_sparsity:
-                print(f"Target zero weights reached: {self.final_sparsity * 100:.2f}%")
-                break
-
+    def log_accuracy(self):
+        """
+        Log the accuracy of the model after pruning.
+        """
+        self.model.eval()
+        with torch.no_grad():
+            outputs = self.model(self.X_train)
+            accuracy = self.calculate_accuracy(outputs, self.y_train)
+            print(f"Accuracy after pruning: {accuracy:.2f}%")
+            
     def save_initial_weights(self):
         """
         Save the initial weights of the model to restore later.
@@ -123,7 +147,7 @@ class IterativeMagnitudePruning:
 
     def replace_with_pruned_layers(self):
         """
-        Replace the standard Linear and Conv2d layers with PrunedLinear and PrunedConv2d.
+        Replace the standard Linear and Conv2d layers with Pruned versions before pruning starts.
         """
         for name, module in self.model.named_children():
             if isinstance(module, nn.Linear):
@@ -132,147 +156,152 @@ class IterativeMagnitudePruning:
             elif isinstance(module, nn.Conv2d):
                 print(f"Replacing Conv2d layer {name} with PrunedConv2d")
                 setattr(self.model, name, PrunedConv2d(module.in_channels, module.out_channels, module.kernel_size))
-            else:
-                self.replace_with_pruned_layers(module)  # Recursively handle submodules
+            # No recursive call here unless you handle submodules carefully
 
     def prune_weights(self, prune_percentage):
         """
-        Concatenate all model weights, calculate pruning mask, and prune weights.
+        Perform pruning based on the specified percentage of weights to prune.
+        This ensures that we prune exactly the desired percentage of weights
+        across all layers of the model.
         """
-        print(f"Pruning weights to {prune_percentage * 100:.2f}% zero weights.")
-        self.magnitude_prune(prune_percentage)
+        print(f"Pruning weights to {prune_percentage * 100:.2f}% zeroed weights.")
 
-    def magnitude_prune(self, prune_percentage):
-        """
-        Perform pruning based on magnitude (absolute values) of weights.
-        This method will flatten all weights, sort them by magnitude, and prune the smallest weights.
-        """
-        # Step 1: Collect all weights from the model layers
+        # Collect all weights and their corresponding masks
         all_weights = []
+        all_masks = []
         all_names = []
+        start_idx = 0  # Start index to track the flat weight vector position
+        weight_shapes = {}  # Dictionary to store the shapes of each layer's weights
+
+        # Flatten all weights from the model layers
         for name, module in self.model.named_modules():
             if isinstance(module, (nn.Linear, nn.Conv2d)):
                 weight = module.weight.data
-                all_weights.append(weight.view(-1))  # Flatten and add to list
-                all_names.append(name)  # Store the name for mask tracking
-        
-        # Step 2: Concatenate all weights into a single tensor
-        all_weights = torch.cat(all_weights)  # Concatenate all the weights
-        all_weights_abs = torch.abs(all_weights)  # Take the absolute value for magnitude pruning
+                all_weights.append(weight.view(-1))  # Flatten the weight tensor
+                weight_shapes[name] = weight.shape  # Store the shape of each layer
+                all_names.append(name)  # Store the name for layer tracking
 
-        # Step 3: Sort weights by magnitude (absolute values)
-        sorted_indices = torch.argsort(all_weights_abs)
+        # Concatenate all weights into a single tensor
+        all_weights = torch.cat(all_weights)
 
-        # Step 4: Calculate how many weights to prune
-        num_weights = all_weights.size(0)
-        num_to_prune = int(num_weights * prune_percentage)
+        # Call the pruning criterion (default is magnitude_prune)
+        prune_mask = self.pruning_criterion(prune_percentage, all_weights)
 
-        # Step 5: Create a mask for pruning
-        prune_mask = torch.ones(num_weights).to(self.device)
-        prune_mask[sorted_indices[:num_to_prune]] = 0  # Set smallest `num_to_prune` weights to 0
-
-        # Step 6: Reapply the mask to the weights
-        start_idx = 0
+        # Apply the mask to the weights in each layer and store the mask
+        new_start_idx = 0
         for name, module in self.model.named_modules():
             if isinstance(module, (nn.Linear, nn.Conv2d)):
                 weight = module.weight.data
                 num_params = weight.numel()  # Number of parameters in this layer
-                mask = prune_mask[start_idx:start_idx + num_params]
-                # Apply the mask to the weight and store it
-                module.mask = mask.clone()  # Set the mask as an attribute
-                weight.mul_(mask.view(weight.shape))  # Apply the mask to the weight
-                start_idx += num_params
-                
-                # Save the mask for future use
-                self.saved_masks[name] = mask.clone()
+                # Create mask for this layer based on the flat weight vector
+                mask = prune_mask[new_start_idx:new_start_idx + num_params].view(weight.shape)
+                # move mask to device
+                mask = mask.to(self.device)
+                module.weight.data.mul_(mask)  # Apply mask to weights
+                module.weight.requires_grad = False
+                self.saved_masks[name] = mask  # Save the mask for this layer
+                new_start_idx += num_params
 
-    def load_weights(self):
+        # After pruning, ensure that we report the sparsity correctly
+        self.current_sparsity = self.get_model_zeroed_weight_percentage()
+        print(f"Zeroed weights after pruning: {self.current_sparsity:.2f}%")
+
+    def get_model_zeroed_weight_percentage(self):
         """
-        Load the pruned weights back into the model using the masks.
+        Get the percentage of zeroed weights in the model.
         """
-        for name, module in self.model.named_modules():
-            if isinstance(module, (nn.Linear, nn.Conv2d)):
-                weight = module.weight.data
-                mask = self.saved_masks.get(name)
-                if mask is not None:
-                    weight.mul_(mask.view(weight.shape))  # Reapply the saved mask to the weights
-                else:
-                    print(f"Warning: No mask found for {name}, skipping weight reload.")
-    
+        zeroed_weights = 0
+        total_weights = 0
+        for param in self.model.parameters():
+            total_weights += param.numel()
+            zeroed_weights += torch.sum(param == 0).item()
+
+        return zeroed_weights / total_weights * 100
+
+    def magnitude_prune(self, prune_percentage, all_weights):
+        """
+        Prune weights by magnitude, removing the smallest values based on their absolute value.
+        """
+        num_to_prune = int(prune_percentage * all_weights.numel())
+        # Get the indices of the smallest weights
+        _, indices = torch.topk(all_weights.abs(), num_to_prune, largest=False)
+        
+        # Create a mask that sets the smallest weights to zero
+        mask = torch.ones(all_weights.numel(), device=all_weights.device)
+        mask[indices] = 0  # Set smallest weights to zero
+        
+        return mask
+
+    def apply_zeroed_gradients(self):
+        """
+        Apply zeroed gradients to pruned weights (those corresponding to zeroed masks).
+        This ensures that pruned weights are ignored during optimization.
+        """
+        for name, param in self.model.named_parameters():
+            if name in self.saved_masks:
+                mask = self.saved_masks[name]
+                
+                # Check if gradients exist for this parameter
+                if param.grad is not None:
+                    # Zero out the gradients for pruned weights by applying the mask
+                    param.grad.mul_(mask)  # Mask gradients
+
+                    # Alternatively, set gradients to None for pruned weights entirely
+                    if mask.sum().item() == 0:  # All weights in this layer are pruned
+                        param.grad = None  # Ignore this weight during optimization
+
     def fine_tune_model(self):
         """
-        Fine-tune the model after pruning.
+        Fine-tune the model after pruning, ensuring pruned weights stay zeroed out 
+        and gradients are zeroed for pruned weights.
         """
-        print("Fine-tuning the model for 5 epochs.")
+        print(f"Inside fine_tune_model === {self.get_model_zeroed_weight_percentage()}")
+        
         optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
         criterion = nn.CrossEntropyLoss()
 
-        # Fine-tuning loop
         self.model.train()
-        for epoch in range(5):
-            optimizer.zero_grad()
-            outputs = self.model(self.X_train)
-            loss = criterion(outputs, self.y_train)
-            loss.backward()
-            optimizer.step()
-            print(f"Fine-tune Epoch {epoch + 1}, Loss: {loss.item()}")
-
-    def get_model_zero_weight_percentage(self):
-        """
-        Calculate the percentage of zero weights in the model (pruned weights).
-        """
-        total_params = 0
-        zero_params = 0
-        for name, module in self.model.named_modules():
-            if isinstance(module, (nn.Linear, nn.Conv2d)):
-                weight = module.weight.data
-                mask = self.saved_masks.get(name)
-                if mask is not None:
-                    zero_params += torch.sum(mask == 0).item()
-                    total_params += weight.numel()
-        zero_weight_percentage = (zero_params / total_params) * 100
-        return zero_weight_percentage
-
-    def save_checkpoint(self, step):
-        """
-        Save checkpoint after each pruning step (weights, masks, sparsity, etc.).
-        """
-        self.checkpoints[step] = {
-            'weights': {name: param.data.clone() for name, param in self.model.named_parameters()},
-            'masks': {name: getattr(module, 'mask', None) for name, module in self.model.named_modules()},
-            'zero_weights_percentage': self.get_model_zero_weight_percentage()
-        }
-
-        # Check for None masks and avoid operations on them
-        total_masked_weights = 0
-        total_weights = 0
-        for mask in self.checkpoints[step]['masks'].values():
-            if mask is not None:
-                total_masked_weights += mask.sum().item()
-                total_weights += mask.numel()
-
-
-        # Print checkpoint information
-        print(f"\tCheckpoint {step} saved.")
-        print(f"\tZero weights percentage: {self.checkpoints[step]['zero_weights_percentage']:.2f}%")
-        print(f"\tTotal masked weights: {total_masked_weights}")
-        print(f"\tTotal weights: {total_weights}")
-        print(f"\tTotal masked percentage: {(1-(total_masked_weights/total_weights)) * 100:.2f}%")
+        optimizer.zero_grad()
+        outputs = self.model(self.X_train)
+        loss = criterion(outputs, self.y_train)
         
+        print(f"before loss.backward === {self.get_model_zeroed_weight_percentage()}")
+        loss.backward()
+        print(f"after loss.backward === {self.get_model_zeroed_weight_percentage()}")
+        
+        print(f"before optimizer step === {self.get_model_zeroed_weight_percentage()}")
+        
+        # Apply gradients masking before optimizer step
+        self.apply_zeroed_gradients()
+        optimizer.step()
+        
+        print(f"after optimizer step === {self.get_model_zeroed_weight_percentage()}")
+        import pdb; pdb.set_trace()
+        # Log accuracy after fine-tuning
+        accuracy = self.calculate_accuracy(outputs, self.y_train)
+        print(f"Fine-Tune Loss: {loss.item():.4f} | Accuracy: {accuracy:.2f}%")
+
+    def calculate_accuracy(self, outputs, targets):
+        """
+        Calculate the accuracy of the model.
+        """
+        _, predicted = torch.max(outputs, 1)
+        correct = (predicted == targets).sum().item()
+        accuracy = 100 * correct / targets.size(0)
+        return accuracy
 
 class PrunedLinear(nn.Linear):
     def forward(self, x):
         if hasattr(self, 'mask'):
-            # Ensure the mask is applied to the weights correctly
-            # Reshape the mask to match the weight dimensions
-            self.weight.data *= self.mask.view(self.weight.data.shape)  # Apply mask during forward pass (keeping original weight shape)
+            # Debug: print mask application
+            print(f"Applying mask to Linear layer: {self.mask.sum()} weights are pruned.")
+            self.weight.data *= self.mask.view(self.weight.data.shape)
         return super().forward(x)
-
 
 class PrunedConv2d(nn.Conv2d):
     def forward(self, x):
         if hasattr(self, 'mask'):
-            # Ensure the mask is applied to the weights correctly
-            # Reshape the mask to match the weight dimensions
-            self.weight.data *= self.mask.view(self.weight.data.shape)  # Apply mask during forward pass (keeping original weight shape)
+            # Debug: print mask application
+            print(f"Applying mask to Conv2d layer: {self.mask.sum()} weights are pruned.")
+            self.weight.data *= self.mask.view(self.weight.data.shape)
         return super().forward(x)
