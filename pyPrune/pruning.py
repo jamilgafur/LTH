@@ -84,33 +84,32 @@ class IterativeMagnitudePruning:
         """
         Perform gradual pruning from the current sparsity to final sparsity using np.arange.
         """
-        print(f"Starting gradual pruning: current sparsity = {self.current_sparsity * 100:.2f}%")
-        print(f"Target final sparsity = {self.final_sparsity * 100:.2f}%")
+        print(f"Starting gradual pruning: current zero weights = {self.current_sparsity * 100:.2f}%")
+        print(f"Target final non-zero weights = {(1 - self.final_sparsity) * 100:.2f}%")
         print(f"Pruning in {self.steps} steps.")
 
         # Generate sparsity values using np.linspace for smooth transitions
-        pruning_steps = np.linspace(0, self.final_sparsity, self.steps + 1)  
-        # remove the last element as it is 0
+        pruning_steps = np.linspace(0, self.final_sparsity, self.steps + 1)
         pruning_steps = pruning_steps[1:]
-        print(f"Pruning percetages non-sparsity: {pruning_steps}")
+        print(f"Pruning steps (zero weights): {pruning_steps}")
 
-        for step, target_sparsity in enumerate(pruning_steps):  # Skip the 0% sparsity (initial state)
-            print(f"Step {step} of {self.steps}: Pruning to {target_sparsity * 100:.2f}% sparsity.")
+        for step, target_sparsity in enumerate(pruning_steps):
+            print(f"Step {step} of {self.steps}: Pruning to {target_sparsity * 100:.2f}% zero weights.")
             self.prune_weights(target_sparsity)
 
             # Fine-tune the model after pruning
             self.fine_tune_model()
 
-            # Recalculate the actual model sparsity after pruning and fine-tuning
-            actual_sparsity = self.get_model_sparsity()
-            print(f"Sparsity after pruning and fine-tuning: {actual_sparsity:.2f}%")
+            # Recalculate the actual zero weights after pruning and fine-tuning
+            actual_zero_weights = self.get_model_zero_weight_percentage()
+            print(f"Zero weights after pruning and fine-tuning: {actual_zero_weights:.2f}%")
 
             # Save checkpoint for this iteration
             self.save_checkpoint(step)
 
-            # Stop pruning if we've reached the final sparsity
+            # Stop pruning if we've reached the final zero weight percentage
             if target_sparsity >= self.final_sparsity:
-                print(f"Target sparsity reached: {self.final_sparsity * 100:.2f}%")
+                print(f"Target zero weights reached: {self.final_sparsity * 100:.2f}%")
                 break
 
     def save_initial_weights(self):
@@ -140,7 +139,7 @@ class IterativeMagnitudePruning:
         """
         Concatenate all model weights, calculate pruning mask, and prune weights.
         """
-        print(f"Pruning weights with {prune_percentage * 100:.2f}% sparsity.")
+        print(f"Pruning weights to {prune_percentage * 100:.2f}% zero weights.")
         self.magnitude_prune(prune_percentage)
 
     def magnitude_prune(self, prune_percentage):
@@ -218,21 +217,21 @@ class IterativeMagnitudePruning:
             optimizer.step()
             print(f"Fine-tune Epoch {epoch + 1}, Loss: {loss.item()}")
 
-    def get_model_sparsity(self):
+    def get_model_zero_weight_percentage(self):
         """
-        Calculate the current sparsity of the model based on the masks.
+        Calculate the percentage of zero weights in the model (pruned weights).
         """
         total_params = 0
-        pruned_params = 0
+        zero_params = 0
         for name, module in self.model.named_modules():
             if isinstance(module, (nn.Linear, nn.Conv2d)):
                 weight = module.weight.data
                 mask = self.saved_masks.get(name)
                 if mask is not None:
-                    pruned_params += torch.sum(mask == 0).item()
+                    zero_params += torch.sum(mask == 0).item()
                     total_params += weight.numel()
-        sparsity = (pruned_params / total_params) * 100
-        return sparsity
+        zero_weight_percentage = (zero_params / total_params) * 100
+        return zero_weight_percentage
 
     def save_checkpoint(self, step):
         """
@@ -241,7 +240,7 @@ class IterativeMagnitudePruning:
         self.checkpoints[step] = {
             'weights': {name: param.data.clone() for name, param in self.model.named_parameters()},
             'masks': {name: getattr(module, 'mask', None) for name, module in self.model.named_modules()},
-            'sparsity': self.get_model_sparsity()
+            'zero_weights_percentage': self.get_model_zero_weight_percentage()
         }
 
         # Check for None masks and avoid operations on them
@@ -255,12 +254,11 @@ class IterativeMagnitudePruning:
 
         # Print checkpoint information
         print(f"\tCheckpoint {step} saved.")
-        print(f"\tSparsity: {self.checkpoints[step]['sparsity']:.2f}%")
+        print(f"\tZero weights percentage: {self.checkpoints[step]['zero_weights_percentage']:.2f}%")
         print(f"\tTotal masked weights: {total_masked_weights}")
         print(f"\tTotal weights: {total_weights}")
         print(f"\tTotal masked percentage: {(1-(total_masked_weights/total_weights)) * 100:.2f}%")
         
-
 
 class PrunedLinear(nn.Linear):
     def forward(self, x):
