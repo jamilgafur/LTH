@@ -1,19 +1,44 @@
 import torch
 import torch.nn as nn
 import numpy as np
+import logging
+import pandas as pd
+import os
 from tqdm import tqdm  # For progress bars
+from datetime import datetime
+from .model_utils import PrunedLinear, PrunedConv2d
 
 class IterativeMagnitudePruning:
     """
     Class for performing Iterative Magnitude Pruning (IMP) on a neural network model.
     """
-    
+
     def __init__(self, model, X_train, y_train, final_sparsity, steps, 
                  E=10, pruning_criterion=None, reset_weights=True, 
-                 is_pretrained=False, pretrain_epochs=20, device=None):
+                 is_pretrained=False, pretrain_epochs=20, device=None, 
+                 save_dir='pruning_checkpoints'):
         """
         Initialize the iterative magnitude pruning process with gradual pruning.
+        
+        Parameters:
+            model (nn.Module): Neural network model to be pruned.
+            X_train (torch.Tensor): Training input data.
+            y_train (torch.Tensor): Training labels.
+            final_sparsity (float): The final target sparsity.
+            steps (int): Number of pruning steps.
+            E (int, optional): Number of epochs for pretraining. Defaults to 10.
+            pruning_criterion (callable, optional): Function for pruning criterion. Defaults to magnitude pruning.
+            reset_weights (bool, optional): Whether to reset weights before pruning. Defaults to True.
+            is_pretrained (bool, optional): Whether the model is pretrained. Defaults to False.
+            pretrain_epochs (int, optional): Number of epochs for pretraining. Defaults to 20.
+            device (str, optional): Device for training (cuda or cpu). Defaults to None.
+            save_dir (str, optional): Directory to save logs, metrics, masks, and weights. Defaults to 'pruning_checkpoints'.
         """
+        # Initialize logger
+        self.save_dir = save_dir  # Custom directory for saving files
+        self.setup_save_dir()  # Ensure the save_dir exists
+        self.logger = self.setup_logger(os.path.join(self.save_dir, 'logging.txt'))  # Save log inside save_dir
+        
         # Validate inputs
         assert 0 < final_sparsity < 1, "final_sparsity must be between 0 and 1."
         assert steps > 0, "steps must be a positive integer."
@@ -35,7 +60,6 @@ class IterativeMagnitudePruning:
         self.model = model
         self.X_train = X_train
         self.y_train = y_train
-        
         self.model.to(self.device)  # Move model to device
 
         # Replace layers with Pruned versions before pruning starts
@@ -44,26 +68,64 @@ class IterativeMagnitudePruning:
         # Save initial weights and zeroed masks for reset during pruning
         self.initial_weights = self.save_initial_weights()
         self.saved_masks = {}  # Store the zeroed masks for each layer
+        self.saved_weights = {}  # Store pruned weights after each step
 
-        # Dictionary to store checkpoints during pruning
-        self.checkpoints = {}
+        # Initialize metrics list
+        self.metrics = []
 
-        print(f"\n{'='*50}")
-        print(f"Initialized Iterative Magnitude Pruning with {self.steps} steps.")
-        print(f"{'='*50}\n")
-    
+        self.logger.info(f"\n{'='*50}")
+        self.logger.info(f"Initialized Iterative Magnitude Pruning with {self.steps} steps.")
+        self.logger.info(f"{'='*50}\n")
+
+        # Path to store the final metrics in a Parquet file
+        self.metrics_file = os.path.join(self.save_dir, 'metrics.parquet')
+
+    def setup_logger(self, log_file):
+        """
+        Setup the logger to write logs to both the console and a file.
+        
+        Parameters:
+            log_file (str): Path to the log file.
+        """
+        logger = logging.getLogger('IMP')
+        logger.setLevel(logging.INFO)
+        
+        # Console handler
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+        logger.addHandler(console_handler)
+
+        # File handler
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        
+        return logger
+
+    def setup_save_dir(self):
+        """
+        Ensure the save directory exists, and create it if necessary.
+        """
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir)
+
     def run(self):
         """
         Perform the iterative magnitude pruning (IMP) with weight resetting and fine-tuning.
         """
         # Step 1: Train or fine-tune the model if it's not pretrained
         if not self.is_pretrained:
-            print("Pretraining model as it is not pretrained.")
+            self.logger.info("Pretraining model as it is not pretrained.")
             self.pretrain_model()
 
         # Gradual pruning and fine-tuning
-        print("\nStarting gradual pruning and fine-tuning process...\n")
+        self.logger.info("\nStarting gradual pruning and fine-tuning process...\n")
         self.perform_gradual_pruning()
+
+        # Save metrics to a Parquet file
+        self.save_metrics_to_parquet()
 
         return self.model
 
@@ -71,7 +133,7 @@ class IterativeMagnitudePruning:
         """
         Pretrain the model if it is not already pretrained.
         """
-        print(f"\nPretraining the model for {self.pretrain_epochs} epochs...\n")
+        self.logger.info(f"\nPretraining the model for {self.pretrain_epochs} epochs...\n")
         optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
         criterion = nn.CrossEntropyLoss()
 
@@ -95,36 +157,34 @@ class IterativeMagnitudePruning:
             # Calculate accuracy
             accuracy = self.calculate_accuracy(outputs, self.y_train)
             
-            # Print training info
-            print(f"Epoch {epoch + 1}/{self.pretrain_epochs} - Loss: {loss.item():.4f} | Accuracy: {accuracy:.2f}%")
+            # Log training info
+            self.logger.info(f"Epoch {epoch + 1}/{self.pretrain_epochs} - Loss: {loss.item():.4f} | Accuracy: {accuracy:.2f}%")
+            self.metrics.append({'step': epoch, 'loss': loss.item(), 'accuracy': accuracy, 'sparsity': self.current_sparsity})
 
     def perform_gradual_pruning(self):
         """
         Perform gradual pruning from the current sparsity to final sparsity using np.linspace.
         """
-        print(f"\nStarting gradual pruning: current zeroed weights = {self.current_sparsity * 100:.2f}%")
-        print(f"Target final non-zero weights = {(1 - self.final_sparsity) * 100:.2f}%")
-        print(f"Pruning in {self.steps} steps...\n")
+        self.logger.info(f"\nStarting gradual pruning: current zeroed weights = {self.current_sparsity * 100:.2f}%")
+        self.logger.info(f"Target final non-zero weights = {(1 - self.final_sparsity) * 100:.2f}%")
+        self.logger.info(f"Pruning in {self.steps} steps...\n")
 
         # Generate sparsity values using np.linspace for smooth transitions
         pruning_steps = np.linspace(self.current_sparsity, self.final_sparsity, self.steps)[1:]
         
-        # Display the steps visually
-        print(f"Pruning steps (zeroed weights): {pruning_steps}\n")
         for step, target_sparsity in enumerate(pruning_steps):
-            print(f"Step {step + 1}/{self.steps}: Pruning to {target_sparsity * 100:.2f}% zeroed weights.")
+            self.logger.info(f"Step {step + 1}/{self.steps}: Pruning to {target_sparsity * 100:.2f}% zeroed weights.")
             self.prune_weights(target_sparsity)
-            # Fine-tune the model after pruning
-            print(f"before fine_tune_model === {self.get_model_zeroed_weight_percentage()}")
             self.fine_tune_model()
-            print(f"after fine_tune_model=== {self.get_model_zeroed_weight_percentage()}")
-            
-            # Recalculate the actual zeroed weights after pruning and fine-tuning
-            actual_zeroed_weights = self.get_model_zeroed_weight_percentage()
-            print(f"\nZeroed weights after pruning and fine-tuning: {actual_zeroed_weights:.2f}%\n")
-            # Log the accuracy after pruning
-            self.log_accuracy()
 
+            # Log the metrics after pruning
+            accuracy = self.log_accuracy()
+            layer_sparsities = self.get_layer_sparsities()
+            self.metrics.append({'step': step, 'accuracy': accuracy, 'sparsity': self.current_sparsity,
+                                 'layer_sparsities': layer_sparsities})
+
+            # Save masks and weights for each pruning step
+            self.save_masks_and_weights(step)
 
     def log_accuracy(self):
         """
@@ -134,8 +194,17 @@ class IterativeMagnitudePruning:
         with torch.no_grad():
             outputs = self.model(self.X_train)
             accuracy = self.calculate_accuracy(outputs, self.y_train)
-            print(f"Accuracy after pruning: {accuracy:.2f}%")
-            
+            self.logger.info(f"Accuracy after pruning: {accuracy:.2f}%")
+        return accuracy
+
+    def save_metrics_to_parquet(self):
+        """
+        Save the accumulated metrics to a Parquet file for analysis.
+        """
+        df = pd.DataFrame(self.metrics)
+        df.to_parquet(self.metrics_file, index=False)
+        self.logger.info(f"Metrics saved to {self.metrics_file}")
+
     def save_initial_weights(self):
         """
         Save the initial weights of the model to restore later.
@@ -147,26 +216,21 @@ class IterativeMagnitudePruning:
 
     def replace_with_pruned_layers(self):
         """
-        Replace the standard Linear and Conv2d layers with Pruned versions before pruning starts.
+        Replace the standard Linear and Conv2d layers with Pruned versions.
         """
-        for name, module in self.model.named_children():
+        for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
-                print(f"Replacing Linear layer {name} with PrunedLinear")
+                self.logger.info(f"Replacing Linear layer {name} with PrunedLinear")
                 setattr(self.model, name, PrunedLinear(module.in_features, module.out_features))
             elif isinstance(module, nn.Conv2d):
-                print(f"Replacing Conv2d layer {name} with PrunedConv2d")
+                self.logger.info(f"Replacing Conv2d layer {name} with PrunedConv2d")
                 setattr(self.model, name, PrunedConv2d(module.in_channels, module.out_channels, module.kernel_size))
-            # No recursive call here unless you handle submodules carefully
 
     def prune_weights(self, prune_percentage):
         """
         Perform pruning based on the specified percentage of weights to prune.
-        This ensures that we prune exactly the desired percentage of weights
-        across all layers of the model.
         """
-        print(f"Pruning weights to {prune_percentage * 100:.2f}% zeroed weights.")
-
-        # Collect all weights and their corresponding masks
+        self.logger.info(f"Pruning weights to {prune_percentage * 100:.2f}% zeroed weights.")
         all_weights = []
         all_masks = []
         all_names = []
@@ -195,7 +259,6 @@ class IterativeMagnitudePruning:
                 num_params = weight.numel()  # Number of parameters in this layer
                 # Create mask for this layer based on the flat weight vector
                 mask = prune_mask[new_start_idx:new_start_idx + num_params].view(weight.shape)
-                # move mask to device
                 mask = mask.to(self.device)
                 module.weight.data.mul_(mask)  # Apply mask to weights
                 module.weight.requires_grad = False
@@ -204,7 +267,24 @@ class IterativeMagnitudePruning:
 
         # After pruning, ensure that we report the sparsity correctly
         self.current_sparsity = self.get_model_zeroed_weight_percentage()
-        print(f"Zeroed weights after pruning: {self.current_sparsity:.2f}%")
+        self.logger.info(f"Zeroed weights after pruning: {self.current_sparsity:.2f}%")
+
+    def save_masks_and_weights(self, step):
+        """
+        Save the masks and weights at each pruning step.
+        """
+        step_dir = os.path.join(self.save_dir, f"step_{step + 1}")
+        os.makedirs(step_dir, exist_ok=True)
+
+        # Save masks and pruned weights
+        for name, mask in self.saved_masks.items():
+            torch.save(mask, os.path.join(step_dir, f"{name}_mask.pth"))
+        
+        for name, param in self.model.named_parameters():
+            if param.requires_grad:
+                torch.save(param.data, os.path.join(step_dir, f"{name}_weights.pth"))
+        
+        self.logger.info(f"Saved masks and weights for step {step + 1}.")
 
     def get_model_zeroed_weight_percentage(self):
         """
@@ -218,45 +298,44 @@ class IterativeMagnitudePruning:
 
         return zeroed_weights / total_weights * 100
 
+    def get_layer_sparsities(self):
+        """
+        Get the sparsity for each individual layer.
+        """
+        layer_sparsities = {}
+        for name, module in self.model.named_modules():
+            if isinstance(module, (nn.Linear, nn.Conv2d)):
+                zeroed_weights = torch.sum(module.weight.data == 0).item()
+                total_weights = module.weight.data.numel()
+                sparsity = zeroed_weights / total_weights * 100
+                layer_sparsities[name] = sparsity
+        return layer_sparsities
+
     def magnitude_prune(self, prune_percentage, all_weights):
         """
         Prune weights by magnitude, removing the smallest values based on their absolute value.
         """
         num_to_prune = int(prune_percentage * all_weights.numel())
-        # Get the indices of the smallest weights
         _, indices = torch.topk(all_weights.abs(), num_to_prune, largest=False)
         
-        # Create a mask that sets the smallest weights to zero
         mask = torch.ones(all_weights.numel(), device=all_weights.device)
-        mask[indices] = 0  # Set smallest weights to zero
-        
+        mask[indices] = 0
         return mask
 
     def apply_zeroed_gradients(self):
         """
         Apply zeroed gradients to pruned weights (those corresponding to zeroed masks).
-        This ensures that pruned weights are ignored during optimization.
         """
         for name, param in self.model.named_parameters():
             if name in self.saved_masks:
                 mask = self.saved_masks[name]
-                
-                # Check if gradients exist for this parameter
                 if param.grad is not None:
-                    # Zero out the gradients for pruned weights by applying the mask
                     param.grad.mul_(mask)  # Mask gradients
-
-                    # Alternatively, set gradients to None for pruned weights entirely
-                    if mask.sum().item() == 0:  # All weights in this layer are pruned
-                        param.grad = None  # Ignore this weight during optimization
 
     def fine_tune_model(self):
         """
-        Fine-tune the model after pruning, ensuring pruned weights stay zeroed out 
-        and gradients are zeroed for pruned weights.
+        Fine-tune the model after pruning.
         """
-        print(f"Inside fine_tune_model === {self.get_model_zeroed_weight_percentage()}")
-        
         optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
         criterion = nn.CrossEntropyLoss()
 
@@ -264,22 +343,13 @@ class IterativeMagnitudePruning:
         optimizer.zero_grad()
         outputs = self.model(self.X_train)
         loss = criterion(outputs, self.y_train)
-        
-        print(f"before loss.backward === {self.get_model_zeroed_weight_percentage()}")
         loss.backward()
-        print(f"after loss.backward === {self.get_model_zeroed_weight_percentage()}")
-        
-        print(f"before optimizer step === {self.get_model_zeroed_weight_percentage()}")
-        
-        # Apply gradients masking before optimizer step
+
         self.apply_zeroed_gradients()
         optimizer.step()
-        
-        print(f"after optimizer step === {self.get_model_zeroed_weight_percentage()}")
-        import pdb; pdb.set_trace()
-        # Log accuracy after fine-tuning
+
         accuracy = self.calculate_accuracy(outputs, self.y_train)
-        print(f"Fine-Tune Loss: {loss.item():.4f} | Accuracy: {accuracy:.2f}%")
+        self.logger.info(f"Fine-Tune Loss: {loss.item():.4f} | Accuracy: {accuracy:.2f}%")
 
     def calculate_accuracy(self, outputs, targets):
         """
@@ -290,18 +360,3 @@ class IterativeMagnitudePruning:
         accuracy = 100 * correct / targets.size(0)
         return accuracy
 
-class PrunedLinear(nn.Linear):
-    def forward(self, x):
-        if hasattr(self, 'mask'):
-            # Debug: print mask application
-            print(f"Applying mask to Linear layer: {self.mask.sum()} weights are pruned.")
-            self.weight.data *= self.mask.view(self.weight.data.shape)
-        return super().forward(x)
-
-class PrunedConv2d(nn.Conv2d):
-    def forward(self, x):
-        if hasattr(self, 'mask'):
-            # Debug: print mask application
-            print(f"Applying mask to Conv2d layer: {self.mask.sum()} weights are pruned.")
-            self.weight.data *= self.mask.view(self.weight.data.shape)
-        return super().forward(x)
