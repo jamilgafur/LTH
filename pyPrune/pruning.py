@@ -132,6 +132,12 @@ class IterativeMagnitudePruning:
         # save the accuray, sparsity and loss for each step as a csv 
         df = pd.DataFrame(self.metrics)
         df.to_csv(os.path.join(self.save_dir, 'metrics.csv'), index=False)
+        # plot the accuracy, sparsity and loss for each step
+        df.plot(x='step', y=['accuracy', 'sparsity', 'loss'], secondary_y=['sparsity'], figsize=(10, 6))
+        plt.title('Accuracy, Sparsity, and Loss vs. Pruning Step')
+        plt.savefig(os.path.join(self.save_dir, 'metrics_plot.png'))
+        plt.close()
+        
         
 
     def pretrain_model(self) -> None:
