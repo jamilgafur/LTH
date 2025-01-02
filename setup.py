@@ -7,6 +7,14 @@ setup(
     install_requires=[
         'torch',
         'numpy',
+        'matplotlib',
+        'seaborn',
+        'pandas',
+        'scipy',
+        'scikit-learn',
+        'tqdm',
+        'torchvision',
+        
     ],
     author="Jamil Gafur",
     author_email="jamil-gafur@uiowa.edu",
