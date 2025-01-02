@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from pyPrune.pruning import IterativeMagnitudePruning  # Import the pruning class
+from pyPrune.analysis import PruningAnalysis  # Import the analysis class
 
 # Define a simple model for the example (e.g., a small fully connected network)
 class SimpleNN(nn.Module):
@@ -48,7 +49,11 @@ pruner = IterativeMagnitudePruning(
 # Run pruning and fine-tuning
 pruned_model = pruner.run()
 
-# Access saved checkpoints for each pruning step
-import pdb; pdb.set_trace()
-print(pruner.checkpoints)
+# Now pass the pruned model to the PruningAnalysis class
+analysis = PruningAnalysis(pruner, 'pruning_log.txt', 'results', device='cuda')
 
+# Run the analysis
+analysis_results = analysis.run_analysis()
+
+# Run plotting (saving plots as SVGs)
+analysis.run_plotting(analysis_results)

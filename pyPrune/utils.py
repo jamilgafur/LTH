@@ -1,44 +1,81 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import logging
+import os
 
-# Custom training function (to be used for non-pretrained models)
-def train_model(model, X_train, y_train, num_epochs=20, learning_rate=0.001, device=None):
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+from pyPrune.pruning import IterativeMagnitudePruning  # Import the pruning class
+from pyPrune.analysis import PruningAnalysis  # Import the analysis class
+
+def prune_model(model, train_loader, test_loader, final_sparsity=0.99, steps=9, E=5, pretrain_epochs=0, device=None):
     """
-    Train the model from scratch.
+    Perform iterative pruning on the model.
+    
+    Args:
+        model: The model to prune.
+        train_loader: The training DataLoader.
+        test_loader: The testing DataLoader.
+        final_sparsity: The target sparsity (0.0 to 1.0).
+        steps: Number of pruning steps.
+        E: Number of fine-tuning epochs after each pruning step.
+        pretrain_epochs: Number of pretrain epochs before pruning.
+        device: Device to run the model on (CPU or GPU).
+
+    Returns:
+        pruned_model: The pruned model after pruning and fine-tuning.
     """
-    model.to(device)  # Move the model to the selected device
-    X_train, y_train = X_train.to(device), y_train.to(device)  # Move data to device
+    pruner = IterativeMagnitudePruning(
+        model=model,
+        train_loader=train_loader,
+        test_loader=test_loader,
+        final_sparsity=final_sparsity,
+        steps=steps,
+        E=E,
+        pretrain_epochs=pretrain_epochs,
+        device=device if device else ('cuda' if torch.cuda.is_available() else 'cpu')
+    )
+    
+    pruner.run()  # Run pruning
+    return pruner
 
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    criterion = nn.CrossEntropyLoss()
-
-    for epoch in range(num_epochs):
-        model.train()
-        optimizer.zero_grad()
-        outputs = model(X_train)
-        loss = criterion(outputs, y_train)
-        loss.backward()
-        optimizer.step()
-        print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item()}")
-
-# Fine-tune the model after pruning
-def fine_tune_model(model, X_train, y_train, epochs=10, learning_rate=0.001, device=None):
+def analyze_pruning(pruner, output_log='pruning_log.txt', output_dir='results', device=None):
     """
-    Fine-tune the model after pruning for a given number of epochs.
+    Perform pruning analysis and plotting.
+
+    Args:
+        pruner: The pruner object containing pruning details.
+        output_log: Path to save the pruning log.
+        output_dir: Directory to save analysis results and plots.
+        device: Device to run the analysis on (CPU or GPU).
+    
+    Returns:
+        analysis_results: The results of the pruning analysis.
     """
-    model.to(device)  # Move the model to the selected device
-    X_train, y_train = X_train.to(device), y_train.to(device)  # Move data to device
+    analysis = PruningAnalysis(pruner, output_log, output_dir, device=device if device else 'cuda')
+    analysis_results = analysis.run_analysis()
+    
+    return analysis_results
 
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    criterion = nn.CrossEntropyLoss()
+def get_device():
+    """
+    Get the device to use (GPU or CPU).
+    """
+    return 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    # Training loop for fine-tuning
-    for epoch in range(epochs):
-        model.train()
-        optimizer.zero_grad()
-        outputs = model(X_train)
-        loss = criterion(outputs, y_train)
-        loss.backward()
-        optimizer.step()
-        print(f"Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}")
+def calculate_accuracy(outputs, targets):
+    """
+    Calculate the accuracy of the model based on the outputs and targets.
+
+    Args:
+        outputs: The model's output tensor.
+        targets: The ground truth labels.
+
+    Returns:
+        accuracy: The percentage accuracy of the model.
+    """
+    _, predicted = torch.max(outputs, 1)
+    correct = (predicted == targets).sum().item()
+    accuracy = 100 * correct / len(targets)
+    return accuracy
