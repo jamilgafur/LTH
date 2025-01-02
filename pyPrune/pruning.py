@@ -1,29 +1,33 @@
 import torch
 import torch.nn as nn
-import numpy as np
+import torch.optim as optim
 import logging
-import pandas as pd
 import os
-from tqdm import tqdm  # For progress bars
+import pandas as pd
+import numpy as np
+from typing import Callable, Optional, Dict, Tuple
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 from datetime import datetime
 from .model_utils import PrunedLinear, PrunedConv2d
+
 
 class IterativeMagnitudePruning:
     """
     Class for performing Iterative Magnitude Pruning (IMP) on a neural network model.
     """
 
-    def __init__(self, model, X_train, y_train, final_sparsity, steps, 
-                 E=10, pruning_criterion=None, reset_weights=True, 
-                 is_pretrained=False, pretrain_epochs=20, device=None, 
-                 save_dir='pruning_checkpoints'):
+    def __init__(self, model: nn.Module, train_loader: DataLoader, test_loader: DataLoader, final_sparsity: float, 
+                 steps: int, E: int = 10, pruning_criterion: Optional[Callable[[float, torch.Tensor], torch.Tensor]] = None, 
+                 reset_weights: bool = True, is_pretrained: bool = False, pretrain_epochs: int = 20, 
+                 device: Optional[str] = None, save_dir: str = 'pruning_checkpoints') -> None:
         """
         Initialize the iterative magnitude pruning process with gradual pruning.
-        
+
         Parameters:
             model (nn.Module): Neural network model to be pruned.
-            X_train (torch.Tensor): Training input data.
-            y_train (torch.Tensor): Training labels.
+            train_loader (DataLoader): Training data loader.
+            test_loader (DataLoader): Test data loader.
             final_sparsity (float): The final target sparsity.
             steps (int): Number of pruning steps.
             E (int, optional): Number of epochs for pretraining. Defaults to 10.
@@ -38,14 +42,12 @@ class IterativeMagnitudePruning:
         self.save_dir = save_dir  # Custom directory for saving files
         self.setup_save_dir()  # Ensure the save_dir exists
         self.logger = self.setup_logger(os.path.join(self.save_dir, 'logging.txt'))  # Save log inside save_dir
-        
+
         # Validate inputs
         assert 0 < final_sparsity < 1, "final_sparsity must be between 0 and 1."
         assert steps > 0, "steps must be a positive integer."
         assert isinstance(model, nn.Module), "The model must be a subclass of nn.Module."
-        assert isinstance(X_train, torch.Tensor), "X_train must be a torch tensor."
-        assert isinstance(y_train, torch.Tensor), "y_train must be a torch tensor."
-        
+
         # Set class attributes
         self.final_sparsity = final_sparsity
         self.steps = steps
@@ -56,10 +58,10 @@ class IterativeMagnitudePruning:
         self.pretrain_epochs = pretrain_epochs
         self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
         self.current_sparsity = 0.0  # Current sparsity level
-        
+
         self.model = model
-        self.X_train = X_train
-        self.y_train = y_train
+        self.train_loader = train_loader
+        self.test_loader = test_loader
         self.model.to(self.device)  # Move model to device
 
         # Replace layers with Pruned versions before pruning starts
@@ -67,11 +69,11 @@ class IterativeMagnitudePruning:
 
         # Save initial weights and zeroed masks for reset during pruning
         self.initial_weights = self.save_initial_weights()
-        self.saved_masks = {}  # Store the zeroed masks for each layer
-        self.saved_weights = {}  # Store pruned weights after each step
+        self.saved_masks: Dict[str, torch.Tensor] = {}  # Store the zeroed masks for each layer
+        self.saved_weights: Dict[str, torch.Tensor] = {}  # Store pruned weights after each step
 
         # Initialize metrics list
-        self.metrics = []
+        self.metrics: list[Dict[str, float]] = []
 
         self.logger.info(f"\n{'='*50}")
         self.logger.info(f"Initialized Iterative Magnitude Pruning with {self.steps} steps.")
@@ -80,16 +82,16 @@ class IterativeMagnitudePruning:
         # Path to store the final metrics in a Parquet file
         self.metrics_file = os.path.join(self.save_dir, 'metrics.parquet')
 
-    def setup_logger(self, log_file):
+    def setup_logger(self, log_file: str) -> logging.Logger:
         """
         Setup the logger to write logs to both the console and a file.
-        
+
         Parameters:
             log_file (str): Path to the log file.
         """
         logger = logging.getLogger('IMP')
         logger.setLevel(logging.INFO)
-        
+
         # Console handler
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.INFO)
@@ -101,17 +103,17 @@ class IterativeMagnitudePruning:
         formatter = logging.Formatter('%(asctime)s - %(message)s')
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
-        
+
         return logger
 
-    def setup_save_dir(self):
+    def setup_save_dir(self) -> None:
         """
         Ensure the save directory exists, and create it if necessary.
         """
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
 
-    def run(self):
+    def run(self) -> nn.Module:
         """
         Perform the iterative magnitude pruning (IMP) with weight resetting and fine-tuning.
         """
@@ -126,10 +128,13 @@ class IterativeMagnitudePruning:
 
         # Save metrics to a Parquet file
         self.save_metrics_to_parquet()
+        
+        # save the accuray, sparsity and loss for each step as a csv 
+        df = pd.DataFrame(self.metrics)
+        df.to_csv(os.path.join(self.save_dir, 'metrics.csv'), index=False)
+        
 
-        return self.model
-
-    def pretrain_model(self):
+    def pretrain_model(self) -> None:
         """
         Pretrain the model if it is not already pretrained.
         """
@@ -137,31 +142,28 @@ class IterativeMagnitudePruning:
         optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
         criterion = nn.CrossEntropyLoss()
 
-        # move everything to device
         self.model.to(self.device)
-        self.X_train = self.X_train.to(self.device)
-        self.y_train = self.y_train.to(self.device)
-        
-        for epoch in range(self.pretrain_epochs):  # Pretrain for the specified number of epochs
+        # Pretrain for the specified number of epochs
+        for epoch in  tqdm(range(self.pretrain_epochs), desc='Pretraining', unit='epoch', leave=False):
             self.model.train()
-            optimizer.zero_grad()
-            outputs = self.model(self.X_train)
-            loss = criterion(outputs, self.y_train)
-            loss.backward()
+            for data, target in self.train_loader:
+                data, target = data.to(self.device), target.to(self.device)
+                optimizer.zero_grad()
+                outputs = self.model(data)
+                loss = criterion(outputs, target)
+                loss.backward()
 
-            # Apply zeroed gradients before optimizer step
-            self.apply_zeroed_gradients()
+                # Apply zeroed gradients before optimizer step
+                self.apply_zeroed_gradients()
 
-            optimizer.step()
+                optimizer.step()
 
-            # Calculate accuracy
-            accuracy = self.calculate_accuracy(outputs, self.y_train)
-            
-            # Log training info
+                # Log training info
+                accuracy = self.calculate_accuracy(outputs, target)
             self.logger.info(f"Epoch {epoch + 1}/{self.pretrain_epochs} - Loss: {loss.item():.4f} | Accuracy: {accuracy:.2f}%")
             self.metrics.append({'step': epoch, 'loss': loss.item(), 'accuracy': accuracy, 'sparsity': self.current_sparsity})
 
-    def perform_gradual_pruning(self):
+    def perform_gradual_pruning(self) -> None:
         """
         Perform gradual pruning from the current sparsity to final sparsity using np.linspace.
         """
@@ -171,33 +173,38 @@ class IterativeMagnitudePruning:
 
         # Generate sparsity values using np.linspace for smooth transitions
         pruning_steps = np.linspace(self.current_sparsity, self.final_sparsity, self.steps)[1:]
-        
-        for step, target_sparsity in enumerate(pruning_steps):
+
+        for step, target_sparsity in  tqdm(enumerate(pruning_steps), desc='Pruning', unit='step', leave=False):
             self.logger.info(f"Step {step + 1}/{self.steps}: Pruning to {target_sparsity * 100:.2f}% zeroed weights.")
             self.prune_weights(target_sparsity)
             self.fine_tune_model()
 
             # Log the metrics after pruning
             accuracy = self.log_accuracy()
-            layer_sparsities = self.get_layer_sparsities()
-            self.metrics.append({'step': step, 'accuracy': accuracy, 'sparsity': self.current_sparsity,
-                                 'layer_sparsities': layer_sparsities})
+            self.metrics.append({'step': step, 'accuracy': accuracy, 'sparsity': self.current_sparsity})
 
             # Save masks and weights for each pruning step
             self.save_masks_and_weights(step)
 
-    def log_accuracy(self):
+    def log_accuracy(self) -> float:
         """
         Log the accuracy of the model after pruning.
         """
         self.model.eval()
+        correct = 0
+        total = 0
         with torch.no_grad():
-            outputs = self.model(self.X_train)
-            accuracy = self.calculate_accuracy(outputs, self.y_train)
-            self.logger.info(f"Accuracy after pruning: {accuracy:.2f}%")
+            for data, target in self.test_loader:
+                data, target = data.to(self.device), target.to(self.device)
+                outputs = self.model(data)
+                correct += (outputs.argmax(1) == target).sum().item()
+                total += target.size(0)
+
+        accuracy = correct / total * 100
+        self.logger.info(f"Accuracy after pruning: {accuracy:.2f}%, percentage of zeroed weights: {self.current_sparsity*100:.2f}%")
         return accuracy
 
-    def save_metrics_to_parquet(self):
+    def save_metrics_to_parquet(self) -> None:
         """
         Save the accumulated metrics to a Parquet file for analysis.
         """
@@ -205,122 +212,83 @@ class IterativeMagnitudePruning:
         df.to_parquet(self.metrics_file, index=False)
         self.logger.info(f"Metrics saved to {self.metrics_file}")
 
-    def save_initial_weights(self):
+    def save_initial_weights(self) -> Dict[str, torch.Tensor]:
         """
         Save the initial weights of the model to restore later.
         """
         initial_weights = {}
         for name, param in self.model.named_parameters():
-            initial_weights[name] = param.data.clone()
+            initial_weights[name] = param.clone()
         return initial_weights
 
-    def replace_with_pruned_layers(self):
+    def replace_with_pruned_layers(self) -> None:
         """
-        Replace the standard Linear and Conv2d layers with Pruned versions.
+        Replace layers with their pruned counterparts, if necessary.
         """
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
-                self.logger.info(f"Replacing Linear layer {name} with PrunedLinear")
-                setattr(self.model, name, PrunedLinear(module.in_features, module.out_features))
+                self.model._modules[name] = PrunedLinear(module.in_features, module.out_features)
             elif isinstance(module, nn.Conv2d):
-                self.logger.info(f"Replacing Conv2d layer {name} with PrunedConv2d")
-                setattr(self.model, name, PrunedConv2d(module.in_channels, module.out_channels, module.kernel_size))
+                self.model._modules[name] = PrunedConv2d(module.in_channels, module.out_channels, module.kernel_size)
 
-    def prune_weights(self, prune_percentage):
+    def prune_weights(self, target_sparsity: float) -> None:
         """
-        Perform pruning based on the specified percentage of weights to prune.
+        Perform pruning by zeroing out the weights with smallest magnitude.
         """
-        self.logger.info(f"Pruning weights to {prune_percentage * 100:.2f}% zeroed weights.")
-        all_weights = []
-        all_masks = []
-        all_names = []
-        start_idx = 0  # Start index to track the flat weight vector position
-        weight_shapes = {}  # Dictionary to store the shapes of each layer's weights
+        with torch.no_grad():
+            for name, param in self.model.named_parameters():
+                if 'weight' in name:
+                    num_zeroed = int(param.numel() * target_sparsity)
+                    threshold = torch.topk(param.abs().flatten(), num_zeroed, largest=False).values[-1]
+                    param.data[param.abs() <= threshold] = 0
+                    self.saved_masks[name] = param.abs() <= threshold  # Save zeroed mask
 
-        # Flatten all weights from the model layers
-        for name, module in self.model.named_modules():
-            if isinstance(module, (nn.Linear, nn.Conv2d)):
-                weight = module.weight.data
-                all_weights.append(weight.view(-1))  # Flatten the weight tensor
-                weight_shapes[name] = weight.shape  # Store the shape of each layer
-                all_names.append(name)  # Store the name for layer tracking
+        self.current_sparsity = target_sparsity
 
-        # Concatenate all weights into a single tensor
-        all_weights = torch.cat(all_weights)
-
-        # Call the pruning criterion (default is magnitude_prune)
-        prune_mask = self.pruning_criterion(prune_percentage, all_weights)
-
-        # Apply the mask to the weights in each layer and store the mask
-        new_start_idx = 0
-        for name, module in self.model.named_modules():
-            if isinstance(module, (nn.Linear, nn.Conv2d)):
-                weight = module.weight.data
-                num_params = weight.numel()  # Number of parameters in this layer
-                # Create mask for this layer based on the flat weight vector
-                mask = prune_mask[new_start_idx:new_start_idx + num_params].view(weight.shape)
-                mask = mask.to(self.device)
-                module.weight.data.mul_(mask)  # Apply mask to weights
-                module.weight.requires_grad = False
-                self.saved_masks[name] = mask  # Save the mask for this layer
-                new_start_idx += num_params
-
-        # After pruning, ensure that we report the sparsity correctly
-        self.current_sparsity = self.get_model_zeroed_weight_percentage()
-        self.logger.info(f"Zeroed weights after pruning: {self.current_sparsity:.2f}%")
-
-    def save_masks_and_weights(self, step):
+    def save_masks_and_weights(self, step: int) -> None:
         """
-        Save the masks and weights at each pruning step.
+        Save the current masks and pruned model to disk.
         """
-        step_dir = os.path.join(self.save_dir, f"step_{step + 1}")
-        os.makedirs(step_dir, exist_ok=True)
+        masks_file = os.path.join(self.save_dir, f'masks_step_{step}.pt')
+        weights_file = os.path.join(self.save_dir, f'weights_step_{step}.pt')
 
-        # Save masks and pruned weights
-        for name, mask in self.saved_masks.items():
-            torch.save(mask, os.path.join(step_dir, f"{name}_mask.pth"))
+        # Save masks and weights
+        torch.save(self.saved_masks, masks_file)
+        torch.save(self.model.state_dict(), weights_file)
+
+        self.logger.info(f"Saved masks to {masks_file}")
+        self.logger.info(f"Saved weights to {weights_file}")
         
-        for name, param in self.model.named_parameters():
-            if param.requires_grad:
-                torch.save(param.data, os.path.join(step_dir, f"{name}_weights.pth"))
-        
-        self.logger.info(f"Saved masks and weights for step {step + 1}.")
-
-    def get_model_zeroed_weight_percentage(self):
+    def get_model_zeroed_weight_percentage(self) -> float:
         """
-        Get the percentage of zeroed weights in the model.
+        Calculate the percentage of zeroed weights in the model.
         """
-        zeroed_weights = 0
-        total_weights = 0
+        zeroed_count = 0
+        total_count = 0
         for param in self.model.parameters():
-            total_weights += param.numel()
-            zeroed_weights += torch.sum(param == 0).item()
+            zeroed_count += (param == 0).sum().item()
+            total_count += param.numel()
 
-        return zeroed_weights / total_weights * 100
+        return zeroed_count / total_count * 100
 
-    def get_layer_sparsities(self):
+    def get_layer_sparsities(self) -> Dict[str, float]:
         """
-        Get the sparsity for each individual layer.
+        Get the sparsity (percentage of zeroed weights) for each layer.
         """
-        layer_sparsities = {}
-        for name, module in self.model.named_modules():
-            if isinstance(module, (nn.Linear, nn.Conv2d)):
-                zeroed_weights = torch.sum(module.weight.data == 0).item()
-                total_weights = module.weight.data.numel()
-                sparsity = zeroed_weights / total_weights * 100
-                layer_sparsities[name] = sparsity
-        return layer_sparsities
+        sparsities = {}
+        for name, param in self.model.named_parameters():
+            if 'weight' in name:
+                sparsities[name] = (param == 0).sum().item() / param.numel() * 100
+        return sparsities
 
-    def magnitude_prune(self, prune_percentage, all_weights):
+    def magnitude_prune(self, param: torch.Tensor, sparsity: float) -> torch.Tensor:
         """
-        Prune weights by magnitude, removing the smallest values based on their absolute value.
+        Apply magnitude pruning to a tensor by zeroing the smallest magnitudes.
         """
-        num_to_prune = int(prune_percentage * all_weights.numel())
-        _, indices = torch.topk(all_weights.abs(), num_to_prune, largest=False)
-        
-        mask = torch.ones(all_weights.numel(), device=all_weights.device)
-        mask[indices] = 0
-        return mask
+        num_zeroed = int(param.numel() * sparsity)
+        threshold = torch.topk(param.abs().flatten(), num_zeroed, largest=False).values[-1]
+        param.data[param.abs() <= threshold] = 0
+        return param
 
     def apply_zeroed_gradients(self):
         """
@@ -331,32 +299,38 @@ class IterativeMagnitudePruning:
                 mask = self.saved_masks[name]
                 if param.grad is not None:
                     param.grad.mul_(mask)  # Mask gradients
-
-    def fine_tune_model(self):
+                
+    def fine_tune_model(self) -> None:
         """
         Fine-tune the model after pruning.
         """
+        self.logger.info(f"\nFine-tuning the model for {self.E} epochs...\n")
         optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
         criterion = nn.CrossEntropyLoss()
 
-        self.model.train()
-        optimizer.zero_grad()
-        outputs = self.model(self.X_train)
-        loss = criterion(outputs, self.y_train)
-        loss.backward()
+        self.model.to(self.device)
+        for epoch in  tqdm(range(self.E), desc='Fine-tuning', unit='epoch', leave=False):
+            self.model.train()
+            for data, target in self.train_loader:
+                data, target = data.to(self.device), target.to(self.device)
+                optimizer.zero_grad()
+                outputs = self.model(data)
+                loss = criterion(outputs, target)
+                loss.backward()
 
-        self.apply_zeroed_gradients()
-        optimizer.step()
+                # Apply zeroed gradients before optimizer step
+                self.apply_zeroed_gradients()
 
-        accuracy = self.calculate_accuracy(outputs, self.y_train)
-        self.logger.info(f"Fine-Tune Loss: {loss.item():.4f} | Accuracy: {accuracy:.2f}%")
+                optimizer.step()
 
-    def calculate_accuracy(self, outputs, targets):
+            accuracy = self.log_accuracy()
+            self.metrics.append({'step': epoch, 'loss': loss.item(), 'accuracy': accuracy, 'sparsity': self.current_sparsity})
+
+    def calculate_accuracy(self, outputs: torch.Tensor, targets: torch.Tensor) -> float:
         """
-        Calculate the accuracy of the model.
+        Calculate accuracy given the outputs and targets.
         """
         _, predicted = torch.max(outputs, 1)
         correct = (predicted == targets).sum().item()
-        accuracy = 100 * correct / targets.size(0)
+        accuracy = 100 * correct / len(targets)
         return accuracy
-
