@@ -5,9 +5,9 @@ import torch.nn.functional as F
 class LeNet(nn.Module):
     def __init__(self):
         super(LeNet, self).__init__()
-        self.fc1 = nn.Linear(28 * 28, 10)
-        self.fc2 = nn.Linear(10, 10)
-        self.fc3 = nn.Linear(10, 10)  # 10 classes for MNIST
+        self.fc1 = nn.Linear(28 * 28, 2)
+        self.fc2 = nn.Linear(2, 2)
+        self.fc3 = nn.Linear(2, 10)  # 10 classes for MNIST
 
     def forward(self, x):
         x = x.view(-1, 28 * 28)  # Flatten input

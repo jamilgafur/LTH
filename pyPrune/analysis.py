@@ -79,74 +79,44 @@ class PruningAnalysis:
         """
         self.logger.info(f"Starting pruning analysis...")
 
-        # Initialize empty lists to store results for each step
         similarity_matrices = []
         weight_changes = []
         neuron_changes = []
+        non_contributory_percentages = []  # Track non-contributory neuron percentage
 
-        # Run the analysis for each pruning step with tqdm
         for step in tqdm(range(self.steps), desc="Pruning Steps", unit="step"):
             self.logger.info(f"Analyzing step {step + 1} of {self.steps}...")
-
-            # Create directory for each step's results
             step_dir = f"{self.save_dir}/experiment_step_{step + 1}"
             if not os.path.exists(step_dir):
                 os.makedirs(step_dir)
 
-            # Log model information and statistics
-            self.logger.info(f"Model at step {step + 1}: {str(self.model)}")
-            
-            # Log sparsity (if final_sparsity is a list/array)
-            if isinstance(self.final_sparsity, (list, np.ndarray)):
-                self.logger.info(f"Sparsity at step {step + 1}: {self.final_sparsity[step]}")
-            else:
-                self.logger.info(f"Final sparsity: {self.final_sparsity}")
-
-            # Save model weights and masks
-            torch.save(self.model.state_dict(), f"{step_dir}/model_step_{step + 1}.pt")
-            
-            # Compute neuron similarity matrix (Experiment 1)
             similarity_matrix = self.compute_similarity_matrix()
             similarity_matrices.append(similarity_matrix)
             
-            # Plot similarity matrices for each layer at each step with tqdm
-            for step, similarity_matrix in enumerate(similarity_matrices):
-                for layer_name, sim_matrix in similarity_matrix.items():
-                    # Plot non-clustered similarity matrix
-                    self.plot_similarity_matrix(sim_matrix, step, layer_name)
-                    
-                    # Plot clustered similarity matrix
-                    self.plot_clustered_similarity_matrix(sim_matrix, step, layer_name)
+            for layer_name, sim_matrix in similarity_matrix.items():
+                self.plot_similarity_matrix(sim_matrix, step, layer_name,step_dir)
+                self.plot_clustered_similarity_matrix(sim_matrix, step, layer_name, step_dir)
 
-            # Measure weight zeroing effects (Experiment 2)
-            weight_change = self.measure_weight_zeroing_effects(step)
+            weight_change = self.measure_weight_zeroing_effects(step, step_dir)
             weight_changes.append(weight_change)
-            
-            
-            # Plot weight zeroing effects as a histogram
             for step, weight_changes in enumerate(weight_changes):
-                self.plot_weight_zeroing_histogram(weight_changes, step)
+                self.plot_weight_zeroing_histogram(weight_changes, step, step_dir)
 
-
-            # Measure neuron zeroing effects (Experiment 3)
-            neuron_change = self.measure_neuron_zeroing_effects()
+            neuron_change, non_contributory_percentage = self.measure_neuron_zeroing_effects(step)
             neuron_changes.append(neuron_change)
-            
-            
-            # Plot neuron zeroing effects as a bar plot
-            for step, neuron_changes in enumerate(neuron_changes):
-                self.plot_neuron_zeroing_barplot(neuron_changes, step)
+            non_contributory_percentages.append(non_contributory_percentage)
+            self.plot_neuron_zeroing_barplot(neuron_change, step, step_dir)
 
+        # Plot non-contributory neurons percentage over time
+        self.plot_non_contributory_neurons(non_contributory_percentages, step_dir)
 
         self.logger.info("Pruning analysis completed.")
-        
-        # Return all the results as a dictionary
         return {
             'similarity_matrices': similarity_matrices,
             'weight_changes': weight_changes,
-            'neuron_changes': neuron_changes
+            'neuron_changes': neuron_changes,
+            'non_contributory_percentages': non_contributory_percentages
         }
-
 
     def _hook_fn(self, name: str):
         """
@@ -206,7 +176,7 @@ class PruningAnalysis:
 
         return layer_similarity_matrices
 
-    def measure_weight_zeroing_effects(self,step):
+    def measure_weight_zeroing_effects(self, step, step_dir):
         """
         Measure the effect of weight zeroing by evaluating loss change when each weight is zeroed.
         """
@@ -229,52 +199,28 @@ class PruningAnalysis:
             if param.requires_grad:
                 original_weights = param.data.clone()
                 
-                # Plot histogram for the weight of the current layer (pass step number)
-                self.plot_weight_histogram(original_weights, name, step)  # Pass 'step' here
                 
                 # Zero out one weight at a time
                 param.data.zero_()
 
-                loss_after = 0.0
-                with torch.no_grad():
-                    for batch in tqdm(self.X_train, desc=f"Zeroing weights for {name}", unit="batch"):
-                        batch_x, batch_y = batch
-                        batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
-                        loss_after += criterion(self.model(batch_x), batch_y).item()
+                if "weight" in name:
+                    # Plot histogram for the weight of the current layer (pass step number)
+                    self.plot_weight_histogram(original_weights, name, step, step_dir)  # Pass 'step' here
+                
+                    loss_after = 0.0
+                    with torch.no_grad():
+                        for batch in tqdm(self.X_train, desc=f"Zeroing weights for {name}", unit="batch"):
+                            batch_x, batch_y = batch
+                            batch_x, batch_y = batch_x.to(self.device), batch_y.to(self.device)
+                            loss_after += criterion(self.model(batch_x), batch_y).item()
 
-                loss_after /= len(self.X_train)
-                weight_changes.append(loss_after - loss_before)
-                param.data.copy_(original_weights)  # Restore the weight
+                    loss_after /= len(self.X_train)
+                    weight_changes.append(loss_after - loss_before)
+                    param.data.copy_(original_weights)  # Restore the weight
 
         return np.array(weight_changes)
 
-    def plot_weight_histogram(self, original_weights, name, step):
-        """
-        Plot a histogram of the weights for a specific layer and save it in the appropriate directory.
-        
-        Parameters:
-            original_weights (Tensor): The weight tensor of the layer.
-            name (str): The name of the layer.
-            step (int): The current pruning step.
-        """
-        plt.figure(figsize=(8, 6))
-        plt.hist(original_weights.cpu().numpy().flatten(), bins=50, color='skyblue', edgecolor='black')
-        plt.title(f"Histogram of Weights for Layer {name}")
-        plt.xlabel("Weight Value")
-        plt.ylabel("Frequency")
-        plt.tight_layout()
-
-        # Create directory for the step if it doesn't exist
-        step_dir = f"{self.save_dir}/experiment_step_{step + 1}"
-        if not os.path.exists(step_dir):
-            os.makedirs(step_dir)
-
-        # Save the plot in the corresponding folder for the step
-        save_path = f"{step_dir}/weight_histogram_{name}_step_{step + 1}.png"
-        plt.savefig(save_path, format="png")
-        plt.close()
-
-    def measure_neuron_zeroing_effects(self):
+    def measure_neuron_zeroing_effects(self, step):
         """
         Measure the effect of neuron zeroing by evaluating loss change when each neuron is zeroed.
         """
@@ -292,6 +238,7 @@ class PruningAnalysis:
         loss_before /= len(self.X_train)
 
         neuron_changes = []
+        non_contributory_neurons = 0  # Track non-contributory neurons
 
         for name, module in self.model.named_modules():
             if isinstance(module, (torch.nn.Linear, torch.nn.Conv2d)):
@@ -310,62 +257,112 @@ class PruningAnalysis:
                             loss_after += criterion(self.model(batch_x), batch_y).item()
 
                     loss_after /= len(self.X_train)
-                    neuron_changes.append(loss_after - loss_before)
+                    change = loss_after - loss_before
+                    
+                    neuron_changes.append(change)
+                    # Check if the change in loss is negligible (non-contributory neuron)
+                    if abs(change) < 0.01:  # You can tweak this threshold
+                        non_contributory_neurons += 1
                     module.weight.data.copy_(original_weights)  # Restore the weight
-        
-        return np.array(neuron_changes)
 
-    # Plotting functions (no changes needed for DataLoader integration)
-    def plot_similarity_matrix(self, similarity_matrix: np.ndarray, step: int, layer_name: str):
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(similarity_matrix, cmap='coolwarm', square=True, cbar=True, annot=False)
-        plt.title(f"Neuron Similarity Matrix for Layer {layer_name} at Step {step + 1}")
-        plt.xlabel("Neurons")
-        plt.ylabel("Neurons")
+        # Track the percentage of non-contributory neurons
+        total_neurons = len(neuron_changes)
+        non_contributory_percentage = non_contributory_neurons / total_neurons * 100
+
+        self.logger.info(f"Step {step + 1}: {non_contributory_percentage}% of neurons are non-contributory.")
+
+        return np.array(neuron_changes), non_contributory_percentage
+
+    def plot_similarity_matrix(self, sim_matrix, step, layer_name, step_dir):
+        """
+        Plot and save similarity matrix for a given layer at the current pruning step.
+        """
+        plt.figure(figsize=(8, 6))
+        sns.heatmap(sim_matrix, cmap="coolwarm", annot=False)
+        plt.title(f"Layer: {layer_name} | Step: {step + 1} | Neuron Similarity")
+        plt.tight_layout()
+        save_path = f"{step_dir}/similarity_matrix_{layer_name}_step{step + 1}.png"
+        plt.savefig(save_path)
+        plt.close()
+        # save the data as a npy file
+        np.save(f"{step_dir}/similarity_matrix_{layer_name}_step{step + 1}.npy", sim_matrix)
+
+    def plot_clustered_similarity_matrix(self, sim_matrix, step, layer_name, step_dir):
+        """
+        Plot and save a clustered version of the similarity matrix for a given layer.
+        """
+        plt.figure(figsize=(8, 6))
+        linkage_matrix = linkage(sim_matrix, method='ward')
+        dendrogram(linkage_matrix)
+        plt.title(f"Clustered Neuron Similarity - Layer: {layer_name} | Step: {step + 1}")
+        plt.tight_layout()
+        save_path = f"{step_dir}/clustered_similarity_{layer_name}_step{step + 1}.png"
+        plt.savefig(save_path)
+        plt.close()
+        
+        # save the data as a npy file
+        np.save(f"{step_dir}/clustered_similarity_{layer_name}_step{step + 1}.npy", linkage_matrix)
+
+    def plot_weight_histogram(self, weight_data, layer_name, step, step_dir):
+        """
+        Plot histogram of weights for a specific layer at a pruning step.
+        """
+        plt.figure(figsize=(8, 6))
+        plt.hist(weight_data.cpu().numpy().flatten(), bins=50)
+        plt.title(f"Weight Distribution - Layer: {layer_name} | Step: {step + 1}")
+        plt.tight_layout()
+        save_path = f"{step_dir}/weight_histogram_{layer_name}_step{step + 1}.png"
+        plt.savefig(save_path)
+        plt.close()
+        
+        # save the data as a npy file
+        np.save(f"{step_dir}/weight_histogram_{layer_name}_step{step + 1}.npy", weight_data.cpu().numpy().flatten())
+
+    def plot_neuron_zeroing_barplot(self, neuron_changes, step,step_dir):
+        """
+        Plot a bar plot showing the change in loss when neurons are zeroed.
+        """
+        plt.figure(figsize=(8, 6))
+        plt.bar(range(len(neuron_changes)), neuron_changes)
+        plt.title(f"Neuron Zeroing Loss Changes | Step {step + 1}")
+        plt.tight_layout()
+        save_path = f"{step_dir}/neuron_zeroing_barplot_step{step + 1}.png"
+        plt.savefig(save_path)
+        plt.close()
+        
+        # save the data as a npy file
+        np.save(f"{step_dir}/neuron_zeroing_barplot_step{step + 1}.npy", neuron_changes)
+        
+
+    def plot_weight_zeroing_histogram(self, weight_changes, step, step_dir):
+        """
+        Plot histogram of weight zeroing effects on loss for a given pruning step.
+        """
+        plt.figure(figsize=(8, 6))
+        plt.hist(weight_changes, bins=50)
+        plt.title(f"Effect of Weight Zeroing on Loss | Step {step + 1}")
+        plt.tight_layout()
+        save_path = f"{step_dir}/weight_zeroing_histogram_step{step + 1}.png"
+        plt.savefig(save_path)
+        plt.close()
+        
+        # save the data as a npy file
+        np.save(f"{step_dir}/weight_zeroing_histogram_step{step + 1}.npy", weight_changes)
+
+    def plot_non_contributory_neurons(self, non_contributory_percentages, step_dir):
+        """
+        Plot the percentage of non-contributory neurons across pruning steps.
+        """
+        plt.figure(figsize=(8, 6))
+        plt.plot(non_contributory_percentages, marker='o', linestyle='-', color='b')
+        plt.title("Percentage of Non-Contributory Neurons Over Time")
+        plt.xlabel("Pruning Step")
+        plt.ylabel("Percentage of Non-Contributory Neurons")
         plt.tight_layout()
 
-        # Save the plot in the corresponding folder
-        save_path = f"{self.save_dir}/experiment_step_{step + 1}/similarity_matrix_{layer_name}_step_{step + 1}.png"
+        save_path = f"{step_dir}/non_contributory_neurons.png"
         plt.savefig(save_path, format="png")
         plt.close()
 
-    def plot_clustered_similarity_matrix(self, similarity_matrix, step, layer_name):
-        # Perform hierarchical clustering (using the 'ward' method)
-        linked = linkage(similarity_matrix, method='ward')
-        
-        # Create the dendrogram for hierarchical clustering
-        plt.figure(figsize=(10, 8))
-        dendrogram(linked, labels=np.arange(similarity_matrix.shape[0]), orientation='top', color_threshold=0)
-        plt.title(f"Clustered Neuron Similarity at Step {step + 1} for Layer {layer_name}")
-        plt.xlabel("Neuron Index")
-        plt.ylabel("Similarity")
-        plt.tight_layout()
-        
-        # Save to the correct folder for the step
-        step_dir = f"{self.save_dir}/experiment_step_{step + 1}"
-        plt.savefig(f"{step_dir}/clustered_similarity_step_{step + 1}_layer_{layer_name}.png", format="png")
-        plt.close()
-
-    def plot_weight_zeroing_histogram(self, weight_changes, step):
-        plt.figure(figsize=(8, 6))
-        plt.hist(weight_changes, bins=50, color='skyblue', edgecolor='black')
-        plt.title(f"Histogram of Loss Change vs Weight Zeroing at Step {step + 1}")
-        plt.xlabel("Loss Change")
-        plt.ylabel("Frequency")
-        plt.tight_layout()
-
-        step_dir = f"{self.save_dir}/experiment_step_{step + 1}"
-        plt.savefig(f"{step_dir}/weight_zeroing_histogram_step_{step + 1}.png", format="png")
-        plt.close()
-
-    def plot_neuron_zeroing_barplot(self, neuron_changes, step):
-        plt.figure(figsize=(8, 6))
-        plt.bar(np.arange(len(neuron_changes)), neuron_changes, color='salmon')
-        plt.title(f"Loss Change vs Neuron Zeroing at Step {step + 1}")
-        plt.xlabel("Neuron Index")
-        plt.ylabel("Loss Change")
-        plt.tight_layout()
-
-        step_dir = f"{self.save_dir}/experiment_step_{step + 1}"
-        plt.savefig(f"{step_dir}/neuron_zeroing_barplot_step_{step + 1}.png", format="png")
-        plt.close()
+        # save the data as a npy file
+        np.save(f"{step_dir}/non_contributory_neurons.npy", non_contributory_percentages)
