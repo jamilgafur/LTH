@@ -56,7 +56,6 @@ class IterativeMagnitudePruning:
         logger.info(f"Initial weights saved for {len(initial_weights)} weight parameters.")
         return initial_weights
 
-
     def unroll(self, percentage: float = 0) -> None:
         logger.debug(f"Unrolling model at {percentage * 100:.2f}% sparsity")
 
@@ -139,7 +138,28 @@ class IterativeMagnitudePruning:
                         param.grad *= mask.float()  # Zero out gradients for pruned weights
 
                 self.optimizer.step()
+                accuracy = 100. * output.argmax(dim=1).eq(target).sum().item() / target.size(0)
             logger.info(f"Training step complete, Loss: {loss.item()}")
+            self.metrics.append({'sparsity': self.current_sparsity, 'loss': loss.item()})
+        elif type == "eval":
+            self.model.eval()
+            total_loss = 0.0
+            correct = 0
+            with torch.no_grad():
+                for data, target in tqdm(self.test_loader, desc="Evaluating", unit="batch"):
+                    data, target = data.to(self.device), target.to(self.device)
+                    output = self.model(data)
+                    total_loss += self.criterion(output, target).item()
+                    pred = output.argmax(dim=1, keepdim=True)
+                    correct += pred.eq(target.view_as(pred)).sum().item()
+
+            total_loss /= len(self.test_loader.dataset)
+            accuracy = 100. * correct / len(self.test_loader.dataset)
+            logger.info(f"Evaluation complete, Average loss: {total_loss:.4f}, Accuracy: {accuracy:.2f}%")
+            self.metrics[-1]['loss'] = total_loss
+        logger.debug(f"Metrics: {self.metrics}")
+        logger.debug(f"Current sparsity: {self.current_sparsity}")
+        logger.debug(f"Accuracy: {accuracy}")
 
     def run(self) -> None:
         self.initial_weights = self.save_initial_weights()
@@ -181,5 +201,9 @@ class IterativeMagnitudePruning:
         # Allow for a small tolerance in the sparsity difference
         assert np.isclose(current_sparsity_model, sparsity, atol=1e-2), \
             f"Model sparsity mismatch: {current_sparsity_model} vs {sparsity}"
+        
+        self.current_sparsity = current_sparsity_model
 
         logger.info(f"Sparsity assertion passed: {current_sparsity_model * 100:.2f}% model.")
+
+        
