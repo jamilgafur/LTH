@@ -51,6 +51,7 @@ def main():
         finetune_epochs=1
     )    
     pruner.run()  # Run pruning
+    import pdb; pdb.set_trace()
     # # Perform pruning analysis
     # analysis = analyze_pruning(
     #     pruner=pruner,

@@ -6,6 +6,7 @@ from typing import Optional, Callable
 import numpy as np
 from tqdm import tqdm
 import logging
+import json
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -36,7 +37,14 @@ class IterativeMagnitudePruning:
         self.current_sparsity = 0.0
 
         self.initial_weights = self.save_initial_weights()
-        self.metrics = []
+        self.metrics = {
+            'sparsity': [],
+            'loss': [],
+            'accuracy': [],
+            'gradients': [],
+            'optimizer': [],
+            'step': [],
+        }
 
         logger.info("IterativeMagnitudePruning initialized.")
         logger.info(f"Device: {self.device}, Final sparsity: {self.final_sparsity}, Steps: {self.steps}")
@@ -121,6 +129,13 @@ class IterativeMagnitudePruning:
                 param.data = self.initial_weights[name].clone()
         logger.info("Weights reset to initial values.")
 
+    def update_metrics(self, loss: float, accuracy: float, gradients: torch.Tensor) -> None:
+        # Record metrics
+        self.metrics['sparsity'].append(self.current_sparsity)
+        self.metrics['loss'].append(loss)
+        self.metrics['accuracy'].append(accuracy)
+        
+
     def train(self, type: str = "train") -> None:
         if type == "train":
             self.model.train()
@@ -139,8 +154,10 @@ class IterativeMagnitudePruning:
 
                 self.optimizer.step()
                 accuracy = 100. * output.argmax(dim=1).eq(target).sum().item() / target.size(0)
+                
+            # Update the metrics dictionary
+            self.update_metrics(loss.item(), accuracy, next(self.model.parameters()).grad)
             logger.info(f"Training step complete, Loss: {loss.item()}")
-            self.metrics.append({'sparsity': self.current_sparsity, 'loss': loss.item()})
         elif type == "eval":
             self.model.eval()
             total_loss = 0.0
@@ -155,8 +172,11 @@ class IterativeMagnitudePruning:
 
             total_loss /= len(self.test_loader.dataset)
             accuracy = 100. * correct / len(self.test_loader.dataset)
+
+            # Update the metrics dictionary
+            self.update_metrics(total_loss, accuracy, None)
             logger.info(f"Evaluation complete, Average loss: {total_loss:.4f}, Accuracy: {accuracy:.2f}%")
-            self.metrics[-1]['loss'] = total_loss
+
         logger.debug(f"Metrics: {self.metrics}")
         logger.debug(f"Current sparsity: {self.current_sparsity}")
         logger.debug(f"Accuracy: {accuracy}")
@@ -169,24 +189,55 @@ class IterativeMagnitudePruning:
             self.train("train")
         
         steps = np.linspace(0, self.final_sparsity, self.steps)
+        steps = steps[1:]  # Skip the first step (0% sparsity)
         logger.info(f"Starting pruning with {self.steps} steps for sparsity levels: {steps}")
 
         for step in tqdm(steps, desc="Pruning Steps", unit="step"):
             logger.info(f"Starting pruning step: {step * 100:.2f}% sparsity")
             self.magnitude_prune(step)
 
+            # Update the current sparsity
+            self.assert_sparsity(step)  # This checks the sparsity and updates current_sparsity
+            
             logger.info("Fine-tuning the model...")
             self.train("train")
 
             logger.info("Updating optimizer to reflect pruned weights...")
             self.save_checkpoint(step, os.path.join(self.save_dir, f"pruned_model_step_{int(step * 100)}.pth"))
-            self.metrics.append({'sparsity': step, 'loss': self.metrics[-1]['loss'] if self.metrics else 0.0})
             
+            # Add metrics for pruning step
+            self.metrics['step'].append(step)
+            self.metrics['sparsity'].append(self.current_sparsity)  # Store the updated sparsity
+
             self.train("eval")
             print("\n\n\n")
-            self.assert_sparsity(step)
 
         logger.info("Pruning complete.")
+        # save the metrics as a json
+        logger.info("Saving metrics...")
+        self.save_metrics()
+    
+    def save_metrics(self) -> None:
+        import json
+
+        # Convert the metrics dictionary so all tensors are converted to native Python types
+        def convert_tensor(t):
+            if isinstance(t, torch.Tensor):
+                if t.numel() == 1:
+                    return t.item()  # Convert scalar tensors to float
+                else:
+                    return t.tolist()  # Convert other tensors to lists
+            elif isinstance(t, torch.nn.Parameter):
+                return convert_tensor(t.data)  # If it's a Parameter, convert its data
+            return t  # If it's not a tensor, return as is
+
+        # Apply the conversion to the entire metrics dictionary
+        metrics_serializable = {key: [convert_tensor(val) for val in values] for key, values in self.metrics.items()}
+
+        # Save the metrics as a JSON file
+        with open(os.path.join(self.save_dir, 'pruning_metrics.json'), 'w') as f:
+            json.dump(metrics_serializable, f)
+        logger.info("Metrics saved to pruning_metrics.json")
 
     def assert_sparsity(self, sparsity: float) -> None:
         total_params_model = 0
@@ -202,8 +253,7 @@ class IterativeMagnitudePruning:
         assert np.isclose(current_sparsity_model, sparsity, atol=1e-2), \
             f"Model sparsity mismatch: {current_sparsity_model} vs {sparsity}"
         
+        # Update the current sparsity
         self.current_sparsity = current_sparsity_model
 
         logger.info(f"Sparsity assertion passed: {current_sparsity_model * 100:.2f}% model.")
-
-        
