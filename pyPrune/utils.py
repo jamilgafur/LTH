@@ -9,7 +9,7 @@ from torchvision import datasets, transforms
 from pyPrune.pruning import IterativeMagnitudePruning  # Import the pruning class
 from pyPrune.analysis import PruningAnalysis  # Import the analysis class
 
-def prune_model(model, train_loader, test_loader, final_sparsity=0.99, steps=9, E=5, pretrain_epochs=0, device=None):
+def prune_model(model, train_loader, test_loader, final_sparsity=0.99, steps=9, pretrain_epochs=0, device=None, finetune=0):
     """
     Perform iterative pruning on the model.
     
@@ -32,9 +32,9 @@ def prune_model(model, train_loader, test_loader, final_sparsity=0.99, steps=9, 
         test_loader=test_loader,
         final_sparsity=final_sparsity,
         steps=steps,
-        E=E,
         pretrain_epochs=pretrain_epochs,
-        device=device if device else ('cuda' if torch.cuda.is_available() else 'cpu')
+        device=device if device else ('cuda' if torch.cuda.is_available() else 'cpu'),
+        finetune_epochs=finetune
     )
     
     pruner.run()  # Run pruning

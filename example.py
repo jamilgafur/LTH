@@ -1,9 +1,8 @@
 
 import torch
 from torch import nn
-from pyPrune.utils import prune_model, analyze_pruning
 from pyPrune.models.LeNet import LeNet
-
+from pyPrune.pruning import IterativeMagnitudePruning 
 
 def load_mnist():
     # Load MNIST dataset
@@ -35,25 +34,31 @@ def main():
     # Initialize the model
     model = LeNet()
 
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    criterion = nn.CrossEntropyLoss()
+
     # Initialize Iterative Magnitude Pruning with gradual pruning
-    pruner = prune_model(
+    pruner = IterativeMagnitudePruning(
         model=model,
+        optimizer=optimizer,
+        criterion=criterion,
         train_loader=train_loader,
         test_loader=test_loader,
-        final_sparsity=0.99,  # Target final sparsity (e.g., 99% sparsity)
-        steps=9,  # Prune in 5 steps
-        E=5,  # Fine-tuning epochs after each pruning step
-        pretrain_epochs=10,  # Pretrain the model for 20 epochs before pruning
-        device='cuda' if torch.cuda.is_available() else 'cpu',  # Use GPU if available
-    )
-    
-    # Perform pruning analysis
-    analysis = analyze_pruning(
-        pruner=pruner,
-        output_log='pruning_log.txt',  # Save pruning log
-        output_dir='results',  # Save analysis results and plots
-        device='cuda' if torch.cuda.is_available() else 'cpu',  # Use GPU if available
-    )
+        final_sparsity=0.99,
+        steps=9,
+        pretrain_epochs=0,
+        device='cuda' if torch.cuda.is_available() else 'cpu',
+        finetune_epochs=1
+    )    
+    pruner.run()  # Run pruning
+    import pdb; pdb.set_trace()
+    # # Perform pruning analysis
+    # analysis = analyze_pruning(
+    #     pruner=pruner,
+    #     output_log='pruning_log.txt',  # Save pruning log
+    #     output_dir='results',  # Save analysis results and plots
+    #     device='cuda' if torch.cuda.is_available() else 'cpu',  # Use GPU if available
+    # )
     
 if __name__ == '__main__':
     main()
