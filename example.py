@@ -3,7 +3,7 @@ import torch
 from torch import nn
 from pyPrune.models.LeNet import LeNet
 from pyPrune.pruning import IterativeMagnitudePruning 
-
+import numpy as np
 def load_mnist():
     # Load MNIST dataset
     from torchvision import datasets, transforms
@@ -44,21 +44,28 @@ def main():
         criterion=criterion,
         train_loader=train_loader,
         test_loader=test_loader,
-        final_sparsity=0.99,
-        steps=9,
-        pretrain_epochs=0,
+        steps=np.linspace(0, .99, 9)[1:]  , # 9 steps from 1'st step to 99% pruning
+        pretrain_epochs=3,
         device='cuda' if torch.cuda.is_available() else 'cpu',
-        finetune_epochs=1
+        finetune_epochs=2
     )    
-    pruner.run()  # Run pruning
-    import pdb; pdb.set_trace()
-    # # Perform pruning analysis
-    # analysis = analyze_pruning(
-    #     pruner=pruner,
-    #     output_log='pruning_log.txt',  # Save pruning log
-    #     output_dir='results',  # Save analysis results and plots
-    #     device='cuda' if torch.cuda.is_available() else 'cpu',  # Use GPU if available
-    # )
+    pruner.run()  # Run pruning process
+    plot_loss_accuracy_sparsity(pruner)
+
+
+def plot_loss_accuracy_sparsity(pruner: IterativeMagnitudePruning):
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(1, 2, figsize=(15, 5))
+    ax[0].plot(pruner.metrics['sparsity'], pruner.metrics['accuracy'], label='Accuracy')
+    ax[0].set_xlabel('Sparsity')
+    ax[0].set_ylabel('Accuracy')
+    ax[0].legend()
+    ax[1].plot(pruner.metrics['sparsity'], pruner.metrics['loss'], label='Loss')
+    ax[1].set_xlabel('Sparsity')
+    ax[1].set_ylabel('Loss')
+    ax[1].legend()
+
+    plt.savefig('metrics.png')
     
 if __name__ == '__main__':
     main()
