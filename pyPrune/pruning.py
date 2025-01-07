@@ -7,6 +7,7 @@ import numpy as np
 from tqdm import tqdm
 import logging
 import json
+from pyPrune.utils import *
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -17,7 +18,7 @@ class IterativeMagnitudePruning:
                  steps: int, optimizer: torch.optim.Optimizer, criterion: nn.Module, 
                  pruning_criterion: Optional[Callable[[float, torch.Tensor], torch.Tensor]] = None,
                  device: Optional[str] = None, save_dir: str = 'pruning_checkpoints', finetune_epochs: int = 0, 
-                 pretrain_epochs: int = 0, learning_rate: float = 0.01) -> None:
+                 pretrain_epochs: int = 0, learning_rate: float = 0.01, file_handler: str = "logger.log") -> None:
         """
         Initializes the IterativeMagnitudePruning class to perform iterative magnitude pruning on a neural network model.
 
@@ -92,6 +93,18 @@ class IterativeMagnitudePruning:
             'step': [],
         }
 
+        # if steps has the first index as 0, update pretrain_epochs accordingly
+        if self.steps[0] == 0 and self.pretrain_epochs == 0:
+            self.pretrain_epochs = self.pretrain_epochs + 1  # Set pretrain_epochs to 1 more
+            self.steps = self.steps[1:]  # Remove the first element (0) from steps
+        
+        # Log the initialization details with a file handler
+        file_handler = logging.FileHandler(self.save_dir + "/" + file_handler)
+        file_handler.setLevel(logging.DEBUG)
+        logger.addHandler(file_handler)
+
+        self.logger = logger
+        
         logger.info("IterativeMagnitudePruning initialized.")
         logger.info(f"Device: {self.device}, Final sparsity: {self.steps[-1]}, Steps: {self.steps}")
 
@@ -429,6 +442,8 @@ class IterativeMagnitudePruning:
         logger.debug(f"Current sparsity: {self.current_sparsity}")
         logger.debug(f"Accuracy: {accuracy}")
 
+        clean_memory()  # Clean up memory after each epoch 
+
     def run(self) -> None:
         """
         Runs the iterative magnitude pruning process, including pretraining, pruning, 
@@ -487,7 +502,7 @@ class IterativeMagnitudePruning:
             logger.info("Fine-tuning the model...")
             if self.finetune_epochs > 0:    
                 for finetune_epoch_steps in range(self.finetune_epochs):
-                    logger.info("Fine-tuning the model at step {finetune_epoch_steps + 1}...")
+                    logger.info(f"Fine-tuning the model at step {finetune_epoch_steps + 1}...")
                     self.epoch("train")
 
             logger.info("Updating optimizer to reflect pruned weights...")
@@ -495,8 +510,7 @@ class IterativeMagnitudePruning:
             
             # Add metrics for pruning step
             self.metrics['step'].append(step)
-            self.metrics['sparsity'].append(self.current_sparsity)  # Store the updated sparsity
-
+            
             
             self.epoch("eval")
             print("\n\n\n")
@@ -505,7 +519,10 @@ class IterativeMagnitudePruning:
         # save the metrics as a json
         logger.info("Saving metrics...")
         self.save_metrics()
-    
+
+        logger.info("Metrics saved to pruning_metrics.json")
+        
+
     def save_metrics(self) -> None:
         """
         Saves the pruning process metrics to a JSON file. The metrics include sparsity, 
