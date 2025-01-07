@@ -1,7 +1,3 @@
-Here's the updated and comprehensive README, which now includes all of the information we've discussed:
-
----
-
 # Iterative Magnitude Pruning for Neural Networks
 
 This repository implements an iterative magnitude pruning algorithm for pruning neural networks in PyTorch. The pruning method involves gradually removing less significant weights from the model to achieve a specified sparsity, followed by fine-tuning the pruned model to recover performance.
@@ -212,6 +208,3 @@ We welcome contributions! If you find any bugs or have suggestions for improveme
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
-
-This README now includes all the essential details about setup, usage, and running the pruning process both with and without Docker, along with other key information like metrics and logging. Let me know if you need any additional adjustments!

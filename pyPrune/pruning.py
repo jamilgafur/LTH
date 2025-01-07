@@ -7,22 +7,69 @@ import numpy as np
 from tqdm import tqdm
 import logging
 import json
+from pyPrune.utils import *
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger()
 
 class IterativeMagnitudePruning:
-    def __init__(self, model: nn.Module, train_loader: DataLoader, test_loader: DataLoader, final_sparsity: float, 
+    def __init__(self, model: nn.Module, train_loader: DataLoader, test_loader: DataLoader,  
                  steps: int, optimizer: torch.optim.Optimizer, criterion: nn.Module, 
                  pruning_criterion: Optional[Callable[[float, torch.Tensor], torch.Tensor]] = None,
                  device: Optional[str] = None, save_dir: str = 'pruning_checkpoints', finetune_epochs: int = 0, 
-                 pretrain_epochs: int = 0, learning_rate: float = 0.01) -> None:
+                 pretrain_epochs: int = 0, learning_rate: float = 0.01, file_handler: str = "logger.log") -> None:
+        """
+        Initializes the IterativeMagnitudePruning class to perform iterative magnitude pruning on a neural network model.
+
+        This constructor sets up the model, dataset loaders, pruning parameters, optimizer, and device configuration 
+        necessary for the pruning process. It also ensures that the save directory exists for storing model checkpoints 
+        during pruning, and initializes the model's weights and metrics tracking.
+
+        Parameters:
+            model (nn.Module): The neural network model to be pruned.
+            train_loader (DataLoader): The DataLoader instance used for training the model.
+            test_loader (DataLoader): The DataLoader instance used for evaluating the model after pruning.
+            steps (list): A list of sparsity levels to prune the model to.
+            optimizer (torch.optim.Optimizer): The optimizer to be used for fine-tuning the pruned model.
+            criterion (nn.Module): The loss function (e.g., CrossEntropyLoss) to be used during training and evaluation.
+            pruning_criterion (Optional[Callable[[float, torch.Tensor], torch.Tensor]], optional): A custom function for pruning 
+                based on specific criteria. Defaults to None, using magnitude-based pruning.
+            device (Optional[str], optional): The device to run the model on ('cpu' or 'cuda'). Defaults to None, which chooses 'cuda' 
+                if available.
+            save_dir (str, optional): Directory where pruned model checkpoints will be saved. Defaults to 'pruning_checkpoints'.
+            finetune_epochs (int, optional): Number of epochs for fine-tuning the model after each pruning step. Defaults to 0.
+            pretrain_epochs (int, optional): Number of epochs for pretraining the model before starting pruning. Defaults to 0.
+            learning_rate (float, optional): The learning rate used during fine-tuning. Defaults to 0.01.
+
+        Returns:
+            None: The constructor initializes the class and does not return any value.
+
+        Example:
+            model = MyModel()
+            optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+            criterion = torch.nn.CrossEntropyLoss()
+            train_loader = DataLoader(...)
+            test_loader = DataLoader(...)
+
+            pruner = IterativeMagnitudePruning(
+                model=model,
+                train_loader=train_loader,
+                test_loader=test_loader,
+                final_sparsity=0.9,
+                steps=10,
+                optimizer=optimizer,
+                criterion=criterion,
+                pretrain_epochs=5,
+                finetune_epochs=2,
+                learning_rate=0.01
+            )
+        """
+
         self.save_dir = save_dir
         self.setup_save_dir()
-
-        self.final_sparsity = final_sparsity
-        self.steps = steps
+        
+        self.steps =  steps
         self.pruning_criterion = pruning_criterion or self.magnitude_prune
         self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
         self.finetune_epochs = finetune_epochs
@@ -46,10 +93,40 @@ class IterativeMagnitudePruning:
             'step': [],
         }
 
+        # if steps has the first index as 0, update pretrain_epochs accordingly
+        if self.steps[0] == 0 and self.pretrain_epochs == 0:
+            self.pretrain_epochs = self.pretrain_epochs + 1  # Set pretrain_epochs to 1 more
+            self.steps = self.steps[1:]  # Remove the first element (0) from steps
+        
+        # Log the initialization details with a file handler
+        file_handler = logging.FileHandler(self.save_dir + "/" + file_handler)
+        file_handler.setLevel(logging.DEBUG)
+        logger.addHandler(file_handler)
+
+        self.logger = logger
+        
         logger.info("IterativeMagnitudePruning initialized.")
-        logger.info(f"Device: {self.device}, Final sparsity: {self.final_sparsity}, Steps: {self.steps}")
+        logger.info(f"Device: {self.device}, Final sparsity: {self.steps[-1]}, Steps: {self.steps}")
 
     def setup_save_dir(self) -> None:
+        """
+        Sets up the directory where model checkpoints will be saved during the pruning process.
+
+        This method checks if the specified save directory exists. If not, it creates the directory to ensure that 
+        model checkpoints can be saved during the pruning process. A log message is generated to inform the user 
+        about the creation or existence of the directory.
+
+        Parameters:
+            None: This method does not accept any parameters as it operates on the instance's `self.save_dir`.
+
+        Returns:
+            None: This method does not return any value. It only ensures the save directory exists.
+
+        Example:
+            pruner = IterativeMagnitudePruning(...)
+            pruner.setup_save_dir()
+            # This will create the directory specified by `self.save_dir` if it doesn't already exist.
+        """
         if not os.path.exists(self.save_dir):
             os.makedirs(self.save_dir)
             logger.info(f"Created directory: {self.save_dir}")
@@ -57,6 +134,29 @@ class IterativeMagnitudePruning:
             logger.info(f"Save directory {self.save_dir} already exists.")
 
     def save_initial_weights(self) -> dict:
+        """
+        Saves the initial weights of the model's weight parameters before any pruning 
+        is applied. This method iterates over the model's parameters, identifies those 
+        that represent weights (i.e., parameters with the substring 'weight' in their name), 
+        and stores their initial values in a dictionary. The initial weights are saved 
+        for potential restoration after pruning or to track changes during the pruning process.
+
+        Returns:
+            dict: 
+                A dictionary containing the initial weights of the model's weight parameters. 
+                The dictionary maps parameter names (as strings) to their corresponding 
+                weight values (as torch.Tensor objects).
+
+        Example:
+            # Create an instance of IterativeMagnitudePruning
+            pruning = IterativeMagnitudePruning(...)
+
+            # Save initial weights
+            initial_weights = pruning.save_initial_weights()
+
+            # The initial_weights dictionary can be used for comparison or restoring weights.
+        """       
+
         initial_weights = {}
         for name, param in self.model.named_parameters():
             if 'weight' in name:
@@ -65,6 +165,31 @@ class IterativeMagnitudePruning:
         return initial_weights
 
     def unroll(self, percentage: float = 0) -> None:
+        """
+        Unrolls the model's weight parameters to facilitate pruning based on their magnitudes.
+
+        This method extracts all weight parameters from the model, flattens them into a single tensor, 
+        and sorts them by absolute value to determine which weights should be pruned. It calculates 
+        the number of weights to prune based on the specified percentage and returns the relevant data 
+        for pruning.
+
+        Parameters:
+            percentage (float): The percentage of weights to prune from the model. Should be between 0 and 1.
+                                This value determines the sparsity level to which the model will be pruned.
+                                For example, 0.1 means 10% of weights will be pruned.
+
+        Returns:
+            tuple: A tuple containing:
+                - num_prune (int): The number of weights to prune based on the specified percentage.
+                - all_weights (torch.Tensor): A flattened tensor containing all model weights.
+                - sorted_weights (torch.Tensor): The sorted tensor of all weights by absolute magnitude.
+
+        Example:
+            pruner = IterativeMagnitudePruning(...)
+            num_prune, all_weights, sorted_weights = pruner.unroll(percentage=0.1)
+            # This will unroll the model's weights and determine the top 10% smallest weights for pruning.
+        """
+
         logger.debug(f"Unrolling model at {percentage * 100:.2f}% sparsity")
 
         all_weights = []
@@ -76,21 +201,33 @@ class IterativeMagnitudePruning:
         sorted_weights = torch.abs(all_weights).sort()[0]
 
         num_prune = max(1, int(all_weights.numel() * percentage))
-        threshold_value = sorted_weights[num_prune - 1] if num_prune > 0 else float('inf')
-
-        # Apply pruning: directly zero out weights below the threshold
-        for name, param in self.model.named_parameters():
-            if 'weight' in name:
-                mask = torch.abs(param.data) >= threshold_value
-                param.data.mul_(mask.float())  # Prune weights
-
-                # Detach pruned weights from gradients
-                param.grad = None  # Zero out any existing gradient for the pruned weights
-                param.requires_grad = not param.data.eq(0).all()  # Set requires_grad to False if all weights are zero
-
-        logger.debug(f"Pruning applied at {percentage * 100:.2f}% sparsity with threshold {threshold_value:.6f}")
+        
+        return num_prune, all_weights, sorted_weights
 
     def update_optimizer(self) -> None:
+        """
+        Updates the optimizer to reflect the current set of trainable parameters after pruning.
+
+        After pruning, some weights in the model may have been set to zero and their gradients
+        are no longer required. This method updates the optimizer by excluding pruned weights
+        and adjusting the parameter list to only include weights that are still trainable. It also
+        logs the total number of parameters being passed to the optimizer.
+
+        This ensures that the optimizer always works with the current set of model parameters, 
+        which may change as pruning progresses.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+
+        Example:
+            pruner = IterativeMagnitudePruning(...)
+            pruner.update_optimizer()
+            # This updates the optimizer after pruning to ensure that it works only with trainable parameters.
+        """
+
         # Get the parameters that are still trainable after pruning
         params_to_optimize = [p for p in self.model.parameters() if p.requires_grad]
 
@@ -105,6 +242,28 @@ class IterativeMagnitudePruning:
         logger.debug(f"Optimizer parameters: {[p.shape for p in params_to_optimize]}")
 
     def save_checkpoint(self, step: int, file_path: str) -> None:
+        """
+        Saves the model and optimizer state to a checkpoint file.
+
+        This method serializes the current state of the model and optimizer to a checkpoint 
+        file, allowing for later recovery of the model's state at a particular pruning step. 
+        The checkpoint contains the model's state dictionary, optimizer's state dictionary, 
+        and the current step in the pruning process. It helps in resuming training or pruning 
+        from a specific point in case of interruption or for analysis.
+
+        Parameters:
+            step (int): The current pruning step number, used to name the checkpoint file.
+            file_path (str): The path to the file where the checkpoint will be saved.
+
+        Returns:
+            None
+
+        Example:
+            pruner = IterativeMagnitudePruning(...)
+            pruner.save_checkpoint(step=3, file_path="pruning_checkpoints/step_3.pth")
+            # Saves the model and optimizer states at step 3 to 'step_3.pth'.
+        """
+
         try:
             checkpoint = {
                 'step': step,
@@ -119,24 +278,126 @@ class IterativeMagnitudePruning:
             raise
 
     def magnitude_prune(self, percentage: float) -> None:
+        """
+        Prunes the model's weights based on their magnitudes.
+
+        This method performs magnitude-based pruning, which removes weights from the model 
+        that have the smallest absolute values. The pruning is applied to the model’s 
+        parameters by zeroing out the weights with the smallest magnitudes, effectively 
+        reducing the number of active parameters. The method also updates the optimizer to 
+        reflect the pruned weights.
+
+        Parameters:
+            percentage (float): The percentage of weights to prune, represented as a decimal 
+                                between 0 and 1. For example, 0.2 corresponds to pruning 20% 
+                                of the smallest magnitude weights.
+
+        Returns:
+            None
+
+        Example:
+            pruner = IterativeMagnitudePruning(...)
+            pruner.magnitude_prune(percentage=0.2)
+            # Prunes 20% of the smallest magnitude weights from the model.
+        """
+
         logger.info(f"Pruning model at {percentage * 100:.2f}% sparsity.")
-        self.unroll(percentage)
+        num_prune, all_weights, sorted_weights = self.unroll(percentage)
+
+        threshold_value = sorted_weights[num_prune - 1] if num_prune > 0 else float('inf')
+
+        # Apply pruning: directly zero out weights below the threshold
+        for name, param in self.model.named_parameters():
+            if 'weight' in name:
+                mask = torch.abs(param.data) >= threshold_value
+                param.data.mul_(mask.float())  # Prune weights
+
+                # Detach pruned weights from gradients
+                param.grad = None  # Zero out any existing gradient for the pruned weights
+                param.requires_grad = not param.data.eq(0).all()  # Set requires_grad to False if all weights are zero
+
+        logger.debug(f"Pruning applied at {percentage * 100:.2f}% sparsity with threshold {threshold_value:.6f}")
         self.update_optimizer()
 
     def reset_weights(self) -> None:
+        """
+        Resets the model's weights to their initial values.
+
+        This method restores the weights of the model to the state they were in when the 
+        `IterativeMagnitudePruning` instance was first initialized. It is useful for cases 
+        where you want to undo the pruning process and start with the original weights.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+
+        Example:
+            pruner = IterativeMagnitudePruning(...)
+            pruner.reset_weights()
+            # The model's weights are now restored to their initial values.
+        """
+
         for name, param in self.model.named_parameters():
             if 'weight' in name:
                 param.data = self.initial_weights[name].clone()
         logger.info("Weights reset to initial values.")
 
     def update_metrics(self, loss: float, accuracy: float, gradients: torch.Tensor) -> None:
+        """
+        Updates the pruning metrics for the current step.
+
+        This method updates the internal `metrics` dictionary by appending the current 
+        loss, accuracy, and gradients (if provided) for the pruning process. The metrics 
+        are used to track the performance of the model during the pruning and fine-tuning 
+        steps.
+
+        Parameters:
+            loss (float): The loss value for the current training or evaluation step.
+            accuracy (float): The accuracy of the model during the current step.
+            gradients (torch.Tensor, optional): The gradients of the model parameters. 
+                This can be `None` during evaluation steps.
+
+        Returns:
+            None
+
+        Example:
+            pruner.update_metrics(loss.item(), accuracy, next(pruner.model.parameters()).grad)
+            # The metrics dictionary is now updated with the new loss, accuracy, and gradients.
+        """
+
         # Record metrics
         self.metrics['sparsity'].append(self.current_sparsity)
         self.metrics['loss'].append(loss)
         self.metrics['accuracy'].append(accuracy)
-        
 
-    def train(self, type: str = "train") -> None:
+    def epoch(self, type: str = "train") -> None:
+        """
+        Trains or evaluates the model depending on the specified mode.
+
+        This method controls whether the model is in training or evaluation mode. 
+        It performs training by iterating over the training data and updating the model 
+        parameters using backpropagation and the optimizer. During evaluation, it 
+        computes the average loss and accuracy on the test data without updating the model.
+
+        Parameters:
+            type (str): The mode of the operation. It can either be "train" or "eval".
+                - "train" will train the model on the training set.
+                - "eval" will evaluate the model on the test set.
+
+        Returns:
+            None
+
+        Example:
+            pruner.train("train")  # Runs the training loop on the model using the training data.
+            pruner.train("eval")   # Runs the evaluation loop on the model using the test data.
+
+        Note:
+            In training mode, the gradients of zeroed-out weights are masked during the 
+            backpropagation step to ensure that pruned weights are not updated.
+        """
+
         if type == "train":
             self.model.train()
             for data, target in tqdm(self.train_loader, desc="Training", unit="batch"):
@@ -181,18 +442,57 @@ class IterativeMagnitudePruning:
         logger.debug(f"Current sparsity: {self.current_sparsity}")
         logger.debug(f"Accuracy: {accuracy}")
 
+        clean_memory()  # Clean up memory after each epoch 
+
     def run(self) -> None:
+        """
+        Runs the iterative magnitude pruning process, including pretraining, pruning, 
+        and fine-tuning the model.
+
+        The method begins by saving the initial model weights and optionally performs 
+        pretraining (if specified). It then proceeds to iteratively prune the model 
+        over a specified number of steps. After each pruning step, the model is 
+        fine-tuned to recover any performance lost due to pruning. The process is 
+        logged and checkpoints are saved at each pruning step. Finally, the pruning 
+        metrics are saved to a JSON file.
+
+        Steps:
+        1. Save the initial weights of the model.
+        2. Optionally pretrain the model for the specified number of epochs.
+        3. Perform iterative pruning over a defined number of steps, gradually 
+        increasing sparsity.
+        4. Fine-tune the model after each pruning step to recover performance.
+        5. Save a checkpoint after each pruning step.
+        6. Evaluate the model performance after each pruning and fine-tuning step.
+        7. Save all pruning metrics to a JSON file.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+
+        Example:
+            pruner.run()  # Runs the entire pruning process, including pretraining,
+                        # pruning, fine-tuning, and saving metrics.
+
+        Note:
+            - The final sparsity level is specified when initializing the `IterativeMagnitudePruning` object.
+            - The method will handle the saving of model checkpoints and metrics.
+            - If the number of pretrain epochs is greater than 0, pretraining will be done before pruning starts.
+        """
+
         self.initial_weights = self.save_initial_weights()
 
         if self.pretrain_epochs > 0:
             logger.info("Starting pretraining...")
-            self.train("train")
+            for pretrain_epoch_steps in range(self.pretrain_epochs):
+                logger.info("Pretraining the model at step {pretrain_epoch_steps + 1}...")
+                self.epoch("train")
         
-        steps = np.linspace(0, self.final_sparsity, self.steps)
-        steps = steps[1:]  # Skip the first step (0% sparsity)
-        logger.info(f"Starting pruning with {self.steps} steps for sparsity levels: {steps}")
+        logger.info(f"Starting pruning with {self.steps} steps...")
 
-        for step in tqdm(steps, desc="Pruning Steps", unit="step"):
+        for step in tqdm(self.steps, desc="Pruning Steps", unit="step"):
             logger.info(f"Starting pruning step: {step * 100:.2f}% sparsity")
             self.magnitude_prune(step)
 
@@ -200,46 +500,148 @@ class IterativeMagnitudePruning:
             self.assert_sparsity(step)  # This checks the sparsity and updates current_sparsity
             
             logger.info("Fine-tuning the model...")
-            self.train("train")
+            if self.finetune_epochs > 0:    
+                for finetune_epoch_steps in range(self.finetune_epochs):
+                    logger.info(f"Fine-tuning the model at step {finetune_epoch_steps + 1}...")
+                    self.epoch("train")
 
             logger.info("Updating optimizer to reflect pruned weights...")
             self.save_checkpoint(step, os.path.join(self.save_dir, f"pruned_model_step_{int(step * 100)}.pth"))
             
             # Add metrics for pruning step
             self.metrics['step'].append(step)
-            self.metrics['sparsity'].append(self.current_sparsity)  # Store the updated sparsity
-
-            self.train("eval")
+            
+            
+            self.epoch("eval")
             print("\n\n\n")
 
         logger.info("Pruning complete.")
         # save the metrics as a json
         logger.info("Saving metrics...")
         self.save_metrics()
-    
+
+        logger.info("Metrics saved to pruning_metrics.json")
+        
+
     def save_metrics(self) -> None:
-        import json
+        """
+        Saves the pruning process metrics to a JSON file. The metrics include sparsity, 
+        loss, accuracy, gradients, optimizer state, and step information collected 
+        throughout the iterative pruning process.
 
-        # Convert the metrics dictionary so all tensors are converted to native Python types
-        def convert_tensor(t):
-            if isinstance(t, torch.Tensor):
-                if t.numel() == 1:
-                    return t.item()  # Convert scalar tensors to float
-                else:
-                    return t.tolist()  # Convert other tensors to lists
-            elif isinstance(t, torch.nn.Parameter):
-                return convert_tensor(t.data)  # If it's a Parameter, convert its data
-            return t  # If it's not a tensor, return as is
+        The method serializes the metrics dictionary, converting any tensors or 
+        parameters into native Python types (e.g., scalars or lists). After conversion, 
+        it saves the metrics into a JSON file at the specified `save_dir`.
 
+        Steps:
+        1. Convert all tensors in the metrics dictionary to native Python types 
+        (scalars or lists).
+        2. Serialize the metrics into a JSON-compatible format.
+        3. Write the serialized metrics to a JSON file in the `save_dir`.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+
+        Example:
+            pruner.save_metrics()  # Saves the current pruning metrics to the 
+                                # 'pruning_metrics.json' file in the save directory.
+
+        Note:
+            - This method is typically called after the pruning process is complete.
+            - The metrics will be saved in a JSON format, where all tensor data 
+            is converted to standard Python types.
+        """
         # Apply the conversion to the entire metrics dictionary
-        metrics_serializable = {key: [convert_tensor(val) for val in values] for key, values in self.metrics.items()}
+        metrics_serializable = {key: [self.convert_tensor(val) for val in values] for key, values in self.metrics.items()}
 
         # Save the metrics as a JSON file
         with open(os.path.join(self.save_dir, 'pruning_metrics.json'), 'w') as f:
             json.dump(metrics_serializable, f)
         logger.info("Metrics saved to pruning_metrics.json")
+    
+    def convert_tensor(self, t):
+        """
+        Converts a PyTorch tensor or parameter to a native Python type that is 
+        serializable for JSON saving. The function recursively handles both 
+        torch.Tensor objects and torch.nn.Parameter objects, ensuring that any tensor 
+        values are converted to either scalars (if the tensor is a single value) or 
+        lists (if the tensor has multiple elements).
+
+        The method helps prepare the metrics data by converting PyTorch-specific 
+        objects to standard Python data types, allowing them to be written to a 
+        JSON file.
+
+        Parameters:
+            t (Union[torch.Tensor, torch.nn.Parameter, Any]): 
+                The input tensor or parameter (or any other type) to convert. 
+                It can be a scalar tensor, a multi-element tensor, or any object 
+                that doesn't need conversion.
+
+        Returns:
+            Union[float, List[float], Any]: 
+                The converted value. If the input is a tensor, it will return a 
+                float (for scalar tensors) or a list of floats (for multi-element tensors).
+                Otherwise, the original value is returned.
+
+        Example:
+            tensor = torch.tensor([1.0, 2.0, 3.0])
+            converted = self.convert_tensor(tensor)
+            # converted will be [1.0, 2.0, 3.0], a list of floats.
+
+        Note:
+            - If the input is a `torch.Tensor` with a single element, it will be converted to a scalar float.
+            - If the input is a `torch.nn.Parameter`, its data will be recursively converted using `convert_tensor`.
+            - The function will return the original value if the input is not a tensor or parameter.
+        """
+
+        if isinstance(t, torch.Tensor):
+            if t.numel() == 1:
+                return t.item()  # Convert scalar tensors to float
+            else:
+                return t.tolist()  # Convert other tensors to lists
+        elif isinstance(t, torch.nn.Parameter):
+            return self.convert_tensor(t.data)  # If it's a Parameter, convert its data
+        return t  # If it's not a tensor, return as is
 
     def assert_sparsity(self, sparsity: float) -> None:
+        """
+        Asserts that the model has reached the expected sparsity level by comparing 
+        the actual sparsity of the model’s weight parameters with the target sparsity 
+        value, allowing for a small tolerance in the difference. The method counts 
+        the total number of parameters and the number of pruned (zeroed-out) parameters 
+        and calculates the actual sparsity of the model.
+
+        Parameters:
+            sparsity (float): 
+                The target sparsity value that the model should have after pruning, 
+                represented as a float between 0 and 1 (e.g., 0.9 for 90% sparsity).
+
+        Returns:
+            None
+
+        Raises:
+            AssertionError: 
+                If the model’s actual sparsity differs significantly from the target 
+                sparsity (beyond a tolerance of 1e-2), an AssertionError will be raised, 
+                indicating a mismatch between the expected and actual sparsity.
+
+        Example:
+            # Assume the model has been pruned to a target sparsity of 90%
+            pruning.assert_sparsity(0.9)
+            # This will verify if the current sparsity of the model is close to 90%.
+
+        Note:
+            - The function only considers weight parameters in the model (i.e., parameters 
+            containing the substring 'weight' in their names).
+            - The method asserts that the sparsity is within a small tolerance (atol=1e-2) 
+            to account for minor differences during pruning.
+            - After successful verification, the `current_sparsity` attribute is updated 
+            with the actual sparsity value of the model.
+        """
+
         total_params_model = 0
         pruned_params_model = 0
         for name, param in self.model.named_parameters():

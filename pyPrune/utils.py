@@ -1,81 +1,50 @@
+import matplotlib.pyplot as plt
+import gc
 import torch
-import torch.nn as nn
-import torch.optim as optim
-import logging
-import os
+import random
+import numpy as np
+import torch
 
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
-from pyPrune.pruning import IterativeMagnitudePruning  # Import the pruning class
-from pyPrune.analysis import PruningAnalysis  # Import the analysis class
 
-def prune_model(model, train_loader, test_loader, final_sparsity=0.99, steps=9, pretrain_epochs=0, device=None, finetune=0):
-    """
-    Perform iterative pruning on the model.
+def clean_memory():
+    gc.collect()
+    torch.cuda.empty_cache()
+
+def set_seed(seed: int):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+def plot_loss_accuracy_sparsity(pruner):
+    metrics = pruner.metrics
+    accuracy = metrics['accuracy']
+    loss = metrics['loss']
+    sparsity = metrics['sparsity']
     
-    Args:
-        model: The model to prune.
-        train_loader: The training DataLoader.
-        test_loader: The testing DataLoader.
-        final_sparsity: The target sparsity (0.0 to 1.0).
-        steps: Number of pruning steps.
-        E: Number of fine-tuning epochs after each pruning step.
-        pretrain_epochs: Number of pretrain epochs before pruning.
-        device: Device to run the model on (CPU or GPU).
+    # 2x1 subplots: one for Accuracy, one for Loss
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
 
-    Returns:
-        pruned_model: The pruned model after pruning and fine-tuning.
-    """
-    pruner = IterativeMagnitudePruning(
-        model=model,
-        train_loader=train_loader,
-        test_loader=test_loader,
-        final_sparsity=final_sparsity,
-        steps=steps,
-        pretrain_epochs=pretrain_epochs,
-        device=device if device else ('cuda' if torch.cuda.is_available() else 'cpu'),
-        finetune_epochs=finetune
-    )
-    
-    pruner.run()  # Run pruning
-    return pruner
+    # Plot Accuracy
+    ax1.plot(sparsity, accuracy, 'g-', label='Accuracy', linewidth=2)
+    ax1.scatter(sparsity, accuracy, c='g', marker='o', s=50)
+    ax1.set_ylabel('Accuracy', color='g', fontsize=14)
+    ax1.grid(True, linestyle='--', alpha=0.7)
+    ax1.legend(loc='upper left', fontsize=12)
 
-def analyze_pruning(pruner, output_log='pruning_log.txt', output_dir='results', device=None):
-    """
-    Perform pruning analysis and plotting.
+    # Plot Loss
+    ax2.plot(sparsity, loss, 'b-', label='Loss', linewidth=2)
+    ax2.scatter(sparsity, loss, c='b', marker='x', s=50)
+    ax2.set_xlabel('Sparsity', fontsize=14)
+    ax2.set_ylabel('Loss', color='b', fontsize=14)
+    ax2.grid(True, linestyle='--', alpha=0.7)
+    ax2.legend(loc='upper left', fontsize=12)
 
-    Args:
-        pruner: The pruner object containing pruning details.
-        output_log: Path to save the pruning log.
-        output_dir: Directory to save analysis results and plots.
-        device: Device to run the analysis on (CPU or GPU).
-    
-    Returns:
-        analysis_results: The results of the pruning analysis.
-    """
-    analysis = PruningAnalysis(pruner, output_log, output_dir, device=device if device else 'cuda')
-    analysis_results = analysis.run_analysis()
-    
-    return analysis_results
+    # Set title and adjust layout
+    plt.suptitle('Loss and Accuracy vs Sparsity', fontsize=16)
+    plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust layout to make room for the title
 
-def get_device():
-    """
-    Get the device to use (GPU or CPU).
-    """
-    return 'cuda' if torch.cuda.is_available() else 'cpu'
-
-def calculate_accuracy(outputs, targets):
-    """
-    Calculate the accuracy of the model based on the outputs and targets.
-
-    Args:
-        outputs: The model's output tensor.
-        targets: The ground truth labels.
-
-    Returns:
-        accuracy: The percentage accuracy of the model.
-    """
-    _, predicted = torch.max(outputs, 1)
-    correct = (predicted == targets).sum().item()
-    accuracy = 100 * correct / len(targets)
-    return accuracy
+    # Save and show plot
+    plt.savefig('sparsity_vs_loss_and_accuracy.png', dpi=300)
+    plt.show()
