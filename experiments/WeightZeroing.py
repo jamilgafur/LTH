@@ -9,7 +9,7 @@ from tqdm import tqdm
 from copy import deepcopy
 
 class WeightZeroing:
-    def __init__(self, pruner, sample_fraction=0.01, zeroing_metric='accuracy', logger=None, save_plots=True):
+    def __init__(self, pruner, sample_fraction=0.05, logger=None, save_plots=True):
         """
         Initialize the WeightZeroing experiment.
 
@@ -27,13 +27,12 @@ class WeightZeroing:
         
         self.save_dir = os.path.join(pruner.save_dir, 'weight_zeroing')
         self.sample_fraction = sample_fraction
-        self.zeroing_metric = zeroing_metric
         self.logger = logger if logger else logging.getLogger(__name__)
         self.metrics = {'weight_accuracy_drops': [], 'total_accuracy_drops': [], 'zeroed_weights_count': 0, 'step_accuracy': []}
         
         self.save_plots = save_plots
         os.makedirs(self.save_dir, exist_ok=True)  # Ensure directory exists
-        self.logger.info(f"WeightZeroing initialized with sample_fraction={sample_fraction}, zeroing_metric={zeroing_metric}")
+        self.logger.info(f"WeightZeroing initialized with sample_fraction={sample_fraction}")
 
     def evaluate_performance(self) -> float:
         """Evaluate the model's performance on the test dataset."""
