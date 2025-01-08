@@ -232,7 +232,8 @@ class IterativeMagnitudePruning:
         params_to_optimize = [p for p in self.model.parameters() if p.requires_grad]
 
         # Update the optimizer to reflect the current parameters
-        self.optimizer = torch.optim.Adam(params_to_optimize, lr=self.learning_rate)
+        # create a new optimizer that is the same as the old one but with the new parameters
+        self.optimizer = self.optimizer.__class__(params_to_optimize, lr=self.learning_rate)
 
         # Log the number of parameters being passed to the optimizer
         total_params = sum(p.numel() for p in params_to_optimize)
@@ -459,11 +460,13 @@ class IterativeMagnitudePruning:
         Steps:
         1. Save the initial weights of the model.
         2. Optionally pretrain the model for the specified number of epochs.
-        3. Perform iterative pruning over a defined number of steps, gradually 
+        3. Update the initial weights to be the rewound weights.
+        4. Perform iterative pruning over a defined number of steps, gradually 
         increasing sparsity.
-        4. Fine-tune the model after each pruning step to recover performance.
-        5. Save a checkpoint after each pruning step.
-        6. Evaluate the model performance after each pruning and fine-tuning step.
+        5. Fine-tune the model after each pruning step to recover performance.
+        6. Save a checkpoint after each pruning step.
+        7. Evaluate the model performance after each pruning and fine-tuning step.
+        8. Reset the model weights to the rewinded state after each pruning step.
         7. Save all pruning metrics to a JSON file.
 
         Parameters:
@@ -489,21 +492,27 @@ class IterativeMagnitudePruning:
             for pretrain_epoch_steps in range(self.pretrain_epochs):
                 logger.info("Pretraining the model at step {pretrain_epoch_steps + 1}...")
                 self.epoch("train")
-        
+                
+        # Update initial weights after pretraining for the "rewinding" effect
+        self.initial_weights = self.save_initial_weights()
         logger.info(f"Starting pruning with {self.steps} steps...")
 
         for step in tqdm(self.steps, desc="Pruning Steps", unit="step"):
             logger.info(f"Starting pruning step: {step * 100:.2f}% sparsity")
-            self.magnitude_prune(step)
 
-            # Update the current sparsity
-            self.assert_sparsity(step)  # This checks the sparsity and updates current_sparsity
-            
+            # Retrain the model  
             logger.info("Fine-tuning the model...")
             if self.finetune_epochs > 0:    
                 for finetune_epoch_steps in range(self.finetune_epochs):
                     logger.info(f"Fine-tuning the model at step {finetune_epoch_steps + 1}...")
                     self.epoch("train")
+
+            # Prune the model
+            logger.info(f"Pruning the model at {step * 100:.2f}% sparsity...")
+            self.magnitude_prune(step)
+
+            # Update the current sparsity
+            self.assert_sparsity(step) 
 
             logger.info("Updating optimizer to reflect pruned weights...")
             self.save_checkpoint(step, os.path.join(self.save_dir, f"pruned_model_step_{int(step * 100)}.pth"))
@@ -513,6 +522,10 @@ class IterativeMagnitudePruning:
             
             
             self.epoch("eval")
+
+            # reset to the rewind weights
+            logger.info(f"Resetting weights to rewind state at {self.pretrain_epochs}, currently at  {step * 100:.2f}% sparsity...")
+            self.reset_weights()
             print("\n\n\n")
 
         logger.info("Pruning complete.")
