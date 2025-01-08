@@ -70,7 +70,7 @@ def main():
         train_loader=train_loader,
         test_loader=test_loader,
         steps=np.linspace(0, .99, 3), # 9 steps from 1'st step to 99% pruning
-        pretrain_epochs=1,
+        pretrain_epochs=10,
         device='cuda' if torch.cuda.is_available() else 'cpu',
         finetune_epochs=1, 
     )    
