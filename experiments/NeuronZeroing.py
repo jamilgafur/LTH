@@ -9,6 +9,7 @@ from scipy.stats import ttest_rel
 from copy import deepcopy
 import random
 from sklearn.metrics import precision_recall_fscore_support
+from tqdm import tqdm  # Import tqdm
 
 class NeuronZeroing:
     def __init__(self, pruner, sample_fraction=0.1, zeroing_metric='accuracy', logger=None):
@@ -154,10 +155,10 @@ class NeuronZeroing:
         # No model size threshold, zero out all neurons in the sampled layers
         self.logger.info(f"Zeroing neurons from {total_neurons} total neurons.")
 
-        # Zero out each neuron and evaluate performance
-        for layer in sampled_neurons:
+        # Zero out each neuron and evaluate performance with tqdm for progress tracking
+        for layer in tqdm(sampled_neurons, desc="Zeroing neurons in layers", unit="layer"):
             original_weights = layer.weight.clone()  # Save original weights
-            for i in range(layer.out_features):
+            for i in tqdm(range(layer.out_features), desc=f"Zeroing neurons in {layer.__class__.__name__}", unit="neuron", leave=False):
                 layer.weight.data[i, :] = 0  # Zero out the neuron (entire row of weights)
                 accuracy_after_zeroing = self.evaluate_performance()
                 sparsity_after_zeroing = self.compute_sparsity()

@@ -4,6 +4,7 @@ import random
 import logging
 import numpy as np
 from copy import deepcopy
+from tqdm import tqdm  # Import tqdm
 
 class WeightZeroing:
     def __init__(self, pruner, sample_fraction=0.1, zeroing_metric='accuracy', logger=None):
@@ -70,8 +71,8 @@ class WeightZeroing:
             sampled_weights = random.sample(sampled_weights, num_sampled_weights)
             self.logger.info(f"Sampling {num_sampled_weights} weights from {total_weights} total weights.")
 
-        # Zero out each weight and evaluate performance
-        for param in sampled_weights:
+        # Zero out each weight and evaluate performance using tqdm for progress
+        for param in tqdm(sampled_weights, desc="Zeroing weights", ncols=100):
             original_weights = param.clone()  # Save original weights
             with torch.no_grad():  # Disable gradient tracking for in-place operations
                 for idx in range(param.numel()):

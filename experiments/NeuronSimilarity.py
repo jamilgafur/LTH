@@ -6,7 +6,7 @@ import os
 from typing import List, Dict, Optional, Union
 import matplotlib.pyplot as plt
 import json
-
+from tqdm import tqdm  # Import tqdm
 
 class NeuronSimilarity:
     """
@@ -145,8 +145,8 @@ class NeuronSimilarity:
         """
         self.logger.info(f"Starting Neuron Similarity experiment for all layers...")
 
-        # Iterate through all layers and evaluate activations
-        for name, module in self.model.named_modules():
+        # Use tqdm to show a progress bar when iterating through layers
+        for name, module in tqdm(self.model.named_modules(), desc="Evaluating Layers", ncols=100):
             if isinstance(module, nn.Module):
                 self.logger.info(f"Evaluating layer: {name}")
                 activations = self.evaluate_layer_activations(name)
@@ -170,7 +170,7 @@ class NeuronSimilarity:
         # Plot the similarity matrices
         self.plot_similarity_matrices()
 
-        # Save metrics to a JSON file - takes to long to run
+        # Save metrics to a JSON file - takes too long to run
         # self.save_metrics() 
 
         self.logger.info("Neuron Similarity experiment completed for all layers.")
@@ -199,4 +199,3 @@ class NeuronSimilarity:
         with open(metrics_file, 'w') as f:
             json.dump(self.metrics, f, indent=4)
         self.logger.info(f"Metrics saved to {metrics_file}")
-
