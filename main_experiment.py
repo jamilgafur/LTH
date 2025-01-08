@@ -5,6 +5,9 @@ from pyPrune.models.LeNet import LeNet
 from pyPrune.pruning import IterativeMagnitudePruning 
 import numpy as np
 from pyPrune.utils import plot_loss_accuracy_sparsity
+from experiments.WeightZeroing import WeightZeroing
+from experiments.NeuronZeroing import NeuronZeroing
+from experiments.NeuronSimilarity import NeuronSimilarity
 
 def load_mnist():
     # Load MNIST dataset
@@ -76,7 +79,22 @@ def main():
     )    
     pruner.run()  # Run pruning process
     plot_loss_accuracy_sparsity(pruner)
-    baseline(pruner)  # Train baseline model for comparison
+
+    # Initialize NeuronSimilarity class
+    print("Starting neuron similarity experiment...")
+    neuron_similarity = NeuronSimilarity(pruner)
+    neuron_similarity.run_experiment()
+
+    # Initialize NeuronZeroing class
+    print("Starting neuron zeroing experiment...")
+    neuron_zeroing = NeuronZeroing(pruner)
+    neuron_zeroing.run_experiment()
+
+    # Initialize WeightZeroing class
+    print("Starting weight zeroing experiment...")
+    weight_zeroing = WeightZeroing(pruner)
+    weight_zeroing.run_experiment()
+
 
 
 if __name__ == '__main__':

@@ -82,6 +82,7 @@ class IterativeMagnitudePruning:
         self.train_loader = train_loader
         self.test_loader = test_loader
         self.current_sparsity = 0.0
+        self.best_model_weights = None
 
         self.initial_weights = self.save_initial_weights()
         self.metrics = {
@@ -373,6 +374,11 @@ class IterativeMagnitudePruning:
         self.metrics['loss'].append(loss)
         self.metrics['accuracy'].append(accuracy)
 
+        # check accuracy if sparisty is greater than zero and best accuracy update the best model
+        if self.current_sparsity > 0 and accuracy > max(self.metrics['accuracy']):
+            logger.info(f"Updating best model weights at {self.current_sparsity * 100:.2f}% sparsity with accuracy {accuracy:.2f} %")
+            self.best_model_weights = self.model.state_dict()
+
     def epoch(self, type: str = "train") -> None:
         """
         Trains or evaluates the model depending on the specified mode.
@@ -490,11 +496,12 @@ class IterativeMagnitudePruning:
         if self.pretrain_epochs > 0:
             logger.info("Starting pretraining...")
             for pretrain_epoch_steps in range(self.pretrain_epochs):
-                logger.info("Pretraining the model at step {pretrain_epoch_steps + 1}...")
+                logger.info(f"Pretraining the model at step {pretrain_epoch_steps + 1}...")
                 self.epoch("train")
                 
         # Update initial weights after pretraining for the "rewinding" effect
         self.initial_weights = self.save_initial_weights()
+        self.best_model_weights = self.model.state_dict()
         logger.info(f"Starting pruning with {self.steps} steps...")
 
         for step in tqdm(self.steps, desc="Pruning Steps", unit="step"):
