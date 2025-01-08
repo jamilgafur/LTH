@@ -376,6 +376,7 @@ class IterativeMagnitudePruning:
 
         # check accuracy if sparisty is greater than zero and best accuracy update the best model
         if self.current_sparsity > 0 and accuracy > max(self.metrics['accuracy']):
+            logger.info(f"Updating best model weights at {self.current_sparsity * 100:.2f}% sparsity with accuracy {accuracy:.2f} %")
             self.best_model_weights = self.model.state_dict()
 
     def epoch(self, type: str = "train") -> None:

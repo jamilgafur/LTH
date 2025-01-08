@@ -90,6 +90,7 @@ class WeightZeroing:
                     param.data.view(-1)[idx] = original_weights.view(-1)[idx]  # Restore weight
                     self.logger.debug(f"Zeroed weight {param.name}, accuracy drop: {accuracy_drop:.4f}")
 
+        self.plot_results()
         self.logger.info("Weight zeroing experiment completed.")
         return self.metrics
 
