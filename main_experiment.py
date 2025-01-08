@@ -5,6 +5,9 @@ from pyPrune.models.LeNet import LeNet
 from pyPrune.pruning import IterativeMagnitudePruning 
 import numpy as np
 from pyPrune.utils import plot_loss_accuracy_sparsity
+from experiments.WeightZeroing import WeightZeroing
+from experiments.NeuronZeroing import NeuronZeroing
+
 
 def load_mnist():
     # Load MNIST dataset
@@ -70,13 +73,23 @@ def main():
         train_loader=train_loader,
         test_loader=test_loader,
         steps=np.linspace(0, .99, 3), # 9 steps from 1'st step to 99% pruning
-        pretrain_epochs=10,
+        pretrain_epochs=1,
         device='cuda' if torch.cuda.is_available() else 'cpu',
         finetune_epochs=1, 
     )    
     pruner.run()  # Run pruning process
     plot_loss_accuracy_sparsity(pruner)
-    baseline(pruner)  # Train baseline model for comparison
+    # baseline(pruner)  # Train baseline model for comparison
+
+    # Initialize WeightZeroing class
+    weight_zeroing = WeightZeroing(pruner)
+    weight_zeroing.run_experiment()
+
+    # Initialize NeuronZeroing class
+    neuron_zeroing = NeuronZeroing(pruner)
+    neuron_zeroing.run_experiment()
+
+
 
 
 if __name__ == '__main__':
