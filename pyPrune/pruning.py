@@ -159,7 +159,7 @@ class IterativeMagnitudePruning:
         """       
 
         initial_weights = {}
-        for name, param in self.model.named_parameters():
+        for name, param in self.model.named_parameters(): #keep batchnorm weights here for rewinding
             if 'weight' in name:
                 initial_weights[name] = param.data.clone()
         logger.info(f"Initial weights saved for {len(initial_weights)} weight parameters.")
@@ -194,7 +194,7 @@ class IterativeMagnitudePruning:
         logger.debug(f"Unrolling model at {percentage * 100:.2f}% sparsity")
 
         all_weights = []
-        for name, param in self.model.named_parameters():
+        for name, param in self.model.named_parameters(): #no batch norm weights here
             if 'weight' in name:
                 all_weights.append(param.data.flatten())
 
@@ -309,7 +309,7 @@ class IterativeMagnitudePruning:
         threshold_value = sorted_weights[num_prune - 1] if num_prune > 0 else float('inf')
 
         # Apply pruning: directly zero out weights below the threshold
-        for name, param in self.model.named_parameters():
+        for name, param in self.model.named_parameters(): #no batch norm here
             if 'weight' in name:
                 mask = torch.abs(param.data) >= threshold_value
                 param.data.mul_(mask.float())  # Prune weights
@@ -341,7 +341,7 @@ class IterativeMagnitudePruning:
             # The model's weights are now restored to their initial values.
         """
 
-        for name, param in self.model.named_parameters():
+        for name, param in self.model.named_parameters(): #keep batch norm
             if 'weight' in name:
                 param.data = self.initial_weights[name].clone()
         logger.info("Weights reset to initial values.")
@@ -415,7 +415,7 @@ class IterativeMagnitudePruning:
                 loss.backward()
 
                 # Mask the gradients for zeroed-out weights
-                for name, param in self.model.named_parameters():
+                for name, param in self.model.named_parameters(): #no batch norm here
                     if 'weight' in name and param.requires_grad:
                         mask = param.data != 0  # Mask for non-zero weights
                         param.grad *= mask.float()  # Zero out gradients for pruned weights
@@ -664,7 +664,7 @@ class IterativeMagnitudePruning:
 
         total_params_model = 0
         pruned_params_model = 0
-        for name, param in self.model.named_parameters():
+        for name, param in self.model.named_parameters(): #no batch norm here
             if 'weight' in name:  # Ensure we are only considering weight parameters
                 total_params_model += param.numel()
                 pruned_params_model += torch.sum(param == 0).item()

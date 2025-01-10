@@ -67,3 +67,8 @@ class ResNet20(nn.Module):
         x = self.fc(x)
         return x
     
+model = ResNet20()
+
+for name, param in model.named_parameters():
+    print(name)
+    
