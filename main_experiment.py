@@ -15,6 +15,7 @@ def load_mnist():
     from torch.utils.data import DataLoader
 
     transform = transforms.Compose([
+        transforms.Resize((32,32)),
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
