@@ -18,7 +18,8 @@ class IterativeMagnitudePruning:
                  steps: int, optimizer: torch.optim.Optimizer, criterion: nn.Module, 
                  pruning_criterion: Optional[Callable[[float, torch.Tensor], torch.Tensor]] = None,
                  device: Optional[str] = None, save_dir: str = 'pruning_checkpoints', finetune_epochs: int = 0, 
-                 pretrain_epochs: int = 0, learning_rate: float = 0.01, file_handler: str = "logger.log") -> None:
+                 pretrain_epochs: int = 0, learning_rate: float = 0.01, file_handler: str = "logger.log",
+                 prunable_layers: tuple = (torch.nn.Conv2d,torch.nn.Linear)) -> None:
         """
         Initializes the IterativeMagnitudePruning class to perform iterative magnitude pruning on a neural network model.
 
@@ -65,7 +66,7 @@ class IterativeMagnitudePruning:
                 learning_rate=0.01
             )
         """
-
+        self.prunable_layers = prunable_layers
         self.save_dir = save_dir
         self.setup_save_dir()
         
@@ -158,12 +159,11 @@ class IterativeMagnitudePruning:
             # The initial_weights dictionary can be used for comparison or restoring weights.
         """       
 
-        initial_weights = {}
+        initial_parameters = {}
         for name, param in self.model.named_parameters(): #keep batchnorm weights here for rewinding
-            if 'weight' in name:
-                initial_weights[name] = param.data.clone()
-        logger.info(f"Initial weights saved for {len(initial_weights)} weight parameters.")
-        return initial_weights
+            initial_parameters[name] = param.data.clone()
+        logger.info(f"Initial values saved for {len(initial_parameters)}  parameters.")
+        return initial_parameters
 
     def unroll(self, percentage: float = 0) -> None:
         """
@@ -194,9 +194,9 @@ class IterativeMagnitudePruning:
         logger.debug(f"Unrolling model at {percentage * 100:.2f}% sparsity")
 
         all_weights = []
-        for name, param in self.model.named_parameters(): #no batch norm weights here
-            if 'weight' in name:
-                all_weights.append(param.data.flatten())
+        for module in self.model.modules():
+            if isinstance(module, self.prunable_layers):
+                all_weights.append(module.weight.data.flatten())
 
         all_weights = torch.cat(all_weights)
         sorted_weights = torch.abs(all_weights).sort()[0]
@@ -307,16 +307,15 @@ class IterativeMagnitudePruning:
         num_prune, all_weights, sorted_weights = self.unroll(percentage)
 
         threshold_value = sorted_weights[num_prune - 1] if num_prune > 0 else float('inf')
-
         # Apply pruning: directly zero out weights below the threshold
-        for name, param in self.model.named_parameters(): #no batch norm here
-            if 'weight' in name:
-                mask = torch.abs(param.data) >= threshold_value
-                param.data.mul_(mask.float())  # Prune weights
+        for module in self.model.modules(): #no batch norm here
+            if isinstance(module, self.prunable_layers):
+                mask = torch.abs(module.weight.data) >= threshold_value
+                module.weight.data.mul_(mask.float())  # Prune weights
 
                 # Detach pruned weights from gradients
-                param.grad = None  # Zero out any existing gradient for the pruned weights
-                param.requires_grad = not param.data.eq(0).all()  # Set requires_grad to False if all weights are zero
+                module.weight.grad = None  # Zero out any existing gradient for the pruned weights
+                module.weight.requires_grad = not module.weight.data.eq(0).all()  # Set requires_grad to False if all weights are zero
 
         logger.debug(f"Pruning applied at {percentage * 100:.2f}% sparsity with threshold {threshold_value:.6f}")
         self.update_optimizer()
@@ -342,8 +341,7 @@ class IterativeMagnitudePruning:
         """
 
         for name, param in self.model.named_parameters(): #keep batch norm
-            if 'weight' in name:
-                param.data = self.initial_weights[name].clone()
+            param.data = self.initial_weights[name].clone()
         logger.info("Weights reset to initial values.")
 
     def update_metrics(self, loss: float, accuracy: float, gradients: torch.Tensor) -> None:
@@ -415,10 +413,10 @@ class IterativeMagnitudePruning:
                 loss.backward()
 
                 # Mask the gradients for zeroed-out weights
-                for name, param in self.model.named_parameters(): #no batch norm here
-                    if 'weight' in name and param.requires_grad:
-                        mask = param.data != 0  # Mask for non-zero weights
-                        param.grad *= mask.float()  # Zero out gradients for pruned weights
+                for module in self.model.modules(): #no batch norm here
+                    if isinstance(module,self.prunable_layers):
+                        mask = module.weight.data != 0  # Mask for non-zero weights
+                        module.weight.grad *= mask.float()  # Zero out gradients for pruned weights
 
                 self.optimizer.step()
                 accuracy = 100. * output.argmax(dim=1).eq(target).sum().item() / target.size(0)
@@ -664,10 +662,10 @@ class IterativeMagnitudePruning:
 
         total_params_model = 0
         pruned_params_model = 0
-        for name, param in self.model.named_parameters(): #no batch norm here
-            if 'weight' in name:  # Ensure we are only considering weight parameters
-                total_params_model += param.numel()
-                pruned_params_model += torch.sum(param == 0).item()
+        for module in self.model.modules(): #no batch norm here
+            if isinstance(module,self.prunable_layers):  # Ensure we are only considering weight parameters
+                total_params_model += module.weight.numel()
+                pruned_params_model += torch.sum(module.weight == 0).item()
 
         current_sparsity_model = pruned_params_model / total_params_model
 
