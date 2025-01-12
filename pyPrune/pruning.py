@@ -4,6 +4,7 @@ import os
 from torch.utils.data import DataLoader
 from typing import Optional, Callable
 import numpy as np
+import pickle
 from tqdm import tqdm
 import logging
 import json
@@ -68,6 +69,8 @@ class IterativeMagnitudePruning:
         """
         self.prunable_layers = prunable_layers
         self.save_dir = save_dir
+    
+        self.pickle_name = f"{self.save_dir}/pruner.pkl"
         self.setup_save_dir()
         
         self.steps =  steps
@@ -145,6 +148,11 @@ class IterativeMagnitudePruning:
         else:
             logger.info(f"Save directory {self.save_dir} already exists.")
 
+        # initalize the pickle
+        with open(self.pickle_name, 'wb') as f:
+            pickle.dump(self, f)
+        logger.info(f"Init Pruner saved as pickle.")
+
     def save_initial_parameters(self) -> dict:
         """
         Saves the initial values of the model's weight parameters any pruning 
@@ -200,7 +208,7 @@ class IterativeMagnitudePruning:
         logger.debug(f"Unrolling model at {percentage * 100:.2f}% sparsity")
 
         all_weights = []
-        for module in self.get_pruneable_named_parameters()
+        for module in self.get_pruneable_named_parameters():
                 all_weights.append(module.weight.data.flatten())
 
         all_weights = torch.cat(all_weights)
@@ -408,7 +416,7 @@ class IterativeMagnitudePruning:
                 loss.backward()
 
                 # Mask the gradients for zeroed-out weights
-                for module in self.get_pruneable_named_parameters()
+                for module in self.get_pruneable_named_parameters():
                         mask = module.weight.data != 0  # Mask for non-zero weights
                         module.weight.grad *= mask.float()  # Zero out gradients for pruned weights
 
@@ -442,6 +450,29 @@ class IterativeMagnitudePruning:
         logger.debug(f"Accuracy: {accuracy}")
 
         clean_memory()  # Clean up memory after each epoch 
+
+    def update_pickle(self) -> None:
+        """
+        Updates the pickle file with the current state of the pruner object.
+
+        This method saves the current state of the pruner object to a pickle file. 
+        It is useful for saving the pruner object during the pruning process, allowing 
+        the process to be resumed or analyzed later.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+
+        Example:
+            pruner.update_pickle()
+            # The current state of the pruner object is saved to the pickle file.
+        """
+
+        with open(self.pickle_name, 'wb') as f:
+            pickle.dump(self, f)
+        logger.info("Pruner saved as pickle.")
 
     def run(self) -> None:
         """
@@ -528,14 +559,20 @@ class IterativeMagnitudePruning:
             # reset to the rewind weights
             logger.info(f"Resetting weights to rewind state at {self.pretrain_epochs}, currently at  {step * 100:.2f}% sparsity...")
             self.reset_weights()
+            logger.info(f"Pickling at {step * 100:.2f}% sparsity...")
+            self.update_pickle()
             print("\n\n\n")
 
         logger.info("Pruning complete.")
         # save the metrics as a json
         logger.info("Saving metrics...")
         self.save_metrics()
-
         logger.info("Metrics saved to pruning_metrics.json")     
+
+        self.update_pickle()
+        logger.info("Pruner saved as pickle.")
+
+        logger.info("Pruning process complete.")
 
     def save_metrics(self) -> None:
         """

@@ -75,25 +75,36 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
 
-    # Initialize Iterative Magnitude Pruning with gradual pruning
-    pruner = IterativeMagnitudePruning(
-        model=model,
-        optimizer=optimizer,
-        criterion=criterion,
-        train_loader=train_loader,
-        test_loader=test_loader,
-        steps=exponential_decay_list(), #goes down to 1% weights remaining 20% at a time
-        pretrain_epochs=0,
-        device='cuda' if torch.cuda.is_available() else 'cpu',
-        finetune_epochs=5, 
-    )    
-    pruner.run()  # Run pruning process
+    # if the pickle file exists, load the pruner object from the pickle file
+    import os
+    save_dir = 'pruning_checkpoints'
+
+    if os.path.exists(save_dir+'/pruner.pkl'):
+        import pickle
+        with open(save_dir+'/pruner.pkl', 'rb') as f:
+            pruner = pickle.load(f)
+    else:
+        # Initialize Iterative Magnitude Pruning with gradual pruning
+        pruner = IterativeMagnitudePruning(
+            model=model,
+            optimizer=optimizer,
+            criterion=criterion,
+            train_loader=train_loader,
+            test_loader=test_loader,
+            steps=exponential_decay_list(steps=3),
+            pretrain_epochs=0,
+            device='cuda' if torch.cuda.is_available() else 'cpu',
+            finetune_epochs=5, 
+            save_dir=save_dir,
+        )    
+        pruner.run()  # Run pruning process
+       
     plot_loss_accuracy_sparsity(pruner)
 
-    # Initialize NeuronSimilarity class
-    print("Starting neuron similarity experiment...")
-    neuron_similarity = NeuronSimilarity(pruner)
-    neuron_similarity.run_experiment()
+    # # Initialize NeuronSimilarity class
+    # print("Starting neuron similarity experiment...")
+    # neuron_similarity = NeuronSimilarity(pruner)
+    # neuron_similarity.run_experiment()
 
     # Initialize NeuronZeroing class
     print("Starting neuron zeroing experiment...")
