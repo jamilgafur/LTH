@@ -18,7 +18,8 @@ class IterativeMagnitudePruning:
                  steps: int, optimizer: torch.optim.Optimizer, criterion: nn.Module, 
                  pruning_criterion: Optional[Callable[[float, torch.Tensor], torch.Tensor]] = None,
                  device: Optional[str] = None, save_dir: str = 'pruning_checkpoints', finetune_epochs: int = 0, 
-                 pretrain_epochs: int = 0, learning_rate: float = 0.01, file_handler: str = "logger.log") -> None:
+                 pretrain_epochs: int = 0, learning_rate: float = 0.01, file_handler: str = "logger.log",
+                 prunable_layers: tuple = (torch.nn.Conv2d,torch.nn.Linear)) -> None:
         """
         Initializes the IterativeMagnitudePruning class to perform iterative magnitude pruning on a neural network model.
 
@@ -65,7 +66,7 @@ class IterativeMagnitudePruning:
                 learning_rate=0.01
             )
         """
-
+        self.prunable_layers = prunable_layers
         self.save_dir = save_dir
         self.setup_save_dir()
         
@@ -84,7 +85,7 @@ class IterativeMagnitudePruning:
         self.current_sparsity = 0.0
         self.best_model_weights = None
 
-        self.initial_weights = self.save_initial_weights()
+        self.initial_parameters = self.save_initial_parameters()
         self.metrics = {
             'sparsity': [],
             'loss': [],
@@ -134,43 +135,40 @@ class IterativeMagnitudePruning:
         else:
             logger.info(f"Save directory {self.save_dir} already exists.")
 
-    def save_initial_weights(self) -> dict:
+    def save_initial_parameters(self) -> dict:
         """
-        Saves the initial weights of the model's weight parameters before any pruning 
-        is applied. This method iterates over the model's parameters, identifies those 
-        that represent weights (i.e., parameters with the substring 'weight' in their name), 
-        and stores their initial values in a dictionary. The initial weights are saved 
+        Saves the initial values of the model's weight parameters any pruning 
+        is applied. This method iterates over the model's parameters, 
+        and stores their initial values in a dictionary. The initial parameters are saved 
         for potential restoration after pruning or to track changes during the pruning process.
 
         Returns:
             dict: 
-                A dictionary containing the initial weights of the model's weight parameters. 
+                A dictionary containing the initial values of the model's parameters. 
                 The dictionary maps parameter names (as strings) to their corresponding 
-                weight values (as torch.Tensor objects).
+                values (as torch.Tensor objects).
 
         Example:
             # Create an instance of IterativeMagnitudePruning
             pruning = IterativeMagnitudePruning(...)
 
             # Save initial weights
-            initial_weights = pruning.save_initial_weights()
+            initial_weights = pruning.save_initial_parameters()
 
             # The initial_weights dictionary can be used for comparison or restoring weights.
         """       
 
-        initial_weights = {}
+        initial_parameters = {}
         for name, param in self.model.named_parameters(): #keep batchnorm weights here for rewinding
-            if 'weight' in name:
-                initial_weights[name] = param.data.clone()
-        logger.info(f"Initial weights saved for {len(initial_weights)} weight parameters.")
-        return initial_weights
+            initial_parameters[name] = param.data.clone()
+        logger.info(f"Initial values saved for {len(initial_parameters)}  parameters.")
+        return initial_parameters
 
     def unroll(self, percentage: float = 0) -> None:
         """
         Unrolls the model's weight parameters to facilitate pruning based on their magnitudes.
 
-        This method extracts all weight parameters from the model, flattens them into a single tensor, 
-        and sorts them by absolute value to determine which weights should be pruned. It calculates 
+        This method extracts all weight parameters from the model, and flattens them into a single tensor. It calculates 
         the number of weights to prune based on the specified percentage and returns the relevant data 
         for pruning.
 
@@ -183,39 +181,29 @@ class IterativeMagnitudePruning:
             tuple: A tuple containing:
                 - num_prune (int): The number of weights to prune based on the specified percentage.
                 - all_weights (torch.Tensor): A flattened tensor containing all model weights.
-                - sorted_weights (torch.Tensor): The sorted tensor of all weights by absolute magnitude.
 
         Example:
             pruner = IterativeMagnitudePruning(...)
-            num_prune, all_weights, sorted_weights = pruner.unroll(percentage=0.1)
-            # This will unroll the model's weights and determine the top 10% smallest weights for pruning.
+            num_prune, all_weights, = pruner.unroll(percentage=0.1)
         """
 
         logger.debug(f"Unrolling model at {percentage * 100:.2f}% sparsity")
 
         all_weights = []
-        for name, param in self.model.named_parameters(): #no batch norm weights here
-            if 'weight' in name:
-                all_weights.append(param.data.flatten())
+        for module in self.model.modules():
+            if isinstance(module, self.prunable_layers):
+                all_weights.append(module.weight.data.flatten())
 
         all_weights = torch.cat(all_weights)
-        sorted_weights = torch.abs(all_weights).sort()[0]
 
         num_prune = max(1, int(all_weights.numel() * percentage))
         
-        return num_prune, all_weights, sorted_weights
+        return num_prune, all_weights
 
     def update_optimizer(self) -> None:
         """
-        Updates the optimizer to reflect the current set of trainable parameters after pruning.
-
-        After pruning, some weights in the model may have been set to zero and their gradients
-        are no longer required. This method updates the optimizer by excluding pruned weights
-        and adjusting the parameter list to only include weights that are still trainable. It also
-        logs the total number of parameters being passed to the optimizer.
-
-        This ensures that the optimizer always works with the current set of model parameters, 
-        which may change as pruning progresses.
+        Resets the optimizer each time training restarts (after each pass of pruning). This will clear 
+        any adaptive learning rates, momentums, rmsprop, etc... from the optimizer
 
         Parameters:
             None
@@ -228,20 +216,15 @@ class IterativeMagnitudePruning:
             pruner.update_optimizer()
             # This updates the optimizer after pruning to ensure that it works only with trainable parameters.
         """
-
-        # Get the parameters that are still trainable after pruning
-        params_to_optimize = [p for p in self.model.parameters() if p.requires_grad]
-
-        # Update the optimizer to reflect the current parameters
-        # create a new optimizer that is the same as the old one but with the new parameters
-        self.optimizer = self.optimizer.__class__(params_to_optimize, lr=self.learning_rate)
+        #re-initialize the optimizer
+        self.optimizer = self.optimizer.__class__(self.model.parameters(), lr=self.learning_rate)
 
         # Log the number of parameters being passed to the optimizer
-        total_params = sum(p.numel() for p in params_to_optimize)
-        logger.info(f"Optimizer updated to reflect {len(params_to_optimize)} parameters, Total: {total_params} parameters.")
+        total_params = sum(p.numel() for p in self.model.parameters())
+        logger.info(f"Optimizer updated to reflect {len(list(self.model.parameters()))} parameters, Total: {total_params} parameters.")
 
         # Log the parameters (optional, can be verbose for large models)
-        logger.debug(f"Optimizer parameters: {[p.shape for p in params_to_optimize]}")
+        logger.debug(f"Optimizer parameters: {[p.shape for p in self.model.parameters()]}")
 
     def save_checkpoint(self, step: int, file_path: str) -> None:
         """
@@ -304,19 +287,22 @@ class IterativeMagnitudePruning:
         """
 
         logger.info(f"Pruning model at {percentage * 100:.2f}% sparsity.")
-        num_prune, all_weights, sorted_weights = self.unroll(percentage)
-
-        threshold_value = sorted_weights[num_prune - 1] if num_prune > 0 else float('inf')
-
+        num_prune, all_weights = self.unroll(percentage)
+        # O(n) partition to select the threshold. the element at position num_prune-1 in the partitioned array is 
+        # the pruning threshold. partition is on absolute value of weights
+        # needs to be copied back to cpu for numpy to work, maybe not worth it compared to sorting
+        threshold_value = np.partition(np.abs(all_weights.cpu().numpy()),num_prune-1)[num_prune-1]
+        if num_prune == 0:
+            threshold_value = float('inf')
         # Apply pruning: directly zero out weights below the threshold
-        for name, param in self.model.named_parameters(): #no batch norm here
-            if 'weight' in name:
-                mask = torch.abs(param.data) >= threshold_value
-                param.data.mul_(mask.float())  # Prune weights
+        for module in self.model.modules(): #no batch norm here
+            if isinstance(module, self.prunable_layers):
+                mask = torch.abs(module.weight.data) >= threshold_value
+                module.weight.data.mul_(mask.float())  # Prune weights
 
                 # Detach pruned weights from gradients
-                param.grad = None  # Zero out any existing gradient for the pruned weights
-                param.requires_grad = not param.data.eq(0).all()  # Set requires_grad to False if all weights are zero
+                module.weight.grad = None  # Zero out any existing gradient for the pruned weights
+                module.weight.requires_grad = not module.weight.data.eq(0).all()  # Set requires_grad to False if all weights are zero
 
         logger.debug(f"Pruning applied at {percentage * 100:.2f}% sparsity with threshold {threshold_value:.6f}")
         self.update_optimizer()
@@ -342,8 +328,7 @@ class IterativeMagnitudePruning:
         """
 
         for name, param in self.model.named_parameters(): #keep batch norm
-            if 'weight' in name:
-                param.data = self.initial_weights[name].clone()
+            param.data = self.initial_parameters[name].clone()
         logger.info("Weights reset to initial values.")
 
     def update_metrics(self, loss: float, accuracy: float, gradients: torch.Tensor) -> None:
@@ -415,10 +400,10 @@ class IterativeMagnitudePruning:
                 loss.backward()
 
                 # Mask the gradients for zeroed-out weights
-                for name, param in self.model.named_parameters(): #no batch norm here
-                    if 'weight' in name and param.requires_grad:
-                        mask = param.data != 0  # Mask for non-zero weights
-                        param.grad *= mask.float()  # Zero out gradients for pruned weights
+                for module in self.model.modules(): #no batch norm here
+                    if isinstance(module,self.prunable_layers):
+                        mask = module.weight.data != 0  # Mask for non-zero weights
+                        module.weight.grad *= mask.float()  # Zero out gradients for pruned weights
 
                 self.optimizer.step()
                 accuracy = 100. * output.argmax(dim=1).eq(target).sum().item() / target.size(0)
@@ -491,7 +476,7 @@ class IterativeMagnitudePruning:
             - If the number of pretrain epochs is greater than 0, pretraining will be done before pruning starts.
         """
 
-        self.initial_weights = self.save_initial_weights()
+        self.initial_parameters = self.save_initial_parameters()
 
         if self.pretrain_epochs > 0:
             logger.info("Starting pretraining...")
@@ -500,7 +485,7 @@ class IterativeMagnitudePruning:
                 self.epoch("train")
                 
         # Update initial weights after pretraining for the "rewinding" effect
-        self.initial_weights = self.save_initial_weights()
+        self.initial_parameters = self.save_initial_parameters()
         self.best_model_weights = self.model.state_dict()
         logger.info(f"Starting pruning with {self.steps} steps...")
 
@@ -664,10 +649,10 @@ class IterativeMagnitudePruning:
 
         total_params_model = 0
         pruned_params_model = 0
-        for name, param in self.model.named_parameters(): #no batch norm here
-            if 'weight' in name:  # Ensure we are only considering weight parameters
-                total_params_model += param.numel()
-                pruned_params_model += torch.sum(param == 0).item()
+        for module in self.model.modules(): #no batch norm here
+            if isinstance(module,self.prunable_layers):  # Ensure we are only considering weight parameters
+                total_params_model += module.weight.numel()
+                pruned_params_model += torch.sum(module.weight == 0).item()
 
         current_sparsity_model = pruned_params_model / total_params_model
 

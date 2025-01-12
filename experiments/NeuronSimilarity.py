@@ -80,9 +80,14 @@ class NeuronSimilarity:
         Returns:
             np.ndarray: Cosine similarity matrix.
         """
+        if activations.ndim == 4: #convolutional layers have more dimensions to flatten
+            batch_size, num_filters, height, width = activations.shape
+            activations = activations.transpose(0,2,3,1).reshape(-1,num_filters)
+        activations = activations.T #batch dimension is first - that needs to change
         norm_activations = np.linalg.norm(activations, axis=1, keepdims=True)
         normalized_activations = activations / norm_activations
         similarity_matrix = np.dot(normalized_activations, normalized_activations.T)
+        print(similarity_matrix.shape)
         return similarity_matrix
 
     def _correlation_similarity(self, activations: np.ndarray) -> np.ndarray:

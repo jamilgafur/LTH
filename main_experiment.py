@@ -15,6 +15,7 @@ def load_mnist():
     from torch.utils.data import DataLoader
 
     transform = transforms.Compose([
+        transforms.Resize((32,32)),
         transforms.ToTensor(),
         transforms.Normalize((0.1307,), (0.3081,))
     ])
@@ -54,8 +55,17 @@ def baseline(pruner: IterativeMagnitudePruning):
     logger.debug('Saving baseline model...')
     torch.save(baseline_model.state_dict(), pruner.save_dir + '/baseline_model.pth')
 
+def exponential_decay_list(decay_rate = 0.8, steps = 21):
+    decay_list = []
+    decay_list.append(0)
+    n = 1
+    for i in range(steps):
+        n*= decay_rate
+        decay_list.append(1-n)
+    return decay_list
+
+
 def main():
-        
     # Load MNIST dataset X_train, y_train, X_test, y_test
     train_loader, test_loader = load_mnist()
     
@@ -72,10 +82,10 @@ def main():
         criterion=criterion,
         train_loader=train_loader,
         test_loader=test_loader,
-        steps=np.linspace(0, .99, 3), # 9 steps from 1'st step to 99% pruning
-        pretrain_epochs=1,
+        steps=exponential_decay_list(), #goes down to 1% weights remaining 20% at a time
+        pretrain_epochs=0,
         device='cuda' if torch.cuda.is_available() else 'cpu',
-        finetune_epochs=1, 
+        finetune_epochs=5, 
     )    
     pruner.run()  # Run pruning process
     plot_loss_accuracy_sparsity(pruner)
