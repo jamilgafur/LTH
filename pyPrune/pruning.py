@@ -15,7 +15,7 @@ logger = logging.getLogger()
 
 class IterativeMagnitudePruning:
     def __init__(self, model: nn.Module, train_loader: DataLoader, test_loader: DataLoader,  
-                 steps: int, optimizer: torch.optim.Optimizer, criterion: nn.Module, 
+                 steps: list, optimizer: torch.optim.Optimizer, criterion: nn.Module, 
                  pruning_criterion: Optional[Callable[[float, torch.Tensor], torch.Tensor]] = None,
                  device: Optional[str] = None, save_dir: str = 'pruning_checkpoints', finetune_epochs: int = 0, 
                  pretrain_epochs: int = 0, learning_rate: float = 0.01, file_handler: str = "logger.log",
@@ -85,7 +85,10 @@ class IterativeMagnitudePruning:
         self.current_sparsity = 0.0
         self.best_model_weights = None
 
+
         self.initial_parameters = self.save_initial_parameters()
+
+        self.weight_history = [self.initial_parameters]
         self.metrics = {
             'sparsity': [],
             'loss': [],
@@ -110,6 +113,13 @@ class IterativeMagnitudePruning:
         logger.info("IterativeMagnitudePruning initialized.")
         logger.info(f"Device: {self.device}, Final sparsity: {self.steps[-1]}, Steps: {self.steps}")
 
+    def get_pruneable_named_parameters(self):
+        acceptable_modules = []
+        for module in self.model.modules():
+            if isinstance(module, self.prunable_layers):
+                acceptable_modules.append(module)
+        return acceptable_modules
+    
     def setup_save_dir(self) -> None:
         """
         Sets up the directory where model checkpoints will be saved during the pruning process.
@@ -190,8 +200,7 @@ class IterativeMagnitudePruning:
         logger.debug(f"Unrolling model at {percentage * 100:.2f}% sparsity")
 
         all_weights = []
-        for module in self.model.modules():
-            if isinstance(module, self.prunable_layers):
+        for module in self.get_pruneable_named_parameters()
                 all_weights.append(module.weight.data.flatten())
 
         all_weights = torch.cat(all_weights)
@@ -295,8 +304,7 @@ class IterativeMagnitudePruning:
         if num_prune == 0:
             threshold_value = float('inf')
         # Apply pruning: directly zero out weights below the threshold
-        for module in self.model.modules(): #no batch norm here
-            if isinstance(module, self.prunable_layers):
+        for module in self.get_pruneable_named_parameters():
                 mask = torch.abs(module.weight.data) >= threshold_value
                 module.weight.data.mul_(mask.float())  # Prune weights
 
@@ -400,8 +408,7 @@ class IterativeMagnitudePruning:
                 loss.backward()
 
                 # Mask the gradients for zeroed-out weights
-                for module in self.model.modules(): #no batch norm here
-                    if isinstance(module,self.prunable_layers):
+                for module in self.get_pruneable_named_parameters()
                         mask = module.weight.data != 0  # Mask for non-zero weights
                         module.weight.grad *= mask.float()  # Zero out gradients for pruned weights
 
@@ -514,6 +521,9 @@ class IterativeMagnitudePruning:
             
             
             self.epoch("eval")
+            # save the current weights
+            logger.info(f"Saving weights at {step * 100:.2f}% sparsity...")
+            self.weight_history.append(self.model.state_dict())
 
             # reset to the rewind weights
             logger.info(f"Resetting weights to rewind state at {self.pretrain_epochs}, currently at  {step * 100:.2f}% sparsity...")
@@ -525,8 +535,7 @@ class IterativeMagnitudePruning:
         logger.info("Saving metrics...")
         self.save_metrics()
 
-        logger.info("Metrics saved to pruning_metrics.json")
-        
+        logger.info("Metrics saved to pruning_metrics.json")     
 
     def save_metrics(self) -> None:
         """
