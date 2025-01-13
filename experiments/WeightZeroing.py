@@ -37,7 +37,7 @@ class WeightZeroing:
         self.pruner = pruner
         self.model = pruner.model  # Directly use the pruner's model instead of deepcopy
         self.save_dir = os.path.join(pruner.save_dir, 'weight_zeroing')
-        self.sample_fraction = sample_fraction
+        self.sample_fraction = .0001
         self.zeroing_metric = zeroing_metric
         self.logger = logger if logger else logging.getLogger(__name__)
         self.metrics: Dict[str, List] = {'weight_accuracy_drops': [], 'total_accuracy_drops': [], 'zeroed_weights_count': 0, 'step_accuracy': []}
@@ -127,11 +127,11 @@ class WeightZeroing:
 
             experiment_metrics[step] = self.metrics
             self.plot_results(step)  # Plot results after each step
+            # clear the metrics for the next step
+            self.metrics = {'weight_accuracy_drops': [], 'total_accuracy_drops': [], 'zeroed_weights_count': 0, 'step_accuracy': []}
 
-            # Periodically clear metrics to prevent memory bloat
-            self.metrics = {key: [] for key in self.metrics}
 
-        return self.metrics
+        return experiment_metrics
 
     def collect_weights(self) -> (int, List[float]):
         """
@@ -162,7 +162,9 @@ class WeightZeroing:
             accuracy_drop (float): The accuracy drop after zeroing the weight.
         """
         self.metrics['weight_accuracy_drops'].append({'weight_name': weight_name, 'accuracy_drop': accuracy_drop, 'original_value': original_value})
+        print("Before incrementing:", self.metrics['zeroed_weights_count'])  # Debug line
         self.metrics['zeroed_weights_count'] += 1
+        print("After incrementing:", self.metrics['zeroed_weights_count'])  # Debug line
 
     def save_metrics(self):
         """
