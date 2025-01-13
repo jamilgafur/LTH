@@ -690,10 +690,9 @@ class IterativeMagnitudePruning:
 
         total_params_model = 0
         pruned_params_model = 0
-        for module in self.model.modules(): #no batch norm here
-            if isinstance(module,self.prunable_layers):  # Ensure we are only considering weight parameters
-                total_params_model += module.weight.numel()
-                pruned_params_model += torch.sum(module.weight == 0).item()
+        for module in get_pruneable_modules(self.model, self.prunable_layers):
+            total_params_model += module.weight.numel()
+            pruned_params_model += torch.sum(module.weight == 0).item()
 
         current_sparsity_model = pruned_params_model / total_params_model
 
