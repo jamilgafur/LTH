@@ -4,6 +4,36 @@ import torch
 import random
 import numpy as np
 import torch
+import torch
+
+def get_pruneable_named_parameters(model, prunable_layers):
+    names = []
+    params = []
+    for name, param in model.named_parameters():
+        module_name = name.rsplit('.', 1)[0]  # Extract the module name
+        module = dict(model.named_modules()).get(module_name, None)
+        if 'weight' in name and module and any(isinstance(module, layer) for layer in prunable_layers):
+            names.append(name)
+            params.append(param)
+    return names, params
+
+
+def get_pruneable_named_modules(model, prunable_layers):
+    names = []
+    modules = []
+    for name, module in model.named_modules():
+        if any(isinstance(module, layer) for layer in prunable_layers):
+            names.append(name)
+            modules.append(module)
+    return names, modules
+
+
+def get_pruneable_modules(model, prunable_layers):
+    acceptable_modules = []
+    for module in model.modules():
+        if any(isinstance(module, layer) for layer in prunable_layers):
+            acceptable_modules.append(module)
+    return acceptable_modules
 
 
 def clean_memory():
@@ -46,5 +76,5 @@ def plot_loss_accuracy_sparsity(pruner):
     plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust layout to make room for the title
 
     # Save and show plot
-    plt.savefig('sparsity_vs_loss_and_accuracy.png', dpi=300)
+    plt.savefig(pruner.save_dir+ '/sparsity_vs_loss_and_accuracy.png', dpi=300)
     plt.show()

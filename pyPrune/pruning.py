@@ -3,7 +3,9 @@ import torch.nn as nn
 import os
 from torch.utils.data import DataLoader
 from typing import Optional, Callable
+from pyPrune.utils import *
 import numpy as np
+import pickle
 from tqdm import tqdm
 import logging
 import json
@@ -15,7 +17,7 @@ logger = logging.getLogger()
 
 class IterativeMagnitudePruning:
     def __init__(self, model: nn.Module, train_loader: DataLoader, test_loader: DataLoader,  
-                 steps: int, optimizer: torch.optim.Optimizer, criterion: nn.Module, 
+                 steps: list, optimizer: torch.optim.Optimizer, criterion: nn.Module, 
                  pruning_criterion: Optional[Callable[[float, torch.Tensor], torch.Tensor]] = None,
                  device: Optional[str] = None, save_dir: str = 'pruning_checkpoints', finetune_epochs: int = 0, 
                  pretrain_epochs: int = 0, learning_rate: float = 0.01, file_handler: str = "logger.log",
@@ -68,6 +70,8 @@ class IterativeMagnitudePruning:
         """
         self.prunable_layers = prunable_layers
         self.save_dir = save_dir
+    
+        self.pickle_name = f"{self.save_dir}/pruner.pkl"
         self.setup_save_dir()
         
         self.steps =  steps
@@ -85,7 +89,10 @@ class IterativeMagnitudePruning:
         self.current_sparsity = 0.0
         self.best_model_weights = None
 
+
         self.initial_parameters = self.save_initial_parameters()
+
+        self.weight_history = [self.initial_parameters]
         self.metrics = {
             'sparsity': [],
             'loss': [],
@@ -134,6 +141,11 @@ class IterativeMagnitudePruning:
             logger.info(f"Created directory: {self.save_dir}")
         else:
             logger.info(f"Save directory {self.save_dir} already exists.")
+
+        # initalize the pickle
+        with open(self.pickle_name, 'wb') as f:
+            pickle.dump(self, f)
+        logger.info(f"Init Pruner saved as pickle.")
 
     def save_initial_parameters(self) -> dict:
         """
@@ -190,8 +202,7 @@ class IterativeMagnitudePruning:
         logger.debug(f"Unrolling model at {percentage * 100:.2f}% sparsity")
 
         all_weights = []
-        for module in self.model.modules():
-            if isinstance(module, self.prunable_layers):
+        for module in get_pruneable_modules(self.model, self.prunable_layers):
                 all_weights.append(module.weight.data.flatten())
 
         all_weights = torch.cat(all_weights)
@@ -295,8 +306,7 @@ class IterativeMagnitudePruning:
         if num_prune == 0:
             threshold_value = float('inf')
         # Apply pruning: directly zero out weights below the threshold
-        for module in self.model.modules(): #no batch norm here
-            if isinstance(module, self.prunable_layers):
+        for module in get_pruneable_modules(self.model, self.prunable_layers):
                 mask = torch.abs(module.weight.data) >= threshold_value
                 module.weight.data.mul_(mask.float())  # Prune weights
 
@@ -364,19 +374,22 @@ class IterativeMagnitudePruning:
             logger.info(f"Updating best model weights at {self.current_sparsity * 100:.2f}% sparsity with accuracy {accuracy:.2f} %")
             self.best_model_weights = self.model.state_dict()
 
-    def epoch(self, type: str = "train") -> None:
+    def epoch(self, type: str = "train", patience: int = 5) -> None:
         """
-        Trains or evaluates the model depending on the specified mode.
+        Trains or evaluates the model depending on the specified mode, with early stopping.
 
         This method controls whether the model is in training or evaluation mode. 
         It performs training by iterating over the training data and updating the model 
         parameters using backpropagation and the optimizer. During evaluation, it 
         computes the average loss and accuracy on the test data without updating the model.
+        Early stopping is applied based on validation loss.
 
         Parameters:
             type (str): The mode of the operation. It can either be "train" or "eval".
                 - "train" will train the model on the training set.
                 - "eval" will evaluate the model on the test set.
+            patience (int): The number of epochs to wait for improvement in validation loss 
+                            before stopping the training early.
 
         Returns:
             None
@@ -392,6 +405,9 @@ class IterativeMagnitudePruning:
 
         if type == "train":
             self.model.train()
+            epochs_without_improvement = 0
+            best_val_loss = float("inf")
+
             for data, target in tqdm(self.train_loader, desc="Training", unit="batch"):
                 data, target = data.to(self.device), target.to(self.device)
                 self.optimizer.zero_grad()
@@ -400,17 +416,44 @@ class IterativeMagnitudePruning:
                 loss.backward()
 
                 # Mask the gradients for zeroed-out weights
-                for module in self.model.modules(): #no batch norm here
-                    if isinstance(module,self.prunable_layers):
+                for module in get_pruneable_modules(self.model, self.prunable_layers):
+                    if module.weight.grad is not None:
                         mask = module.weight.data != 0  # Mask for non-zero weights
                         module.weight.grad *= mask.float()  # Zero out gradients for pruned weights
 
                 self.optimizer.step()
                 accuracy = 100. * output.argmax(dim=1).eq(target).sum().item() / target.size(0)
                 
+            # Perform evaluation to get validation loss
+            self.model.eval()
+            total_loss = 0.0
+            correct = 0
+            with torch.no_grad():
+                for data, target in tqdm(self.test_loader, desc="Evaluating", unit="batch"):
+                    data, target = data.to(self.device), target.to(self.device)
+                    output = self.model(data)
+                    total_loss += self.criterion(output, target).item()
+                    pred = output.argmax(dim=1, keepdim=True)
+                    correct += pred.eq(target.view_as(pred)).sum().item()
+
+            total_loss /= len(self.test_loader.dataset)
+            accuracy = 100. * correct / len(self.test_loader.dataset)
+
+            # Early stopping logic
+            if total_loss < best_val_loss:
+                best_val_loss = total_loss
+                epochs_without_improvement = 0  # Reset the counter if there's improvement
+            else:
+                epochs_without_improvement += 1
+
+            if epochs_without_improvement >= patience:
+                logger.info(f"Early stopping triggered. No improvement in validation loss for {patience} epochs.")
+                return  # Stop training if no improvement for 'patience' epochs
+
             # Update the metrics dictionary
-            self.update_metrics(loss.item(), accuracy, next(self.model.parameters()).grad)
+            self.update_metrics(total_loss, accuracy, None)
             logger.info(f"Training step complete, Loss: {loss.item()}")
+
         elif type == "eval":
             self.model.eval()
             total_loss = 0.0
@@ -434,7 +477,30 @@ class IterativeMagnitudePruning:
         logger.debug(f"Current sparsity: {self.current_sparsity}")
         logger.debug(f"Accuracy: {accuracy}")
 
-        clean_memory()  # Clean up memory after each epoch 
+        clean_memory()  # Clean up memory after each epoch
+
+    def update_pickle(self) -> None:
+        """
+        Updates the pickle file with the current state of the pruner object.
+
+        This method saves the current state of the pruner object to a pickle file. 
+        It is useful for saving the pruner object during the pruning process, allowing 
+        the process to be resumed or analyzed later.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+
+        Example:
+            pruner.update_pickle()
+            # The current state of the pruner object is saved to the pickle file.
+        """
+
+        with open(self.pickle_name, 'wb') as f:
+            pickle.dump(self, f)
+        logger.info("Pruner saved as pickle.")
 
     def run(self) -> None:
         """
@@ -514,19 +580,27 @@ class IterativeMagnitudePruning:
             
             
             self.epoch("eval")
+            # save the current weights
+            logger.info(f"Saving weights at {step * 100:.2f}% sparsity...")
+            self.weight_history.append(self.model.state_dict())
 
             # reset to the rewind weights
             logger.info(f"Resetting weights to rewind state at {self.pretrain_epochs}, currently at  {step * 100:.2f}% sparsity...")
             self.reset_weights()
+            logger.info(f"Pickling at {step * 100:.2f}% sparsity...")
+            self.update_pickle()
             print("\n\n\n")
 
         logger.info("Pruning complete.")
         # save the metrics as a json
         logger.info("Saving metrics...")
         self.save_metrics()
+        logger.info("Metrics saved to pruning_metrics.json")     
 
-        logger.info("Metrics saved to pruning_metrics.json")
-        
+        self.update_pickle()
+        logger.info("Pruner saved as pickle.")
+
+        logger.info("Pruning process complete.")
 
     def save_metrics(self) -> None:
         """
@@ -649,10 +723,9 @@ class IterativeMagnitudePruning:
 
         total_params_model = 0
         pruned_params_model = 0
-        for module in self.model.modules(): #no batch norm here
-            if isinstance(module,self.prunable_layers):  # Ensure we are only considering weight parameters
-                total_params_model += module.weight.numel()
-                pruned_params_model += torch.sum(module.weight == 0).item()
+        for module in get_pruneable_modules(self.model, self.prunable_layers):
+            total_params_model += module.weight.numel()
+            pruned_params_model += torch.sum(module.weight == 0).item()
 
         current_sparsity_model = pruned_params_model / total_params_model
 
