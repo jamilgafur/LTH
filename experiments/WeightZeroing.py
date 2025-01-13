@@ -6,6 +6,7 @@ import torch
 import logging
 import pickle
 from tqdm import tqdm
+from pyPrune.utils import *
 from typing import Dict, List, Optional
 
 
@@ -105,7 +106,10 @@ class WeightZeroing:
             zeroed_weights, step_accuracy = 0, []
             for idx in tqdm(sampled_indices, desc="Zeroing weights"):
                 param_idx = 0
-                for name, param in self.pruner.get_pruneable_named_parameters():
+                # Use the helper function to get prunable parameters
+                prunable_names, prunable_params = get_pruneable_named_parameters(self.model, self.pruner.prunable_layers)
+                
+                for name, param in zip(prunable_names, prunable_params):
                     if 'weight' in name:
                         weight_tensor = param.view(-1)
                         if idx < param_idx + weight_tensor.size(0):
@@ -120,10 +124,9 @@ class WeightZeroing:
 
             self.metrics['step_accuracy'].append(step_accuracy)
             self.save_metrics()
-            if self.save_plots:
-                self.plot_results()
 
             experiment_metrics[step] = self.metrics
+            self.plot_results(step)  # Plot results after each step
 
         return self.metrics
 
@@ -137,7 +140,10 @@ class WeightZeroing:
             and a list of all weight values.
         """
         total_weights, weight_list = 0, []
-        for name, param in self.pruner.get_pruneable_named_parameters():
+        # Use the helper function to get prunable parameters
+        prunable_names, prunable_params = get_pruneable_named_parameters(self.model, self.pruner.prunable_layers)
+        
+        for name, param in zip(prunable_names, prunable_params):
             if 'weight' in name:
                 total_weights += param.numel()
                 weight_list.extend(param.view(-1).tolist())
@@ -167,21 +173,22 @@ class WeightZeroing:
         with open(os.path.join(self.save_dir, 'weight_zeroing.pkl'), 'wb') as f:
             pickle.dump(self, f)
 
-    def plot_results(self):
+    def plot_results(self, step: int):
         """
-        Generates and saves plots for the experiment results, including:
-        - Accuracy drop distribution
-        - Accuracy change over steps
-        - Original weight distribution
+        Generates and saves plots for the experiment results after each pruning step.
         """
         accuracy_drops = [entry['accuracy_drop'] for entry in self.metrics['weight_accuracy_drops']]
-        self.plot_histogram(accuracy_drops, 'Accuracy Drop Distribution', 'Accuracy Drop', 'Frequency', 'accuracy_drop')
+        step_accuracy = self.metrics['step_accuracy'][-1]
 
-        step_accuracy = [entry['accuracy'] for entry in self.metrics['step_accuracy']]
-        self.plot_line_plot(range(1, len(step_accuracy) + 1), step_accuracy, 'Accuracy Change Over Steps', 'Step', 'Accuracy', 'accuracy_over_steps')
+        # Accuracy Drop Distribution
+        self.plot_histogram(accuracy_drops, f'Accuracy Drop Distribution at Step {step}', 'Accuracy Drop', 'Frequency', f'accuracy_drop_step_{step}')
 
+        # Accuracy Change Over Steps
+        self.plot_line_plot(range(1, len(step_accuracy) + 1), step_accuracy, f'Accuracy Change Over Steps at Step {step}', 'Step', 'Accuracy', f'accuracy_over_steps_step_{step}')
+
+        # Original Weight Distribution
         original_weights = [entry['original_value'] for entry in self.metrics['weight_accuracy_drops']]
-        self.plot_histogram(original_weights, 'Original Weight Distribution', 'Weight Value', 'Frequency', 'original_weights')
+        self.plot_histogram(original_weights, f'Original Weight Distribution at Step {step}', 'Weight Value', 'Frequency', f'original_weight_distribution_step_{step}')
 
     def plot_histogram(self, data: List[float], title: str, xlabel: str, ylabel: str, filename: str):
         """

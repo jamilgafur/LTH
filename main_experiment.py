@@ -119,15 +119,15 @@ def run_experiments(pruner: IterativeMagnitudePruning, experiment_names: list[st
     Returns:
         None
     """
-    if 'NeuronSimilarity' in experiment_names:
-        print("Starting neuron similarity experiment...")
-        neuron_similarity = NeuronSimilarity(pruner)
-        neuron_similarity.run_experiment()
+    # if 'NeuronSimilarity' in experiment_names:
+    #     print("Starting neuron similarity experiment...")
+    #     neuron_similarity = NeuronSimilarity(pruner)
+    #     neuron_similarity.run_experiment()
 
-    if 'NeuronZeroing' in experiment_names:
-        print("Starting neuron zeroing experiment...")
-        neuron_zeroing = NeuronZeroing(pruner)
-        neuron_zeroing.run_experiment()
+    # if 'NeuronZeroing' in experiment_names:
+    #     print("Starting neuron zeroing experiment...")
+    #     neuron_zeroing = NeuronZeroing(pruner)
+    #     neuron_zeroing.run_experiment()
 
     if 'WeightZeroing' in experiment_names:
         print("Starting weight zeroing experiment...")
