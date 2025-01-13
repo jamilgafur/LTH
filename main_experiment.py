@@ -17,6 +17,16 @@ from experiments.NeuronZeroing import NeuronZeroing
 from experiments.NeuronSimilarity import NeuronSimilarity
 
 def load_mnist(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+    """
+    Loads the MNIST dataset and prepares DataLoader objects for training and testing.
+
+    Args:
+        batch_size (int): The batch size for training and testing datasets (default: 64).
+        num_workers (int): The number of subprocesses to use for data loading (default: 4).
+
+    Returns:
+        tuple: A tuple containing the training and test DataLoader objects.
+    """
     transform = transforms.Compose([
         transforms.Resize((32, 32)),
         transforms.ToTensor(),
@@ -36,6 +46,16 @@ def load_mnist(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, 
     return train_loader, test_loader
 
 def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[float]:
+    """
+    Generates a list of pruning steps based on exponential decay.
+
+    Args:
+        decay_rate (float): The decay rate for each step (default: 0.8).
+        steps (int): The number of pruning steps to generate (default: 21).
+
+    Returns:
+        list: A list of pruning steps representing exponential decay.
+    """
     decay_list = [0]
     n = 1
     for _ in range(steps):
@@ -45,8 +65,26 @@ def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[flo
 
 def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: DataLoader,
                       steps: list[float], pretrain_epochs: int, finetune_epochs: int, device: str, save_dir: str) -> IterativeMagnitudePruning:
-    if os.path.exists(os.path.join(save_dir, 'pruner.pkl')):
-        with open(os.path.join(save_dir, 'pruner.pkl'), 'rb') as f:
+    """
+    Initializes the pruning process, either by loading an existing pruner from checkpoint or by creating a new one.
+
+    Args:
+        model (nn.Module): The model to prune (LeNet, ResNet20, Vgg16).
+        train_loader (DataLoader): The DataLoader for training data.
+        test_loader (DataLoader): The DataLoader for test data.
+        steps (list): List of pruning decay steps.
+        pretrain_epochs (int): The number of epochs to pretrain the model (default: 0).
+        finetune_epochs (int): The number of epochs to finetune the model after pruning (default: 5).
+        device (str): The device to use ('cpu' or 'cuda').
+        save_dir (str): Directory to save or load the pruning checkpoint.
+
+    Returns:
+        IterativeMagnitudePruning: The initialized or loaded pruner object.
+    """
+    pruner_path = os.path.join(save_dir, 'pruner.pkl')
+    
+    if os.path.exists(pruner_path):
+        with open(pruner_path, 'rb') as f:
             pruner = pickle.load(f)
         print("Loaded pruner from checkpoint.")
     else:
@@ -71,6 +109,16 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
     return pruner
 
 def run_experiments(pruner: IterativeMagnitudePruning, experiment_names: list[str]) -> None:
+    """
+    Runs specified experiments (e.g., NeuronSimilarity, NeuronZeroing, WeightZeroing) after pruning.
+
+    Args:
+        pruner (IterativeMagnitudePruning): The pruner object after pruning is completed.
+        experiment_names (list): List of experiment names to run (e.g., ['NeuronSimilarity']).
+
+    Returns:
+        None
+    """
     if 'NeuronSimilarity' in experiment_names:
         print("Starting neuron similarity experiment...")
         neuron_similarity = NeuronSimilarity(pruner)
@@ -87,6 +135,12 @@ def run_experiments(pruner: IterativeMagnitudePruning, experiment_names: list[st
         weight_zeroing.run_experiment()
 
 def parse_args() -> tuple:
+    """
+    Parses command line arguments.
+
+    Returns:
+        tuple: A tuple containing the parsed arguments.
+    """
     parser = argparse.ArgumentParser(description="Run pruning and experiments with a specified model and experiments.")
     
     # Model and experiments arguments
@@ -97,11 +151,11 @@ def parse_args() -> tuple:
                         help="List of experiments to run. Default is all.")
     
     # Pruning related arguments
-    parser.add_argument('--steps', type=float, nargs='+', default=None,
-                        help="List of steps for pruning decay (defaults to exponential decay).")
+    parser.add_argument('--steps', type=int, default=3,
+                        help="Number of steps for pruning decay (defaults to exponential decay).")
     parser.add_argument('--pretrain_epochs', type=int, default=0,
                         help="Number of pretrain epochs. Default is 0.")
-    parser.add_argument('--finetune_epochs', type=int, default=5,
+    parser.add_argument('--finetune_epochs', type=int, default=1,
                         help="Number of finetune epochs after pruning. Default is 5.")
     parser.add_argument('--device', type=str, default='cuda',
                         choices=['cpu', 'cuda'],
@@ -122,6 +176,12 @@ def parse_args() -> tuple:
     return args
 
 def main() -> None:
+    """
+    The main function that runs the pruning process and specified experiments.
+
+    Returns:
+        None
+    """
     args = parse_args()
 
     # Load MNIST data
@@ -138,7 +198,7 @@ def main() -> None:
         raise ValueError(f"Model '{args.model}' is not supported.")
     
     # Initialize pruning process
-    pruner = initialize_pruner(model, train_loader, test_loader, steps=args.steps,
+    pruner = initialize_pruner(model, train_loader, test_loader, steps=exponential_decay_list(steps=args.steps),
                                 pretrain_epochs=args.pretrain_epochs, finetune_epochs=args.finetune_epochs,
                                 device=args.device, save_dir=args.save_dir)
 
