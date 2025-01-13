@@ -37,7 +37,7 @@ class WeightZeroing:
         self.pruner = pruner
         self.model = pruner.model  # Directly use the pruner's model instead of deepcopy
         self.save_dir = os.path.join(pruner.save_dir, 'weight_zeroing')
-        self.sample_fraction = .0001
+        self.sample_fraction = sample_fraction
         self.zeroing_metric = zeroing_metric
         self.logger = logger if logger else logging.getLogger(__name__)
         self.metrics: Dict[str, List] = {'weight_accuracy_drops': [], 'total_accuracy_drops': [], 'zeroed_weights_count': 0, 'step_accuracy': []}
