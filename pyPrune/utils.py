@@ -46,5 +46,5 @@ def plot_loss_accuracy_sparsity(pruner):
     plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust layout to make room for the title
 
     # Save and show plot
-    plt.savefig('sparsity_vs_loss_and_accuracy.png', dpi=300)
+    plt.savefig(pruner.save_dir+ '/sparsity_vs_loss_and_accuracy.png', dpi=300)
     plt.show()
