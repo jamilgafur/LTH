@@ -117,6 +117,26 @@ class IterativeMagnitudePruning:
         logger.info(f"Device: {self.device}, Final sparsity: {self.steps[-1]}, Steps: {self.steps}")
 
     def get_pruneable_named_parameters(self):
+        name = []
+        param = []
+
+        for name, param in self.model.named_parameters():
+            if isinstance(param, self.prunable_layers):
+                name.append(name)
+                param.append(param)
+        return name, param
+    
+    def get_pruneable_named_modules(self):
+        name = []
+        module = []
+
+        for name, module in self.model.named_modules():
+            if isinstance(module, self.prunable_layers):
+                name.append(name)
+                module.append(module)
+        return name, module
+    
+    def get_pruneable_modules(self):
         acceptable_modules = []
         for module in self.model.modules():
             if isinstance(module, self.prunable_layers):
@@ -208,7 +228,7 @@ class IterativeMagnitudePruning:
         logger.debug(f"Unrolling model at {percentage * 100:.2f}% sparsity")
 
         all_weights = []
-        for module in self.get_pruneable_named_parameters():
+        for module in self.get_pruneable_modules():
                 all_weights.append(module.weight.data.flatten())
 
         all_weights = torch.cat(all_weights)
@@ -312,7 +332,7 @@ class IterativeMagnitudePruning:
         if num_prune == 0:
             threshold_value = float('inf')
         # Apply pruning: directly zero out weights below the threshold
-        for module in self.get_pruneable_named_parameters():
+        for module in self.get_pruneable_modules():
                 mask = torch.abs(module.weight.data) >= threshold_value
                 module.weight.data.mul_(mask.float())  # Prune weights
 
@@ -416,7 +436,8 @@ class IterativeMagnitudePruning:
                 loss.backward()
 
                 # Mask the gradients for zeroed-out weights
-                for module in self.get_pruneable_named_parameters():
+                for module in self.get_pruneable_modules():
+                    if module.weight.grad is not None:
                         mask = module.weight.data != 0  # Mask for non-zero weights
                         module.weight.grad *= mask.float()  # Zero out gradients for pruned weights
 
