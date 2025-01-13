@@ -169,11 +169,8 @@ def parse_args() -> tuple:
     
     args = parser.parse_args()
     
-    # Default decay steps if not provided
-    if args.steps is None:
-        args.steps = exponential_decay_list()
     # update save_dir to include model name, pretrain_epochs, and finetune_epochs, also length of steps, and device
-    args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrain_epochs}_finetune{args.finetune_epochs}_steps{len(args.steps)}_{args.device}")
+    args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrain_epochs}_finetune{args.finetune_epochs}_steps{args.steps}_{args.device}")
     
     return args
 
