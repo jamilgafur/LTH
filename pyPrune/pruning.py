@@ -374,19 +374,22 @@ class IterativeMagnitudePruning:
             logger.info(f"Updating best model weights at {self.current_sparsity * 100:.2f}% sparsity with accuracy {accuracy:.2f} %")
             self.best_model_weights = self.model.state_dict()
 
-    def epoch(self, type: str = "train") -> None:
+    def epoch(self, type: str = "train", patience: int = 5) -> None:
         """
-        Trains or evaluates the model depending on the specified mode.
+        Trains or evaluates the model depending on the specified mode, with early stopping.
 
         This method controls whether the model is in training or evaluation mode. 
         It performs training by iterating over the training data and updating the model 
         parameters using backpropagation and the optimizer. During evaluation, it 
         computes the average loss and accuracy on the test data without updating the model.
+        Early stopping is applied based on validation loss.
 
         Parameters:
             type (str): The mode of the operation. It can either be "train" or "eval".
                 - "train" will train the model on the training set.
                 - "eval" will evaluate the model on the test set.
+            patience (int): The number of epochs to wait for improvement in validation loss 
+                            before stopping the training early.
 
         Returns:
             None
@@ -402,6 +405,9 @@ class IterativeMagnitudePruning:
 
         if type == "train":
             self.model.train()
+            epochs_without_improvement = 0
+            best_val_loss = float("inf")
+
             for data, target in tqdm(self.train_loader, desc="Training", unit="batch"):
                 data, target = data.to(self.device), target.to(self.device)
                 self.optimizer.zero_grad()
@@ -418,9 +424,36 @@ class IterativeMagnitudePruning:
                 self.optimizer.step()
                 accuracy = 100. * output.argmax(dim=1).eq(target).sum().item() / target.size(0)
                 
+            # Perform evaluation to get validation loss
+            self.model.eval()
+            total_loss = 0.0
+            correct = 0
+            with torch.no_grad():
+                for data, target in tqdm(self.test_loader, desc="Evaluating", unit="batch"):
+                    data, target = data.to(self.device), target.to(self.device)
+                    output = self.model(data)
+                    total_loss += self.criterion(output, target).item()
+                    pred = output.argmax(dim=1, keepdim=True)
+                    correct += pred.eq(target.view_as(pred)).sum().item()
+
+            total_loss /= len(self.test_loader.dataset)
+            accuracy = 100. * correct / len(self.test_loader.dataset)
+
+            # Early stopping logic
+            if total_loss < best_val_loss:
+                best_val_loss = total_loss
+                epochs_without_improvement = 0  # Reset the counter if there's improvement
+            else:
+                epochs_without_improvement += 1
+
+            if epochs_without_improvement >= patience:
+                logger.info(f"Early stopping triggered. No improvement in validation loss for {patience} epochs.")
+                return  # Stop training if no improvement for 'patience' epochs
+
             # Update the metrics dictionary
-            self.update_metrics(loss.item(), accuracy, next(self.model.parameters()).grad)
+            self.update_metrics(total_loss, accuracy, None)
             logger.info(f"Training step complete, Loss: {loss.item()}")
+
         elif type == "eval":
             self.model.eval()
             total_loss = 0.0
@@ -444,7 +477,7 @@ class IterativeMagnitudePruning:
         logger.debug(f"Current sparsity: {self.current_sparsity}")
         logger.debug(f"Accuracy: {accuracy}")
 
-        clean_memory()  # Clean up memory after each epoch 
+        clean_memory()  # Clean up memory after each epoch
 
     def update_pickle(self) -> None:
         """
