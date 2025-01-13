@@ -153,15 +153,15 @@ def parse_args() -> tuple:
     # Pruning related arguments
     parser.add_argument('--steps', type=int, default=3,
                         help="Number of steps for pruning decay (defaults to exponential decay).")
-    parser.add_argument('--pretrain_epochs', type=int, default=0,
+    parser.add_argument('--pretrain_epochs', type=int, default=10,
                         help="Number of pretrain epochs. Default is 0.")
-    parser.add_argument('--finetune_epochs', type=int, default=1,
+    parser.add_argument('--finetune_epochs', type=int, default=10,
                         help="Number of finetune epochs after pruning. Default is 5.")
     parser.add_argument('--device', type=str, default='cuda',
                         choices=['cpu', 'cuda'],
                         help="Device to use for training and pruning. Default is 'cuda'.")
-    parser.add_argument('--save_dir', type=str, default='pruning_checkpoints',
-                        help="Directory to save pruning checkpoints. Default is 'pruning_checkpoints'.")
+    parser.add_argument('--save_dir', type=str, default='pruning_checkpoints/',
+                        help="Directory to save pruning checkpoints. Default is 'pruning_checkpoints/'.")
     
     # Other arguments
     parser.add_argument('--batch_size', type=int, default=64, help="Batch size for training. Default is 64.")
@@ -172,6 +172,8 @@ def parse_args() -> tuple:
     # Default decay steps if not provided
     if args.steps is None:
         args.steps = exponential_decay_list()
+    # update save_dir to include model name, pretrain_epochs, and finetune_epochs, also length of steps, and device
+    args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrain_epochs}_finetune{args.finetune_epochs}_steps{len(args.steps)}_{args.device}")
     
     return args
 
