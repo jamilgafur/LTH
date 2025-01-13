@@ -45,9 +45,9 @@ class WeightZeroing:
         os.makedirs(self.save_dir, exist_ok=True)
 
         # Check if pruner state already exists
-        if os.path.exists(self.save_dir + '/pruner.pkl'):
-            with open(self.save_dir + '/pruner.pkl', 'rb') as f:
-                self.pruner = pickle.load(f)
+        self.checkpoint_file = os.path.join(self.save_dir, 'weight_zeroing.pkl')
+        if os.path.exists(self.checkpoint_file):
+            self.load_checkpoint()
 
     def evaluate_performance(self) -> float:
         """
@@ -128,6 +128,9 @@ class WeightZeroing:
             experiment_metrics[step] = self.metrics
             self.plot_results(step)  # Plot results after each step
 
+            # Periodically clear metrics to prevent memory bloat
+            self.metrics = {key: [] for key in self.metrics}
+
         return self.metrics
 
     def collect_weights(self) -> (int, List[float]):
@@ -170,7 +173,7 @@ class WeightZeroing:
         with open(save_path, 'w') as f:
             json.dump(self.metrics, f)
 
-        with open(os.path.join(self.save_dir, 'weight_zeroing.pkl'), 'wb') as f:
+        with open(self.checkpoint_file, 'wb') as f:
             pickle.dump(self, f)
 
     def plot_results(self, step: int):
@@ -228,3 +231,11 @@ class WeightZeroing:
         plt.ylabel(ylabel)
         plt.grid(True)
         plt.savefig(os.path.join(self.save_dir, f'{filename}.png'))
+
+    def load_checkpoint(self):
+        """Load checkpoint."""
+        self.logger.info(f"Resuming from checkpoint: {self.checkpoint_file}")
+        with open(self.checkpoint_file, 'rb') as f:
+            checkpoint = pickle.load(f)
+            self.model.load_state_dict(checkpoint.model.state_dict())
+            self.metrics = checkpoint.metrics

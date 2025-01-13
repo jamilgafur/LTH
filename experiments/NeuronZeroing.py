@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import os
-import json
 import logging
 import pickle
 from pyPrune.utils import *
@@ -9,12 +8,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from sklearn.metrics import precision_recall_fscore_support
-from copy import deepcopy
+
 
 class NeuronZeroing:
     def __init__(self, pruner, sample_fraction=0.01, zeroing_metric='accuracy', logger=None):
         self.pruner = pruner
-        self.model = deepcopy(pruner.model)
+        self.model = pruner.model  # No need for deepcopy, use the reference directly
         self.prunerable_layer = self.pruner.prunable_layers
         self.save_dir = os.path.join(pruner.save_dir, 'neuron_zeroing')
         os.makedirs(self.save_dir, exist_ok=True)
@@ -26,10 +25,11 @@ class NeuronZeroing:
             'sparsity_metrics': [],
             'precision_recall_fscore': [],
             'loss_metrics': [],
-            'layer_accuracy_drops': []
+            'layer_accuracy_drops': [],
+            'loss_changes': []  # To track loss changes after zeroing each neuron
         }
         self.checkpoint_file = os.path.join(self.save_dir, 'neuron_zeroing.pkl')
-        
+
         if os.path.exists(self.checkpoint_file):
             self.load_checkpoint()
         else:
@@ -60,7 +60,7 @@ class NeuronZeroing:
                 y_pred.extend(predicted.cpu().numpy())
                 correct += (predicted == target).sum().item()
                 total += target.size(0)
-                
+
         accuracy = correct / total
         precision, recall, fscore, _ = precision_recall_fscore_support(y_true, y_pred, average=None)
         return accuracy, total_loss / total_samples, {'precision': precision, 'recall': recall, 'fscore': fscore}
@@ -89,13 +89,15 @@ class NeuronZeroing:
             sampled_neurons = [layer for name, layer in zip(names, layers) if hasattr(layer, 'out_features')]
             
             for layer in tqdm(sampled_neurons, desc="Zeroing neurons in layers", unit="layer"):
-                original_weights = layer.weight.clone()
+                original_weights = layer.weight.data.clone()  # Use data to avoid creating unnecessary tensor objects
                 for i in tqdm(range(layer.out_features), desc=f"Zeroing neurons in {layer.__class__.__name__}", unit="neuron", leave=False):
                     layer.weight.data[i, :] = 0  # Zero the neuron
                     accuracy_after, loss_after, metrics_after = self.evaluate_metrics()
                     sparsity_after = self.compute_sparsity()
 
                     accuracy_drop = baseline_accuracy - accuracy_after
+                    loss_change = baseline_loss - loss_after  # Calculate the loss change
+
                     self.metrics['neuron_accuracy_drops'].append({
                         'layer_name': layer.__class__.__name__, 'neuron_index': i, 'accuracy_drop': accuracy_drop
                     })
@@ -108,26 +110,33 @@ class NeuronZeroing:
                     self.metrics['loss_metrics'].append({
                         'layer_name': layer.__class__.__name__, 'neuron_index': i, 'loss': loss_after
                     })
-                    layer.weight.data[i, :] = original_weights[i]
+                    self.metrics['loss_changes'].append({
+                        'layer_name': layer.__class__.__name__, 'neuron_index': i, 'loss_change': loss_change
+                    })
+
+                    layer.weight.data[i, :] = original_weights[i]  # Restore weights after testing
 
                 self.save_checkpoint()
 
             metrics[step] = self.metrics
             self.plot_results(step)  # Plot results after each step
 
-        self.metrics = metrics
-        return self.metrics
+            # Periodically clear metrics to prevent memory bloat
+            self.metrics = {key: [] for key in self.metrics}
+
+        return metrics
 
     def plot_results(self, step):
         """Plot the results after each step of the neuron zeroing experiment."""
         accuracy_drops = [entry['accuracy_drop'] for entry in self.metrics['neuron_accuracy_drops']]
         sparsities = [entry['sparsity'] for entry in self.metrics['sparsity_metrics']]
         layer_accuracy_drops = {layer_name: [] for layer_name in set([entry['layer_name'] for entry in self.metrics['layer_accuracy_drops']])}
+        loss_changes = [entry['loss_change'] for entry in self.metrics['loss_changes']]  # Track loss changes
 
         for entry in self.metrics['layer_accuracy_drops']:
             layer_accuracy_drops[entry['layer_name']].append(entry['accuracy_drop'])
 
-        plt.figure(figsize=(14, 10))
+        plt.figure(figsize=(14, 12))
 
         # Plot accuracy drop vs sparsity
         plt.subplot(2, 3, 1)
@@ -152,9 +161,16 @@ class NeuronZeroing:
         plt.ylabel('Frequency')
         plt.legend()
 
+        # Plot loss change histogram
+        plt.subplot(2, 3, 4)
+        plt.hist(loss_changes, bins=30, color='orange', alpha=0.7)
+        plt.title(f'Step {step}: Loss Change Distribution')
+        plt.xlabel('Loss Change')
+        plt.ylabel('Frequency')
+
         # Plot loss vs sparsity
         loss_metrics = [entry['loss'] for entry in self.metrics['loss_metrics']]
-        plt.subplot(2, 3, 4)
+        plt.subplot(2, 3, 5)
         plt.scatter(sparsities, loss_metrics, alpha=0.5)
         plt.title(f'Step {step}: Loss vs Sparsity')
         plt.xlabel('Sparsity')
