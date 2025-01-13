@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 from pyPrune.models.LeNet import LeNet
 from pyPrune.models.ResNet20 import ResNet20
-from pyPrune.models.Vgg16 import Vgg16
+from pyPrune.models.Vgg16 import VGG16_CIFAR10 as Vgg16
 from pyPrune.pruning import IterativeMagnitudePruning
 from pyPrune.utils import plot_loss_accuracy_sparsity
 from experiments.WeightZeroing import WeightZeroing
