@@ -105,7 +105,7 @@ class WeightZeroing:
             zeroed_weights, step_accuracy = 0, []
             for idx in tqdm(sampled_indices, desc="Zeroing weights"):
                 param_idx = 0
-                for name, param in self.model.named_parameters():
+                for name, param in self.pruner.get_pruneable_named_parameters():
                     if 'weight' in name:
                         weight_tensor = param.view(-1)
                         if idx < param_idx + weight_tensor.size(0):
@@ -137,7 +137,7 @@ class WeightZeroing:
             and a list of all weight values.
         """
         total_weights, weight_list = 0, []
-        for name, param in self.model.named_parameters():
+        for name, param in self.pruner.get_pruneable_named_parameters():
             if 'weight' in name:
                 total_weights += param.numel()
                 weight_list.extend(param.view(-1).tolist())

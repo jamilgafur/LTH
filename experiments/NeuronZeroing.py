@@ -88,7 +88,7 @@ class NeuronZeroing:
         """
         total_params = 0
         zero_params = 0
-        for name, param in self.model.named_parameters():
+        for name, param in self.pruner.get_prunable_named_parameters():
             total_params += param.numel()  # Get total number of parameters in the layer
             zero_params += (param == 0).sum().item()  # Count number of zero parameters
         sparsity = zero_params / total_params  # Calculate sparsity
@@ -163,10 +163,9 @@ class NeuronZeroing:
             sampled_neurons = []
 
             # Gather neurons from all fully connected (Linear) layers
-            for name, layer in self.model.named_modules():
-                if isinstance(layer, nn.Linear):
-                    total_neurons += layer.out_features
-                    sampled_neurons.append(layer)  # Add the layer to the list of layers to sample neurons from
+            for name, layer in self.pruner.get_pruneable_named_modules():
+                total_neurons += layer.out_features
+                sampled_neurons.append(layer)  # Add the layer to the list of layers to sample neurons from
 
             self.logger.info(f"Zeroing neurons from {total_neurons} total neurons.")
 
