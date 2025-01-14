@@ -2,7 +2,7 @@
 #SBATCH --job-name=prune_${model}           # Job name
 #SBATCH --output=prune_${model}.out         # Output file
 #SBATCH --ntasks=1                         # Number of tasks
-#SBATCH --time=24:00:00                    # Max runtime (24 hours)
+#SBATCH --time=4:00:00                    # Max runtime (24 hours)
 #SBATCH --mem=16GB                         # Memory allocation
 #SBATCH --gpus=1                           # Number of GPUs
 #SBATCH --account=modularai
