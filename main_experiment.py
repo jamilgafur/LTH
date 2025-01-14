@@ -147,16 +147,16 @@ def parse_args() -> tuple:
     parser.add_argument('--model', type=str, default='LeNet', choices=['LeNet', 'ResNet20', 'Vgg16'],
                         help="The model architecture to use for pruning. Default is 'LeNet'.")
     parser.add_argument('--experiments', type=str, nargs='+', default=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing'],
-                        choices=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing'],
+                        choices=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing', "None"],
                         help="List of experiments to run. Default is all.")
     
     # Pruning related arguments
-    parser.add_argument('--steps', type=int, default=3,
+    parser.add_argument('--steps', type=int, default=21,
                         help="Number of steps for pruning decay (defaults to exponential decay).")
     parser.add_argument('--pretrain_epochs', type=int, default=10,
-                        help="Number of pretrain epochs. Default is 0.")
+                        help="Number of pretrain epochs. Default is 10.")
     parser.add_argument('--finetune_epochs', type=int, default=10,
-                        help="Number of finetune epochs after pruning. Default is 5.")
+                        help="Number of finetune epochs after pruning. Default is 10.")
     parser.add_argument('--device', type=str, default='cuda',
                         choices=['cpu', 'cuda'],
                         help="Device to use for training and pruning. Default is 'cuda'.")
@@ -170,8 +170,9 @@ def parse_args() -> tuple:
     args = parser.parse_args()
     
     # update save_dir to include model name, pretrain_epochs, and finetune_epochs, also length of steps, and device
-    args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrain_epochs}_finetune{args.finetune_epochs}_steps{args.steps}_{args.device}")
-    
+    args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrain_epochs}_finetune{args.finetune_epochs}_steps{args.steps}_batch{args.batch_size}_device{args.device}")
+    # print the experiment configuration
+    print(f"Experiment configuration: {args.experiments}")
     return args
 
 def main() -> None:

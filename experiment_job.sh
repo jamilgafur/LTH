@@ -7,11 +7,9 @@
 #SBATCH --gpus=1                                     # Number of GPUs
 
 # Load necessary modules (e.g., Python, CUDA, etc.)
-module load python/3.8
-module load cuda/11.2
+module load conda
+conda activate /scratch/jgafur/LTH_Conda_ENV/LTH_exp_env
 
-# Activate virtual environment or set up environment
-source /path/to/your/virtualenv/bin/activate
 
 # Run the experiment job based on the pruning result
-python main_experiment.py --model ${MODEL} --experiment ${EXPERIMENT}
+python main_experiment.py --model ${MODEL} --experiment ${EXPERIMENT} --save_dir ${SAVE_DIR}
