@@ -173,6 +173,8 @@ def parse_args() -> tuple:
     args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrain_epochs}_finetune{args.finetune_epochs}_steps{args.steps}_batch{args.batch_size}_device{args.device}")
     # print the experiment configuration
     print(f"Experiment configuration: {args.experiments}")
+    
+    print(f"all arguments: {args}")
     return args
 
 def main() -> None:
