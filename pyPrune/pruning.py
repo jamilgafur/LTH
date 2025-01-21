@@ -10,8 +10,10 @@ from tqdm import tqdm
 import logging
 import json
 from pyPrune.utils import *
+import datetime
 
-# Set up logging
+# if log file already exists load it and append else create a new one
+
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger()
 
@@ -79,6 +81,10 @@ class IterativeMagnitudePruning:
         self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
         self.finetune_epochs = finetune_epochs
         self.pretrain_epochs = pretrain_epochs
+        
+        self.current_finetune_epoch = 0
+        self.current_pretrain_epoch = 0
+        
         self.optimizer = optimizer
         self.criterion = criterion
         self.learning_rate = learning_rate
@@ -108,15 +114,32 @@ class IterativeMagnitudePruning:
             self.steps = self.steps[1:]  # Remove the first element (0) from steps
         
         # Log the initialization details with a file handler
+        if os.path.exists(self.save_dir + "/" + file_handler):
+            # get the current time and append it to the file name
+            file_handler = file_handler.split(".")
+            file_handler = file_handler[0] + "_" + str(datetime.datetime.now()) + "." + file_handler[1]
         file_handler = logging.FileHandler(self.save_dir + "/" + file_handler)
         file_handler.setLevel(logging.DEBUG)
         logger.addHandler(file_handler)
 
         self.logger = logger
+        self.complete = False
         
         logger.info("IterativeMagnitudePruning initialized.")
         logger.info(f"Device: {self.device}, Final sparsity: {self.steps[-1]}, Steps: {self.steps}")
 
+    def delete_pickle(self) -> None:
+        """
+        Deletes all pickle files created during the pruning process.
+        
+        This method deletes all pickle files created during the pruning process. It is useful
+        """
+        if os.path.exists(self.pickle_name):
+            os.remove(self.pickle_name)
+            logger.info(f"Deleted pickle file: {self.pickle_name}")
+        else:
+            logger.info(f"No pickle file found at: {self.pickle_name}")
+            
     def setup_save_dir(self) -> None:
         """
         Sets up the directory where model checkpoints will be saved during the pruning process.
@@ -541,66 +564,80 @@ class IterativeMagnitudePruning:
             - The method will handle the saving of model checkpoints and metrics.
             - If the number of pretrain epochs is greater than 0, pretraining will be done before pruning starts.
         """
+        try:
+            self.initial_parameters = self.save_initial_parameters()
 
-        self.initial_parameters = self.save_initial_parameters()
+            if self.pretrain_epochs > 0:
+                logger.info("Starting pretraining...")
+                for pretrain_epoch_steps in range(self.pretrain_epochs):
+                    if pretrain_epoch_steps < self.pretrain_epochs:
+                        logger.info(f"model already pre-trained at step {pretrain_epoch_steps}, skipping...")
+                    else:
+                        logger.info(f"Pretraining the model at step {pretrain_epoch_steps + 1}...")
+                        self.pretrain_epochs = pretrain_epoch_steps
+                        logger.info(f"Pretraining the model at step {pretrain_epoch_steps + 1}...")
+                        self.epoch("train")
+                    
+            # Update initial weights after pretraining for the "rewinding" effect
+            self.initial_parameters = self.save_initial_parameters()
+            self.best_model_weights = self.model.state_dict()
+            logger.info(f"Starting pruning with {self.steps} steps...")
 
-        if self.pretrain_epochs > 0:
-            logger.info("Starting pretraining...")
-            for pretrain_epoch_steps in range(self.pretrain_epochs):
-                logger.info(f"Pretraining the model at step {pretrain_epoch_steps + 1}...")
-                self.epoch("train")
-                
-        # Update initial weights after pretraining for the "rewinding" effect
-        self.initial_parameters = self.save_initial_parameters()
-        self.best_model_weights = self.model.state_dict()
-        logger.info(f"Starting pruning with {self.steps} steps...")
+            for step in tqdm(self.steps, desc="Pruning Steps", unit="step"):
+                if step < self.current_finetune_epoch:
+                    logger.info(f"model already pruned at step {step}, skipping...")
+                else:
+                    self.current_finetune_epoch = step
+                    logger.info(f"Starting pruning step: {step * 100:.2f}% sparsity")
 
-        for step in tqdm(self.steps, desc="Pruning Steps", unit="step"):
-            logger.info(f"Starting pruning step: {step * 100:.2f}% sparsity")
+                    # Retrain the model  
+                    logger.info("Fine-tuning the model...")
+                    if self.finetune_epochs > 0:    
+                        for finetune_epoch_steps in range(self.finetune_epochs):
+                            logger.info(f"Fine-tuning the model at step {finetune_epoch_steps + 1}...")
+                            self.epoch("train")
 
-            # Retrain the model  
-            logger.info("Fine-tuning the model...")
-            if self.finetune_epochs > 0:    
-                for finetune_epoch_steps in range(self.finetune_epochs):
-                    logger.info(f"Fine-tuning the model at step {finetune_epoch_steps + 1}...")
-                    self.epoch("train")
+                    # Prune the model
+                    logger.info(f"Pruning the model at {step * 100:.2f}% sparsity...")
+                    self.magnitude_prune(step)
 
-            # Prune the model
-            logger.info(f"Pruning the model at {step * 100:.2f}% sparsity...")
-            self.magnitude_prune(step)
+                    # Update the current sparsity
+                    self.assert_sparsity(step) 
 
-            # Update the current sparsity
-            self.assert_sparsity(step) 
+                    logger.info("Updating optimizer to reflect pruned weights...")
+                    self.save_checkpoint(step, os.path.join(self.save_dir, f"pruned_model_step_{float(step):.4f}.pth"))
+                    
+                    # Add metrics for pruning step
+                    self.metrics['step'].append(step)
+                    
+                    
+                    self.epoch("eval")
+                    # save the current weights
+                    logger.info(f"Saving weights at {step * 100:.2f}% sparsity...")
+                    self.weight_history.append(self.model.state_dict())
 
-            logger.info("Updating optimizer to reflect pruned weights...")
-            self.save_checkpoint(step, os.path.join(self.save_dir, f"pruned_model_step_{int(step * 100)}.pth"))
-            
-            # Add metrics for pruning step
-            self.metrics['step'].append(step)
-            
-            
-            self.epoch("eval")
-            # save the current weights
-            logger.info(f"Saving weights at {step * 100:.2f}% sparsity...")
-            self.weight_history.append(self.model.state_dict())
+                    # reset to the rewind weights
+                    logger.info(f"Resetting weights to rewind state at {self.pretrain_epochs}, currently at  {step * 100:.2f}% sparsity...")
+                    self.reset_weights()
+                    logger.info(f"Pickling at {step * 100:.2f}% sparsity...")
+                    self.update_pickle()
+                    print("\n\n\n")
 
-            # reset to the rewind weights
-            logger.info(f"Resetting weights to rewind state at {self.pretrain_epochs}, currently at  {step * 100:.2f}% sparsity...")
-            self.reset_weights()
-            logger.info(f"Pickling at {step * 100:.2f}% sparsity...")
+            logger.info("Pruning complete.")
+            # save the metrics as a json
+            logger.info("Saving metrics...")
+            self.save_metrics()
+            logger.info("Metrics saved to pruning_metrics.json")     
+
             self.update_pickle()
-            print("\n\n\n")
+            logger.info("Pruner saved as pickle.")
 
-        logger.info("Pruning complete.")
-        # save the metrics as a json
-        logger.info("Saving metrics...")
-        self.save_metrics()
-        logger.info("Metrics saved to pruning_metrics.json")     
-
-        self.update_pickle()
-        logger.info("Pruner saved as pickle.")
-
-        logger.info("Pruning process complete.")
+            logger.info("Pruning process complete.")
+            self.complete = True
+        except Exception as e:
+            logger.error(f"Error during pruning: {str(e)}")
+            logger.error("Deleting pickle file...")
+            self.delete_pickle()
 
     def save_metrics(self) -> None:
         """

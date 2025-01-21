@@ -20,7 +20,7 @@ class WeightZeroing:
 
     def __init__(self, 
                  pruner: 'IterativeMagnitudePruning', 
-                 sample_fraction: float = 0.01, 
+                 sample_fraction: float = 0.001, 
                  zeroing_metric: str = 'accuracy', 
                  logger: Optional[logging.Logger] = None, 
                  save_plots: bool = True):
@@ -35,8 +35,10 @@ class WeightZeroing:
             save_plots (bool): Whether to save plots after the experiment.
         """
         self.pruner = pruner
+        self.experiment_metrics: Dict[str, Dict] = {}
+
         self.model = pruner.model  # Directly use the pruner's model instead of deepcopy
-        self.save_dir = os.path.join(pruner.save_dir, 'weight_zeroing')
+        self.save_dir = os.path.join(pruner.save_dir, f"weightZeroing_{sample_fraction}_{zeroing_metric}")
         self.sample_fraction = sample_fraction
         self.zeroing_metric = zeroing_metric
         self.logger = logger if logger else logging.getLogger(__name__)
@@ -92,47 +94,51 @@ class WeightZeroing:
         Returns:
             Dict[str, List]: The collected metrics during the experiment.
         """
-        experiment_metrics: Dict[str, Dict] = {}
-        for weight, step in zip(self.pruner.weight_history, self.pruner.steps):
-            self.model.load_state_dict(weight)
-            self.model.eval().to(self.pruner.device)
+        try:
+            for weight, step in zip(self.pruner.weight_history, self.pruner.steps):
+                self.model.load_state_dict(weight)
+                self.model.eval().to(self.pruner.device)
 
-            baseline_accuracy = self.evaluate_performance()
-            total_weights, weight_list = self.collect_weights()
+                baseline_accuracy = self.evaluate_performance()
+                total_weights, weight_list = self.collect_weights()
 
-            num_sampled_weights = int(self.sample_fraction * total_weights)
-            sampled_indices = random.sample(range(len(weight_list)), num_sampled_weights)
+                num_sampled_weights = int(self.sample_fraction * total_weights)
+                sampled_indices = random.sample(range(len(weight_list)), num_sampled_weights)
 
-            zeroed_weights, step_accuracy = 0, []
-            for idx in tqdm(sampled_indices, desc="Zeroing weights"):
-                param_idx = 0
-                # Use the helper function to get prunable parameters
-                prunable_names, prunable_params = get_pruneable_named_parameters(self.model, self.pruner.prunable_layers)
-                
-                for name, param in zip(prunable_names, prunable_params):
-                    if 'weight' in name:
-                        weight_tensor = param.view(-1)
-                        if idx < param_idx + weight_tensor.size(0):
-                            original_value = self.zero_weight(weight_tensor, idx - param_idx)
-                            accuracy_after_zeroing = self.evaluate_performance()
-                            accuracy_drop = baseline_accuracy - accuracy_after_zeroing
-                            self.track_metrics(name, original_value, accuracy_drop)
-                            step_accuracy.append(accuracy_after_zeroing)
-                            zeroed_weights += 1
-                            break
-                        param_idx += weight_tensor.size(0)
+                zeroed_weights, step_accuracy = 0, []
+                for idx in tqdm(sampled_indices, desc="Zeroing weights"):
+                    param_idx = 0
+                    # Use the helper function to get prunable parameters
+                    prunable_names, prunable_params = get_pruneable_named_parameters(self.model, self.pruner.prunable_layers)
+                    
+                    for name, param in zip(prunable_names, prunable_params):
+                        if 'weight' in name:
+                            weight_tensor = param.view(-1)
+                            if idx < param_idx + weight_tensor.size(0):
+                                original_value = self.zero_weight(weight_tensor, idx - param_idx)
+                                accuracy_after_zeroing = self.evaluate_performance()
+                                accuracy_drop = baseline_accuracy - accuracy_after_zeroing
+                                self.track_metrics(name, original_value, accuracy_drop)
+                                step_accuracy.append(accuracy_after_zeroing)
+                                zeroed_weights += 1
+                                break
+                            param_idx += weight_tensor.size(0)
 
-            self.metrics['step_accuracy'].append(step_accuracy)
-            self.save_metrics()
+                self.metrics['step_accuracy'].append(step_accuracy)
+                self.save_metrics()
 
-            experiment_metrics[step] = self.metrics
-            self.plot_results(step)  # Plot results after each step
-            # clear the metrics for the next step
-            self.metrics = {'weight_accuracy_drops': [], 'total_accuracy_drops': [], 'zeroed_weights_count': 0, 'step_accuracy': []}
+                self.experiment_metrics[step] = self.metrics
+                self.plot_results(step)  # Plot results after each step
+                # clear the metrics for the next step
+                self.metrics = {'weight_accuracy_drops': [], 'total_accuracy_drops': [], 'zeroed_weights_count': 0, 'step_accuracy': []}
 
 
-        return experiment_metrics
-
+            return self.experiment_metrics
+        except Exception as e:
+            self.logger.error(f"An error occurred during Weight Zeroing experiment: {e}")
+            self.logger.error("Experiment terminated.")
+            return {}
+        
     def collect_weights(self) -> (int, List[float]):
         """
         Collects all weights from the model and returns the total weight count 
@@ -171,9 +177,9 @@ class WeightZeroing:
         Saves the metrics from the weight zeroing experiment to a JSON file and the current 
         WeightZeroing object to a pickle file for later use or recovery.
         """
-        save_path = os.path.join(self.save_dir, 'weight_zeroing_metrics.json')
+        save_path = os.path.join(self.save_dir, f"weight_zeroing_metrics.json")
         with open(save_path, 'w') as f:
-            json.dump(self.metrics, f)
+            json.dump(self.experiment_metrics, f, indent=4)
 
         with open(self.checkpoint_file, 'wb') as f:
             pickle.dump(self, f)

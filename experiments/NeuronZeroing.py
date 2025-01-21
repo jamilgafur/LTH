@@ -1,3 +1,4 @@
+import json
 import torch
 import torch.nn as nn
 import os
@@ -10,14 +11,14 @@ from tqdm import tqdm
 from sklearn.metrics import precision_recall_fscore_support
 
 
+
 class NeuronZeroing:
-    def __init__(self, pruner, sample_fraction=0.01, zeroing_metric='accuracy', logger=None):
+    def __init__(self, pruner, zeroing_metric='accuracy', logger=None):
         self.pruner = pruner
         self.model = pruner.model  # No need for deepcopy, use the reference directly
         self.prunerable_layer = self.pruner.prunable_layers
-        self.save_dir = os.path.join(pruner.save_dir, 'neuron_zeroing')
+        self.save_dir = os.path.join(pruner.save_dir, f"neuronZeroing_{zeroing_metric}")
         os.makedirs(self.save_dir, exist_ok=True)
-        self.sample_fraction = sample_fraction
         self.zeroing_metric = zeroing_metric
         self.logger = logger if logger else logging.getLogger(__name__)
         self.metrics = {
@@ -30,6 +31,7 @@ class NeuronZeroing:
         }
         self.checkpoint_file = os.path.join(self.save_dir, 'neuron_zeroing.pkl')
 
+        # Load checkpoint if exists
         if os.path.exists(self.checkpoint_file):
             self.load_checkpoint()
         else:
@@ -37,7 +39,6 @@ class NeuronZeroing:
             logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
             self.metadata = {
                 'model_architecture': str(self.model),
-                'sample_fraction': self.sample_fraction,
                 'zeroing_metric': self.zeroing_metric
             }
 
@@ -74,58 +75,69 @@ class NeuronZeroing:
         return zero_params / total_params
 
     def run_experiment(self):
-        metrics = {}  
-        for weights, step in zip(self.pruner.weight_history, self.pruner.steps):
-            self.logger.info(f"Processing step {step}...")
-            self.model.load_state_dict(weights)
-            self.model.to(self.pruner.device)
-            baseline_accuracy, baseline_loss, baseline_metrics = self.evaluate_metrics()
-            baseline_sparsity = self.compute_sparsity()
+        try:
+            metrics = {}  
+            last_step = self.metadata.get('last_step', 0)  # Get the last completed step from metadata
 
-            self.logger.info(f"Baseline Accuracy: {baseline_accuracy:.4f}, Loss: {baseline_loss:.4f}, Sparsity: {baseline_sparsity:.4f}")
-            self.logger.info(f"Precision: {baseline_metrics['precision']}, Recall: {baseline_metrics['recall']}, F1-Score: {baseline_metrics['fscore']}")
+            for idx, (weights, step) in enumerate(zip(self.pruner.weight_history, self.pruner.steps)):
+                if step <= last_step:
+                    continue  # Skip steps that have already been processed
 
-            names, layers = get_pruneable_named_modules(self.model, self.prunerable_layer)
-            sampled_neurons = [layer for name, layer in zip(names, layers) if hasattr(layer, 'out_features')]
-            
-            for layer in tqdm(sampled_neurons, desc="Zeroing neurons in layers", unit="layer"):
-                original_weights = layer.weight.data.clone()  # Use data to avoid creating unnecessary tensor objects
-                for i in tqdm(range(layer.out_features), desc=f"Zeroing neurons in {layer.__class__.__name__}", unit="neuron", leave=False):
-                    layer.weight.data[i, :] = 0  # Zero the neuron
-                    accuracy_after, loss_after, metrics_after = self.evaluate_metrics()
-                    sparsity_after = self.compute_sparsity()
+                self.logger.info(f"Processing step {step}...")
+                self.model.load_state_dict(weights)
+                self.model.to(self.pruner.device)
+                baseline_accuracy, baseline_loss, baseline_metrics = self.evaluate_metrics()
+                baseline_sparsity = self.compute_sparsity()
 
-                    accuracy_drop = baseline_accuracy - accuracy_after
-                    loss_change = baseline_loss - loss_after  # Calculate the loss change
+                self.logger.info(f"Baseline Accuracy: {baseline_accuracy:.4f}, Loss: {baseline_loss:.4f}, Sparsity: {baseline_sparsity:.4f}")
+                self.logger.info(f"Precision: {baseline_metrics['precision']}, Recall: {baseline_metrics['recall']}, F1-Score: {baseline_metrics['fscore']}")
 
-                    self.metrics['neuron_accuracy_drops'].append({
-                        'layer_name': layer.__class__.__name__, 'neuron_index': i, 'accuracy_drop': accuracy_drop
-                    })
-                    self.metrics['sparsity_metrics'].append({
-                        'layer_name': layer.__class__.__name__, 'neuron_index': i, 'sparsity': sparsity_after
-                    })
-                    self.metrics['precision_recall_fscore'].append({
-                        'layer_name': layer.__class__.__name__, 'neuron_index': i, **metrics_after
-                    })
-                    self.metrics['loss_metrics'].append({
-                        'layer_name': layer.__class__.__name__, 'neuron_index': i, 'loss': loss_after
-                    })
-                    self.metrics['loss_changes'].append({
-                        'layer_name': layer.__class__.__name__, 'neuron_index': i, 'loss_change': loss_change
-                    })
+                names, layers = get_pruneable_named_modules(self.model, self.prunerable_layer)
+                sampled_neurons = [layer for name, layer in zip(names, layers) if hasattr(layer, 'out_features')]
+                
+                for layer in tqdm(sampled_neurons, desc="Zeroing neurons in layers", unit="layer"):
+                    original_weights = layer.weight.data.clone()  # Use data to avoid creating unnecessary tensor objects
+                    for i in tqdm(range(layer.out_features), desc=f"Zeroing neurons in {layer.__class__.__name__}", unit="neuron", leave=False):
+                        layer.weight.data[i, :] = 0  # Zero the neuron
+                        accuracy_after, loss_after, metrics_after = self.evaluate_metrics()
+                        sparsity_after = self.compute_sparsity()
 
-                    layer.weight.data[i, :] = original_weights[i]  # Restore weights after testing
+                        accuracy_drop = baseline_accuracy - accuracy_after
+                        loss_change = baseline_loss - loss_after  # Calculate the loss change
 
-                self.save_checkpoint()
+                        self.metrics['neuron_accuracy_drops'].append({
+                            'layer_name': layer.__class__.__name__, 'neuron_index': i, 'accuracy_drop': accuracy_drop
+                        })
+                        self.metrics['sparsity_metrics'].append({
+                            'layer_name': layer.__class__.__name__, 'neuron_index': i, 'sparsity': sparsity_after
+                        })
+                        self.metrics['precision_recall_fscore'].append({
+                            'layer_name': layer.__class__.__name__, 'neuron_index': i, **metrics_after
+                        })
+                        self.metrics['loss_metrics'].append({
+                            'layer_name': layer.__class__.__name__, 'neuron_index': i, 'loss': loss_after
+                        })
+                        self.metrics['loss_changes'].append({
+                            'layer_name': layer.__class__.__name__, 'neuron_index': i, 'loss_change': loss_change
+                        })
 
-            metrics[step] = self.metrics
-            self.plot_results(step)  # Plot results after each step
+                        layer.weight.data[i, :] = original_weights[i]  # Restore weights after testing
 
-            # Periodically clear metrics to prevent memory bloat
-            self.metrics = {key: [] for key in self.metrics}
+                    self.save_checkpoint(step)  # Save checkpoint after processing each layer
 
-        return metrics
+                metrics[step] = self.metrics
+                self.plot_results(step)  # Plot results after each step
+                self.save_metrics(step)  # Save metrics after each step
 
+                # Periodically clear metrics to prevent memory bloat
+                self.metrics = {key: [] for key in self.metrics}
+
+            return metrics
+        except Exception as e:
+            self.logger.error(f"An error occurred during Neuron Zeroing experiment: {e}")
+            self.logger.error("Experiment terminated.")
+            return {}
+        
     def plot_results(self, step):
         """Plot the results after each step of the neuron zeroing experiment."""
         accuracy_drops = [entry['accuracy_drop'] for entry in self.metrics['neuron_accuracy_drops']]
@@ -192,13 +204,22 @@ class NeuronZeroing:
             self.metrics = checkpoint['metrics']
             self.metadata = checkpoint['metadata']
 
-    def save_checkpoint(self):
+    def save_checkpoint(self, step=None):
         """Save checkpoint."""
         checkpoint = {
             'model_state_dict': self.model.state_dict(),
             'metrics': self.metrics,
             'metadata': self.metadata
         }
+        if step:
+            self.metadata['last_step'] = step  # Store the last completed step
         with open(self.checkpoint_file, 'wb') as f:
             pickle.dump(checkpoint, f)
         self.logger.info(f"Checkpoint saved to {self.checkpoint_file}")
+
+    def save_metrics(self, step=None):
+        """Save metrics to a JSON file."""
+        metrics_file = os.path.join(self.save_dir, 'metrics.json')
+        with open(metrics_file, 'w') as f:
+            json.dump(self.metrics, f, indent=4)
+        self.logger.info(f"Metrics saved to {metrics_file}")
