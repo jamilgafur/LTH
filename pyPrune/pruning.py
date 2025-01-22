@@ -570,7 +570,7 @@ class IterativeMagnitudePruning:
             if self.pretrain_epochs > 0:
                 logger.info("Starting pretraining...")
                 for pretrain_epoch_steps in range(self.pretrain_epochs):
-                    if pretrain_epoch_steps < self.pretrain_epochs:
+                    if pretrain_epoch_steps <= self.pretrain_epochs:
                         logger.info(f"model already pre-trained at step {pretrain_epoch_steps}, skipping...")
                     else:
                         logger.info(f"Pretraining the model at step {pretrain_epoch_steps + 1}...")
@@ -584,7 +584,7 @@ class IterativeMagnitudePruning:
             logger.info(f"Starting pruning with {self.steps} steps...")
 
             for step in tqdm(self.steps, desc="Pruning Steps", unit="step"):
-                if step < self.current_finetune_epoch:
+                if step <= self.current_finetune_epoch:
                     logger.info(f"model already pruned at step {step}, skipping...")
                 else:
                     self.current_finetune_epoch = step

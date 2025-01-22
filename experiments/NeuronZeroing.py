@@ -11,7 +11,6 @@ from tqdm import tqdm
 from sklearn.metrics import precision_recall_fscore_support
 
 
-
 class NeuronZeroing:
     def __init__(self, pruner, zeroing_metric='accuracy', logger=None):
         self.pruner = pruner
@@ -75,69 +74,64 @@ class NeuronZeroing:
         return zero_params / total_params
 
     def run_experiment(self):
-        try:
-            metrics = {}  
-            last_step = self.metadata.get('last_step', 0)  # Get the last completed step from metadata
+        metrics = {}  
+        last_step = self.metadata.get('last_step', 0)  # Get the last completed step from metadata
 
-            for idx, (weights, step) in enumerate(zip(self.pruner.weight_history, self.pruner.steps)):
-                if step <= last_step:
-                    continue  # Skip steps that have already been processed
+        for idx, (weights, step) in enumerate(zip(self.pruner.weight_history, self.pruner.steps)):
+            if step <= last_step:
+                continue  # Skip steps that have already been processed
 
-                self.logger.info(f"Processing step {step}...")
-                self.model.load_state_dict(weights)
-                self.model.to(self.pruner.device)
-                baseline_accuracy, baseline_loss, baseline_metrics = self.evaluate_metrics()
-                baseline_sparsity = self.compute_sparsity()
+            self.logger.info(f"Processing step {step}...")
+            self.model.load_state_dict(weights, strict=False)
+            self.model.to(self.pruner.device)
+            baseline_accuracy, baseline_loss, baseline_metrics = self.evaluate_metrics()
+            baseline_sparsity = self.compute_sparsity()
 
-                self.logger.info(f"Baseline Accuracy: {baseline_accuracy:.4f}, Loss: {baseline_loss:.4f}, Sparsity: {baseline_sparsity:.4f}")
-                self.logger.info(f"Precision: {baseline_metrics['precision']}, Recall: {baseline_metrics['recall']}, F1-Score: {baseline_metrics['fscore']}")
+            self.logger.info(f"Baseline Accuracy: {baseline_accuracy:.4f}, Loss: {baseline_loss:.4f}, Sparsity: {baseline_sparsity:.4f}")
+            self.logger.info(f"Precision: {baseline_metrics['precision']}, Recall: {baseline_metrics['recall']}, F1-Score: {baseline_metrics['fscore']}")
 
-                names, layers = get_pruneable_named_modules(self.model, self.prunerable_layer)
-                sampled_neurons = [layer for name, layer in zip(names, layers) if hasattr(layer, 'out_features')]
-                
-                for layer in tqdm(sampled_neurons, desc="Zeroing neurons in layers", unit="layer"):
-                    original_weights = layer.weight.data.clone()  # Use data to avoid creating unnecessary tensor objects
-                    for i in tqdm(range(layer.out_features), desc=f"Zeroing neurons in {layer.__class__.__name__}", unit="neuron", leave=False):
-                        layer.weight.data[i, :] = 0  # Zero the neuron
-                        accuracy_after, loss_after, metrics_after = self.evaluate_metrics()
-                        sparsity_after = self.compute_sparsity()
+            names, layers = get_pruneable_named_modules(self.model, self.prunerable_layer)
+            sampled_neurons = [layer for name, layer in zip(names, layers) if hasattr(layer, 'out_features')]
+            
+            for layer in tqdm(sampled_neurons, desc="Zeroing neurons in layers", unit="layer"):
+                original_weights = layer.weight.data.clone()  # Use data to avoid creating unnecessary tensor objects
+                for i in tqdm(range(layer.out_features), desc=f"Zeroing neurons in {layer.__class__.__name__}", unit="neuron", leave=False):
+                    layer.weight.data[i, :] = 0  # Zero the neuron
+                    accuracy_after, loss_after, metrics_after = self.evaluate_metrics()
+                    sparsity_after = self.compute_sparsity()
 
-                        accuracy_drop = baseline_accuracy - accuracy_after
-                        loss_change = baseline_loss - loss_after  # Calculate the loss change
+                    accuracy_drop = baseline_accuracy - accuracy_after
+                    loss_change = baseline_loss - loss_after  # Calculate the loss change
 
-                        self.metrics['neuron_accuracy_drops'].append({
-                            'layer_name': layer.__class__.__name__, 'neuron_index': i, 'accuracy_drop': accuracy_drop
-                        })
-                        self.metrics['sparsity_metrics'].append({
-                            'layer_name': layer.__class__.__name__, 'neuron_index': i, 'sparsity': sparsity_after
-                        })
-                        self.metrics['precision_recall_fscore'].append({
-                            'layer_name': layer.__class__.__name__, 'neuron_index': i, **metrics_after
-                        })
-                        self.metrics['loss_metrics'].append({
-                            'layer_name': layer.__class__.__name__, 'neuron_index': i, 'loss': loss_after
-                        })
-                        self.metrics['loss_changes'].append({
-                            'layer_name': layer.__class__.__name__, 'neuron_index': i, 'loss_change': loss_change
-                        })
+                    self.metrics['neuron_accuracy_drops'].append({
+                        'layer_name': layer.__class__.__name__, 'neuron_index': i, 'accuracy_drop': accuracy_drop
+                    })
+                    self.metrics['sparsity_metrics'].append({
+                        'layer_name': layer.__class__.__name__, 'neuron_index': i, 'sparsity': sparsity_after
+                    })
+                    self.metrics['precision_recall_fscore'].append({
+                        'layer_name': layer.__class__.__name__, 'neuron_index': i, **metrics_after
+                    })
+                    self.metrics['loss_metrics'].append({
+                        'layer_name': layer.__class__.__name__, 'neuron_index': i, 'loss': loss_after
+                    })
+                    self.metrics['loss_changes'].append({
+                        'layer_name': layer.__class__.__name__, 'neuron_index': i, 'loss_change': loss_change
+                    })
 
-                        layer.weight.data[i, :] = original_weights[i]  # Restore weights after testing
+                    layer.weight.data[i, :] = original_weights[i]  # Restore weights after testing
 
-                    self.save_checkpoint(step)  # Save checkpoint after processing each layer
+                self.save_checkpoint(step)  # Save checkpoint after processing each layer
+                self.save_metrics(step)  # Save metrics after processing each layer
 
-                metrics[step] = self.metrics
-                self.plot_results(step)  # Plot results after each step
-                self.save_metrics(step)  # Save metrics after each step
+            metrics[step] = self.metrics
+            self.plot_results(step)  # Plot results after each step
 
-                # Periodically clear metrics to prevent memory bloat
-                self.metrics = {key: [] for key in self.metrics}
+            # Periodically clear metrics to prevent memory bloat
+            self.metrics = {key: [] for key in self.metrics}
 
-            return metrics
-        except Exception as e:
-            self.logger.error(f"An error occurred during Neuron Zeroing experiment: {e}")
-            self.logger.error("Experiment terminated.")
-            return {}
-        
+        return metrics
+
     def plot_results(self, step):
         """Plot the results after each step of the neuron zeroing experiment."""
         accuracy_drops = [entry['accuracy_drop'] for entry in self.metrics['neuron_accuracy_drops']]
@@ -198,11 +192,20 @@ class NeuronZeroing:
     def load_checkpoint(self):
         """Load checkpoint."""
         self.logger.info(f"Resuming from checkpoint: {self.checkpoint_file}")
-        with open(self.checkpoint_file, 'rb') as f:
-            checkpoint = pickle.load(f)
-            self.model.load_state_dict(checkpoint['model_state_dict'])
-            self.metrics = checkpoint['metrics']
-            self.metadata = checkpoint['metadata']
+        try:
+            with open(self.checkpoint_file, 'rb') as f:
+                checkpoint = pickle.load(f)
+                self.model.load_state_dict(checkpoint['model_state_dict'])
+                self.metrics = checkpoint['metrics']
+                self.metadata = checkpoint['metadata']
+        except pickle.UnpicklingError as e:
+            self.logger.error(f"Error loading checkpoint: {e}")
+            self.logger.info("The checkpoint file might be corrupted.")
+            # You can raise an error, or try recovering from a fallback checkpoint here
+            raise  # Re-raise the exception if you want to stop execution
+        except Exception as e:
+            self.logger.error(f"Unexpected error loading checkpoint: {e}")
+            raise  # Re-raise the exception for other unexpected issues
 
     def save_checkpoint(self, step=None):
         """Save checkpoint."""
@@ -218,8 +221,29 @@ class NeuronZeroing:
         self.logger.info(f"Checkpoint saved to {self.checkpoint_file}")
 
     def save_metrics(self, step=None):
-        """Save metrics to a JSON file."""
+        """Save metrics to a JSON file with ndarray objects converted to lists."""
+        
+        # Function to convert ndarray to list recursively
+        def convert_ndarray(obj):
+            """Convert all ndarray objects to lists recursively."""
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, list):
+                return [convert_ndarray(item) for item in obj]
+            elif isinstance(obj, dict):
+                return {key: convert_ndarray(value) for key, value in obj.items()}
+            else:
+                return obj
+
+        # Convert ndarray objects in metrics to lists
+        converted_metrics = convert_ndarray(self.metrics)
+        
+        # Define the file path for saving the metrics
         metrics_file = os.path.join(self.save_dir, 'metrics.json')
+        
+        # Save the converted metrics to the JSON file
         with open(metrics_file, 'w') as f:
-            json.dump(self.metrics, f, indent=4)
+            json.dump(converted_metrics, f, indent=4)
+
+        # Log the saving of metrics
         self.logger.info(f"Metrics saved to {metrics_file}")

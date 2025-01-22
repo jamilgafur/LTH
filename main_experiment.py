@@ -2,6 +2,7 @@ import argparse
 import os
 import pickle
 import torch
+import copy
 from torch import nn
 from torch.utils.data import DataLoader
 import numpy as np
@@ -194,11 +195,11 @@ def parse_args() -> tuple:
     # sampling fraction 
     parser.add_argument('--sampling_fraction', type=float, default=0.1, help="Fraction to sample for Weight Zeroing experiment")
     # Pruning related arguments
-    parser.add_argument('--steps', type=int, default=2,
+    parser.add_argument('--steps', type=int, default=21,
                         help="Number of steps for pruning decay (defaults to exponential decay).")
-    parser.add_argument('--pretrain_epochs', type=int, default=1,
+    parser.add_argument('--pretrain_epochs', type=int, default=10,
                         help="Number of pretrain epochs. Default is 10.")
-    parser.add_argument('--finetune_epochs', type=int, default=1,
+    parser.add_argument('--finetune_epochs', type=int, default=10,
                         help="Number of finetune epochs after pruning. Default is 10.")
     parser.add_argument('--device', type=str, default='cuda',
                         choices=['cpu', 'cuda'],
@@ -253,7 +254,7 @@ def main() -> None:
     # plot_loss_accuracy_sparsity(pruner)
 
     # Run the specified experiments
-    run_experiments(pruner, args.experiments, args.sampling_fraction)
+    run_experiments(copy.deepcopy(pruner), args.experiments, args.sampling_fraction)
 
 if __name__ == '__main__':
     main()

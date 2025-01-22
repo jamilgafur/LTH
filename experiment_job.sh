@@ -2,7 +2,7 @@
 #SBATCH --job-name=experiment_$1_$3  # Job name
 #SBATCH --output=experiment_$1_$3.out  # Output file
 #SBATCH --ntasks=1                                    # Number of tasks
-#SBATCH --time=8:00:00                                # Max runtime (8 hours)
+#SBATCH --time=16:00:00                                # Max runtime (8 hours)
 #SBATCH --mem=16GB                                    # Memory allocation
 #SBATCH --gpus=1                                     # Number of GPUs
 #SBATCH --account=modularai

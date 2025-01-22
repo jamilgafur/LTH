@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=prune_runner       # Job name, based on the model argument
 #SBATCH --ntasks=1                       # Number of tasks
-#SBATCH --time=4:00:00                   # Max runtime (4 hours)
+#SBATCH --time=1-12:00:00                   # Max runtime (4 hours)
 #SBATCH --mem=16GB                       # Memory allocation
 #SBATCH --gpus=1                         # Number of GPUs
 #SBATCH --account=modularai
@@ -40,6 +40,9 @@ fi
 echo "Current Time: $(date)"
 echo "Running pruning job for ${model} with command: python main_experiment.py --model ${model} --save_dir /scratch/jgafur/LTH_output --experiment None"
 python main_experiment.py --model ${model} --save_dir /scratch/jgafur/LTH_output --experiment None 
+
+# wait 10 seconds to ensure the pruning job completes
+sleep 10
 
 # Submit experiment jobs after pruning completes
 echo "Submitting experiment jobs for model: ${model} for job id: ${SLURM_JOB_ID}"

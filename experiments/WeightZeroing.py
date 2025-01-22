@@ -96,7 +96,7 @@ class WeightZeroing:
         """
         try:
             for weight, step in zip(self.pruner.weight_history, self.pruner.steps):
-                self.model.load_state_dict(weight)
+                self.model.load_state_dict(weight,strict=False)
                 self.model.eval().to(self.pruner.device)
 
                 baseline_accuracy = self.evaluate_performance()
