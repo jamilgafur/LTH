@@ -8,11 +8,12 @@ import matplotlib.pyplot as plt
 import json
 from tqdm import tqdm  # Import tqdm
 import pickle
+import torch.nn.functional as F  # Importing the functional API for ReLU
 
 class NeuronSimilarity:
     """
     A class to measure redundancy between neurons in all layers of the neural network during the pruning process.
-    Redundancy is measured using similarity matrices based on neuron activations.
+    Redundancy is measured using similarity matrices based on neuron activations, post-ReLU.
 
     Args:
         pruner (IterativeMagnitudePruning): Pruner instance containing model and training information.
@@ -112,7 +113,7 @@ class NeuronSimilarity:
             layer_name (str): Name of the layer to get activations from.
 
         Returns:
-            torch.Tensor: The activations of the neurons in the layer.
+            torch.Tensor: The activations of the neurons in the layer, post-ReLU.
         """
         activations: List[torch.Tensor] = []
         
@@ -121,13 +122,15 @@ class NeuronSimilarity:
             if hasattr(module, 'name') and module.name == layer_name:
                 activations.append(output)
         
-        # Register the hook on all layers
+        # Register the hook on all layers in prunable layers
         hooks = []
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Module):
                 module.name = name  # Attach name to module for easy identification
-                hook = module.register_forward_hook(hook_fn)
-                hooks.append(hook)
+                # Only register hook for layers in pruner.prunable_layers
+                if name in self.pruner.prunable_layers:
+                    hook = module.register_forward_hook(hook_fn)
+                    hooks.append(hook)
 
         # Run a forward pass
         for data, _ in self.pruner.test_loader:
@@ -137,9 +140,13 @@ class NeuronSimilarity:
         # Remove hooks after capturing activations
         for hook in hooks:
             hook.remove()
-        
+
         # Stack activations across all batches
         activations = torch.cat(activations, dim=0)
+        
+        # Apply ReLU manually (post-activation)
+        activations = F.relu(activations)
+        
         return activations
 
     def load_checkpoint(self) -> Optional[str]:
@@ -160,7 +167,8 @@ class NeuronSimilarity:
 
     def run_experiment(self) -> Dict[str, List[Dict[str, Union[str, float]]]]:
         """
-        Run the Neuron Similarity experiment, computing similarity matrices of neuron activations for all layers.
+        Run the Neuron Similarity experiment, computing similarity matrices of neuron activations for all layers
+        in prunable layers, post-ReLU.
 
         Returns:
             Dict[str, List[Dict[str, Union[str, float]]]]: A dictionary containing similarity matrices at each layer.
@@ -174,8 +182,8 @@ class NeuronSimilarity:
             # Use tqdm to show a progress bar when iterating through layers
             for name, module in tqdm(self.model.named_modules(), desc="Evaluating Layers", ncols=100):
                 if isinstance(module, nn.Module):
-                    # Skip layers that have already been processed
-                    if last_completed_layer and name <= last_completed_layer:
+                    # Skip layers that are not in prunable layers or have already been processed
+                    if name not in self.pruner.prunable_layers or (last_completed_layer and name <= last_completed_layer):
                         continue
 
                     self.logger.info(f"Evaluating layer: {name}")
