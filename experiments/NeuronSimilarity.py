@@ -139,6 +139,7 @@ class NeuronSimilarity:
         
         # Stack activations across all batches
         activations = torch.cat(activations, dim=0)
+        
         return activations
 
     def run_experiment(self) -> Dict[str, List[Dict[str, Union[str, float]]]]:

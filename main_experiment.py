@@ -2,6 +2,7 @@ import argparse
 import os
 import pickle
 import torch
+import copy
 from torch import nn
 from torch.utils.data import DataLoader
 import numpy as np
@@ -15,6 +16,39 @@ from pyPrune.utils import plot_loss_accuracy_sparsity
 from experiments.WeightZeroing import WeightZeroing
 from experiments.NeuronZeroing import NeuronZeroing
 from experiments.NeuronSimilarity import NeuronSimilarity
+
+
+def load_cifar10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+    """
+    Loads the CIFAR-10 dataset and prepares DataLoader objects for training and testing.
+
+    Args:
+        batch_size (int): The batch size for training and testing datasets (default: 64).
+        num_workers (int): The number of subprocesses to use for data loading (default: 4).
+
+    Returns:
+        tuple: A tuple containing the training and test DataLoader objects.
+    """
+    transform = transforms.Compose([
+        transforms.Resize((32, 32)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+
+    train_loader = DataLoader(
+        datasets.CIFAR10('data', train=True, download=True, transform=transform),
+        batch_size=batch_size, shuffle=True, num_workers=num_workers
+    )
+
+    test_loader = DataLoader(
+        datasets.CIFAR10('data', train=False, transform=transform),
+        batch_size=batch_size, shuffle=False, num_workers=num_workers
+    )
+    
+    # print out a single batch of data shape
+    print("CIFAR-10 data shape: ", next(iter(train_loader))[0].shape)
+
+    return train_loader, test_loader
 
 def load_mnist(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
     """
@@ -103,8 +137,12 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
             finetune_epochs=finetune_epochs,
             save_dir=save_dir,
         )
+             
+    if pruner.complete is False:
+        print("Pruning process is not completed. Run the pruning process first.")
         pruner.run()
-        print("Pruning process complete. Saved pruner to checkpoint.")
+        
+    print("Pruning process complete. Saved pruner to checkpoint.")
 
     return pruner
 
@@ -119,19 +157,29 @@ def run_experiments(pruner: IterativeMagnitudePruning, experiment_names: list[st
     Returns:
         None
     """
+    
+    if 'None' in experiment_names:
+        print("No experiments to run.")
+        return
+    
     if 'NeuronSimilarity' in experiment_names:
-        print("Starting neuron similarity experiment...")
+        pruner.logger.info("Starting neuron similarity experiment...")
         neuron_similarity = NeuronSimilarity(pruner)
         neuron_similarity.run_experiment()
 
     if 'NeuronZeroing' in experiment_names:
-        print("Starting neuron zeroing experiment...")
+        pruner.logger.info("Starting neuron zeroing experiment...")
         neuron_zeroing = NeuronZeroing(pruner)
         neuron_zeroing.run_experiment()
 
     if 'WeightZeroing' in experiment_names:
-        print("Starting weight zeroing experiment...")
-        weight_zeroing = WeightZeroing(pruner)
+        pruner.logger.info("Starting weight zeroing experiment...")
+        sample_fractions = {
+            'linear': .01,  # Fraction for dense layers (fully connected layers)
+            'conv': .01    # Fraction for convolutional layers
+        }
+
+        weight_zeroing = WeightZeroing(pruner, sample_fractions)
         weight_zeroing.run_experiment()
 
 def parse_args() -> tuple:
@@ -146,10 +194,9 @@ def parse_args() -> tuple:
     # Model and experiments arguments
     parser.add_argument('--model', type=str, default='LeNet', choices=['LeNet', 'ResNet20', 'Vgg16'],
                         help="The model architecture to use for pruning. Default is 'LeNet'.")
-    parser.add_argument('--experiments', type=str, nargs='+', default=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing'],
+    parser.add_argument('--experiments', type=str, nargs='+', default=['None'],
                         choices=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing', "None"],
                         help="List of experiments to run. Default is all.")
-    
     # Pruning related arguments
     parser.add_argument('--steps', type=int, default=21,
                         help="Number of steps for pruning decay (defaults to exponential decay).")
@@ -165,7 +212,7 @@ def parse_args() -> tuple:
     
     # Other arguments
     parser.add_argument('--batch_size', type=int, default=64, help="Batch size for training. Default is 64.")
-    parser.add_argument('--num_workers', type=int, default=4, help="Number of workers for data loading. Default is 4.")
+    parser.add_argument('--num_workers', type=int, default=1, help="Number of workers for data loading. Default is 1.")
     
     args = parser.parse_args()
     
@@ -187,15 +234,17 @@ def main() -> None:
     args = parse_args()
 
     # Load MNIST data
-    train_loader, test_loader = load_mnist(batch_size=args.batch_size, num_workers=args.num_workers)
 
     # Initialize model
     if args.model == 'LeNet':
         model = LeNet()
+        train_loader, test_loader = load_mnist(batch_size=args.batch_size, num_workers=args.num_workers)
     elif args.model == 'ResNet20':
         model = ResNet20()
+        train_loader, test_loader = load_cifar10(batch_size=args.batch_size, num_workers=args.num_workers)
     elif args.model == 'Vgg16':
         model = Vgg16()
+        train_loader, test_loader = load_cifar10(batch_size=args.batch_size, num_workers=args.num_workers)
     else:
         raise ValueError(f"Model '{args.model}' is not supported.")
     
@@ -205,10 +254,10 @@ def main() -> None:
                                 device=args.device, save_dir=args.save_dir)
 
     # Plot loss, accuracy, and sparsity after pruning
-    plot_loss_accuracy_sparsity(pruner)
+    # plot_loss_accuracy_sparsity(pruner)
 
     # Run the specified experiments
-    run_experiments(pruner, args.experiments)
+    run_experiments(copy.deepcopy(pruner), args.experiments)
 
 if __name__ == '__main__':
     main()
