@@ -18,9 +18,10 @@ class WeightZeroing:
     by gradually zeroing a fraction of weights and monitoring the accuracy drop at each step.
     """
 
+class WeightZeroing:
     def __init__(self, 
-                 sample_fractions: dict,
                  pruner: 'IterativeMagnitudePruning',  
+                 sample_fractions: dict = None,
                  zeroing_metric: str = 'accuracy', 
                  logger: Optional[logging.Logger] = None, 
                  save_plots: bool = True):
@@ -38,10 +39,25 @@ class WeightZeroing:
         self.experiment_metrics: Dict[str, Dict] = {}
 
         self.model = pruner.model  # Directly use the pruner's model instead of deepcopy
+        if sample_fractions is None:
+            sample_fractions = {}
+            print("No sample fractions provided. Using default sample fractions.")
+            
+            # Default setup for layer types (Conv2d, Linear, etc.)
+            for layer in list(pruner.prunable_layers):
+                if layer is not None:
+                    layer_name = str(layer).split(".")[-2]  # Get the layer name without '>' or 'module'
+                    print(f"Layer name: {layer_name} setting to 1.0 (or your fraction)")
+                    sample_fractions[layer_name] = 1.0  # Default fraction for each layer
+            self.sample_fractions = sample_fractions
+            print("sample_fractions:", self.sample_fractions)
+        else:
+            self.sample_fractions = sample_fractions
         self.save_dir = os.path.join(pruner.save_dir, f"weightZeroing_{''.join([str(key) + str(value) for key, value in sample_fractions.items()])}_{zeroing_metric}")
-        self.sample_fractions = sample_fractions
+
         self.zeroing_metric = zeroing_metric
         self.logger = logger if logger else logging.getLogger(__name__)
+        self.logger.info(f"Starting Weight Zeroing experiment with info: {self.__dict__}")
         self.metrics: Dict[str, List] = {'weight_accuracy_drops': [], 'total_accuracy_drops': [], 'zeroed_weights_count': 0, 'step_accuracy': []}
         self.save_plots = save_plots
         os.makedirs(self.save_dir, exist_ok=True)
@@ -86,65 +102,134 @@ class WeightZeroing:
         weight_tensor[idx] = 0  # Zero out the weight
         return original_value
 
+    def evaluate_loss(self) -> float:
+        """
+        Evaluates the model's loss on the test dataset.
+        
+        Returns:
+            float: The loss of the model on the test dataset.
+        """
+        self.model.eval()
+        criterion = torch.nn.CrossEntropyLoss()
+        loss = 0
+        with torch.no_grad():
+            for data, target in self.pruner.test_loader:
+                data, target = data.to(self.pruner.device), target.to(self.pruner.device)
+                output = self.model(data)
+                loss += criterion(output, target).item()
+        return loss
+    
     def run_experiment(self) -> Dict[str, List]:
         """
-        Runs the weight zeroing experiment by progressively zeroing a fraction of weights 
-        and evaluating the performance after each zeroing.
+        Runs the weight zeroing experiment by progressively zeroing one weight at a time,
+        evaluating the performance after each zeroing, and restoring the weight before moving to the next.
         
         Returns:
             Dict[str, List]: The collected metrics during the experiment.
         """
-        try:
-            for weight, step in zip(self.pruner.weight_history, self.pruner.steps):
-                self.model.load_state_dict(weight, strict=False)
-                self.model.eval().to(self.pruner.device)
+        # Iterate over each step in the weight history and corresponding step
+        for weight, step in zip(self.pruner.weight_history, self.pruner.steps):
+            # Load the model's weights at this step
+            self.model.load_state_dict(weight, strict=False)
+            self.model.eval().to(self.pruner.device)
 
-                baseline_accuracy = self.evaluate_performance()
-                total_weights, weight_list = self.collect_weights()
+            # Get baseline performance before any pruning
+            baseline_accuracy = self.evaluate_performance()
+            baseline_loss = self.evaluate_loss()  # Assuming you have a loss function for evaluation
+            self.logger.info(f"Baseline Accuracy: {baseline_accuracy}, Baseline Loss: {baseline_loss}")
 
-                zeroed_weights, step_accuracy = 0, []
-                for layer_type, fraction in self.sample_fractions.items():
-                    # Collect weights only from the layers that match the layer type
-                    prunable_names, prunable_params = get_pruneable_named_parameters(self.model, self.pruner.prunable_layers)
+            # Initialize metrics tracking for this step
+            step_metrics = {
+                'zeroed_weights': {},
+                'total_accuracy_drop': 0,
+                'total_loss_drop': 0,
+            }
 
-                    # Filter out weights that do not belong to the current layer type
-                    filtered_weights = []
-                    for name, param in zip(prunable_names, prunable_params):
-                        if layer_type in name and 'weight' in name:
-                            filtered_weights.extend(param.view(-1).tolist())
-                    
-                    num_sampled_weights = int(fraction * len(filtered_weights))
-                    sampled_indices = random.sample(range(len(filtered_weights)), num_sampled_weights)
+            # Collect weights and filter them based on the sample fractions
+            prunable_names, prunable_params = get_pruneable_named_parameters(self.model, self.pruner.prunable_layers)
 
-                    for idx in tqdm(sampled_indices, desc=f"Zeroing weights in {layer_type}"):
-                        param_idx = 0
-                        for name, param in zip(prunable_names, prunable_params):
-                            if layer_type in name and 'weight' in name:
-                                weight_tensor = param.view(-1)
-                                if idx < param_idx + weight_tensor.size(0):
-                                    original_value = self.zero_weight(weight_tensor, idx - param_idx)
-                                    accuracy_after_zeroing = self.evaluate_performance()
-                                    accuracy_drop = baseline_accuracy - accuracy_after_zeroing
-                                    self.track_metrics(name, original_value, accuracy_drop)
-                                    step_accuracy.append(accuracy_after_zeroing)
-                                    zeroed_weights += 1
-                                    break
-                                param_idx += weight_tensor.size(0)
+            # For each layer, zero out a fraction of its weights
+            for layer_type, fraction in self.sample_fractions.items():
+                filtered_weights = []
+                for name, param in zip(prunable_names, prunable_params):
+                    if str.lower(layer_type) in str.lower(name) and 'weight' in name:
+                        filtered_weights.extend(param.view(-1).tolist())
+                # Determine how many weights to zero based on the sampling fraction
+                num_weights_to_zero = int(fraction * len(filtered_weights))
+                sampled_indices = random.sample(range(len(filtered_weights)), num_weights_to_zero)
 
-                self.metrics['step_accuracy'].append(step_accuracy)
-                self.save_metrics()
+            self.logger.info(f"Zeroing total number of weights from the model: {len(sampled_indices)} out of {len(filtered_weights)}")
+            print(f"Zeroing total number of weights from the model: {len(sampled_indices)} out of {len(filtered_weights)}")
+            step_metrics = self.zero_and_restore_weights(sampled_indices)
 
-                self.experiment_metrics[step] = self.metrics
-                self.plot_results(step)  # Plot results after each step
-                # clear the metrics for the next step
-                self.metrics = {'weight_accuracy_drops': [], 'total_accuracy_drops': [], 'zeroed_weights_count': 0, 'step_accuracy': []}
+            # Save the step metrics into the main experiment metrics
+            self.experiment_metrics[step] = step_metrics
 
-            return self.experiment_metrics
-        except Exception as e:
-            self.logger.error(f"An error occurred during Weight Zeroing experiment: {e}")
-            self.logger.error("Experiment terminated.")
-            return {}
+            # Save metrics to disk after each step
+            self.save_metrics()
 
+            # Optionally plot results for this step
+            self.plot_results(step)
+
+        return self.experiment_metrics
+
+    def zero_and_restore_weights(self, sampled_indices: List[int]) -> Dict[str, List]:
+        """
+        Zeroes out the sampled weights one by one, evaluates the performance, 
+        restores the weight, and tracks the metrics for each weight zeroed.
+        
+        Args:
+            sampled_indices (List[int]): The indices of the weights to zero out.
+        
+        Returns:
+            Dict[str, List]: Dictionary of metrics for each weight that was zeroed.
+        """
+        metrics = {}
+        
+        # Iterate through each index in the sampled_indices list
+        for idx in tqdm(sampled_indices, desc="Zeroing weights one by one"):
+            # Find the weight that corresponds to the current index in the model
+            prunable_names, prunable_params = get_pruneable_named_parameters(self.model, self.pruner.prunable_layers)
+            
+            weight_name = None
+            saved_value = None
+            
+            param_idx = 0  # To track the index in flattened tensor
+            for name, param in zip(prunable_names, prunable_params):
+                if 'weight' in name:  # Look for weight parameters
+                    weight_tensor = param.view(-1)  # Flatten the parameter tensor
+                    if idx < param_idx + weight_tensor.size(0):
+                        # If idx is in the range of current weight_tensor, zero out this weight
+                        weight_name = name
+                        saved_value = weight_tensor[idx - param_idx].item()  # Save the original value
+                        
+                        # Detach the tensor from the computation graph and zero out the weight
+                        weight_tensor = weight_tensor.detach()  # Detach from graph
+                        weight_tensor[idx - param_idx] = 0  # Zero out the weight
+                        
+                        # Break after finding and zeroing out the weight
+                        break
+                    param_idx += weight_tensor.size(0)
+
+            # After zeroing, evaluate the model's performance
+            accuracy_after_zeroing = self.evaluate_performance()
+            accuracy_drop = self.evaluate_performance() - accuracy_after_zeroing
+
+            # Track the metrics for this weight
+            metrics[idx] = {
+                'accuracy_drop': accuracy_drop,
+                'original_value': saved_value,
+                'weight_name': weight_name
+            }
+            
+            # Restore the original weight value
+            weight_tensor[idx - param_idx] = saved_value
+
+
+        return metrics
+
+
+            
     def collect_weights(self) -> (int, List[float]):
         """
         Collects all weights from the model and returns the total weight count 
@@ -163,21 +248,7 @@ class WeightZeroing:
                 total_weights += param.numel()
                 weight_list.extend(param.view(-1).tolist())
         return total_weights, weight_list
-
-    def track_metrics(self, weight_name: str, original_value: float, accuracy_drop: float):
-        """
-        Stores the metrics for a zeroed weight during the experiment.
-        
-        Args:
-            weight_name (str): The name of the weight parameter.
-            original_value (float): The original value of the weight before zeroing.
-            accuracy_drop (float): The accuracy drop after zeroing the weight.
-        """
-        self.metrics['weight_accuracy_drops'].append({'weight_name': weight_name, 'accuracy_drop': accuracy_drop, 'original_value': original_value})
-        print("Before incrementing:", self.metrics['zeroed_weights_count'])  # Debug line
-        self.metrics['zeroed_weights_count'] += 1
-        print("After incrementing:", self.metrics['zeroed_weights_count'])  # Debug line
-
+    
     def save_metrics(self):
         """
         Saves the metrics from the weight zeroing experiment to a JSON file and the current 
@@ -195,7 +266,7 @@ class WeightZeroing:
         Generates and saves plots for the experiment results after each pruning step.
         """
         accuracy_drops = [entry['accuracy_drop'] for entry in self.metrics['weight_accuracy_drops']]
-        step_accuracy = self.metrics['step_accuracy'][-1]
+        step_accuracy = self.metrics['step_accuracy']
 
         # Accuracy Drop Distribution
         self.plot_histogram(accuracy_drops, f'Accuracy Drop Distribution at Step {step}', 'Accuracy Drop', 'Frequency', f'accuracy_drop_step_{step}')

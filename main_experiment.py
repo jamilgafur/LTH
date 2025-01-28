@@ -146,7 +146,7 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
 
     return pruner
 
-def run_experiments(pruner: IterativeMagnitudePruning, experiment_names: list[str], sample_fraction: float) -> None:
+def run_experiments(pruner: IterativeMagnitudePruning, experiment_names: list[str]) -> None:
     """
     Runs specified experiments (e.g., NeuronSimilarity, NeuronZeroing, WeightZeroing) after pruning.
 
@@ -174,7 +174,12 @@ def run_experiments(pruner: IterativeMagnitudePruning, experiment_names: list[st
 
     if 'WeightZeroing' in experiment_names:
         pruner.logger.info("Starting weight zeroing experiment...")
-        weight_zeroing = WeightZeroing(pruner,sample_fraction=sample_fraction)
+        sample_fractions = {
+            'linear': .01,  # Fraction for dense layers (fully connected layers)
+            'conv': .01    # Fraction for convolutional layers
+        }
+
+        weight_zeroing = WeightZeroing(pruner, sample_fractions)
         weight_zeroing.run_experiment()
 
 def parse_args() -> tuple:
@@ -192,8 +197,6 @@ def parse_args() -> tuple:
     parser.add_argument('--experiments', type=str, nargs='+', default=['None'],
                         choices=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing', "None"],
                         help="List of experiments to run. Default is all.")
-    # sampling fraction 
-    parser.add_argument('--sampling_fraction', type=float, default=0.1, help="Fraction to sample for Weight Zeroing experiment")
     # Pruning related arguments
     parser.add_argument('--steps', type=int, default=21,
                         help="Number of steps for pruning decay (defaults to exponential decay).")
@@ -254,7 +257,7 @@ def main() -> None:
     # plot_loss_accuracy_sparsity(pruner)
 
     # Run the specified experiments
-    run_experiments(copy.deepcopy(pruner), args.experiments, args.sampling_fraction)
+    run_experiments(copy.deepcopy(pruner), args.experiments)
 
 if __name__ == '__main__':
     main()
