@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from sklearn.metrics import precision_recall_fscore_support
 
-
 class NeuronZeroing:
     def __init__(self, pruner, zeroing_metric='accuracy', logger=None):
         self.pruner = pruner
@@ -73,6 +72,47 @@ class NeuronZeroing:
             zero_params += (param == 0).sum().item()
         return zero_params / total_params
 
+    def zero_and_restore_neurons(self, layer, idx, is_conv_layer=True):
+        """Zero out a specific neuron (channel or feature) and restore it after evaluation."""
+        original_weights = layer.weight.data.clone()  # Save the original weights
+
+        if is_conv_layer:
+            # Zero out the specified output channel (feature map) in convolutional layers
+            layer.weight.data[idx, :, :, :] = 0
+            self.logger.info(f"Zeroed output channel {idx} in {layer.__class__.__name__}")
+        else:
+            # Zero out the entire row (neuron) in fully connected layers
+            layer.weight.data[idx, :] = 0
+            self.logger.info(f"Zeroed neuron {idx} in {layer.__class__.__name__}")
+
+        # Evaluate the metrics after zeroing the neuron (channel or feature)
+        accuracy_after, loss_after, metrics_after = self.evaluate_metrics()
+        sparsity_after = self.compute_sparsity()
+
+        # Calculate accuracy drop and loss change
+        accuracy_drop = self.baseline_accuracy - accuracy_after
+        loss_change = self.baseline_loss - loss_after
+        
+        # Store metrics
+        self.metrics['neuron_accuracy_drops'].append({
+            'layer_name': layer.__class__.__name__, 'neuron_index': idx, 'accuracy_drop': accuracy_drop
+        })
+        self.metrics['sparsity_metrics'].append({
+            'layer_name': layer.__class__.__name__, 'neuron_index': idx, 'sparsity': sparsity_after
+        })
+        self.metrics['precision_recall_fscore'].append({
+            'layer_name': layer.__class__.__name__, 'neuron_index': idx, **metrics_after
+        })
+        self.metrics['loss_metrics'].append({
+            'layer_name': layer.__class__.__name__, 'neuron_index': idx, 'loss': loss_after
+        })
+        self.metrics['loss_changes'].append({
+            'layer_name': layer.__class__.__name__, 'neuron_index': idx, 'loss_change': loss_change
+        })
+
+        # Restore the original weights after testing
+        layer.weight.data = original_weights
+
     def run_experiment(self):
         metrics = {}  
         last_step = self.metadata.get('last_step', 0)  # Get the last completed step from metadata
@@ -84,42 +124,25 @@ class NeuronZeroing:
             self.logger.info(f"Processing step {step}...")
             self.model.load_state_dict(weights, strict=False)
             self.model.to(self.pruner.device)
-            baseline_accuracy, baseline_loss, baseline_metrics = self.evaluate_metrics()
+            self.baseline_accuracy, self.baseline_loss, baseline_metrics = self.evaluate_metrics()
             baseline_sparsity = self.compute_sparsity()
 
-            self.logger.info(f"Baseline Accuracy: {baseline_accuracy:.4f}, Loss: {baseline_loss:.4f}, Sparsity: {baseline_sparsity:.4f}")
+            self.logger.info(f"Baseline Accuracy: {self.baseline_accuracy:.4f}, Loss: {self.baseline_loss:.4f}, Sparsity: {baseline_sparsity:.4f}")
             self.logger.info(f"Precision: {baseline_metrics['precision']}, Recall: {baseline_metrics['recall']}, F1-Score: {baseline_metrics['fscore']}")
 
             names, layers = get_pruneable_named_modules(self.model, self.prunerable_layer)
-            sampled_neurons = [layer for name, layer in zip(names, layers) if hasattr(layer, 'out_features')]
-            
-            for layer in tqdm(sampled_neurons, desc="Zeroing neurons in layers", unit="layer"):
-                original_weights = layer.weight.data.clone()  # Use data to avoid creating unnecessary tensor objects
-                for i in tqdm(range(layer.out_features), desc=f"Zeroing neurons in {layer.__class__.__name__}", unit="neuron", leave=False):
-                    layer.weight.data[i, :] = 0  # Zero the neuron
-                    accuracy_after, loss_after, metrics_after = self.evaluate_metrics()
-                    sparsity_after = self.compute_sparsity()
+            sampled_layers = [layer for name, layer in zip(names, layers) if hasattr(layer, 'out_channels') or hasattr(layer, 'out_features')]
 
-                    accuracy_drop = baseline_accuracy - accuracy_after
-                    loss_change = baseline_loss - loss_after  # Calculate the loss change
-
-                    self.metrics['neuron_accuracy_drops'].append({
-                        'layer_name': layer.__class__.__name__, 'neuron_index': i, 'accuracy_drop': accuracy_drop
-                    })
-                    self.metrics['sparsity_metrics'].append({
-                        'layer_name': layer.__class__.__name__, 'neuron_index': i, 'sparsity': sparsity_after
-                    })
-                    self.metrics['precision_recall_fscore'].append({
-                        'layer_name': layer.__class__.__name__, 'neuron_index': i, **metrics_after
-                    })
-                    self.metrics['loss_metrics'].append({
-                        'layer_name': layer.__class__.__name__, 'neuron_index': i, 'loss': loss_after
-                    })
-                    self.metrics['loss_changes'].append({
-                        'layer_name': layer.__class__.__name__, 'neuron_index': i, 'loss_change': loss_change
-                    })
-
-                    layer.weight.data[i, :] = original_weights[i]  # Restore weights after testing
+            for layer in tqdm(sampled_layers, desc="Zeroing neurons in layers", unit="layer"):
+                # Check if it's a convolutional layer or a fully connected layer
+                if hasattr(layer, 'out_channels'):
+                    # Zeroing output channels in convolutional layers
+                    for i in tqdm(range(layer.out_channels), desc=f"Zeroing output channels in {layer.__class__.__name__}", unit="channel", leave=False):
+                        self.zero_and_restore_neurons(layer, i, is_conv_layer=True)
+                elif hasattr(layer, 'out_features'):
+                    # Zeroing neurons (rows) in fully connected layers
+                    for i in tqdm(range(layer.out_features), desc=f"Zeroing neurons in {layer.__class__.__name__}", unit="neuron", leave=False):
+                        self.zero_and_restore_neurons(layer, i, is_conv_layer=False)
 
                 self.save_checkpoint(step)  # Save checkpoint after processing each layer
                 self.save_metrics(step)  # Save metrics after processing each layer
@@ -201,7 +224,6 @@ class NeuronZeroing:
         except pickle.UnpicklingError as e:
             self.logger.error(f"Error loading checkpoint: {e}")
             self.logger.info("The checkpoint file might be corrupted.")
-            # You can raise an error, or try recovering from a fallback checkpoint here
             raise  # Re-raise the exception if you want to stop execution
         except Exception as e:
             self.logger.error(f"Unexpected error loading checkpoint: {e}")
@@ -222,7 +244,6 @@ class NeuronZeroing:
 
     def save_metrics(self, step=None):
         """Save metrics to a JSON file with ndarray objects converted to lists."""
-        
         # Function to convert ndarray to list recursively
         def convert_ndarray(obj):
             """Convert all ndarray objects to lists recursively."""
