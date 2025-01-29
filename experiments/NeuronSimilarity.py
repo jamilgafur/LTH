@@ -26,7 +26,7 @@ class NeuronSimilarity:
         self.similarity_metric: str = similarity_metric
         self.sample_fraction: float = sample_fraction
         self.logger: logging.Logger = logger or logging.getLogger(__name__)
-        self.metrics: Dict[str, List[Dict[str, Union[str, float]]]] = {'similarity_matrices': [], 'average_similarities': []}
+        self.metrics = {}
 
         # Initialize the model and load its state
         self.model: nn.Module = self._initialize_model(pruner)
@@ -150,51 +150,55 @@ class NeuronSimilarity:
             Dict[str, List[Dict[str, Union[str, float]]]]: A dictionary containing similarity matrices at each layer.
         """
         self.logger.info(f"Starting Neuron Similarity experiment for all layers...")
+        for model_step, step in zip(self.pruner.weight_history, self.pruner.metrics["step"]):
+            metrics = {"similarity_matrices" : [], "average_similarities" : []}
+            self.model.load_state_dict(model_step, strict=False)
+            # Use tqdm to show a progress bar when iterating through layers
+            for name, module in tqdm(self.model.named_modules(), desc="Evaluating Layers", ncols=100):
+                if isinstance(module, nn.Module):
+                    self.logger.info(f"Evaluating layer: {name}")
+                    activations = self.evaluate_layer_activations(name)
 
-        # Use tqdm to show a progress bar when iterating through layers
-        for name, module in tqdm(self.model.named_modules(), desc="Evaluating Layers", ncols=100):
-            if isinstance(module, nn.Module):
-                self.logger.info(f"Evaluating layer: {name}")
-                activations = self.evaluate_layer_activations(name)
+                    # Compute the similarity matrix for the activations
+                    similarity_matrix = self.compute_similarity_matrix(activations)
 
-                # Compute the similarity matrix for the activations
-                similarity_matrix = self.compute_similarity_matrix(activations)
+                    # Calculate the average similarity for the layer
+                    avg_similarity = np.mean(similarity_matrix)
 
-                # Calculate the average similarity for the layer
-                avg_similarity = np.mean(similarity_matrix)
+                    # Store the similarity matrix and average similarity
+                    metrics['similarity_matrices'].append({
+                        'layer_name': name,
+                        'similarity_matrix': similarity_matrix.tolist()  # Convert tensor to list for easier logging/storage
+                    })
+                    metrics['average_similarities'].append({
+                        'layer_name': name,
+                        'average_similarity': avg_similarity
+                    })
 
-                # Store the similarity matrix and average similarity
-                self.metrics['similarity_matrices'].append({
-                    'layer_name': name,
-                    'similarity_matrix': similarity_matrix.tolist()  # Convert tensor to list for easier logging/storage
-                })
-                self.metrics['average_similarities'].append({
-                    'layer_name': name,
-                    'average_similarity': avg_similarity
-                })
+            # Plot the similarity matrices
+            self.plot_similarity_matrices(metrics,step)
 
-        # Plot the similarity matrices
-        self.plot_similarity_matrices()
+            # Save metrics to a JSON file - takes too long to run
+            # self.save_metrics() 
 
-        # Save metrics to a JSON file - takes too long to run
-        # self.save_metrics() 
+            self.logger.info("Neuron Similarity experiment completed for all layers.")
+            self.metrics[step] = metrics
 
-        self.logger.info("Neuron Similarity experiment completed for all layers.")
         return self.metrics
 
-    def plot_similarity_matrices(self) -> None:
+    def plot_similarity_matrices(self, metrics,step) -> None:
         """
         Plot the similarity matrices for the experiment results.
 
         Args:
             save_dir (str): Directory to save the similarity matrix plot.
         """
-        for matrix in self.metrics['similarity_matrices']:
+        for matrix in metrics['similarity_matrices']:
             similarity_matrix = np.array(matrix['similarity_matrix'])
             plt.imshow(similarity_matrix, cmap='hot', interpolation='nearest')
             plt.title(f"Neuron Similarity for Layer: {matrix['layer_name']}")
             plt.colorbar()
-            plt.savefig(f'{self.save_dir}/neuron_similarity_{matrix["layer_name"]}.png')
+            plt.savefig(f'{self.save_dir}/neuron_similarity_{matrix["layer_name"]}_{step}.png')
             plt.close()
 
     def save_metrics(self) -> None:
