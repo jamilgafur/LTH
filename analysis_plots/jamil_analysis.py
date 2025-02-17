@@ -15,12 +15,15 @@ logger = logging.getLogger()
 def process_experiment_file(experiment_file_path):
     """Run the experiment if not already processed."""
     logger.info(f"Processing experiment file: {experiment_file_path}")
-    with open(experiment_file_path, 'rb') as f:
-        experiment_data = pickle.load(f)
-    NS = NeuronSimilarity(experiment_data)
-    NS.run_experiment()
-    logger.info(f"Experiment for {experiment_file_path} completed successfully.")
-        
+    try:
+        with open(experiment_file_path, 'rb') as f:
+            experiment_data = pickle.load(f)
+        NS = NeuronSimilarity(experiment_data)
+        NS.run_experiment()
+        logger.info(f"Experiment for {experiment_file_path} completed successfully.")
+    except Exception as e:
+        logger.error(f"Error running experiment for {experiment_file_path}: {e}")
+        raise
 
 def load_neuron_similarity(file_path):
     """Load and return the neuron similarity analysis from a pickle file."""
@@ -42,15 +45,25 @@ def extract_data_from_metrics(neuron_sim):
             data[step_key] = []
         
         logger.debug(f"Processing step {step_key} with {len(step['average_similarities'])} layers.")
-        for i, similarity in enumerate(step['average_similarities']):
+        for i, similarity in  enumerate(step['average_similarities']):
             layer_name = similarity['layer_name']
             avg_similarity = float(similarity['average_similarity'])  # Ensure we convert np.float32 to float
             similarity_matrix = step['similarity_matrices'][i]['similarity_matrix']
+            # Ensure the similarity_matrix is a NumPy array or tensor
+            if isinstance(similarity_matrix, list):
+                similarity_matrix = np.array(similarity_matrix)
+
+            # Now, we can safely access .shape
+            identity_matrix = np.eye(similarity_matrix.shape[0])
+            adjusted_similarity_matrix = similarity_matrix - identity_matrix
+
+            # Compute the mean of the maximum values from each row
+            mean_max = float(np.mean(np.max(adjusted_similarity_matrix, axis=1)))
             data[step_key].append({
                 'layer_name': layer_name,
                 'average_similarity': avg_similarity,
-                'similarity_matrix': similarity_matrix,
-                'average_mean' : np.mean(np.max(similarity_matrix,axis=1))
+                # TODO go over this with max
+                'mean_max': mean_max
             })
     
     return data
@@ -66,37 +79,42 @@ def save_json_data(model_folder, data):
         logger.error(f"Error saving data to {data_filename}: {e}")
         raise
 
-def generate_and_save_plot_for_layer(layer_name, similarities, pruning_steps, model_folder):
-    """Generate and save plot for a single layer."""
-    plt.figure(figsize=(10, 6))
-    similarities = np.clip(similarities, 0, 1)
-    similarities = np.nan_to_num(similarities)
-    plt.plot(pruning_steps, similarities, label=layer_name, marker='o', linestyle='-', markersize=6, linewidth=2)
+def generate_and_save_plots(model_folder, non_zero_similarities, pruning_steps):
+    """Generate and save plots for the non-zero similarities."""
+    logger.info(f"Starting to generate plots for the layers.")
+    for layer_name, similarities in non_zero_similarities.items():
+        plt.figure(figsize=(10, 6))
+        similarities = np.clip(similarities, 0,1)
+        similarities = np.nan_to_num(similarities)
+        plt.plot(pruning_steps, similarities, label=layer_name, marker='o', linestyle='-', markersize=6, linewidth=2)
 
-    # Add horizontal line for baseline (e.g., 0)
-    plt.axhline(y=0, color='gray', linestyle='--', linewidth=1)
+        # Add horizontal line for baseline (e.g., 0)
+        plt.axhline(y=0, color='gray', linestyle='--', linewidth=1)
 
-    # Customize plot with better labels and titles
-    plt.title(f"Non-Zero Neuron Similarity for Layer: {layer_name}", fontsize=16)
-    plt.xlabel("Pruning Step", fontsize=14)
-    plt.ylabel("Non-Zero Similarity", fontsize=14)
+        # Customize plot with better labels and titles
+        plt.title(f"Non-Zero Neuron Similarity for Layer: {layer_name}", fontsize=16)
+        plt.xlabel("Pruning Step", fontsize=14)
+        plt.ylabel("Non-Zero Similarity", fontsize=14)
 
-    # Adding grid lines for easier interpretation
-    plt.grid(True, which='both', linestyle='--', color='gray', alpha=0.5)
+        # Adding grid lines for easier interpretation
+        plt.grid(True, which='both', linestyle='--', color='gray', alpha=0.5)
 
-    # Adjust the legend and plot style
-    plt.legend(loc='best', fontsize=12)
-    plt.tight_layout()
-    plt.ylim(-.1, 1.1)
+        # Adjust the legend and plot style
+        plt.legend(loc='best', fontsize=12)
+        plt.tight_layout()
+        plt.ylim(-.1,1.1)
 
-    # Save the individual plot for the current layer
-    plot_filename = os.path.join(model_folder, f"non_zero_similarity_{layer_name}.png")
-    plt.savefig(plot_filename)
-    plt.close()  # Close the plot to free memory
-    logger.info(f"Plot saved as {plot_filename}")
+        # Save the individual plot for the current layer
+        plot_filename = os.path.join(model_folder, f"non_zero_similarity_{layer_name}.png")
+        try:
+            plt.savefig(plot_filename)
+            plt.close()
+            logger.info(f"Plot saved as {plot_filename}")
+        except Exception as e:
+            logger.error(f"Error saving plot for {layer_name}: {e}")
+            raise
 
-
-def process_model(fileset):
+def process_model(fileset, plotdata="mean_max"):
     """Process a model's analysis and generate results."""
     
     modelname = fileset.split("/")[4][:fileset.split("/")[4].find("_pretrain")]
@@ -115,7 +133,7 @@ def process_model(fileset):
             experiment_file = experiment_files[0]
             process_experiment_file(experiment_file)
     else:
-        logger.info(f"Analysis file found for {modelname}")
+        logger.info(f"analysis file found for {modelname}")
     
     # Load neuron similarity analysis
     neuron_sim = load_neuron_similarity(file_path)
@@ -131,6 +149,13 @@ def process_model(fileset):
     non_zero_similarities = {layer_name: [] for layer_name in layer_names}
     pruning_steps = list(data.keys())  # List of pruning steps
 
+    # Populate non-zero similarities for each layer and step
+    for step in pruning_steps:
+        for entry in data[step]:
+            layer_name = entry['layer_name']
+            avg_similarity = entry[plotdata]
+            non_zero_similarities[layer_name].append(avg_similarity)
+
     # Create a folder for the model to save the plots and data
     model_folder = os.path.join('./plots', modelname)
     if not os.path.exists(model_folder):
@@ -142,24 +167,20 @@ def process_model(fileset):
     # Save the data as JSON
     save_json_data(model_folder, non_zero_similarities)
 
-    # Populate non-zero similarities for each layer and step, and generate plot in situ
-    for step in pruning_steps:
-        for entry in data[step]:
-            layer_name = entry['layer_name']
-            avg_similarity = entry['average_similarity']
-            non_zero_similarities[layer_name].append(avg_similarity)
-        
-        # Generate plot for each layer as data for that layer is processed
-        for layer_name, similarities in non_zero_similarities.items():
-            generate_and_save_plot_for_layer(layer_name, similarities, pruning_steps, model_folder)
+    # Generate and save plots for each layer
+    generate_and_save_plots(model_folder, non_zero_similarities, pruning_steps)
 
 def main():
     """Main function to process all analysis files."""
-    analysis_path = "/scratch/jgafur/LTH_output/*_pretrain10_finetune10_steps21_batch64_devicecuda/*.pkl"
+    process_data = "mean_max"
+    analysis_path = "/scratch/jgafur/LTH_output/R*_pretrain10_finetune10_steps21_batch64_devicecuda/*.pkl"
     logger.info(f"Found analysis files: {glob.glob(analysis_path)}")
     for fileset in glob.glob(analysis_path)[::-1]:
         if not "vgg" in fileset.lower():
-            process_model(fileset)
+            try:
+                process_model(fileset, process_data)
+            except Exception as e:
+                logger.error(f"Error processing model from {fileset}: {e}")
 
 if __name__ == "__main__":
     main()

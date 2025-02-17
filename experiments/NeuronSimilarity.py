@@ -283,7 +283,7 @@ class NeuronSimilarity:
             # Collect the data for the current pruning step
             non_zero_similarity_data[step] = {}
             for layer_name, similarities in non_zero_similarities.items():
-                non_zero_similarity_data[step][layer_name] = similarities
+                non_zero_similarity_data[step][layer_name] = float(similarities)
 
         # Save non-zero similarity data as a JSON file
         json_filename = f'{self.save_dir}/non_zero_similarity_data.json'
