@@ -21,6 +21,7 @@ def process_experiment_file(experiment_file_path):
         NS = NeuronSimilarity(experiment_data)
         NS.run_experiment()
         logger.info(f"Experiment for {experiment_file_path} completed successfully.")
+        
     except Exception as e:
         logger.error(f"Error running experiment for {experiment_file_path}: {e}")
         raise
@@ -67,40 +68,38 @@ def save_json_data(model_folder, data):
         logger.error(f"Error saving data to {data_filename}: {e}")
         raise
 
-def generate_and_save_plots(model_folder, non_zero_similarities, pruning_steps):
-    """Generate and save plots for the non-zero similarities."""
-    logger.info(f"Starting to generate plots for the layers.")
-    for layer_name, similarities in non_zero_similarities.items():
-        plt.figure(figsize=(10, 6))
-        similarities = np.clip(similarities, 0,1)
-        similarities = np.nan_to_num(similarities)
-        plt.plot(pruning_steps, similarities, label=layer_name, marker='o', linestyle='-', markersize=6, linewidth=2)
+def generate_and_save_plot_for_layer(layer_name, similarities, pruning_steps, model_folder):
+    """Generate and save plot for a single layer."""
+    plt.figure(figsize=(10, 6))
+    similarities = np.clip(similarities, 0, 1)
+    similarities = np.nan_to_num(similarities)
+    plt.plot(pruning_steps, similarities, label=layer_name, marker='o', linestyle='-', markersize=6, linewidth=2)
 
-        # Add horizontal line for baseline (e.g., 0)
-        plt.axhline(y=0, color='gray', linestyle='--', linewidth=1)
+    # Add horizontal line for baseline (e.g., 0)
+    plt.axhline(y=0, color='gray', linestyle='--', linewidth=1)
 
-        # Customize plot with better labels and titles
-        plt.title(f"Non-Zero Neuron Similarity for Layer: {layer_name}", fontsize=16)
-        plt.xlabel("Pruning Step", fontsize=14)
-        plt.ylabel("Non-Zero Similarity", fontsize=14)
+    # Customize plot with better labels and titles
+    plt.title(f"Non-Zero Neuron Similarity for Layer: {layer_name}", fontsize=16)
+    plt.xlabel("Pruning Step", fontsize=14)
+    plt.ylabel("Non-Zero Similarity", fontsize=14)
 
-        # Adding grid lines for easier interpretation
-        plt.grid(True, which='both', linestyle='--', color='gray', alpha=0.5)
+    # Adding grid lines for easier interpretation
+    plt.grid(True, which='both', linestyle='--', color='gray', alpha=0.5)
 
-        # Adjust the legend and plot style
-        plt.legend(loc='best', fontsize=12)
-        plt.tight_layout()
-        plt.ylim(-.1,1.1)
+    # Adjust the legend and plot style
+    plt.legend(loc='best', fontsize=12)
+    plt.tight_layout()
+    plt.ylim(-.1, 1.1)
 
-        # Save the individual plot for the current layer
-        plot_filename = os.path.join(model_folder, f"non_zero_similarity_{layer_name}.png")
-        try:
-            plt.savefig(plot_filename)
-            plt.close()
-            logger.info(f"Plot saved as {plot_filename}")
-        except Exception as e:
-            logger.error(f"Error saving plot for {layer_name}: {e}")
-            raise
+    # Save the individual plot for the current layer
+    plot_filename = os.path.join(model_folder, f"non_zero_similarity_{layer_name}.png")
+    try:
+        plt.savefig(plot_filename)
+        plt.close()  # Close the plot to free memory
+        logger.info(f"Plot saved as {plot_filename}")
+    except Exception as e:
+        logger.error(f"Error saving plot for {layer_name}: {e}")
+        raise
 
 def process_model(fileset):
     """Process a model's analysis and generate results."""
@@ -121,7 +120,7 @@ def process_model(fileset):
             experiment_file = experiment_files[0]
             process_experiment_file(experiment_file)
     else:
-        logger.info(f"analysis file found for {modelname}")
+        logger.info(f"Analysis file found for {modelname}")
     
     # Load neuron similarity analysis
     neuron_sim = load_neuron_similarity(file_path)
@@ -137,13 +136,6 @@ def process_model(fileset):
     non_zero_similarities = {layer_name: [] for layer_name in layer_names}
     pruning_steps = list(data.keys())  # List of pruning steps
 
-    # Populate non-zero similarities for each layer and step
-    for step in pruning_steps:
-        for entry in data[step]:
-            layer_name = entry['layer_name']
-            avg_similarity = entry['average_similarity']
-            non_zero_similarities[layer_name].append(avg_similarity)
-
     # Create a folder for the model to save the plots and data
     model_folder = os.path.join('./plots', modelname)
     if not os.path.exists(model_folder):
@@ -155,8 +147,16 @@ def process_model(fileset):
     # Save the data as JSON
     save_json_data(model_folder, non_zero_similarities)
 
-    # Generate and save plots for each layer
-    generate_and_save_plots(model_folder, non_zero_similarities, pruning_steps)
+    # Populate non-zero similarities for each layer and step, and generate plot in situ
+    for step in pruning_steps:
+        for entry in data[step]:
+            layer_name = entry['layer_name']
+            avg_similarity = entry['average_similarity']
+            non_zero_similarities[layer_name].append(avg_similarity)
+        
+        # Generate plot for each layer as data for that layer is processed
+        for layer_name, similarities in non_zero_similarities.items():
+            generate_and_save_plot_for_layer(layer_name, similarities, pruning_steps, model_folder)
 
 def main():
     """Main function to process all analysis files."""
