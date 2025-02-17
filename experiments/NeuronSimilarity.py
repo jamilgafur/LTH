@@ -7,6 +7,8 @@ from typing import List, Dict, Optional, Union
 import matplotlib.pyplot as plt
 import json
 from tqdm import tqdm  # Import tqdm
+import pickle 
+from matplotlib.colors import LinearSegmentedColormap
 
 class NeuronSimilarity:
     """
@@ -87,7 +89,12 @@ class NeuronSimilarity:
         norm_activations = np.linalg.norm(activations, axis=1, keepdims=True)
         normalized_activations = activations / norm_activations
         similarity_matrix = np.dot(normalized_activations, normalized_activations.T)
+        similarity_matrix = np.nan_to_num(similarity_matrix) #replace NaNs with 0
+        similarity_matrix = np.abs(similarity_matrix) # we only care about the magnitude
+        #TODO - check if we need this @Max
+        similarity_matrix = np.clip(similarity_matrix, 0,1)
         print(similarity_matrix.shape)
+        
         return similarity_matrix
 
     def _correlation_similarity(self, activations: np.ndarray) -> np.ndarray:
@@ -178,27 +185,60 @@ class NeuronSimilarity:
             # Plot the similarity matrices
             self.plot_similarity_matrices(metrics,step)
 
-            # Save metrics to a JSON file - takes too long to run
-            # self.save_metrics() 
-
             self.logger.info("Neuron Similarity experiment completed for all layers.")
             self.metrics[step] = metrics
+            
+        with open(f"{self.save_dir}/neuron_similarity.pkl", 'wb') as f:
+            pickle.dump(self, f) 
+            
+        self.plot_similarity_()
 
         return self.metrics
 
-    def plot_similarity_matrices(self, metrics,step) -> None:
+    def plot_similarity_matrices(self, metrics, step) -> None:
         """
-        Plot the similarity matrices for the experiment results.
+        Plot the similarity matrices for the experiment results with custom normalization and red-blue color scaling.
 
         Args:
-            save_dir (str): Directory to save the similarity matrix plot.
+            metrics (dict): Dictionary containing similarity matrices for the experiment.
+            step (int): The pruning step to be included in the plot title and filename.
         """
+        # Define the red-blue color map with black as the zero point
+        cdict = {
+            'red':   [(0.0, 0.0, 0.0),  # Black for zero
+                    (0.5, 1.0, 1.0),  # Transition to red for positive values
+                    (1.0, 1.0, 1.0)], # Red at maximum positive value
+
+            'green': [(0.0, 0.0, 0.0),  # Black for zero
+                    (0.5, 0.0, 0.0),  # No green in the positive range
+                    (1.0, 0.0, 0.0)], # No green at all for negative values
+
+            'blue':  [(0.0, 1.0, 1.0),  # Transition to blue for negative values
+                    (0.5, 0.0, 0.0),  # Black at zero
+                    (1.0, 0.0, 0.0)], # Blue at maximum negative value
+        }
+        
+        # Create the custom colormap
+        rb_cmap = LinearSegmentedColormap('RBColormap', cdict)
+
         for matrix in metrics['similarity_matrices']:
             similarity_matrix = np.array(matrix['similarity_matrix'])
-            plt.imshow(similarity_matrix, cmap='hot', interpolation='nearest')
-            plt.title(f"Neuron Similarity for Layer: {matrix['layer_name']}")
-            plt.colorbar()
-            plt.savefig(f'{self.save_dir}/neuron_similarity_{matrix["layer_name"]}_{step}.png')
+            
+            # Normalize the matrix to the range [0, 1] based on magnitude
+            # Ensure that the maximum value is mapped to 1, and minimum to 0
+            normed_matrix = (similarity_matrix - np.min(similarity_matrix)) / (np.max(similarity_matrix) - np.min(similarity_matrix))
+            
+            # Plot the matrix
+            plt.figure(figsize=(10, 8))
+            plt.imshow(normed_matrix, cmap=rb_cmap, interpolation='nearest', vmin=0, vmax=1)
+            plt.title(f"Neuron Similarity for Layer: {matrix['layer_name']} - Step {step}")
+            plt.colorbar(label='Similarity (Normalized)')
+            plt.xlabel('Neuron Index')
+            plt.ylabel('Neuron Index')
+            
+            # Save the plot
+            plot_filename = f'{self.save_dir}/neuron_similarity_{matrix["layer_name"]}_{step}.png'
+            plt.savefig(plot_filename)
             plt.close()
 
     def save_metrics(self) -> None:
@@ -209,3 +249,70 @@ class NeuronSimilarity:
         with open(metrics_file, 'w') as f:
             json.dump(self.metrics, f, indent=4)
         self.logger.info(f"Metrics saved to {metrics_file}")
+            
+    def plot_similarity_(self) -> None:
+        """
+        Plot the non-zero similarity for each pruneable layer against the pruning step.
+        One figure will be created per layer, showing the similarity across all pruning steps.
+        The figure is improved with better styling and clarity.
+        """
+        # Prepare lists to store data for plotting
+        pruning_steps = []
+        
+        # Extract the layer names correctly from the first step's 'average_similarities'
+        layer_names = [layer_metric['layer_name'] for layer_metric in self.metrics[next(iter(self.metrics))]['average_similarities']]
+        
+        # Initialize dictionary to store non-zero similarities for each layer
+        non_zero_similarities = {layer_name: [] for layer_name in layer_names}
+        
+        # Prepare a dictionary to store non-zero similarity data for JSON
+        non_zero_similarity_data = {}
+
+        # Iterate over the metrics for each pruning step
+        for step, metrics in self.metrics.items():
+            pruning_steps.append(step)
+            
+            # Calculate non-zero similarities for each layer
+            for layer_metric in metrics['average_similarities']:
+                layer_name = layer_metric['layer_name']
+                avg_similarity = layer_metric['average_similarity']
+                
+                # Store the similarity for each layer across steps
+                non_zero_similarities[layer_name].append(avg_similarity)
+            
+            # Collect the data for the current pruning step
+            non_zero_similarity_data[step] = {}
+            for layer_name, similarities in non_zero_similarities.items():
+                non_zero_similarity_data[step][layer_name] = similarities
+
+        # Save non-zero similarity data as a JSON file
+        json_filename = f'{self.save_dir}/non_zero_similarity_data.json'
+        with open(json_filename, 'w') as json_file:
+            json.dump(non_zero_similarity_data, json_file, indent=4)
+        self.logger.info(f"Non-zero similarity data saved as {json_filename}")
+
+        # Plot non-zero similarities for each layer in separate figures
+        for layer_name, similarities in non_zero_similarities.items():
+            plt.figure(figsize=(10, 6))
+            plt.plot(pruning_steps, similarities, label=layer_name, color='b', marker='o', linestyle='-', markersize=6, linewidth=2)
+            
+            # Add horizontal line for baseline (e.g., 0)
+            plt.axhline(y=0, color='gray', linestyle='--', linewidth=1)
+
+            # Customize plot with better labels and titles
+            plt.title(f"Non-Zero Neuron Similarity for Layer: {layer_name}", fontsize=16)
+            plt.xlabel("Pruning Step", fontsize=14)
+            plt.ylabel("Non-Zero Similarity", fontsize=14)
+            
+            # Adding grid lines for easier interpretation
+            plt.grid(True, which='both', linestyle='--', color='gray', alpha=0.5)
+            
+            # Adjust the legend and plot style
+            plt.legend(loc='best', fontsize=12)
+            plt.tight_layout()
+
+            # Save the individual plot for the current layer
+            plot_filename = f'{self.save_dir}/non_zero_similarity_{layer_name}.png'
+            plt.savefig(plot_filename)
+            plt.close()
+            self.logger.info(f"Plot saved as {plot_filename}")

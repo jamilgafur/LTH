@@ -9,30 +9,41 @@ import torch
 def get_pruneable_named_parameters(model, prunable_layers):
     names = []
     params = []
+    last_layer = list(model.modules())[-1]  # Get the last layer module
+
     for name, param in model.named_parameters():
         module_name = name.rsplit('.', 1)[0]  # Extract the module name
         module = dict(model.named_modules()).get(module_name, None)
-        if 'weight' in name and module and any(isinstance(module, layer) for layer in prunable_layers):
+        
+        # Skip the last layer and check if the layer is pruneable
+        if module != last_layer and 'weight' in name and module and any(isinstance(module, layer) for layer in prunable_layers):
             names.append(name)
             params.append(param)
-    return names, params
 
+    return names, params
 
 def get_pruneable_named_modules(model, prunable_layers):
     names = []
     modules = []
+    last_layer = list(model.modules())[-1]  # Get the last layer module
+
     for name, module in model.named_modules():
-        if any(isinstance(module, layer) for layer in prunable_layers):
+        # Skip the last layer and check if the layer is pruneable
+        if module != last_layer and any(isinstance(module, layer) for layer in prunable_layers):
             names.append(name)
             modules.append(module)
-    return names, modules
 
+    return names, modules
 
 def get_pruneable_modules(model, prunable_layers):
     acceptable_modules = []
+    last_layer = list(model.modules())[-1]  # Get the last layer module
+
     for module in model.modules():
-        if any(isinstance(module, layer) for layer in prunable_layers):
+        # Skip the last layer and check if the layer is pruneable
+        if module != last_layer and any(isinstance(module, layer) for layer in prunable_layers):
             acceptable_modules.append(module)
+
     return acceptable_modules
 
 
