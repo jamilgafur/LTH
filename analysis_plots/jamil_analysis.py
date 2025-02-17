@@ -15,16 +15,12 @@ logger = logging.getLogger()
 def process_experiment_file(experiment_file_path):
     """Run the experiment if not already processed."""
     logger.info(f"Processing experiment file: {experiment_file_path}")
-    try:
-        with open(experiment_file_path, 'rb') as f:
-            experiment_data = pickle.load(f)
-        NS = NeuronSimilarity(experiment_data)
-        NS.run_experiment()
-        logger.info(f"Experiment for {experiment_file_path} completed successfully.")
+    with open(experiment_file_path, 'rb') as f:
+        experiment_data = pickle.load(f)
+    NS = NeuronSimilarity(experiment_data)
+    NS.run_experiment()
+    logger.info(f"Experiment for {experiment_file_path} completed successfully.")
         
-    except Exception as e:
-        logger.error(f"Error running experiment for {experiment_file_path}: {e}")
-        raise
 
 def load_neuron_similarity(file_path):
     """Load and return the neuron similarity analysis from a pickle file."""
@@ -46,13 +42,15 @@ def extract_data_from_metrics(neuron_sim):
             data[step_key] = []
         
         logger.debug(f"Processing step {step_key} with {len(step['average_similarities'])} layers.")
-        for similarity in step['average_similarities']:
+        for i, similarity in enumerate(step['average_similarities']):
             layer_name = similarity['layer_name']
             avg_similarity = float(similarity['average_similarity'])  # Ensure we convert np.float32 to float
-            
+            similarity_matrix = step['similarity_matrices'][i]['similarity_matrix']
             data[step_key].append({
                 'layer_name': layer_name,
-                'average_similarity': avg_similarity
+                'average_similarity': avg_similarity,
+                'similarity_matrix': similarity_matrix,
+                'average_mean' : np.mean(np.max(similarity_matrix,axis=1))
             })
     
     return data
@@ -93,13 +91,10 @@ def generate_and_save_plot_for_layer(layer_name, similarities, pruning_steps, mo
 
     # Save the individual plot for the current layer
     plot_filename = os.path.join(model_folder, f"non_zero_similarity_{layer_name}.png")
-    try:
-        plt.savefig(plot_filename)
-        plt.close()  # Close the plot to free memory
-        logger.info(f"Plot saved as {plot_filename}")
-    except Exception as e:
-        logger.error(f"Error saving plot for {layer_name}: {e}")
-        raise
+    plt.savefig(plot_filename)
+    plt.close()  # Close the plot to free memory
+    logger.info(f"Plot saved as {plot_filename}")
+
 
 def process_model(fileset):
     """Process a model's analysis and generate results."""
@@ -164,10 +159,7 @@ def main():
     logger.info(f"Found analysis files: {glob.glob(analysis_path)}")
     for fileset in glob.glob(analysis_path)[::-1]:
         if not "vgg" in fileset.lower():
-            try:
-                process_model(fileset)
-            except Exception as e:
-                logger.error(f"Error processing model from {fileset}: {e}")
+            process_model(fileset)
 
 if __name__ == "__main__":
     main()
