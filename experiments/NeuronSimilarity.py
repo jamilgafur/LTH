@@ -9,7 +9,7 @@ import json
 from tqdm import tqdm  # Import tqdm
 import pickle 
 from matplotlib.colors import LinearSegmentedColormap
-
+from pyPrune.utils import get_pruneable_named_modules 
 class NeuronSimilarity:
     """
     A class to measure redundancy between neurons in all layers of the neural network during the pruning process.
@@ -86,13 +86,12 @@ class NeuronSimilarity:
             batch_size, num_filters, height, width = activations.shape
             activations = activations.transpose(0,2,3,1).reshape(-1,num_filters)
         activations = activations.T #batch dimension is first - that needs to change
+        activations += .00001 
         norm_activations = np.linalg.norm(activations, axis=1, keepdims=True)
-        normalized_activations = activations / norm_activations
+        normalized_activations = activations / norm_activations 
         similarity_matrix = np.dot(normalized_activations, normalized_activations.T)
         similarity_matrix = np.nan_to_num(similarity_matrix) #replace NaNs with 0
         similarity_matrix = np.abs(similarity_matrix) # we only care about the magnitude
-        #TODO - check if we need this @Max
-        similarity_matrix = np.clip(similarity_matrix, 0,1)
         print(similarity_matrix.shape)
         
         return similarity_matrix
@@ -161,7 +160,8 @@ class NeuronSimilarity:
             metrics = {"similarity_matrices" : [], "average_similarities" : []}
             self.model.load_state_dict(model_step, strict=False)
             # Use tqdm to show a progress bar when iterating through layers
-            for name, module in tqdm(self.model.named_modules(), desc="Evaluating Layers", ncols=100):
+            names, modules = get_pruneable_named_modules(self.model, self.pruner.prunable_layers)
+            for name, module in zip(names, modules):
                 if isinstance(module, nn.Module):
                     self.logger.info(f"Evaluating layer: {name}")
                     activations = self.evaluate_layer_activations(name)
