@@ -14,8 +14,8 @@ def calculate_pruning_percentage(weights):
 
 # Define paths
 for model_name in ["LeNet", "ResNet20", "Vgg16"]:
-    output_dir = f'/scratch/jgafur/LTH_output/{model_name}_pretrain10_finetune10_steps21_batch64_devicecuda/'
-
+    # output_dir = f'/scratch/jgafur/LTH_output/{model_name}_pretrain10_finetune10_steps21_batch64_devicecuda/'
+    output_dir = f'/projects/modularai/jgafur/LTH/temp/LeNet_pretrain1_finetune1_steps5_batch64_devicecuda/'
     # Load pruner object from .pkl file
     with open(glob.glob(f"{output_dir}*.pkl")[0], 'rb') as f:
         pruner = pickle.load(f)
@@ -48,15 +48,15 @@ for model_name in ["LeNet", "ResNet20", "Vgg16"]:
         
         # Get the pruneable modules
         names, modules = get_pruneable_named_modules(model, pruner.prunable_layers)
-        total_weights = 0
-        for name, module in zip(names, modules):
-            total_weights += module.weight.numel()
+        # total_weights = 0
+        # for name, module in zip(names, modules):
+        #     total_weights += module.weight.numel()
             
         # Process layers and store sparsity information
         for name, module in zip(names, modules):
             # Sparsity comes from the filename
             # Pruning percentage is calculated from the module's weight
-            pruning_percentage = 100*(calculate_pruning_percentage(module.weight.data)/total_weights)
+            pruning_percentage = 100*(calculate_pruning_percentage(module.weight.data)/len(module.weight.view(-1)))
             
             # Initialize a list for this layer if not already done
             if name not in layer_sparsity_data:
