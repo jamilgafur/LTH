@@ -14,24 +14,16 @@ logger = logging.getLogger()
 
 def process_experiment_file(experiment_file_path):
     """Run the experiment if not already processed."""
-    try:
-        with open(experiment_file_path, 'rb') as f:
-            experiment_data = pickle.load(f)
-        NS = NeuronSimilarity(experiment_data)
-        NS.run_experiment()
-    except Exception as e:
-        logger.error(f"Error running experiment for {experiment_file_path}: {e}")
-        raise
+    with open(experiment_file_path, 'rb') as f:
+        experiment_data = pickle.load(f)
+    NS = NeuronSimilarity(experiment_data)
+    NS.run_experiment()
     logger.info(f"Experiment for {experiment_file_path} completed successfully.")
 
 def load_neuron_similarity(file_path):
     """Load and return the neuron similarity analysis from a pickle file."""
-    try:
-        with open(file_path, 'rb') as f:
-            return pickle.load(f)
-    except Exception as e:
-        logger.error(f"Failed to load {file_path}: {e}")
-        raise
+    with open(file_path, 'rb') as f:
+        return pickle.load(f)
 
 def extract_data_from_metrics(neuron_sim):
     """Extract data from the NeuronSimilarity metrics."""
@@ -167,14 +159,11 @@ def process_model(fileset, plotdata="mean_max"):
 def main():
     """Main function to process all analysis files."""
     process_data = "mean_max"
-    analysis_path = "/scratch/jgafur/LTH_output/L*_pretrain10_finetune10_steps21_batch64_devicecuda/*.pkl"
+    analysis_path = "/scratch/jgafur/LTH_output/R*_pretrain10_finetune10_steps21_batch64_devicecuda/*.pkl"
     logger.info(f"Found analysis files: {glob.glob(analysis_path)}")
     for fileset in glob.glob(analysis_path)[::-1]:
         if not "vgg" in fileset.lower():
-            try:
-                process_model(fileset, process_data)
-            except Exception as e:
-                logger.error(f"Error processing model from {fileset}: {e}")
+            process_model(fileset, process_data)
 
 if __name__ == "__main__":
     main()
