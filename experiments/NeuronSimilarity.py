@@ -82,18 +82,21 @@ class NeuronSimilarity:
         Returns:
             np.ndarray: Cosine similarity matrix.
         """
-        if activations.ndim == 4: #convolutional layers have more dimensions to flatten
+        activations = activations.to(torch.float64) #avoids precision issues
+        #flattens width and height into batch dimension for convolutions
+        if activations.ndim == 4:
             batch_size, num_filters, height, width = activations.shape
             activations = activations.transpose(0,2,3,1).reshape(-1,num_filters)
-        activations = activations.T #batch dimension is first - that needs to change
-        activations += .00001 
+        # batch dimension is first in pytorch tensors this line switches it to second
+        activations = activations.T
+        activations += .00001 # avoids division by 0
+        #takes an L2 norm over batch dimension (dimension index 1)
         norm_activations = np.linalg.norm(activations, axis=1, keepdims=True)
         normalized_activations = activations / norm_activations 
+        #makes matrix of pairwise cosine similarities
         similarity_matrix = np.dot(normalized_activations, normalized_activations.T)
-        similarity_matrix = np.nan_to_num(similarity_matrix) #replace NaNs with 0
         similarity_matrix = np.abs(similarity_matrix) # we only care about the magnitude
         print(similarity_matrix.shape)
-        
         return similarity_matrix
 
     def _correlation_similarity(self, activations: np.ndarray) -> np.ndarray:
