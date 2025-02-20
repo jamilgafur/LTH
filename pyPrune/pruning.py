@@ -440,10 +440,8 @@ class IterativeMagnitudePruning:
 
                 # Mask the gradients for zeroed-out weights
                 for module in get_pruneable_modules(self.model, self.prunable_layers):
-                    if module.weight.grad is not None:
-                        mask = module.weight.data != 0  # Mask for non-zero weights
-                        module.weight.grad *= mask.float()  # Zero out gradients for pruned weights
-
+                    mask = module.weight.data == 0  # Mask for non-zero weights
+                    module.weight.grad *= mask.float()  # Zero out gradients for pruned weights
                 self.optimizer.step()
                 accuracy = 100. * output.argmax(dim=1).eq(target).sum().item() / target.size(0)
                 
