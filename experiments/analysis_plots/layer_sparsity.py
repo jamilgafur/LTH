@@ -7,15 +7,10 @@ import pickle
 import glob
 from tqdm import tqdm  # For the progress bar
 
-# Function to calculate pruning percentage (fraction of zero weights in the layer)
-def calculate_pruning_percentage(weights):
-    zero_weights = torch.sum(weights == 0).item()  # Number of zero weights
-    return zero_weights
-
 # Define paths
 for model_name in ["LeNet", "ResNet20", "Vgg16"]:
     # output_dir = f'/scratch/jgafur/LTH_output/{model_name}_pretrain10_finetune10_steps21_batch64_devicecuda/'
-    output_dir = f'/projects/modularai/jgafur/LTH/temp/LeNet_pretrain1_finetune1_steps5_batch64_devicecuda/'
+    output_dir = f"/projects/modularai/jgafur/LTH/temp/LeNet_pretrain2_finetune3_steps20_batch64_devicecuda/"
     # Load pruner object from .pkl file
     with open(glob.glob(f"{output_dir}*.pkl")[0], 'rb') as f:
         pruner = pickle.load(f)
@@ -27,14 +22,13 @@ for model_name in ["LeNet", "ResNet20", "Vgg16"]:
     print(f"Received: {paths}")
 
     # Dictionary to store sparsity info
-    layer_sparsity = {}
+    layer_sparsity_data = {}
 
     # Load the model once
     model = pruner.model
 
     # Initialize plotting data
-    layer_names = []
-    layer_sparsity_data = {}
+    total_weights_data = []  # To store total weights for each model
 
     # Iterate over paths (models)
     for path in tqdm(paths, desc="Processing models"):
@@ -48,56 +42,76 @@ for model_name in ["LeNet", "ResNet20", "Vgg16"]:
         
         # Get the pruneable modules
         names, modules = get_pruneable_named_modules(model, pruner.prunable_layers)
-        # total_weights = 0
-        # for name, module in zip(names, modules):
-        #     total_weights += module.weight.numel()
-            
+        
+        # Calculate total number of weights in the model
+        total_weights_in_model = sum(module.weight.numel() for module in modules)
+        total_weights_data.append(total_weights_in_model)
+
         # Process layers and store sparsity information
         for name, module in zip(names, modules):
-            # Sparsity comes from the filename
-            # Pruning percentage is calculated from the module's weight
-            pruning_percentage = 100*(calculate_pruning_percentage(module.weight.data)/len(module.weight.view(-1)))
+            # Calculate the number of zero weights in the layer
+            zero_weights_in_layer = torch.sum(module.weight.data == 0).item() 
+            total_weights_in_layer = module.weight.numel()
+            
+            # Calculate the sparsity of the layer (zero weights in the layer / total weights in the layer)
+            layer_sparsity = (zero_weights_in_layer / total_weights_in_layer) * 100  # Sparsity as percentage
             
             # Initialize a list for this layer if not already done
             if name not in layer_sparsity_data:
                 layer_sparsity_data[name] = {
                     'sparsity': [],  # Store sparsity values from filenames
-                    'pruning_percentage': []  # Store pruning percentages
+                    'zero_weights_in_layer': [],  # Store zero weights in each layer
+                    'total_weights_in_layer': [],  # Store total weights in each layer
+                    'zero_weights_in_model': []  # Store zero weights in the entire model
                 }
             
             # Append the values for this layer
             layer_sparsity_data[name]['sparsity'].append(float(sparsity))  # Sparsity is from the filename
-            layer_sparsity_data[name]['pruning_percentage'].append(pruning_percentage)
+            layer_sparsity_data[name]['zero_weights_in_layer'].append(zero_weights_in_layer)
+            layer_sparsity_data[name]['total_weights_in_layer'].append(total_weights_in_layer)
+            layer_sparsity_data[name]['zero_weights_in_model'].append(zero_weights_in_layer)
 
-            # Print layer-wise sparsity and pruning information
-            print(f"Layer: {name}, Sparsity: {sparsity}, Pruning Percentage: {pruning_percentage:.2f}%")
+    # Create subplots (2 rows, 1 column)
+    fig, axes = plt.subplots(2, 1, figsize=(10, 12))
 
-    # Sort the sparsity values in ascending order (you can change to descending by setting reverse=True)
+    # Sort and plot for Layer Sparsity vs Zero Weights in Layer
     for layer_name, data in layer_sparsity_data.items():
-        # Sort the sparsity and pruning percentages together based on sparsity
+        # Sort the data by sparsity
         sorted_indices = sorted(range(len(data['sparsity'])), key=lambda i: data['sparsity'][i])
-        layer_sparsity_data[layer_name]['sparsity'] = [data['sparsity'][i] for i in sorted_indices]
-        layer_sparsity_data[layer_name]['pruning_percentage'] = [data['pruning_percentage'][i] for i in sorted_indices]
+        sorted_sparsity = [data['sparsity'][i] for i in sorted_indices]
+        sorted_zero_weights_in_layer = [data['zero_weights_in_layer'][i] for i in sorted_indices]
+        sorted_total_weights_in_layer = [data['total_weights_in_layer'][i] for i in sorted_indices]
 
-    # Plotting the sparsity vs pruning percentage for each layer
-    plt.figure(figsize=(12, 6))
+        # First subplot: sparsity of layer (x-axis) vs ratio of zero weights to total weights in the layer
+        zero_weights_in_layer_ratio = [zero / total for zero, total in zip(sorted_zero_weights_in_layer, sorted_total_weights_in_layer)]
+        axes[0].plot(sorted_sparsity, zero_weights_in_layer_ratio, marker='o', linestyle='-', label=layer_name)
 
-    # For each layer, plot the sparsity vs pruning percentage
+    axes[0].set_xlabel('Sparsity (%)')
+    axes[0].set_ylabel('Zero Weights / Total Weights in Layer')
+    axes[0].set_title('Zero Weights / Total Weights in Layer')
+    axes[0].legend(title="Layer Names", bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Sort and plot for Layer Sparsity vs Zero Weights in Model
     for layer_name, data in layer_sparsity_data.items():
-        plt.plot(data['sparsity'], data['pruning_percentage'], label=layer_name)
-        plt.scatter(data['sparsity'], data['pruning_percentage'], label=layer_name)
+        # Sort the data by sparsity
+        sorted_indices = sorted(range(len(data['sparsity'])), key=lambda i: data['sparsity'][i])
+        sorted_sparsity = [data['sparsity'][i] for i in sorted_indices]
+        sorted_zero_weights_in_model = [data['zero_weights_in_model'][i] for i in sorted_indices]
 
-    plt.xlabel('Sparsity (%)')
-    plt.ylabel('Percentage of 0 Weight/Total Pruneable Weights')
-    plt.title('Sparsity vs Pruning Percentage for Each Layer (Sorted by Sparsity)')
-    plt.legend(title="Layer Names", bbox_to_anchor=(1.05, 1), loc='upper left')
+        # Second subplot: sparsity of layer (x-axis) vs ratio of zero weights to total weights in the model
+        zero_weights_in_model_ratio = [zero / total_weights_in_model for zero in sorted_zero_weights_in_model]
+        axes[1].plot(sorted_sparsity, zero_weights_in_model_ratio, marker='o', linestyle='-', label=layer_name)
+
+    axes[1].set_xlabel('Sparsity (%)')
+    axes[1].set_ylabel('Zero Weights / Total Weights in Model')
+    axes[1].set_title('Zero Weights / Total Weights in Model')
+    axes[1].legend(title="Layer Names", bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Adjust layout
     plt.tight_layout()
 
     # Save the plot
     os.makedirs(f"./plots/{model_name}/", exist_ok=True)
-    plt.savefig(f"./plots/{model_name}/sparsity_vs_pruning_percentage_sorted.png")
+    plt.savefig(f"./plots/{model_name}/weights_and_sparsity_plots_sorted.png")
 
-    # Optionally, summarize the layer sparsity and pruning percentages
-    print("\nFinal Layer Sparsity and Pruning Percentages:")
-    for name, data in layer_sparsity_data.items():
-        print(f"Layer: {name}, Sparsity values: {data['sparsity']}, Pruning Percentages: {data['pruning_percentage']}")
+    plt.show()

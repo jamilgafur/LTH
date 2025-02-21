@@ -82,7 +82,8 @@ class NeuronSimilarity:
         Returns:
             np.ndarray: Cosine similarity matrix.
         """
-        activations = activations.to(torch.float64) #avoids precision issues
+        activations = activations.astype(np.float64) #avoids precision issues
+  
         #flattens width and height into batch dimension for convolutions
         if activations.ndim == 4:
             batch_size, num_filters, height, width = activations.shape
@@ -286,7 +287,7 @@ class NeuronSimilarity:
             # Collect the data for the current pruning step
             non_zero_similarity_data[step] = {}
             for layer_name, similarities in non_zero_similarities.items():
-                non_zero_similarity_data[step][layer_name] = float(similarities)
+                non_zero_similarity_data[step][layer_name] = similarities
 
         # Save non-zero similarity data as a JSON file
         json_filename = f'{self.save_dir}/non_zero_similarity_data.json'
