@@ -61,7 +61,7 @@ def merge_neuron_metrics(metrics):
 
 def plot_histogram_accuracy_drop(data, output_dir):
     """
-    Plot a histogram of accuracy drop values (loss) across all neurons.
+    Plot a histogram of accuracy drop values   across all neurons.
     
     Args:
         data (list of dict): Merged neuron data.
@@ -70,9 +70,9 @@ def plot_histogram_accuracy_drop(data, output_dir):
     accuracy_drops = [d['accuracy_drop'] for d in data]
     plt.figure(figsize=(10, 6))
     plt.hist(accuracy_drops, bins=30, color='skyblue', edgecolor='black')
-    plt.xlabel("Accuracy Drop (Loss)")
+    plt.xlabel("Accuracy Drop")
     plt.ylabel("Count of Neurons")
-    plt.title("Histogram of Neuron Accuracy Drops (Loss)")
+    plt.title("Histogram of Neuron Accuracy Drops")
     out_path = os.path.join(output_dir, "histogram_accuracy_drop.png")
     plt.savefig(out_path)
     plt.close()
@@ -91,7 +91,7 @@ def plot_histogram_by_layer(data, output_dir):
     for layer in layers:
         layer_data = [d['accuracy_drop'] for d in data if d['layer'] == layer]
         plt.hist(layer_data, bins=30, alpha=0.5, label=layer)
-    plt.xlabel("Accuracy Drop (Loss)")
+    plt.xlabel("Accuracy Drop")
     plt.ylabel("Count of Neurons")
     plt.title("Histogram of Neuron Accuracy Drops by Layer")
     plt.legend(title="Layer")
@@ -116,9 +116,10 @@ def plot_scatter_sparsity_accuracy(data, output_dir):
         y = [d['accuracy_drop'] for d in data if d['layer'] == layer]
         plt.scatter(x, y, color=cmap(i), label=layer, alpha=0.7)
     plt.xlabel("Sparsity")
-    plt.ylabel("Accuracy Drop (Loss)")
+    plt.ylabel("Accuracy Drop  ")
     plt.title("Scatter Plot of Sparsity vs. Accuracy Drop by Layer")
     plt.legend(title="Layer")
+    plt.xticks(rotation=45)
     out_path = os.path.join(output_dir, "scatter_sparsity_vs_accuracy_drop.png")
     plt.savefig(out_path)
     plt.close()
@@ -140,13 +141,13 @@ def plot_boxplot_accuracy_by_layer(data, output_dir):
     plt.figure(figsize=(10, 6))
     plt.boxplot(data_to_plot, labels=layers)
     plt.xlabel("Layer")
-    plt.ylabel("Accuracy Drop (Loss)")
+    plt.ylabel("Accuracy Drop")
     plt.title("Boxplot of Accuracy Drop by Layer")
     out_path = os.path.join(output_dir, "boxplot_accuracy_drop_by_layer.png")
     plt.savefig(out_path)
     plt.close()
     logging.info(f"Saved boxplot of accuracy drop by layer to {out_path}")
-
+    return (layers, data_to_plot)
 def plot_2d_histogram(data, output_dir):
     """
     Create a 2D histogram (heatmap) of sparsity vs. accuracy drop.
@@ -160,7 +161,7 @@ def plot_2d_histogram(data, output_dir):
     plt.figure(figsize=(10, 6))
     plt.hist2d(x, y, bins=30, cmap='viridis')
     plt.xlabel("Sparsity")
-    plt.ylabel("Accuracy Drop (Loss)")
+    plt.ylabel("Accuracy Drop  ")
     plt.title("2D Histogram of Sparsity vs. Accuracy Drop")
     plt.colorbar(label="Count")
     out_path = os.path.join(output_dir, "2d_histogram_sparsity_vs_accuracy_drop.png")
@@ -173,30 +174,44 @@ def main():
                         format="%(asctime)s - %(levelname)s - %(message)s")
     
     # List of model names to process (update as needed)
-    for model_name in ["LeNet"]:
+    for model_name in ["LeNet", "ResNet20", "Vgg16"]:
         # Update the file paths as needed.
         # Note: The pickle file is assumed to be named "neuron_zeroing.pkl"
-        metrics_files = f"/projects/modularai/jgafur/LTH/pruning_checkpoints/{model_name}_pretrain3_finetune1_steps3_batch64_devicecuda/neuronZeroing_accuracy/metrics_*.json"
+        metrics_files = f"/scratch/jgafur/LTH_output/{model_name}_pretrain3_finetune1_steps3_batch64_devicecuda/neuronZeroing_accuracy/metrics_*.json"
         # metrics_files = f"/scratch/jgafur/LTH_output/{model_name}_pretrain10_finetune10_steps21_batch64_devicecuda/neuronZeroing_accuracy/*.json"
-        for metrics_file in glob.glob(metrics_files):
-            step = metrics_file.split("/")[-1].split("_")[-1].split(".")[1]
-            logging.info(f"Loading metrics from {metrics_file}")
-            merged_data = merge_neuron_metrics(load_metrics(metrics_file))
-            
-            if not merged_data:
-                logging.error("No merged neuron data available. Exiting.")
-                continue
-            
-            # Generate plots
-            plots_dir = os.path.join(".", f"plots/{model_name}/NeuronZeroing/0.{step}",)
-            os.makedirs(plots_dir, exist_ok=True)
-            plot_histogram_accuracy_drop(merged_data, plots_dir)
-            plot_histogram_by_layer(merged_data, plots_dir)
-            plot_scatter_sparsity_accuracy(merged_data, plots_dir)
-            plot_boxplot_accuracy_by_layer(merged_data, plots_dir)
-            plot_2d_histogram(merged_data, plots_dir)
-            
-            logging.info(f"All plots for {model_name} have been generated and saved in {plots_dir}.")
-
+        csv_data = {}
+        try:
+            for metrics_file in glob.glob(metrics_files):
+                step = metrics_file.split("/")[-1].split("_")[-1].split(".")[1]
+                logging.info(f"Loading metrics from {metrics_file}")
+                merged_data = merge_neuron_metrics(load_metrics(metrics_file))
+                
+                if not merged_data:
+                    logging.error("No merged neuron data available. Exiting.")
+                    continue
+                
+                # Generate plots
+                plots_dir = os.path.join(".", f"plots/{model_name}/NeuronZeroing/0.{step}",)
+                os.makedirs(plots_dir, exist_ok=True)
+                plot_histogram_accuracy_drop(merged_data, plots_dir)
+                plot_histogram_by_layer(merged_data, plots_dir)
+                plot_scatter_sparsity_accuracy(merged_data, plots_dir)
+                csv_data[step] = plot_boxplot_accuracy_by_layer(merged_data, plots_dir)
+                plot_2d_histogram(merged_data, plots_dir)
+                
+                logging.info(f"All plots for {model_name} have been generated and saved in {plots_dir}.")
+        except Exception as e:
+            print(f"Error: {e}")
+            continue
+        # Save the boxplot data to a CSV file [step, pruning_layer, average_accuracy_drop, std_accuracy, min_accuracy, max_accuracy]
+        csv_file = os.path.join(".", f"plots/{model_name}/NeuronZeroing/boxplot_accuracy_drop_by_layer.csv")
+        with open(csv_file, 'w') as f:
+            f.write("step,pruning_layer,average_accuracy_drop,std_accuracy,min_accuracy,max_accuracy\n")
+            for step, (layers, data) in csv_data.items():
+                for layer, values in zip(layers, data):
+                    f.write(f"{np.round(float("."+step),4)},{layer},{np.mean(values)},{np.std(values)},{np.min(values)},{np.max(values)}\n")
+        import pandas as pd
+        x = pd.read_csv(csv_file)
+        x.to_latex(csv_file.replace(".csv",".tex"), index=False)
 if __name__ == "__main__":
     main()
