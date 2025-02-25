@@ -1,106 +1,202 @@
+#!/usr/bin/env python3
+
+import json
 import os
 import pickle
-import json
+import logging
 import matplotlib.pyplot as plt
 import numpy as np
+from collections import defaultdict
+import glob
+def load_metrics(json_file):
+    """
+    Load the metrics from a json checkpoint file.
+    
+    Args:
+        json file
+        
+    Returns:
+        dict: The "metrics" dictionary extracted from the checkpoint.
+    """
+    with open(json_file, 'r') as file:
+        data = json.load(file)
+    return data
 
-# Helper function to load checkpoint
-def load_checkpoint(checkpoint_file):
-    with open(checkpoint_file, 'rb') as f:
-        checkpoint = pickle.load(f)
-    return checkpoint
+def merge_neuron_metrics(metrics):
+    """
+    Merge neuron accuracy drops with corresponding sparsity metrics.
+    
+    Both lists are merged on 'layer_name' and 'neuron_index'. Each merged record contains:
+      - layer: layer name
+      - neuron_index: index of the neuron
+      - accuracy_drop: the measured accuracy drop (interpreted as loss)
+      - sparsity: the sparsity metric for the neuron
+      
+    Args:
+        metrics (dict): The loaded metrics data.
+    
+    Returns:
+        list of dict: Merged neuron data.
+    """
+    acc_drops = metrics.get("neuron_accuracy_drops", [])
+    sparsity_metrics = metrics.get("sparsity_metrics", [])
+    
+    # Create a lookup dictionary for sparsity using (layer_name, neuron_index) as key.
+    sparsity_dict = {(d['layer_name'], d['neuron_index']): d['sparsity'] 
+                     for d in sparsity_metrics}
+    
+    merged_data = []
+    for d in acc_drops:
+        key = (d['layer_name'], d['neuron_index'])
+        if key in sparsity_dict:
+            merged_data.append({
+                "layer": d['layer_name'],
+                "neuron_index": d['neuron_index'],
+                "accuracy_drop": d['accuracy_drop'],
+                "sparsity": sparsity_dict[key]
+            })
+        else:
+            logging.warning(f"No sparsity data for {key}")
+    return merged_data
 
-# Helper function to load metrics from the saved file
-def load_metrics(metrics_file):
-    with open(metrics_file, 'r') as f:
-        metrics = json.load(f)
-    return metrics
-
-# Function to generate figures from the metrics
-def generate_figures(metrics, save_dir):
-    # Create the necessary directories
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Extract relevant metrics
-    accuracy_drops = [entry['accuracy_drop'] for entry in metrics['neuron_accuracy_drops']]
-    sparsities = [entry['sparsity'] for entry in metrics['sparsity_metrics']]
-    loss_changes = [entry['loss_change'] for entry in metrics['loss_changes']]
-
-    # Layer accuracy drops
-    layer_accuracy_drops = {}
-    for entry in metrics['layer_accuracy_drops']:
-        if entry['layer_name'] not in layer_accuracy_drops:
-            layer_accuracy_drops[entry['layer_name']] = []
-        layer_accuracy_drops[entry['layer_name']].append(entry['accuracy_drop'])
-
-    # Create the figure
-    plt.figure(figsize=(14, 12))
-
-    # Plot 1: Accuracy Drop Distribution
-    plt.subplot(2, 3, 1)
-    plt.hist(accuracy_drops, bins=30)
-    plt.title('Impact of Neuron Zeroing on Accuracy')
-    plt.xlabel('Accuracy Drop')
-    plt.ylabel('Frequency')
-
-    # Plot 2: Sparsity vs Accuracy Drop
-    plt.subplot(2, 3, 2)
-    plt.scatter(sparsities, accuracy_drops, alpha=0.5)
-    plt.title('Sparsity vs Accuracy Drop')
-    plt.xlabel('Sparsity')
-    plt.ylabel('Accuracy Drop')
-
-    # Plot 3: Accuracy Drop per Layer
-    plt.subplot(2, 3, 3)
-    for layer_name, accuracy in layer_accuracy_drops.items():
-        plt.hist(accuracy, bins=20, alpha=0.5, label=layer_name)
-    plt.title('Accuracy Drop per Layer')
-    plt.xlabel('Accuracy Drop')
-    plt.ylabel('Frequency')
-    plt.legend()
-
-    # Plot 4: Loss Change Distribution
-    plt.subplot(2, 3, 4)
-    plt.hist(loss_changes, bins=30, color='orange', alpha=0.7)
-    plt.title('Loss Change Distribution')
-    plt.xlabel('Loss Change')
-    plt.ylabel('Frequency')
-
-    # Plot 5: Loss vs Sparsity
-    loss_metrics = [entry['loss'] for entry in metrics['loss_metrics']]
-    plt.subplot(2, 3, 5)
-    plt.scatter(sparsities, loss_metrics, alpha=0.5)
-    plt.title('Loss vs Sparsity')
-    plt.xlabel('Sparsity')
-    plt.ylabel('Loss')
-
-    # Tight layout and save the plot
-    plt.tight_layout()
-    plot_file = os.path.join(save_dir, 'neuron_zeroing_results.png')
-    plt.savefig(plot_file)
-    print(f"Figure saved to {plot_file}")
+def plot_histogram_accuracy_drop(data, output_dir):
+    """
+    Plot a histogram of accuracy drop values (loss) across all neurons.
+    
+    Args:
+        data (list of dict): Merged neuron data.
+        output_dir (str): Directory to save the plot.
+    """
+    accuracy_drops = [d['accuracy_drop'] for d in data]
+    plt.figure(figsize=(10, 6))
+    plt.hist(accuracy_drops, bins=30, color='skyblue', edgecolor='black')
+    plt.xlabel("Accuracy Drop (Loss)")
+    plt.ylabel("Count of Neurons")
+    plt.title("Histogram of Neuron Accuracy Drops (Loss)")
+    out_path = os.path.join(output_dir, "histogram_accuracy_drop.png")
+    plt.savefig(out_path)
     plt.close()
+    logging.info(f"Saved histogram of accuracy drops to {out_path}")
 
-# Main function to load the checkpoint, load metrics, and generate figures
-def main(checkpoint_file, metrics_file, save_dir):
-    # Load the checkpoint (for model state, etc.)
-    checkpoint = load_checkpoint(checkpoint_file)
-    print("Checkpoint loaded successfully.")
+def plot_histogram_by_layer(data, output_dir):
+    """
+    Plot a histogram of accuracy drop values for each layer (color-coded).
+    
+    Args:
+        data (list of dict): Merged neuron data.
+        output_dir (str): Directory to save the plot.
+    """
+    layers = list(set(d['layer'] for d in data))
+    plt.figure(figsize=(10, 6))
+    for layer in layers:
+        layer_data = [d['accuracy_drop'] for d in data if d['layer'] == layer]
+        plt.hist(layer_data, bins=30, alpha=0.5, label=layer)
+    plt.xlabel("Accuracy Drop (Loss)")
+    plt.ylabel("Count of Neurons")
+    plt.title("Histogram of Neuron Accuracy Drops by Layer")
+    plt.legend(title="Layer")
+    out_path = os.path.join(output_dir, "histogram_accuracy_drop_by_layer.png")
+    plt.savefig(out_path)
+    plt.close()
+    logging.info(f"Saved histogram of accuracy drops by layer to {out_path}")
 
-    # Load the metrics (accuracy drops, sparsity, etc.)
-    metrics = load_metrics(metrics_file)
-    print("Metrics loaded successfully.")
+def plot_scatter_sparsity_accuracy(data, output_dir):
+    """
+    Create a scatter plot of sparsity vs. accuracy drop, with points color-coded by layer.
+    
+    Args:
+        data (list of dict): Merged neuron data.
+        output_dir (str): Directory to save the plot.
+    """
+    layers = sorted(set(d['layer'] for d in data))
+    plt.figure(figsize=(10, 6))
+    cmap = plt.cm.get_cmap('tab10', len(layers))
+    for i, layer in enumerate(layers):
+        x = [d['sparsity'] for d in data if d['layer'] == layer]
+        y = [d['accuracy_drop'] for d in data if d['layer'] == layer]
+        plt.scatter(x, y, color=cmap(i), label=layer, alpha=0.7)
+    plt.xlabel("Sparsity")
+    plt.ylabel("Accuracy Drop (Loss)")
+    plt.title("Scatter Plot of Sparsity vs. Accuracy Drop by Layer")
+    plt.legend(title="Layer")
+    out_path = os.path.join(output_dir, "scatter_sparsity_vs_accuracy_drop.png")
+    plt.savefig(out_path)
+    plt.close()
+    logging.info(f"Saved scatter plot of sparsity vs. accuracy drop to {out_path}")
 
-    # Generate the figures based on metrics
-    generate_figures(metrics, save_dir)
-    print("Figures generated and saved.")
+def plot_boxplot_accuracy_by_layer(data, output_dir):
+    """
+    Create a boxplot of accuracy drop values grouped by layer.
+    
+    Args:
+        data (list of dict): Merged neuron data.
+        output_dir (str): Directory to save the plot.
+    """
+    layer_dict = defaultdict(list)
+    for d in data:
+        layer_dict[d['layer']].append(d['accuracy_drop'])
+    layers = sorted(layer_dict.keys())
+    data_to_plot = [layer_dict[layer] for layer in layers]
+    plt.figure(figsize=(10, 6))
+    plt.boxplot(data_to_plot, labels=layers)
+    plt.xlabel("Layer")
+    plt.ylabel("Accuracy Drop (Loss)")
+    plt.title("Boxplot of Accuracy Drop by Layer")
+    out_path = os.path.join(output_dir, "boxplot_accuracy_drop_by_layer.png")
+    plt.savefig(out_path)
+    plt.close()
+    logging.info(f"Saved boxplot of accuracy drop by layer to {out_path}")
+
+def plot_2d_histogram(data, output_dir):
+    """
+    Create a 2D histogram (heatmap) of sparsity vs. accuracy drop.
+    
+    Args:
+        data (list of dict): Merged neuron data.
+        output_dir (str): Directory to save the plot.
+    """
+    x = [d['sparsity'] for d in data]
+    y = [d['accuracy_drop'] for d in data]
+    plt.figure(figsize=(10, 6))
+    plt.hist2d(x, y, bins=30, cmap='viridis')
+    plt.xlabel("Sparsity")
+    plt.ylabel("Accuracy Drop (Loss)")
+    plt.title("2D Histogram of Sparsity vs. Accuracy Drop")
+    plt.colorbar(label="Count")
+    out_path = os.path.join(output_dir, "2d_histogram_sparsity_vs_accuracy_drop.png")
+    plt.savefig(out_path)
+    plt.close()
+    logging.info(f"Saved 2D histogram of sparsity vs. accuracy drop to {out_path}")
+
+def main():
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s - %(levelname)s - %(message)s")
+    
+    # List of model names to process (update as needed)
+    for model_name in ["LeNet"]:
+        # Update the file paths as needed.
+        # Note: The pickle file is assumed to be named "neuron_zeroing.pkl"
+        metrics_files = f"/projects/modularai/jgafur/LTH/pruning_checkpoints/{model_name}_pretrain3_finetune1_steps3_batch64_devicecuda/neuronZeroing_accuracy/metrics_*.json"
+        # metrics_files = f"/scratch/jgafur/LTH_output/{model_name}_pretrain10_finetune10_steps21_batch64_devicecuda/neuronZeroing_accuracy/*.json"
+        for metrics_file in glob.glob(metrics_files):
+            step = metrics_file.split("/")[-1].split("_")[-1].split(".")[1]
+            logging.info(f"Loading metrics from {metrics_file}")
+            merged_data = merge_neuron_metrics(load_metrics(metrics_file))
+            
+            if not merged_data:
+                logging.error("No merged neuron data available. Exiting.")
+                continue
+            
+            # Generate plots
+            plots_dir = os.path.join(".", f"plots/{model_name}/NeuronZeroing/0.{step}",)
+            os.makedirs(plots_dir, exist_ok=True)
+            plot_histogram_accuracy_drop(merged_data, plots_dir)
+            plot_histogram_by_layer(merged_data, plots_dir)
+            plot_scatter_sparsity_accuracy(merged_data, plots_dir)
+            plot_boxplot_accuracy_by_layer(merged_data, plots_dir)
+            plot_2d_histogram(merged_data, plots_dir)
+            
+            logging.info(f"All plots for {model_name} have been generated and saved in {plots_dir}.")
 
 if __name__ == "__main__":
-    # Specify file paths (update with the correct paths)
-    for model_name in ["LeNet"]:
-        checkpoint_file = f"/scratch/jgafur/LTH_output/{model_name}_pretrain10_finetune10_steps21_batch64_devicecuda/neuronZeroing_accuracy/neuron_zeroing.pkl"  # Example path to the checkpoint
-        metrics_file = f"/scratch/jgafur/LTH_output/{model_name}_pretrain10_finetune10_steps21_batch64_devicecuda/neuronZeroing_accuracy/metrics.json"  # Example path to the saved metrics
-        save_dir = f"./plots/{model_name}"  # Path where figures should be saved
-
-        # Run the script
-        main(checkpoint_file, metrics_file, save_dir)
+    main()

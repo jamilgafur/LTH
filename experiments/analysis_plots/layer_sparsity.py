@@ -9,9 +9,10 @@ from tqdm import tqdm  # For the progress bar
 
 # Define paths
 for model_name in ["LeNet", "ResNet20", "Vgg16"]:
-    # output_dir = f'/scratch/jgafur/LTH_output/{model_name}_pretrain10_finetune10_steps21_batch64_devicecuda/'
-    output_dir = f"/projects/modularai/jgafur/LTH/temp/LeNet_pretrain2_finetune3_steps20_batch64_devicecuda/"
+    output_dir = f"/projects/modularai/jgafur/LTH/pruning_checkpoints/{model_name}_pretrain3_finetune1_steps3_batch64_devicecuda/"
+    # output_dir = f"/projects/modularai/jgafur/LTH/temp/LeNet_pretrain2_finetune3_steps20_batch64_devicecuda/"
     # Load pruner object from .pkl file
+    print(f"{f"{output_dir}*.pkl"}")
     with open(glob.glob(f"{output_dir}*.pkl")[0], 'rb') as f:
         pruner = pickle.load(f)
 
@@ -111,7 +112,7 @@ for model_name in ["LeNet", "ResNet20", "Vgg16"]:
     plt.tight_layout()
 
     # Save the plot
-    os.makedirs(f"./plots/{model_name}/", exist_ok=True)
-    plt.savefig(f"./plots/{model_name}/weights_and_sparsity_plots_sorted.png")
+    os.makedirs(f"./plots/{model_name}/layer_sparsity/", exist_ok=True)
+    plt.savefig(f"./plots/{model_name}/layer_sparsity/weights_and_sparsity_plots_sorted.png")
 
     plt.show()

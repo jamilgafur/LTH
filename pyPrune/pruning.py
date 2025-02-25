@@ -115,6 +115,7 @@ class IterativeMagnitudePruning:
         else:
             logger.info(f"Save directory {self.save_dir} already exists.")
 
+        print(f"saving pickle to {self.pickle_name}")
         with open(self.pickle_name, 'wb') as f:
             pickle.dump(self, f)
         logger.info("Initial pruner state saved as pickle.")
@@ -366,7 +367,7 @@ class IterativeMagnitudePruning:
             total_params += module.weight.numel()
             pruned_params += torch.sum(module.weight == 0).item()
         current_sparsity = pruned_params / total_params
-        assert np.isclose(current_sparsity, target_sparsity, atol=1e-2), \
+        assert np.isclose(current_sparsity, target_sparsity, atol=.01), \
             f"Model sparsity mismatch: {current_sparsity:.4f} vs {target_sparsity:.4f}"
         self.current_sparsity = current_sparsity
         logger.info(f"Sparsity assertion passed: {current_sparsity * 100:.2f}%")

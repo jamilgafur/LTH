@@ -175,7 +175,7 @@ def main():
     """Main function to process all analysis files."""
     for model_name in ["LeNet", "ResNet20"]:
         process_data = "mean_max"
-        analysis_path = f"/scratch/jgafur/LTH_output/{model_name}_pretrain10_finetune10_steps21_batch64_devicecuda/pruner.pkl"
+        analysis_path = f"/scratch/jgafur/LTH_output/{model_name}_pretrain3_finetune3_steps3_batch64_devicecuda/*.pkl"
         logger.info(f"Found analysis files: {glob.glob(analysis_path)}")
         for fileset in glob.glob(analysis_path)[::-1]:
             if not "vgg" in fileset.lower():
