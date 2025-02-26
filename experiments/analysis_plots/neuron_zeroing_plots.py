@@ -3,7 +3,6 @@
 import json
 import os
 import pickle
-import logging
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
@@ -56,7 +55,7 @@ def merge_neuron_metrics(metrics):
                 "sparsity": sparsity_dict[key]
             })
         else:
-            logging.warning(f"No sparsity data for {key}")
+            print(f"No sparsity data for {key}")
     return merged_data
 
 def plot_histogram_accuracy_drop(data, output_dir):
@@ -76,7 +75,7 @@ def plot_histogram_accuracy_drop(data, output_dir):
     out_path = os.path.join(output_dir, "histogram_accuracy_drop.png")
     plt.savefig(out_path)
     plt.close()
-    logging.info(f"Saved histogram of accuracy drops to {out_path}")
+    print(f"Saved histogram of accuracy drops to {out_path}")
 
 def plot_histogram_by_layer(data, output_dir):
     """
@@ -98,7 +97,7 @@ def plot_histogram_by_layer(data, output_dir):
     out_path = os.path.join(output_dir, "histogram_accuracy_drop_by_layer.png")
     plt.savefig(out_path)
     plt.close()
-    logging.info(f"Saved histogram of accuracy drops by layer to {out_path}")
+    print(f"Saved histogram of accuracy drops by layer to {out_path}")
 
 def plot_scatter_sparsity_accuracy(data, output_dir):
     """
@@ -123,7 +122,7 @@ def plot_scatter_sparsity_accuracy(data, output_dir):
     out_path = os.path.join(output_dir, "scatter_sparsity_vs_accuracy_drop.png")
     plt.savefig(out_path)
     plt.close()
-    logging.info(f"Saved scatter plot of sparsity vs. accuracy drop to {out_path}")
+    print(f"Saved scatter plot of sparsity vs. accuracy drop to {out_path}")
 
 def plot_boxplot_accuracy_by_layer(data, output_dir):
     """
@@ -146,7 +145,7 @@ def plot_boxplot_accuracy_by_layer(data, output_dir):
     out_path = os.path.join(output_dir, "boxplot_accuracy_drop_by_layer.png")
     plt.savefig(out_path)
     plt.close()
-    logging.info(f"Saved boxplot of accuracy drop by layer to {out_path}")
+    print(f"Saved boxplot of accuracy drop by layer to {out_path}")
     return (layers, data_to_plot)
 def plot_2d_histogram(data, output_dir):
     """
@@ -167,11 +166,9 @@ def plot_2d_histogram(data, output_dir):
     out_path = os.path.join(output_dir, "2d_histogram_sparsity_vs_accuracy_drop.png")
     plt.savefig(out_path)
     plt.close()
-    logging.info(f"Saved 2D histogram of sparsity vs. accuracy drop to {out_path}")
+    print(f"Saved 2D histogram of sparsity vs. accuracy drop to {out_path}")
 
 def main():
-    logging.basicConfig(level=logging.INFO,
-                        format="%(asctime)s - %(levelname)s - %(message)s")
     model_names = ["LeNet", "ResNet20", "Vgg16"]
     pretrain = "3"
     finetune = "3"
@@ -191,7 +188,7 @@ def main():
             merged_data = merge_neuron_metrics(load_metrics(metrics_file))
             
             if not merged_data:
-                logging.error("No merged neuron data available. Exiting.")
+                print("No merged neuron data available. Exiting.")
                 continue
             
             # Generate plots
@@ -203,8 +200,6 @@ def main():
             csv_data[step] = plot_boxplot_accuracy_by_layer(merged_data, plots_dir)
             plot_2d_histogram(merged_data, plots_dir)
             
-            logging.info(f"All plots for {model_name} have been generated and saved in {plots_dir}.")
-
         # Save the boxplot data to a CSV file [step, pruning_layer, average_accuracy_drop, std_accuracy, min_accuracy, max_accuracy]
         csv_file = os.path.join(".", f"plots/{model_name}/NeuronZeroing/boxplot_accuracy_drop_by_layer.csv")
         with open(csv_file, 'w') as f:
