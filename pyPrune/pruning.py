@@ -332,8 +332,9 @@ class IterativeMagnitudePruning:
 
         except Exception as e:
             logger.error(f"Error during pruning: {str(e)}")
-            logger.error("Deleting pickle file due to error...")
-            self.delete_pickle()
+            quit()
+            # logger.error("Deleting pickle file due to error...")
+            # self.delete_pickle()
 
     def save_metrics(self) -> None:
         """Save overall pruning metrics and step details to a JSON file."""
