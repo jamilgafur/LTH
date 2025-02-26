@@ -172,13 +172,17 @@ def plot_2d_histogram(data, output_dir):
 def main():
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s - %(levelname)s - %(message)s")
-    
+    model_names = ["LeNet", "ResNet20", "Vgg16"]
+    pretrain = "3"
+    finetune = "3"
+    steps = "5"
+    batch = "128" 
     # List of model names to process (update as needed)
-    for model_name in ["LeNet", "ResNet20", "Vgg16"]:
+    for model_name in model_names:
         # Update the file paths as needed.
         # Note: The pickle file is assumed to be named "neuron_zeroing.pkl"
-        metrics_files = f"/scratch/jgafur/LTH_output/{model_name}_pretrain3_finetune1_steps3_batch64_devicecuda/neuronZeroing_accuracy/metrics_*.json"
-        # metrics_files = f"/scratch/jgafur/LTH_output/{model_name}_pretrain10_finetune10_steps21_batch64_devicecuda/neuronZeroing_accuracy/*.json"
+        metrics_files =  f"/scratch/jgafur/LTH_output/{model_name}_pretrain{pretrain}_finetune{finetune}_steps{steps}_batch{batch}_devicecuda/"
+        print(f"globing: {metrics_files}")
         csv_data = {}
         try:
             for metrics_file in glob.glob(metrics_files):

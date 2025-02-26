@@ -9,27 +9,27 @@ from tqdm import tqdm
 from pyPrune.utils import get_pruneable_named_modules
 from collections import defaultdict
 
-
-# Set up logging configuration
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
-logger = logging.getLogger(__name__)
-
-def load_metrics(json_file):
-    """Load metrics from a JSON checkpoint file."""
+def load_metric(pkl_file):
+    """Load metrics from a pickle file."""
     try:
-        with open(json_file, 'r') as file:
-            return json.load(file)
+        with open(pkl_file, 'rb') as file:
+            return pickle.load(file)
     except Exception as e:
-        logger.error(f"Failed to load metrics from {json_file}: {e}")
+        logger.error(f"Failed to load metrics from {pkl_file}: {e}")
         return {}
 
-def plot_accuracy_and_loss(metrics, model_name):
+def load_json(json_file):
+    """Load metrics from a JSON checkpoint file."""
+    print(f"processing: {json_file}")
+    with open(json_file, 'r') as file:
+        return json.load(file)
+
+def plot_accuracy_and_loss(json, model_name):
     """Plot accuracy and loss over sparsity steps."""
+    metrics = json['overall_metrics']
     accuracy = metrics.get('accuracy', [])
     loss = metrics.get('loss', [])
     sparsity = metrics.get('step', [])
-
-    logger.info(f"Accuracy len: {len(accuracy)}, Loss len: {len(loss)}, Sparsity len: {len(sparsity)}")
 
     fig, ax1 = plt.subplots(figsize=(12, 8))
 
@@ -59,75 +59,65 @@ def plot_accuracy_and_loss(metrics, model_name):
     # Save the plot
     plot_path = os.path.join(f"./plots/{model_name}/layer_sparsity/", "accuracy_and_loss_plot.png")
     plt.savefig(plot_path, dpi=300)
-    logger.info(f"Saved plot to {plot_path}")
 
 
 def process_model(output_dir, model_name):
     """Process model data and generate necessary plots."""
-    try:
-        # Find all .pkl files and load the metrics
-        files_found = glob.glob(os.path.join(output_dir, "*.pkl"))
-        if not files_found:
-            logger.warning(f"No .pkl files found in {output_dir}")
-            return
 
-        metrics = load_metrics(files_found[0])
+    # Find all .pkl files and load the metrics
+    files_found = glob.glob(os.path.join(output_dir, "*.pkl"))
+    print(f"files found: {files_found}")
+    if not files_found:
+        return
 
-        with open(files_found[0], 'rb') as f:
-            pruner = pickle.load(f)
+    with open(files_found[0], 'rb') as f:
+        pruner = pickle.load(f)
 
-        pruner.logger = None
-        paths = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith('.pth')]
-        logger.info(f"Received {len(paths)} model checkpoint paths.")
+    pruner.logger = None
+    paths = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith('.pth')]
 
-        # Initialize variables
-        layer_sparsity_data = defaultdict(lambda: {
-            'sparsity': [],
-            'zero_weights_in_layer': [],
-            'total_weights_in_layer': [],
-            'zero_weights_in_model': []
-        })
+    # Initialize variables
+    layer_sparsity_data = defaultdict(lambda: {
+        'sparsity': [],
+        'zero_weights_in_layer': [],
+        'total_weights_in_layer': [],
+        'zero_weights_in_model': []
+    })
 
-        model = pruner.model
-        total_weights_data = []
+    model = pruner.model
+    total_weights_data = []
 
-        # Process models
-        for path in tqdm(paths, desc="Processing models"):
-            sparsity = path.split('_')[-1][:-4]
-            logger.info(f"Processing file with sparsity: {sparsity} for path: {path}")
+    # Process models
+    for path in tqdm(paths, desc="Processing models"):
+        sparsity = path.split('_')[-1][:-4]
 
-            checkpoint = torch.load(path, map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-            model.load_state_dict(checkpoint['model_state_dict'])
+        checkpoint = torch.load(path, map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+        model.load_state_dict(checkpoint['model_state_dict'])
 
-            # Get pruneable modules
-            names, modules = get_pruneable_named_modules(model, pruner.prunable_layers)
+        # Get pruneable modules
+        names, modules = get_pruneable_named_modules(model, pruner.prunable_layers)
 
-            # Calculate and store total weights
-            total_weights_in_model = sum(module.weight.numel() for module in modules)
-            total_weights_data.append(total_weights_in_model)
+        # Calculate and store total weights
+        total_weights_in_model = sum(module.weight.numel() for module in modules)
+        total_weights_data.append(total_weights_in_model)
 
-            # Process sparsity data
-            for name, module in zip(names, modules):
-                zero_weights_in_layer = torch.sum(module.weight.data == 0).item()
-                total_weights_in_layer = module.weight.numel()
+        # Process sparsity data
+        for name, module in zip(names, modules):
+            zero_weights_in_layer = torch.sum(module.weight.data == 0).item()
+            total_weights_in_layer = module.weight.numel()
 
-                layer_sparsity = (zero_weights_in_layer / total_weights_in_layer) * 100
+            layer_sparsity = (zero_weights_in_layer / total_weights_in_layer) * 100
 
-                layer_sparsity_data[name]['sparsity'].append(float(sparsity))
-                layer_sparsity_data[name]['zero_weights_in_layer'].append(zero_weights_in_layer)
-                layer_sparsity_data[name]['total_weights_in_layer'].append(total_weights_in_layer)
-                layer_sparsity_data[name]['zero_weights_in_model'].append(zero_weights_in_layer)
+            layer_sparsity_data[name]['sparsity'].append(float(sparsity))
+            layer_sparsity_data[name]['zero_weights_in_layer'].append(zero_weights_in_layer)
+            layer_sparsity_data[name]['total_weights_in_layer'].append(total_weights_in_layer)
+            layer_sparsity_data[name]['zero_weights_in_model'].append(zero_weights_in_layer)
 
-        # Plot the sparsity data for layers
-        plot_layer_sparsity(layer_sparsity_data, model_name)
-
-        # Plot accuracy and loss
-        json = load_metrics(glob.glob(os.path.join(output_dir, "*.json"))[0])
-        import pdb; pdb.set_trace()
-        plot_accuracy_and_loss(metrics, model_name)
-
-    except Exception as e:
-        logger.error(f"Error processing {model_name}: {e}")
+    # Plot the sparsity data for layers
+    plot_layer_sparsity(layer_sparsity_data, model_name)
+    # Plot accuracy and loss
+    json = load_json(glob.glob(os.path.join(output_dir, "*.json"))[0])
+    plot_accuracy_and_loss(json, model_name)
 
 
 def plot_layer_sparsity(layer_sparsity_data, model_name):
@@ -167,16 +157,17 @@ def plot_layer_sparsity(layer_sparsity_data, model_name):
     plt.tight_layout()
     os.makedirs(f"./plots/{model_name}/layer_sparsity/", exist_ok=True)
     plt.savefig(f"./plots/{model_name}/layer_sparsity/weights_and_sparsity_plots_sorted.png")
-    logger.info(f"Saved layer sparsity plot for {model_name}")
 
 
 def main():
     """Main function to execute the entire process."""
     model_names = ["LeNet", "ResNet20", "Vgg16"]
-    
+    pretrain = "3"
+    finetune = "3"
+    steps = "5"
+    batch = "128"    
     for model_name in model_names:
-        output_dir = f"/scratch/jgafur/LTH_output/{model_name}_pretrain10_finetune10_steps20_batch128_devicecuda/"
-        logger.info(f"Processing {model_name} with output directory: {output_dir}")
+        output_dir = f"/scratch/jgafur/LTH_output/{model_name}_pretrain{pretrain}_finetune{finetune}_steps{steps}_batch{batch}_devicecuda/"
         process_model(output_dir, model_name)
 
 
