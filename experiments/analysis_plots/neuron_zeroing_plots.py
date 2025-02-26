@@ -181,32 +181,30 @@ def main():
     for model_name in model_names:
         # Update the file paths as needed.
         # Note: The pickle file is assumed to be named "neuron_zeroing.pkl"
-        metrics_files =  f"/scratch/jgafur/LTH_output/{model_name}_pretrain{pretrain}_finetune{finetune}_steps{steps}_batch{batch}_devicecuda/"
+        metrics_files =  f"/scratch/jgafur/LTH_output/{model_name}_pretrain{pretrain}_finetune{finetune}_steps{steps}_batch{batch}_devicecuda"
         print(f"globing: {metrics_files}")
         csv_data = {}
-        try:
-            for metrics_file in glob.glob(metrics_files):
-                step = metrics_file.split("/")[-1].split("_")[-1].split(".")[1]
-                logging.info(f"Loading metrics from {metrics_file}")
-                merged_data = merge_neuron_metrics(load_metrics(metrics_file))
-                
-                if not merged_data:
-                    logging.error("No merged neuron data available. Exiting.")
-                    continue
-                
-                # Generate plots
-                plots_dir = os.path.join(".", f"plots/{model_name}/NeuronZeroing/0.{step}",)
-                os.makedirs(plots_dir, exist_ok=True)
-                plot_histogram_accuracy_drop(merged_data, plots_dir)
-                plot_histogram_by_layer(merged_data, plots_dir)
-                plot_scatter_sparsity_accuracy(merged_data, plots_dir)
-                csv_data[step] = plot_boxplot_accuracy_by_layer(merged_data, plots_dir)
-                plot_2d_histogram(merged_data, plots_dir)
-                
-                logging.info(f"All plots for {model_name} have been generated and saved in {plots_dir}.")
-        except Exception as e:
-            print(f"Error: {e}")
-            continue
+        for metrics_file in glob.glob(metrics_files+"/neuronZeroing_accuracy/*.json"):
+            print(f"processing: {metrics_file}")
+            step = metrics_file.split("/")[-1].split("_")[-1].split(".")[1]
+            print(f"working on step: {step}")
+            merged_data = merge_neuron_metrics(load_metrics(metrics_file))
+            
+            if not merged_data:
+                logging.error("No merged neuron data available. Exiting.")
+                continue
+            
+            # Generate plots
+            plots_dir = os.path.join(".", f"plots/{model_name}/NeuronZeroing/0.{step}",)
+            os.makedirs(plots_dir, exist_ok=True)
+            plot_histogram_accuracy_drop(merged_data, plots_dir)
+            plot_histogram_by_layer(merged_data, plots_dir)
+            plot_scatter_sparsity_accuracy(merged_data, plots_dir)
+            csv_data[step] = plot_boxplot_accuracy_by_layer(merged_data, plots_dir)
+            plot_2d_histogram(merged_data, plots_dir)
+            
+            logging.info(f"All plots for {model_name} have been generated and saved in {plots_dir}.")
+
         # Save the boxplot data to a CSV file [step, pruning_layer, average_accuracy_drop, std_accuracy, min_accuracy, max_accuracy]
         csv_file = os.path.join(".", f"plots/{model_name}/NeuronZeroing/boxplot_accuracy_drop_by_layer.csv")
         with open(csv_file, 'w') as f:
