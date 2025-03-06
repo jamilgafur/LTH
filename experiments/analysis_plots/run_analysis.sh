@@ -1,0 +1,1 @@
+module load conda;conda activate /scratch/jgafur/LTH_Conda_ENV/LTH_exp_env; rm -rf plots; clear; python neuron_zeroing_plots.py ; python layer_sparsity.py 
