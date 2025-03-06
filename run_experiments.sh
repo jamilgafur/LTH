@@ -1,0 +1,1 @@
+rm *.out; sbatch prune_job.sh LeNet 3 1 21; sbatch prune_job.sh ResNet20 5 5 21; sbatch prune_job.sh Vgg16 5 5 21

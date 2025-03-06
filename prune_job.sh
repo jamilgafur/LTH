@@ -14,30 +14,17 @@ conda activate /scratch/jgafur/LTH_Conda_ENV/LTH_exp_env
 
 # Set model from the first command-line argument
 model=$1
-
+finetune_epochs=$2
+pretrain_epochs=$3
+steps=$4
 # Define available models
 available_models=("LeNet" "ResNet20" "Vgg16")
 
-# Check if a model argument is provided
-if [ -z "$1" ]; then
-    echo "Error: No model specified."
-    echo "Usage: $0 <model_name> "
-    echo "Available models: ${available_models[@]}"
-    exit 1
-fi
-
-# Check if the provided model is valid
-if [[ ! " ${available_models[@]} " =~ " ${model} " ]]; then
-    echo "Error: Invalid model specified."
-    echo "Usage: $0 <model_name>"
-    echo "Available models: ${available_models[@]}"
-    exit 1
-fi
 
 # Run the pruning job for the specified model logging
 echo "Current Time: $(date)"
 echo "Running pruning job for ${model} with command: python main_experiment.py --model ${model} --save_dir /scratch/jgafur/LTH_output --experiment None"
-python main_experiment.py --model ${model} --save_dir /scratch/jgafur/LTH_output --experiment None 
+python main_experiment.py --model ${model} --save_dir /scratch/jgafur/LTH_output --experiment None --finetune_epochs ${finetune_epochs} --pretrain_epochs ${pretrain_epochs} --steps ${steps}
 
 # wait 10 seconds to ensure the pruning job completes
 sleep 10

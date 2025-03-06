@@ -29,6 +29,7 @@ class NeuronSimilarity:
         self.sample_fraction: float = sample_fraction
         self.logger: logging.Logger = logger or logging.getLogger(__name__)
         self.metrics = {}
+        self.activations_step = {}
 
         # Initialize the model and load its state
         self.model: nn.Module = self._initialize_model(pruner)
@@ -160,6 +161,7 @@ class NeuronSimilarity:
             Dict[str, List[Dict[str, Union[str, float]]]]: A dictionary containing similarity matrices at each layer.
         """
         self.logger.info(f"Starting Neuron Similarity experiment for all layers...")
+        
         for model_step, step in zip(self.pruner.weight_history, self.pruner.metrics["step"]):
             metrics = {"similarity_matrices" : [], "average_similarities" : []}
             self.model.load_state_dict(model_step, strict=False)
@@ -169,6 +171,9 @@ class NeuronSimilarity:
                 if isinstance(module, nn.Module):
                     self.logger.info(f"Evaluating layer: {name}")
                     activations = self.evaluate_layer_activations(name)
+                    if name not in self.activations_step.keys():
+                        self.activations_step[name] = []
+                    self.activations_step[name].append([step, activations])
 
                     # Compute the similarity matrix for the activations
                     similarity_matrix = self.compute_similarity_matrix(activations)
