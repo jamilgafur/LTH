@@ -227,9 +227,7 @@ class WeightZeroing:
 
 
         return metrics
-
-
-            
+     
     def collect_weights(self) -> (int, List[float]):
         """
         Collects all weights from the model and returns the total weight count 
