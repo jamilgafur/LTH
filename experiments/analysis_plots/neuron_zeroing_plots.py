@@ -2,20 +2,20 @@
 
 import json
 import os
-import pickle
+import glob
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
-import glob
+
 def load_metrics(json_file):
     """
     Load the metrics from a json checkpoint file.
     
     Args:
-        json file
+        json_file (str): File path to a JSON file.
         
     Returns:
-        dict: The "metrics" dictionary extracted from the checkpoint.
+        dict: The loaded JSON data.
     """
     with open(json_file, 'r') as file:
         data = json.load(file)
@@ -58,55 +58,38 @@ def merge_neuron_metrics(metrics):
             print(f"No sparsity data for {key}")
     return merged_data
 
-def plot_histogram_accuracy_drop(data, output_dir):
-    """
-    Plot a histogram of accuracy drop values   across all neurons.
-    
-    Args:
-        data (list of dict): Merged neuron data.
-        output_dir (str): Directory to save the plot.
-    """
+# --- Plotting functions with optional "step" parameter to update filename ---
+
+def plot_histogram_accuracy_drop(data, output_dir, step=None):
     accuracy_drops = [d['accuracy_drop'] for d in data]
     plt.figure(figsize=(10, 6))
     plt.hist(accuracy_drops, bins=30, color='skyblue', edgecolor='black')
-    plt.xlabel("Accuracy Drop")
+    plt.xlabel("Loss Drop")
     plt.ylabel("Count of Neurons")
-    plt.title("Histogram of Neuron Accuracy Drops")
-    out_path = os.path.join(output_dir, "histogram_accuracy_drop.png")
+    plt.title("Histogram of Neuron Loss Drops" + (f" at Step {step}" if step else ""))
+    filename = "histogram_Loss_drop" + (f"_step_{step}" if step else "") + ".png"
+    out_path = os.path.join(output_dir, filename)
     plt.savefig(out_path)
     plt.close()
-    print(f"Saved histogram of accuracy drops to {out_path}")
+    print(f"Saved histogram of Loss drops to {out_path}")
 
-def plot_histogram_by_layer(data, output_dir):
-    """
-    Plot a histogram of accuracy drop values for each layer (color-coded).
-    
-    Args:
-        data (list of dict): Merged neuron data.
-        output_dir (str): Directory to save the plot.
-    """
+def plot_histogram_by_layer(data, output_dir, step=None):
     layers = list(set(d['layer'] for d in data))
     plt.figure(figsize=(10, 6))
     for layer in layers:
         layer_data = [d['accuracy_drop'] for d in data if d['layer'] == layer]
         plt.hist(layer_data, bins=30, alpha=0.5, label=layer)
-    plt.xlabel("Accuracy Drop")
+    plt.xlabel("Loss Drop")
     plt.ylabel("Count of Neurons")
-    plt.title("Histogram of Neuron Accuracy Drops by Layer")
+    plt.title("Histogram of Neuron Loss Drops by Layer" + (f" at Step {step}" if step else ""))
     plt.legend(title="Layer")
-    out_path = os.path.join(output_dir, "histogram_accuracy_drop_by_layer.png")
+    filename = "histogram_Loss_drop_by_layer" + (f"_step_{step}" if step else "") + ".png"
+    out_path = os.path.join(output_dir, filename)
     plt.savefig(out_path)
     plt.close()
     print(f"Saved histogram of accuracy drops by layer to {out_path}")
 
-def plot_scatter_sparsity_accuracy(data, output_dir):
-    """
-    Create a scatter plot of sparsity vs. accuracy drop, with points color-coded by layer.
-    
-    Args:
-        data (list of dict): Merged neuron data.
-        output_dir (str): Directory to save the plot.
-    """
+def plot_scatter_sparsity_accuracy(data, output_dir, step=None):
     layers = sorted(set(d['layer'] for d in data))
     plt.figure(figsize=(10, 6))
     cmap = plt.cm.get_cmap('tab10', len(layers))
@@ -115,23 +98,17 @@ def plot_scatter_sparsity_accuracy(data, output_dir):
         y = [d['accuracy_drop'] for d in data if d['layer'] == layer]
         plt.scatter(x, y, color=cmap(i), label=layer, alpha=0.7)
     plt.xlabel("Sparsity")
-    plt.ylabel("Accuracy Drop  ")
-    plt.title("Scatter Plot of Sparsity vs. Accuracy Drop by Layer")
+    plt.ylabel("Loss Drop")
+    plt.title("Scatter Plot of Sparsity vs. Loss Drop by Layer" + (f" at Step {step}" if step else ""))
     plt.legend(title="Layer")
     plt.xticks(rotation=45)
-    out_path = os.path.join(output_dir, "scatter_sparsity_vs_accuracy_drop.png")
+    filename = "scatter_sparsity_vs_Loss_drop" + (f"_step_{step}" if step else "") + ".png"
+    out_path = os.path.join(output_dir, filename)
     plt.savefig(out_path)
     plt.close()
-    print(f"Saved scatter plot of sparsity vs. accuracy drop to {out_path}")
+    print(f"Saved scatter plot of sparsity vs. Loss drop to {out_path}")
 
-def plot_boxplot_accuracy_by_layer(data, output_dir):
-    """
-    Create a boxplot of accuracy drop values grouped by layer.
-    
-    Args:
-        data (list of dict): Merged neuron data.
-        output_dir (str): Directory to save the plot.
-    """
+def plot_boxplot_accuracy_by_layer(data, output_dir, step=None):
     layer_dict = defaultdict(list)
     for d in data:
         layer_dict[d['layer']].append(d['accuracy_drop'])
@@ -140,75 +117,164 @@ def plot_boxplot_accuracy_by_layer(data, output_dir):
     plt.figure(figsize=(10, 6))
     plt.boxplot(data_to_plot, labels=layers)
     plt.xlabel("Layer")
-    plt.ylabel("Accuracy Drop")
-    plt.title("Boxplot of Accuracy Drop by Layer")
-    out_path = os.path.join(output_dir, "boxplot_accuracy_drop_by_layer.png")
+    plt.ylabel("Loss Drop")
+    plt.title("Boxplot of Loss Drop by Layer" + (f" at Step {step}" if step else ""))
+    filename = "boxplot_loss_drop_by_layer" + (f"_step_{step}" if step else "") + ".png"
+    out_path = os.path.join(output_dir, filename)
     plt.savefig(out_path)
     plt.close()
     print(f"Saved boxplot of accuracy drop by layer to {out_path}")
     return (layers, data_to_plot)
-def plot_2d_histogram(data, output_dir):
-    """
-    Create a 2D histogram (heatmap) of sparsity vs. accuracy drop.
-    
-    Args:
-        data (list of dict): Merged neuron data.
-        output_dir (str): Directory to save the plot.
-    """
+
+def plot_2d_histogram(data, output_dir, step=None):
     x = [d['sparsity'] for d in data]
     y = [d['accuracy_drop'] for d in data]
     plt.figure(figsize=(10, 6))
     plt.hist2d(x, y, bins=30, cmap='viridis')
     plt.xlabel("Sparsity")
-    plt.ylabel("Accuracy Drop  ")
-    plt.title("2D Histogram of Sparsity vs. Accuracy Drop")
+    plt.ylabel("Loss Drop")
+    plt.title("2D Histogram of Sparsity vs. Loss Drop" + (f" at Step {step}" if step else ""))
     plt.colorbar(label="Count")
-    out_path = os.path.join(output_dir, "2d_histogram_sparsity_vs_accuracy_drop.png")
+    filename = "2d_histogram_sparsity_vs_loss_drop" + (f"_step_{step}" if step else "") + ".png"
+    out_path = os.path.join(output_dir, filename)
     plt.savefig(out_path)
     plt.close()
-    print(f"Saved 2D histogram of sparsity vs. accuracy drop to {out_path}")
+    print(f"Saved 2D histogram of sparsity vs. loss drop to {out_path}")
 
+def plot_boxplot_accuracy_by_sparsity_for_layer(data, output_dir, step=None):
+    """
+    For each layer, group neurons by (rounded) sparsity and create a boxplot of accuracy drops.
+    """
+    layers = sorted(set(d['layer'] for d in data))
+    for layer in layers:
+        layer_data = [d for d in data if d['layer'] == layer]
+        sparsity_dict = defaultdict(list)
+        for d in layer_data:
+            key = round(d['sparsity'], 2)
+            sparsity_dict[key].append(d['accuracy_drop'])
+        sorted_sparsity = sorted(sparsity_dict.keys())
+        data_to_plot = [sparsity_dict[s] for s in sorted_sparsity]
+        
+        plt.figure(figsize=(10, 6))
+        plt.boxplot(data_to_plot, labels=[str(s) for s in sorted_sparsity])
+        plt.xlabel("Sparsity")
+        plt.ylabel("Loss Drop")
+        plt.title(f"Boxplot of Loss Drop by Sparsity for Layer {layer}" + (f" at Step {step}" if step else ""))
+        filename = f"boxplot_loss_drop_by_sparsity_{layer}" + (f"_step_{step}" if step else "") + ".png"
+        out_path = os.path.join(output_dir, filename)
+        plt.savefig(out_path)
+        plt.close()
+        print(f"Saved boxplot by sparsity for layer {layer} at step {step} to {out_path}")
+
+def plot_violinplot_accuracy_by_sparsity_for_layer(data, output_dir, step=None):
+    """
+    For each layer, group neurons by (rounded) sparsity and create a violin plot of accuracy drops.
+    """
+    layers = sorted(set(d['layer'] for d in data))
+    for layer in layers:
+        layer_data = [d for d in data if d['layer'] == layer]
+        sparsity_dict = defaultdict(list)
+        for d in layer_data:
+            key = round(d['sparsity'], 2)
+            sparsity_dict[key].append(d['accuracy_drop'])
+        sorted_sparsity = sorted(sparsity_dict.keys())
+        data_to_plot = [sparsity_dict[s] for s in sorted_sparsity]
+        
+        plt.figure(figsize=(10, 6))
+        positions = range(1, len(data_to_plot)+1)
+        plt.violinplot(data_to_plot, positions=positions, showmedians=True)
+        plt.xticks(positions, [str(s) for s in sorted_sparsity])
+        plt.xlabel("Sparsity")
+        plt.ylabel("Loss Drop")
+        plt.title(f"Violin Plot of Loss Drop by Sparsity for Layer {layer}" + (f" at Step {step}" if step else ""))
+        filename = f"violinplot_loss_drop_by_sparsity_{layer}" + (f"_step_{step}" if step else "") + ".png"
+        out_path = os.path.join(output_dir, filename)
+        plt.savefig(out_path)
+        plt.close()
+        print(f"Saved violin plot by sparsity for layer {layer} at step {step} to {out_path}")
+
+def plot_violinplot_accuracy_drop_by_step_for_layer(agg_by_layer_step, output_dir):
+    """
+    For each layer, create a violin plot of accuracy drop distributions across different step levels.
+    
+    agg_by_layer_step: dict mapping each layer to another dict mapping step -> list of accuracy drops.
+    """
+    for layer, step_data in agg_by_layer_step.items():
+        # Sort steps numerically (assuming they can be converted to float)
+        steps = sorted(step_data.keys(), key=lambda x: float(x))
+        data_to_plot = [step_data[s] for s in steps]
+        plt.figure(figsize=(10, 6))
+        positions = range(1, len(data_to_plot)+1)
+        plt.violinplot(data_to_plot, positions=positions, showmedians=True)
+        plt.xticks(positions, steps)
+        plt.xlabel("Step")
+        plt.ylabel("Loss Drop")
+        plt.title(f"Violin Plot of Loss Drop across Steps for Layer {layer}")
+        out_path = os.path.join(output_dir, f"violinplot_loss_drop_by_step_for_layer_{layer}.png")
+        plt.savefig(out_path)
+        plt.close()
+        print(f"Saved aggregated violin plot by step for layer {layer} to {out_path}")
+
+# --- Main function ---
 def main():
     model_names = ["LeNet", "ResNet20", "Vgg16"]
-    pretrain = "3"
-    finetune = "3"
-    steps = "5"
-    batch = "128" 
-    # List of model names to process (update as needed)
-    for model_name in model_names:
-        # Update the file paths as needed.
-        # Note: The pickle file is assumed to be named "neuron_zeroing.pkl"
-        metrics_files =  f"/scratch/jgafur/LTH_output/{model_name}_pretrain{pretrain}_finetune{finetune}_steps{steps}_batch{batch}_devicecuda"
-        print(f"globing: {metrics_files}")
-        csv_data = {}
-        for metrics_file in glob.glob(metrics_files+"/neuronZeroing_accuracy/*.json"):
-            print(f"processing: {metrics_file}")
-            step = metrics_file.split("/")[-1].split("_")[-1].split(".")[1]
-            print(f"working on step: {step}")
-            merged_data = merge_neuron_metrics(load_metrics(metrics_file))
+ 
+    
+    for model_name in model_names:        
+        metrics_files_glob = f"/scratch/jgafur/LTH_output/LeNet_pretrain*_finetune*_steps21_batch*_devicecuda"
+        for metrics_files_path in glob.glob(metrics_files_glob):
+            base_dir = os.path.join(".", f"plots/{metrics_files_path.split("/")[-1]}/NeuronZeroing")
+            steps_dir = os.path.join(base_dir, "steps")
+            combined_dir = os.path.join(base_dir, "combined")
+            os.makedirs(steps_dir, exist_ok=True)
+            os.makedirs(combined_dir, exist_ok=True)
+            print(f"Processing metrics files in: {metrics_files_path}")
+            csv_data = {}
+            # Aggregate data across steps: agg_by_layer_step[layer][step] = list of accuracy drops
+            agg_by_layer_step = defaultdict(lambda: defaultdict(list))
             
-            if not merged_data:
-                print("No merged neuron data available. Exiting.")
-                continue
+            for metrics_file in glob.glob(metrics_files_path + "/neuronZeroing_accuracy/*.json"):
+                print(f"Processing: {metrics_file}")
+                # Extract step from file name (e.g., assuming filename format ..._step.{step}.json)
+                step = "0."+metrics_file.split("/")[-1].split("_")[-1].split(".")[1]
+                print(f"Working on step: {step}")
+                merged_data = merge_neuron_metrics(load_metrics(metrics_file))
+                
+                if not merged_data:
+                    print("No merged neuron data available. Skipping this file.")
+                    continue
+                
+                # Accumulate data for the top-level aggregated plots.
+                for d in merged_data:
+                    agg_by_layer_step[d['layer']][step].append(d['accuracy_drop'])
+                
+                # Generate per-step plots (saved in steps_dir) with the step in the filename.
+                plot_histogram_accuracy_drop(merged_data, steps_dir, step=step)
+                plot_histogram_by_layer(merged_data, steps_dir, step=step)
+                plot_scatter_sparsity_accuracy(merged_data, steps_dir, step=step)
+                csv_data[step] = plot_boxplot_accuracy_by_layer(merged_data, steps_dir, step=step)
+                plot_2d_histogram(merged_data, steps_dir, step=step)
+                
+                # Per-layer plots by sparsity for this step.
+                plot_boxplot_accuracy_by_sparsity_for_layer(merged_data, steps_dir, step=step)
+                plot_violinplot_accuracy_by_sparsity_for_layer(merged_data, steps_dir, step=step)
             
-            # Generate plots
-            plots_dir = os.path.join(".", f"plots/{model_name}/NeuronZeroing/0.{step}",)
-            os.makedirs(plots_dir, exist_ok=True)
-            plot_histogram_accuracy_drop(merged_data, plots_dir)
-            plot_histogram_by_layer(merged_data, plots_dir)
-            plot_scatter_sparsity_accuracy(merged_data, plots_dir)
-            csv_data[step] = plot_boxplot_accuracy_by_layer(merged_data, plots_dir)
-            plot_2d_histogram(merged_data, plots_dir)
+            # Save CSV for boxplot data (if desired)
+            csv_file = os.path.join(base_dir, "boxplot_accuracy_drop_by_layer.csv")
+            with open(csv_file, 'w') as f:
+                f.write("step,pruning_layer,average_accuracy_drop,std_accuracy,min_accuracy,max_accuracy\n")
+                for step, (layers, data_list) in csv_data.items():
+                    for layer, values in zip(layers, data_list):
+                        f.write(f"{np.round(float(step),4)},{layer},{np.mean(values)},{np.std(values)},{np.min(values)},{np.max(values)}\n")
+            try:
+                import pandas as pd
+                x = pd.read_csv(csv_file)
+                x.to_latex(csv_file.replace(".csv", ".tex"), index=False)
+            except ImportError:
+                print("Pandas not installed; skipping CSV to LaTeX conversion.")
             
-        # Save the boxplot data to a CSV file [step, pruning_layer, average_accuracy_drop, std_accuracy, min_accuracy, max_accuracy]
-        csv_file = os.path.join(".", f"plots/{model_name}/NeuronZeroing/boxplot_accuracy_drop_by_layer.csv")
-        with open(csv_file, 'w') as f:
-            f.write("step,pruning_layer,average_accuracy_drop,std_accuracy,min_accuracy,max_accuracy\n")
-            for step, (layers, data) in csv_data.items():
-                for layer, values in zip(layers, data):
-                    f.write(f"{np.round(float("."+step),4)},{layer},{np.mean(values)},{np.std(values)},{np.min(values)},{np.max(values)}\n")
-        import pandas as pd
-        x = pd.read_csv(csv_file)
-        x.to_latex(csv_file.replace(".csv",".tex"), index=False)
+            # Generate top-level aggregated violin plots across steps (saved in combined_dir).
+            plot_violinplot_accuracy_drop_by_step_for_layer(agg_by_layer_step, combined_dir)
+
 if __name__ == "__main__":
     main()
