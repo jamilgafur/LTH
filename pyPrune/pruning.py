@@ -48,7 +48,7 @@ class IterativeMagnitudePruning:
         self.model = model.to(device or ('cuda' if torch.cuda.is_available() else 'cpu'))
         self.train_loader = train_loader
         self.test_loader = test_loader
-        self.steps = steps
+        self.steps = [0]+steps
         self.optimizer = optimizer
         self.criterion = criterion
         self.learning_rate = learning_rate
@@ -332,9 +332,8 @@ class IterativeMagnitudePruning:
 
         except Exception as e:
             logger.error(f"Error during pruning: {str(e)}")
-            quit()
-            # logger.error("Deleting pickle file due to error...")
-            # self.delete_pickle()
+            logger.error("Deleting pickle file due to error...")
+            self.delete_pickle()
 
     def save_metrics(self) -> None:
         """Save overall pruning metrics and step details to a JSON file."""
@@ -376,7 +375,7 @@ class IterativeMagnitudePruning:
     def delete_pickle(self) -> None:
         """Delete the pickle file if it exists."""
         if os.path.exists(self.pickle_name):
-            os.remove(self.pickle_name)
-            logger.info(f"Deleted pickle file: {self.pickle_name}")
+            # os.remove(self.pickle_name)
+            logger.info(f"(deprecated) Deleted pickle file: {self.pickle_name}")
         else:
             logger.info(f"No pickle file found at: {self.pickle_name}")

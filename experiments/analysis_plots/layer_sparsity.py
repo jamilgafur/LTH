@@ -2,7 +2,6 @@ import os
 import torch
 import pickle
 import glob
-import logging
 import matplotlib.pyplot as plt
 import json
 from tqdm import tqdm
@@ -15,7 +14,7 @@ def load_metric(pkl_file):
         with open(pkl_file, 'rb') as file:
             return pickle.load(file)
     except Exception as e:
-        logger.error(f"Failed to load metrics from {pkl_file}: {e}")
+        print(f"Failed to load metrics from {pkl_file}: {e}")
         return {}
 
 def load_json(json_file):
