@@ -137,9 +137,6 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
             finetune_epochs=finetune_epochs,
             save_dir=save_dir,
         )
-             
-    if pruner.complete is False:
-        print("Pruning process is not completed. Run the pruning process first.")
         pruner.run()
         
     print("Pruning process complete. Saved pruner to checkpoint.")
