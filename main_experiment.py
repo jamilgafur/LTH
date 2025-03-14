@@ -209,7 +209,7 @@ def parse_args() -> tuple:
                         help="Device to use for training and pruning. Default is 'cuda'.")
     parser.add_argument('--save_dir', type=str, default='pruning_checkpoints/',
                         help="Directory to save pruning checkpoints. Default is 'pruning_checkpoints/'.")
-    
+    parser.add_argument('--patience', type=int, default=5)
     # Other arguments
     parser.add_argument('--batch_size', type=int, default=64, help="Batch size for training. Default is 64.")
     parser.add_argument('--num_workers', type=int, default=1, help="Number of workers for data loading. Default is 1.")
