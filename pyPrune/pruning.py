@@ -213,7 +213,7 @@ class IterativeMagnitudePruning:
             logger.info(f"Best model updated at {self.current_sparsity * 100:.2f}% sparsity with accuracy {accuracy:.2f}%.")
             self.best_model_weights = self.model.state_dict()
 
-    def epoch(self, mode: str = "train", patience: int = 5) -> Optional[Dict[str, float]]:
+    def epoch(self, mode: str = "train") -> Optional[Dict[str, float]]:
         """
         Run one epoch in training or evaluation mode.
         """
