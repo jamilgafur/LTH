@@ -127,35 +127,42 @@ class NeuronSimilarity:
         Returns:
             torch.Tensor: The activations of the neurons in the layer.
         """
-        activations: List[torch.Tensor] = []
-        
-        # Define a hook to capture activations from each layer
+        activations = []
+
+        # Define a hook to capture activations
         def hook_fn(module, input, output):
-            if hasattr(module, 'name') and module.name == layer_name:
-                activations.append(output)
-        
-        # Register the hook on all layers
+            activations.append(output.detach().cpu())  # Move to CPU immediately
+
+        # Register hooks
         hooks = []
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Module):
-                module.name = name  # Attach name to module for easy identification
+            if name == layer_name:
                 hook = module.register_forward_hook(hook_fn)
                 hooks.append(hook)
 
-        # Run a forward pass
-        for data, _ in self.pruner.test_loader:
-            data = data.to(self.pruner.device)
-            _ = self.model(data)
+        # Run forward pass in no_grad mode and in smaller batches
+        with torch.no_grad():
+            torch.cuda.empty_cache()  # Clear memory before evaluation
+            for i, (data, _) in enumerate(self.pruner.test_loader):
+                if i >= 5:  # Limit to 5 batches to reduce memory usage
+                    break
+                data = data.to(self.pruner.device)
+                _ = self.model(data)
 
-        # Remove hooks after capturing activations
+        # Remove hooks after activation capture
         for hook in hooks:
             hook.remove()
-        
-        # Stack activations across all batches
-        activations = torch.cat(activations, dim=0)
-        
+
+        # Stack activations
+        if activations:
+            activations = torch.cat(activations, dim=0)
+        else:
+            activations = torch.Tensor()  # Return an empty tensor if no activations were captured
+
+        torch.cuda.empty_cache()  # Clear memory after evaluation
         return activations
 
+   
     def run_experiment(self) -> Dict[str, List[Dict[str, Union[str, float]]]]:
         """
         Run the Neuron Similarity experiment, computing similarity matrices of neuron activations for all layers.

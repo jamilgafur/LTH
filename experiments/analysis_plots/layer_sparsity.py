@@ -56,13 +56,12 @@ def plot_accuracy_and_loss(json, model_name):
     fig.tight_layout()
 
     # Save the plot
-    plot_path = os.path.join(f"./plots/{model_name}/layer_sparsity/", "accuracy_and_loss_plot.png")
+    plot_path = os.path.join(f"./plots/{model_name}/layer_sparsity/", "accuracy_and_loss_plot.svg")
     plt.savefig(plot_path, dpi=300)
 
 
 def process_model(output_dir, model_name):
     """Process model data and generate necessary plots."""
-
     # Find all .pkl files and load the metrics
     files_found = glob.glob(os.path.join(output_dir, "*.pkl"))
     print(f"files found: {files_found}")
@@ -155,19 +154,21 @@ def plot_layer_sparsity(layer_sparsity_data, model_name):
     # Adjust layout and save
     plt.tight_layout()
     os.makedirs(f"./plots/{model_name}/layer_sparsity/", exist_ok=True)
-    plt.savefig(f"./plots/{model_name}/layer_sparsity/weights_and_sparsity_plots_sorted.png")
+    plt.savefig(f"./plots/{model_name}/layer_sparsity/weights_and_sparsity_plots_sorted.svg")
 
 
 def main():
     """Main function to execute the entire process."""
     model_names = ["LeNet", "ResNet20", "Vgg16"]
-    pretrain = "3"
-    finetune = "3"
-    steps = "5"
-    batch = "128"    
+    pretrain = "*"
+    finetune = "*"
+    steps = "*"
+    batch = "*"    
     for model_name in model_names:
         output_dir = f"/scratch/jgafur/LTH_output/{model_name}_pretrain{pretrain}_finetune{finetune}_steps{steps}_batch{batch}_devicecuda/"
-        process_model(output_dir, model_name)
+        for dir in glob.glob(output_dir):
+            print(f"processing {dir}")
+            process_model(dir, dir.strip().split("/")[-2])
 
 
 if __name__ == "__main__":
