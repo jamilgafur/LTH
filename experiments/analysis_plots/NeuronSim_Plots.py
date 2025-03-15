@@ -17,12 +17,8 @@ import seaborn as sns
 
 def load_metric(pkl_file):
     """Load metrics from a pickle file."""
-    try:
-        with open(pkl_file, 'rb') as file:
-            return pickle.load(file)
-    except Exception as e:
-        print(f"Failed to load metrics from {pkl_file}: {e}")
-        return {}
+    with open(pkl_file, 'rb') as file:
+        return pickle.load(file)
 
 def load_json(json_file):
     """Load metrics from a JSON checkpoint file."""
@@ -34,12 +30,15 @@ def load_json(json_file):
 # Plotting Functions for Accuracy & Loss
 #############################################
 
-def plot_accuracy_and_loss(json_data, model_name):
+def plot_accuracy_and_loss(json_data, model_name, checkpoint_name):
     """Plot accuracy and loss over sparsity steps, including separate plots for each metric."""
     metrics = json_data['overall_metrics']
     accuracy = metrics.get('accuracy', [])
     loss = metrics.get('loss', [])
     sparsity = metrics.get('step', [])
+
+    save_dir = f"./plots/{model_name}/{checkpoint_name}/layer_sparsity/"
+    os.makedirs(save_dir, exist_ok=True)
 
     # Combined dual-axis plot (Accuracy & Loss)
     fig, ax1 = plt.subplots(figsize=(12, 8))
@@ -56,8 +55,7 @@ def plot_accuracy_and_loss(json_data, model_name):
     ax2.legend(loc='upper right', fontsize=12)
     plt.title('Accuracy and Loss over Sparsity Steps', fontsize=16, pad=20)
     fig.tight_layout()
-    os.makedirs(f"./plots/{model_name}/layer_sparsity/", exist_ok=True)
-    combined_path = os.path.join(f"./plots/{model_name}/layer_sparsity/", "accuracy_and_loss_plot.png")
+    combined_path = os.path.join(save_dir, "accuracy_and_loss_plot.svg")
     plt.savefig(combined_path, dpi=300)
     plt.close()
 
@@ -69,7 +67,7 @@ def plot_accuracy_and_loss(json_data, model_name):
     plt.title('Accuracy vs Step', fontsize=16)
     plt.legend(fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.7)
-    accuracy_path = os.path.join(f"./plots/{model_name}/layer_sparsity/", "accuracy_vs_step.png")
+    accuracy_path = os.path.join(save_dir, "accuracy_vs_step.svg")
     plt.savefig(accuracy_path, dpi=300)
     plt.close()
 
@@ -81,7 +79,7 @@ def plot_accuracy_and_loss(json_data, model_name):
     plt.title('Loss vs Step', fontsize=16)
     plt.legend(fontsize=12)
     plt.grid(True, linestyle='--', alpha=0.7)
-    loss_path = os.path.join(f"./plots/{model_name}/layer_sparsity/", "loss_vs_step.png")
+    loss_path = os.path.join(save_dir, "loss_vs_step.svg")
     plt.savefig(loss_path, dpi=300)
     plt.close()
 
@@ -91,8 +89,11 @@ def plot_accuracy_and_loss(json_data, model_name):
 # Plotting Functions for Layer Sparsity
 #############################################
 
-def plot_layer_sparsity(layer_sparsity_data, model_name):
+def plot_layer_sparsity(layer_sparsity_data, model_name, checkpoint_name):
     """Generate and save layer sparsity plots."""
+    save_dir = f"./plots/{model_name}/{checkpoint_name}/layer_sparsity/"
+    os.makedirs(save_dir, exist_ok=True)
+    
     fig, axes = plt.subplots(2, 1, figsize=(10, 12))
 
     # First subplot: Sparsity vs Zero Weights in Layer
@@ -123,28 +124,69 @@ def plot_layer_sparsity(layer_sparsity_data, model_name):
     axes[1].legend(title="Layer Names", bbox_to_anchor=(1.05, 1), loc='upper left')
 
     plt.tight_layout()
-    os.makedirs(f"./plots/{model_name}/layer_sparsity/", exist_ok=True)
-    sparsity_path = os.path.join(f"./plots/{model_name}/layer_sparsity/", "weights_and_sparsity_plots_sorted.png")
+    sparsity_path = os.path.join(save_dir, "weights_and_sparsity_plots_sorted.svg")
     plt.savefig(sparsity_path)
+    plt.close()
+
+#############################################
+# Helper Functions for Aggregated Similarity Plotting
+#############################################
+
+def aggregate_similarity(sim_dict):
+    """
+    Given a dictionary mapping layer names to a list of (step, similarity)
+    values, aggregate the similarity for each step across layers.
+    Returns sorted steps, average, 25th percentile and 75th percentile.
+    """
+    step_values = defaultdict(list)
+    for layer, sim_list in sim_dict.items():
+        for step, sim in sim_list:
+            step_values[step].append(sim)
+    steps_sorted = sorted(step_values.keys())
+    avg = [np.mean(step_values[step]) for step in steps_sorted]
+    q25 = [np.percentile(step_values[step], 25) for step in steps_sorted]
+    q75 = [np.percentile(step_values[step], 75) for step in steps_sorted]
+    return steps_sorted, avg, q25, q75
+
+def plot_aggregated_similarity(steps, avg, q25, q75, title, ylabel, save_path):
+    """
+    Plot the aggregated average similarity with a shaded area between the 25th and 75th percentiles.
+    """
+    plt.figure(figsize=(10, 6))
+    plt.plot(steps, avg, marker='o', linestyle='-', color='tab:blue', label='Average')
+    plt.fill_between(steps, q25, q75, color='tab:blue', alpha=0.3, label='25th-75th Percentile')
+    plt.xlabel('Step', fontsize=12)
+    plt.ylabel(ylabel, fontsize=12)
+    plt.title(title, fontsize=14)
+    plt.legend(fontsize=12)
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.savefig(save_path, dpi=300)
     plt.close()
 
 #############################################
 # Neuron Similarity Analysis Functions
 #############################################
 
-def process_neuron_similarity(output_dir, model_name):
+def process_neuron_similarity(neuron_similarity_dir, model_name):
     """
     Process neuron similarity data and generate plots:
       1. Cosine similarity between consecutive activation steps.
-      2. Cosine similarity of layer activations compared to the smallest (baseline) step.
-      3. Heatmaps of similarity matrices for each layer at all recorded steps.
-      4. Histograms of cosine similarity distributions.
+      2. Cosine similarity of layer activations compared to the prepruning (first) step.
+      3. Aggregated plots: average neuron similarity (with 25th-75th percentile fill)
+         over each pruning step for both the previous-step and prepruning comparisons.
+      4. Additionally, aggregate similarity values across all files in the directory,
+         and plot the results for each individual layer (separately and as one combined figure).
     """
-    files_found = glob.glob(os.path.join(output_dir, "*.pkl"))
+    files_found = glob.glob(os.path.join(neuron_similarity_dir, "*.pkl"))
     print(f"Files found for neuron similarity: {files_found}")
     if not files_found:
         return
 
+    # Extract checkpoint name from the parent folder of neuron_similarity_dir
+    checkpoint_dir = os.path.dirname(neuron_similarity_dir)
+    checkpoint_name = os.path.basename(os.path.normpath(checkpoint_dir))
+
+    # --- Process the first file for per-file plots (as before) ---
     with open(files_found[0], 'rb') as f:
         pruner = pickle.load(f)
 
@@ -158,30 +200,30 @@ def process_neuron_similarity(output_dir, model_name):
     cosine_similarities = defaultdict(list)
     for layer, data in activations_step.items():
         data_sorted = sorted(data, key=lambda x: x[0])
-        steps = [item[0] for item in data_sorted]
-        acts = [item[1] for item in data_sorted]
-        for i in range(1, len(acts)):
-            act_prev = np.array(acts[i-1].to('cpu').detach().numpy()).flatten()
-            act_curr = np.array(acts[i].to('cpu').detach().numpy()).flatten()
+        for i in range(1, len(data_sorted)):
+            step = data_sorted[i][0]
+            act_prev = np.array(data_sorted[i-1][1].to('cpu').detach().numpy()).flatten()
+            act_curr = np.array(data_sorted[i][1].to('cpu').detach().numpy()).flatten()
             cos_sim = 1 - cosine(act_prev, act_curr)
-            cosine_similarities[layer].append((steps[i], cos_sim))
+            cosine_similarities[layer].append((step, cos_sim))
 
+    save_dir_prev = f"./plots/{model_name}/{checkpoint_name}/activation_similarity/"
+    os.makedirs(save_dir_prev, exist_ok=True)
     plt.figure(figsize=(10, 6))
     for layer, sim_data in cosine_similarities.items():
         sim_data_sorted = sorted(sim_data, key=lambda x: x[0])
-        steps = [x[0] for x in sim_data_sorted]
+        steps_layer = [x[0] for x in sim_data_sorted]
         sims = [x[1] for x in sim_data_sorted]
-        plt.plot(steps, sims, marker='o', linestyle='-', label=layer)
+        plt.plot(steps_layer, sims, marker='o', linestyle='-', label=layer)
     plt.xlabel('Step', fontsize=12)
     plt.ylabel('Cosine Similarity with Previous Step', fontsize=12)
     plt.title('Cosine Similarity of Layer Activations Across Steps', fontsize=14)
     plt.legend(title='Layer', fontsize=10)
     plt.grid(True)
-    os.makedirs(f"./plots/{model_name}/activation_similarity/", exist_ok=True)
-    plt.savefig(f"./plots/{model_name}/activation_similarity/cosine_similarity_across_steps.png")
+    plt.savefig(os.path.join(save_dir_prev, "cosine_similarity_across_steps.svg"))
     plt.close()
 
-    # 2. Plot cosine similarity of layer activations compared to the smallest (baseline) step.
+    # 2. Compute cosine similarity of layer activations compared to the prepruning (first) step.
     baseline_cosine_similarity_by_layer = defaultdict(list)
     for layer, data in activations_step.items():
         data_sorted = sorted(data, key=lambda x: x[0])
@@ -193,53 +235,87 @@ def process_neuron_similarity(output_dir, model_name):
             cos_sim = 1 - cosine(baseline_activation, current_activation)
             baseline_cosine_similarity_by_layer[layer].append((step, cos_sim))
     
+    save_dir_base = f"./plots/{model_name}/{checkpoint_name}/baseline_similarity/"
+    os.makedirs(save_dir_base, exist_ok=True)
     plt.figure(figsize=(10, 6))
-    for layer, data in baseline_cosine_similarity_by_layer.items():
-        data_sorted = sorted(data, key=lambda x: x[0])
-        steps = [x[0] for x in data_sorted]
-        sims = [x[1] for x in data_sorted]
-        plt.plot(steps, sims, marker='o', linestyle='-', label=layer)
+    for layer, sim_data in baseline_cosine_similarity_by_layer.items():
+        sim_data_sorted = sorted(sim_data, key=lambda x: x[0])
+        steps_layer = [x[0] for x in sim_data_sorted]
+        sims = [x[1] for x in sim_data_sorted]
+        plt.plot(steps_layer, sims, marker='o', linestyle='-', label=layer)
     plt.xlabel('Step', fontsize=12)
-    plt.ylabel('Cosine Similarity with Baseline', fontsize=12)
-    plt.title('Cosine Similarity of Layer Activations Compared to the Smallest Step', fontsize=14)
+    plt.ylabel('Cosine Similarity with Prepruning Step', fontsize=12)
+    plt.title('Cosine Similarity of Layer Activations Compared to Prepruning Step', fontsize=14)
     plt.legend(title='Layer', fontsize=10)
     plt.grid(True)
-    os.makedirs(f"./plots/{model_name}/baseline_similarity/", exist_ok=True)
-    plt.savefig(f"./plots/{model_name}/baseline_similarity/baseline_cosine_similarity.png")
+    plt.savefig(os.path.join(save_dir_base, "baseline_cosine_similarity.svg"))
     plt.close()
 
-    # 3. Plot heatmaps of similarity matrices for each layer at all recorded steps.
-    if hasattr(pruner, 'metrics'):
-        metrics = pruner.metrics
-        for step in sorted(metrics.keys()):
-            step_metrics = metrics[step]
-            for sim_dict in step_metrics['similarity_matrices']:
-                layer = sim_dict['layer_name']
-                sim_matrix = np.array(sim_dict['similarity_matrix'])
-                plt.figure(figsize=(8, 6))
-                sns.heatmap(sim_matrix, cmap='viridis')
-                plt.title(f"Similarity Matrix Heatmap for {layer} at Step {step}", fontsize=14)
-                plt.xlabel("Neuron Index", fontsize=12)
-                plt.ylabel("Neuron Index", fontsize=12)
-                os.makedirs(f"./plots/{model_name}/heatmaps/", exist_ok=True)
-                plt.savefig(f"./plots/{model_name}/heatmaps/heatmap_{layer}_step_{step}.png")
-                plt.close()
-    else:
-        print("Skipping heatmap plotting as 'metrics' attribute is missing.")
+    # 3. Aggregate and plot average neuron similarity over each pruning step (with 25th-75th percentile fill)
+    # For similarity compared to the previous step.
+    steps_prev, avg_prev, q25_prev, q75_prev = aggregate_similarity(cosine_similarities)
+    plot_aggregated_similarity(
+        steps_prev, avg_prev, q25_prev, q75_prev,
+        title='Average Cosine Similarity with Previous Step (Aggregated)',
+        ylabel='Cosine Similarity',
+        save_path=os.path.join(save_dir_prev, "aggregated_previous_similarity.svg")
+    )
 
-    # 4. Plot histograms of cosine similarity distributions for each layer.
-    for layer, sim_data in cosine_similarities.items():
-        sims = [x[1] for x in sim_data]
-        plt.figure(figsize=(8, 6))
-        plt.hist(sims, bins=20, color='skyblue', edgecolor='black')
-        plt.xlabel('Cosine Similarity', fontsize=12)
-        plt.ylabel('Frequency', fontsize=12)
-        plt.title(f"Distribution of Cosine Similarities for {layer}", fontsize=14)
-        os.makedirs(f"./plots/{model_name}/histograms/", exist_ok=True)
-        plt.savefig(f"./plots/{model_name}/histograms/histogram_{layer}.png")
-        plt.close()
+    # For similarity compared to the prepruning step.
+    steps_baseline, avg_baseline, q25_baseline, q75_baseline = aggregate_similarity(baseline_cosine_similarity_by_layer)
+    plot_aggregated_similarity(
+        steps_baseline, avg_baseline, q25_baseline, q75_baseline,
+        title='Average Cosine Similarity with Prepruning Step (Aggregated)',
+        ylabel='Cosine Similarity',
+        save_path=os.path.join(save_dir_base, "aggregated_prepruning_similarity.svg")
+    )
 
-    print(f"Neuron similarity post-processing complete for model: {model_name}")
+    # --- New Section: Aggregate neuron similarity across ALL files in the glob ---
+    all_cosine_similarities = defaultdict(list)
+    for file in files_found:
+        with open(file, 'rb') as f:
+            pruner_file = pickle.load(f)
+        if not hasattr(pruner_file, 'activations_step'):
+            continue
+        for layer, data in pruner_file.activations_step.items():
+            data_sorted = sorted(data, key=lambda x: x[0])
+            for i in range(1, len(data_sorted)):
+                step = data_sorted[i][0]
+                act_prev = np.array(data_sorted[i-1][1].to('cpu').detach().numpy()).flatten()
+                act_curr = np.array(data_sorted[i][1].to('cpu').detach().numpy()).flatten()
+                cos_sim = 1 - cosine(act_prev, act_curr)
+                all_cosine_similarities[layer].append((step, cos_sim))
+
+    # Create a new directory for the aggregated results from all files.
+    save_dir_all = os.path.join(save_dir_prev, "all_files_aggregated")
+    os.makedirs(save_dir_all, exist_ok=True)
+
+    # (a) Plot individual figures per layer.
+    individual_dir = os.path.join(save_dir_all, "individual_layers")
+    os.makedirs(individual_dir, exist_ok=True)
+    for layer, sim_list in all_cosine_similarities.items():
+        # Use the aggregate_similarity helper for this individual layer.
+        steps, avg, q25, q75 = aggregate_similarity({layer: sim_list})
+        title = f'Aggregated Cosine Similarity for {layer} (Individual)'
+        save_path = os.path.join(individual_dir, f"aggregated_{layer}_similarity.svg")
+        plot_aggregated_similarity(steps, avg, q25, q75, title, 'Cosine Similarity', save_path)
+
+    # (b) Create one combined figure for all layers.
+    plt.figure(figsize=(10, 6))
+    for layer, sim_list in all_cosine_similarities.items():
+        steps, avg, q25, q75 = aggregate_similarity({layer: sim_list})
+        plt.plot(steps, avg, marker='o', linestyle='-', label=layer)
+        plt.fill_between(steps, q25, q75, alpha=0.3)
+    plt.xlabel('Step', fontsize=12)
+    plt.ylabel('Cosine Similarity', fontsize=12)
+    plt.title('Aggregated Cosine Similarity for All Layers (Combined)', fontsize=14)
+    plt.legend(fontsize=12)
+    plt.grid(True, linestyle='--', alpha=0.7)
+    combined_save_path = os.path.join(save_dir_all, "aggregated_all_layers_similarity.svg")
+    plt.savefig(combined_save_path, dpi=300)
+    plt.close()
+
+    print(f"Neuron similarity post-processing complete for model: {model_name}, checkpoint: {checkpoint_name}")
 
 #############################################
 # Sparsity and Accuracy/Loss Analysis Functions
@@ -251,6 +327,8 @@ def process_sparsity_and_accuracy(output_dir, model_name):
       - Layer sparsity plots.
       - Accuracy and loss plots from JSON checkpoints.
     """
+    checkpoint_name = os.path.basename(os.path.normpath(output_dir))
+    
     pkl_files = glob.glob(os.path.join(output_dir, "*.pkl"))
     if not pkl_files:
         print("No .pkl files found for sparsity processing.")
@@ -287,12 +365,12 @@ def process_sparsity_and_accuracy(output_dir, model_name):
             layer_sparsity_data[name]['total_weights_in_layer'].append(total_weights_in_layer)
             layer_sparsity_data[name]['zero_weights_in_model'].append(zero_weights_in_layer)
 
-    plot_layer_sparsity(layer_sparsity_data, model_name)
+    plot_layer_sparsity(layer_sparsity_data, model_name, checkpoint_name)
 
     json_files = glob.glob(os.path.join(output_dir, "*.json"))
     if json_files:
         json_data = load_json(json_files[0])
-        metrics = plot_accuracy_and_loss(json_data, model_name)
+        metrics = plot_accuracy_and_loss(json_data, model_name, checkpoint_name)
     else:
         print("No JSON checkpoint found for accuracy and loss plotting.")
 
@@ -302,18 +380,17 @@ def process_sparsity_and_accuracy(output_dir, model_name):
 
 def main():
     """Main function to execute the entire post-processing pipeline."""
-    model_names = ["LeNet"]#, "ResNet20", "Vgg16"]
-    pretrain = "*"
-    finetune = "*"
-    steps = "21"
-    batch = "*"
-    
-    for model_name in model_names:
-        for output_dir in glob.glob(f"/scratch/jgafur/LTH_output/{model_name}_pretrain{pretrain}_finetune{finetune}_steps{steps}_batch{batch}_devicecuda/"):
+    model_names = ["LeNet", "ResNet20", "Vgg16"]
+    # The glob pattern is used to select the checkpoint directories.    
+    for model_name in model_names[::-1]:
+        checkpoint_glob = f"/scratch/jgafur/LTH_output/*{model_name}*"
+        for output_dir in glob.glob(checkpoint_glob):
+            print(output_dir)
             neuron_similarity_dir = os.path.join(output_dir, "neuron_similarity")
-            process_neuron_similarity(neuron_similarity_dir, model_name)
-            process_sparsity_and_accuracy(output_dir, model_name)
-            break
+            process_neuron_similarity(neuron_similarity_dir, '')
+            process_sparsity_and_accuracy(output_dir, '')
+            # Process only one checkpoint per model for demonstration purposes.
+            # break
 
 if __name__ == "__main__":
     main()

@@ -10,12 +10,8 @@ from collections import defaultdict
 
 def load_metric(pkl_file):
     """Load metrics from a pickle file."""
-    try:
-        with open(pkl_file, 'rb') as file:
-            return pickle.load(file)
-    except Exception as e:
-        print(f"Failed to load metrics from {pkl_file}: {e}")
-        return {}
+    with open(pkl_file, 'rb') as file:
+        return pickle.load(file)
 
 def load_json(json_file):
     """Load metrics from a JSON checkpoint file."""
