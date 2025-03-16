@@ -182,8 +182,13 @@ def group_weights_and_sparsity_data(weights_and_sparsity_plots_sorted):
     # Step 1: Group by base name (before the first dot)
     for layer_name, data in weights_and_sparsity_plots_sorted.items():
         # Extract the base name before the first dot if there is a dot
-        base_name = layer_name.split('.')[0] if '.' in layer_name else layer_name
-        
+        if layer_name.count('.') == 0:
+            base_name = layer_name
+        if layer_name.count('.') == 1:
+            base_name = layer_name.split('.')[-1]
+        if layer_name.count('.') == 2:
+            base_name = layer_name.split('.')[0]
+            
         # Extract relevant data
         sparsity = data['sparsity']
         zero_weights_in_layer = data['zero_weights_in_layer']
