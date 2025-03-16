@@ -244,8 +244,8 @@ def group_layer_similarity_data(sim_dict):
         if layer.count('.') == 0:
             base_name = layer
         if layer.count('.') == 1:
-            base_name = layer.split('.')[1]
-        if layer.count('.') > 1:
+            base_name = layer.split('.')[-1]
+        if layer.count('.') == 2:
             base_name = layer.split('.')[0]
         grouped_dict[base_name].extend(sim_list)  # Use extend to add the tuples
 
@@ -531,7 +531,7 @@ def main():
             neuron_similarity_dir = os.path.join(output_dir, "neuron_similarity")
             process_neuron_similarity(neuron_similarity_dir, '')
             process_sparsity_and_accuracy(output_dir, '')
-            break
+            
             
            
 if __name__ == "__main__":
