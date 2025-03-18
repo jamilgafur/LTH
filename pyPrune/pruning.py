@@ -281,6 +281,7 @@ class IterativeMagnitudePruning:
                     self.epoch("train")
                 # Update initial parameters after pretraining (rewinding effect)
                 self.initial_parameters = self.save_initial_parameters()
+                self.weight_history[0] = self.initial_parameters 
                 self.best_model_weights = self.model.state_dict()
 
             logger.info(f"Starting iterative pruning with steps: {self.steps}")

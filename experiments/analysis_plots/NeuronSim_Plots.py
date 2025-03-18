@@ -24,6 +24,10 @@ from collections import defaultdict
 # Utility Functions for Loading Metrics
 #############################################
 
+
+def look():
+    import pdb; pdb.set_trace()
+    
 def load_metric(pkl_file):
     """Load metrics from a pickle file."""
     with open(pkl_file, 'rb') as file:
@@ -339,7 +343,9 @@ def process_neuron_similarity(neuron_similarity_dir, model_name):
     with open(files_found[0], 'rb') as f:
         pruner = pickle.load(f)
 
-
+    # Layers activations_step.keys()
+    # dict_keys(['conv1', 'conv2', 'fc1', 'fc2'])
+    # Activations
     activations_step = pruner.activations_step
 
     # 1. Compute cosine similarity between consecutive activation steps for each layer.
@@ -350,7 +356,7 @@ def process_neuron_similarity(neuron_similarity_dir, model_name):
             step = data_sorted[i][0]
             act_prev = np.array(data_sorted[i-1][1].to('cpu').detach().numpy()).flatten()
             act_curr = np.array(data_sorted[i][1].to('cpu').detach().numpy()).flatten()
-            cos_sim = 1 - cosine(act_prev, act_curr)
+            cos_sim = cosine(act_prev, act_curr)
             cosine_similarities[layer].append((step, cos_sim))
 
     cosine_similarities = group_layer_similarity_data(cosine_similarities)
@@ -373,13 +379,11 @@ def process_neuron_similarity(neuron_similarity_dir, model_name):
     # 2. Compute cosine similarity of layer activations compared to the prepruning (first) step.
     baseline_cosine_similarity_by_layer = defaultdict(list)
     for layer, data in activations_step.items():
-        data_sorted = sorted(data, key=lambda x: x[0])
-        if not data_sorted:
-            continue
+        data_sorted = sorted(data, key=lambda x: x[0]) # datasorted[n] = ([step][activation])
         baseline_activation = np.array(data_sorted[0][1].to('cpu').detach().numpy()).flatten()
         for step, act in data_sorted:
             current_activation = np.array(act.to('cpu').detach().numpy()).flatten()
-            cos_sim = 1 - cosine(baseline_activation, current_activation)
+            cos_sim = cosine(baseline_activation, current_activation)
             baseline_cosine_similarity_by_layer[layer].append((step, cos_sim))
     baseline_cosine_similarity_by_layer = group_layer_similarity_data(baseline_cosine_similarity_by_layer)
     save_dir_base = f"./plots/{model_name}/{checkpoint_name}/baseline_similarity/"
