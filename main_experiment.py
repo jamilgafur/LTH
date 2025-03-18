@@ -125,6 +125,10 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
         criterion = nn.CrossEntropyLoss()
 
+        if model.__class__.__name__ == 'VGG16_CIFAR10':
+            optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-6, nesterov=True)
+        print(f"optimizer: {optimizer}, cirterion: {criterion}")
+
         pruner = IterativeMagnitudePruning(
             model=model,
             optimizer=optimizer,

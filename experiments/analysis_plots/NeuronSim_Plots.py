@@ -8,7 +8,7 @@ from tqdm import tqdm
 from pyPrune.utils import get_pruneable_named_modules
 from collections import defaultdict
 import numpy as np
-from scipy.spatial.distance import cosine
+from scipy.spatial.distance import cosine #reutrns the cosign distance
 import seaborn as sns
 
 
@@ -356,7 +356,7 @@ def process_neuron_similarity(neuron_similarity_dir, model_name):
             step = data_sorted[i][0]
             act_prev = np.array(data_sorted[i-1][1].to('cpu').detach().numpy()).flatten()
             act_curr = np.array(data_sorted[i][1].to('cpu').detach().numpy()).flatten()
-            cos_sim = cosine(act_prev, act_curr)
+            cos_sim = 1- cosine(act_prev, act_curr)
             cosine_similarities[layer].append((step, cos_sim))
 
     cosine_similarities = group_layer_similarity_data(cosine_similarities)
@@ -383,7 +383,7 @@ def process_neuron_similarity(neuron_similarity_dir, model_name):
         baseline_activation = np.array(data_sorted[0][1].to('cpu').detach().numpy()).flatten()
         for step, act in data_sorted:
             current_activation = np.array(act.to('cpu').detach().numpy()).flatten()
-            cos_sim = cosine(baseline_activation, current_activation)
+            cos_sim = 1- cosine(baseline_activation, current_activation)
             baseline_cosine_similarity_by_layer[layer].append((step, cos_sim))
     baseline_cosine_similarity_by_layer = group_layer_similarity_data(baseline_cosine_similarity_by_layer)
     save_dir_base = f"./plots/{model_name}/{checkpoint_name}/baseline_similarity/"

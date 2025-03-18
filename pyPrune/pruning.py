@@ -221,22 +221,31 @@ class IterativeMagnitudePruning:
             self.model.train()
             epochs_without_improvement = 0
             best_val_loss = float("inf")
+            correct = 0
+            total = 0
+
             for data, target in tqdm(self.train_loader, desc="Training", unit="batch"):
                 data, target = data.to(self.device), target.to(self.device)
                 self.optimizer.zero_grad()
                 output = self.model(data)
+                
+                # Calculate loss
                 loss = self.criterion(output, target)
                 loss.backward()
-
+                
                 # Mask gradients for pruned weights
                 for module in get_pruneable_modules(self.model, self.prunable_layers):
                     mask = module.weight.data != 0
                     if module.weight.grad is not None:
                         module.weight.grad.data.mul_(mask.float())
+                
                 self.optimizer.step()
 
-            logger.info("Training epoch complete.")
-            clean_memory()
+                # Accuracy calculation
+                _, predicted = torch.max(output, 1)
+                correct += (predicted == target).sum().item()
+                total += target.size(0)
+            print(f"training accuracy: {correct/total}")
             return None
 
         elif mode == "eval":
