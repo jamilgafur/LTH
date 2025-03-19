@@ -138,13 +138,6 @@ class IterativeMagnitudePruning:
         num_prune = max(1, int(all_weights.numel() * percentage))
         return num_prune, all_weights
 
-    def update_optimizer(self) -> None:
-        """Reinitialize the optimizer to reset any internal states."""
-        self.optimizer = self.optimizer.__class__(self.model.parameters(), lr=self.learning_rate)
-        total_params = sum(p.numel() for p in self.model.parameters())
-        logger.info(f"Optimizer updated with {len(list(self.model.parameters()))} parameters (Total: {total_params}).")
-        logger.debug(f"Parameter shapes: {[p.shape for p in self.model.parameters()]}")
-
     def save_checkpoint(self, step: float, file_path: str) -> None:
         """
         Save a checkpoint of the current model and optimizer state.
@@ -187,7 +180,6 @@ class IterativeMagnitudePruning:
             # module.weight.requires_grad = not module.weight.data.eq(0).all()
 
         logger.debug(f"Applied pruning with threshold {threshold_value:.6f}.")
-        self.update_optimizer()
 
     def reset_weights(self) -> None:
         """

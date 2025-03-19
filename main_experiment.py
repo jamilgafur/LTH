@@ -12,7 +12,7 @@ from pyPrune.models.LeNet import LeNet
 from pyPrune.models.ResNet20 import ResNet20
 from pyPrune.models.Vgg16 import VGG16_CIFAR10 as Vgg16
 from pyPrune.pruning import IterativeMagnitudePruning
-from pyPrune.utils import plot_loss_accuracy_sparsity
+from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed
 from experiments.WeightZeroing import WeightZeroing
 from experiments.NeuronZeroing import NeuronZeroing
 from experiments.NeuronSimilarity import NeuronSimilarity
@@ -124,9 +124,6 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
     else:
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
         criterion = nn.CrossEntropyLoss()
-
-        if model.__class__.__name__ == 'VGG16_CIFAR10':
-            optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-6, nesterov=True)
         print(f"optimizer: {optimizer}, cirterion: {criterion}")
 
         pruner = IterativeMagnitudePruning(
@@ -234,7 +231,7 @@ def main() -> None:
     """
     args = parse_args()
 
-    # Load MNIST data
+    set_seed(69917111)
 
     # Initialize model
     if args.model == 'LeNet':
