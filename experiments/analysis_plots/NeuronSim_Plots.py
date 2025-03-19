@@ -8,7 +8,7 @@ from tqdm import tqdm
 from pyPrune.utils import get_pruneable_named_modules
 from collections import defaultdict
 import numpy as np
-from scipy.spatial.distance import cosine #reutrns the cosign distance
+from scipy.spatial.distance import cosine #reutrns the cosign distance (1-sim)
 import seaborn as sns
 
 
@@ -24,10 +24,6 @@ from collections import defaultdict
 # Utility Functions for Loading Metrics
 #############################################
 
-
-def look():
-    import pdb; pdb.set_trace()
-    
 def load_metric(pkl_file):
     """Load metrics from a pickle file."""
     with open(pkl_file, 'rb') as file:
@@ -39,118 +35,6 @@ def load_json(json_file):
     with open(json_file, 'r') as file:
         return json.load(file)
 
-#############################################
-# Plotting Functions for Accuracy & Loss
-#############################################
-
-def plot_accuracy_and_loss(json_data, model_name, checkpoint_name):
-    """Plot accuracy and loss over sparsity steps, including separate plots for each metric."""
-    metrics = json_data['overall_metrics']
-    accuracy = metrics.get('accuracy', [])
-    loss = metrics.get('loss', [])
-    sparsity = metrics.get('step', [])
-
-    save_dir = f"./plots/{model_name}/{checkpoint_name}/layer_sparsity/"
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Combined dual-axis plot (Accuracy & Loss)
-    fig, ax1 = plt.subplots(figsize=(12, 8))
-    ax1.set_xlabel('Sparsity', fontsize=14)
-    ax1.set_ylabel('Accuracy', color='tab:blue', fontsize=14)
-    ax1.plot(sparsity, accuracy, color='tab:blue', label='Accuracy', linewidth=2)
-    ax1.tick_params(axis='y', labelcolor='tab:blue', labelsize=12)
-    ax1.grid(True, linestyle='--', alpha=0.7)
-    ax2 = ax1.twinx()
-    ax2.set_ylabel('Loss', color='tab:red', fontsize=14)
-    ax2.plot(sparsity, loss, color='tab:red', label='Loss', linewidth=2, linestyle='--')
-    ax2.tick_params(axis='y', labelcolor='tab:red', labelsize=12)
-    ax1.legend(loc='upper left', fontsize=12)
-    ax2.legend(loc='upper right', fontsize=12)
-    plt.title('Accuracy and Loss over Sparsity Steps', fontsize=16, pad=20)
-    fig.tight_layout()
-    combined_path = os.path.join(save_dir, "accuracy_and_loss_plot.svg")
-    plt.savefig(combined_path, dpi=300)
-    plt.close()
-
-    # Separate plot: Accuracy vs Step
-    plt.figure(figsize=(10, 6))
-    plt.plot(sparsity, accuracy, marker='o', linestyle='-', color='tab:blue', label='Accuracy')
-    plt.xlabel('Step', fontsize=14)
-    plt.ylabel('Accuracy', fontsize=14)
-    plt.title('Accuracy vs Step', fontsize=16)
-    plt.legend(fontsize=12)
-    plt.grid(True, linestyle='--', alpha=0.7)
-    accuracy_path = os.path.join(save_dir, "accuracy_vs_step.svg")
-    plt.savefig(accuracy_path, dpi=300)
-    plt.close()
-
-    # Separate plot: Loss vs Step
-    plt.figure(figsize=(10, 6))
-    plt.plot(sparsity, loss, marker='o', linestyle='-', color='tab:red', label='Loss')
-    plt.xlabel('Step', fontsize=14)
-    plt.ylabel('Loss', fontsize=14)
-    plt.title('Loss vs Step', fontsize=16)
-    plt.legend(fontsize=12)
-    plt.grid(True, linestyle='--', alpha=0.7)
-    loss_path = os.path.join(save_dir, "loss_vs_step.svg")
-    plt.savefig(loss_path, dpi=300)
-    plt.close()
-
-    return metrics
-
-#############################################
-# Plotting Functions for Layer Sparsity
-#############################################
-
-def plot_layer_sparsity(layer_sparsity_data, model_name, checkpoint_name):
-    """Generate and save layer sparsity plots."""
-    save_dir = f"./plots/{model_name}/{checkpoint_name}/layer_sparsity/"
-    os.makedirs(save_dir, exist_ok=True)
-    
-    fig, axes = plt.subplots(2, 1, figsize=(10, 12))
-
-    axes[0].grid(True, linestyle='--',alpha=.7)
-    axes[1].grid(True, linestyle='--',alpha=.7)
-    
-    layer_sparsity_data = group_weights_and_sparsity_data(layer_sparsity_data)
-    # First subplot: Sparsity vs Zero Weights in Layer
-    for layer_name, data in layer_sparsity_data.items():
-        sorted_indices = sorted(range(len(data['sparsity'])), key=lambda i: data['sparsity'][i])
-        sorted_sparsity = [data['sparsity'][i] for i in sorted_indices]
-        sorted_zero_weights_in_layer = [data['zero_weights_in_layer'][i] for i in sorted_indices]
-        sorted_total_weights_in_layer = [data['total_weights_in_layer'][i] for i in sorted_indices]
-        zero_weights_in_layer_ratio = [zero / total for zero, total in zip(sorted_zero_weights_in_layer, sorted_total_weights_in_layer)]
-        axes[0].plot(sorted_sparsity, zero_weights_in_layer_ratio, marker='o', linestyle='-', label=layer_name)
-
-    axes[0].set_xlabel('Sparsity (%)', fontsize=12)
-    axes[0].set_ylabel('Zero Weights / Total Weights in Layer', fontsize=12)
-    axes[0].set_title('Zero Weights / Total Weights in Layer', fontsize=14)
-    axes[0].legend(title="Layer Names", bbox_to_anchor=(1.05, 1), loc='upper left')
-    axes[0].grid(True, linestyle='--', alpha=.7)
-
-    # Second subplot: Sparsity vs Zero Weights in Model
-    for layer_name, data in layer_sparsity_data.items():
-        sorted_indices = sorted(range(len(data['sparsity'])), key=lambda i: data['sparsity'][i])
-        sorted_sparsity = [data['sparsity'][i] for i in sorted_indices]
-        sorted_zero_weights_in_model = [data['zero_weights_in_model'][i] for i in sorted_indices]
-        zero_weights_in_model_ratio = [zero / sum(data['zero_weights_in_layer']) for zero in sorted_zero_weights_in_model]
-        axes[1].plot(sorted_sparsity, zero_weights_in_model_ratio, marker='o', linestyle='-', label=layer_name)
-
-    axes[1].set_xlabel('Sparsity (%)', fontsize=12)
-    axes[1].set_ylabel('Zero Weights / Total Weights in Model', fontsize=12)
-    axes[1].set_title('Zero Weights / Total Weights in Model', fontsize=14)
-    axes[1].legend(title="Layer Names", bbox_to_anchor=(1.05, 1), loc='upper left')
-    axes[1].grid(True, linestyle='--', alpha=.7)
-
-    # add gridlines to axes[0] and axes[1]
-    plt.tight_layout()
-    sparsity_path = os.path.join(save_dir, "weights_and_sparsity_plots_sorted.svg")
-    plt.savefig(sparsity_path)
-    plt.close()
-
-#############################################
-# Helper Functions for Aggregated Similarity Plotting
-#############################################
 
 from collections import defaultdict
 import numpy as np
@@ -356,7 +240,7 @@ def process_neuron_similarity(neuron_similarity_dir, model_name):
             step = data_sorted[i][0]
             act_prev = np.array(data_sorted[i-1][1].to('cpu').detach().numpy()).flatten()
             act_curr = np.array(data_sorted[i][1].to('cpu').detach().numpy()).flatten()
-            cos_sim = 1- cosine(act_prev, act_curr)
+            cos_sim = 1 - cosine(act_prev, act_curr+1e-10)
             cosine_similarities[layer].append((step, cos_sim))
 
     cosine_similarities = group_layer_similarity_data(cosine_similarities)
@@ -383,7 +267,7 @@ def process_neuron_similarity(neuron_similarity_dir, model_name):
         baseline_activation = np.array(data_sorted[0][1].to('cpu').detach().numpy()).flatten()
         for step, act in data_sorted:
             current_activation = np.array(act.to('cpu').detach().numpy()).flatten()
-            cos_sim = 1- cosine(baseline_activation, current_activation)
+            cos_sim = 1- cosine(baseline_activation, current_activation+1e-10)
             baseline_cosine_similarity_by_layer[layer].append((step, cos_sim))
     baseline_cosine_similarity_by_layer = group_layer_similarity_data(baseline_cosine_similarity_by_layer)
     save_dir_base = f"./plots/{model_name}/{checkpoint_name}/baseline_similarity/"
@@ -468,67 +352,6 @@ def process_neuron_similarity(neuron_similarity_dir, model_name):
 
     print(f"Neuron similarity post-processing complete for model: {model_name}, checkpoint: {checkpoint_name}")
 
-#############################################
-# Sparsity and Accuracy/Loss Analysis Functions
-#############################################
-
-def process_sparsity_and_accuracy(output_dir, model_name):
-    """
-    Process sparsity data from model checkpoints and generate plots:
-      - Layer sparsity plots.
-      - Accuracy and loss plots from JSON checkpoints.
-    """
-    checkpoint_name = os.path.basename(os.path.normpath(output_dir))
-    
-    pkl_files = glob.glob(os.path.join(output_dir, "*.pkl"))
-    if not pkl_files:
-        print("No .pkl files found for sparsity processing.")
-        return
-
-    with open(pkl_files[0], 'rb') as f:
-        pruner = pickle.load(f)
-    pruner.logger = None
-
-    paths = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith('.pth')]
-
-    layer_sparsity_data = defaultdict(lambda: {
-        'sparsity': [],
-        'zero_weights_in_layer': [],
-        'total_weights_in_layer': [],
-        'zero_weights_in_model': []
-    })
-
-    model = pruner.model
-    total_weights_data = []
-
-    for path in tqdm(paths, desc="Processing model checkpoints for sparsity"):
-        sparsity = path.split('_')[-1][:-4]
-        checkpoint = torch.load(path, map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
-        model.load_state_dict(checkpoint['model_state_dict'])
-        names, modules = get_pruneable_named_modules(model, pruner.prunable_layers)
-        total_weights_in_model = sum(module.weight.numel() for module in modules)
-        total_weights_data.append(total_weights_in_model)
-        for name, module in zip(names, modules):
-            zero_weights_in_layer = torch.sum(module.weight.data == 0).item()
-            total_weights_in_layer = module.weight.numel()
-            layer_sparsity_data[name]['sparsity'].append(float(sparsity))
-            layer_sparsity_data[name]['zero_weights_in_layer'].append(zero_weights_in_layer)
-            layer_sparsity_data[name]['total_weights_in_layer'].append(total_weights_in_layer)
-            layer_sparsity_data[name]['zero_weights_in_model'].append(zero_weights_in_layer)
-
-    plot_layer_sparsity(layer_sparsity_data, model_name, checkpoint_name)
-
-    json_files = glob.glob(os.path.join(output_dir, "*.json"))
-    if json_files:
-        json_data = load_json(json_files[0])
-        metrics = plot_accuracy_and_loss(json_data, model_name, checkpoint_name)
-    else:
-        print("No JSON checkpoint found for accuracy and loss plotting.")
-
-#############################################
-# Main Function
-#############################################
-
 def main():
     """Main function to execute the entire post-processing pipeline."""
     model_names = ["LeNet", "ResNet20", "Vgg16"]
@@ -536,11 +359,12 @@ def main():
     for model_name in model_names:
         checkpoint_glob = f"/scratch/jgafur/LTH_output/*{model_name}*"
         for output_dir in glob.glob(checkpoint_glob):
-            print(output_dir)
-            neuron_similarity_dir = os.path.join(output_dir, "neuron_similarity")
-            process_neuron_similarity(neuron_similarity_dir, '')
-            process_sparsity_and_accuracy(output_dir, '')
-            
+            try:
+                print(output_dir)
+                neuron_similarity_dir = os.path.join(output_dir, "neuron_similarity")
+                process_neuron_similarity(neuron_similarity_dir, '')
+            except Exception as e:
+                continue
             
            
 if __name__ == "__main__":
