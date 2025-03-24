@@ -9,7 +9,7 @@ import json
 from tqdm import tqdm  # Import tqdm
 import pickle 
 from matplotlib.colors import LinearSegmentedColormap
-from pyPrune.utils import get_pruneable_named_modules
+from pyPrune.utils import get_pruneable_named_modules, clean_memory
 
 class NeuronSimilarity:
     """
@@ -174,6 +174,7 @@ class NeuronSimilarity:
         
         for model_step, step in zip(self.pruner.weight_history, self.pruner.metrics["step"]):
             metrics = {"similarity_matrices" : [], "average_similarities" : []}
+            clean_memory()
             self.model.load_state_dict(model_step, strict=False)
             # Use tqdm to show a progress bar when iterating through layers
             names, modules = get_pruneable_named_modules(self.model, self.pruner.prunable_layers)

@@ -205,7 +205,7 @@ def plot_aggregated_similarity(steps, avg, q25, q75, title, ylabel, save_path):
 #############################################
 # Neuron Similarity Analysis Functions
 #############################################
-
+    
 def process_neuron_similarity(neuron_similarity_dir, model_name):
     """
     Process neuron similarity data and generate plots:
@@ -226,7 +226,8 @@ def process_neuron_similarity(neuron_similarity_dir, model_name):
     # --- Process the first file for per-file plots (as before) ---
     with open(files_found[0], 'rb') as f:
         pruner = pickle.load(f)
-
+        
+    quit()
     # Layers activations_step.keys()
     # dict_keys(['conv1', 'conv2', 'fc1', 'fc2'])
     # Activations
@@ -358,14 +359,16 @@ def main():
     # The glob pattern is used to select the checkpoint directories.    
     for model_name in model_names:
         checkpoint_glob = f"/scratch/jgafur/LTH_output/*{model_name}*"
-        for output_dir in glob.glob(checkpoint_glob):
-            try:
-                print(output_dir)
-                neuron_similarity_dir = os.path.join(output_dir, "neuron_similarity")
-                process_neuron_similarity(neuron_similarity_dir, '')
-            except Exception as e:
-                continue
+        for output_dir in glob.glob(checkpoint_glob)[::-1]:
+            clear_memory()
+            print(output_dir)
+            neuron_similarity_dir = os.path.join(output_dir, "neuron_similarity")
+            process_neuron_similarity(neuron_similarity_dir, '')
             
+def clear_memory():
+    import gc
+    gc.collect()
+    torch.cuda.empty_cache()
            
 if __name__ == "__main__":
     main()

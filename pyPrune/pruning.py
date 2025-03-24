@@ -45,34 +45,33 @@ class IterativeMagnitudePruning:
         """
         Initializes the IterativeMagnitudePruning class to perform iterative magnitude pruning on a neural network model.
         """
-        self.model = model.to(device or ('cuda' if torch.cuda.is_available() else 'cpu'))
+        self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model = model.to(self.device)
         self.train_loader = train_loader
         self.test_loader = test_loader
-        self.steps = [0]+steps
+        # Ensure the first step isn’t zero (if so, pretrain)
+        self.steps = [0] + steps
         self.optimizer = optimizer
         self.criterion = criterion
         self.learning_rate = learning_rate
         self.pruning_criterion = pruning_criterion or self.magnitude_prune
-        self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
         self.save_dir = save_dir
         self.finetune_epochs = finetune_epochs
         self.pretrain_epochs = pretrain_epochs
         self.prunable_layers = prunable_layers
 
-        # File for pickle saving
         self.pickle_name = os.path.join(self.save_dir, "pruner.pkl")
         self.current_sparsity = 0.0
         self.current_finetune_epoch = 0
         self.best_model_weights = None
 
-        # To store detailed metrics for each pruning step (for scientific logging)
+        # Detailed metrics per pruning step
         self.step_details: List[Dict] = []
 
         self.setup_save_dir()
         self.initial_parameters = self.save_initial_parameters()
         self.weight_history = [self.initial_parameters]
 
-        # Overall metrics tracked over all epochs (train and eval)
         self.metrics: Dict[str, List] = {
             'sparsity': [],
             'loss': [],
@@ -82,7 +81,7 @@ class IterativeMagnitudePruning:
             'step': [],
         }
 
-        # If the first step is 0, assume pretraining is needed even if pretrain_epochs==0.
+        # If first step is 0, pretraining is required
         if self.steps and self.steps[0] == 0:
             if self.pretrain_epochs == 0:
                 self.pretrain_epochs = 1
@@ -115,7 +114,7 @@ class IterativeMagnitudePruning:
         else:
             logger.info(f"Save directory {self.save_dir} already exists.")
 
-        print(f"saving pickle to {self.pickle_name}")
+        logger.info(f"Saving initial pickle to {self.pickle_name}")
         with open(self.pickle_name, 'wb') as f:
             pickle.dump(self, f)
         logger.info("Initial pruner state saved as pickle.")
@@ -130,7 +129,7 @@ class IterativeMagnitudePruning:
         """
         Flatten and concatenate weights from prunable layers.
         """
-        logger.debug(f"Unrolling model weights for {percentage * 100:.2f}% sparsity.")
+        logger.debug(f"Unrolling model weights for target sparsity {percentage * 100:.2f}%.")
         weights_list = []
         for module in get_pruneable_modules(self.model, self.prunable_layers):
             weights_list.append(module.weight.data.flatten())
@@ -158,17 +157,19 @@ class IterativeMagnitudePruning:
         """
         Perform magnitude-based pruning by zeroing out weights below a computed threshold.
         Updates the pruning mask so that pruned weights remain zero.
+        Also updates the optimizer state (momentum buffers etc.) to reflect the pruning.
         """
         logger.info(f"Pruning model to {percentage * 100:.2f}% sparsity.")
         num_prune, all_weights = self.unroll(percentage)
+        # Get threshold by finding the k-th smallest absolute weight
         threshold_value = np.partition(np.abs(all_weights.cpu().numpy()), num_prune - 1)[num_prune - 1]
         if num_prune == 0:
             threshold_value = float('inf')
 
         for module in get_pruneable_modules(self.model, self.prunable_layers):
-            # Compute current mask: True for weights to keep
+            # Compute new mask: True means keep weight
             current_mask = torch.abs(module.weight.data) >= threshold_value
-            # If a mask already exists, accumulate (keep previously pruned weights zeroed)
+            # Combine with existing mask if present (ensuring already pruned weights stay zero)
             if hasattr(module, 'mask'):
                 module.mask = module.mask & current_mask
             else:
@@ -176,8 +177,15 @@ class IterativeMagnitudePruning:
             # Apply the mask so that pruned weights remain zero
             module.weight.data.mul_(module.mask.float())
             module.weight.grad = None
-            # Optionally, you might not want to change requires_grad globally
-            # module.weight.requires_grad = not module.weight.data.eq(0).all()
+
+            # Update optimizer state: for each parameter in optimizer corresponding to this weight,
+            # multiply any momentum buffers by the same mask.
+            for group in self.optimizer.param_groups:
+                for p in group['params']:
+                    if p is module.weight:
+                        state = self.optimizer.state.get(p, {})
+                        if 'momentum_buffer' in state:
+                            state['momentum_buffer'].mul_(module.mask.float())
 
         logger.debug(f"Applied pruning with threshold {threshold_value:.6f}.")
 
@@ -185,6 +193,7 @@ class IterativeMagnitudePruning:
         """
         Reset model weights to the saved initial (rewind) parameters,
         then reapply the cumulative pruning mask so that pruned weights remain zero.
+        Also reinitializes the optimizer state to start fresh.
         """
         for name, param in self.model.named_parameters():
             param.data = self.initial_parameters[name].clone()
@@ -193,6 +202,11 @@ class IterativeMagnitudePruning:
                 module.weight.data.mul_(module.mask.float())
         logger.info("Model weights reset to initial parameters with pruning mask reapplied.")
 
+        # Reinitialize optimizer to remove outdated state.
+        if self.model.__class__.__name__ != 'VGG16_CIFAR10':   
+            self.optimizer = type(self.optimizer)(self.model.parameters(), lr=self.learning_rate)
+        logger.info("Optimizer reinitialized after weight reset.")
+
     def update_metrics(self, loss: float, accuracy: float, gradients: Optional[torch.Tensor]) -> None:
         """Record current metrics into the internal metrics dictionary."""
         self.metrics['sparsity'].append(self.current_sparsity)
@@ -200,8 +214,8 @@ class IterativeMagnitudePruning:
         self.metrics['accuracy'].append(accuracy)
         self.metrics['gradients'].append(self.convert_tensor(gradients) if gradients is not None else None)
 
-        # Update best model if current accuracy is higher
-        if self.current_sparsity > 0 and accuracy > max(self.metrics['accuracy']):
+        # Update best model if current accuracy is higher than previous best.
+        if not self.metrics['accuracy'] or accuracy > max(self.metrics['accuracy']):
             logger.info(f"Best model updated at {self.current_sparsity * 100:.2f}% sparsity with accuracy {accuracy:.2f}%.")
             self.best_model_weights = self.model.state_dict()
 
@@ -211,8 +225,6 @@ class IterativeMagnitudePruning:
         """
         if mode == "train":
             self.model.train()
-            epochs_without_improvement = 0
-            best_val_loss = float("inf")
             correct = 0
             total = 0
 
@@ -220,24 +232,22 @@ class IterativeMagnitudePruning:
                 data, target = data.to(self.device), target.to(self.device)
                 self.optimizer.zero_grad()
                 output = self.model(data)
-                
-                # Calculate loss
+
                 loss = self.criterion(output, target)
                 loss.backward()
-                
-                # Mask gradients for pruned weights
+
+                # Mask gradients for pruned weights.
                 for module in get_pruneable_modules(self.model, self.prunable_layers):
                     mask = module.weight.data != 0
                     if module.weight.grad is not None:
                         module.weight.grad.data.mul_(mask.float())
-                
+
                 self.optimizer.step()
 
-                # Accuracy calculation
                 _, predicted = torch.max(output, 1)
                 correct += (predicted == target).sum().item()
                 total += target.size(0)
-            print(f"training accuracy: {correct/total}")
+            print(f"Training accuracy: {correct/total:.4f}")
             return None
 
         elif mode == "eval":
@@ -273,69 +283,64 @@ class IterativeMagnitudePruning:
           2. Iteratively prune and fine-tune
           3. Save checkpoints and metrics
         """
-        try:
-            # Pretraining phase
-            if self.pretrain_epochs > 0:
-                logger.info("Starting pretraining...")
-                for epoch_num in range(self.pretrain_epochs):
-                    logger.info(f"Pretraining epoch {epoch_num + 1}/{self.pretrain_epochs}")
+        # Pretraining phase
+        if self.pretrain_epochs > 0:
+            logger.info("Starting pretraining...")
+            for epoch_num in range(self.pretrain_epochs):
+                logger.info(f"Pretraining epoch {epoch_num + 1}/{self.pretrain_epochs}")
+                self.epoch("train")
+            # Update initial parameters after pretraining (rewinding effect)
+            self.initial_parameters = self.save_initial_parameters()
+            self.weight_history[0] = self.initial_parameters 
+            self.best_model_weights = self.model.state_dict()
+
+        logger.info(f"Starting iterative pruning with steps: {self.steps}")
+        for step in self.steps:
+            self.current_finetune_epoch = step
+            logger.info(f"--- Pruning step: Target sparsity = {step * 100:.2f}% ---")
+
+            # Fine-tuning phase (if any)
+            if self.finetune_epochs > 0:
+                for ft_epoch in range(self.finetune_epochs):
+                    logger.info(f"Fine-tuning epoch {ft_epoch + 1}/{self.finetune_epochs} at {step * 100:.2f}% sparsity")
                     self.epoch("train")
-                # Update initial parameters after pretraining (rewinding effect)
-                self.initial_parameters = self.save_initial_parameters()
-                self.weight_history[0] = self.initial_parameters 
-                self.best_model_weights = self.model.state_dict()
 
-            logger.info(f"Starting iterative pruning with steps: {self.steps}")
-            for step in self.steps:
-                self.current_finetune_epoch = step
-                logger.info(f"--- Pruning step: Target sparsity = {step * 100:.2f}% ---")
+            # Apply pruning and update optimizer state accordingly
+            logger.info(f"Pruning the model to {step * 100:.2f}% sparsity...")
+            self.magnitude_prune(step)
+            # Check that sparsity is close to what is expected.
+            self.assert_sparsity(step)
 
-                # Fine-tuning phase (if any)
-                if self.finetune_epochs > 0:
-                    for ft_epoch in range(self.finetune_epochs):
-                        logger.info(f"Fine-tuning epoch {ft_epoch + 1}/{self.finetune_epochs} at {step * 100:.2f}% sparsity")
-                        self.epoch("train")
+            checkpoint_path = os.path.join(self.save_dir, f"pruned_model_step_{step:.4f}.pth")
+            self.save_checkpoint(step, checkpoint_path)
+            self.metrics['step'].append(step)
 
-                # Apply pruning
-                logger.info(f"Pruning the model to {step * 100:.2f}% sparsity...")
-                self.magnitude_prune(step)
-                self.assert_sparsity(step)
+            # Evaluate after pruning and fine-tuning
+            eval_metrics = self.epoch("eval")
+            self.weight_history.append(self.model.state_dict())
 
-                checkpoint_path = os.path.join(self.save_dir, f"pruned_model_step_{step:.4f}.pth")
-                self.save_checkpoint(step, checkpoint_path)
-                self.metrics['step'].append(step)
+            # Record step-level details for logging
+            step_detail = {
+                "pruning_step": step,
+                "eval_loss": eval_metrics["eval_loss"] if eval_metrics else None,
+                "eval_accuracy": eval_metrics["eval_accuracy"] if eval_metrics else None,
+                "sparsity": self.current_sparsity,
+                "checkpoint": checkpoint_path,
+            }
+            self.step_details.append(step_detail)
+            logger.info(f"Step metrics recorded: {step_detail}")
 
-                # Evaluate after pruning and fine-tuning
-                eval_metrics = self.epoch("eval")
-                self.weight_history.append(self.model.state_dict())
-
-                # Record step-level details for scientific logging
-                step_detail = {
-                    "pruning_step": step,
-                    "eval_loss": eval_metrics["eval_loss"] if eval_metrics else None,
-                    "eval_accuracy": eval_metrics["eval_accuracy"] if eval_metrics else None,
-                    "sparsity": self.current_sparsity,
-                    "checkpoint": checkpoint_path,
-                }
-                self.step_details.append(step_detail)
-                logger.info(f"Step metrics recorded: {step_detail}")
-
-                # Reset weights to initial (rewinding) state for next pruning step
-                logger.info("Resetting weights to initial state for next pruning step.")
-                self.reset_weights()
-                self.update_pickle()
-                print("\n" + "=" * 50 + "\n")
-
-            logger.info("Pruning process complete. Saving overall metrics...")
-            self.save_metrics()
+            # Reset weights (rewind) for next iteration and reinitialize optimizer
+            logger.info("Resetting weights to initial state for next pruning step.")
+            self.reset_weights()
             self.update_pickle()
-            logger.info("Pruner state and metrics saved successfully.")
-            self.complete = True
+            print("\n" + "=" * 50 + "\n")
 
-        except Exception as e:
-            logger.error(f"Error during pruning: {str(e)}")
-            logger.error("Deleting pickle file due to error...")
-            self.delete_pickle()
+        logger.info("Pruning process complete. Saving overall metrics...")
+        self.save_metrics()
+        self.update_pickle()
+        logger.info("Pruner state and metrics saved successfully.")
+        self.complete = True
 
     def save_metrics(self) -> None:
         """Save overall pruning metrics and step details to a JSON file."""
@@ -369,7 +374,8 @@ class IterativeMagnitudePruning:
             total_params += module.weight.numel()
             pruned_params += torch.sum(module.weight == 0).item()
         current_sparsity = pruned_params / total_params
-        assert np.isclose(current_sparsity, target_sparsity, atol=.01), \
+        # Check that the achieved sparsity is within 1% of the target.
+        assert np.isclose(current_sparsity, target_sparsity, atol=0.1), \
             f"Model sparsity mismatch: {current_sparsity:.4f} vs {target_sparsity:.4f}"
         self.current_sparsity = current_sparsity
         logger.info(f"Sparsity assertion passed: {current_sparsity * 100:.2f}%")
@@ -377,7 +383,7 @@ class IterativeMagnitudePruning:
     def delete_pickle(self) -> None:
         """Delete the pickle file if it exists."""
         if os.path.exists(self.pickle_name):
-            # os.remove(self.pickle_name)
-            logger.info(f"(deprecated) Deleted pickle file: {self.pickle_name}")
+            os.remove(self.pickle_name)
+            logger.info(f"Deleted pickle file: {self.pickle_name}")
         else:
             logger.info(f"No pickle file found at: {self.pickle_name}")

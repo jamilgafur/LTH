@@ -2,7 +2,7 @@
 #SBATCH --job-name=experiment_${1}_${3}  # Job name
 #SBATCH --ntasks=1
 #SBATCH --time=16:00:00                  # Max runtime (16 hours)
-#SBATCH --mem=32GB
+#SBATCH --mem=128GB
 #SBATCH --gpus=1
 #SBATCH --account=modularai
 #SBATCH --output=/scratch/jgafur/LTH_output/experiment_%j.out

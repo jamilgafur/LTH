@@ -195,6 +195,42 @@ def plot_layer_information(savedir, data):
     plt.savefig(f"{savedir}/layer_info_subplot_3.png")
 
 
+import matplotlib.pyplot as plt
+
+def plot_accuracy(pruner, path):
+    """
+    Plots accuracy and loss against sparsity during the pruning process.
+
+    Args:
+        pruner: Pruning object containing metrics with accuracy, loss, and sparsity values.
+    """
+    metrics = pruner.metrics
+    accuracy = metrics['accuracy']
+    loss = metrics['loss']
+    sparsity = metrics['step']
+
+    fig, axs = plt.subplots(2, 1, figsize=(10, 10))
+
+    # Plot accuracy vs sparsity
+    axs[0].plot(sparsity, accuracy, marker='o', linestyle='-', color='blue', label='Accuracy')
+    axs[0].set_title('Accuracy vs Sparsity')
+    axs[0].set_xlabel('Sparsity (%)')
+    axs[0].set_ylabel('Accuracy')
+    axs[0].grid(True)
+    axs[0].legend()
+
+    # Plot loss vs sparsity
+    axs[1].plot(sparsity, loss, marker='o', linestyle='-', color='red', label='Loss')
+    axs[1].set_title('Loss vs Sparsity')
+    axs[1].set_xlabel('Sparsity (%)')
+    axs[1].set_ylabel('Loss')
+    axs[1].grid(True)
+    axs[1].legend()
+
+    plt.tight_layout()
+    plt.savefig(f"{path}/accuracy_loss.png")
+
+
 # ----------------------------
 # Main Execution Block
 # ----------------------------
@@ -204,6 +240,8 @@ if __name__ == "__main__":
         pruner_pickle_path = f"{model_directory}/pruner.pkl"
 
         pruner = load_pickle(pruner_pickle_path)
+        plot_accuracy(pruner, f"./plots/{model_directory.split("/")[-1].split(".")[0]}")
+            
         model_paths = get_sorted_model_paths(model_directory)
 
         data = {}
@@ -213,6 +251,7 @@ if __name__ == "__main__":
             sparsity = float("0." + model_path.split('_')[-1].split('.')[1])
             
             print(f"Model Path: {model_path}")
+            import pdb; pdb.set_trace()
             layer_info, base_params = get_layer_information(pruner, model_path, base_params)
 
             data[sparsity] = {
