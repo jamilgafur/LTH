@@ -107,7 +107,7 @@ def process_neuron_similarity(neuron_similarity_dir, model_name):
 
 def main():
     """Main function to execute the entire post-processing pipeline."""
-    model_names = ["LeNet"] #, "ResNet20", "Vgg16"]
+    model_names = ["LeNet", "ResNet20", "Vgg16"]
     # The glob pattern is used to select the checkpoint directories.    
     for model_name in model_names:
         checkpoint_glob = f"/projects/modularai/jgafur/results/*{model_name}*"

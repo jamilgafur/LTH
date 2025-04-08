@@ -1,8 +1,9 @@
-import torch
 import os
-from scipy.spatial.distance import cosine
-import numpy as np
 import glob
+import pickle
+import torch
+import numpy as np
+from collections import defaultdict
 import matplotlib.pyplot as plt
 import pyPrune.utils as utils
 
@@ -11,199 +12,85 @@ import pyPrune.utils as utils
 # Function to load the pruner pickle
 # ----------------------------
 def load_pickle(file_path):
-    """
-    Loads and returns the pruner pickle.
-
-    Args:
-        file_path (str): Path to the pruner pickle file.
-
-    Returns:
-        pruner: Loaded pruner object.
-    """
+    """Load and return the pruner pickle."""
     if not os.path.isfile(file_path):
         raise FileNotFoundError(f"Pickle file not found: {file_path}")
-
-    import pickle
+    
     with open(file_path, 'rb') as f:
         pruner = pickle.load(f)
-
     return pruner
 
 
 # ----------------------------
-# Function to get model paths
+# Function to get sorted model paths
 # ----------------------------
 def get_sorted_model_paths(directory):
-    """
-    Returns sorted model paths based on the filenames in a directory.
-    
-    Args:
-        directory (str): The directory containing the model checkpoint files.
-
-    Returns:
-        list: Sorted list of model file paths.
-    """
+    """Return sorted model paths by step number."""
     model_paths = glob.glob(os.path.join(directory, "pruned_model_step_*.pth"))
     model_paths.sort(key=lambda x: float(x.split("_")[-1].split(".")[0]))
     return model_paths
 
 
 # ----------------------------
-# Function to get layer information with consistent total_trainable_params
+# Correct Layer Aggregation Logic
 # ----------------------------
-import torch
-from collections import defaultdict
-
 def get_layer_information(pruner, model_path, base_params=None):
     """
-    Gets layer-wise information: # of zeros in the layer, # of trainable parameters in the layer, 
-    and the total # of trainable parameters in the model (constant across sparsities).
+    Extracts layer-wise information with proper grouping by base name (first dot segment).
 
     Args:
         pruner: The pruner object.
         model_path (str): Path to the model checkpoint.
-        base_params (dict, optional): Dictionary storing the original total trainable params for each layer.
+        base_params (dict, optional): Dictionary storing the original total trainable params.
 
     Returns:
-        dict: Dictionary containing layer information.
-        dict: Base parameters dictionary storing the total_trainable_params.
+        dict: Dictionary with layer information.
+        dict: Base parameters dictionary.
     """
-    # Load model weights into pruner
     checkpoint = torch.load(model_path, map_location='cpu', weights_only=True)
     pruner.model.load_state_dict(checkpoint['model_state_dict'])
     pruner.model.eval()
 
-    layer_info = defaultdict(lambda: {"num_zeros": 0, "num_trainable_params": 0, "total_trainable_params": 0})
-    
-    # Load original layer params only once
+    layer_info = defaultdict(lambda: {
+        "num_zeros": 0, "num_trainable_params": 0, "total_trainable_params": 0
+    })
+
     if base_params is None:
         base_params = {}
 
+    # Load model parameters
     names, params = utils.get_pruneable_named_parameters(pruner.model, pruner.prunable_layers)
 
     for name, param in zip(names, params):
-        if name.count(".") == 1:
-            name = name.split(".")[0]
+        # Group by base name before the first dot
         
-        if name.count(".") == 2:
-            name = name.split(".")[1]
-        
-        if name.count(".") == 3:
-            name = name.split(".")[0]
-
+        if name.count('.') == 1:
+            layer_name = name.split('.')[0]
+        if name.count('.') == 2:
+            layer_name = name.split('.')[1]
+        if name.count('.') == 3:
+            layer_name = name.split('.')[1] +"-"+name.split('.')[2]
+        print(name, layer_name)
         num_zeros = (param == 0).sum().item()
         num_trainable_params = param.numel()
 
-        # Store the original total trainable parameters only once
-        if name not in base_params:
-            base_params[name] = num_trainable_params
+        # Store base parameters only once
+        if layer_name not in base_params:
+            base_params[layer_name] = num_trainable_params
 
-        # Aggregate values for layers with the same name
-        layer_info[name]["num_zeros"] += num_zeros
-        layer_info[name]["num_trainable_params"] += num_trainable_params
-        layer_info[name]["total_trainable_params"] = base_params[name]  # Use original total params (constant)
+        # Aggregate layer information
+        layer_info[layer_name]["num_zeros"] += num_zeros
+        layer_info[layer_name]["num_trainable_params"] += num_trainable_params
+        layer_info[layer_name]["total_trainable_params"] = base_params[layer_name]
 
-        print(f"Layer: {name}, Zeros: {num_zeros}, Trainable: {num_trainable_params}, Total: {base_params[name]}")
-
-    # Convert defaultdict back to a regular dict before returning
     return dict(layer_info), base_params
 
 
-
 # ----------------------------
-# Function to plot layer information
+# Plot accuracy and loss
 # ----------------------------
-import os
-import matplotlib.pyplot as plt
-
-def plot_layer_information(savedir, data):
-    """
-    Plots the layer-wise information of pruned models.
-
-    Args:
-        data (dict): Dictionary where keys are sparsity values and values are model data
-                     containing layer information and cosine similarities.
-    """
-    os.makedirs(savedir, exist_ok=True)
-    sparsities = sorted(data.keys())
-
-    # First figure for axes[0] and axes[1]
-    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
-
-    for layer in data[0.0]["layer_info"].keys():
-        layer_name = layer.split(".")[0]
-
-        x1, x2 = [], []
-        
-        for sparsity in sparsities:
-            info = data[sparsity]['layer_info'][layer]
-            
-            # Both x1 and x2 should use the same denominator (sum of trainable params)
-            total_trainable_params = sum(info['num_trainable_params'] for layer in data[sparsity]['layer_info'])
-
-            # Sum of zeros for all layers
-            total_zeros = sum(data[sparsity]["layer_info"][layer]["num_zeros"] for layer in data[sparsity]["layer_info"])
-            total_params = sum(data[sparsity]["layer_info"][layer]["total_trainable_params"] for layer in data[sparsity]["layer_info"])
-
-            x1.append(info['num_zeros'] / info['num_trainable_params'])
-            x2.append(info['num_zeros'] / total_params)
-
-        # Plot x1 for axes[0] and x2 for axes[1]
-        axes[0].plot(sparsities, x1, label=f"{layer_name}")
-        axes[1].plot(sparsities, x2, label=f"{layer_name}")
-
-    # Labels and legends for the first figure
-    axes[0].set_title('Zeros in Layer / Trainable Params in Layer')
-    axes[0].set_xlabel('Sparsity')
-    axes[0].set_ylabel('Ratio')
-    axes[0].legend()
-
-    axes[1].set_title('Zeros in Layer / Total Trainable Params')
-    axes[1].set_xlabel('Sparsity')
-    axes[1].set_ylabel('Ratio')
-    axes[1].legend()
-
-    # Save the first figure
-    plt.tight_layout()
-    plt.savefig(f"{savedir}/layer_info_subplot_1_2.png")
-    plt.clf()  # Clear the figure after saving
-
-    # Second figure for axes[2]
-    fig2, ax2 = plt.subplots(figsize=(14, 5))
-
-    for layer in data[0.0]["layer_info"].keys():
-        layer_name = layer.split(".")[0]
-
-        x3 = []
-        
-        for sparsity in sparsities:
-            total_zeros = sum(data[sparsity]["layer_info"][layer]["num_zeros"] for layer in data[sparsity]["layer_info"])
-            total_params = sum(data[sparsity]["layer_info"][layer]["total_trainable_params"] for layer in data[sparsity]["layer_info"])
-            x3.append(total_zeros / total_params)
-
-        # Plot x3 for axes[2]
-        ax2.plot(sparsities, x3, label="Sum of all layers")
-
-    # Labels and legend for the second figure
-    ax2.set_title('Sum of Zeros / Sum of Trainable Params')
-    ax2.set_xlabel('Sparsity')
-    ax2.set_ylabel('Ratio')
-    ax2.legend()
-
-    # Save the second figure
-    plt.tight_layout()
-    plt.savefig(f"{savedir}/layer_info_subplot_3.png")
-
-
-import matplotlib.pyplot as plt
-
 def plot_accuracy(pruner, path):
-    """
-    Plots accuracy and loss against sparsity during the pruning process.
-
-    Args:
-        pruner: Pruning object containing metrics with accuracy, loss, and sparsity values.
-    """
+    """Plot accuracy and loss against sparsity."""
     metrics = pruner.metrics
     accuracy = metrics['accuracy']
     loss = metrics['loss']
@@ -228,34 +115,103 @@ def plot_accuracy(pruner, path):
     axs[1].legend()
 
     plt.tight_layout()
+    os.makedirs(path, exist_ok=True)
     plt.savefig(f"{path}/accuracy_loss.png")
+
+
+# ----------------------------
+# Plot layer information with improved grouping and colors
+# ----------------------------
+def plot_layer_information(savedir, data):
+    """
+    Plots the layer-wise information of pruned models with consistent colors and line styles.
+
+    Args:
+        savedir (str): Directory to save the plots.
+        data (dict): Dictionary with layer information at different sparsities.
+    """
+    os.makedirs(savedir, exist_ok=True)
+    sparsities = sorted(data.keys())
+
+    # Define color and line style combinations
+    colors = plt.cm.viridis(np.linspace(0, 1, len(data[0.0]["layer_info"])))
+    line_styles = ['-', '--', '-.', ':']
+
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+
+    for idx, (layer, color) in enumerate(zip(data[0.0]["layer_info"].keys(), colors)):
+        layer_name = layer
+
+        x1, x2 = [], []
+
+        for sparsity in sparsities:
+            info = data[sparsity]['layer_info'][layer]
+
+            total_trainable_params = sum(
+                data[sparsity]["layer_info"][l]["total_trainable_params"]
+                for l in data[sparsity]["layer_info"]
+            )
+            total_zeros = sum(
+                data[sparsity]["layer_info"][l]["num_zeros"]
+                for l in data[sparsity]["layer_info"]
+            )
+
+            x1.append(info['num_zeros'] / info['num_trainable_params'])
+            x2.append(info['num_zeros'] / total_trainable_params)
+
+        # Apply distinct colors and line styles
+        style = line_styles[idx % len(line_styles)]
+        axes[0].plot(sparsities, x1, label=f"{layer_name}", color=color, linestyle=style)
+        axes[1].plot(sparsities, x2, label=f"{layer_name}", color=color, linestyle=style)
+
+    # Labels and legends
+    axes[0].set_title('Zeros in Layer / Trainable Params in Layer')
+    axes[0].set_xlabel('Sparsity')
+    axes[0].set_ylabel('Ratio')
+    axes[0].legend()
+
+    axes[1].set_title('Zeros in Layer / Total Trainable Params')
+    axes[1].set_xlabel('Sparsity')
+    axes[1].set_ylabel('Ratio')
+    axes[1].legend()
+
+    plt.tight_layout()
+    plt.savefig(f"{savedir}/layer_info.png")
 
 
 # ----------------------------
 # Main Execution Block
 # ----------------------------
 if __name__ == "__main__":
-    
-    for model_directory in  glob.glob("/scratch/jgafur/LTH_output/*cuda*"):
+
+    base_output_dir = "./plots"
+
+    for model_directory in glob.glob("/scratch/jgafur/LTH_output/*cuda*"):
         pruner_pickle_path = f"{model_directory}/pruner.pkl"
 
+        # Load pruner
         pruner = load_pickle(pruner_pickle_path)
-        plot_accuracy(pruner, f"./plots/{model_directory.split("/")[-1].split(".")[0]}")
-            
+        
+        # Plot accuracy and loss
+        output_dir = os.path.join(base_output_dir, model_directory.split("/")[-1])
+        plot_accuracy(pruner, output_dir)
+
         model_paths = get_sorted_model_paths(model_directory)
 
         data = {}
         base_params = None
 
+        # Process each model path
         for model_path in model_paths:
             sparsity = float("0." + model_path.split('_')[-1].split('.')[1])
-            
-            print(f"Model Path: {model_path}")
-            import pdb; pdb.set_trace()
-            layer_info, base_params = get_layer_information(pruner, model_path, base_params)
 
+            print(f"Processing Model: {model_path}")
+            
+            layer_info, base_params = get_layer_information(pruner, model_path, base_params)
+            
             data[sparsity] = {
                 "layer_info": layer_info,
             }
-            
-        plot_layer_information(f"./plots/{model_directory.split("/")[-1].split(".")[0]}", data)
+
+        # Plot layer information
+        plot_layer_information(output_dir, data)
