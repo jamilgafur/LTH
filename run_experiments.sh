@@ -4,10 +4,10 @@ rm *.out
 
 # Define arrays for models, pretrain epochs, early stopping, finetune epochs, and steps
 models=("LeNet" "ResNet20" "Vgg16")
-pretrain_epochs=(5 20 20)
+pretrain_epochs=(5 20 50)
 early_stopping=(3 3 3)
 finetune_epochs_LeNet=(1 5 10)
-finetune_epochs_rest=(3 5 10)
+finetune_epochs_rest=(60 100 160)
 steps=21
 
 # Loop over models

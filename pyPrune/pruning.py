@@ -30,6 +30,7 @@ class IterativeMagnitudePruning:
         model: nn.Module,
         train_loader: DataLoader,
         test_loader: DataLoader,
+        scheduler: Optional[torch.optim.lr_scheduler._LRScheduler],
         steps: List[float],
         optimizer: torch.optim.Optimizer,
         criterion: nn.Module,
@@ -59,6 +60,7 @@ class IterativeMagnitudePruning:
         self.finetune_epochs = finetune_epochs
         self.pretrain_epochs = pretrain_epochs
         self.prunable_layers = prunable_layers
+        self.scheduler = scheduler
 
         self.pickle_name = os.path.join(self.save_dir, "pruner.pkl")
         self.current_sparsity = 0.0
@@ -89,6 +91,7 @@ class IterativeMagnitudePruning:
 
         self._setup_logger(file_handler)
         self.complete = False
+        
 
         logger.info("IterativeMagnitudePruning initialized.")
         logger.info(f"Device: {self.device}, Target final sparsity: {self.steps[-1] if self.steps else 'N/A'}, Steps: {self.steps}")
@@ -243,6 +246,8 @@ class IterativeMagnitudePruning:
                         module.weight.grad.data.mul_(mask.float())
 
                 self.optimizer.step()
+                if self.scheduler:
+                    self.scheduler.step()
 
                 _, predicted = torch.max(output, 1)
                 correct += (predicted == target).sum().item()
