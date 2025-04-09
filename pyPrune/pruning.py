@@ -204,6 +204,8 @@ class IterativeMagnitudePruning:
             if hasattr(module, 'mask'):
                 module.weight.data.mul_(module.mask.float())
         logger.info("Model weights reset to initial parameters with pruning mask reapplied.")
+        # reset the scheduler to be at the rewind point
+
 
         # Reinitialize optimizer to remove outdated state.
         if self.model.__class__.__name__ != 'VGG16_CIFAR10':   
@@ -252,8 +254,7 @@ class IterativeMagnitudePruning:
                 _, predicted = torch.max(output, 1)
                 correct += (predicted == target).sum().item()
                 total += target.size(0)
-            print(f"Training accuracy: {correct/total:.4f}")
-            return None
+            return correct/total
 
         elif mode == "eval":
             self.model.eval()
@@ -292,8 +293,9 @@ class IterativeMagnitudePruning:
         if self.pretrain_epochs > 0:
             logger.info("Starting pretraining...")
             for epoch_num in range(self.pretrain_epochs):
-                logger.info(f"Pretraining epoch {epoch_num + 1}/{self.pretrain_epochs}")
-                self.epoch("train")
+                accuracy = self.epoch("train")
+                logger.info(f"Pretraining epoch {epoch_num + 1}/{self.pretrain_epochs} with accuracy: {accuracy:.4f}")
+
             # Update initial parameters after pretraining (rewinding effect)
             self.initial_parameters = self.save_initial_parameters()
             self.weight_history[0] = self.initial_parameters 
@@ -307,8 +309,9 @@ class IterativeMagnitudePruning:
             # Fine-tuning phase (if any)
             if self.finetune_epochs > 0:
                 for ft_epoch in range(self.finetune_epochs):
-                    logger.info(f"Fine-tuning epoch {ft_epoch + 1}/{self.finetune_epochs} at {step * 100:.2f}% sparsity")
-                    self.epoch("train")
+                    accuracy = self.epoch("train")
+                    logger.info(f"Fine-tuning epoch {ft_epoch + 1}/{self.finetune_epochs} at {step * 100:.2f}% sparsity with accuracy: {accuracy:.4f}")
+                
 
             # Apply pruning and update optimizer state accordingly
             logger.info(f"Pruning the model to {step * 100:.2f}% sparsity...")
@@ -335,8 +338,13 @@ class IterativeMagnitudePruning:
             self.step_details.append(step_detail)
             logger.info(f"Step metrics recorded: {step_detail}")
 
+            
             # Reset weights (rewind) for next iteration and reinitialize optimizer
             logger.info("Resetting weights to initial state for next pruning step.")
+            self.scheduler.current_epoch = self.finetune_epochs
+            self.scheduler.step()
+            logger.info(f"Resetting scheduler to epoch {self.scheduler.current_epoch} with learning rate {self.optimizer.param_groups[0]['lr']}")
+            
             self.reset_weights()
             self.update_pickle()
             print("\n" + "=" * 50 + "\n")

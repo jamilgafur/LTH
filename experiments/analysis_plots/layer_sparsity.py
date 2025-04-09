@@ -6,7 +6,7 @@ import numpy as np
 from collections import defaultdict
 import matplotlib.pyplot as plt
 import pyPrune.utils as utils
-
+from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed, CustomLambdaLR, lr_lambda
 
 # ----------------------------
 # Function to load the pruner pickle
@@ -15,7 +15,7 @@ def load_pickle(file_path):
     """Load and return the pruner pickle."""
     if not os.path.isfile(file_path):
         raise FileNotFoundError(f"Pickle file not found: {file_path}")
-    
+
     with open(file_path, 'rb') as f:
         pruner = pickle.load(f)
     return pruner

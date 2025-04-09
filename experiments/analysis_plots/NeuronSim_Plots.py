@@ -10,6 +10,7 @@ from collections import defaultdict
 import numpy as np
 from scipy.spatial.distance import cosine  # returns the cosine distance (1-sim)
 import seaborn as sns
+from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed, CustomLambdaLR, lr_lambda
 
 #############################################
 # Global Plot Settings for Better Visualization
@@ -154,9 +155,12 @@ def process_neuron_similarity(neuron_similarity_dir, model_name):
     checkpoint_name = os.path.basename(os.path.normpath(checkpoint_dir))
 
     # Process the first file for per-file plots
-    with open(files_found[0], 'rb') as f:
-        pruner = pickle.load(f)
-        
+    if files_found:
+        with open(files_found[0], 'rb') as f:
+            pruner = pickle.load(f)
+    else:
+        print(f"No files found in {neuron_similarity_dir}")
+        return        
     # Comment out quit() for full processing
     # quit()
     
@@ -297,10 +301,10 @@ def clear_memory():
 
 def main():
     """Main function to execute the entire post-processing pipeline."""
-    model_names = ["LeNet", "ResNet20", "Vgg16"]
+    model_names = ["LeNet", "ResNet20", "Vgg16"][::-1]
     for model_name in model_names:
         checkpoint_glob = f"/scratch/jgafur/LTH_output/*{model_name}*"
-        for output_dir in glob.glob(checkpoint_glob)[::-1]:
+        for output_dir in glob.glob(checkpoint_glob):
             clear_memory()
             clean_memory()
             print(output_dir)

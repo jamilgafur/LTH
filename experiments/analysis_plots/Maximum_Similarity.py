@@ -8,6 +8,7 @@ from tqdm import tqdm
 from collections import defaultdict
 import numpy as np
 import seaborn as sns
+from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed, CustomLambdaLR
 
 
 from collections import defaultdict
