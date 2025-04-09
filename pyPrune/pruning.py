@@ -6,7 +6,6 @@ import logging
 import numpy as np
 from tqdm import tqdm
 from typing import Optional, Callable, List, Tuple, Dict
-
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -14,6 +13,7 @@ from torch.utils.data import DataLoader
 from pyPrune.utils import (
     get_pruneable_modules,
     clean_memory,
+    CustomLambdaLR
 )
 
 # Configure root logger
@@ -248,8 +248,7 @@ class IterativeMagnitudePruning:
                         module.weight.grad.data.mul_(mask.float())
 
                 self.optimizer.step()
-                if self.scheduler:
-                    self.scheduler.step()
+                self.scheduler.step()
 
                 _, predicted = torch.max(output, 1)
                 correct += (predicted == target).sum().item()
@@ -341,8 +340,8 @@ class IterativeMagnitudePruning:
             
             # Reset weights (rewind) for next iteration and reinitialize optimizer
             logger.info("Resetting weights to initial state for next pruning step.")
+            self.scheduler.rewind(self.finetune_epochs)
             self.scheduler.current_epoch = self.finetune_epochs
-            self.scheduler.step()
             logger.info(f"Resetting scheduler to epoch {self.scheduler.current_epoch} with learning rate {self.optimizer.param_groups[0]['lr']}")
             
             self.reset_weights()

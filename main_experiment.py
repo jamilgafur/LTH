@@ -15,22 +15,13 @@ from pyPrune.models.LeNet import LeNet
 from pyPrune.models.ResNet20 import ResNet20
 from pyPrune.models.Vgg16 import VGG16_CIFAR10 as Vgg16
 from pyPrune.pruning import IterativeMagnitudePruning
-from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed
+from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed, lr_lambda, CustomLambdaLR
 from experiments.WeightZeroing import WeightZeroing
 from experiments.NeuronZeroing import NeuronZeroing
 from experiments.NeuronSimilarity import NeuronSimilarity
 
 
-# Custom learning rate scheduler class
-class CustomLambdaLR(torch.optim.lr_scheduler._LRScheduler):
-    def __init__(self, optimizer, total_epochs, lr_lambda, last_epoch=-1, verbose=False):
-        self.total_epochs = total_epochs
-        self.lr_lambda = lr_lambda
-        super().__init__(optimizer, last_epoch, verbose)
 
-    def get_lr(self):
-        # Use the current epoch (self.last_epoch) and the total_epochs to calculate the learning rate
-        return [base_lr * self.lr_lambda(self.last_epoch, self.total_epochs) for base_lr in self.base_lrs]
 
 
 def load_cifar10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
@@ -88,16 +79,6 @@ def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[flo
     return decay_list
 
 
-def lr_lambda(epoch: int, total_epochs: int) -> float:
-    epoch_percentage = epoch / total_epochs
-
-    if epoch_percentage < 0.4:
-        return 1.0
-    elif epoch_percentage < 0.8:
-        return 0.1
-    else:
-        return 0.01
-
 
 def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: DataLoader,
                       steps: list[float], pretrain_epochs: int, finetune_epochs: int, device: str, save_dir: str, model_name: str, total_epochs: int) -> IterativeMagnitudePruning:
@@ -114,8 +95,8 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
             print(f"optimizer: {optimizer}, criterion: {criterion}")
             scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
         else:
-            optimizer = SGD(model.parameters(), lr=0.1, momentum=0.9, nesterov=True, weight_decay=5e-4)
             criterion = nn.CrossEntropyLoss()
+            optimizer = optim.SGD(model.parameters(), lr = 0.1, momentum=0.9, nesterov=True, weight_decay=5e-4)
             print(f"optimizer: {optimizer}, criterion: {criterion}")
             # Use the custom lambda LR scheduler with total_epochs passed as an argument
             scheduler = CustomLambdaLR(optimizer, total_epochs=total_epochs, lr_lambda=lr_lambda)
