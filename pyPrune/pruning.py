@@ -12,8 +12,7 @@ from torch.utils.data import DataLoader
 
 from pyPrune.utils import (
     get_pruneable_modules,
-    clean_memory,
-    CustomLambdaLR
+    clean_memory, 
 )
 
 # Configure root logger
@@ -44,7 +43,8 @@ class IterativeMagnitudePruning:
         prunable_layers: Tuple = (nn.Conv2d, nn.Linear)
     ) -> None:
         """
-        Initializes the IterativeMagnitudePruning class to perform iterative magnitude pruning on a neural network model.
+        Initializes the IterativeMagnitudePruning class to perform iterative magnitude pruning 
+        on a neural network model using global pruning based on weight magnitude.
         """
         self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = model.to(self.device)
@@ -61,13 +61,15 @@ class IterativeMagnitudePruning:
         self.pretrain_epochs = pretrain_epochs
         self.prunable_layers = prunable_layers
         self.scheduler = scheduler
+        self.total_weight_count = sum(
+            p.numel() for m in get_pruneable_modules(model, self.prunable_layers) for p in [m.weight]
+        )
 
         self.pickle_name = os.path.join(self.save_dir, "pruner.pkl")
         self.current_sparsity = 0.0
         self.current_finetune_epoch = 0
         self.best_model_weights = None
 
-        # Detailed metrics per pruning step
         self.step_details: List[Dict] = []
 
         self.setup_save_dir()
@@ -130,12 +132,21 @@ class IterativeMagnitudePruning:
 
     def unroll(self, percentage: float) -> Tuple[int, torch.Tensor]:
         """
-        Flatten and concatenate weights from prunable layers.
+        Flatten and concatenate weights from prunable layers for global pruning.
+        In subsequent pruning iterations, only non-zero weights (i.e. unpruned weights) are considered.
         """
-        logger.debug(f"Unrolling model weights for target sparsity {percentage * 100:.2f}%.")
+        logger.debug(f"Unrolling model weights for global pruning with target sparsity {percentage * 100:.2f}%.")
         weights_list = []
         for module in get_pruneable_modules(self.model, self.prunable_layers):
-            weights_list.append(module.weight.data.flatten())
+            if hasattr(module, 'mask'):
+                valid_weights = module.weight.data[module.mask.bool()].flatten()
+                if valid_weights.numel() == 0:
+                    continue
+                weights_list.append(valid_weights)
+            else:
+                weights_list.append(module.weight.data.flatten())
+        if not weights_list:
+            raise ValueError("No valid weights found for pruning.")
         all_weights = torch.cat(weights_list)
         num_prune = max(1, int(all_weights.numel() * percentage))
         return num_prune, all_weights
@@ -156,33 +167,33 @@ class IterativeMagnitudePruning:
             logger.error(f"Error saving checkpoint: {str(e)}")
             raise
 
-    def magnitude_prune(self, percentage: float) -> None:
-        """
-        Perform magnitude-based pruning by zeroing out weights below a computed threshold.
-        Updates the pruning mask so that pruned weights remain zero.
-        Also updates the optimizer state (momentum buffers etc.) to reflect the pruning.
-        """
-        logger.info(f"Pruning model to {percentage * 100:.2f}% sparsity.")
-        num_prune, all_weights = self.unroll(percentage)
-        # Get threshold by finding the k-th smallest absolute weight
-        threshold_value = np.partition(np.abs(all_weights.cpu().numpy()), num_prune - 1)[num_prune - 1]
-        if num_prune == 0:
-            threshold_value = float('inf')
+    def magnitude_prune(self, target_sparsity: float) -> None:
+        logger.info(f"Global pruning: Target sparsity = {target_sparsity * 100:.2f}%")
+        _, all_weights = self.unroll(1.0)  # get all remaining (unpruned) weights
+        total_weights = all_weights.numel()
+
+        # How many to prune to reach total target sparsity?
+        num_prune_total = int(self.total_weight_count * target_sparsity)
+        num_already_pruned = self.total_weight_count - total_weights
+        num_to_prune_now = num_prune_total - num_already_pruned
+
+        if num_to_prune_now <= 0:
+            logger.info("No additional pruning needed at this step.")
+            return
+
+        all_weights_np = np.abs(all_weights.cpu().numpy())
+        threshold_value = np.partition(all_weights_np, num_to_prune_now - 1)[num_to_prune_now - 1]
 
         for module in get_pruneable_modules(self.model, self.prunable_layers):
-            # Compute new mask: True means keep weight
-            current_mask = torch.abs(module.weight.data) >= threshold_value
-            # Combine with existing mask if present (ensuring already pruned weights stay zero)
+            weight_data = module.weight.data
+            current_mask = torch.abs(weight_data) >= threshold_value
             if hasattr(module, 'mask'):
                 module.mask = module.mask & current_mask
             else:
                 module.mask = current_mask
-            # Apply the mask so that pruned weights remain zero
             module.weight.data.mul_(module.mask.float())
             module.weight.grad = None
 
-            # Update optimizer state: for each parameter in optimizer corresponding to this weight,
-            # multiply any momentum buffers by the same mask.
             for group in self.optimizer.param_groups:
                 for p in group['params']:
                     if p is module.weight:
@@ -190,7 +201,7 @@ class IterativeMagnitudePruning:
                         if 'momentum_buffer' in state:
                             state['momentum_buffer'].mul_(module.mask.float())
 
-        logger.debug(f"Applied pruning with threshold {threshold_value:.6f}.")
+        logger.debug(f"Global pruning applied with threshold {threshold_value:.6f}.")
 
     def reset_weights(self) -> None:
         """
@@ -204,12 +215,11 @@ class IterativeMagnitudePruning:
             if hasattr(module, 'mask'):
                 module.weight.data.mul_(module.mask.float())
         logger.info("Model weights reset to initial parameters with pruning mask reapplied.")
-        # reset the scheduler to be at the rewind point
 
+        self.scheduler.last_epoch = self.finetune_epochs
 
-        # Reinitialize optimizer to remove outdated state.
-        if self.model.__class__.__name__ != 'VGG16_CIFAR10':   
-            self.optimizer = type(self.optimizer)(self.model.parameters(), lr=self.learning_rate)
+        self.optimizer = type(self.optimizer)(self.model.parameters(), lr=self.learning_rate)
+        
         logger.info("Optimizer reinitialized after weight reset.")
 
     def update_metrics(self, loss: float, accuracy: float, gradients: Optional[torch.Tensor]) -> None:
@@ -219,7 +229,6 @@ class IterativeMagnitudePruning:
         self.metrics['accuracy'].append(accuracy)
         self.metrics['gradients'].append(self.convert_tensor(gradients) if gradients is not None else None)
 
-        # Update best model if current accuracy is higher than previous best.
         if not self.metrics['accuracy'] or accuracy > max(self.metrics['accuracy']):
             logger.info(f"Best model updated at {self.current_sparsity * 100:.2f}% sparsity with accuracy {accuracy:.2f}%.")
             self.best_model_weights = self.model.state_dict()
@@ -241,18 +250,19 @@ class IterativeMagnitudePruning:
                 loss = self.criterion(output, target)
                 loss.backward()
 
-                # Mask gradients for pruned weights.
                 for module in get_pruneable_modules(self.model, self.prunable_layers):
                     mask = module.weight.data != 0
                     if module.weight.grad is not None:
                         module.weight.grad.data.mul_(mask.float())
 
                 self.optimizer.step()
-                self.scheduler.step()
-
+            
                 _, predicted = torch.max(output, 1)
                 correct += (predicted == target).sum().item()
                 total += target.size(0)
+
+            self.scheduler.step()
+            
             return correct/total
 
         elif mode == "eval":
@@ -270,6 +280,7 @@ class IterativeMagnitudePruning:
             self.update_metrics(total_loss, accuracy, None)
             logger.info(f"Evaluation complete, Average Loss: {total_loss:.4f}, Accuracy: {accuracy:.2f}%")
             clean_memory()
+            print({"eval_loss": total_loss, "eval_accuracy": accuracy})
             return {"eval_loss": total_loss, "eval_accuracy": accuracy}
         else:
             logger.error("Epoch mode must be either 'train' or 'eval'.")
@@ -288,14 +299,12 @@ class IterativeMagnitudePruning:
           2. Iteratively prune and fine-tune
           3. Save checkpoints and metrics
         """
-        # Pretraining phase
         if self.pretrain_epochs > 0:
             logger.info("Starting pretraining...")
             for epoch_num in range(self.pretrain_epochs):
                 accuracy = self.epoch("train")
                 logger.info(f"Pretraining epoch {epoch_num + 1}/{self.pretrain_epochs} with accuracy: {accuracy:.4f}")
 
-            # Update initial parameters after pretraining (rewinding effect)
             self.initial_parameters = self.save_initial_parameters()
             self.weight_history[0] = self.initial_parameters 
             self.best_model_weights = self.model.state_dict()
@@ -305,28 +314,24 @@ class IterativeMagnitudePruning:
             self.current_finetune_epoch = step
             logger.info(f"--- Pruning step: Target sparsity = {step * 100:.2f}% ---")
 
-            # Fine-tuning phase (if any)
             if self.finetune_epochs > 0:
                 for ft_epoch in range(self.finetune_epochs):
                     accuracy = self.epoch("train")
                     logger.info(f"Fine-tuning epoch {ft_epoch + 1}/{self.finetune_epochs} at {step * 100:.2f}% sparsity with accuracy: {accuracy:.4f}")
                 
-
-            # Apply pruning and update optimizer state accordingly
-            logger.info(f"Pruning the model to {step * 100:.2f}% sparsity...")
+            logger.info(f"Pruning the model globally to {step * 100:.2f}% sparsity...")
             self.magnitude_prune(step)
-            # Check that sparsity is close to what is expected.
             self.assert_sparsity(step)
 
             checkpoint_path = os.path.join(self.save_dir, f"pruned_model_step_{step:.4f}.pth")
             self.save_checkpoint(step, checkpoint_path)
             self.metrics['step'].append(step)
 
-            # Evaluate after pruning and fine-tuning
             eval_metrics = self.epoch("eval")
+
+            print(eval_metrics)
             self.weight_history.append(self.model.state_dict())
 
-            # Record step-level details for logging
             step_detail = {
                 "pruning_step": step,
                 "eval_loss": eval_metrics["eval_loss"] if eval_metrics else None,
@@ -337,12 +342,8 @@ class IterativeMagnitudePruning:
             self.step_details.append(step_detail)
             logger.info(f"Step metrics recorded: {step_detail}")
 
-            
-            # Reset weights (rewind) for next iteration and reinitialize optimizer
             logger.info("Resetting weights to initial state for next pruning step.")
-            self.scheduler.rewind(self.finetune_epochs)
-            self.scheduler.current_epoch = self.finetune_epochs
-            logger.info(f"Resetting scheduler to epoch {self.scheduler.current_epoch} with learning rate {self.optimizer.param_groups[0]['lr']}")
+            logger.info(f"Resetting scheduler to epoch {self.scheduler.last_epoch} with learning rate {self.optimizer.param_groups[0]['lr']}")
             
             self.reset_weights()
             self.update_pickle()
@@ -377,20 +378,15 @@ class IterativeMagnitudePruning:
             return self.convert_tensor(t.data)
         return t
 
-    def assert_sparsity(self, target_sparsity: float) -> None:
-        """
-        Verify that the model's sparsity is close to the target value.
-        """
-        total_params, pruned_params = 0, 0
+    def assert_sparsity(self, expected_sparsity: float):
+        total = 0
+        zero = 0
         for module in get_pruneable_modules(self.model, self.prunable_layers):
-            total_params += module.weight.numel()
-            pruned_params += torch.sum(module.weight == 0).item()
-        current_sparsity = pruned_params / total_params
-        # Check that the achieved sparsity is within 1% of the target.
-        assert np.isclose(current_sparsity, target_sparsity, atol=0.1), \
-            f"Model sparsity mismatch: {current_sparsity:.4f} vs {target_sparsity:.4f}"
-        self.current_sparsity = current_sparsity
-        logger.info(f"Sparsity assertion passed: {current_sparsity * 100:.2f}%")
+            total += module.weight.data.numel()
+            zero += (module.weight.data == 0).sum().item()
+        actual_sparsity = zero / total
+        logger.info(f"Sparsity assertion: actual = {actual_sparsity * 100:.2f}%, expected = {expected_sparsity * 100:.2f}%")
+        assert abs(actual_sparsity - expected_sparsity) < 0.1, "Sparsity check failed!"
 
     def delete_pickle(self) -> None:
         """Delete the pickle file if it exists."""

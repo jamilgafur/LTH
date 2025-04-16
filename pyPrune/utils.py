@@ -4,53 +4,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 from typing import Tuple, List, Callable, Optional
-from torch.optim.lr_scheduler import _LRScheduler
 
-class CustomLambdaLR(torch.optim.lr_scheduler._LRScheduler):
-    def __init__(self, optimizer, total_epochs: int, lr_lambda: Callable[[int, int], float], last_epoch: int = -1):
-        self.total_epochs = total_epochs
-        self.lr_lambda = lr_lambda
-        self.current_epoch = 0
-        super().__init__(optimizer, last_epoch)
-    
-    def get_lr(self):
-        """Compute learning rates using base_lrs and the lambda schedule."""
-        factor = self.lr_lambda(self.current_epoch, self.total_epochs)
-        return [base_lr * factor for base_lr in self.base_lrs]
-
-    def step(self, epoch: Optional[int] = None):
-        """
-        Update the learning rate according to the lambda function.
-
-        This version matches the behavior of PyTorch's LambdaLR and updates once per epoch.
-        """
-        if epoch is not None:
-            self.current_epoch = epoch
-        else:
-            self.current_epoch += 1
-        super().step(self.current_epoch)
-
-    def rewind(self, rewind_epoch: int):
-        """
-        Reset the scheduler's internal state for rewinding purposes.
-        Sets the learning rate to what it would have been at the specified rewind epoch.
-        """
-        self.current_epoch = rewind_epoch
-        self.last_epoch = rewind_epoch
-        self.optimizer.param_groups = [
-            {**pg, 'lr': base_lr * self.lr_lambda(rewind_epoch, self.total_epochs)}
-            for pg, base_lr in zip(self.optimizer.param_groups, self.base_lrs)
-        ]
-
-# Example lambda function
-def lr_lambda(epoch: int, total_epochs: int) -> float:
-    epoch_percentage = epoch / total_epochs
-    if epoch_percentage < 0.4:
-        return 1.0
-    elif epoch_percentage < 0.8:
-        return 0.1
-    else:
-        return 0.01
 
 def get_pruneable_named_parameters(model: torch.nn.Module, prunable_layers: Tuple) -> Tuple[List[str], List[torch.nn.Parameter]]:
     names = []
@@ -121,3 +75,14 @@ def plot_loss_accuracy_sparsity(pruner) -> None:
     plot_path = pruner.save_dir + '/sparsity_vs_loss_and_accuracy.png'
     plt.savefig(plot_path, dpi=300)
     plt.show()
+
+
+
+def lr_lambda(epoch: int,experiment) -> float:
+    epoch_percentage = epoch / (experiment.pretrain_epochs+ experiment.finetune_epochs)
+    if epoch_percentage < 0.5:
+        return 1.0
+    elif epoch_percentage < 0.75:
+        return 0.1
+    else:
+        return 0.01

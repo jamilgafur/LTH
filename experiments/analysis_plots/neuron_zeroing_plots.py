@@ -6,7 +6,7 @@ import glob
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
-from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed, CustomLambdaLR, lr_lambda
+from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed, lr_lambda
 
 def load_metrics(json_file):
     """

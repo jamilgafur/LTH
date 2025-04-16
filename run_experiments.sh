@@ -2,29 +2,33 @@
 
 rm *.out
 
-# Define arrays for models, pretrain epochs, early stopping, finetune epochs, and steps
+# Model and hyperparameter configuration
 models=("LeNet" "ResNet20" "Vgg16")
-pretrain_epochs=(5 20 50)
-early_stopping=(3 3 3)
+pretrain_epochs_list=(5 10 20 50)
 finetune_epochs_LeNet=(1 5 10)
-finetune_epochs_rest=(60 100 160)
+early_stopping=3
 steps=21
 
-# Loop over models
-for i in "${!models[@]}"; do
-    model=${models[$i]}
-    pretrain_epoch=${pretrain_epochs[$i]}
-    es=${early_stopping[$i]}
+# Loop over each model
+for model in "${models[@]}"; do
+    for pretrain_epoch in "${pretrain_epochs_list[@]}"; do
 
-    # Decide which finetune epochs to use based on the model
-    if [ "$model" == "LeNet" ]; then
-        finetune_epochs=("${finetune_epochs_LeNet[@]}")
-    else
-        finetune_epochs=("${finetune_epochs_rest[@]}")
-    fi
+        # Set finetune epochs based on model type
+        if [ "$model" == "LeNet" ]; then
+            finetune_epochs=("${finetune_epochs_LeNet[@]}")
+        else
+            finetune_epoch=$((pretrain_epoch - 160))
+            if [ "$finetune_epoch" -lt 0 ]; then
+                # Skip invalid fine-tune settings
+                continue
+            fi
+            finetune_epochs=("$finetune_epoch")
+        fi
 
-    # Loop over finetune epochs
-    for finetune_epoch in "${finetune_epochs[@]}"; do
-        sbatch prune_job.sh "$model" "$pretrain_epoch" "$es" "$finetune_epoch" "$steps"
+        # Submit job for each finetune epoch
+        for finetune_epoch in "${finetune_epochs[@]}"; do
+            sbatch prune_job.sh "$model" "$pretrain_epoch" "$early_stopping" "$finetune_epoch" "$steps"
+        done
+
     done
 done

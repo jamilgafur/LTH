@@ -6,7 +6,9 @@ import numpy as np
 from collections import defaultdict
 import matplotlib.pyplot as plt
 import pyPrune.utils as utils
-from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed, CustomLambdaLR, lr_lambda
+from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed, lr_lambda
+
+
 
 # ----------------------------
 # Function to load the pruner pickle

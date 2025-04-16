@@ -10,7 +10,7 @@ from collections import defaultdict
 import numpy as np
 from scipy.spatial.distance import cosine  # returns the cosine distance (1-sim)
 import seaborn as sns
-from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed, CustomLambdaLR, lr_lambda
+from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed, lr_lambda
 
 #############################################
 # Global Plot Settings for Better Visualization

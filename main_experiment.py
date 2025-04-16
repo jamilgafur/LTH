@@ -15,13 +15,41 @@ from pyPrune.models.LeNet import LeNet
 from pyPrune.models.ResNet20 import ResNet20
 from pyPrune.models.Vgg16 import VGG16_CIFAR10 as Vgg16
 from pyPrune.pruning import IterativeMagnitudePruning
-from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed, lr_lambda, CustomLambdaLR
+from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed
 from experiments.WeightZeroing import WeightZeroing
 from experiments.NeuronZeroing import NeuronZeroing
 from experiments.NeuronSimilarity import NeuronSimilarity
+from torch.optim.lr_scheduler import LambdaLR
 
 
+parser = argparse.ArgumentParser(description="Run pruning and experiments with a specified model and experiments.")
 
+parser.add_argument('--model', type=str, default='LeNet', choices=['LeNet', 'ResNet20', 'Vgg16'],
+                    help="The model architecture to use for pruning. Default is 'LeNet'.")
+parser.add_argument('--experiments', type=str, nargs='+', default=['None'],
+                    choices=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing', "None"],
+                    help="List of experiments to run. Default is all.")
+parser.add_argument('--steps', type=int, default=21,
+                    help="Number of steps for pruning decay (defaults to exponential decay).")
+parser.add_argument('--pretrain_epochs', type=int, default=10,
+                    help="Number of pretrain epochs. Default is 10.")
+parser.add_argument('--finetune_epochs', type=int, default=10,
+                    help="Number of finetune epochs after pruning. Default is 10.")
+parser.add_argument('--device', type=str, default='cuda',
+                    choices=['cpu', 'cuda'],
+                    help="Device to use for training and pruning. Default is 'cuda'.")
+parser.add_argument('--save_dir', type=str, default='pruning_checkpoints/',
+                    help="Directory to save pruning checkpoints. Default is 'pruning_checkpoints/'.")
+parser.add_argument('--patience', type=int, default=5)
+parser.add_argument('--batch_size', type=int, default=128, help="Batch size for training. Default is 128.")
+parser.add_argument('--num_workers', type=int, default=1, help="Number of workers for data loading. Default is 1.")
+
+args = parser.parse_args()
+
+# Update save_dir to include model name, pretrain_epochs, and finetune_epochs, also length of steps, and device
+args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrain_epochs}_finetune{args.finetune_epochs}_steps{args.steps}_batch{args.batch_size}_device{args.device}")
+
+print(f"Experiment configuration: {args}")
 
 
 def load_cifar10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
@@ -79,7 +107,6 @@ def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[flo
     return decay_list
 
 
-
 def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: DataLoader,
                       steps: list[float], pretrain_epochs: int, finetune_epochs: int, device: str, save_dir: str, model_name: str, total_epochs: int) -> IterativeMagnitudePruning:
     pruner_path = os.path.join(save_dir, 'pruner.pkl')
@@ -98,8 +125,8 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
             criterion = nn.CrossEntropyLoss()
             optimizer = optim.SGD(model.parameters(), lr = 0.1, momentum=0.9, nesterov=True, weight_decay=5e-4)
             print(f"optimizer: {optimizer}, criterion: {criterion}")
-            # Use the custom lambda LR scheduler with total_epochs passed as an argument
-            scheduler = CustomLambdaLR(optimizer, total_epochs=total_epochs, lr_lambda=lr_lambda)
+            # lambda_lr = lambda epoch: 0.1 ** max(0, (epoch-40)//40) #10x drop at halfway and 75% of training
+            scheduler = LambdaLR(optimizer, lr_lambda)
 
         print(scheduler)
         pruner = IterativeMagnitudePruning(
@@ -144,41 +171,16 @@ def run_experiments(pruner: IterativeMagnitudePruning, experiment_names: list[st
         weight_zeroing = WeightZeroing(pruner, sample_fractions)
         weight_zeroing.run_experiment()
 
-
-def parse_args() -> tuple:
-    parser = argparse.ArgumentParser(description="Run pruning and experiments with a specified model and experiments.")
+def lr_lambda(epoch: int,) -> float:
+    epoch_percentage = epoch / (args.pretrain_epochs+ args.finetune_epochs)
+    if epoch_percentage < 0.5:
+        return 1.0
+    elif epoch_percentage < 0.75:
+        return 0.1
+    else:
+        return 0.01
     
-    parser.add_argument('--model', type=str, default='LeNet', choices=['LeNet', 'ResNet20', 'Vgg16'],
-                        help="The model architecture to use for pruning. Default is 'LeNet'.")
-    parser.add_argument('--experiments', type=str, nargs='+', default=['None'],
-                        choices=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing', "None"],
-                        help="List of experiments to run. Default is all.")
-    parser.add_argument('--steps', type=int, default=21,
-                        help="Number of steps for pruning decay (defaults to exponential decay).")
-    parser.add_argument('--pretrain_epochs', type=int, default=10,
-                        help="Number of pretrain epochs. Default is 10.")
-    parser.add_argument('--finetune_epochs', type=int, default=10,
-                        help="Number of finetune epochs after pruning. Default is 10.")
-    parser.add_argument('--device', type=str, default='cuda',
-                        choices=['cpu', 'cuda'],
-                        help="Device to use for training and pruning. Default is 'cuda'.")
-    parser.add_argument('--save_dir', type=str, default='pruning_checkpoints/',
-                        help="Directory to save pruning checkpoints. Default is 'pruning_checkpoints/'.")
-    parser.add_argument('--patience', type=int, default=5)
-    parser.add_argument('--batch_size', type=int, default=128, help="Batch size for training. Default is 128.")
-    parser.add_argument('--num_workers', type=int, default=1, help="Number of workers for data loading. Default is 1.")
-    
-    args = parser.parse_args()
-    
-    # Update save_dir to include model name, pretrain_epochs, and finetune_epochs, also length of steps, and device
-    args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrain_epochs}_finetune{args.finetune_epochs}_steps{args.steps}_batch{args.batch_size}_device{args.device}")
-    
-    print(f"Experiment configuration: {args}")
-    return args
-
-
 def main() -> None:
-    args = parse_args()
 
     set_seed(69917111)
 
@@ -198,7 +200,6 @@ def main() -> None:
                                device=args.device, save_dir=args.save_dir, model_name=args.model, total_epochs=args.pretrain_epochs + args.finetune_epochs)
     
     run_experiments(pruner, args.experiments)
-
 
 if __name__ == '__main__':
     main()
