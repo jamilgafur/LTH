@@ -17,7 +17,7 @@ for model in "${models[@]}"; do
         if [ "$model" == "LeNet" ]; then
             finetune_epochs=("${finetune_epochs_LeNet[@]}")
         else
-            finetune_epoch=$((pretrain_epoch - 160))
+            finetune_epoch=$((160 - pretrain_epoch))
             if [ "$finetune_epoch" -lt 0 ]; then
                 # Skip invalid fine-tune settings
                 continue
