@@ -11,9 +11,10 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from abc import ABC, abstractmethod
 
-from pyPrune.utils import get_pruneable_modules, clean_memory
-from pyPrune.strategies.base import PruningStrategy
-
+from pyPrune.utils import get_pruneable_modules, get_pruneable_named_parameters, clean_memory
+from pyPrune.PruningStrategy import PruningStrategy
+from pyPrune.Trainer import BaseTrainer
+from pyPrune.strategies.MagnitudePruningStrategy import MagnitudePruningStrategy
 # Configure root logger
 logging.basicConfig(
     level=logging.DEBUG,
@@ -74,22 +75,23 @@ class BasePruner(BaseTrainer):
             pickle.dump(self, f)
 
     def _save_initial_state(self) -> Dict[str, torch.Tensor]:
-        state = {n: p.data.clone() for n, p in self.model.named_parameters()}
+        names , parameters = get_pruneable_named_parameters(self.model, self.prunable_layers)
+        state = {n: p.data.clone() for n, p in zip(names, parameters)}
         logger.info(f"Saved {len(state)} initial params.")
         return state
 
     def pretrain(self):
         logger.info("Starting pretraining...")
         for epoch in range(self.pretrain_epochs):
-            acc = self._epoch(train=True)
-            logger.info(f"Pretrain epoch {epoch+1}/{self.pretrain_epochs}, acc={acc:.2f}%")
+            acc, loss = self._epoch(train=True)
+            logger.info(f"Pretrain epoch {epoch+1}/{self.pretrain_epochs}, acc={acc:.2f}%, loss={loss:.4f}")
         self.initial_state = self._save_initial_state()
 
     def finetune(self):
         logger.info(f"Finetuning at {self.current_sparsity*100:.2f}% sparsity")
         for epoch in range(self.finetune_epochs):
-            acc = self._epoch(train=True)
-            logger.info(f" Finetune epoch {epoch+1}/{self.finetune_epochs}, acc={acc:.2f}%")
+            acc, loss = self._epoch(train=True)
+            logger.info(f" Finetune epoch {epoch+1}/{self.finetune_epochs}, acc={acc:.2f}%, loss={loss:.4f}")
 
     def prune_step(self):
         logger.info(f"Pruning to {self.current_sparsity*100:.2f}% sparsity")
@@ -102,14 +104,15 @@ class BasePruner(BaseTrainer):
         )
 
     def evaluate(self) -> float:
-        loss = self._epoch(train=False)
-        logger.info(f"Evaluated at {self.current_sparsity*100:.2f}% sparsity: loss={loss:.4f}")
+        acc, loss = self._epoch(train=False)
+        logger.info(f"Evaluated at {self.current_sparsity*100:.2f}% sparsity: loss={loss:.4f}, acc={acc:.2f}%")
         self.metrics['sparsity'].append(self.current_sparsity)
         self.metrics['loss'].append(loss)
         return loss
 
     def reset_weights(self):
-        for name, param in self.model.named_parameters():
+        names, params = get_pruneable_named_parameters(self.model, self.prunable_layers)
+        for name, param in zip(names, params):
             param.data = self.initial_state[name].clone()
         for m in get_pruneable_modules(self.model, self.prunable_layers):
             if hasattr(m, 'mask'):

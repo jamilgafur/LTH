@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from abc import ABC, abstractmethod
 
 from pyPrune.utils import get_pruneable_modules, clean_memory
-from pyPrune.strategies.base import PruningStrategy
+from pyPrune.PruningStrategy import PruningStrategy
 
 # Configure root logger
 logging.basicConfig(
@@ -71,4 +71,4 @@ class BaseTrainer(ABC):
             self.scheduler.step()
         avg_loss = total_loss / total
         acc = 100. * correct / total
-        return acc if train else avg_loss
+        return acc, avg_loss

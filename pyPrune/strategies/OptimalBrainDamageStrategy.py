@@ -1,4 +1,25 @@
+import os
+import json
+import pickle
+import datetime
+import logging
+import numpy as np
+from tqdm import tqdm
+from typing import Optional, Callable, List, Tuple, Dict
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from abc import ABC, abstractmethod
 
+from pyPrune.utils import get_pruneable_modules, clean_memory
+from pyPrune.PruningStrategy import PruningStrategy
+
+# Configure root logger
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 class OptimalBrainDamageStrategy(PruningStrategy):
     """
     Optimal Brain Damage: prunes by approximated saliency = 0.5 * w^2 * H_ii.

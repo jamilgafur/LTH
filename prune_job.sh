@@ -17,10 +17,11 @@ pretrain_epochs=$2
 patience=$3
 finetune_epochs=$4
 steps=$5
+strategy=$6
 
 echo "Current Time: $(date)"
 echo "Running pruning job for ${model} with command: python main_experiment.py --model ${model} --save_dir /scratch/jgafur/LTH_output --experiment None"
-python main_experiment.py --model ${model} --save_dir /scratch/jgafur/LTH_output --experiment None --finetune_epochs ${finetune_epochs} --pretrain_epochs ${pretrain_epochs} --steps ${steps} --patience ${patience}
+python main_experiment.py --model ${model} --save_dir /scratch/jgafur/LTH_output --experiment None --finetune_epochs ${finetune_epochs} --pretrain_epochs ${pretrain_epochs} --steps ${steps} --patience ${patience} --strategy ${strategy} 
 
 
 # Submit experiment jobs after pruning completes

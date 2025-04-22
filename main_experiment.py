@@ -14,7 +14,8 @@ from torchvision import datasets, transforms
 from pyPrune.models.LeNet import LeNet
 from pyPrune.models.ResNet20 import ResNet20
 from pyPrune.models.Vgg16 import VGG16_CIFAR10 as Vgg16
-from pyPrune.pruning import IterativeMagnitudePruning
+from pyPrune.IterativePruner import IterativePruner
+from pyPrune.strategies import MagnitudePruningStrategy, OptimalBrainDamageStrategy
 from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed
 from experiments.WeightZeroing import WeightZeroing
 from experiments.NeuronZeroing import NeuronZeroing
@@ -24,7 +25,7 @@ from torch.optim.lr_scheduler import LambdaLR
 
 parser = argparse.ArgumentParser(description="Run pruning and experiments with a specified model and experiments.")
 
-parser.add_argument('--model', type=str, default='LeNet', choices=['LeNet', 'ResNet20', 'Vgg16'],
+parser.add_argument('--model', type=str, default='Vgg16', choices=['LeNet', 'ResNet20', 'Vgg16'],
                     help="The model architecture to use for pruning. Default is 'LeNet'.")
 parser.add_argument('--experiments', type=str, nargs='+', default=['None'],
                     choices=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing', "None"],
@@ -43,11 +44,13 @@ parser.add_argument('--save_dir', type=str, default='pruning_checkpoints/',
 parser.add_argument('--patience', type=int, default=5)
 parser.add_argument('--batch_size', type=int, default=128, help="Batch size for training. Default is 128.")
 parser.add_argument('--num_workers', type=int, default=1, help="Number of workers for data loading. Default is 1.")
+parser.add_argument('--strategy', type=str, default='magnitude', choices=['magnitude', 'brain-damage'],
+                    help="Pruning strategy to use. Default is 'magnitude'.")
 
 args = parser.parse_args()
 
 # Update save_dir to include model name, pretrain_epochs, and finetune_epochs, also length of steps, and device
-args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrain_epochs}_finetune{args.finetune_epochs}_steps{args.steps}_batch{args.batch_size}_device{args.device}")
+args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrain_epochs}_finetune{args.finetune_epochs}_steps{args.steps}_batch{args.batch_size}_device{args.device}_strategy_{args.strategy}")
 
 print(f"Experiment configuration: {args}")
 
@@ -98,6 +101,16 @@ def load_mnist(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, 
     return train_loader, test_loader
 
 
+def lr_lambda(epoch: int) -> float:
+    epoch_percentage = epoch / (args.pretrain_epochs+ args.finetune_epochs)
+    if epoch_percentage < 0.5:
+        return 1.0
+    elif epoch_percentage < 0.75:
+        return 0.1
+    else:
+        return 0.01
+
+
 def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[float]:
     decay_list = [0]
     n = 1
@@ -108,7 +121,7 @@ def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[flo
 
 
 def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: DataLoader,
-                      steps: list[float], pretrain_epochs: int, finetune_epochs: int, device: str, save_dir: str, model_name: str, total_epochs: int) -> IterativeMagnitudePruning:
+                      steps: list[float], pretrain_epochs: int, finetune_epochs: int, device: str, save_dir: str, model_name: str, total_epochs: int) -> IterativePruner:
     pruner_path = os.path.join(save_dir, 'pruner.pkl')
     
     if os.path.exists(pruner_path):
@@ -125,11 +138,17 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
             criterion = nn.CrossEntropyLoss()
             optimizer = optim.SGD(model.parameters(), lr = 0.1, momentum=0.9, nesterov=True, weight_decay=5e-4)
             print(f"optimizer: {optimizer}, criterion: {criterion}")
-            # lambda_lr = lambda epoch: 0.1 ** max(0, (epoch-40)//40) #10x drop at halfway and 75% of training
             scheduler = LambdaLR(optimizer, lr_lambda)
 
         print(scheduler)
-        pruner = IterativeMagnitudePruning(
+        if args.strategy == 'magnitude':
+            strategy = MagnitudePruningStrategy.MagnitudePruningStrategy(device=device)
+        elif args.strategy == 'brain-damage':
+            strategy = OptimalBrainDamageStrategy.OptimalBrainDamageStrategy(train_loader=train_loader, criterion=criterion, device=device)
+        else:
+            raise ValueError(f"Unknown strategy: {args.strategy}")
+        
+        pruner = IterativePruner(
             model=model,
             optimizer=optimizer,
             scheduler=scheduler,
@@ -141,6 +160,7 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
             device=device,
             finetune_epochs=finetune_epochs,
             save_dir=save_dir,
+            strategy=strategy,  # Pass the pruning strategy argument
         )
         pruner.run()
         
@@ -149,7 +169,7 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
     return pruner
 
 
-def run_experiments(pruner: IterativeMagnitudePruning, experiment_names: list[str]) -> None:
+def run_experiments(pruner: IterativePruner, experiment_names: list[str]) -> None:
     if 'None' in experiment_names:
         print("No experiments to run.")
         return
@@ -171,14 +191,7 @@ def run_experiments(pruner: IterativeMagnitudePruning, experiment_names: list[st
         weight_zeroing = WeightZeroing(pruner, sample_fractions)
         weight_zeroing.run_experiment()
 
-def lr_lambda(epoch: int,) -> float:
-    epoch_percentage = epoch / (args.pretrain_epochs+ args.finetune_epochs)
-    if epoch_percentage < 0.5:
-        return 1.0
-    elif epoch_percentage < 0.75:
-        return 0.1
-    else:
-        return 0.01
+
     
 def main() -> None:
 
