@@ -76,8 +76,6 @@ def plot_loss_accuracy_sparsity(pruner) -> None:
     plt.savefig(plot_path, dpi=300)
     plt.show()
 
-
-
 def lr_lambda(epoch: int,experiment) -> float:
     epoch_percentage = epoch / (experiment.pretrain_epochs+ experiment.finetune_epochs)
     if epoch_percentage < 0.5:
