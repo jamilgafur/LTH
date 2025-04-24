@@ -188,7 +188,8 @@ if __name__ == "__main__":
 
     base_output_dir = "./plots"
 
-    for model_directory in glob.glob("/scratch/jgafur/LTH_output/*cuda*"):
+    # for model_directory in glob.glob("/scratch/jgafur/LTH_output/*cuda*"):
+    for model_directory in glob.glob("/projects/modularai/jgafur/LTH/pruning_checkpoints/*"):
         pruner_pickle_path = f"{model_directory}/pruner.pkl"
 
         # Load pruner

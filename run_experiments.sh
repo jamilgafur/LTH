@@ -28,9 +28,9 @@ for strat in "${strategy[@]}"; do
             fi
             # Submit job for each finetune epoch
             for finetune_epoch in "${finetune_epochs[@]}"; do
+                echo "prune_job.sh $model $pretrain_epoch $early_stopping $finetune_epoch $steps $strat"
                 sbatch prune_job.sh  "$model" "$pretrain_epoch" "$early_stopping" "$finetune_epoch" "$steps" "$strat"
             done
-
         done
     done
 done

@@ -20,10 +20,11 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
 class OptimalBrainDamageStrategy(PruningStrategy):
     """
-    Optimal Brain Damage: prunes by approximated saliency = 0.5 * w^2 * H_ii.
-    Approximates diagonal Hessian via a single backward pass.
+    Optimal Brain Damage: prunes by approximating saliency = 0.5 * w^2 * H_ii.
+    Prunes based on the lowest percentage of Hessian values.
     """
     def __init__(
         self,
@@ -54,44 +55,81 @@ class OptimalBrainDamageStrategy(PruningStrategy):
             create_graph=True
         )
         for m, g in zip(modules, grads):
-            hessian[m] = hessian[m] + g.pow(2)
+            hessian[m] = g.pow(2)  # Hessian diagonal approximation: H_ii = g^2
         return hessian
 
     def apply(self,
-              model: nn.Module,
-              optimizer: torch.optim.Optimizer,
-              target_sparsity: float,
-              prunable_layers: Tuple = (nn.Conv2d, nn.Linear),
-              total_weight_count: Optional[int] = None) -> None:
-        logger.info(f"[OBD] Target sparsity: {target_sparsity*100:.2f}%")
+            model: nn.Module,
+            optimizer: torch.optim.Optimizer,
+            target_sparsity: float,
+            prunable_layers: Tuple = (nn.Conv2d, nn.Linear),
+            total_weight_count: Optional[int] = None) -> None:
+        logger.info(f"[OBD] Target sparsity: {target_sparsity * 100:.2f}%")
         modules = list(get_pruneable_modules(model, prunable_layers))
         total = total_weight_count or sum(m.weight.numel() for m in modules)
 
         # Estimate Hessian diagonals
         hess = self._compute_hessian_diag(model, prunable_layers)
-        # Compute saliency for each weight
-        saliency_list = []
+
+        # Collect Hessian values for active weights only
+        hessian_values = []
+        active_weights = 0
         for m in modules:
             w = m.weight.data
-            sal = 0.5 * w.pow(2) * hess[m].to(self.device)
-            saliency_list.append(sal.flatten())
-        all_sal = torch.cat(saliency_list)
-        num_prune = int(total * target_sparsity) - (total - all_sal.numel())
-        if num_prune <= 0:
-            logger.info("Already at or above target sparsity.")
+            hess_values = hess[m].to(self.device)
+
+            if hasattr(m, 'mask'):
+                active_mask = m.mask
+            else:
+                active_mask = torch.ones_like(w, dtype=torch.bool)
+
+            hess_values = hess_values[active_mask]
+            hessian_values.append(hess_values)
+            active_weights += active_mask.sum().item()
+
+        all_hessian_values = torch.cat(hessian_values)
+
+        # Compute how many weights to prune to hit target sparsity
+        target_nonzero = int(total * (1 - target_sparsity))
+        num_to_prune = total - target_nonzero
+        logger.info(f"Target nonzero weights: {target_nonzero}, \n"
+                    f"Current nonzero weights: {active_weights}, \n"
+                    f"Pruning {num_to_prune} weights. \n"
+                    f"Current sparsity: {1 - (active_weights / total) * 100:.2f}\n%"
+                    f"Target sparsity: {target_sparsity * 100:.2f}%\n")
+
+        if num_to_prune <= 0:
+            logger.info("Already at or below target sparsity.")
             return
-        thresh = torch.kthvalue(all_sal.cpu(), num_prune).values.item()
-        # Apply mask based on saliency
+
+        # Sort Hessian values to prune the lowest
+        sorted_hessian_values, sorted_indices = torch.sort(all_hessian_values)
+        thresh_idx = sorted_indices[num_to_prune - 1].item()  # Get the index of the threshold value
+        thresh = sorted_hessian_values[thresh_idx]
+
+        # Apply mask based on the threshold
         for m in modules:
-            sal = 0.5 * m.weight.data.pow(2) * hess[m].to(self.device)
-            mask = sal > thresh
-            m.mask = mask if not hasattr(m, 'mask') else m.mask & mask
-            m.weight.data.mul_(m.mask.float())
+            w = m.weight.data
+            hess_values = hess[m].to(self.device)
+            current_mask = getattr(m, 'mask', torch.ones_like(w, dtype=torch.bool))
+
+            # New mask: keep weights with Hessian greater than threshold
+            new_mask = (hess_values >= thresh) & current_mask
+            m.mask = new_mask
+            m.weight.data.mul_(new_mask.float())
+
             if m.weight.grad is not None:
                 m.weight.grad.zero_()
+
+            # Update optimizer state for the pruned weights
             for group in optimizer.param_groups:
                 for p in group['params']:
                     if p is m.weight and 'momentum_buffer' in optimizer.state[p]:
-                        optimizer.state[p]['momentum_buffer'].mul_(m.mask.float())
-        logger.debug(f"Applied OBD pruning at threshold={thresh:.6f}.")
+                        optimizer.state[p]['momentum_buffer'].mul_(new_mask.float())
 
+        # Check actual sparsity
+        nonzero = sum((m.weight.data != 0).sum().item() for m in modules)
+        actual_sparsity = 1 - (nonzero / total)
+        logger.debug(f"Actual sparsity after pruning: {actual_sparsity * 100:.2f}%")
+
+        return model.state_dict()

@@ -53,7 +53,7 @@ class NeuronSimilarity:
             nn.Module: The deep-copied model set to evaluation mode.
         """
         model: nn.Module = pruner.model
-        model.load_state_dict(pruner.best_model_weights)
+        model.load_state_dict(pruner.best_model_weights[1])
         model.eval().to(pruner.device)
         return model
 

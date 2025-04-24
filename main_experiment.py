@@ -25,16 +25,16 @@ from torch.optim.lr_scheduler import LambdaLR
 
 parser = argparse.ArgumentParser(description="Run pruning and experiments with a specified model and experiments.")
 
-parser.add_argument('--model', type=str, default='Vgg16', choices=['LeNet', 'ResNet20', 'Vgg16'],
+parser.add_argument('--model', type=str, default='LeNet', choices=['LeNet', 'ResNet20', 'Vgg16'],
                     help="The model architecture to use for pruning. Default is 'LeNet'.")
 parser.add_argument('--experiments', type=str, nargs='+', default=['None'],
                     choices=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing', "None"],
                     help="List of experiments to run. Default is all.")
 parser.add_argument('--steps', type=int, default=21,
                     help="Number of steps for pruning decay (defaults to exponential decay).")
-parser.add_argument('--pretrain_epochs', type=int, default=10,
+parser.add_argument('--pretrain_epochs', type=int, default=3,
                     help="Number of pretrain epochs. Default is 10.")
-parser.add_argument('--finetune_epochs', type=int, default=10,
+parser.add_argument('--finetune_epochs', type=int, default=1,
                     help="Number of finetune epochs after pruning. Default is 10.")
 parser.add_argument('--device', type=str, default='cuda',
                     choices=['cpu', 'cuda'],
@@ -44,7 +44,7 @@ parser.add_argument('--save_dir', type=str, default='pruning_checkpoints/',
 parser.add_argument('--patience', type=int, default=5)
 parser.add_argument('--batch_size', type=int, default=128, help="Batch size for training. Default is 128.")
 parser.add_argument('--num_workers', type=int, default=1, help="Number of workers for data loading. Default is 1.")
-parser.add_argument('--strategy', type=str, default='magnitude', choices=['magnitude', 'brain-damage'],
+parser.add_argument('--strategy', type=str, default='brain-damage', choices=['magnitude', 'brain-damage'],
                     help="Pruning strategy to use. Default is 'magnitude'.")
 
 args = parser.parse_args()
@@ -173,7 +173,7 @@ def run_experiments(pruner: IterativePruner, experiment_names: list[str]) -> Non
     if 'None' in experiment_names:
         print("No experiments to run.")
         return
-    
+
     if 'NeuronSimilarity' in experiment_names:
         neuron_similarity = NeuronSimilarity(pruner)
         neuron_similarity.run_experiment()

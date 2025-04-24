@@ -51,6 +51,7 @@ class MagnitudePruningStrategy(PruningStrategy):
         logger.info(f"[Magnitude] Target sparsity: {target_sparsity*100:.2f}%")
         all_weights = self._unroll(model, prunable_layers)
         total = total_weight_count or all_weights.numel()
+        
         num_prune = int(total * target_sparsity) - (total - all_weights.numel())
         if num_prune <= 0:
             logger.info("Already at or above target sparsity.")
@@ -69,3 +70,6 @@ class MagnitudePruningStrategy(PruningStrategy):
                     if p is module.weight and 'momentum_buffer' in optimizer.state[p]:
                         optimizer.state[p]['momentum_buffer'].mul_(module.mask.float())
         logger.debug(f"Applied magnitude pruning at threshold={thresh:.6f}.")
+        
+        # return the updated weights
+        return model.state_dict()
