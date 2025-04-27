@@ -1,36 +1,52 @@
 #!/bin/bash
 
-rm *.out
+rm -f *.out
 
-# Model and hyperparameter configuration
+# Strategies to test
 strategy=("magnitude" "brain-damage")
-models=("LeNet" "ResNet20" "Vgg16")
-pretrain_epochs_list=(5 10 20 50)
+
+# Model lists
+models_cifar=("LeNet" "ResNet20" "Vgg16")
+models_imagenet=("RegNetX" "EfficientNet")
+
+# Hyperparameters
+pretrain_epochs_list_cifar=(5 10 20 50)
+pretrain_epochs_list_imagenet=(5 10 20)  # Smaller due to model size
 finetune_epochs_LeNet=(1 5 10)
 early_stopping=3
 steps=21
 
-# Loop over each model
+# === Run CIFAR Models ===
 for strat in "${strategy[@]}"; do
-    for model in "${models[@]}"; do
-        for pretrain_epoch in "${pretrain_epochs_list[@]}"; do
+    for model in "${models_cifar[@]}"; do
+        for pretrain_epoch in "${pretrain_epochs_list_cifar[@]}"; do
 
-            # Set finetune epochs based on model type
             if [ "$model" == "LeNet" ]; then
                 finetune_epochs=("${finetune_epochs_LeNet[@]}")
             else
                 finetune_epoch=$((160 - pretrain_epoch))
                 if [ "$finetune_epoch" -lt 0 ]; then
-                    # Skip invalid fine-tune settings
                     continue
                 fi
                 finetune_epochs=("$finetune_epoch")
             fi
-            # Submit job for each finetune epoch
+
             for finetune_epoch in "${finetune_epochs[@]}"; do
-                echo "prune_job.sh $model $pretrain_epoch $early_stopping $finetune_epoch $steps $strat"
-                sbatch prune_job.sh  "$model" "$pretrain_epoch" "$early_stopping" "$finetune_epoch" "$steps" "$strat"
+                echo "Submitting CIFAR job: $model, Pretrain: $pretrain_epoch, Finetune: $finetune_epoch"
+                sbatch prune_job.sh "$model" "$pretrain_epoch" "$early_stopping" "$finetune_epoch" "$steps" "$strat"
             done
+        done
+    done
+
+    # === Run TinyImageNet Models ===
+    for model in "${models_imagenet[@]}"; do
+        for pretrain_epoch in "${pretrain_epochs_list_imagenet[@]}"; do
+            finetune_epoch=$((100 - pretrain_epoch))
+            if [ "$finetune_epoch" -lt 0 ]; then
+                continue
+            fi
+            echo "Submitting ImageNet job: $model, Pretrain: $pretrain_epoch, Finetune: $finetune_epoch"
+            sbatch prune_job.sh "$model" "$pretrain_epoch" "$early_stopping" "$finetune_epoch" "$steps" "$strat"
         done
     done
 done
