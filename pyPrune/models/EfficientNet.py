@@ -31,24 +31,48 @@ class EfficientNetB0(nn.Module):
     def __init__(self, num_classes=1000):
         super(EfficientNetB0, self).__init__()
         self.stem = nn.Sequential(OrderedDict([
-            ('conv', nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1, bias=False)),  # 224 -> 112
-            ('bn', nn.BatchNorm2d(32)),
-            ('act', nn.SiLU(inplace=True))
+            ('stem_conv', nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1, bias=False)),  # 224 -> 112
+            ('stem_bn', nn.BatchNorm2d(32)),
+            ('stem_act', nn.SiLU(inplace=True))
         ]))
 
-        # EfficientNet-B0 architecture block repeats
-        self.stage1 = MBConv(32, 16, expansion=1, stride=1)
-        self.stage2 = nn.Sequential(*[MBConv(16, 24, expansion=6, stride=2), MBConv(24, 24, expansion=6)])
-        self.stage3 = nn.Sequential(*[MBConv(24, 40, expansion=6, stride=2), MBConv(40, 40, expansion=6)])
-        self.stage4 = nn.Sequential(*[MBConv(40, 80, expansion=6, stride=2), MBConv(80, 80, expansion=6)])
-        self.stage5 = nn.Sequential(*[MBConv(80, 112, expansion=6), MBConv(112, 112, expansion=6)])
-        self.stage6 = nn.Sequential(*[MBConv(112, 192, expansion=6, stride=2), MBConv(192, 192, expansion=6)])
-        self.stage7 = MBConv(192, 320, expansion=6)
+        self.stage1 = nn.Sequential(OrderedDict([
+            ('mbconv1', MBConv(32, 16, expansion=1, stride=1))
+        ]))
+
+        self.stage2 = nn.Sequential(OrderedDict([
+            ('mbconv2_0', MBConv(16, 24, expansion=6, stride=2)),
+            ('mbconv2_1', MBConv(24, 24, expansion=6))
+        ]))
+
+        self.stage3 = nn.Sequential(OrderedDict([
+            ('mbconv3_0', MBConv(24, 40, expansion=6, stride=2)),
+            ('mbconv3_1', MBConv(40, 40, expansion=6))
+        ]))
+
+        self.stage4 = nn.Sequential(OrderedDict([
+            ('mbconv4_0', MBConv(40, 80, expansion=6, stride=2)),
+            ('mbconv4_1', MBConv(80, 80, expansion=6))
+        ]))
+
+        self.stage5 = nn.Sequential(OrderedDict([
+            ('mbconv5_0', MBConv(80, 112, expansion=6)),
+            ('mbconv5_1', MBConv(112, 112, expansion=6))
+        ]))
+
+        self.stage6 = nn.Sequential(OrderedDict([
+            ('mbconv6_0', MBConv(112, 192, expansion=6, stride=2)),
+            ('mbconv6_1', MBConv(192, 192, expansion=6))
+        ]))
+
+        self.stage7 = nn.Sequential(OrderedDict([
+            ('mbconv7', MBConv(192, 320, expansion=6))
+        ]))
 
         self.head = nn.Sequential(OrderedDict([
-            ('conv', nn.Conv2d(320, 1280, kernel_size=1, bias=False)),
-            ('bn', nn.BatchNorm2d(1280)),
-            ('act', nn.SiLU(inplace=True))
+            ('head_conv', nn.Conv2d(320, 1280, kernel_size=1, bias=False)),
+            ('head_bn', nn.BatchNorm2d(1280)),
+            ('head_act', nn.SiLU(inplace=True))
         ]))
 
         self.pool = nn.AdaptiveAvgPool2d(1)

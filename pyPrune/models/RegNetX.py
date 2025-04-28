@@ -9,9 +9,11 @@ class XBlock(nn.Module):
             ('conv1', nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)),
             ('bn1', nn.BatchNorm2d(out_channels)),
             ('relu1', nn.ReLU(inplace=True)),
-            ('conv2', nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=stride, padding=1, groups=1, bias=False)),
+
+            ('conv2', nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)),
             ('bn2', nn.BatchNorm2d(out_channels)),
             ('relu2', nn.ReLU(inplace=True)),
+
             ('conv3', nn.Conv2d(out_channels, out_channels, kernel_size=1, bias=False)),
             ('bn3', nn.BatchNorm2d(out_channels))
         ]))
@@ -19,9 +21,10 @@ class XBlock(nn.Module):
         self.shortcut = nn.Sequential()
         if stride != 1 or in_channels != out_channels:
             self.shortcut = nn.Sequential(OrderedDict([
-                ('conv', nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False)),
-                ('bn', nn.BatchNorm2d(out_channels))
+                ('shortcut_conv', nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False)),
+                ('shortcut_bn', nn.BatchNorm2d(out_channels))
             ]))
+
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
@@ -32,27 +35,27 @@ class RegNetX_400MF(nn.Module):
         super(RegNetX_400MF, self).__init__()
 
         self.stem = nn.Sequential(OrderedDict([
-            ('conv', nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1, bias=False)),  # 112x112
-            ('bn', nn.BatchNorm2d(32)),
-            ('relu', nn.ReLU(inplace=True))
+            ('stem_conv', nn.Conv2d(3, 32, kernel_size=3, stride=2, padding=1, bias=False)),
+            ('stem_bn', nn.BatchNorm2d(32)),
+            ('stem_relu', nn.ReLU(inplace=True))
         ]))
 
-        # Basic RegNetX-400MF settings
-        self.stage1 = self._make_stage(32, 24, num_blocks=1, stride=1)
-        self.stage2 = self._make_stage(24, 56, num_blocks=1, stride=2)
-        self.stage3 = self._make_stage(56, 152, num_blocks=4, stride=2)
-        self.stage4 = self._make_stage(152, 368, num_blocks=7, stride=2)
+        self.stage1 = self._make_stage('stage1', 32, 24, num_blocks=1, stride=1)
+        self.stage2 = self._make_stage('stage2', 24, 56, num_blocks=1, stride=2)
+        self.stage3 = self._make_stage('stage3', 56, 152, num_blocks=4, stride=2)
+        self.stage4 = self._make_stage('stage4', 152, 368, num_blocks=7, stride=2)
 
         self.pool = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Linear(368, num_classes)
 
-    def _make_stage(self, in_channels, out_channels, num_blocks, stride):
-        layers = []
+    def _make_stage(self, stage_name, in_channels, out_channels, num_blocks, stride):
+        blocks = []
         for i in range(num_blocks):
             s = stride if i == 0 else 1
-            layers.append(XBlock(in_channels, out_channels, stride=s))
+            block_name = f"{stage_name}_block{i}"
+            blocks.append((block_name, XBlock(in_channels, out_channels, stride=s)))
             in_channels = out_channels
-        return nn.Sequential(*layers)
+        return nn.Sequential(OrderedDict(blocks))
 
     def forward(self, x):
         x = self.stem(x)
