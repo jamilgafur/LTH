@@ -201,6 +201,9 @@ class BasePruner(BaseTrainer):
             self.pretrain()
         
         for step in self.steps:
+            if os.path.exists(os.path.join(self.save_dir, f"checkpoint_sparsity_{step:.2f}.pth")):
+                logger.info(f"Checkpoint for sparsity {step:.2f}% already exists. Skipping...")
+                continue
             self.current_sparsity = step
             self.finetune()
             self.prune_step()
