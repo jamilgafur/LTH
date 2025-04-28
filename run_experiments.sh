@@ -41,12 +41,20 @@ for strat in "${strategy[@]}"; do
     # === Run TinyImageNet Models ===
     for model in "${models_imagenet[@]}"; do
         for pretrain_epoch in "${pretrain_epochs_list_imagenet[@]}"; do
-            finetune_epoch=$((100 - pretrain_epoch))
+            if [ "$model" == "EfficientNet" ]; then
+                total_epochs=300
+            else
+                total_epochs=250
+            fi
+
+            finetune_epoch=$((total_epochs - pretrain_epoch))
             if [ "$finetune_epoch" -lt 0 ]; then
                 continue
             fi
-            echo "Submitting ImageNet job: $model, Pretrain: $pretrain_epoch, Finetune: $finetune_epoch"
-            sbatch prune_job.sh "$model" "$pretrain_epoch" "$early_stopping" "$finetune_epoch" "$steps" "$strat"
+
+            batch_size=2046
+            echo "Submitting ImageNet job: $model, Pretrain: $pretrain_epoch, Finetune: $finetune_epoch, Batch size: $batch_size"
+            sbatch prune_job.sh "$model" "$pretrain_epoch" "$early_stopping" "$finetune_epoch" "$steps" "$strat" "$batch_size"
         done
     done
 done

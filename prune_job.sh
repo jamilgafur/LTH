@@ -18,11 +18,27 @@ patience=$3
 finetune_epochs=$4
 steps=$5
 strategy=$6
+batch_size=$7  # Optional (only passed for ImageNet models)
+
+# Base command
+cmd="python main_experiment.py --model ${model} \
+    --save_dir /scratch/jgafur/LTH_output \
+    --experiment None \
+    --finetune_epochs ${finetune_epochs} \
+    --pretrain_epochs ${pretrain_epochs} \
+    --steps ${steps} \
+    --patience ${patience} \
+    --strategy ${strategy}"
+
+# Append batch size if provided
+if [ -n "$batch_size" ]; then
+    cmd="$cmd --batch_size ${batch_size}"
+fi
 
 echo "Current Time: $(date)"
-echo "Running pruning job for ${model} with command: python main_experiment.py --model ${model} --save_dir /scratch/jgafur/LTH_output --experiment None"
-python main_experiment.py --model ${model} --save_dir /scratch/jgafur/LTH_output --experiment None --finetune_epochs ${finetune_epochs} --pretrain_epochs ${pretrain_epochs} --steps ${steps} --patience ${patience} --strategy ${strategy} 
-
+echo "Running pruning job for ${model} with command:"
+echo "$cmd"
+eval $cmd
 
 # Submit experiment jobs after pruning completes
 echo "Submitting experiment jobs for model: ${model} for job id: ${SLURM_JOB_ID}"
