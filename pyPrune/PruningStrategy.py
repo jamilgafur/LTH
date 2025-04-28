@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 class PruningStrategy(ABC):
     """
     Defines the interface for pruning methods. New strategies extend this without changing IterativePruner (OCP).
+    returns the models state_dict
     """
     @abstractmethod
     def apply(
@@ -33,5 +34,5 @@ class PruningStrategy(ABC):
         target_sparsity: float,
         prunable_layers: Tuple = (nn.Conv2d, nn.Linear),
         total_weight_count: Optional[int] = None
-    ) -> None:
-        pass
+    ) -> nn.Module:
+        return model.state_dict()
