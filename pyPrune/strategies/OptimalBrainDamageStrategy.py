@@ -144,7 +144,7 @@ class OptimalBrainDamageStrategy(PruningStrategy):
         logger.debug(f"Total weights: {total}, Active: {flat_sal.numel()}, To prune: {num_prune}")
         if num_prune <= 0:
             logger.info("Already at or above target sparsity. Skipping.")
-            return
+            return model.state_dict()
 
         # 5) Get indices of lowest-saliency weights
         sorted_idx = torch.argsort(flat_sal)
