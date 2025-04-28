@@ -28,7 +28,7 @@ def load_pickle(file_path):
 # ----------------------------
 def get_sorted_model_paths(directory):
     """Return sorted model paths by step number."""
-    model_paths = glob.glob(os.path.join(directory, "pruned_model_step_*.pth"))
+    model_paths = glob.glob(directory+"/*.pth")
     model_paths.sort(key=lambda x: float(x.split("_")[-1].split(".")[0]))
     return model_paths
 
@@ -50,7 +50,7 @@ def get_layer_information(pruner, model_path, base_params=None):
         dict: Base parameters dictionary.
     """
     checkpoint = torch.load(model_path, map_location='cpu', weights_only=True)
-    pruner.model.load_state_dict(checkpoint['model_state_dict'])
+    pruner.model.load_state_dict(checkpoint['model'])
     pruner.model.eval()
 
     layer_info = defaultdict(lambda: {
@@ -136,12 +136,11 @@ def plot_layer_information(savedir, data):
     sparsities = sorted(data.keys())
 
     # Define color and line style combinations
-    colors = plt.cm.viridis(np.linspace(0, 1, len(data[0.0]["layer_info"])))
+    colors = plt.cm.viridis(np.linspace(0, 1, len(data[0.2]["layer_info"].keys())))
     line_styles = ['-', '--', '-.', ':']
-
     fig, axes = plt.subplots(2, 1, figsize=(14, 10))
 
-    for idx, (layer, color) in enumerate(zip(data[0.0]["layer_info"].keys(), colors)):
+    for idx, (layer, color) in enumerate(zip(data[0.2]["layer_info"].keys(), colors)):
         layer_name = layer
 
         x1, x2 = [], []

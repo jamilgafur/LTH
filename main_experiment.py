@@ -15,8 +15,8 @@ from pyPrune.models.LeNet import LeNet
 from pyPrune.models.ResNet20 import ResNet20
 from pyPrune.models.Vgg16 import VGG16_CIFAR10 as Vgg16
 from pyPrune.models.RegNetX import RegNetX_400MF
-from pyPrune.models.EfficientNet import EfficientNetB0
-from pyPrune.IterativePruner import IterativePruner
+from pyPrune.models.EfficientNet import EfficientNetB7
+from pyPrune.pruneMethods.IterativePruner import IterativePruner
 from pyPrune.strategies import MagnitudePruningStrategy, OptimalBrainDamageStrategy
 from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed
 from experiments.WeightZeroing import WeightZeroing
@@ -30,14 +30,14 @@ import shutil
 
 parser = argparse.ArgumentParser(description="Run pruning and experiments with a specified model and experiments.")
 
-parser.add_argument('--model', type=str, default='LeNet', choices=['LeNet', 'ResNet20', 'Vgg16', 'RegNetX', 'EfficientNet'],
+parser.add_argument('--model', type=str, default='EfficientNet', choices=['LeNet', 'ResNet20', 'Vgg16', 'RegNetX', 'EfficientNet', 'Vgg16ImageNet'],
                     help="The model architecture to use for pruning. Default is 'LeNet'.")
 parser.add_argument('--experiments', type=str, nargs='+', default=['None'],
                     choices=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing', "None"],
                     help="List of experiments to run. Default is all.")
 parser.add_argument('--steps', type=int, default=21,
                     help="Number of steps for pruning decay (defaults to exponential decay).")
-parser.add_argument('--pretrain_epochs', type=int, default=3,
+parser.add_argument('--pretrain_epochs', type=int, default=1,
                     help="Number of pretrain epochs. Default is 10.")
 parser.add_argument('--finetune_epochs', type=int, default=1,
                     help="Number of finetune epochs after pruning. Default is 10.")
@@ -47,7 +47,7 @@ parser.add_argument('--device', type=str, default='cuda',
 parser.add_argument('--save_dir', type=str, default='pruning_checkpoints/',
                     help="Directory to save pruning checkpoints. Default is 'pruning_checkpoints/'.")
 parser.add_argument('--patience', type=int, default=5)
-parser.add_argument('--batch_size', type=int, default=128, help="Batch size for training. Default is 128.")
+parser.add_argument('--batch_size', type=int, default=2048, help="Batch size for training. Default is 128.")
 parser.add_argument('--num_workers', type=int, default=1, help="Number of workers for data loading. Default is 1.")
 parser.add_argument('--strategy', type=str, default='brain-damage', choices=['magnitude', 'brain-damage'],
                     help="Pruning strategy to use. Default is 'magnitude'.")
@@ -58,7 +58,6 @@ args = parser.parse_args()
 args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrain_epochs}_finetune{args.finetune_epochs}_steps{args.steps}_batch{args.batch_size}_device{args.device}_strategy_{args.strategy}")
 
 print(f"Experiment configuration: {args}")
-
 
 def load_cifar10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
     train_transform = transforms.Compose([
@@ -85,7 +84,6 @@ def load_cifar10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader
     print("CIFAR-10 data shape: ", next(iter(train_loader))[0].shape)
     return train_loader, test_loader
 
-
 def load_mnist(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
     transform = transforms.Compose([
         transforms.Resize((32, 32)),
@@ -104,7 +102,6 @@ def load_mnist(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, 
     )
 
     return train_loader, test_loader
-
 
 def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
     data_dir = '/projects/modularai/jgafur/LTH/data/tinyImageNet/tiny-imagenet-200/'
@@ -150,7 +147,6 @@ def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 4) -> tuple[Data
 
     return train_loader, val_loader
 
-
 def lr_lambda(epoch: int) -> float:
     epoch_percentage = epoch / (args.pretrain_epochs+ args.finetune_epochs)
     if epoch_percentage < 0.5:
@@ -160,7 +156,6 @@ def lr_lambda(epoch: int) -> float:
     else:
         return 0.01
 
-
 def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[float]:
     decay_list = [0]
     n = 1
@@ -169,7 +164,16 @@ def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[flo
         decay_list.append(1 - n)
     return decay_list
 
-
+def poly_lr_with_warmup(epoch):
+    warmup_epochs = args.pretrain_epochs//10
+    max_epochs = args.pretrain_epochs + args.finetune_epochs
+    if epoch < warmup_epochs:
+        return float(epoch+1)/ warmup_epochs
+    else:
+        decay_epochs = max_epochs - warmup_epochs
+        decay_progress = (epoch - warmup_epochs) / decay_epochs
+        return (1- decay_progress) ** 2
+    
 def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: DataLoader,
                       steps: list[float], pretrain_epochs: int, finetune_epochs: int, device: str, save_dir: str, model_name: str, total_epochs: int) -> IterativePruner:
     pruner_path = os.path.join(save_dir, 'pruner.pkl')
@@ -178,74 +182,66 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
         with open(pruner_path, 'rb') as f:
             pruner = pickle.load(f)
         print("Loaded pruner from checkpoint.")
-    else:
-        if model_name == 'LeNet':
-            optimizer = Adam(model.parameters(), lr=0.0012)
-            criterion = nn.CrossEntropyLoss()
-            scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
+    if model_name == 'LeNet':
+        optimizer = Adam(model.parameters(), lr=0.0012)
+        criterion = nn.CrossEntropyLoss()
+        scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
 
-        elif model_name == 'EfficientNet':
-            # EfficientNet-specific configuration
-            criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
-            optimizer = optim.RMSprop(
-                model.parameters(),
-                lr=0.05,              # adjusted for smaller batch sizes
-                momentum=0.9,
-                alpha=0.9,
-                eps=1e-3,
-                weight_decay=1e-5
-            )
-            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.97)
-
-        elif model_name == 'RegNetX':
-            # RegNetX-specific configuration
-            criterion = nn.CrossEntropyLoss()
-            optimizer = optim.SGD(
-                model.parameters(),
-                lr=0.1,               # Initial learning rate for SGD
-                momentum=0.9,
-                weight_decay=1e-5
-            )
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=pretrain_epochs, eta_min=1e-6)
-
-        else:
-            # Default config for other models (ResNet, VGG)
-            criterion = nn.CrossEntropyLoss()
-            optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, nesterov=True, weight_decay=5e-4)
-            scheduler = LambdaLR(optimizer, lr_lambda)
-
-        print(f"optimizer: {optimizer}, criterion: {criterion}")
-        print(f"Scheduler: {scheduler}")
-
-        # Choose pruning strategy
-        if args.strategy == 'magnitude':
-            strategy = MagnitudePruningStrategy.MagnitudePruningStrategy(device=device)
-        elif args.strategy == 'brain-damage':
-            strategy = OptimalBrainDamageStrategy.OptimalBrainDamageStrategy(train_loader=train_loader, criterion=criterion, device=device)
-        else:
-            raise ValueError(f"Unknown strategy: {args.strategy}")
-        
-        # Initialize and run the pruner
-        pruner = IterativePruner(
-            model=model,
-            optimizer=optimizer,
-            scheduler=scheduler,
-            criterion=criterion,
-            train_loader=train_loader,
-            test_loader=test_loader,
-            steps=steps,
-            pretrain_epochs=pretrain_epochs,
-            device=device,
-            finetune_epochs=finetune_epochs,
-            save_dir=save_dir,
-            strategy=strategy,
+    elif model_name == 'EfficientNet':
+        # EfficientNet-specific configuration
+        criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+        scaled_lr = 0.1 * (args.batch_size / 256)
+        optimizer = torch.optim.SGD(model.parameters(), lr=scaled_lr, momentum=0.9, weight_decay=1e-5, nesterov=True)
+        scheduler = LambdaLR(optimizer, lr_lambda=poly_lr_with_warmup)
+                
+    elif model_name == 'RegNetX':
+        # RegNetX-specific configuration
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.SGD(
+            model.parameters(),
+            lr=0.1,               # Initial learning rate for SGD
+            momentum=0.9,
+            weight_decay=1e-5
         )
-        pruner.run()
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=pretrain_epochs, eta_min=1e-6)
+
+    else:
+        # Default config for other models (ResNet, VGG)
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, nesterov=True, weight_decay=5e-4)
+        scheduler = LambdaLR(optimizer, lr_lambda)
+
+    print(f"optimizer: {optimizer}, criterion: {criterion}")
+    print(f"Scheduler: {scheduler}")
+
+    # Choose pruning strategy
+    if args.strategy == 'magnitude':
+        strategy = MagnitudePruningStrategy.MagnitudePruningStrategy(device=device)
+    elif args.strategy == 'brain-damage':
+        strategy = OptimalBrainDamageStrategy.OptimalBrainDamageStrategy(train_loader=train_loader, criterion=criterion, device=device)
+    else:
+        raise ValueError(f"Unknown strategy: {args.strategy}")
+    
+    # Initialize and run the pruner
+    pruner = IterativePruner(
+        model=model,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        criterion=criterion,
+        train_loader=train_loader,
+        test_loader=test_loader,
+        steps=steps,
+        pretrain_epochs=pretrain_epochs,
+        device=device,
+        finetune_epochs=finetune_epochs,
+        save_dir=save_dir,
+        strategy=strategy,
+        early_stopping=args.patience,
+    )
+    pruner.run()
 
     print("Pruning process complete. Saved pruner to checkpoint.")
     return pruner
-
-
 
 def run_experiments(pruner: IterativePruner, experiment_names: list[str]) -> None:
     if 'None' in experiment_names:
@@ -268,7 +264,6 @@ def run_experiments(pruner: IterativePruner, experiment_names: list[str]) -> Non
 
         weight_zeroing = WeightZeroing(pruner, sample_fractions)
         weight_zeroing.run_experiment()
-
     
 def main() -> None:
 
@@ -283,11 +278,14 @@ def main() -> None:
     elif args.model == 'Vgg16':
         model = Vgg16()
         train_loader, test_loader = load_cifar10(batch_size=args.batch_size, num_workers=args.num_workers)
+    elif args.model == "Vgg16ImageNet":
+        model = Vgg16()
+        train_loader, test_loader = load_tiny_imagenet(batch_size=args.batch_size, num_workers=args.num_workers)
     elif args.model == 'RegNetX':
         model = RegNetX_400MF(num_classes=200)
         train_loader, test_loader = load_tiny_imagenet(batch_size=args.batch_size, num_workers=args.num_workers)
     elif args.model == 'EfficientNet':
-        model = EfficientNetB0(num_classes=200)
+        model = EfficientNetB7(num_classes=200)
         train_loader, test_loader = load_tiny_imagenet(batch_size=args.batch_size, num_workers=args.num_workers)
     
     print(model)

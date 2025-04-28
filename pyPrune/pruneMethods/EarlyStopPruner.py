@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from pyPrune.Trainer import BaseTrainer
-from pyPrune.Pruner import BasePruner
+from pyPrune.pruneMethods.Trainer import BaseTrainer
+from pyPrune.pruneMethods.Pruner import BasePruner
 from pyPrune.PruningStrategy import PruningStrategy
 from pyPrune.strategies.MagnitudePruningStrategy import MagnitudePruningStrategy
 from pyPrune.strategies.OptimalBrainDamageStrategy import OptimalBrainDamageStrategy
@@ -14,7 +14,7 @@ from pyPrune.strategies.OptimalBrainDamageStrategy import OptimalBrainDamageStra
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-class IterativePruner(BasePruner):
+class EarlyStopPruner(BasePruner):
     """
     High-level pruner that composes training logic from BaseTrainer (via BasePruner)
     with dynamic pruning strategies injected at runtime.
@@ -35,7 +35,8 @@ class IterativePruner(BasePruner):
         pretrain_epochs: int = 0,
         learning_rate: float = 0.01,
         file_handler: str = "logger.log",
-        prunable_layers: Tuple = (nn.Conv2d, nn.Linear)
+        prunable_layers: Tuple = (nn.Conv2d, nn.Linear),
+        early_stopping: int = 0,
     ):
         # Initialize BasePruner, which itself extends BaseTrainer
         super().__init__(
@@ -60,3 +61,6 @@ class IterativePruner(BasePruner):
             self.strategy = MagnitudePruningStrategy(device=self.device)
         logger.info(f"IterativePruner initialized with strategy: {self.strategy.__class__.__name__}")
 
+
+    def run(self):
+        

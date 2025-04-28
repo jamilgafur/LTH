@@ -111,16 +111,6 @@ class NeuronZeroing:
         return zero_params / total_params if total_params > 0 else 0.0
 
     def zero_and_restore_neurons(self, layer: nn.Module, layer_index: str, idx: int, is_conv_layer: bool = True) -> None:
-        """
-        Zero out a specific neuron (or channel) in the given layer, evaluate metrics,
-        record the impact, and then restore the original weights.
-        
-        Args:
-            layer: The layer to be modified.
-            layer_index: A string identifier for the layer.
-            idx: Index of the neuron or channel to zero.
-            is_conv_layer: Whether the layer is convolutional (True) or fully-connected (False).
-        """
         original_weights = layer.weight.data.clone()  # Save original weights
 
         # Zero out the specified neuron/channel
@@ -135,15 +125,18 @@ class NeuronZeroing:
         accuracy_after, loss_after, metrics_after = self.evaluate_metrics()
         sparsity_after = self.compute_sparsity()
 
-        # Calculate the drop in accuracy and change in loss
+        # Calculate the drop in accuracy and change in loss (normalized)
         accuracy_drop = self.baseline_accuracy - accuracy_after
         loss_change = self.baseline_loss - loss_after
+
+        normalized_accuracy_drop = (accuracy_drop / self.baseline_accuracy) if self.baseline_accuracy else accuracy_drop
+        normalized_loss_change = (loss_change / self.baseline_loss) if self.baseline_loss else loss_change
 
         # Record metrics for this neuron
         record = {
             'layer_name': f"{layer.__class__.__name__}_{layer_index}",
             'neuron_index': idx,
-            'accuracy_drop': accuracy_drop
+            'accuracy_drop': normalized_accuracy_drop  # Normalized accuracy drop
         }
         self.metrics['neuron_accuracy_drops'].append(record)
         self.metrics['sparsity_metrics'].append({
@@ -164,13 +157,7 @@ class NeuronZeroing:
         self.metrics['loss_changes'].append({
             'layer_name': f"{layer.__class__.__name__}_{layer_index}",
             'neuron_index': idx,
-            'loss_change': loss_change
-        })
-        # Also record per-layer accuracy drop (for aggregated layer-level analysis)
-        self.metrics['layer_accuracy_drops'].append({
-            'layer_name': f"{layer.__class__.__name__}_{layer_index}",
-            'neuron_index': idx,
-            'accuracy_drop': accuracy_drop
+            'loss_change': normalized_loss_change  # Normalized loss change
         })
 
         # Restore the original weights
