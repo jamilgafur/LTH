@@ -41,7 +41,7 @@ class BasePruner(BaseTrainer):
     ):
         super().__init__(model, train_loader, test_loader, optimizer, criterion, scheduler, device, prunable_layers, learning_rate)
         self.strategy = strategy or MagnitudePruningStrategy(device=self.device)
-        self.steps = [0.0] + steps if steps and steps[0] != 0 else steps
+        self.steps = [0.0] + steps 
         self.save_dir = save_dir
         self.finetune_epochs = finetune_epochs
         self.pretrain_epochs = pretrain_epochs
