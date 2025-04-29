@@ -58,7 +58,7 @@ class BaseTrainer(ABC):
         with open(os.path.join(self.save_dir, 'pruner.pkl'), 'wb') as f:
             pickle.dump(self, f)
 
-    def _save_initial_state(self) -> Dict[str, torch.Tensor]:
+    def _save_model_state(self) -> Dict[str, torch.Tensor]:
         names, parameters = get_pruneable_named_parameters(self.model, self.prunable_layers)
         state = {n: p.data.clone() for n, p in zip(names, parameters)}
         logger.info(f"Saved {len(state)} initial parameters.")
@@ -180,7 +180,7 @@ class BaseTrainer(ABC):
     def run(self):
         logger.info("Starting training...")
         acc, loss = self._train_with_early_stopping(self.pretrain_epochs, phase="train")
-        self.initial_state = self._save_initial_state()
+        self.initial_state = self._save_model_state()
         self.weight_history[0] = self.initial_state
         self.best_model_weights = (acc, self.model.state_dict())
         logger.info("Training completed.")

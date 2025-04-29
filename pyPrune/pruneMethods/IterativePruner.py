@@ -78,7 +78,7 @@ class IterativePruner(BasePruner):
             self.assert_sparsity(step)
             self.save_checkpoint(f"sparsity_{step:.2f}")
             acc, loss = self.evaluate()
-            self.weight_history.append(self._save_initial_state())
+            self.weight_history.append(self._save_model_state())
             self.step_details.append({'sparsity': step, 'loss': loss, 'accuracy': acc})
             self.reset_weights()
             self.update_pickle()

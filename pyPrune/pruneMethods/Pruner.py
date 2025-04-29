@@ -66,7 +66,7 @@ class BasePruner(BaseTrainer, ABC):
         }
 
         self._setup_directory(file_handler)
-        self.initial_state = self._save_initial_state()
+        self.initial_state = self._save_model_state()
         self.weight_history: List[Dict] = [self.initial_state]
 
         # If first step is 0, pretraining is required
