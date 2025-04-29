@@ -130,7 +130,6 @@ class BaseTrainer(ABC):
 
     def evaluate(self) -> Tuple[float, float]:
         acc, loss = self._epoch(train=False)
-        self.update_metrics(loss, acc)
         logger.info(f"Evaluated at {self.current_sparsity * 100:.2f}% sparsity - Accuracy: {acc:.2f}%, Loss: {loss:.4f}")
         if acc > self.best_model_weights[0]:
             logger.info(f"New best model at sparsity {self.current_sparsity * 100:.2f}% with accuracy {acc:.2f}%")
@@ -149,15 +148,20 @@ class BaseTrainer(ABC):
             return self.convert_tensor(t.data)
         return t
 
-    def update_metrics(self, loss: float, accuracy: float, gradients: Optional[torch.Tensor] = None):
-        self.metrics['step'].append(self.current_sparsity)
-        self.metrics['loss'].append(loss)
-        self.metrics['accuracy'].append(accuracy)
-        self.metrics['gradients'].append(self.convert_tensor(gradients) if gradients is not None else None)
-        if not self.metrics['accuracy'] or accuracy > max(self.metrics['accuracy']):
+    def update_metrics(self, loss: float, accuracy: float, gradients: Optional[torch.Tensor] = None, label: str = ""):
+        if f"step_{label}" not in self.metrics:
+            self.metrics[f"step_{label}"] = []
+        if f"loss_{label}" not in self.metrics:
+            self.metrics[f"loss_{label}"] = []
+        if f"accuracy_{label}" not in self.metrics:
+            self.metrics[f"accuracy_{label}"] = []
+            
+        self.metrics[f"step_{label}"].append(self.current_sparsity)
+        self.metrics[f"loss_{label}"].append(loss)
+        self.metrics[f"accuracy_{label}"].append(accuracy)
+        if not self.metrics[f"accuracy_{label}"] or accuracy > max(self.metrics[f"accuracy_{label}"]):
             logger.info(f"Best model updated at {self.current_sparsity * 100:.2f}% sparsity with accuracy {accuracy:.2f}%.")
             self.best_model_weights = self.model.state_dict()
-        print(self.metrics)
 
     def update_pickle(self):
         with open(os.path.join(self.save_dir, 'pruner.pkl'), 'wb') as f:

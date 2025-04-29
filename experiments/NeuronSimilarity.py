@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 import logging
 import os
+import glob
 from typing import List, Dict, Optional, Union
 import matplotlib.pyplot as plt
 import json
@@ -161,8 +162,8 @@ class NeuronSimilarity:
 
         torch.cuda.empty_cache()  # Clear memory after evaluation
         return activations
-
-   
+ 
+        
     def run_experiment(self) -> Dict[str, List[Dict[str, Union[str, float]]]]:
         """
         Run the Neuron Similarity experiment, computing similarity matrices of neuron activations for all layers.
@@ -171,7 +172,7 @@ class NeuronSimilarity:
             Dict[str, List[Dict[str, Union[str, float]]]]: A dictionary containing similarity matrices at each layer.
         """
         self.logger.info(f"Starting Neuron Similarity experiment for all layers...")
-        
+
         for model_step, step in zip(self.pruner.weight_history, self.pruner.metrics["step"]):
             metrics = {"similarity_matrices" : [], "average_similarities" : []}
             clean_memory()
@@ -314,3 +315,4 @@ class NeuronSimilarity:
             plot_filename = f'{self.save_dir}/non_zero_similarity_{layer_name}.png'
             plt.savefig(plot_filename)
             plt.close()
+

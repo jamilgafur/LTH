@@ -11,7 +11,7 @@ models_imagenet=("RegNetX" "EfficientNet" "Vgg16ImageNet")
 
 # Hyperparameters
 pretrain_epochs_list_cifar=(5 10 20 50)
-pretrain_epochs_list_imagenet=(100 150 200)  # Smaller due to model size
+pretrain_epochs_list_imagenet=(100 125 150)  # Smaller due to model size
 finetune_epochs_LeNet=(1 5 10)
 early_stopping=3
 steps=21
@@ -42,9 +42,9 @@ for strat in "${strategy[@]}"; do
     for model in "${models_imagenet[@]}"; do
         for pretrain_epoch in "${pretrain_epochs_list_imagenet[@]}"; do
             if [ "$model" == "EfficientNet" ]; then
-                total_epochs=400
+                total_epochs=200
             else
-                total_epochs=350
+                total_epochs=150
             fi
 
             finetune_epoch=$((total_epochs - pretrain_epoch))

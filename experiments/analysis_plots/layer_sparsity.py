@@ -94,13 +94,21 @@ def get_layer_information(pruner, model_path, base_params=None):
 def plot_accuracy(pruner, path):
     """Plot accuracy and loss against sparsity."""
     metrics = pruner.metrics
-    accuracy = metrics['accuracy']
-    loss = metrics['loss']
-    sparsity = metrics['step']
+    import pdb; pdb.set_trace()
+    accuracy = metrics['accuracy_finetune']
+    loss = metrics['loss_finetune']
+    sparsity = metrics['step_finetune']
 
     fig, axs = plt.subplots(2, 1, figsize=(10, 10))
 
     # Plot accuracy vs sparsity
+    if len(sparsity) == 0:
+        print("No sparsity data available.")
+        return
+    if len(sparsity) != len(accuracy):
+        print("Sparsity and accuracy lengths do not match.")
+        import pdb; pdb.set_trace()
+        return
     axs[0].plot(sparsity, accuracy, marker='o', linestyle='-', color='blue', label='Accuracy')
     axs[0].set_title('Accuracy vs Sparsity')
     axs[0].set_xlabel('Sparsity (%)')
@@ -136,11 +144,11 @@ def plot_layer_information(savedir, data):
     sparsities = sorted(data.keys())
 
     # Define color and line style combinations
-    colors = plt.cm.viridis(np.linspace(0, 1, len(data[0.2]["layer_info"].keys())))
+    colors = plt.cm.viridis(np.linspace(0, 1, len(data[0.0]["layer_info"].keys())))
     line_styles = ['-', '--', '-.', ':']
     fig, axes = plt.subplots(2, 1, figsize=(14, 10))
 
-    for idx, (layer, color) in enumerate(zip(data[0.2]["layer_info"].keys(), colors)):
+    for idx, (layer, color) in enumerate(zip(data[0.0]["layer_info"].keys(), colors)):
         layer_name = layer
 
         x1, x2 = [], []
@@ -186,19 +194,23 @@ def plot_layer_information(savedir, data):
 if __name__ == "__main__":
 
     base_output_dir = "./plots"
-
-    for model_directory in glob.glob("/scratch/jgafur/LTH_output/*cuda*"):
+    for model_directory in glob.glob("/projects/modularai/jgafur/LTH/temp/LeNet_pretrain1_finetune1_steps3_batch2048_devicecuda_strategy_brain-damage/"):
+        print(f"Processing Model Directory: {model_directory}")
         pruner_pickle_path = f"{model_directory}/pruner.pkl"
+        if not os.path.isfile(pruner_pickle_path):
+            print(f"Pickle file not found: {pruner_pickle_path}")
+            continue
+        
 
         # Load pruner
         pruner = load_pickle(pruner_pickle_path)
         
         # Plot accuracy and loss
         output_dir = os.path.join(base_output_dir, model_directory.split("/")[-1])
+
         plot_accuracy(pruner, output_dir)
 
         model_paths = get_sorted_model_paths(model_directory)
-
         data = {}
         base_params = None
 
@@ -209,7 +221,7 @@ if __name__ == "__main__":
             print(f"Processing Model: {model_path}")
             
             layer_info, base_params = get_layer_information(pruner, model_path, base_params)
-            
+
             data[sparsity] = {
                 "layer_info": layer_info,
             }

@@ -57,11 +57,6 @@ class BasePruner(BaseTrainer, ABC):
         self.best_model_weights = None
         self.step_details: List[Dict] = []
         self.metrics: Dict[str, List] = {
-            'sparsity': [],
-            'loss': [],
-            'accuracy': [],
-            'gradients': [],
-            'optimizer': [],
             'step': [],
         }
 

@@ -65,42 +65,67 @@ class IterativePruner(BasePruner):
             self.strategy = MagnitudePruningStrategy(device=self.device)
         logger.info(f"IterativePruner initialized with strategy: {self.strategy.__class__.__name__}")
 
+    def save_and_log(self, step: float, prefix: str, acc: float, loss: float, label: str = "original"):
+        """
+        Helper method to save checkpoints and log accuracy/loss.
+        """
+        checkpoint_name = f"{prefix}_{step:.2f}"
+        self.save_checkpoint(checkpoint_name)
+        logger.info(f"{prefix} - Accuracy at sparsity {step:.4f}: {acc:.2f}, Loss: {loss:.2f}")
+        self.update_metrics(loss, acc, label=label)
+
+
     def run(self):
         if self.pretrain_epochs > 0:
             self.pretrain()
-        
+
         clean_memory()
+        
         for step in self.steps:
-            self.save_checkpoint(f"Original{step:.2f}")
+            # Step 1: Save the original state
             acc, loss = self.evaluate()
-            logger.info(f"Initial accuracy at sparsity {step:.4}: {acc:.2f}, loss: {loss:.2f}")
-            if os.path.exists(os.path.join(self.save_dir, f"checkpoint_sparsity_{step:.2f}.pth")):
+            self.save_and_log(step, "Original", acc, loss)
+
+            # Step 2: Skip if checkpoint already exists
+            checkpoint_path = os.path.join(self.save_dir, f"checkpoint_Finetuned_{step:.2f}.pth")
+            if os.path.exists(checkpoint_path):
                 logger.info(f"Checkpoint for sparsity {step:.2f}% already exists. Skipping...")
                 continue
+            
+            # Step 3: Perform pruning and finetuning
             self.current_sparsity = step
             self.finetune()
-            self.save_checkpoint(f"Finetuned_{step:.2f}")
+            self.save_and_log(step, "Finetuned", *self.evaluate(), label="finetune")
+
             model_state_dict = self.prune_step()
-            # Finish training
+
+            # Step 4: Finish training
             for _ in range(self.finish_training_epochs):
                 self._epoch(train=True)
-            acc, loss = self.evaluate()
-            logger.info(f"Final accuracy at sparsity {step:.4}: {acc:.2f}, loss: {loss:.2f}")
-            self.update_metrics(loss, acc)
 
+            # Step 5: Log trained accuracy
+            acc, loss = self.evaluate()
             self.step_details.append({'sparsity': step, 'loss': loss, 'accuracy': acc})
-            self.save_checkpoint(f"Trained_{step:.2f}")
-            # Apply the prune step
+            self.save_and_log(step, "Trained", acc, loss)
+
+            # Step 6: Load the pruned model and apply pruning
             self.model.load_state_dict(model_state_dict, strict=False)
             self.save_checkpoint(f"Pruned_{step:.2f}")
             self.assert_sparsity(step)
+
+            # Step 7: Update history and reset weights
             self.weight_history.append(model_state_dict)
+            self.metrics["step"].append(step)
             self.reset_weights()
             self.update_pickle()
+
+            # Step 8: Clean up and move to next step
             logger.info("-" * 40)
             clean_memory()
+
+        # Final evaluation and logging
         acc, loss = self.evaluate()
         logger.info(f"Final evaluation at {self.current_sparsity * 100:.2f}% sparsity - Accuracy: {acc:.2f}%, Loss: {loss:.4f}")
-        self.update_metrics(loss, acc)
+        self.save_and_log(self.current_sparsity, "Finetuned", acc, loss, label="finetune")
         self.save_metrics()
         logger.info("Pruning run complete.")
