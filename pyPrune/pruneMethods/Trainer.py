@@ -149,31 +149,6 @@ class BaseTrainer(ABC):
             return self.convert_tensor(t.data)
         return t
 
-    def assert_sparsity(self, expected_sparsity: float):
-        total = 0
-        zero = 0
-        for module in get_pruneable_modules(self.model, self.prunable_layers):
-            total += module.weight.data.numel()
-            zero += (module.weight.data == 0).sum().item()
-        actual_sparsity = zero / total
-        logger.info(f"Sparsity check: actual = {actual_sparsity * 100:.2f}%, expected = {expected_sparsity * 100:.2f}%")
-        # update the current sparsity to be the actual sparsity
-        self.current_sparsity = actual_sparsity
-        
-        # assert abs(actual_sparsity - expected_sparsity) < 0.1, f"Sparsity mismatch actural {actual_sparsity * 100:.2f}% vs expected {expected_sparsity * 100:.2f}%"
-
-    def prune_step(self):
-        logger.info(f"Pruning to {self.current_sparsity * 100:.2f}% sparsity")
-        model_state_dict = self.strategy.apply(
-            self.model,
-            self.optimizer,
-            self.current_sparsity,
-            prunable_layers=self.prunable_layers,
-            total_weight_count=self.total_weight_count
-        )
-        # load the model_state_dict
-        self.model.load_state_dict(model_state_dict, strict=False)
-
     def update_metrics(self, loss: float, accuracy: float, gradients: Optional[torch.Tensor] = None):
         self.metrics['step'].append(self.current_sparsity)
         self.metrics['loss'].append(loss)
@@ -183,18 +158,6 @@ class BaseTrainer(ABC):
             logger.info(f"Best model updated at {self.current_sparsity * 100:.2f}% sparsity with accuracy {accuracy:.2f}%.")
             self.best_model_weights = self.model.state_dict()
         print(self.metrics)
-
-    def reset_weights(self):
-        names, params = get_pruneable_named_parameters(self.model, self.prunable_layers)
-        for name, param in zip(names, params):
-            param.data = self.initial_state[name].clone()
-        for m in get_pruneable_modules(self.model, self.prunable_layers):
-            if hasattr(m, 'mask'):
-                m.weight.data.mul_(m.mask.float())
-        logger.info("Weights reset to initial state with pruning mask reapplied.")
-        self.optimizer = type(self.optimizer)(self.model.parameters(), lr=self.learning_rate)
-        if self.scheduler:
-            self.scheduler.last_epoch = self.finetune_epochs
 
     def update_pickle(self):
         with open(os.path.join(self.save_dir, 'pruner.pkl'), 'wb') as f:
