@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from abc import ABC, abstractmethod
 
 from pyPrune.utils import get_pruneable_modules, get_pruneable_named_parameters, clean_memory
-from pyPrune.PruningStrategy import PruningStrategy
+from pyPrune.strategies.PruningStrategy import PruningStrategy
 from pyPrune.pruneMethods.Trainer import BaseTrainer
 from pyPrune.strategies.MagnitudePruningStrategy import MagnitudePruningStrategy
 
@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 logger = logging.getLogger(__name__)
 
 
-class BasePruner(BaseTrainer):
+class BasePruner(BaseTrainer, ABC):
     def __init__(
         self,
         model: nn.Module,
@@ -89,27 +89,6 @@ class BasePruner(BaseTrainer):
         acc, loss = self._train_with_early_stopping(self.finetune_epochs, phase="finetune")
         return acc, loss
 
+    @abstractmethod
     def run(self):
-        if self.pretrain_epochs > 0:
-            self.pretrain()
-        
-        clean_memory()
-        for step in self.steps:
-            if os.path.exists(os.path.join(self.save_dir, f"checkpoint_sparsity_{step:.2f}.pth")):
-                logger.info(f"Checkpoint for sparsity {step:.2f}% already exists. Skipping...")
-                continue
-            self.current_sparsity = step
-            self.finetune()
-            self.prune_step()
-            self.assert_sparsity(step)
-            self.save_checkpoint(f"sparsity_{step:.2f}")
-            acc, loss = self.evaluate()
-            self.weight_history.append(self._save_initial_state())
-            self.step_details.append({'sparsity': step, 'loss': loss, 'accuracy': acc})
-            self.reset_weights()
-            self.update_pickle()
-            logger.info("-" * 40)
-            clean_memory()
-        acc, loss = self.evaluate()
-        self.save_metrics()
-        logger.info("Pruning run complete.")
+        pass

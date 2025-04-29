@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from abc import ABC, abstractmethod
 
 from pyPrune.utils import get_pruneable_modules, get_pruneable_named_parameters, clean_memory
-from pyPrune.PruningStrategy import PruningStrategy
+from pyPrune.strategies.PruningStrategy import PruningStrategy
 
 # Configure root logger
 logging.basicConfig(
@@ -97,7 +97,8 @@ class BaseTrainer(ABC):
         self,
         epochs: int,
         phase: str = "pretrain",
-        tolerance: float = 0.2  # tolerance in percent
+        tolerance: float = 0.2,  
+        eval: bool = False
     ) -> Tuple[float, float]:
         best_metric = float('-inf')
         best_weights = None
@@ -118,6 +119,9 @@ class BaseTrainer(ABC):
             if self.early_stopping > 0 and patience_counter >= self.early_stopping:
                 logger.info(f"Early stopping triggered in {phase} phase at epoch {epoch + 1}")
                 break
+            
+            acc, loss = self._epoch(train=False)
+            print(f"Evaluation - Accuracy: {acc:.2f}%, Loss: {loss:.4f}")
 
         if best_weights:
             self.model.load_state_dict(best_weights)

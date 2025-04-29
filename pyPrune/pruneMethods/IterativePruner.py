@@ -1,15 +1,17 @@
 import logging
+import os
 from typing import Optional, List, Tuple
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
+
 from pyPrune.pruneMethods.Trainer import BaseTrainer
 from pyPrune.pruneMethods.Pruner import BasePruner
-from pyPrune.PruningStrategy import PruningStrategy
+from pyPrune.strategies.PruningStrategy import PruningStrategy
 from pyPrune.strategies.MagnitudePruningStrategy import MagnitudePruningStrategy
 from pyPrune.strategies.OptimalBrainDamageStrategy import OptimalBrainDamageStrategy
-
+from pyPrune.utils import clean_memory
 # Configure module logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -61,3 +63,27 @@ class IterativePruner(BasePruner):
             self.strategy = MagnitudePruningStrategy(device=self.device)
         logger.info(f"IterativePruner initialized with strategy: {self.strategy.__class__.__name__}")
 
+    def run(self):
+        if self.pretrain_epochs > 0:
+            self.pretrain()
+        
+        clean_memory()
+        for step in self.steps:
+            if os.path.exists(os.path.join(self.save_dir, f"checkpoint_sparsity_{step:.2f}.pth")):
+                logger.info(f"Checkpoint for sparsity {step:.2f}% already exists. Skipping...")
+                continue
+            self.current_sparsity = step
+            self.finetune()
+            self.prune_step()
+            self.assert_sparsity(step)
+            self.save_checkpoint(f"sparsity_{step:.2f}")
+            acc, loss = self.evaluate()
+            self.weight_history.append(self._save_initial_state())
+            self.step_details.append({'sparsity': step, 'loss': loss, 'accuracy': acc})
+            self.reset_weights()
+            self.update_pickle()
+            logger.info("-" * 40)
+            clean_memory()
+        acc, loss = self.evaluate()
+        self.save_metrics()
+        logger.info("Pruning run complete.")

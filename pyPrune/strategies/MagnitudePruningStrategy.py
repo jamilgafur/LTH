@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from abc import ABC, abstractmethod
 
 from pyPrune.utils import get_pruneable_modules, clean_memory
-from pyPrune.PruningStrategy import PruningStrategy
+from pyPrune.strategies.PruningStrategy import PruningStrategy
 # Configure root logger
 logging.basicConfig(
     level=logging.DEBUG,
@@ -55,7 +55,7 @@ class MagnitudePruningStrategy(PruningStrategy):
         num_prune = int(total * target_sparsity) - (total - all_weights.numel())
         if num_prune <= 0:
             logger.info("Already at or above target sparsity.")
-            return
+            return model.state_dict()
         abs_w = np.abs(all_weights.cpu().numpy())
         thresh = np.partition(abs_w, num_prune - 1)[num_prune - 1]
         for module in get_pruneable_modules(model, prunable_layers):

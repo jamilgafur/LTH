@@ -11,7 +11,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from pyPrune.utils import get_pruneable_modules, clean_memory
-from pyPrune.PruningStrategy import PruningStrategy
+from pyPrune.strategies.PruningStrategy import PruningStrategy
 
 # Configure root logger
 logging.basicConfig(
@@ -30,7 +30,7 @@ from typing import Optional, Tuple, Dict, List
 from torch.utils.data import DataLoader
 
 from pyPrune.utils import get_pruneable_modules, clean_memory
-from pyPrune.PruningStrategy import PruningStrategy
+from pyPrune.strategies.PruningStrategy import PruningStrategy
 
 # Configure root logger
 logging.basicConfig(

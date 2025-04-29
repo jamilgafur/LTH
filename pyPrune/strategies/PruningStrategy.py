@@ -35,4 +35,4 @@ class PruningStrategy(ABC):
         prunable_layers: Tuple = (nn.Conv2d, nn.Linear),
         total_weight_count: Optional[int] = None
     ) -> nn.Module:
-        return model.state_dict()
+        pass
