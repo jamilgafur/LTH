@@ -39,6 +39,7 @@ class IterativePruner(BasePruner):
         file_handler: str = "logger.log",
         prunable_layers: Tuple = (nn.Conv2d, nn.Linear),
         early_stopping: int = 0,
+        finish_training_epochs: int = 0,
     ):
         # Initialize BasePruner, which itself extends BaseTrainer
         super().__init__(
@@ -58,6 +59,7 @@ class IterativePruner(BasePruner):
             prunable_layers=prunable_layers,
             device=device
         )
+        self.finish_training_epochs = finish_training_epochs
         # Fallback to magnitude if no strategy provided
         if not strategy:
             self.strategy = MagnitudePruningStrategy(device=self.device)
@@ -69,21 +71,36 @@ class IterativePruner(BasePruner):
         
         clean_memory()
         for step in self.steps:
+            self.save_checkpoint(f"Original{step:.2f}")
+            acc, loss = self.evaluate()
+            logger.info(f"Initial accuracy at sparsity {step:.4}: {acc:.2f}, loss: {loss:.2f}")
             if os.path.exists(os.path.join(self.save_dir, f"checkpoint_sparsity_{step:.2f}.pth")):
                 logger.info(f"Checkpoint for sparsity {step:.2f}% already exists. Skipping...")
                 continue
             self.current_sparsity = step
             self.finetune()
-            self.prune_step()
-            self.assert_sparsity(step)
-            self.save_checkpoint(f"sparsity_{step:.2f}")
+            self.save_checkpoint(f"Finetuned_{step:.2f}")
+            model_state_dict = self.prune_step()
+            # Finish training
+            for _ in range(self.finish_training_epochs):
+                self._epoch(train=True)
             acc, loss = self.evaluate()
-            self.weight_history.append(self._save_model_state())
+            logger.info(f"Final accuracy at sparsity {step:.4}: {acc:.2f}, loss: {loss:.2f}")
+            self.update_metrics(loss, acc)
+
             self.step_details.append({'sparsity': step, 'loss': loss, 'accuracy': acc})
+            self.save_checkpoint(f"Trained_{step:.2f}")
+            # Apply the prune step
+            self.model.load_state_dict(model_state_dict, strict=False)
+            self.save_checkpoint(f"Pruned_{step:.2f}")
+            self.assert_sparsity(step)
+            self.weight_history.append(model_state_dict)
             self.reset_weights()
             self.update_pickle()
             logger.info("-" * 40)
             clean_memory()
         acc, loss = self.evaluate()
+        logger.info(f"Final evaluation at {self.current_sparsity * 100:.2f}% sparsity - Accuracy: {acc:.2f}%, Loss: {loss:.4f}")
+        self.update_metrics(loss, acc)
         self.save_metrics()
         logger.info("Pruning run complete.")

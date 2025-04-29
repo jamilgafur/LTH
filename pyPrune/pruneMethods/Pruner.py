@@ -80,10 +80,10 @@ class BasePruner(BaseTrainer, ABC):
     def pretrain(self):
         logger.info("Starting pretraining...")   
         acc, loss = self._train_with_early_stopping(self.pretrain_epochs, phase="pretrain")
-        self.initial_state = self._save_initial_state()
+        self.initial_state = self._save_model_state()
         self.weight_history[0] = self.initial_state
         self.best_model_weights = (acc, self.model.state_dict())
-
+    
     def finetune(self):
         logger.info(f"Finetuning at {self.current_sparsity * 100:.2f}% sparsity...")
         acc, loss = self._train_with_early_stopping(self.finetune_epochs, phase="finetune")
@@ -114,7 +114,7 @@ class BasePruner(BaseTrainer, ABC):
         if self.scheduler:
             self.scheduler.last_epoch = self.finetune_epochs
 
-    def prune_step(self):
+    def prune_step(self) -> nn.Module:
         logger.info(f"Pruning to {self.current_sparsity * 100:.2f}% sparsity")
         model_state_dict = self.strategy.apply(
             self.model,
@@ -123,8 +123,8 @@ class BasePruner(BaseTrainer, ABC):
             prunable_layers=self.prunable_layers,
             total_weight_count=self.total_weight_count
         )
-        # load the model_state_dict
-        self.model.load_state_dict(model_state_dict, strict=False)
+        return model_state_dict
+    
 
     @abstractmethod
     def run(self):
