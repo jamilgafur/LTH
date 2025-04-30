@@ -54,7 +54,7 @@ class BasePruner(BaseTrainer, ABC):
             p.numel() for m in get_pruneable_modules(model, prunable_layers) for p in [m.weight]
         )
         self.current_sparsity = 0.0
-        self.best_model_weights = None
+        self.best_model_weights = (-1, None)
         self.step_details: List[Dict] = []
         self.metrics: Dict[str, List] = {
             'step': [],
@@ -77,8 +77,7 @@ class BasePruner(BaseTrainer, ABC):
         acc, loss = self._train_with_early_stopping(self.pretrain_epochs, phase="pretrain")
         self.initial_state = self._save_model_state()
         self.weight_history[0] = self.initial_state
-        self.best_model_weights = (acc, self.model.state_dict())
-    
+        
     def finetune(self):
         logger.info(f"Finetuning at {self.current_sparsity * 100:.2f}% sparsity...")
         acc, loss = self._train_with_early_stopping(self.finetune_epochs, phase="finetune")
@@ -120,7 +119,6 @@ class BasePruner(BaseTrainer, ABC):
         )
         return model_state_dict
     
-
     @abstractmethod
     def run(self):
         pass

@@ -7,7 +7,7 @@ strategy=("magnitude" "brain-damage")
 
 # Model lists
 models_cifar=("LeNet" "ResNet20" "Vgg16")
-models_imagenet=("RegNetX" "EfficientNet" "Vgg16ImageNet")
+models_imagenet=("RegNetX" "EfficientNet" )
 
 # Hyperparameters
 pretrain_epochs_list_cifar=(5 10 20 50)

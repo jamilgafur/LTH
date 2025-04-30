@@ -54,7 +54,8 @@ class NeuronSimilarity:
             nn.Module: The deep-copied model set to evaluation mode.
         """
         model: nn.Module = pruner.model
-        model.load_state_dict(pruner.best_model_weights[1])
+        import pdb; pdb.set_trace()
+        model.load_state_dict(pruner.best_model_weights)
         model.eval().to(pruner.device)
         return model
 
@@ -172,7 +173,7 @@ class NeuronSimilarity:
             Dict[str, List[Dict[str, Union[str, float]]]]: A dictionary containing similarity matrices at each layer.
         """
         self.logger.info(f"Starting Neuron Similarity experiment for all layers...")
-
+        print(self.pruner.save_dir)
         for model_step, step in zip(self.pruner.weight_history, self.pruner.metrics["step"]):
             metrics = {"similarity_matrices" : [], "average_similarities" : []}
             clean_memory()

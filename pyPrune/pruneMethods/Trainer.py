@@ -45,6 +45,8 @@ class BaseTrainer(ABC):
         self.prunable_layers = prunable_layers
         self.learning_rate = learning_rate
         self.early_stopping = early_stopping
+        self.best_model_weights = (-1, None)
+        
 
     def _setup_directory(self, file_handler: str):
         os.makedirs(self.save_dir, exist_ok=True)
@@ -161,7 +163,7 @@ class BaseTrainer(ABC):
         self.metrics[f"accuracy_{label}"].append(accuracy)
         if not self.metrics[f"accuracy_{label}"] or accuracy > max(self.metrics[f"accuracy_{label}"]):
             logger.info(f"Best model updated at {self.current_sparsity * 100:.2f}% sparsity with accuracy {accuracy:.2f}%.")
-            self.best_model_weights = self.model.state_dict()
+            self.best_model_weights = (accuracy, self.model.state_dict())
 
     def update_pickle(self):
         with open(os.path.join(self.save_dir, 'pruner.pkl'), 'wb') as f:

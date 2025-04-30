@@ -251,10 +251,12 @@ def run_experiments(pruner: IterativePruner, experiment_names: list[str]) -> Non
         return
 
     if 'NeuronSimilarity' in experiment_names:
+        print("Running NeuronSimilarity experiment...")
         neuron_similarity = NeuronSimilarity(pruner)
         neuron_similarity.run_experiment()
 
     if 'NeuronZeroing' in experiment_names:
+        print("Running NeuronZeroing experiment...")
         neuron_zeroing = NeuronZeroing(pruner)
         neuron_zeroing.run_experiment()
 
@@ -263,7 +265,7 @@ def run_experiments(pruner: IterativePruner, experiment_names: list[str]) -> Non
             'linear': .01,
             'conv': .01
         }
-
+        print("Running WeightZeroing experiment...")
         weight_zeroing = WeightZeroing(pruner, sample_fractions)
         weight_zeroing.run_experiment()
     
