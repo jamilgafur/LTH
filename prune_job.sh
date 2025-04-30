@@ -2,7 +2,7 @@
 #SBATCH --job-name=prune_runner
 #SBATCH --ntasks=1
 #SBATCH --time=11:00:00   # Max runtime (11 hour)
-#SBATCH --mem=64GB
+#SBATCH --mem=248GB
 #SBATCH --gpus=1
 #SBATCH --account=modularai
 #SBATCH --output=/scratch/jgafur/LTH_output/prune_runner_%j.out

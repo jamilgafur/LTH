@@ -222,7 +222,7 @@ def main():
  
     
     for model_name in model_names:        
-        metrics_files_glob = f"/scratch/jgafur/LTH_output/LeNet_pretrain*_finetune*_steps21_batch*_devicecuda"
+        metrics_files_glob = f"/scratch/jgafur/LTH_output/*cuda*"
         for metrics_files_path in glob.glob(metrics_files_glob):
             base_dir = os.path.join(".", f"plots/{metrics_files_path.split("/")[-1]}/NeuronZeroing")
             steps_dir = os.path.join(base_dir, "steps")

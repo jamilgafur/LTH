@@ -105,7 +105,7 @@ class BaseTrainer(ABC):
         best_metric = float('-inf')
         best_weights = None
         patience_counter = 0
-
+        acc, loss = 0.0, 0.0
         for epoch in range(epochs):
             acc, loss = self._epoch(train=True)
             logger.info(f"{phase.capitalize()} epoch {epoch + 1}/{epochs} - Accuracy: {acc:.2f}%, Loss: {loss:.4f}")
