@@ -58,6 +58,8 @@ def group_weights_and_sparsity_data(weights_and_sparsity_plots_sorted):
             base_name = layer_name.split('.')[-1]
         elif layer_name.count('.') >= 2:
             base_name = layer_name.split('.')[0]
+        if "stage" in layer_name:
+            layer_name = layer_name.split('.')[1] + "-" + layer_name.split('.')[3]
             
         grouped_data[base_name]['sparsity'].append(data['sparsity'])
         grouped_data[base_name]['zero_weights_in_layer'].append(data['zero_weights_in_layer'])
@@ -86,6 +88,8 @@ def group_layer_similarity_data(sim_dict):
             base_name = layer.split('.')[-1]
         elif layer.count('.') >= 2:
             base_name = layer.split('.')[0]
+        if "stage" in layer:
+            base_name = layer.split('.')[1] + "-" + layer.split('.')[3]
         grouped_dict[base_name].extend(sim_list)
 
     for base_name, data_list in grouped_dict.items():
@@ -148,6 +152,7 @@ def process_neuron_similarity(neuron_similarity_dir, model_name):
       - Cosine similarity of layer activations compared to the prepruning step.
       - Aggregated plots with average neuron similarity and percentile shading.
     """
+    import pdb; pdb.set_trace()
     files_found = glob.glob(os.path.join(neuron_similarity_dir, "*.pkl"))
     print(f"Files found for neuron similarity: {files_found}")
  
@@ -155,6 +160,7 @@ def process_neuron_similarity(neuron_similarity_dir, model_name):
     checkpoint_name = os.path.basename(os.path.normpath(checkpoint_dir))
 
     # Process the first file for per-file plots
+    import pdb
     if files_found:
         with open(files_found[0], 'rb') as f:
             pruner = pickle.load(f)
@@ -301,15 +307,12 @@ def clear_memory():
 
 def main():
     """Main function to execute the entire post-processing pipeline."""
-    model_names = ["LeNet", "ResNet20", "Vgg16"][::-1]
-    for model_name in model_names:
-        checkpoint_glob = f"/scratch/jgafur/LTH_output/*{model_name}*"
-        for output_dir in glob.glob(checkpoint_glob):
-            clear_memory()
-            clean_memory()
-            print(output_dir)
-            neuron_similarity_dir = os.path.join(output_dir, "neuron_similarity")
-            process_neuron_similarity(neuron_similarity_dir, '')
+    checkpoint_glob = f"/scratch/jgafur/LTH_output/*"
+    for output_dir in glob.glob(checkpoint_glob):
+        clear_memory()
+        print(output_dir)
+        neuron_similarity_dir = os.path.join(output_dir, "neuron_similarity")
+        process_neuron_similarity(neuron_similarity_dir, '')
             
 if __name__ == "__main__":
     main()

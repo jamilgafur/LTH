@@ -182,62 +182,64 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
         with open(pruner_path, 'rb') as f:
             pruner = pickle.load(f)
         print("Loaded pruner from checkpoint.")
-    if model_name == 'LeNet':
-        optimizer = Adam(model.parameters(), lr=0.0012)
-        criterion = nn.CrossEntropyLoss()
-        scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
+    else:
+        if model_name == 'LeNet':
+            optimizer = Adam(model.parameters(), lr=0.0012)
+            criterion = nn.CrossEntropyLoss()
+            scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
 
-    elif model_name == 'EfficientNet':
-        # EfficientNet-specific configuration
-        criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
-        scaled_lr = 0.1 * (args.batch_size / 256)
-        optimizer = torch.optim.SGD(model.parameters(), lr=scaled_lr, momentum=0.9, weight_decay=1e-5, nesterov=True)
-        scheduler = LambdaLR(optimizer, lr_lambda=poly_lr_with_warmup)
-                
-    elif model_name == 'RegNetX':
-        # RegNetX-specific configuration
-        criterion = nn.CrossEntropyLoss()
-        optimizer = optim.SGD(
-            model.parameters(),
-            lr=0.1,               # Initial learning rate for SGD
-            momentum=0.9,
-            weight_decay=1e-5
+        elif model_name == 'EfficientNet':
+            # EfficientNet-specific configuration
+            criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+            scaled_lr = 0.1 * (args.batch_size / 256)
+            optimizer = torch.optim.SGD(model.parameters(), lr=scaled_lr, momentum=0.9, weight_decay=1e-5, nesterov=True)
+            scheduler = LambdaLR(optimizer, lr_lambda=poly_lr_with_warmup)
+                    
+        elif model_name == 'RegNetX':
+            # RegNetX-specific configuration
+            criterion = nn.CrossEntropyLoss()
+            optimizer = optim.SGD(
+                model.parameters(),
+                lr=0.1,               # Initial learning rate for SGD
+                momentum=0.9,
+                weight_decay=1e-5
+            )
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=pretrain_epochs, eta_min=1e-6)
+
+        else:
+            # Default config for other models (ResNet, VGG)
+            criterion = nn.CrossEntropyLoss()
+            optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, nesterov=True, weight_decay=5e-4)
+            scheduler = LambdaLR(optimizer, lr_lambda)
+
+        print(f"optimizer: {optimizer}, criterion: {criterion}")
+        print(f"Scheduler: {scheduler}")
+
+        # Choose pruning strategy
+        if args.strategy == 'magnitude':
+            strategy = MagnitudePruningStrategy.MagnitudePruningStrategy(device=device)
+        elif args.strategy == 'brain-damage':
+            strategy = OptimalBrainDamageStrategy.OptimalBrainDamageStrategy(train_loader=train_loader, criterion=criterion, device=device)
+        else:
+            raise ValueError(f"Unknown strategy: {args.strategy}")
+        
+        # Initialize and run the pruner
+        pruner = IterativePruner(
+            model=model,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            criterion=criterion,
+            train_loader=train_loader,
+            test_loader=test_loader,
+            steps=steps,
+            pretrain_epochs=pretrain_epochs,
+            device=device,
+            finetune_epochs=finetune_epochs,
+            save_dir=save_dir,
+            strategy=strategy,
+            early_stopping=args.patience,
         )
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=pretrain_epochs, eta_min=1e-6)
-
-    else:
-        # Default config for other models (ResNet, VGG)
-        criterion = nn.CrossEntropyLoss()
-        optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, nesterov=True, weight_decay=5e-4)
-        scheduler = LambdaLR(optimizer, lr_lambda)
-
-    print(f"optimizer: {optimizer}, criterion: {criterion}")
-    print(f"Scheduler: {scheduler}")
-
-    # Choose pruning strategy
-    if args.strategy == 'magnitude':
-        strategy = MagnitudePruningStrategy.MagnitudePruningStrategy(device=device)
-    elif args.strategy == 'brain-damage':
-        strategy = OptimalBrainDamageStrategy.OptimalBrainDamageStrategy(train_loader=train_loader, criterion=criterion, device=device)
-    else:
-        raise ValueError(f"Unknown strategy: {args.strategy}")
-    
-    # Initialize and run the pruner
-    pruner = IterativePruner(
-        model=model,
-        optimizer=optimizer,
-        scheduler=scheduler,
-        criterion=criterion,
-        train_loader=train_loader,
-        test_loader=test_loader,
-        steps=steps,
-        pretrain_epochs=pretrain_epochs,
-        device=device,
-        finetune_epochs=finetune_epochs,
-        save_dir=save_dir,
-        strategy=strategy,
-        early_stopping=args.patience,
-    )
+    print("running pruner")
     pruner.run()
 
     print("Pruning process complete. Saved pruner to checkpoint.")
