@@ -102,7 +102,7 @@ class OptimalBrainDamageStrategy(PruningStrategy):
         target_sparsity: float,
         prunable_layers: Tuple = (nn.Conv2d, nn.Linear),
         total_weight_count: Optional[int] = None
-    ) -> None:
+    ) -> nn.Module:
         """
         Prune weights with smallest saliency to achieve target sparsity.
         Target sparsity includes existing zeros: total zero weights / total prunable weights.
@@ -161,3 +161,5 @@ class OptimalBrainDamageStrategy(PruningStrategy):
             offset += num
 
         logger.info(f"[OBD] Pruned {pruned}/{total} new weights -> Achieved zeros: {(current_zeros+pruned)/total*100:.2f}%")
+        
+        return model.state_dict()

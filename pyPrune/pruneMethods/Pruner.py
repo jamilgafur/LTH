@@ -4,6 +4,7 @@ import pickle
 import datetime
 import logging
 import numpy as np
+from copy import deepcopy
 from tqdm import tqdm
 from typing import Optional, Callable, List, Tuple, Dict
 import torch
@@ -72,15 +73,43 @@ class BasePruner(BaseTrainer, ABC):
             
         logger.info("Pruner initialized.")
 
+    def save_metrics(self):
+        all_metrics = {
+            "overall_metrics": {
+                key: [self.convert_tensor(val) for val in values]
+                for key, values in self.metrics.items()
+            },
+            "step_details": self.step_details
+        }
+        metrics_path = os.path.join(self.save_dir, 'metrics.json')
+        with open(metrics_path, 'w') as f:
+            json.dump(all_metrics, f, indent=4)
+        logger.info(f"Metrics saved to {metrics_path}")
+
+    def update_metrics(self, loss: float, accuracy: float, gradients: Optional[torch.Tensor] = None, label: str = ""):
+        if f"step_{label}" not in self.metrics:
+            self.metrics[f"step_{label}"] = []
+        if f"loss_{label}" not in self.metrics:
+            self.metrics[f"loss_{label}"] = []
+        if f"accuracy_{label}" not in self.metrics:
+            self.metrics[f"accuracy_{label}"] = []
+            
+        self.metrics[f"step_{label}"].append(self.current_sparsity)
+        self.metrics[f"loss_{label}"].append(loss)
+        self.metrics[f"accuracy_{label}"].append(accuracy)
+        if not self.metrics[f"accuracy_{label}"] or accuracy > max(self.metrics[f"accuracy_{label}"]):
+            logger.info(f"Best model updated at {self.current_sparsity * 100:.2f}% sparsity with accuracy {accuracy:.2f}%.")
+            self.best_model_weights = (accuracy, deepcopy(self.model.state_dict()))
+
     def pretrain(self):
         logger.info("Starting pretraining...")   
-        acc, loss = self._train_with_early_stopping(self.pretrain_epochs, phase="pretrain")
+        acc, loss = self.train(self.pretrain_epochs, phase="pretrain")
         self.initial_state = self._save_model_state()
         self.weight_history[0] = self.initial_state
-        
+    
     def finetune(self):
         logger.info(f"Finetuning at {self.current_sparsity * 100:.2f}% sparsity...")
-        acc, loss = self._train_with_early_stopping(self.finetune_epochs, phase="finetune")
+        acc, loss = self.train(self.finetune_epochs, phase="finetune")
         return acc, loss
 
     def assert_sparsity(self, expected_sparsity: float):

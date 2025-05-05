@@ -62,6 +62,8 @@ class IterativePruner(BasePruner):
             prunable_layers=prunable_layers,
             device=device
         )
+        self.initial_state = self._save_model_state()
+        self.weight_history = [self.initial_state]
         self.finish_training_epochs = finish_training_epochs
 
         if not strategy:
@@ -93,54 +95,89 @@ class IterativePruner(BasePruner):
 
     def _process_step(self, step: float) -> None:
         logger.info(f"[Step {step:.2f}] Starting pruning iteration.")
-        checkpoint_path = os.path.join(self.save_dir, CHECKPOINT_FMT.format(step))
-
-        if os.path.exists(checkpoint_path):
-            logger.info(f"[Step {step:.2f}] Checkpoint already exists. Skipping...")
+        if self._checkpoint_exists(step):
             return
 
-        # Evaluate and save original model
+        self._evaluate_and_save_original_model(step)
+        self._finetune_and_log(step)
+        self._prune_model_and_train(step)
+
+        clean_memory()
+        logger.info(f"[Step {step:.2f}] Completed.")
+
+    def _checkpoint_exists(self, step: float) -> bool:
+        checkpoint_path = os.path.join(self.save_dir, CHECKPOINT_FMT.format(step))
+        if os.path.exists(checkpoint_path):
+            logger.info(f"[Step {step:.2f}] Checkpoint already exists. Skipping...")
+            return True
+        return False
+
+    def _evaluate_and_save_original_model(self, step: float) -> None:
         acc, loss = self.evaluate()
+        self._assign_memory_tag("Original_memory")
         self.save_and_log(step, "Original", acc, loss)
 
-        # Finetune before pruning
+    def _finetune_and_log(self, step: float) -> None:
         self.current_sparsity = step
         self.finetune()
         acc_ft, loss_ft = self.evaluate()
+        self._assign_memory_tag("Finetuned_memory")
         self.save_and_log(step, "Finetuned", acc_ft, loss_ft, label="finetune")
 
-        # Prune model
+    def _prune_model_and_train(self, step: float) -> None:
         model_state_dict = self.prune_step()
         if model_state_dict is None:
             logger.warning(f"[Step {step:.2f}] prune_step returned None. Skipping pruning.")
             return
 
-        # Optional extra training after pruning
         for _ in range(self.finish_training_epochs):
             self._epoch(train=True)
+            torch.cuda.empty_cache()  # Frees unused memory after each epoch
 
-        # Final evaluation
         acc, loss = self.evaluate()
-        self.step_details.append({'sparsity': step, 'loss': loss, 'accuracy': acc})
+        loss = loss.item() if isinstance(loss, torch.Tensor) else loss  # Detach if needed
+        acc = acc.item() if isinstance(acc, torch.Tensor) else acc
+
+        self._assign_memory_tag("Pruned_memory")
+        self.step_details.append({'sparsity': step, 'loss': float(loss), 'accuracy': float(acc)})
         self.save_and_log(step, "Trained", acc, loss)
 
-        # Save pruned model
+        # Restore the model to pre-pruning weights
         self.model.load_state_dict(model_state_dict, strict=False)
         self.save_checkpoint(PRUNED_FMT.format(step))
         self.assert_sparsity(step)
 
-        # Bookkeeping
-        self.weight_history.append(model_state_dict)
+        # Store a *copy* of the pruned weights to avoid holding reference to computation graph
+        pruned_weights_copy = {k: v.detach().clone().cpu() for k, v in model_state_dict.items()}
+        self.weight_history.append(pruned_weights_copy)
+        
         self.metrics["step"].append(step)
         self.reset_weights()
         self.update_pickle()
-        clean_memory()
-        logger.info(f"[Step {step:.2f}] Completed.")
+
+        # Cleanup to avoid holding unnecessary GPU memory
+        del model_state_dict
+        del pruned_weights_copy
+        torch.cuda.empty_cache()
 
     def _final_evaluation(self) -> None:
         acc, loss = self.evaluate()
+        self._assign_memory_tag("Final_memory")
         logger.info(f"Final evaluation at {self.current_sparsity * 100:.2f}% sparsity - Accuracy: {acc:.2f}%, Loss: {loss:.4f}")
         self.save_and_log(self.current_sparsity, "Finetuned", acc, loss, label="finetune")
         self.best_model_weights = self.best_model_weights[1]
         self.save_metrics()
         logger.info("Pruning run complete.")
+
+    def _assign_memory_tag(self, tag: str):
+        """
+        Takes the last entry from self.metrics["memory"] and appends it to a named list.
+        """
+        if "memory" not in self.metrics or not self.metrics["memory"]:
+            logger.warning(f"Cannot assign memory tag '{tag}': no memory data available.")
+            return
+
+        if tag not in self.metrics:
+            self.metrics[tag] = []
+
+        self.metrics[tag].append(self.metrics["memory"][-1])

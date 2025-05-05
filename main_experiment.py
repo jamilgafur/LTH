@@ -12,13 +12,15 @@ import copy
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 from pyPrune.models.LeNet import LeNet
+from pyPrune.models.Vgg16ImageNet import VGG16_ImageNet
 from pyPrune.models.ResNet20 import ResNet20
+from pyPrune.models.ResNet50 import ResNet50
 from pyPrune.models.Vgg16 import VGG16_CIFAR10 as Vgg16
 from pyPrune.models.RegNetX import RegNetX_400MF
 from pyPrune.models.EfficientNet import EfficientNetB7
 from pyPrune.pruneMethods.IterativePruner import IterativePruner
 from pyPrune.strategies import MagnitudePruningStrategy, OptimalBrainDamageStrategy
-from pyPrune.utils import plot_loss_accuracy_sparsity, set_seed
+from pyPrune.utils import *
 from experiments.WeightZeroing import WeightZeroing
 from experiments.NeuronZeroing import NeuronZeroing
 from experiments.NeuronSimilarity import NeuronSimilarity
@@ -30,7 +32,7 @@ import shutil
 
 parser = argparse.ArgumentParser(description="Run pruning and experiments with a specified model and experiments.")
 
-parser.add_argument('--model', type=str, default='EfficientNet', choices=['LeNet', 'ResNet20', 'Vgg16', 'RegNetX', 'EfficientNet', 'Vgg16ImageNet'],
+parser.add_argument('--model', type=str, default='EfficientNet', choices=['LeNet', 'ResNet20', 'Vgg16', 'RegNetX', 'EfficientNet', 'Vgg16ImageNet', 'ResNet50'],
                     help="The model architecture to use for pruning. Default is 'LeNet'.")
 parser.add_argument('--experiments', type=str, nargs='+', default=['None'],
                     choices=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing', "None"],
@@ -59,93 +61,15 @@ args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrai
 
 print(f"Experiment configuration: {args}")
 
-def load_cifar10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
-    train_transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(32, padding=4),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))
-    ])
-    
-    test_transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))
-    ])
-    train_loader = DataLoader(
-        datasets.CIFAR10('data', train=True, download=True, transform=train_transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers
-    )
-
-    test_loader = DataLoader(
-        datasets.CIFAR10('data', train=False, transform=test_transform),
-        batch_size=batch_size, shuffle=False, num_workers=num_workers
-    )
-    
-    print("CIFAR-10 data shape: ", next(iter(train_loader))[0].shape)
-    return train_loader, test_loader
-
-def load_mnist(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
-    transform = transforms.Compose([
-        transforms.Resize((32, 32)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-    ])
-
-    train_loader = DataLoader(
-        datasets.MNIST('data', train=True, download=True, transform=transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers
-    )
-
-    test_loader = DataLoader(
-        datasets.MNIST('data', train=False, transform=transform),
-        batch_size=1000, shuffle=False, num_workers=num_workers
-    )
-
-    return train_loader, test_loader
-
-def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
-    data_dir = '/projects/modularai/jgafur/LTH/data/tinyImageNet/tiny-imagenet-200/'
-    train_dir = os.path.join(data_dir, 'train')
-    val_dir = os.path.join(data_dir, 'val')
-    val_img_dir = os.path.join(val_dir, 'images')
-    val_annot_path = os.path.join(val_dir, 'val_annotations.txt')
-
-    # Reorganize validation images into subfolders (only needs to be done once)
-    if os.path.exists(val_img_dir):
-        with open(val_annot_path, 'r') as f:
-            for line in f:
-                img_file, label = line.strip().split('\t')[:2]
-                label_dir = os.path.join(val_dir, label)
-                os.makedirs(label_dir, exist_ok=True)
-                src = os.path.join(val_img_dir, img_file)
-                dst = os.path.join(label_dir, img_file)
-                if os.path.exists(src):
-                    shutil.move(src, dst)
-        os.rmdir(val_img_dir)
-
-    # Define transforms
-    transform_train = transforms.Compose([
-        transforms.RandomResizedCrop(64),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.480, 0.448, 0.398), (0.277, 0.269, 0.282))
-    ])
-
-    transform_val = transforms.Compose([
-        transforms.Resize((64, 64)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.480, 0.448, 0.398), (0.277, 0.269, 0.282))
-    ])
-
-    # Datasets
-    train_dataset = datasets.ImageFolder(train_dir, transform=transform_train)
-    val_dataset = datasets.ImageFolder(val_dir, transform=transform_val)
-
-    # Dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=1000, shuffle=False, num_workers=num_workers)
-
-    return train_loader, val_loader
+def poly_lr_with_warmup(epoch):
+    warmup_epochs = args.pretrain_epochs//10
+    max_epochs = args.pretrain_epochs + args.finetune_epochs
+    if epoch < warmup_epochs:
+        return float(epoch+1)/ warmup_epochs
+    else:
+        decay_epochs = max_epochs - warmup_epochs
+        decay_progress = (epoch - warmup_epochs) / decay_epochs
+        return (1- decay_progress) ** 2
 
 def lr_lambda(epoch: int) -> float:
     epoch_percentage = epoch / (args.pretrain_epochs+ args.finetune_epochs)
@@ -156,24 +80,6 @@ def lr_lambda(epoch: int) -> float:
     else:
         return 0.01
 
-def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[float]:
-    decay_list = [0]
-    n = 1
-    for _ in range(steps):
-        n *= decay_rate
-        decay_list.append(1 - n)
-    return decay_list
-
-def poly_lr_with_warmup(epoch):
-    warmup_epochs = args.pretrain_epochs//10
-    max_epochs = args.pretrain_epochs + args.finetune_epochs
-    if epoch < warmup_epochs:
-        return float(epoch+1)/ warmup_epochs
-    else:
-        decay_epochs = max_epochs - warmup_epochs
-        decay_progress = (epoch - warmup_epochs) / decay_epochs
-        return (1- decay_progress) ** 2
-    
 def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: DataLoader,
                       steps: list[float], pretrain_epochs: int, finetune_epochs: int, device: str, save_dir: str, model_name: str, total_epochs: int) -> IterativePruner:
     pruner_path = os.path.join(save_dir, 'pruner.pkl')
@@ -186,11 +92,12 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
         if model_name == 'LeNet':
             optimizer = Adam(model.parameters(), lr=0.0012)
             criterion = nn.CrossEntropyLoss()
-            scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
-
+            # default constant scheduler
+            scheduler = StepLR(optimizer, step_size=1, gamma=1)
+            
         elif model_name == 'EfficientNet':
             # EfficientNet-specific configuration
-            criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+            criterion = nn.CrossEntropyLoss()
             scaled_lr = 0.1 * (args.batch_size / 256)
             optimizer = torch.optim.SGD(model.parameters(), lr=scaled_lr, momentum=0.9, weight_decay=1e-5, nesterov=True)
             scheduler = LambdaLR(optimizer, lr_lambda=poly_lr_with_warmup)
@@ -205,9 +112,13 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
                 weight_decay=1e-5
             )
             scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=pretrain_epochs, eta_min=1e-6)
-
+        elif model_name == 'Vgg16ImageNet' or model_name == 'ResNet50':
+            criterion = nn.CrossEntropyLoss()
+            scaled_lr = 0.1 * (args.batch_size / 256)
+            optimizer = torch.optim.SGD(model.parameters(), lr=scaled_lr, momentum=0.9, weight_decay=5e-4, nesterov=True)
+            scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
         else:
-            # Default config for other models (ResNet, VGG)
+            # Default config for other models (ResNet, VGG
             criterion = nn.CrossEntropyLoss()
             optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, nesterov=True, weight_decay=5e-4)
             scheduler = LambdaLR(optimizer, lr_lambda)
@@ -279,11 +190,14 @@ def main() -> None:
     elif args.model == 'ResNet20':
         model = ResNet20()
         train_loader, test_loader = load_cifar10(batch_size=args.batch_size, num_workers=args.num_workers)
+    elif args.model == 'ResNet50':
+        model = ResNet50()
+        train_loader, test_loader = load_tiny_imagenet(batch_size=args.batch_size, num_workers=args.num_workers)
     elif args.model == 'Vgg16':
         model = Vgg16()
         train_loader, test_loader = load_cifar10(batch_size=args.batch_size, num_workers=args.num_workers)
     elif args.model == "Vgg16ImageNet":
-        model = Vgg16()
+        model = VGG16_ImageNet(num_classes=200)
         train_loader, test_loader = load_tiny_imagenet(batch_size=args.batch_size, num_workers=args.num_workers)
     elif args.model == 'RegNetX':
         model = RegNetX_400MF(num_classes=200)

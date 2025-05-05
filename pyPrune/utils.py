@@ -4,7 +4,9 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 from typing import Tuple, List, Callable, Optional
-
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import os
 
 def get_pruneable_named_parameters(model: torch.nn.Module, prunable_layers: Tuple) -> Tuple[List[str], List[torch.nn.Parameter]]:
     names = []
@@ -40,6 +42,7 @@ def clean_memory() -> None:
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
 
 def set_seed(seed: int) -> None:
     random.seed(seed)
@@ -84,3 +87,101 @@ def lr_lambda(epoch: int,experiment) -> float:
         return 0.1
     else:
         return 0.01
+
+def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[float]:
+    decay_list = [0]
+    n = 1
+    for _ in range(steps):
+        n *= decay_rate
+        decay_list.append(1 - n)
+    return decay_list
+
+
+    
+def load_cifar10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+    train_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomCrop(32, padding=4),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))
+    ])
+    
+    test_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))
+    ])
+    train_loader = DataLoader(
+        datasets.CIFAR10('data', train=True, download=True, transform=train_transform),
+        batch_size=batch_size, shuffle=True, num_workers=num_workers
+    )
+
+    test_loader = DataLoader(
+        datasets.CIFAR10('data', train=False, transform=test_transform),
+        batch_size=batch_size, shuffle=False, num_workers=num_workers
+    )
+    
+    print("CIFAR-10 data shape: ", next(iter(train_loader))[0].shape)
+    return train_loader, test_loader
+
+def load_mnist(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+    transform = transforms.Compose([
+        transforms.Resize((32, 32)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+
+    train_loader = DataLoader(
+        datasets.MNIST('data', train=True, download=True, transform=transform),
+        batch_size=batch_size, shuffle=True, num_workers=num_workers
+    )
+
+    test_loader = DataLoader(
+        datasets.MNIST('data', train=False, transform=transform),
+        batch_size=1000, shuffle=False, num_workers=num_workers
+    )
+
+    return train_loader, test_loader
+
+def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+    data_dir = '/projects/modularai/jgafur/LTH/data/tinyImageNet/tiny-imagenet-200/'
+    train_dir = os.path.join(data_dir, 'train')
+    val_dir = os.path.join(data_dir, 'val')
+    val_img_dir = os.path.join(val_dir, 'images')
+    val_annot_path = os.path.join(val_dir, 'val_annotations.txt')
+
+    # Reorganize validation images into subfolders (only needs to be done once)
+    if os.path.exists(val_img_dir):
+        with open(val_annot_path, 'r') as f:
+            for line in f:
+                img_file, label = line.strip().split('\t')[:2]
+                label_dir = os.path.join(val_dir, label)
+                os.makedirs(label_dir, exist_ok=True)
+                src = os.path.join(val_img_dir, img_file)
+                dst = os.path.join(label_dir, img_file)
+                if os.path.exists(src):
+                    shutil.move(src, dst)
+        os.rmdir(val_img_dir)
+
+    # Define transforms
+    transform_train = transforms.Compose([
+        transforms.RandomResizedCrop(64),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.480, 0.448, 0.398), (0.277, 0.269, 0.282))
+    ])
+
+    transform_val = transforms.Compose([
+        transforms.Resize((64, 64)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.480, 0.448, 0.398), (0.277, 0.269, 0.282))
+    ])
+
+    # Datasets
+    train_dataset = datasets.ImageFolder(train_dir, transform=transform_train)
+    val_dataset = datasets.ImageFolder(val_dir, transform=transform_val)
+
+    # Dataloaders
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    val_loader = DataLoader(val_dataset, batch_size=1000, shuffle=False, num_workers=num_workers)
+
+    return train_loader, val_loader
