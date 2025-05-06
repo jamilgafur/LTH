@@ -26,7 +26,6 @@ plt.rcParams.update({
     "ytick.labelsize": 12,
 })
 
-# Utility Functions for Loading Metrics
 def load_metric(pkl_file):
     """Load metrics from a pickle file."""
     with open(pkl_file, 'rb') as file:
@@ -62,6 +61,25 @@ def group_weights_and_sparsity_data(weights_and_sparsity_plots_sorted):
 
     return grouped_data
 
+def poly_lr_with_warmup(args, epoch):
+    warmup_epochs = args.pretrain_epochs//10
+    max_epochs = args.pretrain_epochs + args.finetune_epochs
+    if epoch < warmup_epochs:
+        return float(epoch+1)/ warmup_epochs
+    else:
+        decay_epochs = max_epochs - warmup_epochs
+        decay_progress = (epoch - warmup_epochs) / decay_epochs
+        return (1- decay_progress) ** 2
+
+def lr_lambda(args, epoch: int) -> float:
+    epoch_percentage = epoch / (args.pretrain_epochs+ args.finetune_epochs)
+    if epoch_percentage < 0.5:
+        return 1.0
+    elif epoch_percentage < 0.75:
+        return 0.1
+    else:
+        return 0.01
+    
 def group_layer_similarity_data(sim_dict):
     """
     Groups layer similarity data by the base name (before the first dot).
@@ -122,7 +140,6 @@ def plot_aggregated_similarity(steps, avg, q25, q75, title, ylabel, save_path):
     plt.savefig(save_path, dpi=300)
     plt.close()
 
-# Neuron Similarity Analysis Functions
 def process_neuron_similarity(neuron_similarity_dir, model_name):
     """
     Process neuron similarity data and generate plots:
@@ -238,7 +255,7 @@ def clear_memory():
 
 def main():
     """Main function to execute the entire post-processing pipeline."""
-    checkpoint_glob = f"/scratch/jgafur/LTH_output/*strategy_mag*"
+    checkpoint_glob = f"/scratch/jgafur/LTH_output/R*strategy_mag*"
     for output_dir in glob.glob(checkpoint_glob):
         clear_memory()
         print(output_dir)
