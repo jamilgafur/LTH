@@ -211,6 +211,7 @@ class BaseTrainer(ABC):
         if acc > self.best_model_weights[0]:
             self.best_model_weights = (acc, deepcopy(self.model.state_dict()))
         clean_memory()
+        logger.info(f"Evaluation - Accuracy: {acc:.2f}%, Loss: {loss:.4f}")
         return acc, loss
 
     def save_checkpoint(self, suffix: str):

@@ -23,11 +23,13 @@ parent_job_id=$8
 patience=$9
 strategy=${10}
 batch_size=${11}  
+experimentStep=${12}
 
 echo "Parameters: $1 $2 $3 $4 $5 $6 $7 $8 $9"
 echo "Current Time: $(date)"
 echo "Running experiment for ${model} with ${experiment} in ${save_dir} with parent job id ${parent_job_id}"
-echo "Command: python main_experiment.py --model ${model} --batch_size ${batch_size} --experiment ${experiment} --steps ${steps} --finetune_epochs ${finetune_epochs} --save_dir ${save_dir} --pretrain_epochs ${pretrain_epochs} --patience ${patience} --strategy ${strategy}  >> experiment_${model}_${experiment}.out" 
 sleep 10
-python main_experiment.py --model ${model} --batch_size ${batch_size} --experiment ${experiment} --steps ${steps} --finetune_epochs ${finetune_epochs} --save_dir ${save_dir} --pretrain_epochs ${pretrain_epochs} --patience ${patience} --strategy ${strategy} 
+echo "Command: python main_experiment.py --model ${model} --batch_size ${batch_size} --experiments ${experiment} --steps ${steps} --finetune_epochs ${finetune_epochs} --save_dir ${save_dir} --pretrain_epochs ${pretrain_epochs} --patience ${patience} --strategy ${strategy} --experimentStep ${experimentStep}"
+python main_experiment.py --model ${model} --batch_size ${batch_size} --experiments ${experiment} --steps ${steps} --finetune_epochs ${finetune_epochs} --save_dir ${save_dir} --pretrain_epochs ${pretrain_epochs} --patience ${patience} --strategy ${strategy} --experimentStep ${experimentStep}
+
 echo "End Time: $(date)"

@@ -14,7 +14,7 @@ pretrain_epochs_list_cifar=(5 10 20 50)
 pretrain_epochs_list_imagenet=(100 125 150)
 finetune_epochs_LeNet=(1 5 10)
 early_stopping=3
-steps=2
+steps=21
 
 # Define total training epochs per model
 declare -A total_epochs_map
@@ -45,7 +45,7 @@ for strat in "${strategy[@]}"; do
 
             for finetune_epoch in "${finetune_epochs[@]}"; do
                 echo "Submitting CIFAR job: $model, Pretrain: $pretrain_epoch, Finetune: $finetune_epoch"
-                sbatch prune_job.sh "$model" "$pretrain_epoch" "$early_stopping" "$finetune_epoch" "$steps" "$strat" 
+                sbatch prune_job.sh "$model" "$pretrain_epoch" "$early_stopping" "$finetune_epoch" "$steps" "$strat" 128
             done
         done
     done

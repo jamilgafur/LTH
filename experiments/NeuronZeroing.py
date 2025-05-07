@@ -16,7 +16,7 @@ from pyPrune.utils import get_pruneable_named_modules
 
 
 class NeuronZeroing:
-    def __init__(self, pruner: Any, zeroing_metric: str = 'accuracy', logger: Optional[logging.Logger] = None) -> None:
+    def __init__(self, pruner: Any, zeroing_metric: str = 'accuracy', logger: Optional[logging.Logger] = None, process_Step:int=0) -> None:
         self.pruner = pruner
         self.model = pruner.model
         self.prunerable_layer = pruner.prunable_layers
@@ -29,8 +29,9 @@ class NeuronZeroing:
         logging.basicConfig(filename=log_file, level=logging.INFO,
                             format='%(asctime)s - %(levelname)s - %(message)s')
 
+        self.process_Step = process_Step
         self.metrics = self.init_metrics()
-        self.checkpoint_file = os.path.join(self.save_dir, 'neuron_zeroing.pkl')
+        self.checkpoint_file = os.path.join(self.save_dir, f"neuron_zeroing_{self.process_Step}.pkl")
         self.metadata: Dict[str, Any] = {
             'model_architecture': str(self.model),
             'zeroing_metric': self.zeroing_metric,
@@ -125,49 +126,52 @@ class NeuronZeroing:
 
     def run_experiment(self) -> Dict[Any, Dict[str, List[Dict[str, Any]]]]:
         all_metrics: Dict[Any, Dict[str, List[Dict[str, Any]]]] = {}
-        last_step = self.metadata.get('last_step', 0)
+        # Validate the step index
+        if self.process_Step >= len(self.pruner.weight_history) or self.process_Step < 0:
+            self.logger.error(f"Invalid process_Step: {self.process_Step}")
+            return all_metrics
 
-        for idx, (weights, step) in enumerate(zip(self.pruner.weight_history, self.pruner.steps)):
-            self.logger.info(f"Processing step {step}...")
-            self.model.load_state_dict(weights, strict=False)
-            self.model.to(self.pruner.device)
-            self.baseline_accuracy, self.baseline_loss, baseline_metrics = self.evaluate_metrics()
-            baseline_sparsity = self.compute_sparsity()
+        weights = self.pruner.weight_history[self.process_Step]
+        step = self.pruner.steps[self.process_Step]
 
-            self.logger.info(f"Baseline: Acc: {self.baseline_accuracy:.4f}, Loss: {self.baseline_loss:.4f}, Sparsity: {baseline_sparsity:.4f}")
+        self.logger.info(f"Processing step {step}...")
+        self.model.load_state_dict(weights, strict=False)
+        self.model.to(self.pruner.device)
 
-            names, layers = get_pruneable_named_modules(self.model, self.prunerable_layer)
-            sampled_layers = [layer for layer in layers if isinstance(layer, (nn.Conv2d, nn.Linear))]
+        self.baseline_accuracy, self.baseline_loss, baseline_metrics = self.evaluate_metrics()
+        baseline_sparsity = self.compute_sparsity()
 
-            for layer_index, layer in enumerate(tqdm(sampled_layers, desc="Processing layers", unit="layer")):
-                layer_id = str(layer_index)
+        self.logger.info(f"Baseline: Acc: {self.baseline_accuracy:.4f}, Loss: {self.baseline_loss:.4f}, Sparsity: {baseline_sparsity:.4f}")
 
-                # Create a function that captures the neuron zeroing call
-                def run_zeroing_task(i):
-                    if isinstance(layer, nn.Conv2d):
-                        self.zero_and_restore_neurons(layer, layer_id, i, is_conv_layer=True)
-                    elif isinstance(layer, nn.Linear):
-                        self.zero_and_restore_neurons(layer, layer_id, i, is_conv_layer=False)
+        names, layers = get_pruneable_named_modules(self.model, self.prunerable_layer)
+        sampled_layers = [layer for layer in layers if isinstance(layer, (nn.Conv2d, nn.Linear))]
 
-                # Choose the number of units to process in parallel
+        for layer_index, layer in enumerate(tqdm(sampled_layers, desc="Processing layers", unit="layer")):
+            layer_id = str(layer_index)
+
+            def run_zeroing_task(i):
                 if isinstance(layer, nn.Conv2d):
-                    neuron_count = layer.out_channels
-                else:
-                    neuron_count = layer.out_features
+                    self.zero_and_restore_neurons(layer, layer_id, i, is_conv_layer=True)
+                elif isinstance(layer, nn.Linear):
+                    self.zero_and_restore_neurons(layer, layer_id, i, is_conv_layer=False)
 
-                with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-                    list(tqdm(executor.map(run_zeroing_task, range(neuron_count)),
-                            total=neuron_count,
-                            desc=f"Zeroing {layer.__class__.__name__}_{layer_id}",
-                            leave=False))
+            if isinstance(layer, nn.Conv2d):
+                neuron_count = layer.out_channels
+            else:
+                neuron_count = layer.out_features
 
-                self.save_checkpoint(step)
-                self.save_metrics(step)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                list(tqdm(executor.map(run_zeroing_task, range(neuron_count)),
+                        total=neuron_count,
+                        desc=f"Zeroing {layer.__class__.__name__}_{layer_id}",
+                        leave=False))
 
-            all_metrics[step] = self.metrics.copy()
-            # self.plot_results(step)
-            self.metrics = self.init_metrics()
-            self.metadata['last_step'] = step
+            self.save_checkpoint(step)
+            self.save_metrics(step)
+
+        all_metrics[step] = self.metrics.copy()
+        self.metrics = self.init_metrics()
+        self.metadata['last_step'] = step
 
         return all_metrics
 

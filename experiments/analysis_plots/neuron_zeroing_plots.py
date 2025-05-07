@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
-import json
 import os
 import glob
+import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
 
-def load_metrics(json_file):
-    with open(json_file, 'r') as file:
-        return json.load(file)
+def load_pickle(pkl_file):
+    with open(pkl_file, 'rb') as file:
+        return pickle.load(file)
 
 def merge_neuron_metrics(metrics):
     acc_drops = metrics.get("neuron_accuracy_drops", [])
@@ -62,7 +62,6 @@ def plot_scatter_sparsity_accuracy(data, output_dir, step=None):
         plt.scatter(x, y, color=cmap(i), label=layer, alpha=0.7)
     plt.xlabel("Sparsity")
     plt.ylabel("Loss Drop")
-
     plt.title(f"Sparsity vs Loss Drop by Layer{' at Step ' + str(step) if step else ''}")
     plt.legend()
     save_plot(plt, output_dir, f"scatter_sparsity_vs_Loss_drop_step_{step}.png" if step else "scatter_sparsity_vs_Loss_drop.png")
@@ -143,14 +142,14 @@ def save_plot(plt_obj, out_dir, filename):
     plt_obj.tight_layout()
     plt_obj.savefig(path)
     plt_obj.close()
-    print(f"saved plot to {path}")
+    print(f"✅ Saved plot to {path}")
 
 # --- Main ---
 def main():
-    metrics_dirs = glob.glob("/scratch/jgafur/LTH_output/*strategy_magn*")
+    metrics_dirs = glob.glob("/scratch/jgafur/LTH_output/*LeNet_pretrain1_finetune1_steps2_batch128_devicecuda_strategy_brain-damage*")
 
     for metrics_dir in metrics_dirs:
-        print(f"\nProcessing directory: {metrics_dir}")
+        print(f"\n📂 Processing directory: {metrics_dir}")
         model_id = os.path.normpath(metrics_dir).split(os.sep)[-1]
         base_dir = os.path.join("plots", model_id, "NeuronZeroing")
         steps_dir = os.path.join(base_dir, "steps")
@@ -161,19 +160,32 @@ def main():
         csv_data = {}
         agg_by_layer_step = defaultdict(lambda: defaultdict(list))
 
-        json_files = glob.glob(os.path.join(metrics_dir, "neuronZeroing_accuracy", "*.json"))
-        for json_file in json_files:
-            print(f"File: {json_file}")
+        # Gather and group pkl files by step
+        pkl_files = glob.glob(os.path.join(metrics_dir, "neuronZeroing_accuracy", "*.pkl"))
+        step_to_files = defaultdict(list)
+        for pkl_file in pkl_files:
+            step = os.path.basename(pkl_file).split("_")[-1].replace(".pkl", "")
+            step_to_files[step].append(pkl_file)
+
+        for step, files in step_to_files.items():
+            print(f"\n🔢 Processing step: {step}")
             try:
-                step = json_file.split("_")[-1].replace(".json", "")
-                merged_data = merge_neuron_metrics(load_metrics(json_file))
+                combined_metrics = {"neuron_accuracy_drops": [], "sparsity_metrics": []}
+
+                for f in files:
+                    data = load_pickle(f)
+                    combined_metrics["neuron_accuracy_drops"].extend(data.get("neuron_accuracy_drops", []))
+                    combined_metrics["sparsity_metrics"].extend(data.get("sparsity_metrics", []))
+
+                merged_data = merge_neuron_metrics(combined_metrics)
                 if not merged_data:
                     print("⚠️ Empty merged data; skipping.")
                     continue
 
                 for d in merged_data:
                     agg_by_layer_step[d['layer']][step].append(d['accuracy_drop'])
-                print(f"Step: {step}, Layer: {d['layer']}, Accuracy Drop: {d['accuracy_drop']}, Sparsity: {d['sparsity']}\n merged_data: {merged_data}")
+
+                print(f"📈 Step {step} contains {len(merged_data)} data points.")
                 plot_histogram_accuracy_drop(merged_data, steps_dir, step)
                 plot_histogram_by_layer(merged_data, steps_dir, step)
                 plot_scatter_sparsity_accuracy(merged_data, steps_dir, step)
@@ -183,7 +195,7 @@ def main():
                 plot_violinplot_accuracy_by_sparsity_for_layer(merged_data, steps_dir, step)
 
             except Exception as e:
-                print(f"Error processing {json_file}: {e}")
+                print(f"❌ Error processing step {step}: {e}")
 
         # Save summary stats to CSV
         csv_path = os.path.join(base_dir, "boxplot_accuracy_drop_by_layer.csv")
@@ -198,7 +210,7 @@ def main():
             df = pd.read_csv(csv_path)
             df.to_latex(csv_path.replace(".csv", ".tex"), index=False)
         except ImportError:
-            print("Pandas not installed — skipping LaTeX export.")
+            print("📄 Pandas not installed — skipping LaTeX export.")
 
         plot_violinplot_accuracy_drop_by_step_for_layer(agg_by_layer_step, combined_dir)
 

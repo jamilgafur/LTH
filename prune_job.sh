@@ -23,7 +23,7 @@ batch_size=$7  # Optional (only passed for ImageNet models)
 # Base command
 cmd="python main_experiment.py --model ${model} \
     --save_dir /scratch/jgafur/LTH_output \
-    --experiment None \
+    --experiments None \
     --finetune_epochs ${finetune_epochs} \
     --pretrain_epochs ${pretrain_epochs} \
     --steps ${steps} \
@@ -43,8 +43,12 @@ eval $cmd
 # Submit experiment jobs after pruning completes
 echo "Submitting experiment jobs for model: ${model} for job id: ${SLURM_JOB_ID}"
 sleep 10
-sbatch experiment_job.sh ${model} ${pretrain_epochs} ${patience} ${finetune_epochs} ${steps} /scratch/jgafur/LTH_output NeuronSimilarity ${SLURM_JOB_ID} ${patience} ${strategy} ${batch_size}
+for ((i=0; i<=steps; i++)); do
+    sbatch experiment_job.sh ${model} ${pretrain_epochs} ${patience} ${finetune_epochs} ${steps} /scratch/jgafur/LTH_output NeuronSimilarity ${SLURM_JOB_ID} ${patience} ${strategy} ${batch_size} $i
+done
 sleep 10
-sbatch experiment_job.sh ${model} ${pretrain_epochs} ${patience} ${finetune_epochs} ${steps} /scratch/jgafur/LTH_output NeuronZeroing ${SLURM_JOB_ID} ${patience} ${strategy} ${batch_size}
+for ((i=0; i<=steps; i++)); do
+    sbatch experiment_job.sh ${model} ${pretrain_epochs} ${patience} ${finetune_epochs} ${steps} /scratch/jgafur/LTH_output NeuronZeroing ${SLURM_JOB_ID} ${patience} ${strategy} ${batch_size} $i
+done
 # sbatch experiment_job.sh ${model} ${pretrain_epochs} ${patience} ${finetune_epochs} ${steps} /scratch/jgafur/LTH_output WeightZeroing ${SLURM_JOB_ID} ${patience}
 echo "End Time: $(date)"

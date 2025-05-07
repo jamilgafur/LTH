@@ -53,6 +53,8 @@ parser.add_argument('--batch_size', type=int, default=2048, help="Batch size for
 parser.add_argument('--num_workers', type=int, default=1, help="Number of workers for data loading. Default is 1.")
 parser.add_argument('--strategy', type=str, default='brain-damage', choices=['magnitude', 'brain-damage'],
                     help="Pruning strategy to use. Default is 'magnitude'.")
+parser.add_argument('--experimentStep', type=int, default=1,
+                    help="Step to process for for neuron zeroing experiment. Default is 1.")
 
 args = parser.parse_args()
 
@@ -163,12 +165,12 @@ def run_experiments(pruner: IterativePruner, experiment_names: list[str]) -> Non
 
     if 'NeuronSimilarity' in experiment_names:
         print("Running NeuronSimilarity experiment...")
-        neuron_similarity = NeuronSimilarity(pruner)
+        neuron_similarity = NeuronSimilarity(pruner,process_Step=args.experimentStep)
         neuron_similarity.run_experiment()
 
     if 'NeuronZeroing' in experiment_names:
         print("Running NeuronZeroing experiment...")
-        neuron_zeroing = NeuronZeroing(pruner)
+        neuron_zeroing = NeuronZeroing(pruner,process_Step=args.experimentStep)
         neuron_zeroing.run_experiment()
 
     if 'WeightZeroing' in experiment_names:

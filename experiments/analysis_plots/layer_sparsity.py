@@ -154,7 +154,7 @@ def plot_layer_information(savedir, data):
 
 if __name__ == "__main__":
     base_output_dir = "./plots"
-    model_dirs = glob.glob("/scratch/jgafur/LTH_output/*strategy_magnitude*/")
+    model_dirs = glob.glob("/scratch/jgafur/LTH_output/*LeNet_pretrain1_finetune1_steps2_batch128_devicecuda_strategy_*/")
 
     for model_directory in model_dirs:
         print(f"\nProcessing: {model_directory}")

@@ -15,9 +15,10 @@ from pyPrune.utils import get_pruneable_named_modules, clean_memory
 class NeuronSimilarity:
     def __init__(self, pruner: 'IterativeMagnitudePruning', sample_fraction: float = 0.1,
                  similarity_metric: str = 'cosine', logger: Optional[logging.Logger] = None, 
-                 plot_data: bool = False) -> None:
+                 plot_data: bool = False, process_Step:int =0) -> None:
         self.pruner: 'IterativeMagnitudePruning' = pruner
         self.similarity_metric: str = similarity_metric
+        self.process_Step = process_Step
         self.sample_fraction: float = sample_fraction
         self.logger: logging.Logger = logger or logging.getLogger(__name__)
         self.metrics = {}
@@ -92,7 +93,9 @@ class NeuronSimilarity:
 
     def run_experiment(self) -> Dict[str, List[Dict[str, Union[str, float]]]]:
         self.logger.info(f"Starting Neuron Similarity experiment for all layers...")
-        for model_step, step in zip(self.pruner.weight_history, self.pruner.metrics["step"]):
+        for idx, (model_step, step) in enumerate(zip(self.pruner.weight_history, self.pruner.metrics["step"])):
+            if idx != self.process_Step:
+                continue
             metrics = {"similarity_matrices": [], "average_similarities": []}
             clean_memory()
             self.model.load_state_dict(model_step, strict=False)
@@ -125,7 +128,7 @@ class NeuronSimilarity:
             self.logger.info("Neuron Similarity experiment completed for all layers.")
             self.metrics[step] = metrics
 
-        with open(f"{self.save_dir}/neuron_similarity.pkl", 'wb') as f:
+        with open(f"{self.save_dir}/neuron_similarity_{self.process_Step}.pkl", 'wb') as f:
             pickle.dump(self, f)
 
         if self.plot_data:
