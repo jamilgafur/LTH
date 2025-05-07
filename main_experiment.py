@@ -64,8 +64,9 @@ args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrai
 print(f"Experiment configuration: {args}")
 
 def poly_lr_with_warmup(epoch):
-    warmup_epochs = args.pretrain_epochs//10
     max_epochs = args.pretrain_epochs + args.finetune_epochs
+    warmup_epochs =max_epochs//10
+
     if epoch < warmup_epochs:
         return float(epoch+1)/ warmup_epochs
     else:

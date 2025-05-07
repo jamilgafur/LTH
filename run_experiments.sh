@@ -60,7 +60,7 @@ for strat in "${strategy[@]}"; do
                 continue
             fi
 
-            batch_size=2046
+            batch_size=256
             echo "Submitting ImageNet job: $model, Pretrain: $pretrain_epoch, Finetune: $finetune_epoch, Batch size: $batch_size"
             sbatch prune_job.sh "$model" "$pretrain_epoch" "$early_stopping" "$finetune_epoch" "$steps" "$strat" "$batch_size"
         done
