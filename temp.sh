@@ -40,7 +40,7 @@ sbatch prune_job.sh "Vgg16" 10 "$early_stopping" 150 "$steps" "magnitude" 128
 # === ImageNet MODELS ===
 # Test 2 models: RegNetX and EfficientNet
 # Assume batch size is needed for these models
-batch_size=32
+batch_size=256
 
 # Vgg16ImageNet - Magnitude
 sbatch prune_job.sh "Vgg16ImageNet" 10 "$early_stopping" 80 "$steps" "magnitude" "$batch_size"

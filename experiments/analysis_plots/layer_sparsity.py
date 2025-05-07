@@ -87,23 +87,42 @@ def plot_accuracy(pruner, path):
 
     fig, axs = plt.subplots(2, 1, figsize=(10, 10))
 
-    axs[0].plot(sparsity, accuracy, 'bo-', label='Accuracy')
-    axs[0].set_title('Accuracy vs Sparsity')
-    axs[0].set_xlabel('Sparsity (%)')
+
+    
+    axs[0].plot(1-np.array(sparsity), 1-(np.array(accuracy)/100), 'bo-', label='Accuracy')
+    axs[0].set_title('Accuracy vs Density')
+    axs[0].set_xlabel('Density')
     axs[0].set_ylabel('Accuracy')
     axs[0].grid(True)
     axs[0].legend()
+    # invert x axis
+    axs[0].invert_xaxis()
+    axs[0].invert_yaxis()
+    axs[0].set_xscale('log')
+    axs[0].set_yscale('log')
+    
+ 
 
-    axs[1].plot(sparsity, loss, 'ro-', label='Loss')
-    axs[1].set_title('Loss vs Sparsity')
-    axs[1].set_xlabel('Sparsity (%)')
+    axs[1].set_xscale('log')
+    axs[1].set_yscale('log')
+    axs[1].plot(1-np.array(sparsity), loss, 'ro-', label='Loss')
+    axs[1].set_title('Loss vs Density')
+    axs[1].set_xlabel('Density')
     axs[1].set_ylabel('Loss')
     axs[1].grid(True)
     axs[1].legend()
+    axs[1].invert_xaxis()
+ 
 
+
+    ytickax0 = axs[0].get_yticklabels()
+    for tick in ytickax0:
+        tick.set_text(f'$1 - ${tick.get_text()}')
+    axs[0].set_yticklabels(ytickax0)
+    
     os.makedirs(path, exist_ok=True)
     plt.tight_layout()
-    plt.savefig(os.path.join(path, "accuracy_loss.svg"), bbox_inches='tight')
+    plt.savefig(os.path.join(path, "accuracy_loss.png"), bbox_inches='tight')
     plt.close(fig)
 
 
@@ -133,28 +152,30 @@ def plot_layer_information(savedir, data):
             x2.append(info['num_zeros'] / total_params)
 
         style = line_styles[idx % len(line_styles)]
-        axes[0].plot(sparsities, x1, label=layer, color=color, linestyle=style)
-        axes[1].plot(sparsities, x2, label=layer, color=color, linestyle=style)
+        axes[0].plot(1-np.array(sparsities), x1, label=layer, color=color, linestyle=style)
+        axes[1].plot(1-np.array(sparsities), x2, label=layer, color=color, linestyle=style)
 
+    axes[0].set_xscale('log')
+    axes[1].set_xscale('log')
     axes[0].set_title('Zeros / Trainable Params in Layer')
-    axes[0].set_xlabel('Sparsity')
+    axes[0].set_xlabel('Density')
     axes[0].set_ylabel('Ratio')
     axes[0].legend()
 
     axes[1].set_title('Zeros / Total Trainable Params')
-    axes[1].set_xlabel('Sparsity')
+    axes[1].set_xlabel('Density')
     axes[1].set_ylabel('Ratio')
     axes[1].legend()
 
     plt.tight_layout()
-    print(f"saving to {os.path.join(savedir, 'layer_info.svg')}")
-    plt.savefig(os.path.join(savedir, "layer_info.svg"), bbox_inches='tight')
+    print(f"saving to {os.path.join(savedir, 'layer_info.png')}")
+    plt.savefig(os.path.join(savedir, "layer_info.png"), bbox_inches='tight')
     plt.close(fig)
 
 
 if __name__ == "__main__":
     base_output_dir = "./plots"
-    model_dirs = glob.glob("/scratch/jgafur/LTH_output/*LeNet_pretrain1_finetune1_steps2_batch128_devicecuda_strategy_*/")
+    model_dirs = glob.glob("/scratch/jgafur/LTH_output/*experiments/analysis_plots/plots/*LeNet_pretrain20_finetune5_steps21_batch128_devicecuda_strategy_magnitude*")
 
     for model_directory in model_dirs:
         print(f"\nProcessing: {model_directory}")

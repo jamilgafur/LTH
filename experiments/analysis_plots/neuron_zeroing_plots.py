@@ -146,7 +146,7 @@ def save_plot(plt_obj, out_dir, filename):
 
 # --- Main ---
 def main():
-    metrics_dirs = glob.glob("/scratch/jgafur/LTH_output/*LeNet_pretrain1_finetune1_steps2_batch128_devicecuda_strategy_brain-damage*")
+    metrics_dirs = glob.glob("/scratch/jgafur/LTH_output/*cuda*")
 
     for metrics_dir in metrics_dirs:
         print(f"\n📂 Processing directory: {metrics_dir}")

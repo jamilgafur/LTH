@@ -224,7 +224,7 @@ def clear_memory():
     torch.cuda.empty_cache()
 
 def main():
-    checkpoint_glob = f"/scratch/jgafur/LTH_output/*LeNet_pretrain1_finetune1_steps2_batch128_devicecuda_strategy_brain-damage*"
+    checkpoint_glob = f"/scratch/jgafur/LTH_output/*cuda*"
     for output_dir in glob.glob(checkpoint_glob):
         clear_memory()
         print(output_dir)
