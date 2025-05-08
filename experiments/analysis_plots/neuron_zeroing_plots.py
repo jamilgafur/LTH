@@ -144,10 +144,9 @@ def save_plot(plt_obj, out_dir, filename):
     plt_obj.close()
     print(f"✅ Saved plot to {path}")
 
-# --- Main ---
+# --- Main ----
 def main():
-    metrics_dirs = glob.glob("/scratch/jgafur/LTH_output/*cuda*")
-
+    metrics_dirs = glob.glob("/scratch/jgafur/LTH_output/*LeNet_pretrain20_finetune5_steps21_batch128_devicecuda_strategy_magnitud*/")
     for metrics_dir in metrics_dirs:
         print(f"\n📂 Processing directory: {metrics_dir}")
         model_id = os.path.normpath(metrics_dir).split(os.sep)[-1]
@@ -174,8 +173,8 @@ def main():
 
                 for f in files:
                     data = load_pickle(f)
-                    combined_metrics["neuron_accuracy_drops"].extend(data.get("neuron_accuracy_drops", []))
-                    combined_metrics["sparsity_metrics"].extend(data.get("sparsity_metrics", []))
+                    combined_metrics["neuron_accuracy_drops"].extend(data['metrics'].get("neuron_accuracy_drops", []))
+                    combined_metrics["sparsity_metrics"].extend(data['metrics'].get("sparsity_metrics", []))
 
                 merged_data = merge_neuron_metrics(combined_metrics)
                 if not merged_data:

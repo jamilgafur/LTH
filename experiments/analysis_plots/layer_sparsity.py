@@ -6,6 +6,12 @@ import numpy as np
 from collections import defaultdict
 import matplotlib.pyplot as plt
 from pyPrune.utils import get_pruneable_named_parameters, lr_lambda
+from matplotlib import ticker
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import seaborn as sns
 
 
 def poly_lr_with_warmup(args, epoch):
@@ -90,8 +96,8 @@ def plot_accuracy(pruner, path):
 
     
     axs[0].plot(1-np.array(sparsity), 1-(np.array(accuracy)/100), 'bo-', label='Accuracy')
-    axs[0].set_title('Accuracy vs Density')
-    axs[0].set_xlabel('Density')
+    axs[0].set_title('Accuracy vs Sparsity')
+    axs[0].set_xlabel('Sparsity')
     axs[0].set_ylabel('Accuracy')
     axs[0].grid(True)
     axs[0].legend()
@@ -100,25 +106,52 @@ def plot_accuracy(pruner, path):
     axs[0].invert_yaxis()
     axs[0].set_xscale('log')
     axs[0].set_yscale('log')
+    axs[0].xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=5, subs=[1.0, .5]))
+    axs[0].yaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=5, subs=[1.0, .5]))
     
  
 
     axs[1].set_xscale('log')
     axs[1].set_yscale('log')
     axs[1].plot(1-np.array(sparsity), loss, 'ro-', label='Loss')
-    axs[1].set_title('Loss vs Density')
-    axs[1].set_xlabel('Density')
+    axs[1].set_title('Loss vs Sparsity')
+    axs[1].set_xlabel('Sparsity')
     axs[1].set_ylabel('Loss')
     axs[1].grid(True)
     axs[1].legend()
     axs[1].invert_xaxis()
- 
+    axs[1].xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=5, subs=[1.0, .5]))
+    axs[1].yaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=5, subs=[1.0, .5]))
 
 
-    ytickax0 = axs[0].get_yticklabels()
-    for tick in ytickax0:
-        tick.set_text(f'$1 - ${tick.get_text()}')
-    axs[0].set_yticklabels(ytickax0)
+    def fractional_log_fmt(x, pos):
+        from fractions import Fraction
+        
+        if x == 0:
+            return "$1$"    
+
+        if x == 1:
+            return "$0$"
+        
+
+        expo = np.log10(x)
+
+        frac = Fraction(expo).limit_denominator(2)  # only allow halves
+
+    
+        if frac.denominator == 1:
+
+            return rf"$1 - 10^{{{frac.numerator}}}$"
+
+        else:
+
+            return rf"$1 - 10^{{{frac.numerator}/{frac.denominator}}}$"
+    
+    from matplotlib.ticker import FuncFormatter
+    axs[0].xaxis.set_major_formatter(FuncFormatter(fractional_log_fmt))
+    axs[1].xaxis.set_major_formatter(FuncFormatter(fractional_log_fmt))
+    
+
     
     os.makedirs(path, exist_ok=True)
     plt.tight_layout()
@@ -175,7 +208,7 @@ def plot_layer_information(savedir, data):
 
 if __name__ == "__main__":
     base_output_dir = "./plots"
-    model_dirs = glob.glob("/scratch/jgafur/LTH_output/*experiments/analysis_plots/plots/*LeNet_pretrain20_finetune5_steps21_batch128_devicecuda_strategy_magnitude*")
+    model_dirs = glob.glob("/scratch/jgafur/LTH_output/*")
 
     for model_directory in model_dirs:
         print(f"\nProcessing: {model_directory}")
