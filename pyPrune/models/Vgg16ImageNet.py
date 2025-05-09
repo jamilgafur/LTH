@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from collections import OrderedDict
 
-class VGG16_CIFAR10(nn.Module):
+class VGG16_ImageNet(nn.Module):
     def __init__(self, num_classes=10):
-        super(VGG16_CIFAR10, self).__init__()
+        super(VGG16_ImageNet, self).__init__()
         
         # Convolutional layers
         self.features = nn.Sequential(
@@ -69,7 +69,7 @@ class VGG16_CIFAR10(nn.Module):
         # Fully connected layers
         self.classifier = nn.Sequential(
             OrderedDict([
-            ('fc_1',nn.Linear(512, 4096)),  # Flatten 1x1x512 -> 512
+            ('fc_1',nn.Linear(2048, 4096)),  # Flatten 1x1x512 -> 512
             ('relu_1',nn.ReLU(inplace=True)),
             ('dropout_1',nn.Dropout(p=0.5)),
             ('fc_2',nn.Linear(4096, 4096)), 

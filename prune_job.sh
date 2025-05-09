@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=prune_runner       # Job name, based on the model argument
-#SBATCH --ntasks=1                       # Number of tasks
-#SBATCH --time=1-12:00:00                   # Max runtime (4 hours)
-#SBATCH --mem=16GB                       # Memory allocation
-#SBATCH --gpus=1                         # Number of GPUs
+#SBATCH --job-name=prune_runner
+#SBATCH --ntasks=1
+#SBATCH --time=11:00:00   # Max runtime (11 hour)
+#SBATCH --mem=128GB
+#SBATCH --gpus=1
 #SBATCH --account=modularai
 #SBATCH --output=/scratch/jgafur/LTH_output/prune_runner_%j.out
 #SBATCH --error=/scratch/jgafur/LTH_output/prune_runner_%j.err
@@ -12,26 +12,43 @@
 module load conda
 conda activate /scratch/jgafur/LTH_Conda_ENV/LTH_exp_env
 
-# Set model from the first command-line argument
 model=$1
-finetune_epochs=$2
-pretrain_epochs=$3
-steps=$4
-# Define available models
-available_models=("LeNet" "ResNet20" "Vgg16")
+pretrain_epochs=$2
+patience=$3
+finetune_epochs=$4
+steps=$5
+strategy=$6
+batch_size=$7  # Optional (only passed for ImageNet models)
 
+# Base command
+cmd="python main_experiment.py --model ${model} \
+    --save_dir /scratch/jgafur/LTH_output \
+    --experiments None \
+    --finetune_epochs ${finetune_epochs} \
+    --pretrain_epochs ${pretrain_epochs} \
+    --steps ${steps} \
+    --patience ${patience} \
+    --strategy ${strategy}"
 
-# Run the pruning job for the specified model logging
+# Append batch size if provided
+if [ -n "$batch_size" ]; then
+    cmd="$cmd --batch_size ${batch_size}"
+fi
+
 echo "Current Time: $(date)"
-echo "Running pruning job for ${model} with command: python main_experiment.py --model ${model} --save_dir /scratch/jgafur/LTH_output --experiment None"
-python main_experiment.py --model ${model} --save_dir /scratch/jgafur/LTH_output --experiment None --finetune_epochs ${finetune_epochs} --pretrain_epochs ${pretrain_epochs} --steps ${steps}
-
-# wait 10 seconds to ensure the pruning job completes
-sleep 10
+echo "Running pruning job for ${model} with command:"
+echo "$cmd"
+eval $cmd
 
 # Submit experiment jobs after pruning completes
 echo "Submitting experiment jobs for model: ${model} for job id: ${SLURM_JOB_ID}"
-sbatch experiment_job.sh  ${model}  /scratch/jgafur/LTH_output  NeuronSimilarity  ${SLURM_JOB_ID} 
-sbatch experiment_job.sh  ${model}  /scratch/jgafur/LTH_output  NeuronZeroing   ${SLURM_JOB_ID}
-sbatch experiment_job.sh  ${model}  /scratch/jgafur/LTH_output  WeightZeroing    ${SLURM_JOB_ID}
+sleep 10
+for ((i=0; i<=steps; i++)); do
+    sbatch experiment_job.sh ${model} ${pretrain_epochs} ${patience} ${finetune_epochs} ${steps} /scratch/jgafur/LTH_output NeuronSimilarity ${SLURM_JOB_ID} ${patience} ${strategy} ${batch_size} $i
+done
+sleep 10
+for ((i=0; i<=steps; i++)); do
+    sbatch experiment_job.sh ${model} ${pretrain_epochs} ${patience} ${finetune_epochs} ${steps} /scratch/jgafur/LTH_output NeuronZeroing ${SLURM_JOB_ID} ${patience} ${strategy} ${batch_size} $i
+done
+# sbatch experiment_job.sh ${model} ${pretrain_epochs} ${patience} ${finetune_epochs} ${steps} /scratch/jgafur/LTH_output WeightZeroing ${SLURM_JOB_ID} ${patience}
 echo "End Time: $(date)"

@@ -2,119 +2,89 @@ import argparse
 import os
 import pickle
 import torch
-import copy
-from torch import nn
+import torch.nn as nn
+from torch import optim
+from torch.optim import Adam, SGD
+from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader
 import numpy as np
+import copy
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 from pyPrune.models.LeNet import LeNet
+from pyPrune.models.Vgg16ImageNet import VGG16_ImageNet
 from pyPrune.models.ResNet20 import ResNet20
+from pyPrune.models.ResNet50 import ResNet50
 from pyPrune.models.Vgg16 import VGG16_CIFAR10 as Vgg16
-from pyPrune.pruning import IterativeMagnitudePruning
-from pyPrune.utils import plot_loss_accuracy_sparsity
+from pyPrune.models.RegNetX import RegNetX_400MF
+from pyPrune.models.EfficientNet import EfficientNetB7
+from pyPrune.pruneMethods.IterativePruner import IterativePruner
+from pyPrune.strategies import MagnitudePruningStrategy, OptimalBrainDamageStrategy
+from pyPrune.utils import *
 from experiments.WeightZeroing import WeightZeroing
 from experiments.NeuronZeroing import NeuronZeroing
 from experiments.NeuronSimilarity import NeuronSimilarity
+from torch.optim.lr_scheduler import LambdaLR
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import os
+import shutil
 
+parser = argparse.ArgumentParser(description="Run pruning and experiments with a specified model and experiments.")
 
-def load_cifar10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
-    """
-    Loads the CIFAR-10 dataset and prepares DataLoader objects for training and testing.
+parser.add_argument('--model', type=str, default='EfficientNet', choices=['LeNet', 'ResNet20', 'Vgg16', 'RegNetX', 'EfficientNet', 'Vgg16ImageNet', 'ResNet50'],
+                    help="The model architecture to use for pruning. Default is 'LeNet'.")
+parser.add_argument('--experiments', type=str, nargs='+', default=['None'],
+                    choices=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing', "None"],
+                    help="List of experiments to run. Default is all.")
+parser.add_argument('--steps', type=int, default=21,
+                    help="Number of steps for pruning decay (defaults to exponential decay).")
+parser.add_argument('--pretrain_epochs', type=int, default=1,
+                    help="Number of pretrain epochs. Default is 10.")
+parser.add_argument('--finetune_epochs', type=int, default=1,
+                    help="Number of finetune epochs after pruning. Default is 10.")
+parser.add_argument('--device', type=str, default='cuda',
+                    choices=['cpu', 'cuda'],
+                    help="Device to use for training and pruning. Default is 'cuda'.")
+parser.add_argument('--save_dir', type=str, default='pruning_checkpoints/',
+                    help="Directory to save pruning checkpoints. Default is 'pruning_checkpoints/'.")
+parser.add_argument('--patience', type=int, default=5)
+parser.add_argument('--batch_size', type=int, default=2048, help="Batch size for training. Default is 128.")
+parser.add_argument('--num_workers', type=int, default=1, help="Number of workers for data loading. Default is 1.")
+parser.add_argument('--strategy', type=str, default='brain-damage', choices=['magnitude', 'brain-damage'],
+                    help="Pruning strategy to use. Default is 'magnitude'.")
+parser.add_argument('--experimentStep', type=int, default=1,
+                    help="Step to process for for neuron zeroing experiment. Default is 1.")
 
-    Args:
-        batch_size (int): The batch size for training and testing datasets (default: 64).
-        num_workers (int): The number of subprocesses to use for data loading (default: 4).
+args = parser.parse_args()
 
-    Returns:
-        tuple: A tuple containing the training and test DataLoader objects.
-    """
-    transform = transforms.Compose([
-        transforms.Resize((32, 32)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
+# Update save_dir to include model name, pretrain_epochs, and finetune_epochs, also length of steps, and device
+args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrain_epochs}_finetune{args.finetune_epochs}_steps{args.steps}_batch{args.batch_size}_device{args.device}_strategy_{args.strategy}")
 
-    train_loader = DataLoader(
-        datasets.CIFAR10('data', train=True, download=True, transform=transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers
-    )
+print(f"Experiment configuration: {args}")
 
-    test_loader = DataLoader(
-        datasets.CIFAR10('data', train=False, transform=transform),
-        batch_size=batch_size, shuffle=False, num_workers=num_workers
-    )
-    
-    # print out a single batch of data shape
-    print("CIFAR-10 data shape: ", next(iter(train_loader))[0].shape)
+def poly_lr_with_warmup(epoch):
+    max_epochs = args.pretrain_epochs + args.finetune_epochs
+    warmup_epochs =max_epochs//10
 
-    return train_loader, test_loader
+    if epoch < warmup_epochs:
+        return float(epoch+1)/ warmup_epochs
+    else:
+        decay_epochs = max_epochs - warmup_epochs
+        decay_progress = (epoch - warmup_epochs) / decay_epochs
+        return (1- decay_progress) ** 2
 
-def load_mnist(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
-    """
-    Loads the MNIST dataset and prepares DataLoader objects for training and testing.
-
-    Args:
-        batch_size (int): The batch size for training and testing datasets (default: 64).
-        num_workers (int): The number of subprocesses to use for data loading (default: 4).
-
-    Returns:
-        tuple: A tuple containing the training and test DataLoader objects.
-    """
-    transform = transforms.Compose([
-        transforms.Resize((32, 32)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-    ])
-
-    train_loader = DataLoader(
-        datasets.MNIST('data', train=True, download=True, transform=transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers
-    )
-
-    test_loader = DataLoader(
-        datasets.MNIST('data', train=False, transform=transform),
-        batch_size=1000, shuffle=False, num_workers=num_workers
-    )
-
-    return train_loader, test_loader
-
-def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[float]:
-    """
-    Generates a list of pruning steps based on exponential decay.
-
-    Args:
-        decay_rate (float): The decay rate for each step (default: 0.8).
-        steps (int): The number of pruning steps to generate (default: 21).
-
-    Returns:
-        list: A list of pruning steps representing exponential decay.
-    """
-    decay_list = [0]
-    n = 1
-    for _ in range(steps):
-        n *= decay_rate
-        decay_list.append(1 - n)
-    return decay_list
+def lr_lambda(epoch: int) -> float:
+    epoch_percentage = epoch / (args.pretrain_epochs+ args.finetune_epochs)
+    if epoch_percentage < 0.5:
+        return 1.0
+    elif epoch_percentage < 0.75:
+        return 0.1
+    else:
+        return 0.01
 
 def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: DataLoader,
-                      steps: list[float], pretrain_epochs: int, finetune_epochs: int, device: str, save_dir: str) -> IterativeMagnitudePruning:
-    """
-    Initializes the pruning process, either by loading an existing pruner from checkpoint or by creating a new one.
-
-    Args:
-        model (nn.Module): The model to prune (LeNet, ResNet20, Vgg16).
-        train_loader (DataLoader): The DataLoader for training data.
-        test_loader (DataLoader): The DataLoader for test data.
-        steps (list): List of pruning decay steps.
-        pretrain_epochs (int): The number of epochs to pretrain the model (default: 0).
-        finetune_epochs (int): The number of epochs to finetune the model after pruning (default: 5).
-        device (str): The device to use ('cpu' or 'cuda').
-        save_dir (str): Directory to save or load the pruning checkpoint.
-
-    Returns:
-        IterativeMagnitudePruning: The initialized or loaded pruner object.
-    """
+                      steps: list[float], pretrain_epochs: int, finetune_epochs: int, device: str, save_dir: str, model_name: str, total_epochs: int) -> IterativePruner:
     pruner_path = os.path.join(save_dir, 'pruner.pkl')
     
     if os.path.exists(pruner_path):
@@ -122,12 +92,56 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
             pruner = pickle.load(f)
         print("Loaded pruner from checkpoint.")
     else:
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-        criterion = nn.CrossEntropyLoss()
+        if model_name == 'LeNet':
+            optimizer = Adam(model.parameters(), lr=0.0012)
+            criterion = nn.CrossEntropyLoss()
+            # default constant scheduler
+            scheduler = StepLR(optimizer, step_size=1, gamma=1)
+            
+        elif model_name == 'EfficientNet':
+            # EfficientNet-specific configuration
+            criterion = nn.CrossEntropyLoss()
+            scaled_lr = 0.1 * (args.batch_size / 256)
+            optimizer = torch.optim.SGD(model.parameters(), lr=scaled_lr, momentum=0.9, weight_decay=1e-5, nesterov=True)
+            scheduler = LambdaLR(optimizer, lr_lambda=poly_lr_with_warmup)
+                    
+        elif model_name == 'RegNetX':
+            # RegNetX-specific configuration
+            criterion = nn.CrossEntropyLoss()
+            optimizer = optim.SGD(
+                model.parameters(),
+                lr=0.1,               # Initial learning rate for SGD
+                momentum=0.9,
+                weight_decay=1e-5
+            )
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=pretrain_epochs, eta_min=1e-6)
+        elif model_name == 'Vgg16ImageNet' or model_name == 'ResNet50':
+            criterion = nn.CrossEntropyLoss()
+            scaled_lr = 0.1 * (args.batch_size / 256)
+            optimizer = torch.optim.SGD(model.parameters(), lr=scaled_lr, momentum=0.9, weight_decay=5e-4, nesterov=True)
+            scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
+        else:
+            # Default config for other models (ResNet, VGG
+            criterion = nn.CrossEntropyLoss()
+            optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, nesterov=True, weight_decay=5e-4)
+            scheduler = LambdaLR(optimizer, lr_lambda)
 
-        pruner = IterativeMagnitudePruning(
+        print(f"optimizer: {optimizer}, criterion: {criterion}")
+        print(f"Scheduler: {scheduler}")
+
+        # Choose pruning strategy
+        if args.strategy == 'magnitude':
+            strategy = MagnitudePruningStrategy.MagnitudePruningStrategy(device=device)
+        elif args.strategy == 'brain-damage':
+            strategy = OptimalBrainDamageStrategy.OptimalBrainDamageStrategy(train_loader=train_loader, criterion=criterion, device=device)
+        else:
+            raise ValueError(f"Unknown strategy: {args.strategy}")
+        
+        # Initialize and run the pruner
+        pruner = IterativePruner(
             model=model,
             optimizer=optimizer,
+            scheduler=scheduler,
             criterion=criterion,
             train_loader=train_loader,
             test_loader=test_loader,
@@ -136,128 +150,71 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
             device=device,
             finetune_epochs=finetune_epochs,
             save_dir=save_dir,
+            strategy=strategy,
+            early_stopping=args.patience,
         )
-             
-    if pruner.complete is False:
-        print("Pruning process is not completed. Run the pruning process first.")
-        pruner.run()
-        
-    print("Pruning process complete. Saved pruner to checkpoint.")
+    print("running pruner")
+    pruner.run()
 
+    print("Pruning process complete. Saved pruner to checkpoint.")
     return pruner
 
-def run_experiments(pruner: IterativeMagnitudePruning, experiment_names: list[str]) -> None:
-    """
-    Runs specified experiments (e.g., NeuronSimilarity, NeuronZeroing, WeightZeroing) after pruning.
-
-    Args:
-        pruner (IterativeMagnitudePruning): The pruner object after pruning is completed.
-        experiment_names (list): List of experiment names to run (e.g., ['NeuronSimilarity']).
-
-    Returns:
-        None
-    """
-    
+def run_experiments(pruner: IterativePruner, experiment_names: list[str]) -> None:
     if 'None' in experiment_names:
         print("No experiments to run.")
         return
-    
+
     if 'NeuronSimilarity' in experiment_names:
-        pruner.logger.info("Starting neuron similarity experiment...")
-        neuron_similarity = NeuronSimilarity(pruner)
+        print("Running NeuronSimilarity experiment...")
+        neuron_similarity = NeuronSimilarity(pruner,process_Step=args.experimentStep)
         neuron_similarity.run_experiment()
 
     if 'NeuronZeroing' in experiment_names:
-        pruner.logger.info("Starting neuron zeroing experiment...")
-        neuron_zeroing = NeuronZeroing(pruner)
+        print("Running NeuronZeroing experiment...")
+        neuron_zeroing = NeuronZeroing(pruner,process_Step=args.experimentStep)
         neuron_zeroing.run_experiment()
 
     if 'WeightZeroing' in experiment_names:
-        pruner.logger.info("Starting weight zeroing experiment...")
         sample_fractions = {
-            'linear': .01,  # Fraction for dense layers (fully connected layers)
-            'conv': .01    # Fraction for convolutional layers
+            'linear': .01,
+            'conv': .01
         }
-
+        print("Running WeightZeroing experiment...")
         weight_zeroing = WeightZeroing(pruner, sample_fractions)
         weight_zeroing.run_experiment()
-
-def parse_args() -> tuple:
-    """
-    Parses command line arguments.
-
-    Returns:
-        tuple: A tuple containing the parsed arguments.
-    """
-    parser = argparse.ArgumentParser(description="Run pruning and experiments with a specified model and experiments.")
     
-    # Model and experiments arguments
-    parser.add_argument('--model', type=str, default='LeNet', choices=['LeNet', 'ResNet20', 'Vgg16'],
-                        help="The model architecture to use for pruning. Default is 'LeNet'.")
-    parser.add_argument('--experiments', type=str, nargs='+', default=['None'],
-                        choices=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing', "None"],
-                        help="List of experiments to run. Default is all.")
-    # Pruning related arguments
-    parser.add_argument('--steps', type=int, default=21,
-                        help="Number of steps for pruning decay (defaults to exponential decay).")
-    parser.add_argument('--pretrain_epochs', type=int, default=10,
-                        help="Number of pretrain epochs. Default is 10.")
-    parser.add_argument('--finetune_epochs', type=int, default=10,
-                        help="Number of finetune epochs after pruning. Default is 10.")
-    parser.add_argument('--device', type=str, default='cuda',
-                        choices=['cpu', 'cuda'],
-                        help="Device to use for training and pruning. Default is 'cuda'.")
-    parser.add_argument('--save_dir', type=str, default='pruning_checkpoints/',
-                        help="Directory to save pruning checkpoints. Default is 'pruning_checkpoints/'.")
-    
-    # Other arguments
-    parser.add_argument('--batch_size', type=int, default=64, help="Batch size for training. Default is 64.")
-    parser.add_argument('--num_workers', type=int, default=1, help="Number of workers for data loading. Default is 1.")
-    
-    args = parser.parse_args()
-    
-    # update save_dir to include model name, pretrain_epochs, and finetune_epochs, also length of steps, and device
-    args.save_dir = os.path.join(args.save_dir, f"{args.model}_pretrain{args.pretrain_epochs}_finetune{args.finetune_epochs}_steps{args.steps}_batch{args.batch_size}_device{args.device}")
-    # print the experiment configuration
-    print(f"Experiment configuration: {args.experiments}")
-    
-    print(f"all arguments: {args}")
-    return args
-
 def main() -> None:
-    """
-    The main function that runs the pruning process and specified experiments.
 
-    Returns:
-        None
-    """
-    args = parse_args()
+    set_seed(69917111)
 
-    # Load MNIST data
-
-    # Initialize model
     if args.model == 'LeNet':
         model = LeNet()
         train_loader, test_loader = load_mnist(batch_size=args.batch_size, num_workers=args.num_workers)
     elif args.model == 'ResNet20':
         model = ResNet20()
         train_loader, test_loader = load_cifar10(batch_size=args.batch_size, num_workers=args.num_workers)
+    elif args.model == 'ResNet50':
+        model = ResNet50()
+        train_loader, test_loader = load_tiny_imagenet(batch_size=args.batch_size, num_workers=args.num_workers)
     elif args.model == 'Vgg16':
         model = Vgg16()
         train_loader, test_loader = load_cifar10(batch_size=args.batch_size, num_workers=args.num_workers)
-    else:
-        raise ValueError(f"Model '{args.model}' is not supported.")
+    elif args.model == "Vgg16ImageNet":
+        model = VGG16_ImageNet(num_classes=200)
+        train_loader, test_loader = load_tiny_imagenet(batch_size=args.batch_size, num_workers=args.num_workers)
+    elif args.model == 'RegNetX':
+        model = RegNetX_400MF(num_classes=200)
+        train_loader, test_loader = load_tiny_imagenet(batch_size=args.batch_size, num_workers=args.num_workers)
+    elif args.model == 'EfficientNet':
+        model = EfficientNetB7(num_classes=200)
+        train_loader, test_loader = load_tiny_imagenet(batch_size=args.batch_size, num_workers=args.num_workers)
     
-    # Initialize pruning process
+    print(model)
     pruner = initialize_pruner(model, train_loader, test_loader, steps=exponential_decay_list(steps=args.steps),
-                                pretrain_epochs=args.pretrain_epochs, finetune_epochs=args.finetune_epochs,
-                                device=args.device, save_dir=args.save_dir)
-
-    # Plot loss, accuracy, and sparsity after pruning
-    # plot_loss_accuracy_sparsity(pruner)
-
-    # Run the specified experiments
-    run_experiments(copy.deepcopy(pruner), args.experiments)
+                               pretrain_epochs=args.pretrain_epochs, finetune_epochs=args.finetune_epochs,
+                               device=args.device, save_dir=args.save_dir, model_name=args.model, total_epochs=args.pretrain_epochs + args.finetune_epochs)
+    
+    run_experiments(pruner, args.experiments)
 
 if __name__ == '__main__':
     main()
