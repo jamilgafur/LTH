@@ -3,16 +3,14 @@ import glob
 import pickle
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
 from collections import defaultdict
-import matplotlib.pyplot as plt
-from pyPrune.utils import get_pruneable_named_parameters, lr_lambda
-from matplotlib import ticker
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import seaborn as sns
+from matplotlib import ticker
+from pyPrune.utils import get_pruneable_named_parameters
 
+# Consolidated imports
+sns.set(style="whitegrid", context="paper", font_scale=1.5)
 
 def poly_lr_with_warmup(args, epoch):
     warmup_epochs = args.pretrain_epochs // 10
@@ -23,8 +21,8 @@ def poly_lr_with_warmup(args, epoch):
     decay_progress = (epoch - warmup_epochs) / decay_epochs
     return (1 - decay_progress) ** 2
 
-
 def load_pickle(file_path):
+    """ Load pruner pickle file """
     if not os.path.isfile(file_path):
         raise FileNotFoundError(f"Pickle file not found: {file_path}")
     with open(file_path, 'rb') as f:
@@ -33,15 +31,14 @@ def load_pickle(file_path):
         raise ValueError(f"Failed to load pruner from {file_path}")
     return pruner
 
-
 def get_sorted_model_paths(directory):
+    """ Get sorted model paths based on the checkpoint names """
     model_paths = glob.glob(os.path.join(directory, "*Fine*.pth"))
     model_paths.sort(key=lambda x: float(x.split("_")[-1].split(".")[0]))
     return model_paths
 
-
 def extract_layer_name(name):
-    # Use original logic for extracting a simplified layer name
+    """ Extract simplified layer name from the parameter name """
     if name.count('.') == 1:
         return name.split('.')[0]
     elif name.count('.') == 2:
@@ -51,10 +48,10 @@ def extract_layer_name(name):
     elif "stage" in name:
         return f"{name.split('.')[1]}-{name.split('.')[3]}"
     else:
-        return name  # fallback
-
+        return name
 
 def get_layer_information(pruner, model_path, base_params=None):
+    """ Extract layer information (sparsity, number of zeros) from model """
     checkpoint = torch.load(model_path, map_location='cpu')
     pruner.model.load_state_dict(checkpoint['model'])
     pruner.model.eval()
@@ -62,6 +59,7 @@ def get_layer_information(pruner, model_path, base_params=None):
     layer_info = defaultdict(lambda: {
         "num_zeros": 0, "num_trainable_params": 0, "total_trainable_params": 0
     })
+    
     if base_params is None:
         base_params = {}
 
@@ -81,8 +79,8 @@ def get_layer_information(pruner, model_path, base_params=None):
 
     return dict(layer_info), base_params
 
-
 def plot_accuracy(pruner, path):
+    """ Plot accuracy and loss against sparsity """
     try:
         accuracy = pruner.metrics['accuracy_finetune']
         loss = pruner.metrics['loss_finetune']
@@ -91,91 +89,54 @@ def plot_accuracy(pruner, path):
         print(f"Missing key in pruner metrics: {e}")
         return
 
-    fig, axs = plt.subplots(2, 1, figsize=(10, 10))
+    sparsity_percent = (1 - np.array(sparsity)) * 100
+    acc = 1 - (np.array(accuracy) / 100)
 
+    fig, axs = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
 
-    
-    axs[0].plot(1-np.array(sparsity), 1-(np.array(accuracy)/100), 'bo-', label='Accuracy')
-    axs[0].set_title('Accuracy vs Sparsity')
-    axs[0].set_xlabel('Sparsity')
-    axs[0].set_ylabel('Accuracy')
-    axs[0].grid(True)
-    axs[0].legend()
-    # invert x axis
-    axs[0].invert_xaxis()
+    axs[0].plot(sparsity_percent, acc, 'bo-', label='Accuracy (1 - acc)')
+    axs[0].set_ylabel('Accuracy (lower is better)')
     axs[0].invert_yaxis()
-    axs[0].set_xscale('log')
-    axs[0].set_yscale('log')
-    axs[0].xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=5, subs=[1.0, .5]))
-    axs[0].yaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=5, subs=[1.0, .5]))
-    
- 
+    axs[0].legend(loc='best')
 
-    axs[1].set_xscale('log')
-    axs[1].set_yscale('log')
-    axs[1].plot(1-np.array(sparsity), loss, 'ro-', label='Loss')
-    axs[1].set_title('Loss vs Sparsity')
-    axs[1].set_xlabel('Sparsity')
-    axs[1].set_ylabel('Loss')
-    axs[1].grid(True)
-    axs[1].legend()
+    axs[1].plot(sparsity_percent, loss, 'ro-', label='Loss')
+    axs[1].set_xlabel('Sparsity (%)')
+    axs[1].set_ylabel('Loss (lower is better)')
+    axs[1].legend(loc='best')
     axs[1].invert_xaxis()
-    axs[1].xaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=5, subs=[1.0, .5]))
-    axs[1].yaxis.set_major_locator(ticker.LogLocator(base=10.0, numticks=5, subs=[1.0, .5]))
 
+    axs[1].xaxis.set_major_formatter(ticker.PercentFormatter())
+    for ax in axs:
+        ax.grid(True)
+        ax.set_xscale('linear')
+        ax.set_yscale('log')
 
-    def fractional_log_fmt(x, pos):
-        from fractions import Fraction
-        
-        if x == 0:
-            return "$1$"    
-
-        if x == 1:
-            return "$0$"
-        
-
-        expo = np.log10(x)
-
-        frac = Fraction(expo).limit_denominator(2)  # only allow halves
-
-    
-        if frac.denominator == 1:
-
-            return rf"$1 - 10^{{{frac.numerator}}}$"
-
-        else:
-
-            return rf"$1 - 10^{{{frac.numerator}/{frac.denominator}}}$"
-    
-    from matplotlib.ticker import FuncFormatter
-    axs[0].xaxis.set_major_formatter(FuncFormatter(fractional_log_fmt))
-    axs[1].xaxis.set_major_formatter(FuncFormatter(fractional_log_fmt))
-    
-
-    
     os.makedirs(path, exist_ok=True)
+    save_path = os.path.join(path, "accuracy_loss.png")
     plt.tight_layout()
-    plt.savefig(os.path.join(path, "accuracy_loss.png"), bbox_inches='tight')
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.close(fig)
-
+    print(f"Saved accuracy/loss figure to {save_path}")
 
 def plot_layer_information(savedir, data):
+    """ Plot layer-wise sparsity and layer contribution to global sparsity """
     if not data:
         print("No data available for plotting.")
         return
 
     os.makedirs(savedir, exist_ok=True)
+
     sparsities = sorted(data.keys())
+    sparsity_percent = (1 - np.array(sparsities)) * 100
     layers = list(data[sparsities[0]]["layer_info"].keys())
 
-    colors = plt.cm.viridis(np.linspace(0, 1, len(layers)))
+    colors = plt.cm.tab20(np.linspace(0, 1, len(layers)))
     line_styles = ['-', '--', '-.', ':']
 
-    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+    fig, axes = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
 
     for idx, (layer, color) in enumerate(zip(layers, colors)):
         x1, x2 = [], []
-
         for sparsity in sparsities:
             info = data[sparsity]['layer_info'][layer]
             total_params = sum(
@@ -185,35 +146,124 @@ def plot_layer_information(savedir, data):
             x2.append(info['num_zeros'] / total_params)
 
         style = line_styles[idx % len(line_styles)]
-        axes[0].plot(1-np.array(sparsities), x1, label=layer, color=color, linestyle=style)
-        axes[1].plot(1-np.array(sparsities), x2, label=layer, color=color, linestyle=style)
+        axes[0].plot(sparsity_percent, x1, label=layer, color=color, linestyle=style)
+        axes[1].plot(sparsity_percent, x2, label=layer, color=color, linestyle=style)
 
-    axes[0].set_xscale('log')
-    axes[1].set_xscale('log')
-    axes[0].set_title('Zeros / Trainable Params in Layer')
-    axes[0].set_xlabel('Density')
-    axes[0].set_ylabel('Ratio')
-    axes[0].legend()
+    axes[0].set_ylabel('Zeros / Trainable Params in Layer')
+    axes[0].set_title('Layer-wise Sparsity')
+    axes[0].invert_xaxis()
+    axes[0].grid(True)
 
-    axes[1].set_title('Zeros / Total Trainable Params')
-    axes[1].set_xlabel('Density')
-    axes[1].set_ylabel('Ratio')
-    axes[1].legend()
+    axes[1].set_ylabel('Zeros / Total Trainable Params')
+    axes[1].set_xlabel('Sparsity (%)')
+    axes[1].set_title('Layer Contribution to Global Sparsity')
+    axes[1].invert_xaxis()
+    axes[1].grid(True)
+
+    axes[0].legend(loc='upper left', bbox_to_anchor=(1.02, 1.0), borderaxespad=0.)
+
+    plt.tight_layout(rect=[0, 0, 0.85, 1])
+    save_path = os.path.join(savedir, "layer_info.png")
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close(fig)
+    print(f"Saved updated layer information figure to {save_path}")
+
+def plot_accuracy_all_models(pruner_dict, save_path):
+    """ Plot accuracy and loss for all models """
+    fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+
+    for model_name, pruner in pruner_dict.items():
+        try:
+            accuracy = pruner.metrics['accuracy_finetune']
+            loss = pruner.metrics['loss_finetune']
+            sparsity = pruner.metrics['step_finetune']
+        except KeyError as e:
+            print(f"Missing key for {model_name}: {e}")
+            continue
+
+        sparsity_percent = (1 - np.array(sparsity)) * 100
+        acc = 1 - (np.array(accuracy) / 100)
+
+        axs[0].plot(sparsity_percent, acc, marker='o', label=model_name)
+        axs[1].plot(sparsity_percent, loss, marker='o', label=model_name)
+
+    axs[0].set_ylabel('1 - Accuracy')
+    axs[0].invert_yaxis()
+    axs[0].legend()
+    axs[0].grid(True)
+
+    axs[1].set_xlabel('Sparsity (%)')
+    axs[1].set_ylabel('Loss')
+    axs[1].legend()
+    axs[1].grid(True)
+    axs[0].invert_xaxis()
+    axs[1].invert_xaxis()
+
+    axs[0].set_yscale('log')
+    axs[1].set_yscale('log')
+    axs[1].xaxis.set_major_formatter(ticker.PercentFormatter())
 
     plt.tight_layout()
-    print(f"saving to {os.path.join(savedir, 'layer_info.png')}")
-    plt.savefig(os.path.join(savedir, "layer_info.png"), bbox_inches='tight')
+    os.makedirs(save_path, exist_ok=True)
+    fig.savefig(os.path.join(save_path, "accuracy_loss_all_models.png"), dpi=300, bbox_inches='tight')
     plt.close(fig)
+    print(f"Saved accuracy/loss plot for all models to {save_path}")
 
+def plot_layer_information_all_models(savedir, data_dict):
+    """ Plot layer information for all models """
+    os.makedirs(savedir, exist_ok=True)
+
+    fig, axes = plt.subplots(2, 1, figsize=(12*5, 10*5), sharex=True)
+
+    for model_name, data in data_dict.items():
+        if not data:
+            continue
+
+        sparsities = sorted(data.keys())
+        sparsity_percent = (1 - np.array(sparsities)) * 100
+        layers = list(data[sparsities[0]]["layer_info"].keys())
+
+        for layer in layers:
+            x1, x2 = [], []
+            for sparsity in sparsities:
+                info = data[sparsity]['layer_info'][layer]
+                total_params = sum(
+                    l["total_trainable_params"] for l in data[sparsity]["layer_info"].values()
+                )
+                x1.append(info['num_zeros'] / info['num_trainable_params'])
+                x2.append(info['num_zeros'] / total_params)
+
+            axes[0].plot(sparsity_percent, x1, label=f"{model_name}: {layer}", alpha=0.7)
+            axes[1].plot(sparsity_percent, x2, label=f"{model_name}: {layer}", alpha=0.7)
+
+    axes[0].set_ylabel('Zeros / Trainable Params')
+    axes[0].invert_xaxis()
+    axes[0].grid(True)
+    axes[0].set_title('Layer-wise Sparsity')
+
+    axes[1].set_ylabel('Zeros / Total Trainable Params')
+    axes[1].set_xlabel('Sparsity (%)')
+    axes[1].invert_xaxis()
+    axes[1].grid(True)
+    axes[1].set_title('Layer Contribution to Global Sparsity')
+
+    axes[0].legend(loc='upper left', bbox_to_anchor=(1.02, 1.0), borderaxespad=0.)
+    plt.tight_layout(rect=[0, 0, 0.85, 1])
+    fig.savefig(os.path.join(savedir, "layer_info_all_models.png"), dpi=300, bbox_inches='tight')
+    plt.close(fig)
+    print(f"Saved layer information plot for all models to {savedir}")
 
 if __name__ == "__main__":
     base_output_dir = "./plots"
-    model_dirs = glob.glob("/scratch/jgafur/LTH_output/*")
+    model_dirs = glob.glob("/scratch/jgafur/LTH_output/*LeNet*finetune5*magnitude*")
+
+    all_pruners = {}
+    all_layer_data = {}
 
     for model_directory in model_dirs:
         print(f"\nProcessing: {model_directory}")
         pruner_pickle_path = os.path.join(model_directory, "pruner.pkl")
-        directory_name = model_directory.split("/")[-2]
+        model_name = os.path.basename(model_directory)
 
         if not os.path.isfile(pruner_pickle_path):
             print(f"Missing pruner file: {pruner_pickle_path}")
@@ -221,12 +271,10 @@ if __name__ == "__main__":
 
         try:
             pruner = load_pickle(pruner_pickle_path)
+            all_pruners[model_name] = pruner
         except Exception as e:
             print(f"Error loading pruner: {e}")
             continue
-
-        output_dir = os.path.join(base_output_dir, os.path.basename(model_directory))
-        plot_accuracy(pruner, output_dir+f"/{directory_name}")
 
         model_paths = get_sorted_model_paths(model_directory)
         if not model_paths:
@@ -239,10 +287,11 @@ if __name__ == "__main__":
         for model_path in model_paths:
             try:
                 sparsity = float("0." + model_path.split('_')[-1].split('.')[1])
-                print(f"   Model: {os.path.basename(model_path)} | Sparsity: {sparsity}")
                 layer_info, base_params = get_layer_information(pruner, model_path, base_params)
                 data[sparsity] = {"layer_info": layer_info}
             except Exception as e:
                 print(f"    Skipping {model_path}: {e}")
+        all_layer_data[model_name] = data
 
-        plot_layer_information(output_dir+f"/{directory_name}", data)
+    plot_accuracy_all_models(all_pruners, base_output_dir)
+    plot_layer_information_all_models(base_output_dir, all_layer_data)
