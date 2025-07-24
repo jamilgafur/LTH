@@ -51,7 +51,7 @@ parser.add_argument('--save_dir', type=str, default='pruning_checkpoints/',
 parser.add_argument('--patience', type=int, default=5)
 parser.add_argument('--batch_size', type=int, default=2048, help="Batch size for training. Default is 128.")
 parser.add_argument('--num_workers', type=int, default=1, help="Number of workers for data loading. Default is 1.")
-parser.add_argument('--strategy', type=str, default='brain-damage', choices=['magnitude', 'brain-damage'],
+parser.add_argument('--strategy', type=str, default='magnitude', choices=['magnitude', 'brain-damage'],
                     help="Pruning strategy to use. Default is 'magnitude'.")
 parser.add_argument('--experimentStep', type=int, default=1,
                     help="Step to process for for neuron zeroing experiment. Default is 1.")
