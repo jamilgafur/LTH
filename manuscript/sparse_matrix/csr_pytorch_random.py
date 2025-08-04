@@ -198,7 +198,7 @@ def main():
     torch.manual_seed(0)
 
     path_to_checkpoints = "../structured_study/pruning_checkpoints/LeNet_pretrain1_finetune1_steps21_batch2048_devicecuda_strategy_magnitude"
-
+    filename = path_to_checkpoints.split('/')[-1] + "_sparsity_vs_batch_sizes.png"
     devices = [torch.device("cpu")]
     if torch.cuda.is_available():
         devices.append(torch.device("cuda"))
@@ -235,7 +235,7 @@ def main():
                 time_results[device.type][batch_size]['dense'].append(0)
                 energy_results[device.type][batch_size]['dense'].append(0)
 
-    plot_results(sparsity_levels, mem_results, time_results, energy_results, devices, batch_sizes)
+    plot_results(sparsity_levels, mem_results, time_results, energy_results, devices, batch_sizes, filename)
 
 
 if __name__ == "__main__":
