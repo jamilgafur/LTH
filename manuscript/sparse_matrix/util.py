@@ -18,17 +18,16 @@ def convert_all_to_sparse(model):
     def convert_conv_to_sparse(module):
         for name, child in module.named_children():
             if isinstance(child, nn.Conv2d):
-                weight = child.weight.data
-                out_channels, in_channels, kh, kw = weight.shape
-                weight_flat = weight.view(out_channels, -1)
-                sparse_weight = weight_flat.to_sparse_csr()
-                bias = child.bias.data if child.bias is not None else None
-
-                sparse_conv = SparseConv2d(sparse_weight, bias,
-                                           stride=child.stride[0],
-                                           padding=child.padding[0],
-                                           dilation=child.dilation[0])
-                setattr(module, name, sparse_conv)
+                new_layer = SparseConv2d(
+                    in_channels=child.in_channels,
+                    out_channels=child.out_channels,
+                    kernel_size=child.kernel_size[0],
+                    stride=child.stride[0],
+                    padding=child.padding[0],
+                    dilation=child.dilation[0],
+                    bias=(child.bias is not None)
+                )
+                setattr(module, name, new_layer)
             else:
                 convert_conv_to_sparse(child)
 

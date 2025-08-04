@@ -1,5 +1,4 @@
 # measure.py
-
 from SparseLinear import SparseLinear
 from SparseConv2d import SparseConv2d
 import torch
@@ -82,7 +81,6 @@ def measure_inference_time(model, x, device):
     energy_joules = avg_power * duration
 
     return duration, output, energy_joules
-
 
 def log_memory(mem_dict, device_type, prefix):
     mem_val = mem_dict.get(device_type, 0)
