@@ -3,17 +3,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class SparseConv2d(nn.Module):
-    def __init__(self, sparse_weight, bias, in_channels, stride=1, padding=0, dilation=1):
+    def __init__(self, sparse_weight, bias, in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1):
         super().__init__()
         assert sparse_weight.layout == torch.sparse_csr, "sparse_weight must be CSR format"
-        self.sparse_weight = sparse_weight.coalesce()
+        self.sparse_weight = sparse_weight
         self.bias = bias
         self.stride = stride
         self.padding = padding
         self.dilation = dilation
         self.in_channels = in_channels
-        self.kernel_size = int((sparse_weight.shape[1] // in_channels) ** 0.5)
-        self.out_channels = sparse_weight.shape[0]
+        self.kernel_size = kernel_size
+        self.out_channels = out_channels
 
     @torch.jit.ignore  # exclude from compilation to reduce overhead
     def sparse_mm_per_batch(self, x_unfold, B, L):

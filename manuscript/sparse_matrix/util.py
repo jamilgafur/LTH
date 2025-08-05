@@ -13,26 +13,47 @@ from pyPrune.models.Vgg16ImageNet import VGG16_ImageNet
 from pyPrune.models.Vgg16 import VGG16_CIFAR10
 from pyPrune.models.RegNetX import RegNetX_400MF
 
-def convert_all_to_sparse(module):
-    for name, child in module.named_children():
-        if isinstance(child, nn.Linear):
-            sparse_weight = child.weight.data.to_sparse_csr()
-            bias = child.bias.data if child.bias is not None else None
-            setattr(module, name, SparseLinear(sparse_weight, bias))
-        elif isinstance(child, nn.Conv2d):
-            sparse_weight = child.weight.data.to_sparse_csr()
-            bias = child.bias.data if child.bias is not None else None
-            sparse_conv = SparseConv2d(
-                sparse_weight=sparse_weight,
-                bias=bias,
-                in_channels=child.in_channels,
-                stride=child.stride[0],
-                padding=child.padding[0],
-                dilation=child.dilation[0]
-            )
-            setattr(module, name, sparse_conv)
-        else:
-            convert_all_to_sparse(child)
+def convert_all_to_sparse(model):
+    def convert_linear_to_sparse(module):
+        for name, child in module.named_children():
+            if isinstance(child, nn.Linear):
+                sparse_weight = child.weight.data.to_sparse_csr()
+                bias = child.bias.data if child.bias is not None else None
+                sparse_linear_layer = SparseLinear(sparse_weight, bias)
+                setattr(module, name, sparse_linear_layer)
+            else:
+                convert_linear_to_sparse(child)
+
+    def convert_conv_to_sparse(module):
+        for name, child in module.named_children():
+            if isinstance(child, nn.Conv2d):
+                # Convert weight to sparse CSR
+                # For conv, flatten kernel dimensions for weight matrix:
+                # weight shape: (out_channels, in_channels, kernel_h, kernel_w)
+                # Reshape to (out_channels, in_channels * kernel_h * kernel_w)
+                weight_dense = child.weight.data
+                out_channels, in_channels, kh, kw = weight_dense.shape
+                weight_2d = weight_dense.view(out_channels, -1)
+                sparse_weight = weight_2d.to_sparse_csr()
+
+                bias = child.bias.data if child.bias is not None else None
+
+                new_layer = SparseConv2d(
+                    sparse_weight=sparse_weight,
+                    bias=bias,
+                    in_channels=in_channels,
+                    out_channels=out_channels,
+                    kernel_size=kh,
+                    stride=child.stride[0],
+                    padding=child.padding[0],
+                    dilation=child.dilation[0]
+                )
+                setattr(module, name, new_layer)
+            else:
+                convert_conv_to_sparse(child)
+
+    convert_linear_to_sparse(model)
+    convert_conv_to_sparse(model)
 
 def validate_original_weights_not_sparse(module):
     for name, child in module.named_children():
@@ -81,7 +102,7 @@ def getModelType(model_name):
     elif model_name == "LeNet":
         return LeNet
     elif model_name == "RegNetX":
-        return RegNetX_400MF
+        return RegNetX_400MF(num_classes=200)
     else:
         raise ValueError(f"Unknown model type: {model_name}")
 
@@ -104,53 +125,17 @@ def load_model_from_checkpoint(model_cls, checkpoint_path: str, device: torch.de
 
     return model
 
-def initialize_results_dict(devices, batch_sizes):
-    mem_results = {
-        d.type: {
-            bs: {
-                'cpu_dense': [], 'gpu_dense': [],
-                'cpu_sparse': [], 'gpu_sparse': []
-            } for bs in batch_sizes
-        } for d in devices
-    }
-
-    time_results = {
-        d.type: {
-            bs: {'dense': [], 'sparse': []} for bs in batch_sizes
-        } for d in devices
-    }
-
-    energy_results = {
-        d.type: {
-            bs: {'dense': [], 'sparse': []} for bs in batch_sizes
-        } for d in devices
-    }
-
-    return mem_results, time_results, energy_results
-
-def sparse_tensor_size_bytes(sparse_tensor: torch.Tensor) -> int:
-    """
-    Calculate memory footprint of a sparse CSR tensor in bytes,
-    summing data, crow_indices, and col_indices buffers.
-    """
-    assert sparse_tensor.layout == torch.sparse_csr, "Expected CSR sparse tensor"
-
-    data_bytes = sparse_tensor.values().element_size() * sparse_tensor.values().numel()
-    crow_bytes = sparse_tensor.crow_indices().element_size() * sparse_tensor.crow_indices().numel()
-    col_bytes = sparse_tensor.col_indices().element_size() * sparse_tensor.col_indices().numel()
-    total = data_bytes + crow_bytes + col_bytes
-    return total
-
-def model_size_bytes(model: torch.nn.Module) -> int:
-    total_bytes = 0
-    for module in model.modules():
-        if isinstance(module, SparseLinear) or isinstance(module, SparseConv2d):
-            sparse_weight = module.sparse_weight
-            total_bytes += sparse_tensor_size_bytes(sparse_weight)
-            if module.bias is not None:
-                total_bytes += module.bias.element_size() * module.bias.numel()
-        else:
-            # For normal modules, count dense weights and biases
-            for param in module.parameters(recurse=False):
-                total_bytes += param.element_size() * param.numel()
-    return total_bytes
+def generateData(modelName, batch_size, device):
+    if modelName == "ResNet20":
+        x = torch.randn(batch_size, 3, 32, 32, device=device)
+    elif modelName == "Vgg16_ImageNet":
+        x = torch.randn(batch_size, 3, 224, 224, device=device)
+    elif modelName == "Vgg16_":
+        x = torch.randn(batch_size, 3, 32, 32, device=device)
+    elif modelName == "LeNet":
+        x = torch.randn(batch_size, 1, 32, 32, device=device)
+    elif modelName == "RegNetX":
+        x = torch.randn(batch_size, 3, 224, 224, device=device)
+    else:
+        raise ValueError(f"Unknown model type: {modelName}")
+    return x
