@@ -150,65 +150,68 @@ def plot_timing_grid(modelName, sparsity_levels, batch_sizes, all_timings, filen
 
 def main():
     torch.manual_seed(0)
-    models = ["ResNet20", "Vgg16_ImageNet", "Vgg16_", "RegNetX"]
+    models = ["ResNet20", "Vgg16_ImageNet", "Vgg16_", ]
     batch_sizes = [1, 32, 64]
 
     results = {}
 
     for modelName in models:
         path_to_checkpoints = f"../../../../plots/LTH_output/*{modelName}*"
-        checkpoints = get_checkpoints(path_to_checkpoints, prefix="checkpoint_Pruned_")
+        allRuns = glob.glob(path_to_checkpoints)
+        for oneRun in allRuns:
+            print(f"[Processing] {oneRun}")
+            checkpoints = get_checkpoints(oneRun, prefix="checkpoint_Pruned_")
 
-        if not checkpoints:
-            print(f"[Warning] No checkpoints found for {modelName} at {path_to_checkpoints}")
-            continue
+            if not checkpoints:
+                print(f"[Warning] No checkpoints found for {modelName} at {path_to_checkpoints}")
+                continue
 
-        sparsity_levels = [s for s, _ in checkpoints]
-        devices = [torch.device("cpu")]
-        if torch.cuda.is_available():
-            devices.append(torch.device("cuda"))
+            sparsity_levels = [s for s, _ in checkpoints]
+            devices = [torch.device("cpu")]
+            if torch.cuda.is_available():
+                devices.append(torch.device("cuda"))
 
-        # Measure all timings
-        all_timings = evaluate_models_for_all_configs(
-            modelName=modelName,
-            checkpoints=checkpoints,
-            batch_sizes=batch_sizes,
-            devices=devices,
-            sparsity_levels=sparsity_levels
-        )
+            # Measure all timings
+            all_timings = evaluate_models_for_all_configs(
+                modelName=modelName,
+                checkpoints=checkpoints,
+                batch_sizes=batch_sizes,
+                devices=devices,
+                sparsity_levels=sparsity_levels
+            )
 
-        # Store results
-        results[modelName] = {
-            "sparsity_levels": sparsity_levels,
-            "batch_sizes": batch_sizes,
-            "timings": all_timings
-        }
+            # Store results
+            results[modelName] = {
+                "sparsity_levels": sparsity_levels,
+                "batch_sizes": batch_sizes,
+                "timings": all_timings
+            }
 
-        # Plot
-        filename = checkpoints[0][1].split("/")[-2]
-        plot_timing_grid(modelName, sparsity_levels, batch_sizes, all_timings, filename)
+            # Plot
+            filename = checkpoints[0][1].split("/")[-2]
+            plot_timing_grid(modelName, sparsity_levels, batch_sizes, all_timings, filename)
 
-        # Save results as CSV with flattening timing dict to DataFrame for clarity
-        records = []
-        for device_type in all_timings:
-            for batch_size in all_timings[device_type]:
-                timing_data = all_timings[device_type][batch_size]
-                for i, sparsity in enumerate(sparsity_levels):
-                    records.append({
-                        "Device": device_type,
-                        "Batch Size": batch_size,
-                        "Sparsity": sparsity,
-                        "Unpruned Dense": timing_data["unpruned_dense"],
-                        "Pruned Dense": timing_data["pruned_dense"][i],
-                        "Pruned Sparse": timing_data["pruned_sparse"][i],
-                    })
+            # Save results as CSV with flattening timing dict to DataFrame for clarity
+            records = []
+            for device_type in all_timings:
+                for batch_size in all_timings[device_type]:
+                    timing_data = all_timings[device_type][batch_size]
+                    for i, sparsity in enumerate(sparsity_levels):
+                        records.append({
+                            "Device": device_type,
+                            "Batch Size": batch_size,
+                            "Sparsity": sparsity,
+                            "Unpruned Dense": timing_data["unpruned_dense"],
+                            "Pruned Dense": timing_data["pruned_dense"][i],
+                            "Pruned Sparse": timing_data["pruned_sparse"][i],
+                        })
 
-        df = pd.DataFrame(records)
-        csv_path = f"{filename}.csv"
-        df.to_csv(csv_path, index=False)
-        print(f"[Saved CSV] {csv_path}")
+            df = pd.DataFrame(records)
+            csv_path = f"{filename}.csv"
+            df.to_csv(csv_path, index=False)
+            print(f"[Saved CSV] {csv_path}")
 
-        print(f"[Completed] {modelName} evaluation and plotting.")
+            print(f"[Completed] {modelName} evaluation and plotting.")
 
     return results
 

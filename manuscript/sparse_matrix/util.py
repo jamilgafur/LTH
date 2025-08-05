@@ -102,7 +102,7 @@ def getModelType(model_name):
     elif model_name == "LeNet":
         return LeNet
     elif model_name == "RegNetX":
-        return RegNetX_400MF(num_classes=200)
+        return RegNetX_400MF
     else:
         raise ValueError(f"Unknown model type: {model_name}")
 
