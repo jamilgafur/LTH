@@ -14,6 +14,7 @@ setup(
         'scikit-learn',
         'tqdm',
         'torchvision',
+        'codecarbon',
         
     ],
     author="Jamil Gafur",

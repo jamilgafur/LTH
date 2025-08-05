@@ -3,6 +3,7 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
+import glob
 from SparseConv2d import SparseConv2d
 from SparseLinear import SparseLinear
 from util import *
@@ -19,13 +20,14 @@ torch._dynamo.config.suppress_errors = True
 def evaluate_model_performance(model: torch.nn.Module, device: torch.device, batch_size: int, modelName: str) -> float:
     x = generateData(modelName, batch_size, device)
     with torch.no_grad():
-        time_s = measure_inference_time(model, x, device)
-    return time_s
+        time_s, emissions = measure_inference(model, x, device)
+    return time_s, emissions
 
 
 def evaluate_models_for_all_configs(modelName, checkpoints, batch_sizes, devices, sparsity_levels):
     modelType = getModelType(modelName)
     all_timings = {"CPU": {}, "GPU": {}}
+    all_emissions = {"CPU": {}, "GPU": {}}
 
     for batch_size in batch_sizes:
         for device in devices:
@@ -38,119 +40,123 @@ def evaluate_models_for_all_configs(modelName, checkpoints, batch_sizes, devices
                 "pruned_dense": [],
                 "pruned_sparse": []
             }
+            all_emissions[device_type][batch_size] = {
+                "unpruned_dense": None,
+                "pruned_dense": [],
+                "pruned_sparse": []
+            }
 
-            # 1) Unpruned Dense model (sparsity = 0)
+            # Unpruned Dense model
             dense_model = modelType()
             dense_model.to(device)
             dense_model.eval()
             if torch.__version__ >= "2.0":
                 dense_model = torch.compile(dense_model)
 
-            unpruned_time = evaluate_model_performance(dense_model, device, batch_size, modelName)
+            unpruned_time, unpruned_emissions = evaluate_model_performance(dense_model, device, batch_size, modelName)
             all_timings[device_type][batch_size]["unpruned_dense"] = unpruned_time
+            all_emissions[device_type][batch_size]["unpruned_dense"] = unpruned_emissions
 
-            # 2) Pruned models: Dense and Sparse timings
             pruned_dense_times = []
+            pruned_dense_emissions = []
             pruned_sparse_times = []
+            pruned_sparse_emissions = []
 
             for sparsity, ckpt_path in checkpoints:
-                # Load pruned dense model
                 pruned_dense_model = load_model_from_checkpoint(modelType, ckpt_path, device, use_compile=True)
-
-                dense_time = evaluate_model_performance(pruned_dense_model, device, batch_size, modelName)
+                dense_time, dense_emissions = evaluate_model_performance(pruned_dense_model, device, batch_size, modelName)
                 pruned_dense_times.append(dense_time)
+                pruned_dense_emissions.append(dense_emissions)
 
-                # Convert to sparse representation
-                sparse_model = load_model_from_checkpoint(modelType, ckpt_path, device, use_compile=False)  # no compile before convert
+                sparse_model = load_model_from_checkpoint(modelType, ckpt_path, device, use_compile=False)
                 convert_all_to_sparse(sparse_model)
                 if torch.__version__ >= "2.0":
                     sparse_model = torch.compile(sparse_model)
                 sparse_model.to(device)
                 sparse_model.eval()
 
-                sparse_time = evaluate_model_performance(sparse_model, device, batch_size, modelName)
+                sparse_time, sparse_emissions = evaluate_model_performance(sparse_model, device, batch_size, modelName)
                 pruned_sparse_times.append(sparse_time)
+                pruned_sparse_emissions.append(sparse_emissions)
 
             all_timings[device_type][batch_size]["pruned_dense"] = pruned_dense_times
             all_timings[device_type][batch_size]["pruned_sparse"] = pruned_sparse_times
+            all_emissions[device_type][batch_size]["pruned_dense"] = pruned_dense_emissions
+            all_emissions[device_type][batch_size]["pruned_sparse"] = pruned_sparse_emissions
 
-    return all_timings
+    return all_timings, all_emissions
 
 
-import os
-import matplotlib.pyplot as plt
-
-def plot_timing_grid(modelName, sparsity_levels, batch_sizes, all_timings, filename):
-    n_rows = 2
+def plot_timing_and_emissions_separate_rows(modelName, sparsity_levels, batch_sizes, all_timings, all_emissions, filename):
+    n_rows = 4  # CPU timing, CPU emissions, GPU timing, GPU emissions
     n_cols = len(batch_sizes)
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 5 * n_rows), sharey=True)
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 5 * n_rows), sharex=True)
 
-    device_order = ["CPU", "GPU"]
-    device_row_idx = {"CPU": 0, "GPU": 1}
+    devices = ["CPU", "GPU"]
+    sparsity_percent = [s * 100 for s in sparsity_levels]
 
     for col_idx, batch_size in enumerate(batch_sizes):
-        for device_type in device_order:
-            row_idx = device_row_idx[device_type]
-            ax = axes[row_idx][col_idx] if n_cols > 1 else axes[row_idx]
+        for device_idx, device_type in enumerate(devices):
+            timing_row = device_idx * 2
+            emissions_row = timing_row + 1
+
+            ax_time = axes[timing_row][col_idx] if n_cols > 1 else axes[timing_row]
+            ax_emission = axes[emissions_row][col_idx] if n_cols > 1 else axes[emissions_row]
 
             timing_data = all_timings[device_type][batch_size]
+            emissions_data = all_emissions[device_type][batch_size]
 
-            # Normalize all timings by batch size for per-data-point timing
-            unpruned_time_per_data = timing_data["unpruned_dense"] / batch_size
-            pruned_dense_times_per_data = [t / batch_size for t in timing_data["pruned_dense"]]
-            pruned_sparse_times_per_data = [t / batch_size for t in timing_data["pruned_sparse"]]
+            # Timing per data point
+            unpruned_time = timing_data["unpruned_dense"] / batch_size
+            pruned_dense_times = [t / batch_size for t in timing_data["pruned_dense"]]
+            pruned_sparse_times = [t / batch_size for t in timing_data["pruned_sparse"]]
 
-            # x-axis: sparsity in %
-            sparsity_percent = [s * 100 for s in sparsity_levels]
+            # Emissions per data point
+            unpruned_emission = emissions_data["unpruned_dense"] / batch_size
+            pruned_dense_emissions = [e / batch_size for e in emissions_data["pruned_dense"]]
+            pruned_sparse_emissions = [e / batch_size for e in emissions_data["pruned_sparse"]]
 
-            # Plot unpruned dense time (constant line)
-            ax.axhline(
-                y=unpruned_time_per_data,
-                linestyle='--',
-                color='black',
-                label=f"Unpruned Dense (Time/Item={unpruned_time_per_data:.4f}s)"
-            )
-            ax.set_yscale("log")
+            # Plot Timing
+            ax_time.set_yscale("log")
+            ax_time.axhline(y=unpruned_time, linestyle='--', color='black',
+                            label=f"Unpruned Dense Time/item={unpruned_time:.4f}s")
+            ax_time.plot(sparsity_percent, pruned_dense_times, marker='o', color='blue', label="Pruned Dense Time")
+            ax_time.plot(sparsity_percent, pruned_sparse_times, marker='x', color='green', label="Pruned Sparse Time")
 
-            # Plot pruned dense model times
-            ax.plot(
-                sparsity_percent,
-                pruned_dense_times_per_data,
-                marker='o',
-                color='blue',
-                label="Pruned Dense Model"
-            )
-
-            # Plot pruned sparse model times
-            ax.plot(
-                sparsity_percent,
-                pruned_sparse_times_per_data,
-                marker='x',
-                color='green',
-                label="Pruned Sparse Model (CSR)"
-            )
-
-            if row_idx == 0:
-                ax.set_title(f"Batch Size = {batch_size}", fontsize=12)
             if col_idx == 0:
-                ax.set_ylabel(f"{device_type} Inference Time per Data (s)", fontsize=11)
+                ax_time.set_ylabel(f"{device_type} Inference Time\nper Data (s)", fontsize=11)
+            if timing_row == 0:
+                ax_time.set_title(f"Batch Size = {batch_size}", fontsize=12)
+            ax_time.grid(True, which="both", linestyle="--", linewidth=0.5)
+            ax_time.legend(fontsize=9)
 
-            ax.set_xlabel("Sparsity Level (%)", fontsize=11)
-            ax.grid(True)
-            ax.legend(fontsize=9)
+            # Plot Emissions
+            ax_emission.axhline(y=unpruned_emission, linestyle='--', color='black',
+                               label=f"Unpruned Dense Emission/item={unpruned_emission:.6f}kg")
+            ax_emission.plot(sparsity_percent, pruned_dense_emissions, marker='o', linestyle='-', color='blue',
+                             label="Pruned Dense Emission")
+            ax_emission.plot(sparsity_percent, pruned_sparse_emissions, marker='x', linestyle='-', color='green',
+                             label="Pruned Sparse Emission")
 
-    fig.suptitle(f"{modelName} – Per-Data Inference Time Comparison (CPU & GPU)", fontsize=16)
+            if col_idx == 0:
+                ax_emission.set_ylabel(f"{device_type} CO₂ Emission\nper Data (kg)", fontsize=11)
+            ax_emission.set_xlabel("Sparsity Level (%)", fontsize=11)
+            ax_emission.grid(True, linestyle="--", linewidth=0.5)
+            ax_emission.legend(fontsize=9)
+
+    fig.suptitle(f"{modelName} – Per-Data Inference Time & CO₂ Emissions (CPU & GPU)", fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     output_dir = "./plots"
     os.makedirs(output_dir, exist_ok=True)
-    plot_filename = f"{filename}.png"
+    plot_filename = f"{filename}_timing_emissions.png"
     plt.savefig(os.path.join(output_dir, plot_filename))
     plt.close()
     print(f"[Saved Plot] {plot_filename}")
 
+
 def main():
     torch.manual_seed(0)
-    models = ["ResNet20", "Vgg16_ImageNet", "Vgg16_", ]
+    models = ["ResNet20", "Vgg16_ImageNet", "Vgg16_"]
     batch_sizes = [1, 32, 64]
 
     results = {}
@@ -171,8 +177,7 @@ def main():
             if torch.cuda.is_available():
                 devices.append(torch.device("cuda"))
 
-            # Measure all timings
-            all_timings = evaluate_models_for_all_configs(
+            all_timings, all_emissions = evaluate_models_for_all_configs(
                 modelName=modelName,
                 checkpoints=checkpoints,
                 batch_sizes=batch_sizes,
@@ -180,34 +185,39 @@ def main():
                 sparsity_levels=sparsity_levels
             )
 
-            # Store results
             results[modelName] = {
                 "sparsity_levels": sparsity_levels,
                 "batch_sizes": batch_sizes,
-                "timings": all_timings
+                "timings": all_timings,
+                "emissions": all_emissions
             }
 
-            # Plot
             filename = checkpoints[0][1].split("/")[-2]
-            plot_timing_grid(modelName, sparsity_levels, batch_sizes, all_timings, filename)
 
-            # Save results as CSV with flattening timing dict to DataFrame for clarity
+            # Use combined timing & emissions plot with separate rows
+            plot_timing_and_emissions_separate_rows(modelName, sparsity_levels, batch_sizes, all_timings, all_emissions, filename)
+
+            # Save combined CSV for timings and emissions
             records = []
             for device_type in all_timings:
                 for batch_size in all_timings[device_type]:
                     timing_data = all_timings[device_type][batch_size]
+                    emission_data = all_emissions[device_type][batch_size]
                     for i, sparsity in enumerate(sparsity_levels):
                         records.append({
                             "Device": device_type,
                             "Batch Size": batch_size,
                             "Sparsity": sparsity,
-                            "Unpruned Dense": timing_data["unpruned_dense"],
-                            "Pruned Dense": timing_data["pruned_dense"][i],
-                            "Pruned Sparse": timing_data["pruned_sparse"][i],
+                            "Unpruned Dense Time": timing_data["unpruned_dense"],
+                            "Pruned Dense Time": timing_data["pruned_dense"][i],
+                            "Pruned Sparse Time": timing_data["pruned_sparse"][i],
+                            "Unpruned Dense Emissions": emission_data["unpruned_dense"],
+                            "Pruned Dense Emissions": emission_data["pruned_dense"][i],
+                            "Pruned Sparse Emissions": emission_data["pruned_sparse"][i],
                         })
 
             df = pd.DataFrame(records)
-            csv_path = f"{filename}.csv"
+            csv_path = f"{filename}_timings_emissions.csv"
             df.to_csv(csv_path, index=False)
             print(f"[Saved CSV] {csv_path}")
 
@@ -217,4 +227,5 @@ def main():
 
 
 if __name__ == "__main__":
+    torch.manual_seed(6991)
     main()
