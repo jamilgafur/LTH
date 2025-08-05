@@ -30,18 +30,16 @@ class SparseConv2d(nn.Module):
         x_unfold = F.unfold(x, kernel_size=self.kernel_size,
                             dilation=self.dilation,
                             padding=self.padding,
-                            stride=self.stride)
+                            stride=self.stride)  # (B, K, L)
         B, K, L = x_unfold.shape
-        x_unfold = x_unfold.permute(0, 2, 1).contiguous().view(B*L, K)
 
-        # Option 1: Dense fallback (uncomment if sparse matmul is bottleneck and memory allows)
-        # dense_weight = self.sparse_weight.to_dense()
-        # out = x_unfold @ dense_weight.T
+        # Merge batch and locations dimension to do a single sparse mm
+        x_unfold = x_unfold.permute(0, 2, 1).contiguous().view(B*L, K)  # (B*L, K)
 
-        # Option 2: Sparse batch matmul without Python loop in forward (recommended)
-        out = self.sparse_mm_per_batch(x_unfold, B, L)
+        # sparse_mm with sparse_weight: (out_channels, in_channels*kernel_size*kernel_size)
+        out = torch.sparse.mm(self.sparse_weight, x_unfold.T).T  # (B*L, out_channels)
 
-        out = out.view(B, L, self.out_channels).permute(0, 2, 1)
+        out = out.view(B, L, self.out_channels).permute(0, 2, 1)  # (B, out_channels, L)
 
         out_h = (H + 2*self.padding - self.dilation*(self.kernel_size - 1) - 1)//self.stride + 1
         out_w = (W + 2*self.padding - self.dilation*(self.kernel_size - 1) - 1)//self.stride + 1
@@ -49,6 +47,6 @@ class SparseConv2d(nn.Module):
         out = out.view(B, self.out_channels, out_h, out_w)
 
         if self.bias is not None:
-            out.add_(self.bias.view(1, -1, 1, 1))
+            out += self.bias.view(1, -1, 1, 1)
 
         return out

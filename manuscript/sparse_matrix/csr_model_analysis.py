@@ -63,6 +63,8 @@ def evaluate_models_for_all_configs(modelName, checkpoints, batch_sizes, devices
                 # Convert to sparse representation
                 sparse_model = load_model_from_checkpoint(modelType, ckpt_path, device, use_compile=False)  # no compile before convert
                 convert_all_to_sparse(sparse_model)
+                if torch.__version__ >= "2.0":
+                    sparse_model = torch.compile(sparse_model)
                 sparse_model.to(device)
                 sparse_model.eval()
 
@@ -108,6 +110,7 @@ def plot_timing_grid(modelName, sparsity_levels, batch_sizes, all_timings, filen
                 color='black',
                 label=f"Unpruned Dense (Time/Item={unpruned_time_per_data:.4f}s)"
             )
+            ax.set_yscale("log")
 
             # Plot pruned dense model times
             ax.plot(
