@@ -75,7 +75,10 @@ def evaluate_models_for_all_configs(modelName, checkpoints, batch_sizes, devices
     return all_timings
 
 
-def plot_timing_grid(modelName, sparsity_levels, batch_sizes, all_timings):
+import os
+import matplotlib.pyplot as plt
+
+def plot_timing_grid(modelName, sparsity_levels, batch_sizes, all_timings, filename):
     n_rows = 2
     n_cols = len(batch_sizes)
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 5 * n_rows), sharey=True)
@@ -90,21 +93,26 @@ def plot_timing_grid(modelName, sparsity_levels, batch_sizes, all_timings):
 
             timing_data = all_timings[device_type][batch_size]
 
-            # x axis is sparsity in %
+            # Normalize all timings by batch size for per-data-point timing
+            unpruned_time_per_data = timing_data["unpruned_dense"] / batch_size
+            pruned_dense_times_per_data = [t / batch_size for t in timing_data["pruned_dense"]]
+            pruned_sparse_times_per_data = [t / batch_size for t in timing_data["pruned_sparse"]]
+
+            # x-axis: sparsity in %
             sparsity_percent = [s * 100 for s in sparsity_levels]
 
             # Plot unpruned dense time (constant line)
             ax.axhline(
-                y=timing_data["unpruned_dense"],
+                y=unpruned_time_per_data,
                 linestyle='--',
                 color='black',
-                label=f"Unpruned Dense (Time={timing_data['unpruned_dense']:.4f}s)"
+                label=f"Unpruned Dense (Time/Item={unpruned_time_per_data:.4f}s)"
             )
 
             # Plot pruned dense model times
             ax.plot(
                 sparsity_percent,
-                timing_data["pruned_dense"],
+                pruned_dense_times_per_data,
                 marker='o',
                 color='blue',
                 label="Pruned Dense Model"
@@ -113,7 +121,7 @@ def plot_timing_grid(modelName, sparsity_levels, batch_sizes, all_timings):
             # Plot pruned sparse model times
             ax.plot(
                 sparsity_percent,
-                timing_data["pruned_sparse"],
+                pruned_sparse_times_per_data,
                 marker='x',
                 color='green',
                 label="Pruned Sparse Model (CSR)"
@@ -122,26 +130,25 @@ def plot_timing_grid(modelName, sparsity_levels, batch_sizes, all_timings):
             if row_idx == 0:
                 ax.set_title(f"Batch Size = {batch_size}", fontsize=12)
             if col_idx == 0:
-                ax.set_ylabel(f"{device_type} Inference Time (s)", fontsize=11)
+                ax.set_ylabel(f"{device_type} Inference Time per Data (s)", fontsize=11)
 
             ax.set_xlabel("Sparsity Level (%)", fontsize=11)
             ax.grid(True)
             ax.legend(fontsize=9)
 
-    fig.suptitle(f"{modelName} – Inference Time Comparison (CPU & GPU)", fontsize=16)
+    fig.suptitle(f"{modelName} – Per-Data Inference Time Comparison (CPU & GPU)", fontsize=16)
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     output_dir = "./plots"
     os.makedirs(output_dir, exist_ok=True)
-    plot_filename = f"{modelName}_inference_time_comparison.png"
+    plot_filename = f"{filename}.png"
     plt.savefig(os.path.join(output_dir, plot_filename))
     plt.close()
     print(f"[Saved Plot] {plot_filename}")
 
-
 def main():
     torch.manual_seed(0)
     models = ["ResNet20", "Vgg16_ImageNet", "Vgg16_", "RegNetX"]
-    batch_sizes = [1, 32,64]
+    batch_sizes = [1, 32, 64]
 
     results = {}
 
@@ -175,7 +182,8 @@ def main():
         }
 
         # Plot
-        plot_timing_grid(modelName, sparsity_levels, batch_sizes, all_timings)
+        filename = checkpoints[0][1].split("/")[-2]
+        plot_timing_grid(modelName, sparsity_levels, batch_sizes, all_timings, filename)
 
         # Save results as CSV with flattening timing dict to DataFrame for clarity
         records = []
@@ -193,12 +201,11 @@ def main():
                     })
 
         df = pd.DataFrame(records)
-        csv_path = f"{modelName}_inference_timings.csv"
+        csv_path = f"{filename}.csv"
         df.to_csv(csv_path, index=False)
         print(f"[Saved CSV] {csv_path}")
 
         print(f"[Completed] {modelName} evaluation and plotting.")
-        break  # remove if want all models processed
 
     return results
 
