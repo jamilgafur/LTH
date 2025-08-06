@@ -13,47 +13,53 @@ from pyPrune.models.Vgg16ImageNet import VGG16_ImageNet
 from pyPrune.models.Vgg16 import VGG16_CIFAR10
 from pyPrune.models.RegNetX import RegNetX_400MF
 
-def convert_all_to_sparse(model):
+def convert_all_to_sparse(model, threshold=0.0):
+    assert 0.0 <= threshold <= 1.0, "Threshold must be between 0 and 1"
+
+    def is_sparse_enough(tensor, threshold):
+        total_elements = tensor.numel()
+        zero_elements = (tensor == 0).sum().item()
+        return (zero_elements / total_elements) >= threshold
+
     def convert_linear_to_sparse(module):
         for name, child in module.named_children():
             if isinstance(child, nn.Linear):
-                sparse_weight = child.weight.data.to_sparse_csr()
-                bias = child.bias.data if child.bias is not None else None
-                sparse_linear_layer = SparseLinear(sparse_weight, bias)
-                setattr(module, name, sparse_linear_layer)
+                weight = child.weight.data
+                if is_sparse_enough(weight, threshold):
+                    sparse_weight = weight.to_sparse_csr()
+                    bias = child.bias.data if child.bias is not None else None
+                    sparse_linear_layer = SparseLinear(sparse_weight, bias)
+                    setattr(module, name, sparse_linear_layer)
             else:
                 convert_linear_to_sparse(child)
 
     def convert_conv_to_sparse(module):
         for name, child in module.named_children():
             if isinstance(child, nn.Conv2d):
-                # Convert weight to sparse CSR
-                # For conv, flatten kernel dimensions for weight matrix:
-                # weight shape: (out_channels, in_channels, kernel_h, kernel_w)
-                # Reshape to (out_channels, in_channels * kernel_h * kernel_w)
-                weight_dense = child.weight.data
-                out_channels, in_channels, kh, kw = weight_dense.shape
-                weight_2d = weight_dense.view(out_channels, -1)
-                sparse_weight = weight_2d.to_sparse_csr()
-
-                bias = child.bias.data if child.bias is not None else None
-
-                new_layer = SparseConv2d(
-                    sparse_weight=sparse_weight,
-                    bias=bias,
-                    in_channels=in_channels,
-                    out_channels=out_channels,
-                    kernel_size=kh,
-                    stride=child.stride[0],
-                    padding=child.padding[0],
-                    dilation=child.dilation[0]
-                )
-                setattr(module, name, new_layer)
+                weight = child.weight.data
+                out_channels, in_channels, kh, kw = weight.shape
+                weight_2d = weight.view(out_channels, -1)
+                
+                if is_sparse_enough(weight_2d, threshold):
+                    sparse_weight = weight_2d.to_sparse_csr()
+                    bias = child.bias.data if child.bias is not None else None
+                    new_layer = SparseConv2d(
+                        sparse_weight=sparse_weight,
+                        bias=bias,
+                        in_channels=in_channels,
+                        out_channels=out_channels,
+                        kernel_size=kh,
+                        stride=child.stride[0],
+                        padding=child.padding[0],
+                        dilation=child.dilation[0]
+                    )
+                    setattr(module, name, new_layer)
             else:
                 convert_conv_to_sparse(child)
 
     convert_linear_to_sparse(model)
     convert_conv_to_sparse(model)
+
 
 def validate_original_weights_not_sparse(module):
     for name, child in module.named_children():

@@ -48,10 +48,6 @@ def measure_inference(
     model = move_to_device_if_needed(model, device)
     x = move_to_device_if_needed(x, device)
 
-    # Warm-up runs (GPU especially needs this)
-    with torch.no_grad():
-        for _ in range(3):
-            model(x)
     if device.type == 'cuda':
         torch.cuda.synchronize()
 
