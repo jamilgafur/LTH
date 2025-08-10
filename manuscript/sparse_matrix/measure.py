@@ -68,7 +68,7 @@ def measure_single_run(
     measure_power_secs: int
 ) -> Dict[str, float]:
     run_id = str(uuid.uuid4())
-    output_dir = f"./codecardbon/cc_logs_run_{run}"
+    output_dir = f"./codecardbon/{model.__class__.__name__}/{device.type}/{run_id}"
     os.makedirs(output_dir, exist_ok=True)
 
     tracker = OfflineEmissionsTracker(

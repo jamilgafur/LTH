@@ -96,9 +96,9 @@ def load_model_from_checkpoint(model_cls, checkpoint_path: str, device: torch.de
     if "Vgg16ImageNet" in checkpoint_path:
         model =model_cls(num_classes=200)  # VGG16 for ImageNet
     elif "Vgg16_" in checkpoint_path:
-        model = model_cls(num_classes=10)
+        model = model_cls()
     elif "ResNet20" in checkpoint_path:
-        model = model_cls(num_classes=10)
+        model = model_cls()
     elif "RegNetX" in checkpoint_path:
         model = model_cls(num_classes=200)
     else:    
@@ -119,13 +119,11 @@ def generateData(modelName, batch_size, device):
     if modelName == "ResNet20":
         x = torch.randn(batch_size, 3, 32, 32, device=device)
     elif modelName == "Vgg16ImageNet":
-        x = torch.randn(batch_size, 3, 224, 224, device=device)
+        x = torch.randn(batch_size, 3, 64, 64, device=device)
     elif modelName == "Vgg16_":
         x = torch.randn(batch_size, 3, 32, 32, device=device)
-    elif modelName == "LeNet":
-        x = torch.randn(batch_size, 1, 32, 32, device=device)
     elif modelName == "RegNetX":
-        x = torch.randn(batch_size, 3, 224, 224, device=device)
+        x = torch.randn(batch_size, 3, 64, 64, device=device)
     else:
         raise ValueError(f"Unknown model type: {modelName}")
     return x

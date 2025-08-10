@@ -1,5 +1,5 @@
-
-
+# scancel -u jgafur; rm -rf codecardbon/ plots/ err.err out.out ; clear; bash runner.sh; squeue -u jgafur
+import argparse
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
@@ -7,6 +7,8 @@ import seaborn as sns
 import pandas as pd
 import os
 import glob
+import numpy as np
+import matplotlib.cm as cm
 
 from SparseConv2d import SparseConv2d
 from SparseLinear import SparseLinear
@@ -32,7 +34,6 @@ def evaluate_model_performance(model: torch.nn.Module, device: torch.device, bat
         run_data = measure_inference(model, x, device)
 
     return run_data
-
 
 def evaluate_models_for_sparsities(modelName, sparsity_paths, batch_size=64, threshold=0.0):
     devices = {
@@ -62,8 +63,6 @@ def evaluate_models_for_sparsities(modelName, sparsity_paths, batch_size=64, thr
                 run["emissions_data"]["cpu_energy"] = float(run["emissions_data"]["cpu_energy"]) / batch_size
                 run["emissions_data"]["gpu_energy"] = float(run["emissions_data"]["gpu_energy"]) / batch_size
 
-            
-
             times = [run["duration"] for run in run_data.values()]
             cpu_energy = [float(run["emissions_data"]["cpu_energy"]) for run in run_data.values()]
             gpu_energy = [float(run["emissions_data"]["gpu_energy"]) for run in run_data.values()]
@@ -76,18 +75,38 @@ def evaluate_models_for_sparsities(modelName, sparsity_paths, batch_size=64, thr
 
     return metrics, labels, row_labels, metric_names
 
+import re
 
-def save_metrics_to_csv(all_data, modelName):
+def sanitize_filename(text):
+    """Make a string safe for use in filenames."""
+    text = str(text).strip()
+    # Replace "." with "p" for floats (e.g., 0.5 → 0p5)
+    text = text.replace('.', 'p')
+    # Remove or replace any other unsafe characters
+    return re.sub(r'[^\w\-]', '_', text)
+
+def save_metrics_to_csv(all_data, modelName, batch_size, thresholds):
+    # Clean up model name (remove accidental trailing underscores)
+    modelName = modelName.strip('_')
+
+    # Create a DataFrame from the data
     df = pd.DataFrame(all_data)
-    os.makedirs("plots", exist_ok=True)
-    csv_path = f"./plots/{modelName}_performance_metrics.csv"
-    df.to_csv(csv_path, index=False)
-    print(f"Saved combined metrics CSV to {csv_path}")
 
+    # Create plots directory if it doesn't exist
+    os.makedirs("plots", exist_ok=True)
+
+    # Sanitize threshold list for filename
+    thresholds_str = "_".join(sanitize_filename(th) for th in thresholds)
+
+    # Build output file path
+    csv_filename = f"{modelName}_{batch_size}batchsize_thresholds_{thresholds_str}_performance_metrics.csv"
+    csv_path = os.path.join("plots", csv_filename)
+
+    # Save CSV
+    df.to_csv(csv_path, index=False)
+    print(f"Saved metrics to: {csv_path}")
 
 def plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs, colors):
-    import numpy as np
-
     metric_titles = {
         "memory": "Peak Memory (MB)",
         "time": "Time (s)",
@@ -132,39 +151,39 @@ def plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs
 
             ax.grid(True)
 
-import matplotlib.pyplot as plt
-
 def main():
-    import matplotlib.pyplot as plt
-    import matplotlib.cm as cm
-    import numpy as np
+    # Argument parsing
+    parser = argparse.ArgumentParser(description="Evaluate model performance across different sparsities.")
+    parser.add_argument('--models', nargs='+', default=["Vgg16ImageNet", "Vgg16_", "ResNet20"], help="List of models to evaluate.")
+    parser.add_argument('--batch_sizes', type=int, nargs='+', default=[32], help="List of batch sizes.")
+    parser.add_argument('--thresholds', type=float, nargs='+', default=[0.0, 0.5, 1.0], help="List of thresholds for sparsity.")
+    parser.add_argument('--path_to_checkpoints', type=str, default="../../../../plots/LTH_output/*", help="Path to checkpoint files.")
+    
+    args = parser.parse_args()
 
-    models = [ "Vgg16ImageNet", "Vgg16_", "ResNet20"]
-    batch_sizes = [32]
-    thresholds = [0.0, 0.5, 1.0]
-    for batch_size in batch_sizes:
-        for modelName in models:
-            path_to_checkpoints = f"../../../../plots/LTH_output/*{modelName}*"
+    for batch_size in args.batch_sizes:
+        for modelName in args.models:
+            path_to_checkpoints = f"{args.path_to_checkpoints}*{modelName}*"
             all_paths = get_checkpoints(path_to_checkpoints, prefix="checkpoint_Pruned_")
-            # Use first, left middle, right middle, middle and last paths for thresholds (0,25% 50 and 75% 100%)
+            # Use first, left middle, right middle, middle, and last paths for thresholds
             all_paths = [all_paths[0], all_paths[len(all_paths) // 4], all_paths[len(all_paths) // 2], all_paths[3 * len(all_paths) // 4], all_paths[-1]]
             fig, axs = plt.subplots(2, 4, figsize=(20, 8), sharex=True)
 
             axs = np.array(axs)
 
             color_map = cm.get_cmap('tab10')
-            colors = {f"Threshold={th}": color_map(i) for i, th in enumerate(thresholds)}
+            colors = {f"Threshold={th}": color_map(i) for i, th in enumerate(args.thresholds)}
 
             all_rows = []  
 
-            for threshold in thresholds:
+            for threshold in args.thresholds:
                 threshold_label = f"Threshold={threshold}"
 
                 metrics, labels, row_labels, metric_names = evaluate_models_for_sparsities(
                     modelName, all_paths, batch_size, threshold=threshold
                 )
 
-                # 👇 Add rows for this threshold to the combined list
+                # Add rows for this threshold to the combined list
                 for i, label in enumerate(labels):
                     for device_key in row_labels:
                         all_rows.append({
@@ -180,20 +199,20 @@ def main():
                 plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs, colors)
 
             # Save combined CSV once per model
-            save_metrics_to_csv(all_rows, modelName)
+            save_metrics_to_csv(all_rows, modelName, batch_size, args.thresholds)
 
             for ax in axs[-1, :]:
                 ax.set_xlabel("Sparsity")
-
 
             for j in range(axs.shape[1]):
                 axs[0, j].legend(loc='upper right', fontsize=8)
 
             plt.tight_layout()
             plt.suptitle(f"{modelName} Performance Metrics across Thresholds", fontsize=18, y=1.02)
-            plt.savefig(f"./plots/{modelName}_all_thresholds_comparison.png")
-            plt.savefig(f"./plots/{modelName}_all_thresholds_comparison.svg")
-            plt.show()
-   
+            plot_filename = f"./plots/{modelName}_{batch_size}_{'_'.join(map(str, args.thresholds))}_comparison"
+            plt.savefig(f"{plot_filename}.png")
+            plt.savefig(f"{plot_filename}.svg")
+            plt.close(fig)
+            
 if __name__ == "__main__":
     main()
