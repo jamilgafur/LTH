@@ -2,7 +2,7 @@
 #SBATCH --job-name=trinity
 #SBATCH --ntasks=1
 #SBATCH --time=02:00:00   # Max runtime (11 hour)
-#SBATCH --mem=64GB
+#SBATCH --mem=32GB
 #SBATCH --gpus=1
 #SBATCH --account=modularai
 #SBATCH --output=out.out

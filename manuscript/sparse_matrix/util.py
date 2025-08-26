@@ -15,6 +15,9 @@ from pyPrune.models.RegNetX import RegNetX_400MF
 
 import torch.nn as nn
 
+import torch
+import torch.nn as nn
+
 def convert_all_to_sparse(model, threshold=0.0):
     assert 0.0 <= threshold <= 1.0, (
         "Threshold must be between 0 and 1, where 0 means all layers are converted "
@@ -36,21 +39,31 @@ def convert_all_to_sparse(model, threshold=0.0):
                 sparse_condition = is_sparse_enough(weight, threshold)
                 if sparse_condition or passed_threshold or threshold == 0.0:
                     passed_threshold = passed_threshold or sparse_condition or (threshold == 0.0)
-                    sparse_weight = weight.to_sparse_coo().coalesce()
+                    
+                    # Convert to COO first, then CSR
+                    coo = weight.to_sparse().coalesce()
+                    csr = coo.to_sparse_csr()
+                    
                     bias = child.bias.data if child.bias is not None else None
-                    sparse_linear_layer = SparseLinear(sparse_weight, bias)
+                    sparse_linear_layer = SparseLinear(csr, bias)
                     setattr(module, name, sparse_linear_layer)
+
             elif isinstance(child, nn.Conv2d):
                 weight = child.weight.data
                 out_channels, in_channels, kh, kw = weight.shape
                 weight_2d = weight.view(out_channels, -1)
+
                 sparse_condition = is_sparse_enough(weight_2d, threshold)
                 if sparse_condition or passed_threshold or threshold == 0.0:
                     passed_threshold = passed_threshold or sparse_condition or (threshold == 0.0)
-                    sparse_weight = weight_2d.to_sparse_coo().coalesce()
+                    
+                    # Convert to COO first, then CSR
+                    coo = weight_2d.to_sparse().coalesce()
+                    csr = coo.to_sparse_csr()
+                    
                     bias = child.bias.data if child.bias is not None else None
                     new_layer = SparseConv2d(
-                        sparse_weight=sparse_weight,
+                        sparse_weight=csr,
                         bias=bias,
                         in_channels=in_channels,
                         out_channels=out_channels,

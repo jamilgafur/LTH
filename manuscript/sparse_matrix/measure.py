@@ -125,7 +125,7 @@ def measure_inference(
     model: torch.nn.Module,
     x: torch.Tensor,
     device: torch.device,
-    runs: int = 5,
+    runs: int = 10,
     measure_power_secs: int = 1
 ) -> Tuple[Dict[int, Dict[str, float]], float]:
     """

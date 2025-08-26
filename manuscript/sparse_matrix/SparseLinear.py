@@ -5,13 +5,15 @@ from torch import Tensor
 class SparseLinear(nn.Module):
     def __init__(self, sparse_weight: Tensor, bias: Tensor = None):
         super().__init__()
-        assert sparse_weight.layout == torch.sparse_coo, "sparse_weight must be COO sparse tensor"
+        assert sparse_weight.layout == torch.sparse_csr, "sparse_weight must be CSR sparse tensor"
         self.sparse_weight = sparse_weight
         self.bias = bias
 
     def _sparse_linear(self, input: Tensor, sparse_weight: Tensor, bias: Tensor = None) -> Tensor:
         assert input.dim() == 2, "Input must be 2D (batch_size, in_features)"
-        output = torch.sparse.mm(sparse_weight, input.t()).t()
+        # Ensure weight and input are on the same device
+        sparse_weight = sparse_weight.to(input.device)
+        output = torch.sparse.mm(sparse_weight, input.t()).t()  # (batch, out_features)
         if bias is not None:
             output += bias
         return output

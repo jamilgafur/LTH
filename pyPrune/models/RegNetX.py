@@ -31,7 +31,7 @@ class XBlock(nn.Module):
         return self.relu(self.block(x) + self.shortcut(x))
 
 class RegNetX_400MF(nn.Module):
-    def __init__(self, num_classes=1000):
+    def __init__(self, num_classes=200):
         super(RegNetX_400MF, self).__init__()
 
         self.stem = nn.Sequential(OrderedDict([

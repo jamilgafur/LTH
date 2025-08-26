@@ -4,10 +4,10 @@
 models=("ResNet20" "Vgg16_" "Vgg16ImageNet")
 
 # Batch sizes
-batch_sizes=(64)
+batch_sizes=(1 64)
 
 # Sparsity thresholds (comma-separated list)
-thresholds=("0.0" "0.5" "1.0")
+thresholds=("0.0" "0.5" "0.7" "1.0")
 
 # Path to the experiment script
 experiment_script="experiment.sh"
