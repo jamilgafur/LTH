@@ -19,54 +19,62 @@ import torch
 import torch.nn as nn
 
 def convert_all_to_sparse(model, threshold=0.0):
-    assert 0.0 <= threshold <= 1.0, (
-        "Threshold must be between 0 and 1, where 1 means all layers are converted "
-        "and 0 means only layers with 100% zeros are converted."
-    )
+    """
+    Converts Linear and Conv2d layers to sparse (CSR) if their weight sparsity
+    exceeds the given threshold (0.0 to 1.0).
 
-    def is_sparse_enough(tensor, threshold):
+    Args:
+        model (torch.nn.Module): The model to convert.
+        threshold (float): Sparsity threshold (0.0 to 1.0). Layers with weight sparsity
+                           greater than or equal to this value will be converted.
+    """
+    assert 0.0 <= threshold <= 1.0, "Threshold must be between 0.0 and 1.0 where 1.0 means all layers are converted and 0.0 means only layers with 100% zeros are converted."
+
+    num_linear_checked = 0
+    num_conv2d_checked = 0
+    num_linear_converted = 0
+    num_conv2d_converted = 0
+
+    def layer_sparsity(tensor):
         total_elements = tensor.numel()
         zero_elements = (tensor == 0).sum().item()
-        return (zero_elements / total_elements) >= threshold
-
-    passed_threshold = False
+        return zero_elements / total_elements if total_elements > 0 else 0.0
 
     def convert_layers(module):
-        nonlocal passed_threshold
+        nonlocal num_linear_checked, num_conv2d_checked
+        nonlocal num_linear_converted, num_conv2d_converted
+
         for name, child in module.named_children():
             if isinstance(child, nn.Linear):
+                num_linear_checked += 1
                 weight = child.weight.data
-                sparse_condition = is_sparse_enough(weight, threshold)
+                sparsity = layer_sparsity(weight)
+                print(f"[DEBUG][Linear] Layer: {name}, Sparsity: {sparsity:.4f}")
 
-                # Inverted logic: if threshold is 1.0, we convert all layers
-                if sparse_condition or passed_threshold or threshold == 1.0:
-                    passed_threshold = passed_threshold or sparse_condition or (threshold == 1.0)
-                    
-                    # Convert to COO first, then CSR
+                if sparsity >= threshold:
+                    print(f"  --> Converting Linear layer '{name}' to Sparse (CSR)")
+                    # Convert to CSR
                     coo = weight.to_sparse().coalesce()
                     csr = coo.to_sparse_csr()
-                    
                     bias = child.bias.data if child.bias is not None else None
-                    sparse_linear_layer = SparseLinear(csr, bias)
-                    setattr(module, name, sparse_linear_layer)
+                    sparse_linear = SparseLinear(csr, bias)
+                    setattr(module, name, sparse_linear)
+                    num_linear_converted += 1
 
             elif isinstance(child, nn.Conv2d):
+                num_conv2d_checked += 1
                 weight = child.weight.data
                 out_channels, in_channels, kh, kw = weight.shape
-                weight_2d = weight.view(out_channels, -1)
+                weight_2d = weight.view(out_channels, -1)  # Flatten for sparsity
+                sparsity = layer_sparsity(weight_2d)
+                print(f"[DEBUG][Conv2d] Layer: {name}, Sparsity: {sparsity:.4f}")
 
-                sparse_condition = is_sparse_enough(weight_2d, threshold)
-
-                # Inverted logic: if threshold is 1.0, we convert all layers
-                if sparse_condition or passed_threshold or threshold == 1.0:
-                    passed_threshold = passed_threshold or sparse_condition or (threshold == 1.0)
-                    
-                    # Convert to COO first, then CSR
+                if sparsity >= threshold:
+                    print(f"  --> Converting Conv2d layer '{name}' to Sparse (CSR)")
                     coo = weight_2d.to_sparse().coalesce()
                     csr = coo.to_sparse_csr()
-                    
                     bias = child.bias.data if child.bias is not None else None
-                    new_layer = SparseConv2d(
+                    sparse_conv = SparseConv2d(
                         sparse_weight=csr,
                         bias=bias,
                         in_channels=in_channels,
@@ -76,11 +84,88 @@ def convert_all_to_sparse(model, threshold=0.0):
                         padding=child.padding[0],
                         dilation=child.dilation[0]
                     )
-                    setattr(module, name, new_layer)
+                    setattr(module, name, sparse_conv)
+                    num_conv2d_converted += 1
             else:
+                # Recursively check submodules
                 convert_layers(child)
 
+    # Run conversion
     convert_layers(model)
+
+    # Summary
+    print("\n[SUMMARY] Sparse Conversion Complete:")
+    print(f"  Linear Layers Checked: {num_linear_checked}")
+    print(f"  Linear Layers Converted: {num_linear_converted}")
+    print(f"  Conv2d Layers Checked: {num_conv2d_checked}")
+    print(f"  Conv2d Layers Converted: {num_conv2d_converted}")
+    print(f"  Threshold: {threshold}\n")
+
+# def convert_all_to_sparse(model, threshold=0.0):
+#     assert 0.0 <= threshold <= 1.0, (
+#         "Threshold must be between 0 and 1, where 1 means all layers are converted "
+#         "and 0 means only layers with 100% zeros are converted."
+#     )
+
+#     def is_sparse_enough(tensor, threshold):
+#         total_elements = tensor.numel()
+#         zero_elements = (tensor == 0).sum().item()
+#         return (zero_elements / total_elements) >= threshold
+
+#     passed_threshold = False
+
+#     def convert_layers(module):
+#         nonlocal passed_threshold
+#         for name, child in module.named_children():
+#             if isinstance(child, nn.Linear):
+#                 weight = child.weight.data
+#                 sparse_condition = is_sparse_enough(weight, threshold)
+                
+#                 # Inverted logic: if threshold is 1.0, we convert all layers
+#                 if sparse_condition or passed_threshold or threshold == 1.0:
+#                     passed_threshold = passed_threshold or sparse_condition or (threshold == 1.0)
+                    
+#                     # Convert to COO first, then CSR
+#                     coo = weight.to_sparse().coalesce()
+#                     csr = coo.to_sparse_csr()
+                    
+#                     bias = child.bias.data if child.bias is not None else None
+#                     sparse_linear_layer = SparseLinear(csr, bias)
+#                     setattr(module, name, sparse_linear_layer)
+
+#             elif isinstance(child, nn.Conv2d):
+#                 weight = child.weight.data
+#                 out_channels, in_channels, kh, kw = weight.shape
+#                 weight_2d = weight.view(out_channels, -1)
+
+#                 sparse_condition = is_sparse_enough(weight_2d, threshold)
+#                 if sparse_condition:
+#                     converted_layers += 1
+
+#                 # Inverted logic: if threshold is 1.0, we convert all layers
+#                 if sparse_condition or passed_threshold or threshold == 1.0:
+#                     passed_threshold = passed_threshold or sparse_condition or (threshold == 1.0)
+                    
+#                     # Convert to COO first, then CSR
+#                     coo = weight_2d.to_sparse().coalesce()
+#                     csr = coo.to_sparse_csr()
+                    
+#                     bias = child.bias.data if child.bias is not None else None
+#                     new_layer = SparseConv2d(
+#                         sparse_weight=csr,
+#                         bias=bias,
+#                         in_channels=in_channels,
+#                         out_channels=out_channels,
+#                         kernel_size=kh,
+#                         stride=child.stride[0],
+#                         padding=child.padding[0],
+#                         dilation=child.dilation[0]
+#                     )
+#                     setattr(module, name, new_layer)
+#             else:
+#                 convert_layers(child)
+#     convert_layers(model)
+#     print(f"\n\n\nConverted {converted_layers} layers to sparse format.\n\n\n")
 
 def extract_sparsity_from_filename(filename, prefix="checkpoint_Pruned_"):
     pattern = rf"{prefix}(\d+\.\d+).pth"

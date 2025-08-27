@@ -53,6 +53,7 @@ def evaluate_models_for_sparsities(modelName, sparsity_paths, batch_size=64, thr
             model = load_model_from_checkpoint(getModelType(modelName), path, device, use_compile=False)
 
             # Always apply sparsification based on threshold
+            print(f"Applying sparsification with threshold {threshold} for model with sparsity {sparsity}")
             convert_all_to_sparse(model, threshold=threshold)
 
             run_data = evaluate_model_performance(model, device, batch_size, modelName)
@@ -61,12 +62,12 @@ def evaluate_models_for_sparsities(modelName, sparsity_paths, batch_size=64, thr
                 run["duration"] /= batch_size
                 run["emissions_data"]["cpu_energy"] = float(run["emissions_data"]["cpu_energy"]) / batch_size
                 run["emissions_data"]["gpu_energy"] = float(run["emissions_data"]["gpu_energy"]) / batch_size
-                
+                 
 
             times = [run["duration"] for run in run_data.values()]
             cpu_energy = [float(run["emissions_data"]["cpu_energy"]) for run in run_data.values()]
             gpu_energy = [float(run["emissions_data"]["gpu_energy"]) for run in run_data.values()]
-            mems = [run["peak_mem"] for run in run_data.values()]
+            mems = [run["peak_mem_MB"] for run in run_data.values()]
 
             metrics[device_key]["time"].append(times)
             metrics[device_key]["cpu_energy"].append(cpu_energy)
@@ -105,12 +106,12 @@ def save_metrics_to_csv(all_data, modelName, batch_size, thresholds):
     # Save CSV
     df.to_csv(csv_path, index=False)
     print(f"Saved metrics to: {csv_path}")
-
 def plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs, colors):
     metric_titles = {
         "time": "Time (s)",
         "cpu_energy": "CPU Energy (kWh)",
         "gpu_energy": "GPU Energy (kWh)",
+        "memory": "Peak Memory (MB)",
     }
 
     desired_order = ["memory", "time", "cpu_energy", "gpu_energy"]
@@ -119,42 +120,92 @@ def plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs
     n_rows = len(row_labels)
     n_cols = len(metric_names)
 
+    # Convert labels to floats for proper numeric x-axis plotting if possible
+    try:
+        x_vals = list(map(float, labels))
+    except Exception:
+        x_vals = labels
+
     for i, device_key in enumerate(row_labels):
         for j, metric in enumerate(metric_names):
             ax = axs[i, j] if n_rows > 1 else axs[j]
             all_runs = metrics[device_key][metric]
-            medians, q25s, q75s = [], [], []
 
-            for k in range(len(labels)):
-                runs = np.array(all_runs[k])
-                if len(runs) == 0:
+            medians, q25s, q75s = [], [], []
+            for runs in all_runs:
+                runs_arr = np.array(runs)
+                if runs_arr.size == 0:
                     medians.append(0)
                     q25s.append(0)
                     q75s.append(0)
-                    continue
-
-                medians.append(np.median(runs))
-                q25s.append(np.percentile(runs, 25))
-                q75s.append(np.percentile(runs, 75))
+                else:
+                    medians.append(np.median(runs_arr))
+                    q25s.append(np.percentile(runs_arr, 25))
+                    q75s.append(np.percentile(runs_arr, 75))
 
             color = colors[threshold_label]
 
-            ax.plot(labels, medians, marker='o', linestyle='-', label=threshold_label, color=color)
-            ax.fill_between(labels, q25s, q75s, alpha=0.2, color=color)
+            ax.plot(x_vals, medians, marker='o', linestyle='-', label=threshold_label, color=color)
+            ax.fill_between(x_vals, q25s, q75s, alpha=0.2, color=color)
 
             if i == 0:
                 ax.set_title(metric_titles.get(metric, metric), fontsize=14)
             if j == 0:
-                ax.set_ylabel(device_key.replace('_', ' ').upper(), fontsize=12)
+                ax.set_ylabel(device_key.upper(), fontsize=12)
 
             ax.grid(True)
+            ax.set_xlabel("Sparsity" if i == n_rows - 1 else "")
+
+
+# def plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs, colors):
+#     metric_titles = {
+#         "time": "Time (s)",
+#         "cpu_energy": "CPU Energy (kWh)",
+#         "gpu_energy": "GPU Energy (kWh)",
+#     }
+
+#     desired_order = ["memory", "time", "cpu_energy", "gpu_energy"]
+#     metric_names = [m for m in desired_order if m in metric_names]
+
+#     n_rows = len(row_labels)
+#     n_cols = len(metric_names)
+
+#     for i, device_key in enumerate(row_labels):
+#         for j, metric in enumerate(metric_names):
+#             ax = axs[i, j] if n_rows > 1 else axs[j]
+#             all_runs = metrics[device_key][metric]
+#             medians, q25s, q75s = [], [], []
+
+#             for k in range(len(labels)):
+#                 runs = np.array(all_runs[k])
+#                 if len(runs) == 0:
+#                     medians.append(0)
+#                     q25s.append(0)
+#                     q75s.append(0)
+#                     continue
+
+#                 medians.append(np.median(runs))
+#                 q25s.append(np.percentile(runs, 25))
+#                 q75s.append(np.percentile(runs, 75))
+
+#             color = colors[threshold_label]
+
+#             ax.plot(labels, medians, marker='o', linestyle='-', label=threshold_label, color=color)
+#             ax.fill_between(labels, q25s, q75s, alpha=0.2, color=color)
+
+#             if i == 0:
+#                 ax.set_title(metric_titles.get(metric, metric), fontsize=14)
+#             if j == 0:
+#                 ax.set_ylabel(device_key.replace('_', ' ').upper(), fontsize=12)
+
+#             ax.grid(True)
 
 def main():
     # Argument parsing
     parser = argparse.ArgumentParser(description="Evaluate model performance across different sparsities.")
     parser.add_argument('--models', nargs='+', default=["Vgg16_"], help="List of models to evaluate.")
     parser.add_argument('--batch_sizes', type=int, nargs='+', default=[32], help="List of batch sizes.")
-    parser.add_argument('--thresholds', type=float, nargs='+', default=[0.0, 0.5, 1.0], help="List of thresholds for sparsity.")
+    parser.add_argument('--thresholds', type=float, nargs='+', default=[0.01, .9], help="List of thresholds for sparsity.")
     parser.add_argument('--path_to_checkpoints', type=str, default="../structured_study/pruning_checkpoints/*", help="Path to checkpoint files.")
     
     args = parser.parse_args()
@@ -163,16 +214,15 @@ def main():
         for modelName in args.models:
             path_to_checkpoints = f"{args.path_to_checkpoints}*{modelName}*"
             all_paths = get_checkpoints(path_to_checkpoints, prefix="checkpoint_Pruned_")
-            # Use first, left middle, right middle, middle, and last paths for thresholds
-            all_paths = [all_paths[0], all_paths[len(all_paths) // 4], all_paths[len(all_paths) // 2], all_paths[3 * len(all_paths) // 4], all_paths[-1]]
-            fig, axs = plt.subplots(2, 4, figsize=(20, 8), sharex=True)
+            all_paths = [all_paths[0], all_paths[-1]]
 
+            fig, axs = plt.subplots(2, 4, figsize=(20, 8), sharex=True)
             axs = np.array(axs)
 
             color_map = cm.get_cmap('tab10')
             colors = {f"Threshold={th}": color_map(i) for i, th in enumerate(args.thresholds)}
 
-            all_rows = []  
+            all_rows = []
 
             for threshold in args.thresholds:
                 threshold_label = f"Threshold={threshold}"
@@ -181,7 +231,6 @@ def main():
                     modelName, all_paths, batch_size, threshold=threshold
                 )
 
-                # Add rows for this threshold to the combined list
                 for i, label in enumerate(labels):
                     for device_key in row_labels:
                         all_rows.append({
@@ -193,23 +242,20 @@ def main():
                             "GPU_Energy_kWh": metrics[device_key]["gpu_energy"][i],
                             "Peak_Memory_MB": metrics[device_key]["memory"][i],
                         })
+
                 plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs, colors)
 
-            # Save combined CSV once per model
             save_metrics_to_csv(all_rows, modelName, batch_size, args.thresholds)
 
-            for ax in axs[-1, :]:
-                ax.set_xlabel("Sparsity")
-
+            # Add legends on the top row only once per metric column
             for j in range(axs.shape[1]):
                 axs[0, j].legend(loc='upper right', fontsize=8)
 
-            plt.tight_layout()
-            plt.suptitle(f"{modelName} Performance Metrics across Thresholds", fontsize=18, y=1.02)
+            plt.tight_layout(rect=[0, 0, 1, 0.96])  # Leave space for suptitle
+            plt.suptitle(f"{modelName} Performance Metrics across Thresholds", fontsize=18)
             plot_filename = f"./plots/{modelName}_{batch_size}_{'_'.join(map(str, args.thresholds))}_comparison"
             plt.savefig(f"{plot_filename}.png")
             plt.savefig(f"{plot_filename}.svg")
-            plt.close(fig)
-            
+            plt.close(fig)        
 if __name__ == "__main__":
     main()
