@@ -20,8 +20,8 @@ import torch.nn as nn
 
 def convert_all_to_sparse(model, threshold=0.0):
     assert 0.0 <= threshold <= 1.0, (
-        "Threshold must be between 0 and 1, where 0 means all layers are converted "
-        "and 1 means only layers with 100% zeros are converted."
+        "Threshold must be between 0 and 1, where 1 means all layers are converted "
+        "and 0 means only layers with 100% zeros are converted."
     )
 
     def is_sparse_enough(tensor, threshold):
@@ -37,8 +37,10 @@ def convert_all_to_sparse(model, threshold=0.0):
             if isinstance(child, nn.Linear):
                 weight = child.weight.data
                 sparse_condition = is_sparse_enough(weight, threshold)
-                if sparse_condition or passed_threshold or threshold == 0.0:
-                    passed_threshold = passed_threshold or sparse_condition or (threshold == 0.0)
+
+                # Inverted logic: if threshold is 1.0, we convert all layers
+                if sparse_condition or passed_threshold or threshold == 1.0:
+                    passed_threshold = passed_threshold or sparse_condition or (threshold == 1.0)
                     
                     # Convert to COO first, then CSR
                     coo = weight.to_sparse().coalesce()
@@ -54,8 +56,10 @@ def convert_all_to_sparse(model, threshold=0.0):
                 weight_2d = weight.view(out_channels, -1)
 
                 sparse_condition = is_sparse_enough(weight_2d, threshold)
-                if sparse_condition or passed_threshold or threshold == 0.0:
-                    passed_threshold = passed_threshold or sparse_condition or (threshold == 0.0)
+
+                # Inverted logic: if threshold is 1.0, we convert all layers
+                if sparse_condition or passed_threshold or threshold == 1.0:
+                    passed_threshold = passed_threshold or sparse_condition or (threshold == 1.0)
                     
                     # Convert to COO first, then CSR
                     coo = weight_2d.to_sparse().coalesce()
@@ -78,14 +82,14 @@ def convert_all_to_sparse(model, threshold=0.0):
 
     convert_layers(model)
 
-# The rest of your functions remain unchanged
 def extract_sparsity_from_filename(filename, prefix="checkpoint_Pruned_"):
     pattern = rf"{prefix}(\d+\.\d+).pth"
     match = re.search(pattern, filename)
     return float(match.group(1)) if match else None
 
 def get_checkpoints(path, prefix="checkpoint_Pruned_"):
-    files = glob.glob(os.path.join(path, f"{prefix}*.pth"))
+    files = glob.glob(f"{path}/{prefix}*.pth")
+
     checkpoints = [(extract_sparsity_from_filename(f, prefix), f) for f in files]
     checkpoints = [ckpt for ckpt in checkpoints if ckpt[0] is not None]
     checkpoints.sort(key=lambda x: x[0])

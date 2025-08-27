@@ -59,14 +59,14 @@ def evaluate_models_for_sparsities(modelName, sparsity_paths, batch_size=64, thr
             # normalize everything based on batch_size
             for run in run_data.values():
                 run["duration"] /= batch_size
-                run["mem_alloc"] /= batch_size
                 run["emissions_data"]["cpu_energy"] = float(run["emissions_data"]["cpu_energy"]) / batch_size
                 run["emissions_data"]["gpu_energy"] = float(run["emissions_data"]["gpu_energy"]) / batch_size
+                
 
             times = [run["duration"] for run in run_data.values()]
             cpu_energy = [float(run["emissions_data"]["cpu_energy"]) for run in run_data.values()]
             gpu_energy = [float(run["emissions_data"]["gpu_energy"]) for run in run_data.values()]
-            mems = [run["mem_alloc"] for run in run_data.values()]
+            mems = [run["peak_mem"] for run in run_data.values()]
 
             metrics[device_key]["time"].append(times)
             metrics[device_key]["cpu_energy"].append(cpu_energy)
@@ -108,7 +108,6 @@ def save_metrics_to_csv(all_data, modelName, batch_size, thresholds):
 
 def plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs, colors):
     metric_titles = {
-        "memory": "Peak Memory (MB)",
         "time": "Time (s)",
         "cpu_energy": "CPU Energy (kWh)",
         "gpu_energy": "GPU Energy (kWh)",
@@ -124,7 +123,6 @@ def plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs
         for j, metric in enumerate(metric_names):
             ax = axs[i, j] if n_rows > 1 else axs[j]
             all_runs = metrics[device_key][metric]
-
             medians, q25s, q75s = [], [], []
 
             for k in range(len(labels)):
@@ -154,10 +152,10 @@ def plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs
 def main():
     # Argument parsing
     parser = argparse.ArgumentParser(description="Evaluate model performance across different sparsities.")
-    parser.add_argument('--models', nargs='+', default=["Vgg16ImageNet", "Vgg16_", "ResNet20"], help="List of models to evaluate.")
+    parser.add_argument('--models', nargs='+', default=["Vgg16_"], help="List of models to evaluate.")
     parser.add_argument('--batch_sizes', type=int, nargs='+', default=[32], help="List of batch sizes.")
     parser.add_argument('--thresholds', type=float, nargs='+', default=[0.0, 0.5, 1.0], help="List of thresholds for sparsity.")
-    parser.add_argument('--path_to_checkpoints', type=str, default="../../../../plots/LTH_output/*", help="Path to checkpoint files.")
+    parser.add_argument('--path_to_checkpoints', type=str, default="../structured_study/pruning_checkpoints/*", help="Path to checkpoint files.")
     
     args = parser.parse_args()
 
@@ -195,7 +193,6 @@ def main():
                             "GPU_Energy_kWh": metrics[device_key]["gpu_energy"][i],
                             "Peak_Memory_MB": metrics[device_key]["memory"][i],
                         })
-
                 plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs, colors)
 
             # Save combined CSV once per model
