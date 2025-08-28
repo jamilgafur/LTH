@@ -14,6 +14,13 @@ class SparseConv2d(nn.Module):
         self.in_channels = in_channels
         self.kernel_size = kernel_size
         self.out_channels = out_channels
+    def to(self, *args, **kwargs):
+        device = kwargs.get("device", args[0] if args else None)
+        if device is not None:
+            self.sparse_weight = self.sparse_weight.to(device)
+            if self.bias is not None:
+                self.bias = self.bias.to(device)
+        return super().to(*args, **kwargs)
 
     def forward(self, x):
         B, C, H, W = x.shape

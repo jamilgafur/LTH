@@ -28,6 +28,7 @@ import os
 
 import multiprocessing as mp
 mp.set_start_method("spawn", force=True)
+torch.backends.cudnn.benchmark = False
 
 
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -56,7 +57,7 @@ def evaluate_single_experiment(args):
 
     clear_memory()
 
-    model = load_model_from_checkpoint(getModelType(modelName), checkpoint_path, device, use_compile=False)
+    model = load_model_from_checkpoint(getModelType(modelName), checkpoint_path, device, use_compile=True)
 
     # Apply sparsification threshold
     print(f"[{device_key.upper()}] Sparsity {sparsity} → Applying threshold {threshold}")
@@ -223,7 +224,7 @@ def main():
     parser = argparse.ArgumentParser(description="Evaluate model performance across different sparsities.")
     parser.add_argument('--models', nargs='+', default=["Vgg16_"], help="List of models to evaluate.")
     parser.add_argument('--batch_sizes', type=int, nargs='+', default=[32], help="List of batch sizes.")
-    parser.add_argument('--thresholds', type=float, nargs='+', default=[0, 1], help="Percent CSR.")
+    parser.add_argument('--thresholds', type=float, nargs='+', default=[0, .5,  1], help="Percent CSR.")
     parser.add_argument('--path_to_checkpoints', type=str, default="../structured_study/pruning_checkpoints/*", help="Path to checkpoint files.")
     parser.add_argument('--processes', type=int, default=4, help="Number of parallel processes.")
     
