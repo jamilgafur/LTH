@@ -56,7 +56,7 @@ def evaluate_single_experiment(args):
 
     # Measure inference
     with torch.no_grad():
-        run_data = measure_inference(model, x, device, runs=5)  # increase runs for stability
+        run_data = measure_inference(model, x, device, runs=2)  # increase runs for stability
 
     # Collect metrics (keep per-batch values, no division by batch_size)
     times = [run["duration"] for run in run_data.values()]
@@ -128,9 +128,9 @@ def sanitize_filename(text):
     return re.sub(r'[^\w\-]', '_', text)
 
 
-def save_metrics_to_csv(all_data, modelName, batch_size, thresholds):
+def save_metrics_to_csv(all_data, folder, batch_size, thresholds):
     # Clean up model name (remove accidental trailing underscores)
-    modelName = modelName.strip('_')
+    modelName = folder.strip('_')[0]
 
     # Create a DataFrame from the data
     df = pd.DataFrame(all_data)
@@ -142,7 +142,7 @@ def save_metrics_to_csv(all_data, modelName, batch_size, thresholds):
     thresholds_str = "_".join(sanitize_filename(th) for th in thresholds)
 
     # Build output file path
-    csv_filename = f"{modelName}_{batch_size}batchsize_thresholds_{thresholds_str}_performance_metrics.csv"
+    csv_filename = f"{folder}_{modelName}_{batch_size}batchsize_thresholds_{thresholds_str}_metrics.csv"
     csv_path = os.path.join("plots", csv_filename)
 
     # Save CSV
@@ -205,62 +205,64 @@ def plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs
 def main():
     # Argument parsing
     parser = argparse.ArgumentParser(description="Evaluate model performance across different sparsities.")
-    parser.add_argument('--models', nargs='+', default=["Vgg16_"], help="List of models to evaluate.")
+    parser.add_argument('--models', nargs='+', default=["Vgg16_", "Vgg16ImageNet"], help="List of models to evaluate.")
     parser.add_argument('--batch_sizes', type=int, nargs='+', default=[32], help="List of batch sizes.")
-    parser.add_argument('--thresholds', type=float, nargs='+', default=[0, .5,  1], help="Percent CSR.")
-    parser.add_argument('--path_to_checkpoints', type=str, default="../structured_study/pruning_checkpoints/*", help="Path to checkpoint files.")
+    parser.add_argument('--thresholds', type=float, nargs='+', default=[0,  1], help="Percent CSR.")
+    parser.add_argument('--path_to_checkpoints', type=str, default="../../../../plots/LTH_output/*", help="Path to checkpoint files.")
     
     args = parser.parse_args()
 
     for batch_size in args.batch_sizes:
         for modelName in args.models:
-            path_to_checkpoints = f"{args.path_to_checkpoints}*{modelName}*"
-            all_paths = get_checkpoints(path_to_checkpoints, prefix="checkpoint_Pruned_")
-            all_paths = [all_paths[0], all_paths[int(len(all_paths) * 0.25)], all_paths[int(len(all_paths) * 0.5)], all_paths[int(len(all_paths) * 0.75)], all_paths[-1]] 
+            for folder in glob.glob(f"{args.path_to_checkpoints}*{modelName}*"):
+                path_to_checkpoints = folder
 
-            fig, axs = plt.subplots(2, 5, figsize=(20, 8), sharex=True)  # Adjusted for 5 columns of metrics
-            axs = np.array(axs)
+                all_paths = get_checkpoints(path_to_checkpoints, prefix="checkpoint_Pruned_")
+                all_paths = [all_paths[0], all_paths[-1]]
+                file_info = all_paths[0][1].split("/")[-2]
+                fig, axs = plt.subplots(2, 5, figsize=(20, 8), sharex=True)  # Adjusted for 5 columns of metrics
+                axs = np.array(axs)
 
-            color_map = cm.get_cmap('tab10')
-            colors = {f"Threshold={th}": color_map(i) for i, th in enumerate(args.thresholds)}
+                color_map = cm.get_cmap('tab10')
+                colors = {f"Threshold={th}": color_map(i) for i, th in enumerate(args.thresholds)}
 
-            all_rows = []
+                all_rows = []
 
-            for threshold in args.thresholds:
-                threshold_label = f"Threshold={threshold}"
+                for threshold in args.thresholds:
+                    threshold_label = f"Threshold={threshold}"
 
-                metrics, labels, row_labels, metric_names = evaluate_models_for_sparsities_serial(
-                    modelName, all_paths, batch_size, threshold=threshold
-                )
+                    metrics, labels, row_labels, metric_names = evaluate_models_for_sparsities_serial(
+                        modelName, all_paths, batch_size, threshold=threshold
+                    )
 
-                for i, label in enumerate(labels):
-                    for device_key in row_labels:
-                        all_rows.append({
-                            "Sparsity": label,
-                            "Device": device_key,
-                            "Threshold": threshold,
-                            "Time_s": metrics[device_key]["time"][i],
-                            "CPU_Energy_kWh": metrics[device_key]["cpu_energy"][i],
-                            "GPU_Energy_kWh": metrics[device_key]["gpu_energy"][i],
-                            "Analytical_Memory_MB": metrics[device_key]["analytical_memory"][i],
-                            "Measured_Memory_MB": metrics[device_key]["measured_memory"][i],
-                        })
+                    for i, label in enumerate(labels):
+                        for device_key in row_labels:
+                            all_rows.append({
+                                "Sparsity": label,
+                                "Device": device_key,
+                                "Threshold": threshold,
+                                "Time_s": metrics[device_key]["time"][i],
+                                "CPU_Energy_kWh": metrics[device_key]["cpu_energy"][i],
+                                "GPU_Energy_kWh": metrics[device_key]["gpu_energy"][i],
+                                "Analytical_Memory_MB": metrics[device_key]["analytical_memory"][i],
+                                "Measured_Memory_MB": metrics[device_key]["measured_memory"][i],
+                            })
 
-                plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs, colors)
+                    plot_metrics(metrics, labels, row_labels, metric_names, threshold_label, axs, colors)
+                save_metrics_to_csv(all_rows, folder.split('/')[-1], batch_size, args.thresholds)
 
-            save_metrics_to_csv(all_rows, modelName, batch_size, args.thresholds)
+                # Add legends on the top row only once per metric column
+                for j in range(axs.shape[1]):
+                    axs[0, j].legend(loc='upper right', fontsize=8)
 
-            # Add legends on the top row only once per metric column
-            for j in range(axs.shape[1]):
-                axs[0, j].legend(loc='upper right', fontsize=8)
-
-            plt.tight_layout(rect=[0, 0, 1, 0.96])  # Leave space for suptitle
-            plt.suptitle(f"{modelName} Performance Metrics across Thresholds", fontsize=18)
-            plot_filename = f"./plots/{modelName}_{batch_size}_{'_'.join(map(str, args.thresholds))}_comparison"
-            plt.savefig(f"{plot_filename}.png")
-            plt.savefig(f"{plot_filename}.svg")
-            plt.close(fig)
-
+                plt.tight_layout(rect=[0, 0, 1, 0.96])  # Leave space for suptitle
+                plt.suptitle(f"{modelName} Performance Metrics across Thresholds", fontsize=18)
+                plot_filename = f"./plots/{folder.split('/')[-1]}"
+                os.makedirs("plots", exist_ok=True)
+                plt.savefig(f"{plot_filename}.png", dpi=300)
+                plt.savefig(f"{plot_filename}.svg")
+                plt.close(fig)
+            break
 
 if __name__ == "__main__":
     main()

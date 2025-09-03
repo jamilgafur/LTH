@@ -21,86 +21,88 @@ import torch.nn as nn
 import torch
 import torch.nn as nn
 
-def convert_all_to_sparse(model: nn.Module, threshold: float = 1.0):
+def convert_all_to_sparse(model, threshold=1.0):
     """
-    Converts Linear and Conv2d layers to sparse CSR format
-    if their weight sparsity >= threshold.
+    Converts Linear and Conv2d layers to sparse (CSR) format if their weight sparsity
+    is greater than or equal to the given threshold.
+
+    Args:
+        model (torch.nn.Module): The model to convert.
+        threshold (float): Sparsity threshold (0.0 to 1.0+). Layers with weight sparsity
+                           greater than or equal to this value will be converted.
+                           - threshold > 1.0: Convert all eligible layers
+                           - threshold = 1.0: Convert only fully sparse (100% zeros)
+                           - threshold = 0.0: No layers will be converted
     """
 
-    num_linear_checked = num_conv2d_checked = 0
-    num_linear_converted = num_conv2d_converted = 0
+    num_linear_checked = 0
+    num_conv2d_checked = 0
+    num_linear_converted = 0
+    num_conv2d_converted = 0
 
     if threshold <= 0.0:
-        print("Threshold <= 0.0: No layers will be converted.")
+        print("Threshold <= 0.0: No layers will be converted to sparse.")
         return
 
-    convert_all = threshold > 1.0
-    if convert_all:
-        print("Threshold > 1.0: All eligible layers will be converted.")
+    convert_all = False
+    if threshold >= 1.0:
+        print("Threshold > 1.0: All eligible layers will be converted to sparse.")
+        convert_all = True
 
-    def layer_sparsity(tensor: Tensor) -> float:
-        total = tensor.numel()
-        zeros = (tensor == 0).sum().item()
-        return zeros / total if total > 0 else 0.0
+    def layer_sparsity(tensor):
+        total_elements = tensor.numel()
+        zero_elements = (tensor == 0).sum().item()
+        return zero_elements / total_elements if total_elements > 0 else 0.0
 
-    def convert_layers(module: nn.Module):
+    def convert_layers(module):
         nonlocal num_linear_checked, num_conv2d_checked
         nonlocal num_linear_converted, num_conv2d_converted
 
-        for name, child in list(module.named_children()):
+        for name, child in module.named_children():
             if isinstance(child, nn.Linear):
                 num_linear_checked += 1
-                weight = child.weight.detach()
+                weight = child.weight.data
                 sparsity = layer_sparsity(weight)
-                print(f"[Linear] {name} sparsity={sparsity:.4f}")
+                print(f"[DEBUG][Linear] Layer: {name}, Sparsity: {sparsity:.4f}")
 
                 if convert_all or sparsity >= threshold:
-                    csr = weight.to_sparse_csr()
-                    bias = child.bias.detach() if child.bias is not None else None
-                    sparse_layer = SparseLinear(csr, bias)
-
-                    # free dense params
-                    del child.weight
-                    if child.bias is not None:
-                        del child.bias
-
-                    setattr(module, name, sparse_layer)
+                    print(f"  --> Converting Linear layer '{name}' to Sparse (CSR)")
+                    coo = weight.to_sparse().coalesce()
+                    csr = coo.to_sparse_csr()
+                    bias = child.bias.data if child.bias is not None else None
+                    sparse_linear = SparseLinear(csr, bias)
+                    setattr(module, name, sparse_linear)
                     num_linear_converted += 1
-                    print(f"  --> converted to SparseLinear")
                 else:
-                    convert_layers(child)
+                    print(f"  --> Skipping Linear layer '{name}'")
 
             elif isinstance(child, nn.Conv2d):
                 num_conv2d_checked += 1
-                weight = child.weight.detach()
+                weight = child.weight.data
                 out_channels, in_channels, kh, kw = weight.shape
                 weight_2d = weight.view(out_channels, -1)
                 sparsity = layer_sparsity(weight_2d)
-                print(f"[Conv2d] {name} sparsity={sparsity:.4f}")
+                print(f"[DEBUG][Conv2d] Layer: {name}, Sparsity: {sparsity:.4f}")
 
                 if convert_all or sparsity >= threshold:
-                    csr = weight_2d.to_sparse_csr()
-                    bias = child.bias.detach() if child.bias is not None else None
-                    sparse_layer = SparseConv2d(
+                    print(f"  --> Converting Conv2d layer '{name}' to Sparse (CSR)")
+                    coo = weight_2d.to_sparse().coalesce()
+                    csr = coo.to_sparse_csr()
+                    bias = child.bias.data if child.bias is not None else None
+                    sparse_conv = SparseConv2d(
                         sparse_weight=csr,
                         bias=bias,
                         in_channels=in_channels,
                         out_channels=out_channels,
-                        kernel_size=(kh, kw),
+                        kernel_size=kh,
                         stride=child.stride[0],
                         padding=child.padding[0],
                         dilation=child.dilation[0]
                     )
-
-                    del child.weight
-                    if child.bias is not None:
-                        del child.bias
-
-                    setattr(module, name, sparse_layer)
+                    setattr(module, name, sparse_conv)
                     num_conv2d_converted += 1
-                    print(f"  --> converted to SparseConv2d")
                 else:
-                    convert_layers(child)
+                    print(f"  --> Skipping Conv2d layer '{name}'")
 
             else:
                 convert_layers(child)
@@ -113,6 +115,7 @@ def convert_all_to_sparse(model: nn.Module, threshold: float = 1.0):
     print(f"  Conv2d Layers Checked: {num_conv2d_checked}")
     print(f"  Conv2d Layers Converted: {num_conv2d_converted}")
     print(f"  Sparsity Threshold: {threshold}\n")
+
 
 def extract_sparsity_from_filename(filename, prefix="checkpoint_Pruned_"):
     pattern = rf"{prefix}(\d+\.\d+).pth"
