@@ -56,7 +56,7 @@ def evaluate_single_experiment(args):
 
     # Measure inference
     with torch.no_grad():
-        run_data = measure_inference(model, x, device, runs=10)  # increase runs for stability
+        run_data = measure_inference(model, x, device, runs=5)  # increase runs for stability
 
     # Collect metrics (keep per-batch values, no division by batch_size)
     times = [run["duration"] for run in run_data.values()]
@@ -206,8 +206,8 @@ def main():
     # Argument parsing
     parser = argparse.ArgumentParser(description="Evaluate model performance across different sparsities.")
     parser.add_argument('--models', nargs='+', default=["Vgg16_"], help="List of models to evaluate.")
-    parser.add_argument('--batch_sizes', type=int, nargs='+', default=[64], help="List of batch sizes.")
-    parser.add_argument('--thresholds', type=float, nargs='+', default=[0], help="Percent CSR.")
+    parser.add_argument('--batch_sizes', type=int, nargs='+', default=[32], help="List of batch sizes.")
+    parser.add_argument('--thresholds', type=float, nargs='+', default=[0, .5,  1], help="Percent CSR.")
     parser.add_argument('--path_to_checkpoints', type=str, default="../structured_study/pruning_checkpoints/*", help="Path to checkpoint files.")
     
     args = parser.parse_args()
@@ -216,7 +216,7 @@ def main():
         for modelName in args.models:
             path_to_checkpoints = f"{args.path_to_checkpoints}*{modelName}*"
             all_paths = get_checkpoints(path_to_checkpoints, prefix="checkpoint_Pruned_")
-            all_paths = [all_paths[0], all_paths[-1]]  # Use only the first and last checkpoints for brevity
+            all_paths = [all_paths[0], all_paths[int(len(all_paths) * 0.25)], all_paths[int(len(all_paths) * 0.5)], all_paths[int(len(all_paths) * 0.75)], all_paths[-1]] 
 
             fig, axs = plt.subplots(2, 5, figsize=(20, 8), sharex=True)  # Adjusted for 5 columns of metrics
             axs = np.array(axs)
