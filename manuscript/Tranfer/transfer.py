@@ -7,6 +7,10 @@ import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 from pyPrune.models.Vgg16 import VGG16_CIFAR10
 from collections import OrderedDict
+from utils import *
+from collections import OrderedDict
+from torch import nn
+import torch
 
 def load_cifar10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
     train_transform = transforms.Compose([
@@ -33,20 +37,6 @@ def load_cifar10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader
     print("CIFAR-10 data shape: ", next(iter(train_loader))[0].shape)
     return train_loader, test_loader
 
-def count_zeros(tensor): 
-    return torch.sum(tensor == 0).item()
-
-def layer_stats(model):
-    print("\nLayer-wise zero parameter stats:\n")
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            zeros = count_zeros(param)
-            total = param.numel()
-            print(f"{name}: {zeros}/{total} zeros ({100 * zeros/total:.2f}%)")
-
-def count_trainable_params(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
 def evaluate(model, loader, device):
     model.eval()
     correct = total = 0
@@ -59,109 +49,6 @@ def evaluate(model, loader, device):
             correct += (predicted == yb).sum().item()
             total += yb.size(0)
     return 100 * correct / total
-
-from collections import OrderedDict
-from torch import nn
-import torch
-
-
-def collapse_block(model, start_layer_name, end_layer_name):
-    containers = {
-        "features": model.features,
-        "classifier": model.classifier,
-    }
-
-    for section_name, container in containers.items():
-        named = list(container.named_children())
-
-        start_idx = end_idx = None
-        for i, (name, _) in enumerate(named):
-            if name == start_layer_name:
-                start_idx = i
-            if name == end_layer_name:
-                end_idx = i
-
-        if start_idx is not None and end_idx is not None:
-            assert start_idx <= end_idx, "Start index must be <= end index"
-
-            full_block = named[start_idx:end_idx + 1]
-
-            # Only keep Conv2d or Linear layers for collapsing
-            selected_layers = [layer for _, layer in full_block if isinstance(layer, (nn.Conv2d, nn.Linear))]
-
-            if len(selected_layers) < 2:
-                raise ValueError("Need at least 2 Conv2d or Linear layers to collapse.")
-
-            layer_type = type(selected_layers[0])
-            if not all(isinstance(l, layer_type) for l in selected_layers):
-                raise ValueError("Cannot collapse mixed layer types.")
-
-            # Simulate input
-            dummy_input = torch.randn(1, 3, 32, 32).to(next(model.parameters()).device)
-
-            x = dummy_input
-            if section_name == "features":
-                for layer in list(model.features.children())[:start_idx]:
-                    x = layer(x)
-            else:
-                for layer in model.features:
-                    x = layer(x)
-                x = torch.flatten(x, 1)
-                for layer in list(model.classifier.children())[:start_idx]:
-                    x = layer(x)
-
-            in_features = x.shape[1] if layer_type == nn.Linear else selected_layers[0].in_channels
-            for layer in selected_layers:
-                x = layer(x)
-            out_features = x.shape[1] if layer_type == nn.Linear else selected_layers[-1].out_channels
-
-            print(f"Input shape: {dummy_input.shape} → Output shape: {x.shape}")
-
-            # Construct new block
-            if layer_type == nn.Conv2d:
-                collapsed_block = nn.Sequential(
-                    nn.Conv2d(in_channels=in_features, out_channels=out_features, kernel_size=1, stride=1, padding=0),
-                    nn.AdaptiveAvgPool2d((1, 1))
-                )
-            elif layer_type == nn.Linear:
-                collapsed_block = nn.Linear(in_features * x.shape[-1] * x.shape[-2], out_features)
-            else:
-                raise NotImplementedError
-
-            # Replace layers
-            new_layers = []
-            for i, (name, layer) in enumerate(named):
-                if i == start_idx:
-                    new_layers.append((f"collapsed_{start_layer_name}_to_{end_layer_name}", collapsed_block))
-                elif start_idx < i <= end_idx:
-                    continue  # skip
-                elif i > end_idx and isinstance(layer, nn.MaxPool2d):
-                    print(f"Removing MaxPool2d after collapsed block: {name}")
-                    continue  # remove dangerous MaxPool2d
-                else:
-                    new_layers.append((name, layer))
-
-            updated_container = nn.Sequential(OrderedDict(new_layers))
-            if section_name == "features":
-                model.features = updated_container
-            else:
-                model.classifier = updated_container
-
-            print(f"Collapsed {section_name} layers {start_layer_name} → {end_layer_name}")
-            print(f"New trainable params: {count_trainable_params(model)}")
-            return model
-
-    raise ValueError(f"Layer names '{start_layer_name}' or '{end_layer_name}' not found.")
-
-
-def count_trainable_params(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-def clone_model(model):
-    """Utility to clone a model and load weights to keep experiments isolated."""
-    new_model = VGG16_CIFAR10()
-    new_model.load_state_dict(model.state_dict())
-    return new_model
 
 def train_and_evaluate(model, train_loader, test_loader, device, epochs=10):
     model.to(device)
@@ -203,7 +90,7 @@ def run_experiment(model, train_loader, test_loader, device, epochs=10, collapse
     Returns (param_count, final_accuracy, accuracies_per_epoch)
     """
     model = clone_model(model)  # Work on a fresh copy
-
+    
     if collapse_range:
         print(f"\nCollapsing layers: {collapse_range}")
         model = collapse_block(model, *collapse_range)
@@ -221,105 +108,156 @@ def run_experiment(model, train_loader, test_loader, device, epochs=10, collapse
 
     return param_count, init_acc, final_acc, accuracies
 
+
 def main():
-    for run in range(1, 2):  # Just one run for demonstration
-        model_path = "../structured_study/pruning_checkpoints/Vgg16_pretrain10_finetune30_steps21_batch1024_devicecuda_strategy_magnitude/checkpoint_Finetuned_0.97.pth"
-        if not os.path.exists(model_path):
-            print(f"Model path {model_path} not found. Exiting.")
+    for run in range(1, 2):
+        model_path_097 = "../structured_study/pruning_checkpoints/Vgg16_pretrain10_finetune30_steps21_batch1024_devicecuda_strategy_magnitude/checkpoint_Finetuned_0.97.pth"
+        model_path_000 = "../structured_study/pruning_checkpoints/Vgg16_pretrain10_finetune30_steps21_batch1024_devicecuda_strategy_magnitude/checkpoint_Original_0.00.pth"
+
+        if not os.path.exists(model_path_097) or not os.path.exists(model_path_000):
+            print("Required model weight files not found. Exiting.")
             return
 
-        base_model = VGG16_CIFAR10()
-        base_model.load_state_dict(torch.load(model_path)['model'])
-        print(f"Loaded model from {model_path}")
-        # print layer stats
-        layer_stats(base_model)
         train_loader, test_loader = load_cifar10()
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        epochs = 2
+        epochs = 30
 
-        # Define collapse experiments dynamically:
+        # Define compression experiments
         experiments = {
-            "Last 2 Conv Layer Only ": ('conv_12', 'conv_13'),
+            "Last 2 Conv Layer Only": ('conv_12', 'conv_13'),
             "Original Model": None,
             "Stage 5": ('conv_11', 'conv_13'),
             "Stage 4": ('conv_8', 'conv_10'),
+            "Stage 4-5": ('conv_8', 'conv_13'),
             "All Conv Layers": ('conv_1', 'conv_13'),
         }
 
-        param_counts = []
-        final_accuracies = []
-        epoch_accuracies = []
-        exp_names = []
-        init_acc = None
+        # ----------------------------
+        # Compression only
+        # ----------------------------
+        orig_param_counts = []
+        orig_final_accuracies = []
+        orig_exp_names = []
+
         for exp_name, collapse_range in experiments.items():
-            print(f"\n=== Running experiment: {exp_name} ===")
+            print(f"\n=== Running Standard experiment: {exp_name} ===")
             base_model = VGG16_CIFAR10()
-            base_model.load_state_dict(torch.load(model_path)['model'])
+            base_model.load_state_dict(torch.load(model_path_097)['model'])
+
             p_count, init_acc, final_acc, acc_list = run_experiment(
                 base_model, train_loader, test_loader, device, epochs, collapse_range
             )
-            param_counts.append(p_count)
-            final_accuracies.append(final_acc)
-            epoch_accuracies.append(acc_list)
-            exp_names.append(exp_name)
 
-        # Sort by parameter counts
-        sorted_data = sorted(zip(param_counts, final_accuracies, exp_names), key=lambda x: x[0])
-        sorted_params, sorted_final_acc, sorted_exp_names = zip(*sorted_data)
+            orig_param_counts.append(p_count)
+            orig_final_accuracies.append(final_acc)
+            orig_exp_names.append(exp_name)
 
-        # --- Improved plotting code starts here ---
+        # ----------------------------
+        # Kevin Experiment
+        # ----------------------------
+        merged_param_counts = []
+        merged_final_accuracies = []
+        merged_exp_names = []
 
-        fig, ax1 = plt.subplots(figsize=(12, 7))
+        for exp_name, collapse_range in experiments.items():
+            print(f"\n=== Running Merged experiment: {exp_name} ===")
+            if collapse_range is None:
+                print("No collapse in this experiment — skipping merge variant.")
+                continue
 
-        bar_colors = ['#1f77b4', '#ff7f0e','#2ca02c']  # customize colors for bars
+            try:
+                merged_model = collapse_only(
+                    model_weights_1=model_path_000,
+                    compression_set=[collapse_range],
+                )
+            except Exception as e:
+                print(f"Error in collapse_only for {exp_name}: {e}")
+                continue
 
-        # Bar plot for final accuracy
-        bars = ax1.bar(sorted_exp_names, sorted_final_acc, color=bar_colors, alpha=0.7, label='Final Accuracy (%)')
-        ax1.set_ylabel('Final Accuracy (%)', fontsize=14)
-        ax1.set_ylim(0, 100)
-        ax1.set_xlabel('Experiment', fontsize=14)
-        ax1.set_title('Final Accuracy vs Trainable Parameters', fontsize=16)
-        ax1.grid(axis='y', linestyle='--', alpha=0.7)
+            param_count = count_trainable_params(merged_model)
+            accuracies, final_acc  = train_and_evaluate(
+                merged_model, train_loader, test_loader, device, epochs
+            )
+            print(f"[Merged] Final Accuracy: {final_acc:.2f}%, Params: {param_count}")
+            
+            merged_param_counts.append(param_count)
+            merged_final_accuracies.append(final_acc)
+            merged_exp_names.append(exp_name)
 
-        # Annotate bars with accuracy values
-        for bar in bars:
-            height = bar.get_height()
-            ax1.annotate(f'{height:.2f}%',
-                        xy=(bar.get_x() + bar.get_width() / 2, height),
-                        xytext=(0, 5),
-                        textcoords='offset points',
-                        ha='center', va='bottom', fontsize=12)
+        # ----------------------------
+        # Plotting
+        # ----------------------------
+        def plot_results(params, accs, names, title, filename):
+            sorted_data = sorted(zip(params, accs, names), key=lambda x: x[0])
 
-        # Secondary axis for parameters (log scale)
-        ax2 = ax1.twinx()
-        ax2.plot(sorted_exp_names, sorted_params, 'ro--', label='Trainable Parameters (log scale)')
-        ax2.set_ylabel('Trainable Parameters', color='red', fontsize=14)
-        ax2.set_yscale('log')
-        ax2.tick_params(axis='y', colors='red')
-        ax2.grid(False)
-   
-        # Annotate parameter counts
-        for i, param in enumerate(sorted_params):
-            ax2.annotate(f'{param:,}',
-                        xy=(i, param),
-                        xytext=(0, -15),
-                        textcoords='offset points',
-                        ha='center', va='top', color='red', fontsize=10)
+            if not sorted_data:
+                print(f"[Warning] No data to plot for: {title}")
+                return
 
-        # Legend combining both axes
-        lines_labels = [ax1.get_legend_handles_labels(), ax2.get_legend_handles_labels()]
-        lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-        ax1.legend(lines, labels, loc='upper right', fontsize=12)
+            sorted_params, sorted_accs, sorted_names = zip(*sorted_data)
 
-        plt.tight_layout()
-        plt.savefig(f"final_accuracy_vs_params_better_{run}.png")
-        plt.show()
-        print("Saved improved plot to final_accuracy_vs_params_better.png")
+            fig, ax1 = plt.subplots(figsize=(14, 7))
+            bar_colors = ['#1f77b4'] * len(sorted_names)
 
-        # print all data plotted
-        print("\nSummary of experiments:")
-        for p, acc, name in zip(sorted_params, sorted_final_acc, sorted_exp_names):
-            print(f"{name}: Params={p}, Final Acc={acc:.2f}%")
+            bars = ax1.bar(sorted_names, sorted_accs, color=bar_colors, alpha=0.7, label='Final Accuracy (%)')
+            ax1.set_ylabel('Final Accuracy (%)', fontsize=14)
+            ax1.set_ylim(0, 100)
+            ax1.set_xlabel('Experiment', fontsize=14)
+            ax1.set_title(title, fontsize=16)
+            ax1.grid(axis='y', linestyle='--', alpha=0.7)
+
+            for bar in bars:
+                height = bar.get_height()
+                ax1.annotate(f'{height:.2f}%',
+                            xy=(bar.get_x() + bar.get_width() / 2, height),
+                            xytext=(0, 5),
+                            textcoords='offset points',
+                            ha='center', va='bottom', fontsize=11)
+
+            ax2 = ax1.twinx()
+            ax2.plot(sorted_names, sorted_params, 'ro--', label='Trainable Parameters (log scale)')
+            ax2.set_ylabel('Trainable Parameters', color='red', fontsize=14)
+            ax2.set_yscale('log')
+            ax2.tick_params(axis='y', colors='red')
+            ax2.grid(False)
+
+            for i, param in enumerate(sorted_params):
+                ax2.annotate(f'{param:,}',
+                            xy=(i, param),
+                            xytext=(0, -15),
+                            textcoords='offset points',
+                            ha='center', va='top', color='red', fontsize=10)
+
+            lines_labels = [ax1.get_legend_handles_labels(), ax2.get_legend_handles_labels()]
+            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+            ax1.legend(lines, labels, loc='upper right', fontsize=12)
+
+            plt.xticks(rotation=30, ha='right')
+            plt.tight_layout()
+            plt.savefig(filename)
+            plt.show()
+            print(f"Saved plot: {filename}")
+
+            # Print summary
+            print("\nSummary:")
+            for p, a, n in zip(sorted_params, sorted_accs, sorted_names):
+                print(f"{n}: Params={p:,}, Final Acc={a:.2f}%")
+
+        plot_results(
+            orig_param_counts,
+            orig_final_accuracies,
+            orig_exp_names,
+            "Original Compression Experiments",
+            f"original_experiments_plot_{run}.png"
+        )
+
+        plot_results(
+            merged_param_counts,
+            merged_final_accuracies,
+            merged_exp_names,
+            "Merged (collapse_and_merge) Experiments",
+            f"merged_experiments_plot_{run}.png"
+        )
 
 if __name__ == "__main__":
     main()
