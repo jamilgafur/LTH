@@ -141,46 +141,39 @@ def collapse_block(model, start_layer_name, end_layer_name):
 # Cloning Utility
 # ===============================
 
-def clone_model(model):
+def clone_model(model, model_class):
     """Utility to clone a model and load weights to keep experiments isolated."""
-    new_model = VGG16_CIFAR10()
+    new_model = model_class()
     new_model.load_state_dict(model.state_dict())
     return new_model
 
-
-def collapse_only(model_weights_1, compression_set):
+def collapse_only(model_weights_1, compression_set, model_class):
     """
     Args:
         model_weights_1 (str): Path to model weights (used for collapsing layers).
         compression_set (list of tuples): Each tuple is (start_layer_name, end_layer_name).
+        model_class: the class of the model to instantiate.
     Returns:
         nn.Module: Model with collapsed layers.
     """
-    # Load the model weights (model_weights_1) that will be collapsed
     checkpoint_1 = torch.load(model_weights_1, map_location='cpu')
     state_dict_1 = checkpoint_1['model'] if 'model' in checkpoint_1 else checkpoint_1
 
-    # Initialize the model and load the weights
-    reference_model = VGG16_CIFAR10()
+    reference_model = model_class()
     reference_model.load_state_dict(state_dict_1)
 
-    # Track collapsed layer names (all layers between start and end inclusive)
     collapsed_layer_names = set()
     for start_name, end_name in compression_set:
         reference_model = collapse_block(reference_model, start_name, end_name)
         
-        # Add all conv layers in this range to collapsed_layer_names for safety
         start_idx = int(start_name.split('_')[1])
         end_idx = int(end_name.split('_')[1])
         for i in range(start_idx, end_idx + 1):
             collapsed_layer_names.add(f"features.conv_{i}.weight")
             collapsed_layer_names.add(f"features.conv_{i}.bias")
-            # If batchnorm layers exist, add those too (optional)
             collapsed_layer_names.add(f"features.bn_{i}.weight")
             collapsed_layer_names.add(f"features.bn_{i}.bias")
             collapsed_layer_names.add(f"features.bn_{i}.running_mean")
             collapsed_layer_names.add(f"features.bn_{i}.running_var")
 
-    # You now have the collapsed model
-    print(f"\nCollapsed model layers based on compression set.\n{layer_stats(reference_model)}")
     return reference_model

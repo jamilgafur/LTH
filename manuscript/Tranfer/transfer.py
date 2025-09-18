@@ -89,7 +89,7 @@ def run_experiment(model, train_loader, test_loader, device, epochs=10, collapse
     collapse_range: tuple of (start_layer_name, end_layer_name) or None for no collapse.
     Returns (param_count, final_accuracy, accuracies_per_epoch)
     """
-    model = clone_model(model)  # Work on a fresh copy
+    model = clone_model(model, VGG16_CIFAR10)  # Work on a fresh copy
     
     if collapse_range:
         print(f"\nCollapsing layers: {collapse_range}")
@@ -129,6 +129,11 @@ def main():
             "Stage 5": ('conv_11', 'conv_13'),
             "Stage 4": ('conv_8', 'conv_10'),
             "Stage 4-5": ('conv_8', 'conv_13'),
+            "Stage 3": ('conv_5', 'conv_7'),
+            "Stage 3-5": ('conv_5', 'conv_13'),
+            "Stage 2": ('conv_3', 'conv_4'),
+            "Stage 2-5": ('conv_3', 'conv_13'),
+            "Stage 1": ('conv_1', 'conv_2'),
             "All Conv Layers": ('conv_1', 'conv_13'),
         }
 
@@ -169,6 +174,7 @@ def main():
                 merged_model = collapse_only(
                     model_weights_1=model_path_000,
                     compression_set=[collapse_range],
+                    model_class=VGG16_CIFAR10
                 )
             except Exception as e:
                 print(f"Error in collapse_only for {exp_name}: {e}")
@@ -184,71 +190,13 @@ def main():
             merged_final_accuracies.append(final_acc)
             merged_exp_names.append(exp_name)
 
-        # ----------------------------
-        # Plotting
-        # ----------------------------
-        def plot_results(params, accs, names, title, filename):
-            sorted_data = sorted(zip(params, accs, names), key=lambda x: x[0])
-
-            if not sorted_data:
-                print(f"[Warning] No data to plot for: {title}")
-                return
-
-            sorted_params, sorted_accs, sorted_names = zip(*sorted_data)
-
-            fig, ax1 = plt.subplots(figsize=(14, 7))
-            bar_colors = ['#1f77b4'] * len(sorted_names)
-
-            bars = ax1.bar(sorted_names, sorted_accs, color=bar_colors, alpha=0.7, label='Final Accuracy (%)')
-            ax1.set_ylabel('Final Accuracy (%)', fontsize=14)
-            ax1.set_ylim(0, 100)
-            ax1.set_xlabel('Experiment', fontsize=14)
-            ax1.set_title(title, fontsize=16)
-            ax1.grid(axis='y', linestyle='--', alpha=0.7)
-
-            for bar in bars:
-                height = bar.get_height()
-                ax1.annotate(f'{height:.2f}%',
-                            xy=(bar.get_x() + bar.get_width() / 2, height),
-                            xytext=(0, 5),
-                            textcoords='offset points',
-                            ha='center', va='bottom', fontsize=11)
-
-            ax2 = ax1.twinx()
-            ax2.plot(sorted_names, sorted_params, 'ro--', label='Trainable Parameters (log scale)')
-            ax2.set_ylabel('Trainable Parameters', color='red', fontsize=14)
-            ax2.set_yscale('log')
-            ax2.tick_params(axis='y', colors='red')
-            ax2.grid(False)
-
-            for i, param in enumerate(sorted_params):
-                ax2.annotate(f'{param:,}',
-                            xy=(i, param),
-                            xytext=(0, -15),
-                            textcoords='offset points',
-                            ha='center', va='top', color='red', fontsize=10)
-
-            lines_labels = [ax1.get_legend_handles_labels(), ax2.get_legend_handles_labels()]
-            lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
-            ax1.legend(lines, labels, loc='upper right', fontsize=12)
-
-            plt.xticks(rotation=30, ha='right')
-            plt.tight_layout()
-            plt.savefig(filename)
-            plt.show()
-            print(f"Saved plot: {filename}")
-
-            # Print summary
-            print("\nSummary:")
-            for p, a, n in zip(sorted_params, sorted_accs, sorted_names):
-                print(f"{n}: Params={p:,}, Final Acc={a:.2f}%")
-
+ 
         plot_results(
             orig_param_counts,
             orig_final_accuracies,
             orig_exp_names,
             "Original Compression Experiments",
-            f"original_experiments_plot_{run}.png"
+            f"original_experiments_plot_{run}.svg"
         )
 
         plot_results(
@@ -256,8 +204,67 @@ def main():
             merged_final_accuracies,
             merged_exp_names,
             "Merged (collapse_and_merge) Experiments",
-            f"merged_experiments_plot_{run}.png"
+            f"merged_experiments_plot_{run}.svg"
         )
+
+# ----------------------------
+# Plotting
+# ----------------------------
+def plot_results(params, accs, names, title, filename):
+    sorted_data = sorted(zip(params, accs, names), key=lambda x: x[0])
+
+    if not sorted_data:
+        print(f"[Warning] No data to plot for: {title}")
+        return
+
+    sorted_params, sorted_accs, sorted_names = zip(*sorted_data)
+
+    fig, ax1 = plt.subplots(figsize=(14, 7))
+    bar_colors = ['#1f77b4'] * len(sorted_names)
+
+    bars = ax1.bar(sorted_names, sorted_accs, color=bar_colors, alpha=0.7, label='Final Accuracy (%)')
+    ax1.set_ylabel('Final Accuracy (%)', fontsize=14)
+    ax1.set_ylim(0, 100)
+    ax1.set_xlabel('Experiment', fontsize=14)
+    ax1.set_title(title, fontsize=16)
+    ax1.grid(axis='y', linestyle='--', alpha=0.7)
+
+    for bar in bars:
+        height = bar.get_height()
+        ax1.annotate(f'{height:.2f}%',
+                    xy=(bar.get_x() + bar.get_width() / 2, height),
+                    xytext=(0, 5),
+                    textcoords='offset points',
+                    ha='center', va='bottom', fontsize=11)
+
+    ax2 = ax1.twinx()
+    ax2.plot(sorted_names, sorted_params, 'ro--', label='Trainable Parameters (log scale)')
+    ax2.set_ylabel('Trainable Parameters', color='red', fontsize=14)
+    ax2.set_yscale('log')
+    ax2.tick_params(axis='y', colors='red')
+    ax2.grid(False)
+
+    for i, param in enumerate(sorted_params):
+        ax2.annotate(f'{param:,}',
+                    xy=(i, param),
+                    xytext=(0, -15),
+                    textcoords='offset points',
+                    ha='center', va='top', color='red', fontsize=10)
+
+    lines_labels = [ax1.get_legend_handles_labels(), ax2.get_legend_handles_labels()]
+    lines, labels = [sum(lol, []) for lol in zip(*lines_labels)]
+    ax1.legend(lines, labels, loc='upper right', fontsize=12)
+
+    plt.xticks(rotation=30, ha='right')
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.show()
+    print(f"Saved plot: {filename}")
+
+    # Print summary
+    print("\nSummary:")
+    for p, a, n in zip(sorted_params, sorted_accs, sorted_names):
+        print(f"{n}: Params={p:,}, Final Acc={a:.2f}%")
 
 if __name__ == "__main__":
     main()
