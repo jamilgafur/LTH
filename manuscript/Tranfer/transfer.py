@@ -6,11 +6,9 @@ import os
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 from pyPrune.models.Vgg16 import VGG16_CIFAR10
-from collections import OrderedDict
 from utils import *
 from collections import OrderedDict
-from torch import nn
-import torch
+import torch.nn.functional as F
 
 def load_cifar10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
     train_transform = transforms.Compose([
@@ -43,7 +41,6 @@ def evaluate(model, loader, device):
     with torch.no_grad():
         for xb, yb in loader:
             xb, yb = xb.to(device), yb.to(device)
-            model = model.to(device)
             preds = model(xb)
             _, predicted = preds.max(1)
             correct += (predicted == yb).sum().item()
@@ -84,19 +81,12 @@ def train_and_evaluate(model, train_loader, test_loader, device, epochs=10):
     return accuracies, final_acc
 
 def run_experiment(model, train_loader, test_loader, device, epochs=10, collapse_range=None):
-    """
-    Runs training and evaluation on the model, optionally collapsing a layer range.
-    collapse_range: tuple of (start_layer_name, end_layer_name) or None for no collapse.
-    Returns (param_count, final_accuracy, accuracies_per_epoch)
-    """
-    model = clone_model(model, VGG16_CIFAR10)  # Work on a fresh copy
-    
     if collapse_range:
         print(f"\nCollapsing layers: {collapse_range}")
         model = collapse_block(model, *collapse_range)
     else:
         print("\nNo collapsing applied - original model")
-
+    model.to(device)
     param_count = count_trainable_params(model)
     print(f"Trainable parameters: {param_count}")
 
@@ -108,104 +98,229 @@ def run_experiment(model, train_loader, test_loader, device, epochs=10, collapse
 
     return param_count, init_acc, final_acc, accuracies
 
+def register_hooks(model, layers_to_hook):
+    activations = {}
+    def hook_fn(module, input, output):
+        activations[module] = output.detach()
+
+    hooks = []
+    for layer_name, layer in model.named_modules():
+        if layer_name in layers_to_hook:
+            hooks.append(layer.register_forward_hook(hook_fn))
+    
+    return activations, hooks
+
+def compute_weight_similarity(original_weights, compressed_weights):
+    similarities = {}
+    for name in original_weights:
+        if name in compressed_weights:
+            original = original_weights[name].view(-1)
+            compressed = compressed_weights[name].view(-1)
+            original = original.cpu().to(torch.float32)
+            compressed = compressed.cpu().to(torch.float32)
+            similarity = F.cosine_similarity(original, compressed, dim=0).item()
+            similarities[name] = similarity
+    return similarities
+
+
+def plot_weight_similarity(weight_similarities, filename):
+    # Ensure weight_similarities is a flat dictionary (layer_name -> similarity_value)
+    if not isinstance(weight_similarities, dict):
+        raise TypeError("weight_similarities must be a dictionary")
+    
+    # Flatten the dictionary (if there are nested dictionaries)
+    flat_similarities = {}
+    for layer, similarity in weight_similarities.items():
+        # if bias in layer name skip it
+        if 'bias' in layer:
+            continue
+        if isinstance(similarity, dict):  # if similarity is a dictionary, flatten it
+            for sub_layer, sub_similarity in similarity.items():
+                flat_similarities[f"{layer}_{sub_layer}"] = sub_similarity
+        else:
+            flat_similarities[layer] = similarity
+
+    # Prepare for plotting
+    layers = list(flat_similarities.keys())
+    similarities = list(flat_similarities.values())
+
+    plt.figure(figsize=(20, 12))
+    plt.barh(layers, similarities, color='green')
+    plt.xlabel("Cosine Similarity", fontsize=14)
+    plt.title("Weight Similarity for Each Layer (Compression)", fontsize=16)
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.show()
+    print(f"Saved plot: {filename}")
+
 
 def main():
-    for run in range(1, 2):
-        model_path_097 = "../structured_study/pruning_checkpoints/Vgg16_pretrain10_finetune30_steps21_batch1024_devicecuda_strategy_magnitude/checkpoint_Finetuned_0.97.pth"
-        model_path_000 = "../structured_study/pruning_checkpoints/Vgg16_pretrain10_finetune30_steps21_batch1024_devicecuda_strategy_magnitude/checkpoint_Original_0.00.pth"
+    model_path_097 = "../structured_study/pruning_checkpoints/Vgg16_pretrain10_finetune30_steps21_batch1024_devicecuda_strategy_magnitude/checkpoint_Finetuned_0.97.pth"
+    model_path_000 = "../structured_study/pruning_checkpoints/Vgg16_pretrain10_finetune30_steps21_batch1024_devicecuda_strategy_magnitude/checkpoint_Original_0.00.pth"
 
-        if not os.path.exists(model_path_097) or not os.path.exists(model_path_000):
-            print("Required model weight files not found. Exiting.")
-            return
+    if not os.path.exists(model_path_097) or not os.path.exists(model_path_000):
+        print("Required model weight files not found. Exiting.")
+        return
 
-        train_loader, test_loader = load_cifar10()
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        epochs = 30
+    print("Loading CIFAR-10 data...")
+    train_loader, test_loader = load_cifar10()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    epochs = 30
+    pretrain = 10  # Not used in this script but kept for reference
 
-        # Define compression experiments
-        experiments = {
-            "Last 2 Conv Layer Only": ('conv_12', 'conv_13'),
-            "Original Model": None,
-            "Stage 5": ('conv_11', 'conv_13'),
-            "Stage 4": ('conv_8', 'conv_10'),
-            "Stage 4-5": ('conv_8', 'conv_13'),
-            "Stage 3": ('conv_5', 'conv_7'),
-            "Stage 3-5": ('conv_5', 'conv_13'),
-            "Stage 2": ('conv_3', 'conv_4'),
-            "Stage 2-5": ('conv_3', 'conv_13'),
-            "Stage 1": ('conv_1', 'conv_2'),
-            "All Conv Layers": ('conv_1', 'conv_13'),
-        }
+    experiments = {
+        "Last 2 Conv Layer Only": ('conv_12', 'conv_13'),
+        "Original Model": None,
+        "Stage 5": ('conv_11', 'conv_13'),
+        "Stage 4": ('conv_8', 'conv_10'),
+        "Stage 4-5": ('conv_8', 'conv_13'),
+        "Stage 3": ('conv_5', 'conv_7'),
+        "Stage 3-5": ('conv_5', 'conv_13'),
+        "Stage 2": ('conv_3', 'conv_4'),
+        "Stage 2-5": ('conv_3', 'conv_13'),
+        "Stage 1": ('conv_1', 'conv_2'),
+        "All Conv Layers": ('conv_1', 'conv_13'),
+    }
 
-        # ----------------------------
-        # Compression only
-        # ----------------------------
-        orig_param_counts = []
-        orig_final_accuracies = []
-        orig_exp_names = []
+    # ------------------------
+    # JF Experiment Workflow
+    # ------------------------
+    jf_param_counts = []
+    jf_final_accuracies = []
+    jf_exp_names = []
+    all_weight_similarities = OrderedDict()
+    all_weight_similarities["JF"] = {}
 
-        for exp_name, collapse_range in experiments.items():
-            print(f"\n=== Running Standard experiment: {exp_name} ===")
-            base_model = VGG16_CIFAR10()
-            base_model.load_state_dict(torch.load(model_path_097)['model'])
+    print("\n=== Running JF experiment ===")
+    print(f"Loading pre-trained model from {model_path_097}...")
+    base_model = VGG16_CIFAR10()
+    base_model.load_state_dict(torch.load(model_path_097)['model'])
 
-            p_count, init_acc, final_acc, acc_list = run_experiment(
-                base_model, train_loader, test_loader, device, epochs, collapse_range
-            )
+    for exp_name, collapse_range in experiments.items():
+        print(f"\nRunning experiment: {exp_name}")
+        
+        original_weights = base_model.state_dict()
 
-            orig_param_counts.append(p_count)
-            orig_final_accuracies.append(final_acc)
-            orig_exp_names.append(exp_name)
+        if collapse_range is not None:
+           print(f"Applying compression for {exp_name}...")
+            base_model = collapse_only(model_weights_1=model_path_097, compression_set=[collapse_range], model_class=VGG16_CIFAR10)
 
-        # ----------------------------
-        # Kevin Experiment
-        # ----------------------------
-        merged_param_counts = []
-        merged_final_accuracies = []
-        merged_exp_names = []
+        print(f"Finetuning the compressed model...")
+        param_count, init_acc, final_acc, acc_list = run_experiment(base_model, train_loader, test_loader, device, epochs)
 
-        for exp_name, collapse_range in experiments.items():
-            print(f"\n=== Running Merged experiment: {exp_name} ===")
-            if collapse_range is None:
-                print("No collapse in this experiment — skipping merge variant.")
-                continue
+        # After finetuning, capture compressed weights
+        compressed_weights = base_model.state_dict()
 
-            try:
-                merged_model = collapse_only(
-                    model_weights_1=model_path_000,
-                    compression_set=[collapse_range],
-                    model_class=VGG16_CIFAR10
-                )
-            except Exception as e:
-                print(f"Error in collapse_only for {exp_name}: {e}")
-                continue
+        # Compute weight similarities
+        weight_similarities = compute_weight_similarity(original_weights, compressed_weights)
+        all_weight_similarities["JF"][exp_name] = weight_similarities
 
-            param_count = count_trainable_params(merged_model)
-            accuracies, final_acc  = train_and_evaluate(
-                merged_model, train_loader, test_loader, device, epochs
-            )
-            print(f"[Merged] Final Accuracy: {final_acc:.2f}%, Params: {param_count}")
-            
-            merged_param_counts.append(param_count)
-            merged_final_accuracies.append(final_acc)
-            merged_exp_names.append(exp_name)
+        jf_param_counts.append(param_count)
+        jf_final_accuracies.append(final_acc)
+        jf_exp_names.append(exp_name)
 
- 
-        plot_results(
-            orig_param_counts,
-            orig_final_accuracies,
-            orig_exp_names,
-            "Original Compression Experiments",
-            f"original_experiments_plot_{run}.svg"
-        )
+    # Plot JF experiment results
+    print("\nPlotting JF results...")
+    # plot_weight_similarity(all_weight_similarities["JF"], "jf_weight_similarity.svg")
+    plot_results(jf_param_counts, jf_final_accuracies, jf_exp_names, "JF Experiment", "jf_experiment_results.svg")
 
-        plot_results(
-            merged_param_counts,
-            merged_final_accuracies,
-            merged_exp_names,
-            "Merged (collapse_and_merge) Experiments",
-            f"merged_experiments_plot_{run}.svg"
-        )
+
+    # ------------------------
+    # Kevin Experiment Workflow
+    # ------------------------
+    kevin_param_counts = []
+    kevin_final_accuracies = []
+    kevin_exp_names = []
+    all_weight_similarities["Kevin"] = {}
+
+    print("\n=== Running Kevin experiment ===")
+    print(f"Loading untrained model from {model_path_000}...")
+    base_model = VGG16_CIFAR10()
+    base_model.load_state_dict(torch.load(model_path_000)['model'])
+
+    for exp_name, collapse_range in experiments.items():
+        print(f"\nRunning experiment: {exp_name}")
+        
+        original_weights = base_model.state_dict()
+
+        if collapse_range is not None:
+            print(f"Applying compression for {exp_name}...")
+            base_model = collapse_only(model_weights_1=model_path_000, compression_set=[collapse_range], model_class=VGG16_CIFAR10)
+
+        print(f"Finetuning the compressed model...")
+        param_count, init_acc, final_acc, acc_list = run_experiment(base_model, train_loader, test_loader, device, epochs+pretrain)
+
+        # After finetuning, capture compressed weights
+        compressed_weights = base_model.state_dict()
+
+        # Compute weight similarities
+        weight_similarities = compute_weight_similarity(original_weights, compressed_weights)
+        all_weight_similarities["Kevin"][exp_name] = weight_similarities
+
+        kevin_param_counts.append(param_count)
+        kevin_final_accuracies.append(final_acc)
+        kevin_exp_names.append(exp_name)
+
+    # Plot Kevin experiment results
+    print("\nPlotting Kevin results...")
+    # plot_weight_similarity(all_weight_similarities["Kevin"], "kevin_weight_similarity.svg")
+    plot_results(kevin_param_counts, kevin_final_accuracies, kevin_exp_names, "Kevin Experiment", "kevin_experiment_results.svg")
+
+
+    # ------------------------
+    # Nick Experiment Workflow
+    # ------------------------
+    nick_param_counts = []
+    nick_final_accuracies = []
+    nick_exp_names = []
+    all_weight_similarities["Nick"] = {}
+
+    print("\n=== Running Nick experiment ===")
+    print(f"Loading untrained model from {model_path_000}...")
+    base_model = VGG16_CIFAR10()
+    base_model.load_state_dict(torch.load(model_path_000)['model'])
+
+    for exp_name, collapse_range in experiments.items():
+        print(f"\nRunning experiment: {exp_name}")
+        
+        # Nick workflow: First finetune
+        print("First finetuning before compression...")
+        param_count, init_acc, final_acc, acc_list = run_experiment(base_model, train_loader, test_loader, device, epochs+pretrain)
+        print(f"First finetuning completed. Accuracy: {final_acc:.4f}")
+
+        original_weights = base_model.state_dict()
+
+        if collapse_range is not None:
+            print(f"Applying compression for {exp_name}...")
+            # save base_model.state_dict() to a temporary file
+            # then load it in collapse_only
+            # because collapse_only expects a file path
+            #
+            temp_model_path = "temp_model.pth"
+            torch.save({'model': base_model.state_dict()}, temp_model_path)
+            base_model = collapse_only(model_weights_1=temp_model_path, compression_set=[collapse_range], model_class=VGG16_CIFAR10)
+
+        print("Second finetuning after compression...")
+        param_count, init_acc, final_acc, acc_list = run_experiment(base_model, train_loader, test_loader, device, epochs)
+        print(f"Second finetuning completed. Final accuracy: {final_acc:.4f}")
+
+        # After finetuning, capture compressed weights
+        compressed_weights = base_model.state_dict()
+
+        # Compute weight similarities
+        weight_similarities = compute_weight_similarity(original_weights, compressed_weights)
+        all_weight_similarities["Nick"][exp_name] = weight_similarities
+
+        nick_param_counts.append(param_count)
+        nick_final_accuracies.append(final_acc)
+        nick_exp_names.append(exp_name)
+
+    # Plot Nick experiment results
+    print("\nPlotting Nick results...")
+    # plot_weight_similarity(all_weight_similarities["Nick"], "nick_weight_similarity.svg")
+    plot_results(nick_param_counts, nick_final_accuracies, nick_exp_names, "Nick Experiment", "nick_experiment_results.svg")
+
+
 
 # ----------------------------
 # Plotting
@@ -265,6 +380,5 @@ def plot_results(params, accs, names, title, filename):
     print("\nSummary:")
     for p, a, n in zip(sorted_params, sorted_accs, sorted_names):
         print(f"{n}: Params={p:,}, Final Acc={a:.2f}%")
-
 if __name__ == "__main__":
     main()
