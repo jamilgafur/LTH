@@ -160,6 +160,49 @@ def collapse_only(model_weights_1, compression_set, model_class):
     state_dict_1 = checkpoint_1['model'] if 'model' in checkpoint_1 else checkpoint_1
 
     reference_model = model_class()
+
+    # First, load the state dict for the model
+    try:
+        reference_model.load_state_dict(state_dict_1)
+    except RuntimeError as e:
+        print(f"Warning: Error loading state_dict for {model_class.__name__}. Proceeding with layer collapse.")
+
+    collapsed_layer_names = set()
+
+    # Apply layer collapse
+    for start_name, end_name in compression_set:
+        reference_model = collapse_block(reference_model, start_name, end_name)
+        
+        start_idx = int(start_name.split('_')[1])
+        end_idx = int(end_name.split('_')[1])
+        for i in range(start_idx, end_idx + 1):
+            collapsed_layer_names.add(f"features.conv_{i}.weight")
+            collapsed_layer_names.add(f"features.conv_{i}.bias")
+            collapsed_layer_names.add(f"features.bn_{i}.weight")
+            collapsed_layer_names.add(f"features.bn_{i}.bias")
+            collapsed_layer_names.add(f"features.bn_{i}.running_mean")
+            collapsed_layer_names.add(f"features.bn_{i}.running_var")
+
+    # Now, load the model without the collapsed layers' weights
+    state_dict_1_filtered = {k: v for k, v in state_dict_1.items() if k not in collapsed_layer_names}
+    reference_model.load_state_dict(state_dict_1_filtered, strict=False)  # strict=False allows missing keys
+
+    print(f"Collapsed model structure: {reference_model}")
+    print(f"New trainable params: {count_trainable_params(reference_model)}")
+    return reference_model
+
+    """
+    Args:
+        model_weights_1 (str): Path to model weights (used for collapsing layers).
+        compression_set (list of tuples): Each tuple is (start_layer_name, end_layer_name).
+        model_class: the class of the model to instantiate.
+    Returns:
+        nn.Module: Model with collapsed layers.
+    """
+    checkpoint_1 = torch.load(model_weights_1, map_location='cpu')
+    state_dict_1 = checkpoint_1['model'] if 'model' in checkpoint_1 else checkpoint_1
+
+    reference_model = model_class()
     reference_model.load_state_dict(state_dict_1)
 
     collapsed_layer_names = set()

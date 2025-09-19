@@ -182,13 +182,13 @@ def main():
         "All Conv Layers": ('conv_1', 'conv_13'),
     }
 
+    all_weight_similarities = OrderedDict()
     # ------------------------
     # JF Experiment Workflow
     # ------------------------
     jf_param_counts = []
     jf_final_accuracies = []
     jf_exp_names = []
-    all_weight_similarities = OrderedDict()
     all_weight_similarities["JF"] = {}
 
     print("\n=== Running JF experiment ===")
@@ -292,10 +292,6 @@ def main():
 
         if collapse_range is not None:
             print(f"Applying compression for {exp_name}...")
-            # save base_model.state_dict() to a temporary file
-            # then load it in collapse_only
-            # because collapse_only expects a file path
-            #
             temp_model_path = "temp_model.pth"
             torch.save({'model': base_model.state_dict()}, temp_model_path)
             base_model = collapse_only(model_weights_1=temp_model_path, compression_set=[collapse_range], model_class=VGG16_CIFAR10)
