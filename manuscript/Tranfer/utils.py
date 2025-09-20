@@ -61,6 +61,8 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape):
     if layer_type == nn.Conv2d:
         return nn.Sequential(
             nn.Conv2d(in_channels=in_features, out_channels=out_features, kernel_size=1, stride=1, padding=0),
+            nn.ReLU(inplace=True),   # <-- ADD THIS
+            nn.MaxPool2d(kernel_size=2, stride=2),  # <-- ADD THIS
             nn.AdaptiveAvgPool2d((1, 1))
         )
     elif layer_type == nn.Linear:
