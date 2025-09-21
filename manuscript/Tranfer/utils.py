@@ -1,7 +1,244 @@
 import torch
 import torch.nn as nn
 from collections import OrderedDict
-from pyPrune.models.Vgg16 import VGG16_CIFAR10
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import torch.nn.functional as F
+import matplotlib.pyplot as plt
+import os
+import json
+
+
+# -------------------------
+# Result Plotting
+# -------------------------
+def plot_results(params, accs, names, title, filename, infer_times=None, mem_usages=None):
+    fig, axs = plt.subplots(3, 1, figsize=(16, 18))
+
+    axs[0].bar(names, accs, color='skyblue')
+    axs[0].set_title(f"{title} - Final Accuracy (%)", fontsize=14)
+    axs[0].set_ylabel("Accuracy (%)")
+    axs[0].grid(True)
+
+    ax0_twin = axs[0].twinx()
+    ax0_twin.plot(names, params, 'ro--', label='Trainable Parameters (log)', linewidth=2)
+    ax0_twin.set_ylabel('Trainable Parameters', color='red')
+    ax0_twin.set_yscale('log')
+    ax0_twin.tick_params(axis='y', colors='red')
+    for i, param in enumerate(params):
+        ax0_twin.annotate(f'{param:,}', xy=(i, param), xytext=(0, -15),
+                          textcoords='offset points', ha='center', fontsize=9, color='red')
+
+    axs[1].bar(names, infer_times, color='orange')
+    axs[1].set_title("Inference Time (avg per batch in seconds)", fontsize=14)
+    axs[1].set_ylabel("Time (s)")
+    axs[1].grid(True)
+
+    mem_mb = [m / 1e6 for m in mem_usages]
+    axs[2].bar(names, mem_mb, color='green')
+    axs[2].set_title("FLOPs", fontsize=14)
+    axs[2].set_ylabel("FLOPs (Millions)")
+    axs[2].grid(True)
+
+    for ax in axs:
+        ax.set_xticks(range(len(names)))
+        ax.set_xticklabels(names, rotation=30, ha='right')
+
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.show()
+    print(f"[✓] Saved plot: {filename}")
+
+# -------------------------
+# Activation capture + similarity helpers
+# -------------------------
+def get_conv_activations(model, loader, device, num_batches=10):
+    """
+    Capture per-conv-layer activation vectors: mean over batch and spatial dims -> (out_channels,)
+    Returns dict: {'conv_1': tensor, 'conv_2': tensor, ...} in encounter order.
+    """
+    model.to(device)
+    model.eval()
+
+    conv_modules = []
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Conv2d):
+            conv_modules.append((name, module))
+
+    accum = [None] * len(conv_modules)
+    counts = [0] * len(conv_modules)
+    hooks = []
+
+    def make_hook(idx):
+        def hook(module, input, output):
+            with torch.no_grad():
+                out = output.detach()
+                mean_per_channel = out.mean(dim=(0, 2, 3)).cpu()
+                if accum[idx] is None:
+                    accum[idx] = mean_per_channel.clone()
+                else:
+                    accum[idx] += mean_per_channel
+                counts[idx] += 1
+        return hook
+
+    for idx, (name, module) in enumerate(conv_modules):
+        hooks.append(module.register_forward_hook(make_hook(idx)))
+
+    with torch.no_grad():
+        for i, (xb, _) in enumerate(loader):
+            if i >= num_batches:
+                break
+            xb = xb.to(device)
+            _ = model(xb)
+
+    for h in hooks:
+        h.remove()
+
+    activations = {}
+    for idx, (name, module) in enumerate(conv_modules):
+        if counts[idx] > 0:
+            avg = accum[idx] / counts[idx]
+            activations[f"conv_{idx+1}"] = avg.clone()
+        else:
+            activations[f"conv_{idx+1}"] = torch.zeros(module.out_channels)
+
+    return activations
+
+def compute_layerwise_similarity(actsA, actsB):
+    """
+    Compute cosine similarity per layer between two activation dicts.
+    Returns dict {layer: similarity_float}
+    """
+    sims = {}
+    for layer in sorted(set(actsA.keys()) & set(actsB.keys()),
+                        key=lambda x: int(x.split("_")[1])):
+        a = actsA[layer].flatten().float()
+        b = actsB[layer].flatten().float()
+        if a.numel() != b.numel():
+            min_len = min(a.numel(), b.numel())
+            a = a[:min_len]
+            b = b[:min_len]
+        if a.norm() == 0 or b.norm() == 0:
+            sims[layer] = 0.0
+        else:
+            sims[layer] = float(F.cosine_similarity(a.unsqueeze(0), b.unsqueeze(0)).item())
+    return sims
+
+def save_activation_similarity_json(experiment, sim_dict):
+    os.makedirs("metrics", exist_ok=True)
+    fname = f"metrics/activation_similarity_{experiment.replace(' ', '_')}.json"
+    with open(fname, "w") as f:
+        json.dump(sim_dict, f, indent=2)
+    print(f"[✓] Saved activation similarity JSON: {fname}")
+
+def plot_activation_similarity(experiment, sim_dict):
+    os.makedirs("plots", exist_ok=True)
+    # choose a sample similarity dict to get layers (they should all share layer keys)
+    keys = list(sim_dict.keys())
+    if not keys:
+        print(f"[!] No similarity data to plot for {experiment}")
+        return
+    sample = sim_dict[keys[0]]
+    layers = sorted(sample.keys(), key=lambda x: int(x.split("_")[1]))
+    x = list(range(1, len(layers) + 1))
+    plt.figure(figsize=(10, 6))
+    for pair_name, data in sim_dict.items():
+        y = [data.get(layer, 0.0) for layer in layers]
+        plt.plot(x, y, marker='o', label=pair_name)
+    plt.xticks(x, layers, rotation=45)
+    plt.xlabel("Conv Layer")
+    plt.ylabel("Cosine Similarity")
+    plt.ylim(-1.0, 1.0)
+    plt.title(f"Layerwise Activation Similarity - {experiment}")
+    plt.grid(True)
+    plt.legend()
+    filename = f"plots/activation_similarity_{experiment.replace(' ', '_')}.svg"
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
+    print(f"[✓] Saved activation similarity plot: {filename}")
+
+def compare_activations(experiments, jf_activations, nick_activations, kevin_activations):
+    print("\n=== Activation Similarity Comparison Across Workflows ===")
+    for exp_name in experiments.keys():
+        sims = {}
+        sims["JF-Nick"] = compute_layerwise_similarity(jf_activations[exp_name], nick_activations[exp_name])
+        sims["JF-Kevin"] = compute_layerwise_similarity(jf_activations[exp_name], kevin_activations[exp_name])
+        sims["Nick-Kevin"] = compute_layerwise_similarity(nick_activations[exp_name], kevin_activations[exp_name])
+
+        save_activation_similarity_json(exp_name, sims)
+        plot_activation_similarity(exp_name, sims)
+
+# -------------------------
+# CIFAR-10 Data Loaders
+# -------------------------
+def load_cifar10(batch_size=64, num_workers=4):
+    train_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.RandomHorizontalFlip(),
+        transforms.RandomCrop(32, padding=4),
+        transforms.Normalize((0.4914, 0.4822, 0.4465),
+                             (0.2470, 0.2435, 0.2616))
+    ])
+    test_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.4914, 0.4822, 0.4465),
+                             (0.2470, 0.2435, 0.2616))
+    ])
+
+    train_loader = DataLoader(
+        datasets.CIFAR10('data', train=True, download=True, transform=train_transform),
+        batch_size=batch_size, shuffle=True, num_workers=num_workers
+    )
+    test_loader = DataLoader(
+        datasets.CIFAR10('data', train=False, transform=test_transform),
+        batch_size=batch_size, shuffle=False, num_workers=num_workers
+    )
+    return train_loader, test_loader
+
+def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 0) -> tuple[DataLoader, DataLoader]:
+    data_dir = '/workspace/manuscript/temp/tiny-imagenet-200/'
+    train_dir = os.path.join(data_dir, 'train')
+    val_dir = os.path.join(data_dir, 'val')
+    val_img_dir = os.path.join(val_dir, 'images')
+    val_annot_path = os.path.join(val_dir, 'val_annotations.txt')
+
+    # Reorganize validation images into subfolders (only needs to be done once)
+    if os.path.exists(val_img_dir):
+        with open(val_annot_path, 'r') as f:
+            for line in f:
+                img_file, label = line.strip().split('\t')[:2]
+                label_dir = os.path.join(val_dir, label)
+                os.makedirs(label_dir, exist_ok=True)
+                src = os.path.join(val_img_dir, img_file)
+                dst = os.path.join(label_dir, img_file)
+                if os.path.exists(src):
+                    shutil.move(src, dst)
+        os.rmdir(val_img_dir)
+
+    # Define transforms
+    transform_train = transforms.Compose([
+        transforms.RandomResizedCrop(64),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize((0.480, 0.448, 0.398), (0.277, 0.269, 0.282))
+    ])
+
+    transform_val = transforms.Compose([
+        transforms.Resize((64, 64)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.480, 0.448, 0.398), (0.277, 0.269, 0.282))
+    ])
+
+    # Datasets
+    train_dataset = datasets.ImageFolder(train_dir, transform=transform_train)
+    val_dataset = datasets.ImageFolder(val_dir, transform=transform_val)
+
+    # Dataloaders
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    val_loader = DataLoader(val_dataset, batch_size=1000, shuffle=False, num_workers=num_workers)
+
+    return train_loader, val_loader
 
 
 # ===============================
@@ -149,7 +386,18 @@ def clone_model(model, model_class):
     new_model.load_state_dict(model.state_dict())
     return new_model
 
-def collapse_only(model_weights_1, compression_set, model_class):
+def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=None):
+    model_kwargs = model_kwargs or {}
+
+    model = model_class(**model_kwargs)
+    checkpoint = torch.load(model_weights_1, map_location='cpu')
+    model.load_state_dict(checkpoint['model'])
+
+    for start, end in compression_set:
+        model = collapse_block(model, start, end)
+
+    return model
+
     """
     Args:
         model_weights_1 (str): Path to model weights (used for collapsing layers).

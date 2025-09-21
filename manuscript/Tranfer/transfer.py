@@ -12,65 +12,15 @@ import torch
 import time
 from fvcore.nn import FlopCountAnalysis
 from pyPrune.models.Vgg16 import VGG16_CIFAR10
-from utils import count_trainable_params, collapse_block, collapse_only
+from pyPrune.models.Vgg16ImageNet import VGG16_ImageNet
+from utils import *
 from torchinfo import summary
 from collections import OrderedDict
 import numpy as np
-# -------------------------
-# CIFAR-10 Data Loaders
-# -------------------------
-def load_cifar10(batch_size=64, num_workers=4):
-    train_transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(32, padding=4),
-        transforms.Normalize((0.4914, 0.4822, 0.4465),
-                             (0.2470, 0.2435, 0.2616))
-    ])
-    test_transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465),
-                             (0.2470, 0.2435, 0.2616))
-    ])
-
-    train_loader = DataLoader(
-        datasets.CIFAR10('data', train=True, download=True, transform=train_transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers
-    )
-    test_loader = DataLoader(
-        datasets.CIFAR10('data', train=False, transform=test_transform),
-        batch_size=batch_size, shuffle=False, num_workers=num_workers
-    )
-    return train_loader, test_loader
 
 # -------------------------
 # Training and Evaluation
 # -------------------------
-# -------------------------
-# Helper: load checkpoint into matching architecture
-# -------------------------
-def load_model_from_checkpoint(ckpt_path, collapse_range, device):
-    """
-    Load checkpoint at ckpt_path into a model whose architecture matches whether
-    collapse_range is present. If collapse_range is not None, apply collapse_block
-    to the fresh model before loading state_dict so shapes/keys match.
-    """
-    if not os.path.exists(ckpt_path):
-        raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
-
-    # instantiate fresh base model
-    model = VGG16_CIFAR10()
-    # If this experiment used collapse_range, modify architecture before loading
-    if collapse_range is not None:
-        # collapse_block returns the modified model (same function used in run_experiment)
-        model = collapse_block(model, *collapse_range)
-
-    # load weights
-    sd = torch.load(ckpt_path)['model']
-    model.load_state_dict(sd)
-    model.to(device)
-    model.eval()
-    return model
 
 def train_and_evaluate(model, train_loader, test_loader, device, epochs=10):
     if epochs <= 0:
@@ -217,234 +167,65 @@ def plot_accuracy_loss_curve(acc_list, loss_list, workflow, experiment):
     plt.close()
     print(f"[✓] Saved plot: {filename}")
 
+def load_model_from_checkpoint(ckpt_path, collapse_range, device, model_class=VGG16_CIFAR10, model_kwargs=None):
+    if not os.path.exists(ckpt_path):
+        raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
+
+    model_kwargs = model_kwargs or {}
+    model = model_class(**model_kwargs)
+    import pdb; pdb.set_trace()
+    if collapse_range is not None:
+        model = collapse_block(model, *collapse_range)
+
+    sd = torch.load(ckpt_path)['model']
+    model.load_state_dict(sd)
+    model.to(device)
+    model.eval()
+    return model
+
 # -------------------------
 # Experiment Runner
 # -------------------------
-def run_experiment(model, train_loader, test_loader, device, epochs, workflow, exp_name,
-                   collapse_range=None, pretrain=0):
-    ckpt_path = get_checkpoint_filename(workflow, exp_name, 'VGG16', pretrain, epochs)
+def run_experiment(model_class=VGG16_CIFAR10, model_kwargs=None,
+                   train_loader=None, test_loader=None, device='cpu',
+                   epochs=10, workflow='default', exp_name='experiment',
+                   collapse_range=None, pretrain=0,data_shape=(1,3,32,32)):
+    
+    model_kwargs = model_kwargs or {}
+    model = model_class(**model_kwargs)
+
+    ckpt_path = get_checkpoint_filename(workflow, exp_name, model_class.__name__, pretrain, epochs)
 
     if collapse_range:
         model = collapse_block(model, *collapse_range)
+
     model.to(device)
-    describe_model(model, input_size=(1, 3, 32, 32), device=device)
+    describe_model(model, input_size=data_shape, device=device)
 
     print(f"[•] Training model: {exp_name}")
     acc_list, final_acc, loss_list = train_and_evaluate(model, train_loader, test_loader, device, epochs)
-    
+
     os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
     torch.save({'model': model.state_dict()}, ckpt_path)
-    
+
     plot_accuracy_loss_curve(acc_list, loss_list, workflow, exp_name)
 
     param_count = count_trainable_params(model)
     infer_time, mem_usage = benchmark_model(model, test_loader, device)
+
     save_metrics_json(
-            workflow, exp_name,
-            acc_list, loss_list,
-            infer_time=infer_time,
-            mem_usage=mem_usage,
-            param_count=param_count
-        )
+        workflow, exp_name,
+        acc_list, loss_list,
+        infer_time=infer_time,
+        mem_usage=mem_usage,
+        param_count=param_count
+    )
     return param_count, final_acc, infer_time, mem_usage
 
-# -------------------------
-# Result Plotting
-# -------------------------
-def plot_results(params, accs, names, title, filename, infer_times=None, mem_usages=None):
-    fig, axs = plt.subplots(3, 1, figsize=(16, 18))
 
-    axs[0].bar(names, accs, color='skyblue')
-    axs[0].set_title(f"{title} - Final Accuracy (%)", fontsize=14)
-    axs[0].set_ylabel("Accuracy (%)")
-    axs[0].grid(True)
-
-    ax0_twin = axs[0].twinx()
-    ax0_twin.plot(names, params, 'ro--', label='Trainable Parameters (log)', linewidth=2)
-    ax0_twin.set_ylabel('Trainable Parameters', color='red')
-    ax0_twin.set_yscale('log')
-    ax0_twin.tick_params(axis='y', colors='red')
-    for i, param in enumerate(params):
-        ax0_twin.annotate(f'{param:,}', xy=(i, param), xytext=(0, -15),
-                          textcoords='offset points', ha='center', fontsize=9, color='red')
-
-    axs[1].bar(names, infer_times, color='orange')
-    axs[1].set_title("Inference Time (avg per batch in seconds)", fontsize=14)
-    axs[1].set_ylabel("Time (s)")
-    axs[1].grid(True)
-
-    mem_mb = [m / 1e6 for m in mem_usages]
-    axs[2].bar(names, mem_mb, color='green')
-    axs[2].set_title("FLOPs", fontsize=14)
-    axs[2].set_ylabel("FLOPs (Millions)")
-    axs[2].grid(True)
-
-    for ax in axs:
-        ax.set_xticks(range(len(names)))
-        ax.set_xticklabels(names, rotation=30, ha='right')
-
-    plt.tight_layout()
-    plt.savefig(filename)
-    plt.show()
-    print(f"[✓] Saved plot: {filename}")
-
-# -------------------------
-# Activation capture + similarity helpers
-# -------------------------
-def get_conv_activations(model, loader, device, num_batches=10):
-    """
-    Capture per-conv-layer activation vectors: mean over batch and spatial dims -> (out_channels,)
-    Returns dict: {'conv_1': tensor, 'conv_2': tensor, ...} in encounter order.
-    """
-    model.to(device)
-    model.eval()
-
-    conv_modules = []
-    for name, module in model.named_modules():
-        if isinstance(module, nn.Conv2d):
-            conv_modules.append((name, module))
-
-    accum = [None] * len(conv_modules)
-    counts = [0] * len(conv_modules)
-    hooks = []
-
-    def make_hook(idx):
-        def hook(module, input, output):
-            with torch.no_grad():
-                out = output.detach()
-                mean_per_channel = out.mean(dim=(0, 2, 3)).cpu()
-                if accum[idx] is None:
-                    accum[idx] = mean_per_channel.clone()
-                else:
-                    accum[idx] += mean_per_channel
-                counts[idx] += 1
-        return hook
-
-    for idx, (name, module) in enumerate(conv_modules):
-        hooks.append(module.register_forward_hook(make_hook(idx)))
-
-    with torch.no_grad():
-        for i, (xb, _) in enumerate(loader):
-            if i >= num_batches:
-                break
-            xb = xb.to(device)
-            _ = model(xb)
-
-    for h in hooks:
-        h.remove()
-
-    activations = {}
-    for idx, (name, module) in enumerate(conv_modules):
-        if counts[idx] > 0:
-            avg = accum[idx] / counts[idx]
-            activations[f"conv_{idx+1}"] = avg.clone()
-        else:
-            activations[f"conv_{idx+1}"] = torch.zeros(module.out_channels)
-
-    return activations
-
-def compute_layerwise_similarity(actsA, actsB):
-    """
-    Compute cosine similarity per layer between two activation dicts.
-    Returns dict {layer: similarity_float}
-    """
-    sims = {}
-    for layer in sorted(set(actsA.keys()) & set(actsB.keys()),
-                        key=lambda x: int(x.split("_")[1])):
-        a = actsA[layer].flatten().float()
-        b = actsB[layer].flatten().float()
-        if a.numel() != b.numel():
-            min_len = min(a.numel(), b.numel())
-            a = a[:min_len]
-            b = b[:min_len]
-        if a.norm() == 0 or b.norm() == 0:
-            sims[layer] = 0.0
-        else:
-            sims[layer] = float(F.cosine_similarity(a.unsqueeze(0), b.unsqueeze(0)).item())
-    return sims
-
-def save_activation_similarity_json(experiment, sim_dict):
-    os.makedirs("metrics", exist_ok=True)
-    fname = f"metrics/activation_similarity_{experiment.replace(' ', '_')}.json"
-    with open(fname, "w") as f:
-        json.dump(sim_dict, f, indent=2)
-    print(f"[✓] Saved activation similarity JSON: {fname}")
-
-def plot_activation_similarity(experiment, sim_dict):
-    os.makedirs("plots", exist_ok=True)
-    # choose a sample similarity dict to get layers (they should all share layer keys)
-    keys = list(sim_dict.keys())
-    if not keys:
-        print(f"[!] No similarity data to plot for {experiment}")
-        return
-    sample = sim_dict[keys[0]]
-    layers = sorted(sample.keys(), key=lambda x: int(x.split("_")[1]))
-    x = list(range(1, len(layers) + 1))
-    plt.figure(figsize=(10, 6))
-    for pair_name, data in sim_dict.items():
-        y = [data.get(layer, 0.0) for layer in layers]
-        plt.plot(x, y, marker='o', label=pair_name)
-    plt.xticks(x, layers, rotation=45)
-    plt.xlabel("Conv Layer")
-    plt.ylabel("Cosine Similarity")
-    plt.ylim(-1.0, 1.0)
-    plt.title(f"Layerwise Activation Similarity - {experiment}")
-    plt.grid(True)
-    plt.legend()
-    filename = f"plots/activation_similarity_{experiment.replace(' ', '_')}.svg"
-    plt.tight_layout()
-    plt.savefig(filename)
-    plt.close()
-    print(f"[✓] Saved activation similarity plot: {filename}")
-
-def compare_activations(experiments, jf_activations, nick_activations, kevin_activations):
-    print("\n=== Activation Similarity Comparison Across Workflows ===")
-    for exp_name in experiments.keys():
-        sims = {}
-        sims["JF-Nick"] = compute_layerwise_similarity(jf_activations[exp_name], nick_activations[exp_name])
-        sims["JF-Kevin"] = compute_layerwise_similarity(jf_activations[exp_name], kevin_activations[exp_name])
-        sims["Nick-Kevin"] = compute_layerwise_similarity(nick_activations[exp_name], kevin_activations[exp_name])
-
-        save_activation_similarity_json(exp_name, sims)
-        plot_activation_similarity(exp_name, sims)
-
-# -------------------------
-# Main
-# -------------------------
-def main():
-    model_path_097 = "../structured_study/pruning_checkpoints/Vgg16_pretrain10_finetune30_steps21_batch1024_devicecuda_strategy_magnitude/checkpoint_Finetuned_0.97.pth"
-    model_path_000 = "../structured_study/pruning_checkpoints/Vgg16_pretrain10_finetune30_steps21_batch1024_devicecuda_strategy_magnitude/checkpoint_Original_0.00.pth"
-
-    if not os.path.exists(model_path_097) or not os.path.exists(model_path_000):
-        print("Required model weight files not found. Exiting.")
-        return
-
-    print("Loading CIFAR-10 data...")
-    train_loader, test_loader = load_cifar10()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    epochs = 30
-    pretrain = 10  # kept for consistency
-
-    experiments = {
-        "Original Model": None,
-        "Stage 4-5": ('conv_8', 'conv_13'),
-        "Stage 2-5": ('conv_3', 'conv_13'),
-        "All Conv Layers": ('conv_1', 'conv_13'),
-    }
-
-    # Run JF Experiment Workflow
-    jf_data = run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain)
-    
-    # Run Nick Experiment Workflow
-    nick_data = run_nick_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs, pretrain)
-
-    # Run Kevin Experiment Workflow
-    kevin_data = run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs, pretrain)
-
-    # Compare activations across workflows
-    compare_activations(experiments, jf_data, nick_data, kevin_data)
-
-def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain):
+def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device,
+                      epochs, pretrain, model_class=VGG16_CIFAR10, model_kwargs=None,data_shape=None):
+    model_kwargs = model_kwargs or {}
     jf_param_counts, jf_final_accuracies, jf_exp_names = [], [], []
     jf_infer_times, jf_mem_usages = [], []
     jf_activations = {}
@@ -453,41 +234,23 @@ def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, de
     for exp_name, collapse_range in experiments.items():
         print(f"\nRunning JF experiment: {exp_name}")
 
-        # prepare base_model (not strictly needed if we load checkpoint)
-        base_model = VGG16_CIFAR10()
+        base_model = model_class(**model_kwargs)
         base_model.load_state_dict(torch.load(model_path_097)['model'])
+
         if collapse_range is not None:
             base_model = collapse_only(
                 model_weights_1=model_path_097,
                 compression_set=[collapse_range],
-                model_class=VGG16_CIFAR10
+                model_class=model_class,
+                model_kwargs=model_kwargs
             )
 
-        ckpt_path = get_checkpoint_filename("JF", exp_name, 'VGG16', pretrain, epochs)
-        print(f"[•] Checking for existing checkpoint at: {ckpt_path}")
+        param_count, final_acc, infer_time, mem_usage = run_experiment(
+            model_class=model_class, model_kwargs=model_kwargs,
+            train_loader=train_loader, test_loader=test_loader, device=device,
+            epochs=epochs, workflow="JF", exp_name=exp_name, pretrain=pretrain,data_shape=data_shape )
 
-        if os.path.exists(ckpt_path):
-            try:
-                print(f"[i] Found existing checkpoint for JF {exp_name}: {ckpt_path}. Loading instead of re-training.")
-                model_ckpt = load_model_from_checkpoint(ckpt_path, collapse_range, device)
-                param_count = count_trainable_params(model_ckpt)
-                final_acc = evaluate(model_ckpt, test_loader, device)
-                infer_time, mem_usage = benchmark_model(model_ckpt, test_loader, device)
-            except Exception as e:
-                print(f"[!] Failed to load checkpoint for JF {exp_name} (will retrain): {e}")
-                param_count, final_acc, infer_time, mem_usage = run_experiment(
-                    base_model, train_loader, test_loader, device, epochs, "JF", exp_name, pretrain=pretrain
-                )
-                # after training, load the saved final model properly
-                model_ckpt = load_model_from_checkpoint(ckpt_path, collapse_range, device)
-        else:
-            param_count, final_acc, infer_time, mem_usage = run_experiment(
-                base_model, train_loader, test_loader, device, epochs, "JF", exp_name, pretrain=pretrain
-            )
-            model_ckpt = load_model_from_checkpoint(ckpt_path, collapse_range, device)
-
-        # collect activations from final model
-        jf_activations[exp_name] = get_conv_activations(model_ckpt, test_loader, device)
+        jf_activations[exp_name] = get_conv_activations(base_model, test_loader, device)
 
         jf_param_counts.append(param_count)
         jf_final_accuracies.append(final_acc)
@@ -502,7 +265,9 @@ def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, de
     )
     return jf_activations
 
-def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs, pretrain):
+def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, device,
+                        epochs, pretrain, model_class=VGG16_CIFAR10, model_kwargs=None,data_shape=None):
+    model_kwargs = model_kwargs or {}
     nick_param_counts, nick_final_accuracies, nick_exp_names = [], [], []
     nick_infer_times, nick_mem_usages = [], []
     nick_activations = {}
@@ -511,51 +276,33 @@ def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, 
     for exp_name, collapse_range in experiments.items():
         print(f"\nRunning Nick experiment: {exp_name}")
 
-        base_model = VGG16_CIFAR10()
+        base_model = model_class(**model_kwargs)
         base_model.load_state_dict(torch.load(model_path_000)['model'])
 
-        # Pre-finetune step (always run once)
         _, _, _, _ = run_experiment(
-            base_model, train_loader, test_loader, device, epochs+pretrain,
-            "Nick", exp_name, pretrain=pretrain
+            model_class=model_class, model_kwargs=model_kwargs,
+            train_loader=train_loader, test_loader=test_loader, device=device,
+            epochs=epochs+pretrain, workflow="Nick", exp_name=exp_name, pretrain=pretrain,data_shape=data_shape
         )
 
         if collapse_range is not None:
-            print(f"Applying compression for {exp_name}...")
             tmp_path = "temp_model.pth"
             torch.save({'model': base_model.state_dict()}, tmp_path)
             base_model = collapse_only(
                 model_weights_1=tmp_path,
                 compression_set=[collapse_range],
-                model_class=VGG16_CIFAR10
+                model_class=model_class,
+                model_kwargs=model_kwargs
             )
             os.remove(tmp_path)
 
-        ckpt_path = get_checkpoint_filename("Nick", exp_name, 'VGG16', pretrain, epochs)
-        print(f"[•] Checking for existing checkpoint at: {ckpt_path}")
+        param_count, final_acc, infer_time, mem_usage = run_experiment(
+            model_class=model_class, model_kwargs=model_kwargs,
+            train_loader=train_loader, test_loader=test_loader, device=device,
+            epochs=epochs, workflow="Nick", exp_name=exp_name, pretrain=pretrain,data_shape=data_shape
+        )
 
-        if os.path.exists(ckpt_path):
-            try:
-                print(f"[i] Found existing checkpoint for Nick {exp_name}: {ckpt_path}. Loading instead of re-training.")
-                model_ckpt = load_model_from_checkpoint(ckpt_path, collapse_range, device)
-                param_count = count_trainable_params(model_ckpt)
-                final_acc = evaluate(model_ckpt, test_loader, device)
-                infer_time, mem_usage = benchmark_model(model_ckpt, test_loader, device)
-            except Exception as e:
-                print(f"[!] Failed to load checkpoint for Nick {exp_name} (will retrain): {e}")
-                param_count, final_acc, infer_time, mem_usage = run_experiment(
-                    base_model, train_loader, test_loader, device, epochs,
-                    "Nick", exp_name, pretrain=pretrain
-                )
-                model_ckpt = load_model_from_checkpoint(ckpt_path, collapse_range, device)
-        else:
-            param_count, final_acc, infer_time, mem_usage = run_experiment(
-                base_model, train_loader, test_loader, device, epochs,
-                "Nick", exp_name, pretrain=pretrain
-            )
-            model_ckpt = load_model_from_checkpoint(ckpt_path, collapse_range, device)
-
-        nick_activations[exp_name] = get_conv_activations(model_ckpt, test_loader, device)
+        nick_activations[exp_name] = get_conv_activations(base_model, test_loader, device)
 
         nick_param_counts.append(param_count)
         nick_final_accuracies.append(final_acc)
@@ -570,7 +317,9 @@ def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, 
     )
     return nick_activations
 
-def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs, pretrain):
+def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device,
+                         epochs, pretrain, model_class=VGG16_CIFAR10, model_kwargs=None,data_shape=None):
+    model_kwargs = model_kwargs or {}
     kevin_param_counts, kevin_final_accuracies, kevin_exp_names = [], [], []
     kevin_infer_times, kevin_mem_usages = [], []
     kevin_activations = {}
@@ -579,47 +328,25 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
     for exp_name, collapse_range in experiments.items():
         print(f"\nRunning Kevin experiment: {exp_name}")
 
-        base_model = VGG16_CIFAR10()
+        base_model = model_class(**model_kwargs)
         base_model.load_state_dict(torch.load(model_path_000)['model'])
 
         if collapse_range is not None:
             base_model = collapse_only(
                 model_weights_1=model_path_000,
                 compression_set=[collapse_range],
-                model_class=VGG16_CIFAR10
+                model_class=model_class,
+                model_kwargs=model_kwargs
             )
 
-        # try multiple checkpoint names if needed
-        possible_ckpts = [
-            get_checkpoint_filename("Kevin", exp_name, 'VGG16', pretrain, epochs+pretrain),
-            get_checkpoint_filename("Kevin", exp_name, 'VGG16', pretrain, epochs),
-        ]
-        ckpt_found = next((ck for ck in possible_ckpts if os.path.exists(ck)), None)
+     
+        param_count, final_acc, infer_time, mem_usage = run_experiment(
+            model_class=model_class, model_kwargs=model_kwargs,
+            train_loader=train_loader, test_loader=test_loader, device=device,
+            epochs=epochs + pretrain, workflow="Kevin", exp_name=exp_name, pretrain=pretrain,data_shape=data_shape
+        )
 
-        if ckpt_found:
-            try:
-                print(f"[i] Found existing checkpoint for Kevin {exp_name}: {ckpt_found}. Loading instead of re-training.")
-                model_ckpt = load_model_from_checkpoint(ckpt_found, collapse_range, device)
-                param_count = count_trainable_params(model_ckpt)
-                final_acc = evaluate(model_ckpt, test_loader, device)
-                infer_time, mem_usage = benchmark_model(model_ckpt, test_loader, device)
-            except Exception as e:
-                print(f"[!] Failed to load checkpoint for Kevin {exp_name} (will retrain): {e}")
-                param_count, final_acc, infer_time, mem_usage = run_experiment(
-                    base_model, train_loader, test_loader, device, epochs+pretrain,
-                    "Kevin", exp_name, pretrain=pretrain
-                )
-                ckpt_new = get_checkpoint_filename("Kevin", exp_name, 'VGG16', pretrain, epochs+pretrain)
-                model_ckpt = load_model_from_checkpoint(ckpt_new, collapse_range, device)
-        else:
-            param_count, final_acc, infer_time, mem_usage = run_experiment(
-                base_model, train_loader, test_loader, device, epochs+pretrain,
-                "Kevin", exp_name, pretrain=pretrain
-            )
-            ckpt_new = get_checkpoint_filename("Kevin", exp_name, 'VGG16', pretrain, epochs+pretrain)
-            model_ckpt = load_model_from_checkpoint(ckpt_new, collapse_range, device)
-
-        kevin_activations[exp_name] = get_conv_activations(model_ckpt, test_loader, device)
+        kevin_activations[exp_name] = get_conv_activations(base_model, test_loader, device)
 
         kevin_param_counts.append(param_count)
         kevin_final_accuracies.append(final_acc)
@@ -634,5 +361,64 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
     )
     return kevin_activations
 
+def main(model_path_097, model_path_000, experiments=None, epochs=0, pretrain=0,
+         model_class=VGG16_CIFAR10, model_kwargs=None,dataset="Cifar10"):
+    import os
+    import torch
+
+    if not os.path.exists(model_path_097) or not os.path.exists(model_path_000):
+        print("Required model weight files not found. Exiting.")
+        return
+    if dataset=="Cifar10":
+        print("Loading CIFAR-10 data...")
+        train_loader, test_loader = load_cifar10()
+        input_size = (1, 3, 32, 32)
+        default_num_classes = 10
+    elif dataset=="TinyImageNet":
+        print("Loading Tiny ImageNet data...")
+        train_loader, test_loader = load_tiny_imagenet()
+        input_size = (1, 3, 64, 64)
+        default_num_classes = 200
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    model_kwargs = model_kwargs or {'num_classes': default_num_classes}  # default
+
+    jf_data = run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device,
+                                epochs, pretrain, model_class=model_class, model_kwargs=model_kwargs,data_shape=input_size)
+
+    nick_data = run_nick_experiment(experiments, model_path_000, train_loader, test_loader, device,
+                                    epochs, pretrain, model_class=model_class, model_kwargs=model_kwargs,data_shape=input_size)
+
+    kevin_data = run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device,
+                                      epochs, pretrain, model_class=model_class, model_kwargs=model_kwargs,data_shape=input_size)
+
+    compare_activations(experiments, jf_data, nick_data, kevin_data)
+
+
 if __name__ == "__main__":
-    main()
+    style = "Cifar10"
+    if style == "Cifar10":
+        model_path_097 = "../structured_study/pruning_checkpoints/Vgg16_pretrain10_finetune30_steps21_batch1024_devicecuda_strategy_magnitude/checkpoint_Finetuned_0.97.pth"
+        model_path_000 = "../structured_study/pruning_checkpoints/Vgg16_pretrain10_finetune30_steps21_batch1024_devicecuda_strategy_magnitude/checkpoint_Original_0.00.pth"
+
+        experiments = {
+                # "Original Model": None,
+                "Stage 4-5": ('conv_8', 'conv_13'),
+                # "Stage 2-5": ('conv_3', 'conv_13'),
+                # "All Conv Layers": ('conv_1', 'conv_13'),
+            }
+        main(model_path_097, model_path_000, experiments=experiments, epochs=0, pretrain=0,
+            model_class=VGG16_CIFAR10, model_kwargs={'num_classes': 10},dataset="Cifar10")
+    elif style == "TinyImageNet":
+        model_path_097 = "../structured_study/pruning_checkpoints/Vgg16ImageNet_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/checkpoint_Finetuned_0.74.pth"
+        model_path_000 = "../structured_study/pruning_checkpoints/Vgg16ImageNet_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/checkpoint_Original_0.00.pth"
+
+        experiments = {
+                # "Original Model": None,
+                "Stage 4-5": ('conv_8', 'conv_13'),
+                # "Stage 2-5": ('conv_3', 'conv_13'),
+                # "All Conv Layers": ('conv_1', 'conv_13'),
+            }
+        main(model_path_097, model_path_000, experiments=experiments, epochs=0, pretrain=0,
+            model_class=VGG16_ImageNet, model_kwargs={'num_classes': 200},dataset="TinyImageNet")
