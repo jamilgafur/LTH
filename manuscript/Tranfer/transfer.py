@@ -149,6 +149,7 @@ def benchmark_model(model, loader, device, num_batches=10):
 
     avg_time = sum(times) / len(times) if times else 0
     return avg_time, flops
+
 def describe_model(model, input_size=(1, 3, 32, 32), device='cpu'):
     print("=" * 60)
     print("🔍 Model Summary (via torchinfo)")
@@ -360,7 +361,7 @@ def compute_layerwise_similarity(actsA, actsB):
             sims[layer] = 0.0
         else:
             sims[layer] = float(F.cosine_similarity(a.unsqueeze(0), b.unsqueeze(0)).item())
-    return np.abs(sims)
+    return sims
 
 def save_activation_similarity_json(experiment, sim_dict):
     os.makedirs("metrics", exist_ok=True)
@@ -396,6 +397,17 @@ def plot_activation_similarity(experiment, sim_dict):
     plt.close()
     print(f"[✓] Saved activation similarity plot: {filename}")
 
+def compare_activations(experiments, jf_activations, nick_activations, kevin_activations):
+    print("\n=== Activation Similarity Comparison Across Workflows ===")
+    for exp_name in experiments.keys():
+        sims = {}
+        sims["JF-Nick"] = compute_layerwise_similarity(jf_activations[exp_name], nick_activations[exp_name])
+        sims["JF-Kevin"] = compute_layerwise_similarity(jf_activations[exp_name], kevin_activations[exp_name])
+        sims["Nick-Kevin"] = compute_layerwise_similarity(nick_activations[exp_name], kevin_activations[exp_name])
+
+        save_activation_similarity_json(exp_name, sims)
+        plot_activation_similarity(exp_name, sims)
+
 # -------------------------
 # Main
 # -------------------------
@@ -417,7 +429,7 @@ def main():
         "Original Model": None,
         "Stage 4-5": ('conv_8', 'conv_13'),
         "Stage 2-5": ('conv_3', 'conv_13'),
-        # "All Conv Layers": ('conv_1', 'conv_13'),
+        "All Conv Layers": ('conv_1', 'conv_13'),
     }
 
     # Run JF Experiment Workflow
@@ -431,7 +443,6 @@ def main():
 
     # Compare activations across workflows
     compare_activations(experiments, jf_data, nick_data, kevin_data)
-
 
 def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain):
     jf_param_counts, jf_final_accuracies, jf_exp_names = [], [], []
@@ -558,6 +569,7 @@ def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, 
         infer_times=nick_infer_times, mem_usages=nick_mem_usages
     )
     return nick_activations
+
 def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs, pretrain):
     kevin_param_counts, kevin_final_accuracies, kevin_exp_names = [], [], []
     kevin_infer_times, kevin_mem_usages = [], []
@@ -621,18 +633,6 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
         infer_times=kevin_infer_times, mem_usages=kevin_mem_usages
     )
     return kevin_activations
-
-
-def compare_activations(experiments, jf_activations, nick_activations, kevin_activations):
-    print("\n=== Activation Similarity Comparison Across Workflows ===")
-    for exp_name in experiments.keys():
-        sims = {}
-        sims["JF-Nick"] = compute_layerwise_similarity(jf_activations[exp_name], nick_activations[exp_name])
-        sims["JF-Kevin"] = compute_layerwise_similarity(jf_activations[exp_name], kevin_activations[exp_name])
-        sims["Nick-Kevin"] = compute_layerwise_similarity(nick_activations[exp_name], kevin_activations[exp_name])
-
-        save_activation_similarity_json(exp_name, sims)
-        plot_activation_similarity(exp_name, sims)
 
 if __name__ == "__main__":
     main()
