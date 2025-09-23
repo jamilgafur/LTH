@@ -16,8 +16,8 @@ from pyPrune.utils import clean_memory
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-CHECKPOINT_FMT = "checkpoint_Finetuned_{:.2f}.pth"
-PRUNED_FMT = "Pruned_{:.2f}"
+CHECKPOINT_FMT = "checkpoint_Finetuned_{:.6f}.pth"
+PRUNED_FMT = "Pruned_{:.6f}"
 
 class IterativePruner(BasePruner):
     """
@@ -72,9 +72,9 @@ class IterativePruner(BasePruner):
         logger.info(f"IterativePruner initialized with strategy: {self.strategy.__class__.__name__}")
 
     def save_and_log(self, step: float, prefix: str, acc: float, loss: float, label: str = "original") -> None:
-        checkpoint_name = f"{prefix}_{step:.2f}"
+        checkpoint_name = f"{prefix}_{step:.6f}"
         self.save_checkpoint(checkpoint_name)
-        logger.info(f"[{prefix}] Accuracy at sparsity {step:.4f}: {acc:.2f}, Loss: {loss:.2f}")
+        logger.info(f"[{prefix}] Accuracy at sparsity {step:.4f}: {acc:.6f}, Loss: {loss:.6f}")
         self.update_metrics(loss, acc, label=label)
 
     def run(self) -> None:
@@ -87,14 +87,10 @@ class IterativePruner(BasePruner):
         self._final_evaluation()
 
     def _maybe_pretrain(self) -> None:
-        if not glob.glob(os.path.join(self.save_dir, "*.pkl")) and self.pretrain_epochs > 0:
-            logger.info("No existing pickle file found. Starting pre-training.")
-            self.pretrain()
-        else:
-            logger.info("Pickle file exists, skipping pre-training.")
-
+        self.pretrain()
+       
     def _process_step(self, step: float) -> None:
-        logger.info(f"[Step {step:.2f}] Starting pruning iteration.")
+        logger.info(f"[Step {step:.6f}] Starting pruning iteration.")
         if self._checkpoint_exists(step):
             return
 
@@ -103,12 +99,12 @@ class IterativePruner(BasePruner):
         self._prune_model_and_train(step)
 
         clean_memory()
-        logger.info(f"[Step {step:.2f}] Completed.")
+        logger.info(f"[Step {step:.6f}] Completed.")
 
     def _checkpoint_exists(self, step: float) -> bool:
         checkpoint_path = os.path.join(self.save_dir, CHECKPOINT_FMT.format(step))
         if os.path.exists(checkpoint_path):
-            logger.info(f"[Step {step:.2f}] Checkpoint already exists. Skipping...")
+            logger.info(f"[Step {step:.6f}] Checkpoint already exists. Skipping...")
             return True
         return False
 
@@ -127,7 +123,7 @@ class IterativePruner(BasePruner):
     def _prune_model_and_train(self, step: float) -> None:
         model_state_dict = self.prune_step()
         if model_state_dict is None:
-            logger.warning(f"[Step {step:.2f}] prune_step returned None. Skipping pruning.")
+            logger.warning(f"[Step {step:.6f}] prune_step returned None. Skipping pruning.")
             return
 
         for _ in range(self.finish_training_epochs):
@@ -163,7 +159,7 @@ class IterativePruner(BasePruner):
     def _final_evaluation(self) -> None:
         acc, loss = self.evaluate()
         self._assign_memory_tag("Final_memory")
-        logger.info(f"Final evaluation at {self.current_sparsity * 100:.2f}% sparsity - Accuracy: {acc:.2f}%, Loss: {loss:.4f}")
+        logger.info(f"Final evaluation at {self.current_sparsity * 100:.6f}% sparsity - Accuracy: {acc:.6f}%, Loss: {loss:.4f}")
         self.save_and_log(self.current_sparsity, "Finetuned", acc, loss, label="finetune")
         self.best_model_weights = self.best_model_weights[1]
         self.save_metrics()
