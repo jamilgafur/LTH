@@ -98,7 +98,7 @@ class BasePruner(BaseTrainer, ABC):
         self.metrics[f"loss_{label}"].append(loss)
         self.metrics[f"accuracy_{label}"].append(accuracy)
         if not self.metrics[f"accuracy_{label}"] or accuracy > max(self.metrics[f"accuracy_{label}"]):
-            logger.info(f"Best model updated at {self.current_sparsity * 100:.2f}% sparsity with accuracy {accuracy:.2f}%.")
+            logger.info(f"Best model updated at {self.current_sparsity * 100:.6f}% sparsity with accuracy {accuracy:.6f}%.")
             self.best_model_weights = (accuracy, deepcopy(self.model.state_dict()))
 
     def pretrain(self):
@@ -108,7 +108,7 @@ class BasePruner(BaseTrainer, ABC):
         self.weight_history[0] = self.initial_state
     
     def finetune(self):
-        logger.info(f"Finetuning at {self.current_sparsity * 100:.2f}% sparsity...")
+        logger.info(f"Finetuning at {self.current_sparsity * 100:.6f}% sparsity...")
         acc, loss = self.train(self.finetune_epochs, phase="finetune")
         return acc, loss
 
@@ -119,11 +119,11 @@ class BasePruner(BaseTrainer, ABC):
             total += module.weight.data.numel()
             zero += (module.weight.data == 0).sum().item()
         actual_sparsity = zero / total
-        logger.info(f"Sparsity check: actual = {actual_sparsity * 100:.2f}%, expected = {expected_sparsity * 100:.2f}%")
+        logger.info(f"Sparsity check: actual = {actual_sparsity * 100:.6f}%, expected = {expected_sparsity * 100:.6f}%")
         # update the current sparsity to be the actual sparsity
         self.current_sparsity = actual_sparsity
         
-        # assert abs(actual_sparsity - expected_sparsity) < 0.1, f"Sparsity mismatch actural {actual_sparsity * 100:.2f}% vs expected {expected_sparsity * 100:.2f}%"
+        # assert abs(actual_sparsity - expected_sparsity) < 0.1, f"Sparsity mismatch actural {actual_sparsity * 100:.6f}% vs expected {expected_sparsity * 100:.6f}%"
 
     def reset_weights(self):
         names, params = get_pruneable_named_parameters(self.model, self.prunable_layers)
@@ -138,7 +138,7 @@ class BasePruner(BaseTrainer, ABC):
             self.scheduler.last_epoch = self.finetune_epochs
 
     def prune_step(self) -> nn.Module:
-        logger.info(f"Pruning to {self.current_sparsity * 100:.2f}% sparsity")
+        logger.info(f"Pruning to {self.current_sparsity * 100:.6f}% sparsity")
         model_state_dict = self.strategy.apply(
             self.model,
             self.optimizer,

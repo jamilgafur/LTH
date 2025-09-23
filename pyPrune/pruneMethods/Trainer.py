@@ -146,7 +146,7 @@ class BaseTrainer(ABC):
 
             logger.info(
                 f"[{phase.capitalize()} Epoch] CPU ΔMem/sample: {mem_per_sample_MB:.4f} MB | "
-                f"GPU Peak: {gpu_peak_mem:.2f} MB | Time: {time_elapsed:.2f}s"
+                f"GPU Peak: {gpu_peak_mem:.6f} MB | Time: {time_elapsed:.6f}s"
             )
 
         avg_loss = total_loss / total
@@ -170,7 +170,7 @@ class BaseTrainer(ABC):
         acc, loss = 0.0, 0.0
         for epoch in range(epochs):
             acc, loss = self._epoch(train=True)
-            logger.info(f"{phase.capitalize()} epoch {epoch + 1}/{epochs} - Accuracy: {acc:.2f}%, Loss: {loss:.4f}")
+            logger.info(f"{phase.capitalize()} epoch {epoch + 1}/{epochs} - Accuracy: {acc:.6f}%, Loss: {loss:.4f}")
 
             # Only reset patience if accuracy improves by more than `tolerance`
             if acc - best_metric > tolerance:
@@ -185,7 +185,7 @@ class BaseTrainer(ABC):
                 break
             
             acc, loss = self._epoch(train=False)
-            print(f"Evaluation - Accuracy: {acc:.2f}%, Loss: {loss:.4f}")
+            print(f"Evaluation - Accuracy: {acc:.6f}%, Loss: {loss:.4f}")
 
         if best_weights:
             self.model.load_state_dict(best_weights)
@@ -201,7 +201,7 @@ class BaseTrainer(ABC):
         acc, loss = 0.0, 0.0
         for epoch in range(epochs):
             acc, loss = self._epoch(train=True)
-            logger.info(f"{phase.capitalize()} epoch {epoch + 1}/{epochs} - Accuracy: {acc:.2f}%, Loss: {loss:.4f}")
+            logger.info(f"{phase.capitalize()} epoch {epoch + 1}/{epochs} - Accuracy: {acc:.6f}%, Loss: {loss:.4f}")
             
         return acc, loss
 
@@ -211,7 +211,7 @@ class BaseTrainer(ABC):
         if acc > self.best_model_weights[0]:
             self.best_model_weights = (acc, deepcopy(self.model.state_dict()))
         clean_memory()
-        logger.info(f"Evaluation - Accuracy: {acc:.2f}%, Loss: {loss:.4f}")
+        logger.info(f"Evaluation - Accuracy: {acc:.6f}%, Loss: {loss:.4f}")
         return acc, loss
 
     def save_checkpoint(self, suffix: str):
