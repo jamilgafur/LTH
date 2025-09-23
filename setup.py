@@ -15,6 +15,8 @@ setup(
         'tqdm',
         'torchvision',
         'codecarbon',
+        'fvcore',
+        'torchinfo',
         
     ],
     author="Jamil Gafur",
