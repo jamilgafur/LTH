@@ -11,7 +11,37 @@ from fvcore.nn import FlopCountAnalysis
 import time
 from torchinfo import summary
 import numpy as np
+from pyPrune.utils import load_cifar10, load_cifar100, load_tiny_imagenet
 
+def load_dataset(dataset_name):
+    if dataset_name == "TinyImageNet":
+        print("Loading Tiny ImageNet data...")
+        train_loader, test_loader = load_tiny_imagenet()
+        sample_input = next(iter(train_loader))[0]
+        input_size = sample_input.shape[-2:]
+        input_channels = sample_input.shape[1]
+        num_classes = 200
+
+    elif dataset_name == "Cifar100":
+        print("Loading CIFAR-100 data...")
+        train_loader, test_loader = load_cifar100()
+        sample_input = next(iter(train_loader))[0]
+        input_size = sample_input.shape[-2:]
+        input_channels = sample_input.shape[1]
+        num_classes = 100
+
+    elif dataset_name == "Cifar10":
+        print("Loading CIFAR-10 data...")
+        train_loader, test_loader = load_cifar10()
+        sample_input = next(iter(train_loader))[0]
+        input_size = sample_input.shape[-2:]
+        input_channels = sample_input.shape[1]
+        num_classes = 10
+
+    else:
+        raise ValueError(f"Unsupported dataset: {dataset_name}")
+
+    return train_loader, test_loader, input_size, input_channels, num_classes
 
 # -------------------------
 # Benchmark Inference
