@@ -7,7 +7,7 @@ from typing import Tuple, List, Callable, Optional
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 import os
-
+import shutil
 def get_pruneable_named_parameters(model: torch.nn.Module, prunable_layers: Tuple) -> Tuple[List[str], List[torch.nn.Parameter]]:
     names = []
     params = []
@@ -233,7 +233,7 @@ def load_caltech101(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoa
     return train_loader, test_loader
 
 def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
-    data_dir = '/projects/modularai/jgafur/LTH/data/tinyImageNet/tiny-imagenet-200/'
+    data_dir = '/workspace/data/tiny-imagenet-200/'
     train_dir = os.path.join(data_dir, 'train')
     val_dir = os.path.join(data_dir, 'val')
     val_img_dir = os.path.join(val_dir, 'images')
@@ -273,5 +273,73 @@ def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 4) -> tuple[Data
     # Dataloaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     val_loader = DataLoader(val_dataset, batch_size=1000, shuffle=False, num_workers=num_workers)
+
+    return train_loader, val_loader
+import torchvision.transforms as transforms
+from torchvision.datasets import Imagenette
+from torch.utils.data import DataLoader
+
+import os
+from torchvision.datasets import Imagenette
+from torch.utils.data import DataLoader
+import torchvision.transforms as transforms
+
+def load_imagenet(batch_size: int = 64, num_workers: int = 2):
+    """
+    Returns train and validation DataLoaders for the Imagenette2-160 dataset using torchvision.datasets.Imagenette.
+
+    Args:
+        batch_size (int): Number of samples per batch.
+        num_workers (int): Number of subprocesses for data loading.
+
+    Returns:
+        (train_loader, val_loader): Tuple of DataLoaders.
+    """
+
+    root = '.temp/data/imagenette2'
+    dataset_dir = os.path.join(root, 'imagenette2-160')
+    
+    # Check if the dataset is already downloaded
+    already_downloaded = os.path.exists(dataset_dir)
+
+    # Define image transforms (standard ImageNet normalization)
+    transform = transforms.Compose([
+        transforms.Resize((160, 160)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+    ])
+
+    # Load datasets using torchvision.datasets.Imagenette
+    train_dataset = Imagenette(
+        root=root,
+        split='train',
+        size='160px',
+        download=not already_downloaded,
+        transform=transform
+    )
+
+    val_dataset = Imagenette(
+        root=root,
+        split='val',
+        size='160px',
+        download=not already_downloaded,
+        transform=transform
+    )
+
+    # Create DataLoaders
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers
+    )
+
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers
+    )
 
     return train_loader, val_loader
