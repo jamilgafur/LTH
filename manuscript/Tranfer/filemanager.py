@@ -5,9 +5,9 @@ from pyPrune.models.Vgg16 import VGG16
 # -------------------------
 # Checkpoint and Naming
 # -------------------------
-def get_checkpoint_filename(workflow, exp_name, model_type, pretrain_epochs, finetune_epochs):
+def get_checkpoint_filename(workflow, exp_name, model_type, epochs):
     exp_tag = exp_name.replace(" ", "_").replace("-", "_")
-    filename = f"{workflow}_{exp_tag}_{model_type}_pre{pretrain_epochs}_ft{finetune_epochs}.pth"
+    filename = f"{workflow}_{exp_tag}_{model_type}_epochs{epochs}.pth"
     return filename
 
 import os

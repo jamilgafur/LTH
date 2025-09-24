@@ -23,7 +23,7 @@ def train_and_evaluate(model, train_loader, test_loader, device, epochs=10, post
 
     max_epochs = epochs
     patience = 5
-    threshold = 0.05  # 0.05% improvement threshold
+    threshold = 0.5  # 0.05% improvement threshold
     epochs_no_improve = 0
     best_acc = 0
 
