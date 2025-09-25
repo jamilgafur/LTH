@@ -7,6 +7,15 @@ from typing import Tuple, List, Callable, Optional
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 import os
+import torchvision.transforms as transforms
+from torchvision.datasets import Imagenette
+from torch.utils.data import DataLoader
+
+import os
+from torchvision.datasets import Imagenette
+from torch.utils.data import DataLoader
+import torchvision.transforms as transforms
+
 import shutil
 def get_pruneable_named_parameters(model: torch.nn.Module, prunable_layers: Tuple) -> Tuple[List[str], List[torch.nn.Parameter]]:
     names = []
@@ -232,25 +241,12 @@ def load_caltech101(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoa
     print("Caltech101 data shape: ", next(iter(train_loader))[0].shape)
     return train_loader, test_loader
 
-def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
     data_dir = '/workspace/data/tiny-imagenet-200/'
     train_dir = os.path.join(data_dir, 'train')
     val_dir = os.path.join(data_dir, 'val')
     val_img_dir = os.path.join(val_dir, 'images')
     val_annot_path = os.path.join(val_dir, 'val_annotations.txt')
-
-    # Reorganize validation images into subfolders (only needs to be done once)
-    if os.path.exists(val_img_dir):
-        with open(val_annot_path, 'r') as f:
-            for line in f:
-                img_file, label = line.strip().split('\t')[:2]
-                label_dir = os.path.join(val_dir, label)
-                os.makedirs(label_dir, exist_ok=True)
-                src = os.path.join(val_img_dir, img_file)
-                dst = os.path.join(label_dir, img_file)
-                if os.path.exists(src):
-                    shutil.move(src, dst)
-        os.rmdir(val_img_dir)
 
     # Define transforms
     transform_train = transforms.Compose([
@@ -272,17 +268,9 @@ def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 4) -> tuple[Data
 
     # Dataloaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=1000, shuffle=False, num_workers=num_workers)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
     return train_loader, val_loader
-import torchvision.transforms as transforms
-from torchvision.datasets import Imagenette
-from torch.utils.data import DataLoader
-
-import os
-from torchvision.datasets import Imagenette
-from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
 
 def load_imagenet(batch_size: int = 64, num_workers: int = 2):
     """

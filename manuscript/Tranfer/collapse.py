@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from collections import OrderedDict
 from utils import count_trainable_params, layer_stats
+
 # ===============================
 # Layer Collapse Helpers
 # ===============================
@@ -15,8 +16,8 @@ def _find_layer_indices(named_layers, start_layer_name, end_layer_name):
             end_idx = i
     return start_idx, end_idx
 
-def _simulate_input(model, section_name, start_idx):
-    dummy_input = torch.randn(1, 3, 32, 32).to(next(model.parameters()).device)
+def _simulate_input(model, section_name, start_idx, input_shape):
+    dummy_input = torch.randn(input_shape).to(next(model.parameters()).device)
     x = dummy_input
 
     if section_name == "features":
@@ -35,8 +36,8 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape):
     if layer_type == nn.Conv2d:
         return nn.Sequential(
             nn.Conv2d(in_channels=in_features, out_channels=out_features, kernel_size=1, stride=1, padding=0),
-            nn.ReLU(inplace=True),   # <-- ADD THIS
-            nn.MaxPool2d(kernel_size=2, stride=2),  # <-- ADD THIS
+            nn.ReLU(inplace=True),   
+            nn.MaxPool2d(kernel_size=2, stride=2),  
             nn.AdaptiveAvgPool2d((1, 1))
         )
     elif layer_type == nn.Linear:
@@ -64,7 +65,7 @@ def _replace_layers(named_layers, start_idx, end_idx, new_block):
 # Main Collapse Function
 # ===============================
 
-def _collapse_block(model, start_layer_name, end_layer_name):
+def _collapse_block(model, start_layer_name, end_layer_name, input_shape):
     print(f"\nCollapsing layers from '{start_layer_name}' to '{end_layer_name}'...")
     containers = {
         "features": model.features,
@@ -88,7 +89,7 @@ def _collapse_block(model, start_layer_name, end_layer_name):
             if not all(isinstance(l, layer_type) for l in selected_layers):
                 raise ValueError("Cannot collapse mixed layer types.")
 
-            dummy_input, x = _simulate_input(model, section_name, start_idx)
+            dummy_input, x = _simulate_input(model, section_name, start_idx, input_shape)
 
             in_features = x.shape[1] if layer_type == nn.Linear else selected_layers[0].in_channels
             for layer in selected_layers:
@@ -113,7 +114,7 @@ def _collapse_block(model, start_layer_name, end_layer_name):
     raise ValueError(f"Layer names '{start_layer_name}' or '{end_layer_name}' not found.")
 
 
-def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=None):
+def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=None, input_shape=(1, 3, 32, 32)):
     model_kwargs = model_kwargs or {}
 
     model = model_class(**model_kwargs)
@@ -121,6 +122,6 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
     model.load_state_dict(checkpoint['model'])
 
     for start, end in compression_set:
-        model = _collapse_block(model, start, end)
+        model = _collapse_block(model, start, end, input_shape)
 
     return model

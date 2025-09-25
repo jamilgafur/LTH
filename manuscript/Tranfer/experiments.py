@@ -1,6 +1,5 @@
 import os
 import torch
-import shutil
 import json
 import torchvision.transforms as transforms
 from torchvision import datasets
@@ -14,7 +13,6 @@ from collapse import collapse_only
 from trainer import train_and_evaluate
 from plots import plot_accuracy_loss_curve, plot_results
 from pyPrune.utils import *
-
 
 def run_experiment(model, model_kwargs=None,
                    train_loader=None, test_loader=None, device='cpu',
@@ -31,8 +29,24 @@ def run_experiment(model, model_kwargs=None,
     describe_model(model, input_size=(1, model_kwargs['input_channels'], *data_shape), device=device)
 
     print(f"[•] Training model: {exp_name}")
+
+    # === Check if metrics JSON already exists for this experiment ===
+    metrics_dir = os.path.join(save_path, "metrics")
+    json_path = os.path.join(metrics_dir, f"{workflow}_metrics.json")
+
+    if os.path.exists(json_path):
+        with open(json_path, "r") as f:
+            all_metrics = json.load(f)
+
+        if workflow in all_metrics and exp_name in all_metrics[workflow]:
+            print(f"[✓] Found existing results for '{exp_name}' in {json_path}, skipping experiment.")
+            result = all_metrics[workflow][exp_name]
+            return result
+
+    # === Run training and evaluation ===
     data = train_and_evaluate(model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs)
 
+    # Save checkpoint
     torch.save({'model': model.state_dict()}, ckpt_path)
 
     # Save plots
@@ -44,11 +58,9 @@ def run_experiment(model, model_kwargs=None,
     )
 
     param_count = count_trainable_params(model)
-
     infer_time, mem_usage = benchmark_model(model, test_loader, device)
 
-    # Save metrics json
-    metrics_dir = os.path.join(save_path, "metrics")
+    # Update metrics and save to JSON
     os.makedirs(metrics_dir, exist_ok=True)
     data.update({
         "param_count": param_count,
@@ -61,11 +73,12 @@ def run_experiment(model, model_kwargs=None,
         f"{workflow}/{model.__class__.__name__}_postcomp_{post_compress_epochs}", exp_name,
         data, base_dir=metrics_dir
     )
-    # save final model state dict to checkpoint
+
+    # Save final model
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
     del model
-    
+
     return {
         "param_count": param_count,
         "final_accuracy": data["accuracies"][-1] if data["accuracies"] else 0,
@@ -92,7 +105,8 @@ def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, de
                 model_weights_1=model_path_097,
                 compression_set=[collapse_range],
                 model_class=model_class,
-                model_kwargs=model_kwargs
+                model_kwargs=model_kwargs,
+                input_shape=(1, model_kwargs['input_channels'], *data_shape)
             )
 
         data = run_experiment(
@@ -140,16 +154,15 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
         print(f"\nRunning Kevin experiment: {exp_name}")
 
         base_model = model_class(**model_kwargs)
-        # base_model.load_state_dict(torch.load(model_path_000)['model'])
-        # randomly initialize the model weights
-        
+        base_model.load_state_dict(torch.load(model_path_000)['model'])
 
         if collapse_range is not None:
             base_model = collapse_only(
                 model_weights_1=model_path_000,
                 compression_set=[collapse_range],
                 model_class=model_class,
-                model_kwargs=model_kwargs
+                model_kwargs=model_kwargs,
+                input_shape=(1, model_kwargs['input_channels'], *data_shape)
             )
 
         # Run the experiment
@@ -204,9 +217,8 @@ def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, 
 
         # 1. Load initial model weights (model_path_000)
         base_model = model_class(**model_kwargs)
-        # base_model.load_state_dict(torch.load(model_path_000)['model'])
+        base_model.load_state_dict(torch.load(model_path_000)['model'])
         base_model.to(device)
-
         # 2. Train the model for (pretrain + epochs) epochs with initial weights
         print(f"Training for {pretrain + epochs} epochs (initial weights)...")
         train_and_evaluate(base_model, train_loader, test_loader, device, pretrain + epochs, post_compress_epochs=False)
@@ -220,7 +232,8 @@ def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, 
                 model_weights_1=tmp_path,
                 compression_set=[collapse_range],
                 model_class=model_class,
-                model_kwargs=model_kwargs
+                model_kwargs=model_kwargs,
+                input_shape=(1, model_kwargs['input_channels'], *data_shape)
             )
             base_model.to(device)
             os.remove(tmp_path)  # Remove temporary model file after collapse
