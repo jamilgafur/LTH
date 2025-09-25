@@ -42,8 +42,9 @@ def main(model_path_097, model_path_000, experiments=None, epochs=0, pretrain=0,
 
 
 def runCifar10(post_compress_epochs):
-    base = "../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude"
-    model_path_097 = os.path.join(base, "checkpoint_Finetuned_0.981986.pth")
+    
+    base = "../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain30_finetune10_steps21_batch32_devicecuda_strategy_magnitude/"
+    model_path_097 = os.path.join(base, "checkpoint_Finetuned_0.000000.pth")
     model_path_000 = os.path.join(base, "checkpoint_Original_0.000000.pth")
     experiments = {
         "Original Model": None,
@@ -56,13 +57,13 @@ def runCifar10(post_compress_epochs):
         "Stage 2-5": ('conv_3', 'conv_13'),
     }
 
-    main(model_path_097, model_path_000, experiments=experiments, epochs=30, pretrain=10,
+    main(model_path_097, model_path_000, experiments=experiments, epochs=0, pretrain=0,
          model_class=VGG16, model_kwargs=None, dataset="Cifar10", post_compress_epochs=post_compress_epochs)
 
 
 def runCifar100(post_compress_epochs):
-    base = "../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude"
-    model_path_097 = os.path.join(base, "checkpoint_Finetuned_0.945024.pth")
+    base = "../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain30_finetune10_steps21_batch32_devicecuda_strategy_magnitude"
+    model_path_097 = os.path.join(base, "checkpoint_Finetuned_0.000000.pth")
     model_path_000 = os.path.join(base, "checkpoint_Original_0.000000.pth")
     experiments = {
         "Original Model": None,
@@ -72,13 +73,13 @@ def runCifar100(post_compress_epochs):
         "Stage 4-5": ('conv_8', 'conv_13'),        
     }
 
-    main(model_path_097, model_path_000, experiments=experiments, epochs=30, pretrain=10,
+    main(model_path_097, model_path_000, experiments=experiments, epochs=0, pretrain=0,
          model_class=VGG16, model_kwargs=None, dataset="Cifar100", post_compress_epochs=post_compress_epochs)
 
 
 def runTinyImageNet(post_compress_epochs):
-    base = "../structured_study/pruning_checkpoints/Vgg16_datasettinyimagenet_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/"
-    model_path_097 = os.path.join(base, "checkpoint_Finetuned_0.964816.pth")
+    base = "../structured_study/pruning_checkpoints/Vgg16_datasetimagenet_pretrain60_finetune20_steps21_batch32_devicecuda_strategy_magnitude/"
+    model_path_097 = os.path.join(base, "checkpoint_Finetuned_0.000000.pth")
     model_path_000 = os.path.join(base, "checkpoint_Original_0.000000.pth")
 
     experiments = {
@@ -90,7 +91,7 @@ def runTinyImageNet(post_compress_epochs):
 
 
 if __name__ == "__main__":
-    post_compress_epochs = True
+    post_compress_epochs = False
     runCifar10(post_compress_epochs)
     runCifar100(post_compress_epochs)
-    # runTinyImageNet(post_compress_epochs)
+    runTinyImageNet(post_compress_epochs)
