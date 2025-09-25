@@ -14,6 +14,10 @@ from trainer import train_and_evaluate
 from plots import plot_accuracy_loss_curve, plot_results
 from pyPrune.utils import *
 
+import glob
+
+import glob
+
 def run_experiment(model, model_kwargs=None,
                    train_loader=None, test_loader=None, device='cpu',
                    epochs=10, workflow='default', exp_name='experiment',
@@ -32,19 +36,35 @@ def run_experiment(model, model_kwargs=None,
 
     # === Check if metrics JSON already exists for this experiment ===
     metrics_dir = os.path.join(save_path, "metrics")
-    json_path = os.path.join(metrics_dir, f"{workflow}_metrics.json")
-
-    if os.path.exists(json_path):
+    os.makedirs(metrics_dir, exist_ok=True)
+    glob_path = os.path.join(metrics_dir, f"{workflow}/*metrics.json")
+    json_paths = glob.glob(glob_path)
+    data = None
+    if json_paths:
+        json_path = json_paths[0]  # Use the first match
         with open(json_path, "r") as f:
             all_metrics = json.load(f)
 
-        if workflow in all_metrics and exp_name in all_metrics[workflow]:
+        if exp_name in all_metrics[list(all_metrics.keys())[0]].keys():
             print(f"[✓] Found existing results for '{exp_name}' in {json_path}, skipping experiment.")
-            result = all_metrics[workflow][exp_name]
-            return result
 
-    # === Run training and evaluation ===
-    data = train_and_evaluate(model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs)
+            data = all_metrics[list(all_metrics.keys())[0]][exp_name]
+            print(f"Loaded metrics: {data}")
+
+            # Always plot if accuracy/loss exists
+            plots_dir = os.path.join(save_path, "plots")
+            os.makedirs(plots_dir, exist_ok=True)
+            if "accuracies" in data and "losses" in data:
+                plot_accuracy_loss_curve(
+                    data['accuracies'], data['losses'], workflow, exp_name,
+                    save_dir=plots_dir
+                )
+                
+    if data is None:
+        # === Run training and evaluation ===
+        data = train_and_evaluate(model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs)
+    else:
+        print(f"[✓] Skipping training for '{exp_name}' as results already exist.")
 
     # Save checkpoint
     torch.save({'model': model.state_dict()}, ckpt_path)
@@ -61,7 +81,6 @@ def run_experiment(model, model_kwargs=None,
     infer_time, mem_usage = benchmark_model(model, test_loader, device)
 
     # Update metrics and save to JSON
-    os.makedirs(metrics_dir, exist_ok=True)
     data.update({
         "param_count": param_count,
         "inference_time": infer_time,
@@ -79,12 +98,9 @@ def run_experiment(model, model_kwargs=None,
     torch.save({'model': model.state_dict()}, final_path)
     del model
 
-    return {
-        "param_count": param_count,
-        "final_accuracy": data["accuracies"][-1] if data["accuracies"] else 0,
-        "infer_time": infer_time,
-        "mem_usage": mem_usage
-    }
+    return data
+
+
 
 def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain, model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs", post_compress_epochs=False):
 
@@ -124,9 +140,9 @@ def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, de
         )
         param_count = data["param_count"]
         final_acc = data["final_accuracy"]
-        infer_time = data["infer_time"]
-        mem_usage = data["mem_usage"]
-        
+        infer_time = data["inference_time"]
+        mem_usage = data["memory_usage"]
+
         jf_param_counts.append(param_count)
         jf_final_accuracies.append(final_acc)
         jf_infer_times.append(infer_time)
@@ -135,6 +151,7 @@ def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, de
 
     plot_dir = os.path.join(save_path, "plots")
     os.makedirs(plot_dir, exist_ok=True)
+    import pdb; pdb.set_trace()
     plot_results(
         jf_param_counts, jf_final_accuracies, jf_exp_names,
         "JF Experiment", os.path.join(plot_dir, "jf_experiment_results.svg"),
@@ -183,8 +200,8 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
         # Merge results
         kevin_param_counts.append(data["param_count"])
         kevin_final_accuracies.append(data["final_accuracy"])
-        kevin_infer_times.append(data["infer_time"])
-        kevin_mem_usages.append(data["mem_usage"])
+        kevin_infer_times.append(data["inference_time"])
+        kevin_mem_usages.append(data["memory_usage"])
         kevin_exp_names.append(exp_name)
 
     # Plot results
@@ -257,8 +274,8 @@ def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, 
         # Merge the fine-tuned model's results (data)
         nick_param_counts.append(data["param_count"])
         nick_final_accuracies.append(data["final_accuracy"])
-        nick_infer_times.append(data["infer_time"])
-        nick_mem_usages.append(data["mem_usage"])
+        nick_infer_times.append(data["inference_time"])
+        nick_mem_usages.append(data["memory_usage"])
         nick_exp_names.append(f"{exp_name}_finetuned")
 
     # Plot results
