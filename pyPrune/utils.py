@@ -7,7 +7,19 @@ from typing import Tuple, List, Callable, Optional
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 import os
+import torchvision.transforms as transforms
+from torchvision.datasets import Imagenette
+from torch.utils.data import DataLoader
+
+import os
+from torchvision.datasets import Imagenette
+from torch.utils.data import DataLoader
+import torchvision.transforms as transforms
+
 import shutil
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+
 def get_pruneable_named_parameters(model: torch.nn.Module, prunable_layers: Tuple) -> Tuple[List[str], List[torch.nn.Parameter]]:
     names = []
     params = []
@@ -95,9 +107,6 @@ def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[flo
         n *= decay_rate
         decay_list.append(1 - n)
     return decay_list
-
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
 
 def load_cifar100(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
     train_transform = transforms.Compose([
@@ -233,24 +242,11 @@ def load_caltech101(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoa
     return train_loader, test_loader
 
 def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
-    data_dir = '/workspace/data/tiny-imagenet-200/'
+    data_dir = '/projects/modularai/jgafur/LTH/manuscript/structured_study/.temp/data/tiny-imagenet-200/'
     train_dir = os.path.join(data_dir, 'train')
     val_dir = os.path.join(data_dir, 'val')
     val_img_dir = os.path.join(val_dir, 'images')
     val_annot_path = os.path.join(val_dir, 'val_annotations.txt')
-
-    # Reorganize validation images into subfolders (only needs to be done once)
-    if os.path.exists(val_img_dir):
-        with open(val_annot_path, 'r') as f:
-            for line in f:
-                img_file, label = line.strip().split('\t')[:2]
-                label_dir = os.path.join(val_dir, label)
-                os.makedirs(label_dir, exist_ok=True)
-                src = os.path.join(val_img_dir, img_file)
-                dst = os.path.join(label_dir, img_file)
-                if os.path.exists(src):
-                    shutil.move(src, dst)
-        os.rmdir(val_img_dir)
 
     # Define transforms
     transform_train = transforms.Compose([
@@ -272,19 +268,11 @@ def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 4) -> tuple[Data
 
     # Dataloaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=1000, shuffle=False, num_workers=num_workers)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
     return train_loader, val_loader
-import torchvision.transforms as transforms
-from torchvision.datasets import Imagenette
-from torch.utils.data import DataLoader
 
-import os
-from torchvision.datasets import Imagenette
-from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
-
-def load_imagenet(batch_size: int = 64, num_workers: int = 2):
+def load_imagenet(batch_size: int = 64, num_workers: int = 4):
     """
     Returns train and validation DataLoaders for the Imagenette2-160 dataset using torchvision.datasets.Imagenette.
 
@@ -296,7 +284,7 @@ def load_imagenet(batch_size: int = 64, num_workers: int = 2):
         (train_loader, val_loader): Tuple of DataLoaders.
     """
 
-    root = '.temp/data/imagenette2'
+    root = '/projects/modularai/jgafur/LTH/manuscript/structured_study/.temp/data/imagenette2'
     dataset_dir = os.path.join(root, 'imagenette2-160')
     
     # Check if the dataset is already downloaded

@@ -11,7 +11,7 @@ from fvcore.nn import FlopCountAnalysis
 import time
 from torchinfo import summary
 import numpy as np
-from pyPrune.utils import load_cifar10, load_cifar100, load_tiny_imagenet
+from pyPrune.utils import load_cifar10, load_cifar100, load_tiny_imagenet, load_imagenet
 
 def load_dataset(dataset_name):
     if dataset_name == "TinyImageNet":
@@ -33,6 +33,13 @@ def load_dataset(dataset_name):
     elif dataset_name == "Cifar10":
         print("Loading CIFAR-10 data...")
         train_loader, test_loader = load_cifar10()
+        sample_input = next(iter(train_loader))[0]
+        input_size = sample_input.shape[-2:]
+        input_channels = sample_input.shape[1]
+        num_classes = 10
+    elif dataset_name == "ImageNet":
+        print("Loading ImageNet data...")
+        train_loader, test_loader = load_imagenet()
         sample_input = next(iter(train_loader))[0]
         input_size = sample_input.shape[-2:]
         input_channels = sample_input.shape[1]
@@ -73,11 +80,12 @@ def benchmark_model(model, loader, device, num_batches=10):
     avg_time = sum(times) / len(times) if times else 0
     return avg_time, flops
 
-def describe_model(model, input_size=(1, 3, 32, 32), device='cpu'):
+def describe_model(model, loader, device='cpu'):
     print("=" * 60)
     print("🔍 Model Summary (via torchinfo)")
     print("=" * 60)
-    summary(model, input_size=input_size, device=device)
+    layer_stats(model)
+    summary(model, input_size=next(iter(loader))[0].shape, device=device)
     print("=" * 60)
 
 
