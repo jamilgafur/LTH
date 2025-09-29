@@ -30,7 +30,7 @@ def run_experiment(model, model_kwargs=None,
     ckpt_path = os.path.join(ckpt_dir, get_checkpoint_filename(workflow, exp_name, model.__class__.__name__, epochs))
 
     model.to(device)
-    describe_model(model, input_size=(1, model_kwargs['input_channels'], *data_shape), device=device)
+    describe_model(model, loader=train_loader, device=device)
 
     print(f"[•] Training model: {exp_name}")
 
@@ -122,8 +122,10 @@ def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, de
                 compression_set=[collapse_range],
                 model_class=model_class,
                 model_kwargs=model_kwargs,
-                input_shape=(1, model_kwargs['input_channels'], *data_shape)
+                input_shape=(1, model_kwargs['input_channels'], *data_shape),
+                device=device
             )
+
 
         data = run_experiment(
             model=base_model,
@@ -151,13 +153,31 @@ def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, de
 
     plot_dir = os.path.join(save_path, "plots")
     os.makedirs(plot_dir, exist_ok=True)
-    import pdb; pdb.set_trace()
     plot_results(
         jf_param_counts, jf_final_accuracies, jf_exp_names,
         "JF Experiment", os.path.join(plot_dir, "jf_experiment_results.svg"),
         infer_times=jf_infer_times, mem_usages=jf_mem_usages
     )
-    return jf_activations
+
+    # if one experiment in experiments, load the models weights from file and return the model
+
+    if len(experiments) == 1:
+        final_model_path = os.path.join(save_path, "checkpoints", f"final_JF_{list(experiments.keys())[0]}_{model_class.__name__}_epochs{epochs}.pth").replace(" ", "_")
+        print(f"Looking for final model at: {final_model_path}")
+        print(os.path.exists(final_model_path))
+        if os.path.exists(final_model_path):
+            final_model = collapse_only(
+                model_weights_1=model_path_097,
+                compression_set=[list(experiments.values())[0]],
+                model_class=model_class,
+                model_kwargs=model_kwargs,
+                input_shape=(1, model_kwargs['input_channels'], *data_shape),
+                device=device
+            )
+            final_model.load_state_dict(torch.load(final_model_path)['model'])
+            final_model.to(device)
+
+            return final_model
 
 def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs, model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs", post_compress_epochs=False):
 
@@ -179,8 +199,10 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
                 compression_set=[collapse_range],
                 model_class=model_class,
                 model_kwargs=model_kwargs,
-                input_shape=(1, model_kwargs['input_channels'], *data_shape)
+                input_shape=(1, model_kwargs['input_channels'], *data_shape),
+                device=device
             )
+
 
         # Run the experiment
         data = run_experiment(
@@ -213,17 +235,25 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
         infer_times=kevin_infer_times, mem_usages=kevin_mem_usages
     )
 
-    return {
-        "param_counts": kevin_param_counts,
-        "final_accuracies": kevin_final_accuracies,
-        "infer_times": kevin_infer_times,
-        "mem_usages": kevin_mem_usages
-    }
+    if len(experiments) == 1:
+        final_model_path = os.path.join(save_path, "checkpoints", f"final_Kevin_{list(experiments.keys())[0]}_{model_class.__name__}_epochs{epochs}.pth").replace(" ", "_")
+        if os.path.exists(final_model_path):
+            final_model = collapse_only(
+                model_weights_1=model_path_000,
+                compression_set=[list(experiments.values())[0]],
+                model_class=model_class,
+                model_kwargs=model_kwargs,
+                input_shape=(1, model_kwargs['input_channels'], *data_shape),
+                device=device
+            )
+            final_model.load_state_dict(torch.load(final_model_path)['model'])
+            final_model.to(device)
+            return final_model
 
 def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, device,
                         epochs, pretrain, model_class=VGG16, model_kwargs=None, data_shape=None,
                         save_path="./runs", post_compress_epochs=False):
-
+    
     model_kwargs = model_kwargs or {}
     nick_param_counts, nick_final_accuracies, nick_exp_names = [], [], []
     nick_infer_times, nick_mem_usages = [], []
@@ -236,9 +266,51 @@ def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, 
         base_model = model_class(**model_kwargs)
         base_model.load_state_dict(torch.load(model_path_000)['model'])
         base_model.to(device)
-        # 2. Train the model for (pretrain + epochs) epochs with initial weights
-        print(f"Training for {pretrain + epochs} epochs (initial weights)...")
-        train_and_evaluate(base_model, train_loader, test_loader, device, pretrain + epochs, post_compress_epochs=False)
+        
+        # === Check if pretraining metrics already exist ===
+        metrics_dir = os.path.join(save_path, "metrics")
+        os.makedirs(metrics_dir, exist_ok=True)
+        glob_path = os.path.join(metrics_dir, f"Nick/*metrics.json")
+        json_paths = glob.glob(glob_path)
+        data = None
+        
+        if json_paths:
+            json_path = json_paths[0]  # Use the first match
+            with open(json_path, "r") as f:
+                all_metrics = json.load(f)
+
+            if exp_name in all_metrics[list(all_metrics.keys())[0]].keys():
+                print(f"[✓] Found existing pretraining results for '{exp_name}' in {json_path}, skipping pretraining.")
+
+                # Load metrics and plot accuracy/loss if available
+                data = all_metrics[list(all_metrics.keys())[0]][exp_name]
+                print(f"Loaded pretraining metrics: {data}")
+                plots_dir = os.path.join(save_path, "plots")
+                os.makedirs(plots_dir, exist_ok=True)
+                if "accuracies" in data and "losses" in data:
+                    plot_accuracy_loss_curve(
+                        data['accuracies'], data['losses'], "Nick", exp_name,
+                        save_dir=plots_dir
+                    )
+
+        if data is None:
+            # 2. Train the model for (pretrain + epochs) epochs with initial weights
+            print(f"Training for {pretrain + epochs} epochs (initial weights)...")
+            data = train_and_evaluate(base_model, train_loader, test_loader, device, pretrain + epochs, post_compress_epochs=False)
+            
+            # Save the pretraining results (metrics)
+            save_metrics_json(
+                f"Nick/{model_class.__name__}_pretrain", exp_name, data, base_dir=metrics_dir
+            )
+            
+            # Always plot if accuracy/loss exists
+            plots_dir = os.path.join(save_path, "plots")
+            os.makedirs(plots_dir, exist_ok=True)
+            if "accuracies" in data and "losses" in data:
+                plot_accuracy_loss_curve(
+                    data['accuracies'], data['losses'], "Nick", exp_name,
+                    save_dir=plots_dir
+                )
 
         # 3. Apply compression (collapse) if collapse_range is provided
         if collapse_range is not None:
@@ -250,8 +322,10 @@ def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, 
                 compression_set=[collapse_range],
                 model_class=model_class,
                 model_kwargs=model_kwargs,
-                input_shape=(1, model_kwargs['input_channels'], *data_shape)
+                input_shape=(1, model_kwargs['input_channels'], *data_shape),
+                device=device
             )
+
             base_model.to(device)
             os.remove(tmp_path)  # Remove temporary model file after collapse
 
@@ -287,9 +361,19 @@ def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, 
         infer_times=nick_infer_times, mem_usages=nick_mem_usages
     )
 
-    return {
-        "param_counts": nick_param_counts,
-        "final_accuracies": nick_final_accuracies,
-        "infer_times": nick_infer_times,
-        "mem_usages": nick_mem_usages
-    }
+
+    if len(experiments) == 1:
+        final_model_path = os.path.join(save_path, "checkpoints", f"final_Nick_{list(experiments.keys())[0]}_{model_class.__name__}_epochs{epochs}.pth").replace(" ", "_")
+        if os.path.exists(final_model_path):
+            final_model = collapse_only(
+                model_weights_1=model_path_000,
+                compression_set=[list(experiments.values())[0]],
+                model_class=model_class,
+                model_kwargs=model_kwargs,
+                input_shape=(1, model_kwargs['input_channels'], *data_shape),
+                device=device
+            )
+            final_model.load_state_dict(torch.load(final_model_path)['model'])
+            final_model.to(device)
+            return final_model
+        

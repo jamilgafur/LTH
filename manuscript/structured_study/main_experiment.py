@@ -154,6 +154,36 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
             )
         else:
             raise ValueError(f"Unknown strategy: {args.strategy}")
+        # Print the type and some basic info about each parameter
+        print("Model Type:", type(model))
+        print("Optimizer Type:", type(optimizer))
+        print("Scheduler Type:", type(scheduler))
+        print("Criterion Type:", type(criterion))
+        print("Train Loader Type:", type(train_loader))
+        print("Test Loader Type:", type(test_loader))
+        print("Steps Type:", type(steps))
+        print("Pretrain Epochs Type:", type(pretrain_epochs))
+        print("Device Type:", type(device))
+        print("Finetune Epochs Type:", type(finetune_epochs))
+        print("Save Dir Type:", type(save_dir))
+        print("Strategy Type:", type(strategy))
+        print("Early Stopping Type:", type(args.patience))
+
+        # Optionally, print out their values if they are not too large/complex
+        print("\nModel:", model)
+        print("Optimizer:", optimizer)
+        print("Scheduler:", scheduler)
+        print("Criterion:", criterion)
+        print("Train Loader:", train_loader)
+        print("Test Loader:", test_loader)
+        print("Steps:", steps)
+        print("Pretrain Epochs:", pretrain_epochs)
+        print("Device:", device)
+        print("Finetune Epochs:", finetune_epochs)
+        print("Save Dir:", save_dir)
+        print("Strategy:", strategy)
+        print("Early Stopping:", args.patience)
+        import pdb; pdb.set_trace()
 
         # Initialize Pruner
         pruner = IterativePruner(
@@ -215,7 +245,7 @@ def main() -> None:
     # Map dataset to the number of classes
     dataset_to_num_classes = {
         'cifar10': 10,
-        'imagenet': 1000,
+        'imagenet': 10,
         'tinyimagenet': 200,
         'cifar100': 100,
         'stl10': 10,
@@ -308,7 +338,7 @@ def main() -> None:
     print(model)
 
     total_epochs = args.pretrain_epochs + args.finetune_epochs
-
+    import pdb; pdb.set_trace()
     pruner = initialize_pruner(
         model=model,
         train_loader=train_loader,

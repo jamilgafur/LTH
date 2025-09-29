@@ -241,7 +241,7 @@ def load_caltech101(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoa
     print("Caltech101 data shape: ", next(iter(train_loader))[0].shape)
     return train_loader, test_loader
 
-def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
+def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
     data_dir = '/projects/modularai/jgafur/LTH/manuscript/structured_study/.temp/data/tiny-imagenet-200/'
     train_dir = os.path.join(data_dir, 'train')
     val_dir = os.path.join(data_dir, 'val')
@@ -272,7 +272,7 @@ def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 1) -> tuple[Data
 
     return train_loader, val_loader
 
-def load_imagenet(batch_size: int = 64, num_workers: int = 2):
+def load_imagenet(batch_size: int = 64, num_workers: int = 4):
     """
     Returns train and validation DataLoaders for the Imagenette2-160 dataset using torchvision.datasets.Imagenette.
 
