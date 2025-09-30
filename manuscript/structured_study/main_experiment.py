@@ -183,7 +183,6 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
         print("Save Dir:", save_dir)
         print("Strategy:", strategy)
         print("Early Stopping:", args.patience)
-        import pdb; pdb.set_trace()
 
         # Initialize Pruner
         pruner = IterativePruner(
@@ -317,8 +316,8 @@ def main() -> None:
             train_loader, test_loader = load_imagenet(args.batch_size, args.num_workers)
         else:
             raise ValueError(f"Unsupported dataset for RegNetX: {dataset}")
-
-        input_size = next(iter(train_loader))[0].shape[2:]
+        input_tensor = next(iter(train_loader))[0]
+        input_size = input_tensor.shape[1:]  # Includes channels: (C, H, W)
         model = RegNetX_400MF(num_classes=num_classes, input_size=input_size)
 
     elif args.model == 'EfficientNet':
@@ -338,7 +337,7 @@ def main() -> None:
     print(model)
 
     total_epochs = args.pretrain_epochs + args.finetune_epochs
-    import pdb; pdb.set_trace()
+    
     pruner = initialize_pruner(
         model=model,
         train_loader=train_loader,
