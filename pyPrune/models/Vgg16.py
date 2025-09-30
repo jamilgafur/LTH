@@ -3,12 +3,18 @@ import torch.nn as nn
 from collections import OrderedDict
 
 class VGG16(nn.Module):
-    def __init__(self, num_classes=10, input_size=(32, 32), input_channels=3):
+    def __init__(self, one_batch=None, num_classes=10):
         super(VGG16, self).__init__()
-        
-        self.input_size = input_size  # (height, width)
-        self.input_channels = input_channels  # 1 for B/W, 3 for RGB
-        
+
+        if one_batch is not None:
+            # Extract the input channels and size from the provided batch
+            batch_size, input_channels, height, width = one_batch.shape
+            self.input_channels = input_channels
+            self.input_size = (height, width)
+        else:
+            self.input_channels = 3  # Default to 3 channels (RGB)
+            self.input_size = (32, 32)  # Default to (height, width)
+
         # Convolutional layers
         self.features = nn.Sequential(
             OrderedDict([
@@ -20,7 +26,7 @@ class VGG16(nn.Module):
                 ('relu_2', nn.ReLU(inplace=True)),
                 ('bn_2', nn.BatchNorm2d(64)),
                 ('pool_1', nn.MaxPool2d(kernel_size=2, stride=2)),
-                
+
                 # Block 2
                 ('conv_3', nn.Conv2d(64, 128, kernel_size=3, padding=1)),
                 ('relu_3', nn.ReLU(inplace=True)),
@@ -29,7 +35,7 @@ class VGG16(nn.Module):
                 ('relu_4', nn.ReLU(inplace=True)),
                 ('bn_4', nn.BatchNorm2d(128)),
                 ('pool_2', nn.MaxPool2d(kernel_size=2, stride=2)),
-                
+
                 # Block 3
                 ('conv_5', nn.Conv2d(128, 256, kernel_size=3, padding=1)),
                 ('relu_5', nn.ReLU(inplace=True)),
@@ -41,7 +47,7 @@ class VGG16(nn.Module):
                 ('relu_7', nn.ReLU(inplace=True)),
                 ('bn_7', nn.BatchNorm2d(256)),
                 ('pool_3', nn.MaxPool2d(kernel_size=2, stride=2)),
-                
+
                 # Block 4
                 ('conv_8', nn.Conv2d(256, 512, kernel_size=3, padding=1)),
                 ('relu_8', nn.ReLU(inplace=True)),
@@ -53,7 +59,7 @@ class VGG16(nn.Module):
                 ('relu_10', nn.ReLU(inplace=True)),
                 ('bn_10', nn.BatchNorm2d(512)),
                 ('pool_4', nn.MaxPool2d(kernel_size=2, stride=2)),
-                
+
                 # Block 5
                 ('conv_11', nn.Conv2d(512, 512, kernel_size=3, padding=1)),
                 ('relu_11', nn.ReLU(inplace=True)),
@@ -69,7 +75,7 @@ class VGG16(nn.Module):
         )
 
         # Calculate the size of the output from the convolutional layers
-        self._calculate_fc_input_size()
+        self._calculate_fc_input_size(one_batch)
 
         # Fully connected layers
         self.classifier = nn.Sequential(
@@ -84,9 +90,12 @@ class VGG16(nn.Module):
             ])
         )
 
-    def _calculate_fc_input_size(self):
+    def _calculate_fc_input_size(self, one_batch):
+        # This method calculates the flattened feature size after passing through the convolutional layers
         with torch.no_grad():
-            dummy_input = torch.zeros(1, self.input_channels, *self.input_size)
+            # Use the provided batch to get the shape dynamically
+            batch_size, input_channels, height, width = one_batch.shape
+            dummy_input = torch.zeros(1, input_channels, height, width)
             feature_map = self.features(dummy_input)
             self.fc_input_size = feature_map.numel() // feature_map.size(0)
 

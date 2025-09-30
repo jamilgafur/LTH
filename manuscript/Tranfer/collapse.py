@@ -7,6 +7,102 @@ from utils import count_trainable_params, layer_stats
 # Layer Collapse Helpers
 # ===============================
 
+def get_layer(model, layer_name):
+    """
+    Dynamically access a layer in the model based on the name.
+    """
+    layer_parts = layer_name.split('.')
+    layer = model
+    for part in layer_parts:
+        layer = getattr(layer, part)
+    return layer
+
+def compression_set(layers):
+    """
+    Example of compressing layers. Replace this with actual compression logic.
+    """
+    for layer in layers:
+        print(f"Compressing layer: {layer}")
+        # Add compression logic here (e.g., pruning, quantization)
+
+def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=None, input_shape=(1, 3, 32, 32), device='cpu'):
+    model_kwargs = model_kwargs or {}
+    num_classes = model_kwargs.get('num_classes', 200)
+
+    print(f"Loading model with weights from '{model_weights_1}'...")
+    model = model_class(**model_kwargs)
+    checkpoint = torch.load(model_weights_1, map_location=device)
+    model.load_state_dict(checkpoint['model'])
+    model.to(device)
+
+    for start, end in compression_set:
+        print(f"\n--- Starting collapse for block: {start} to {end} ---")
+        model = _collapse_block(model, start, end, input_shape)
+
+    print("\n--- Adjusting classifier input features AFTER collapsing all blocks ---")
+    adjust_classifier_input_features(model, input_shape, num_classes=num_classes, device=device)
+
+    print(f"Collapse complete. Total trainable params: {count_trainable_params(model)}")
+    print(f"Final model structure:\n{layer_stats(model)}")
+
+    return model
+
+def _collapse_block(model, start_layer_name, end_layer_name, input_shape):
+    print(f"\nCollapsing layers from '{start_layer_name}' to '{end_layer_name}'...")
+
+    containers = {
+        "features": model.features,
+        "classifier": model.classifier,
+    }
+
+    for section_name, container in containers.items():
+        named_layers = list(container.named_children())
+        start_idx, end_idx = _find_layer_indices(named_layers, start_layer_name, end_layer_name)
+
+        if start_idx is not None and end_idx is not None:
+            assert start_idx <= end_idx, "Start index must be <= end index"
+            print(f"Collapsing in section '{section_name}' from index {start_idx} to {end_idx}")
+
+            full_block = named_layers[start_idx:end_idx + 1]
+            selected_layers = [layer for _, layer in full_block if isinstance(layer, (nn.Conv2d, nn.Linear))]
+
+            if len(selected_layers) < 2:
+                raise ValueError("Need at least 2 Conv2d or Linear layers to collapse.")
+
+            layer_type = type(selected_layers[0])
+            if not all(isinstance(l, layer_type) for l in selected_layers):
+                raise ValueError("Cannot collapse mixed layer types.")
+
+            dummy_input, x = _simulate_input(model, section_name, start_idx, input_shape)
+            print(f"  Simulated input shape before collapsing block: {x.shape}")
+
+            in_features = x.shape[1] if layer_type == nn.Linear else selected_layers[0].in_channels
+            print(f"  in_features determined as: {in_features}")
+
+            # Apply all selected layers sequentially to x for out_features
+            for i, layer in enumerate(selected_layers):
+                x = layer(x)
+                print(f"    After selected layer {i} ({type(layer).__name__}) output shape: {x.shape}")
+
+            out_features = x.shape[1] if layer_type == nn.Linear else selected_layers[-1].out_channels
+            print(f"  out_features determined as: {out_features}")
+
+            collapsed_block = _build_collapsed_block(layer_type, in_features, out_features, x.shape)
+            updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
+
+            if section_name == "features":
+                model.features = updated_container
+            else:
+                model.classifier = updated_container
+
+            print(f"Collapsed {section_name} layers {start_layer_name} → {end_layer_name}")
+            print(f"New trainable params: {count_trainable_params(model)}")
+            print(f"Model structure after collapse:\n{layer_stats(model)}")
+            return model
+
+    print(f"New structure:\n{layer_stats(model)}")
+    raise ValueError(f"Layer names '{start_layer_name}' or '{end_layer_name}' not found.")
+
 def _find_layer_indices(named_layers, start_layer_name, end_layer_name):
     start_idx = end_idx = None
     print(f"Finding indices for layers '{start_layer_name}' to '{end_layer_name}'...")
@@ -77,68 +173,6 @@ def _replace_layers(named_layers, start_idx, end_idx, new_block):
             new_layers.append((name, layer))
     return nn.Sequential(OrderedDict(new_layers))
 
-
-# ===============================
-# Main Collapse Function
-# ===============================
-
-def _collapse_block(model, start_layer_name, end_layer_name, input_shape):
-    print(f"\nCollapsing layers from '{start_layer_name}' to '{end_layer_name}'...")
-
-    containers = {
-        "features": model.features,
-        "classifier": model.classifier,
-    }
-
-    for section_name, container in containers.items():
-        named_layers = list(container.named_children())
-        start_idx, end_idx = _find_layer_indices(named_layers, start_layer_name, end_layer_name)
-
-        if start_idx is not None and end_idx is not None:
-            assert start_idx <= end_idx, "Start index must be <= end index"
-            print(f"Collapsing in section '{section_name}' from index {start_idx} to {end_idx}")
-
-            full_block = named_layers[start_idx:end_idx + 1]
-            selected_layers = [layer for _, layer in full_block if isinstance(layer, (nn.Conv2d, nn.Linear))]
-
-            if len(selected_layers) < 2:
-                raise ValueError("Need at least 2 Conv2d or Linear layers to collapse.")
-
-            layer_type = type(selected_layers[0])
-            if not all(isinstance(l, layer_type) for l in selected_layers):
-                raise ValueError("Cannot collapse mixed layer types.")
-
-            dummy_input, x = _simulate_input(model, section_name, start_idx, input_shape)
-            print(f"  Simulated input shape before collapsing block: {x.shape}")
-
-            in_features = x.shape[1] if layer_type == nn.Linear else selected_layers[0].in_channels
-            print(f"  in_features determined as: {in_features}")
-
-            # Apply all selected layers sequentially to x for out_features
-            for i, layer in enumerate(selected_layers):
-                x = layer(x)
-                print(f"    After selected layer {i} ({type(layer).__name__}) output shape: {x.shape}")
-
-            out_features = x.shape[1] if layer_type == nn.Linear else selected_layers[-1].out_channels
-            print(f"  out_features determined as: {out_features}")
-
-            collapsed_block = _build_collapsed_block(layer_type, in_features, out_features, x.shape)
-            updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
-
-            if section_name == "features":
-                model.features = updated_container
-            else:
-                model.classifier = updated_container
-
-            print(f"Collapsed {section_name} layers {start_layer_name} → {end_layer_name}")
-            print(f"New trainable params: {count_trainable_params(model)}")
-            print(f"Model structure after collapse:\n{layer_stats(model)}")
-            return model
-
-    print(f"New structure:\n{layer_stats(model)}")
-    raise ValueError(f"Layer names '{start_layer_name}' or '{end_layer_name}' not found.")
-
-
 def adjust_classifier_input_features(model, input_shape, num_classes=200, device='cpu'):
     model.eval()  # Switch entire model to eval mode
 
@@ -161,25 +195,3 @@ def adjust_classifier_input_features(model, input_shape, num_classes=200, device
         )
     model.train()  # Switch back to train mode after adjustment
 
-
-def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=None, input_shape=(1, 3, 32, 32), device='cpu'):
-    model_kwargs = model_kwargs or {}
-    num_classes = model_kwargs.get('num_classes', 200)
-
-    print(f"Loading model with weights from '{model_weights_1}'...")
-    model = model_class(**model_kwargs)
-    checkpoint = torch.load(model_weights_1, map_location=device)
-    model.load_state_dict(checkpoint['model'])
-    model.to(device)
-
-    for start, end in compression_set:
-        print(f"\n--- Starting collapse for block: {start} to {end} ---")
-        model = _collapse_block(model, start, end, input_shape)
-
-    print("\n--- Adjusting classifier input features AFTER collapsing all blocks ---")
-    adjust_classifier_input_features(model, input_shape, num_classes=num_classes, device=device)
-
-    print(f"Collapse complete. Total trainable params: {count_trainable_params(model)}")
-    print(f"Final model structure:\n{layer_stats(model)}")
-
-    return model
