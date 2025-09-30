@@ -31,11 +31,11 @@ class XBlock(nn.Module):
         return self.relu(self.block(x) + self.shortcut(x))
 
 class RegNetX_400MF(nn.Module):
-    def __init__(self, num_classes=200, input_shape=(3, 224, 224)):
+    def __init__(self, num_classes=200, input_size=(3, 224, 224)):
         super(RegNetX_400MF, self).__init__()
 
-        self.input_shape = input_shape  # (C, H, W)
-        in_channels = input_shape[0]
+        self.input_size = input_size  # (C, H, W)
+        in_channels = input_size[0]
 
         # Stem
         self.stem = nn.Sequential(OrderedDict([
@@ -68,7 +68,7 @@ class RegNetX_400MF(nn.Module):
 
     def _get_flattened_feature_size(self):
         with torch.no_grad():
-            dummy_input = torch.zeros(1, *self.input_shape)
+            dummy_input = torch.zeros(1, *self.input_size)
             x = self.stem(dummy_input)
             x = self.stage1(x)
             x = self.stage2(x)
