@@ -18,13 +18,12 @@ np.random.seed(seed)
 torch.manual_seed(seed)
 cudnn.deterministic = True
 cudnn.benchmark = False
-
 # -------------------------------
 # Define Model-Specific Checkpoints and Experiments
 # -------------------------------
 CHECKPOINT_BASES = {
     "VGG16": {
-        "Cifar10": "../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain30_finetune10_steps21_batch2048_devicecuda_strategy_magnitude/",
+        "Cifar10": "../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/",
         "Cifar100": "../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain30_finetune10_steps21_batch2048_devicecuda_strategy_magnitude/",
         "TinyImageNet": "../structured_study/pruning_checkpoints/Vgg16_datasettinyimagenet_pretrain30_finetune10_steps21_batch2048_devicecuda_strategy_magnitude/",
         "ImageNet": "../structured_study/pruning_checkpoints/Vgg16_datasetimagenet_pretrain30_finetune10_steps21_batch1024_devicecuda_strategy_magnitude/",
@@ -39,16 +38,16 @@ CHECKPOINT_BASES = {
 
 CHECKPOINT_FILES = {
     "VGG16": {
-        "Cifar10": ("checkpoint_Finetuned_0.945024.pth", "checkpoint_Original_0.000000.pth"),
-        "Cifar100": ("checkpoint_Finetuned_0.914101.pth", "checkpoint_Original_0.000000.pth"),
-        "TinyImageNet": ("checkpoint_Finetuned_0.971853.pth", "checkpoint_Original_0.000000.pth"),
-        "ImageNet": ("checkpoint_Finetuned_0.865782.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar10": ("checkpoint_Finetuned_0.981986.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar100": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "TinyImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "ImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
     },
     "RegNetX_400MF": {
-        "Cifar10": ("checkpoint_Finetuned_0.200000.pth", "checkpoint_Original_0.000000.pth"),
-        "Cifar100": ("checkpoint_Finetuned_0.891011.pth", "checkpoint_Original_0.000000.pth"),
-        "TinyImageNet": ("checkpoint_Finetuned_0.963210.pth", "checkpoint_Original_0.000000.pth"),
-        "ImageNet": ("checkpoint_Finetuned_0.845678.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar10": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar100": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "TinyImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "ImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
     }
 }
 
@@ -56,7 +55,7 @@ EXPERIMENTS = {
     "VGG16": {
         "Cifar10": {
             "Original Model": None,
-            "Last 2": ('features.conv9', 'features.conv10'),  # Conv layers at the last stage
+            "Last 2": ('features.conv_9', 'features.conv_10'),  # Conv layers at the last stage
             "Stage 5": ('features.conv8', 'features.conv9'),  # Last convolution block
             "Stage 4": ('features.conv5', 'features.conv7'),  # Mid convolution block
             "Stage 3": ('features.conv3', 'features.conv4'),  # Earlier convolution block
@@ -97,25 +96,8 @@ EXPERIMENTS = {
     },
     "RegNetX_400MF": {
         "Cifar10": {
-            "Original Model": None,
-            "Last Stage": ('block_3', 'block_4'),
-            "All Stages": ('block_1', 'block_4'),
-        },
-        "Cifar100": {
-            "Original Model": None,
-            "Last Stage": ('block_3', 'block_4'),
-            "All Stages": ('block_1', 'block_4'),
-        },
-        "TinyImageNet": {
-            "Original Model": None,
-            "Last Stage": ('block_3', 'block_4'),
-            "All Stages": ('block_1', 'block_4'),
-        },
-        "ImageNet": {
-            "Original Model": None,
-            "Last Stage": ('block_3', 'block_4'),
-            "All Stages": ('block_1', 'block_4'),
-        },
+            "Last 2": ('stage4.stage4_block6.block.conv1', 'stage4.stage4_block6.block.conv3'),
+        }
     }
 }
 
@@ -165,7 +147,6 @@ def imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader,
 
 def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, input_size, post_compress_epochs, run_all, experiment_func):
     """Run all experiments for a given dataset."""
-    import pdb; pdb.set_trace()
     save_path = f"{model_class.__name__}_{dataset}_{CHECKPOINT_FILES[model_class.__name__][dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
     
     # Define optimizer, scheduler, and criterion
@@ -221,11 +202,11 @@ if __name__ == "__main__":
 
     # Initialize the argument parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="VGG16", choices=["VGG16", "RegNetX_400MF"], help="Model architecture to use")
+    parser.add_argument("--model", type=str, default="RegNetX_400MF", choices=["VGG16", "RegNetX_400MF"], help="Model architecture to use")
     parser.add_argument("--dataset", type=str, help="Dataset to use (Cifar10, Cifar100, ImageNet, TinyImageNet)",default="Cifar10")
     parser.add_argument("--epochs", type=int, default=30, help="Number of epochs to train for")
     parser.add_argument("--pretrain", type=int, default=30, help="Number of pretraining epochs")
-    parser.add_argument("--experiment", type=str, help="Experiment to run",default=None)
+    parser.add_argument("--experiment", type=str, help="Experiment to run",default="Last 2")
     parser.add_argument("--post_compress_epochs", type=int, default=10, help="Number of post-pruning compression epochs")
     parser.add_argument("--run_all", action="store_true", help="Run all experiments")
     parser.add_argument("--imp", action="store_true", help="Apply Iterative Magnitude Pruning")

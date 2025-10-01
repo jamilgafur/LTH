@@ -9,7 +9,7 @@ from utils import count_trainable_params, layer_stats
 
 def get_layer(model, layer_name):
     """
-    Dynamically access a layer in the model based on the name.
+    Dynamically access a layer in the model based on the full dot-separated name.
     """
     layer_parts = layer_name.split('.')
     layer = model
@@ -50,91 +50,79 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
 def _collapse_block(model, start_layer_name, end_layer_name, input_shape):
     print(f"\nCollapsing layers from '{start_layer_name}' to '{end_layer_name}'...")
 
-    containers = {
-        "features": model.features,
-        "classifier": model.classifier,
-    }
+    # Gather available layers for collapsing
+    build_layer_names = []
+    for name, layer in model.named_modules():
+        if isinstance(layer, (nn.Conv2d, nn.Linear, nn.MaxPool2d, nn.ReLU, nn.AdaptiveAvgPool2d)):
+            build_layer_names.append(name)
+    print(f"Available layers for collapsing: {build_layer_names}")
 
-    for section_name, container in containers.items():
-        named_layers = list(container.named_children())
-        start_idx, end_idx = _find_layer_indices(named_layers, start_layer_name, end_layer_name)
+    start_container_name, start_subname = _get_container_and_subname(start_layer_name)
+    end_container_name, end_subname = _get_container_and_subname(end_layer_name)
+    
+    # Make sure both layers are within the same container
+    if start_container_name != end_container_name:
+        raise ValueError(f"Start and end layers must be in the same container. Found: {start_container_name}, {end_container_name}")
 
-        if start_idx is not None and end_idx is not None:
-            assert start_idx <= end_idx, "Start index must be <= end index"
-            print(f"Collapsing in section '{section_name}' from index {start_idx} to {end_idx}")
+    container = get_layer(model, start_container_name)
+    named_layers = list(container.named_children())
 
-            full_block = named_layers[start_idx:end_idx + 1]
-            selected_layers = [layer for _, layer in full_block if isinstance(layer, (nn.Conv2d, nn.Linear))]
+    # Find layer indices for start and end within container
+    start_idx, end_idx = _find_layer_indices(named_layers, start_subname, end_subname)
+    
+    if start_idx is not None and end_idx is not None:
+        assert start_idx <= end_idx, "Start index must be <= end index"
+        print(f"Collapsing in section '{start_container_name}' from index {start_idx} to {end_idx}")
 
-            if len(selected_layers) < 2:
-                raise ValueError("Need at least 2 Conv2d or Linear layers to collapse.")
+        full_block = named_layers[start_idx:end_idx + 1]
+        selected_layers = [layer for _, layer in full_block if isinstance(layer, (nn.Conv2d, nn.Linear))]
 
-            layer_type = type(selected_layers[0])
-            if not all(isinstance(l, layer_type) for l in selected_layers):
-                raise ValueError("Cannot collapse mixed layer types.")
+        if len(selected_layers) < 2:
+            raise ValueError("Need at least 2 Conv2d or Linear layers to collapse.")
 
-            dummy_input, x = _simulate_input(model, section_name, start_idx, input_shape)
-            print(f"  Simulated input shape before collapsing block: {x.shape}")
+        layer_type = type(selected_layers[0])
+        if not all(isinstance(l, layer_type) for l in selected_layers):
+            raise ValueError("Cannot collapse mixed layer types.")
 
-            in_features = x.shape[1] if layer_type == nn.Linear else selected_layers[0].in_channels
-            print(f"  in_features determined as: {in_features}")
+        dummy_input, x = _simulate_input(model, start_container_name, start_idx, input_shape)
+        print(f"  Simulated input shape before collapsing block: {x.shape}")
 
-            # Apply all selected layers sequentially to x for out_features
-            for i, layer in enumerate(selected_layers):
-                x = layer(x)
-                print(f"    After selected layer {i} ({type(layer).__name__}) output shape: {x.shape}")
+        in_features = x.shape[1] if layer_type == nn.Linear else selected_layers[0].in_channels
+        print(f"  in_features determined as: {in_features}")
 
-            out_features = x.shape[1] if layer_type == nn.Linear else selected_layers[-1].out_channels
-            print(f"  out_features determined as: {out_features}")
+        # Forward through each selected layer to track output shape
+        for i, layer in enumerate(selected_layers):
+            x = layer(x)
+            print(f"    After selected layer {i} ({type(layer).__name__}) output shape: {x.shape}")
 
-            collapsed_block = _build_collapsed_block(layer_type, in_features, out_features, x.shape)
-            updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
+        out_features = x.shape[1] if layer_type == nn.Linear else selected_layers[-1].out_channels
+        print(f"  out_features determined as: {out_features}")
 
-            if section_name == "features":
-                model.features = updated_container
-            else:
-                model.classifier = updated_container
+        # Build the collapsed block
+        collapsed_block = _build_collapsed_block(layer_type, in_features, out_features, x.shape)
+        updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
 
-            print(f"Collapsed {section_name} layers {start_layer_name} → {end_layer_name}")
-            print(f"New trainable params: {count_trainable_params(model)}")
-            print(f"Model structure after collapse:\n{layer_stats(model)}")
-            return model
+        # Dynamically update container in model (instead of hardcoding features/classifier)
+        _update_container(model, start_container_name, updated_container)
 
-    print(f"New structure:\n{layer_stats(model)}")
+        print(f"Collapsed {start_container_name} layers {start_layer_name} → {end_layer_name}")
+        print(f"New trainable params: {count_trainable_params(model)}")
+        print(f"Model structure after collapse:\n{layer_stats(model)}")
+        return model
+
     raise ValueError(f"Layer names '{start_layer_name}' or '{end_layer_name}' not found.")
-
-def _find_layer_indices(named_layers, start_layer_name, end_layer_name):
-    start_idx = end_idx = None
-    print(f"Finding indices for layers '{start_layer_name}' to '{end_layer_name}'...")
-    for i, (name, _) in enumerate(named_layers):
-        if name == start_layer_name:
-            start_idx = i
-            print(f"  Found start layer '{start_layer_name}' at index {start_idx}")
-        if name == end_layer_name:
-            end_idx = i
-            print(f"  Found end layer '{end_layer_name}' at index {end_idx}")
-    if start_idx is None or end_idx is None:
-        print(f"Warning: Could not find one or both layer names '{start_layer_name}', '{end_layer_name}'")
-    return start_idx, end_idx
 
 def _simulate_input(model, section_name, start_idx, input_shape):
     dummy_input = torch.randn(input_shape).to(next(model.parameters()).device)
     print(f"Simulating input for section '{section_name}' with shape {input_shape}...")
     x = dummy_input
 
-    if section_name == "features":
-        for i, layer in enumerate(list(model.features.children())[:start_idx]):
-            x = layer(x)
-            print(f"  After features layer {i} output shape: {x.shape}")
-    else:
-        for i, layer in enumerate(model.features):
-            x = layer(x)
-            print(f"  After features layer {i} output shape: {x.shape}")
-        x = torch.flatten(x, 1)
-        print(f"  After flatten in classifier input: {x.shape}")
-        for i, layer in enumerate(list(model.classifier.children())[:start_idx]):
-            x = layer(x)
-            print(f"  After classifier layer {i} output shape: {x.shape}")
+    container = get_layer(model, section_name)
+
+    # Forward through container layers before start_idx to get input to collapsed block
+    for i, layer in enumerate(list(container.children())[:start_idx]):
+        x = layer(x)
+        print(f"  After {section_name} layer {i} output shape: {x.shape}")
 
     return dummy_input, x
 
@@ -195,3 +183,40 @@ def adjust_classifier_input_features(model, input_shape, num_classes=200, device
         )
     model.train()  # Switch back to train mode after adjustment
 
+def _get_container_and_subname(layer_name):
+    """
+    Extracts the container (e.g., 'features', 'classifier' or any module path) and the subname 
+    (e.g., 'conv1') from the full layer name (e.g., 'features.conv1').
+    """
+    layer_parts = layer_name.split('.')
+    container = '.'.join(layer_parts[:-1])  # All but last part (parent module path)
+    subname = layer_parts[-1]               # Last part (layer/module name)
+    return container, subname
+
+def _find_layer_indices(named_layers, start_layer_name, end_layer_name):
+    start_idx = end_idx = None
+    print(f"Finding indices for layers '{start_layer_name}' to '{end_layer_name}'...")
+
+    for i, (name, _) in enumerate(named_layers):
+        if name == start_layer_name:
+            start_idx = i
+            print(f"  Found start layer '{start_layer_name}' at index {start_idx}")
+        if name == end_layer_name:
+            end_idx = i
+            print(f"  Found end layer '{end_layer_name}' at index {end_idx}")
+
+    if start_idx is None or end_idx is None:
+        print(f"Warning: Could not find one or both layer names '{start_layer_name}', '{end_layer_name}'")
+
+    return start_idx, end_idx
+
+def _update_container(model, container_path, new_container):
+    """
+    Replace the module at `container_path` in `model` with `new_container`.
+    container_path is a dot-separated string specifying nested modules.
+    """
+    parts = container_path.split('.')
+    parent = model
+    for part in parts[:-1]:
+        parent = getattr(parent, part)
+    setattr(parent, parts[-1], new_container)
