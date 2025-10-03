@@ -92,7 +92,6 @@ def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, de
         print(f"\nRunning JF experiment: {exp_name}")
         base_model = model_class(**model_kwargs)
         describe_model(base_model, loader=train_loader, device=device)
-        import pdb; pdb.set_trace()
         base_model.load_state_dict(torch.load(model_path_097)['model'])
 
         if collapse_range is not None:
