@@ -55,43 +55,44 @@ EXPERIMENTS = {
     "VGG16": {
         "Cifar10": {
             "Original Model": None,
-            "Last 2": ('features.conv_9', 'features.conv_10'),  # Conv layers at the last stage
-            "Stage 5": ('features.conv8', 'features.conv9'),  # Last convolution block
-            "Stage 4": ('features.conv5', 'features.conv7'),  # Mid convolution block
-            "Stage 3": ('features.conv3', 'features.conv4'),  # Earlier convolution block
-            "Stage 4-5": ('features.conv5', 'features.conv10'),  # Combine mid and late conv layers
-            "Stage 3-5": ('features.conv3', 'features.conv10'),  # Combine early and late conv layers
-            "Stage 2-5": ('features.conv2', 'features.conv10'),  # Combine early and late conv layers
+            "Last 2": ('features.conv_12', 'features.conv_13'),  # Conv layers at the last stage
+            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
+            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
+            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
+            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
+            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
+            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
         },
         "Cifar100": {
             "Original Model": None,
-            "Last 2": ('features.conv9', 'features.conv10'),
-            "Stage 5": ('features.conv8', 'features.conv9'),
-            "Stage 4": ('features.conv5', 'features.conv7'),
-            "Stage 3": ('features.conv3', 'features.conv4'),
-            "Stage 4-5": ('features.conv5', 'features.conv10'),
-            "Stage 3-5": ('features.conv3', 'features.conv10'),
-            "Stage 2-5": ('features.conv2', 'features.conv10'),
+            "Last 2": ('features.conv_9', 'features.conv_10'),
+            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
+            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
+            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
+            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
+            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
+            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
         },
         "TinyImageNet": {
             "Original Model": None,
             "Last 2": ('features.conv9', 'features.conv10'),
-            "Stage 5": ('features.conv8', 'features.conv9'),
-            "Stage 4": ('features.conv5', 'features.conv7'),
-            "Stage 3": ('features.conv3', 'features.conv4'),
-            "Stage 4-5": ('features.conv5', 'features.conv10'),
-            "Stage 3-5": ('features.conv3', 'features.conv10'),
-            "Stage 2-5": ('features.conv2', 'features.conv10'),
+            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
+            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
+            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
+            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
+            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
+            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
         },
         "ImageNet": {
             "Original Model": None,
             "Last 2": ('features.conv9', 'features.conv10'),
             "Stage 5": ('features.conv8', 'features.conv9'),
-            "Stage 4": ('features.conv5', 'features.conv7'),
-            "Stage 3": ('features.conv3', 'features.conv4'),
-            "Stage 4-5": ('features.conv5', 'features.conv10'),
-            "Stage 3-5": ('features.conv3', 'features.conv10'),
-            "Stage 2-5": ('features.conv2', 'features.conv10'),
+            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
+            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
+            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
+            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
+            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
+            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
         },
     },
     "RegNetX_400MF": {
@@ -145,7 +146,7 @@ def imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader,
     
     return pruner
 
-def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, input_size, post_compress_epochs, run_all, experiment_func):
+def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, post_compress_epochs, run_all, experiment_func):
     """Run all experiments for a given dataset."""
     save_path = f"{model_class.__name__}_{dataset}_{CHECKPOINT_FILES[model_class.__name__][dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
     
@@ -219,7 +220,6 @@ if __name__ == "__main__":
 
     model_class = VGG16 if model_name == "VGG16" else RegNetX_400MF
     model_kwargs = {}  # Customize based on model
-    input_size = (3, 32, 32)  # Adjust based on dataset
 
     # Select the checkpoint paths
     base_path = CHECKPOINT_BASES[model_name][dataset]
@@ -235,4 +235,4 @@ if __name__ == "__main__":
         raise ValueError("You must specify an experiment with --experiment or use --run_all to run all experiments.")
 
     # Example: Run experiments
-    run_experiments_for_dataset(experiment_dict, dataset, model_path_097, model_path_000, None, None, 'cpu', args.epochs, args.pretrain, model_class, model_kwargs, input_size, args.post_compress_epochs, args.run_all, experiment_func=imp_prune)
+    run_experiments_for_dataset(experiment_dict, dataset, model_path_097, model_path_000, None, None, 'cpu', args.epochs, args.pretrain, model_class, model_kwargs, args.post_compress_epochs, args.run_all, experiment_func=imp_prune)
