@@ -310,6 +310,8 @@ def main() -> None:
     elif args.model == 'RegNetX':
         if dataset == 'cifar10':
             train_loader, test_loader = load_cifar10(args.batch_size, args.num_workers)
+        elif dataset == 'cifar100':
+            train_loader, test_loader = load_cifar100(args.batch_size, args.num_workers)
         elif dataset == 'tinyimagenet':
             train_loader, test_loader = load_tiny_imagenet(args.batch_size, args.num_workers)
         elif dataset == 'imagenet':
