@@ -318,7 +318,7 @@ def main() -> None:
             raise ValueError(f"Unsupported dataset for RegNetX: {dataset}")
         input_tensor = next(iter(train_loader))[0]
         input_size = input_tensor.shape[1:]  # Includes channels: (C, H, W)
-        model = RegNetX_400MF(num_classes=num_classes, input_size=input_size)
+        model = RegNetX_400MF(num_classes=num_classes, one_batch=input_tensor,num_classes=num_classes)
 
     elif args.model == 'EfficientNet':
         model = EfficientNetB7(num_classes=num_classes)
