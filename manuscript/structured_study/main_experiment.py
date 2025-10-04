@@ -305,7 +305,7 @@ def main() -> None:
             raise ValueError(f"Unsupported dataset for VGG16: {dataset}")
 
         input_size = next(iter(train_loader))[0].shape[2:]  # Get input shape for VGG16
-        model = VGG16(num_classes=num_classes, input_size=input_size)
+        model = VGG16(num_classes=num_classes, one_batch=next(iter(train_loader))[0], num_classes=num_classes)
 
     elif args.model == 'RegNetX':
         if dataset == 'cifar10':
