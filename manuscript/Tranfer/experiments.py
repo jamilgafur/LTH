@@ -15,7 +15,7 @@ from plots import plot_accuracy_loss_curve, plot_results
 from pyPrune.utils import *
 import glob
 
-def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None, device='cpu', epochs=10, workflow='default', exp_name='experiment', collapse_range=None, data_shape=(1, 3, 32, 32), save_path="./runs", post_compress_epochs=False):
+def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None, device='cuda', epochs=10, workflow='default', exp_name='experiment', collapse_range=None, data_shape=(1, 3, 32, 32), save_path="./runs", post_compress_epochs=False):
     # Checkpoint directory & filename
     ckpt_dir = os.path.join(save_path, "checkpoints")
     os.makedirs(ckpt_dir, exist_ok=True)

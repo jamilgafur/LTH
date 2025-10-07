@@ -23,22 +23,22 @@ cudnn.benchmark = False
 # -------------------------------
 CHECKPOINT_BASES = {
     "VGG16": {
-        "Cifar10": "../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/",
-        "Cifar100": "../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain30_finetune10_steps21_batch2048_devicecuda_strategy_magnitude/",
-        "TinyImageNet": "../structured_study/pruning_checkpoints/Vgg16_datasettinyimagenet_pretrain30_finetune10_steps21_batch2048_devicecuda_strategy_magnitude/",
-        "ImageNet": "../structured_study/pruning_checkpoints/Vgg16_datasetimagenet_pretrain30_finetune10_steps21_batch1024_devicecuda_strategy_magnitude/",
+        "Cifar10": "../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch2048_devicecuda_strategy_magnitude/",
+        "Cifar100": "../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain10_finetune30_steps21_batch2048_devicecuda_strategy_magnitude/",
+        "TinyImageNet": "../structured_study/pruning_checkpoints/Vgg16_datasettinyimagenet_pretrain10_finetune30_steps21_batch2048_devicecuda_strategy_magnitude/",
+        "ImageNet": "../structured_study/pruning_checkpoints/Vgg16_datasetimagenet_pretrain10_finetune30_steps21_batch2048_devicecuda_strategy_magnitude/",
     },
     "RegNetX_400MF": {
-        "Cifar10": "../structured_study/pruning_checkpoints/RegNetX_datasetcifar10_pretrain10_finetune30_steps21_batch1024_devicecuda_strategy_magnitude/",
-        "Cifar100": "../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain30_finetune10_steps21_batch2048_devicecuda_strategy_magnitude/",
-        "TinyImageNet": "../structured_study/pruning_checkpoints/RegNetX_datasettinyimagenet_pretrain30_finetune10_steps21_batch2048_devicecuda_strategy_magnitude/",
-        "ImageNet": "../structured_study/pruning_checkpoints/RegNetX_datasetimagenet_pretrain30_finetune10_steps21_batch1024_devicecuda_strategy_magnitude/",
+        "Cifar10": "../structured_study/pruning_checkpoints/RegNetX_datasetcifar10_pretrain10_finetune30_steps21_batch2048_devicecuda_strategy_magnitude/",
+        "Cifar100": "../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain10_finetune30_steps21_batch2048_devicecuda_strategy_magnitude/",
+        "TinyImageNet": "../structured_study/pruning_checkpoints/RegNetX_datasettinyimagenet_pretrain10_finetune30_steps21_batch2048_devicecuda_strategy_magnitude/",
+        "ImageNet": "../structured_study/pruning_checkpoints/RegNetX_datasetimagenet_pretrain10_finetune30_steps21_batch2048_devicecuda_strategy_magnitude/",
     }
 }
 
 CHECKPOINT_FILES = {
     "VGG16": {
-        "Cifar10": ("checkpoint_Finetuned_0.981986.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar10": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
         "Cifar100": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
         "TinyImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
         "ImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
@@ -167,6 +167,7 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
     model_kwargs['num_classes'] = num_classes
     input_tensor = next(iter(train_loader))[0]
     model_kwargs['one_batch'] = input_tensor
+    
     if run_all:
         run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain,
                         model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path,
@@ -214,7 +215,8 @@ if __name__ == "__main__":
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
     args = parser.parse_args()
-
+    print(args)
+    print(f"has GPU: {torch.cuda.is_available()}")
     model_name = args.model
     dataset = args.dataset
 

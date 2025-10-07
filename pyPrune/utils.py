@@ -108,7 +108,7 @@ def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[flo
         decay_list.append(1 - n)
     return decay_list
 
-def load_cifar100(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
+def load_cifar100(batch_size: int = 2048, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
     train_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.RandomHorizontalFlip(),
@@ -242,7 +242,7 @@ def load_caltech101(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoa
     return train_loader, test_loader
 
 def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
-    data_dir = '/projects/modularai/jgafur/LTH/manuscript/structured_study/.temp/data/tiny-imagenet-200/'
+    data_dir = '/Users/jgafur/LTH/manuscript/structured_study/.temp/tiny-imagenet-200/'
     train_dir = os.path.join(data_dir, 'train')
     val_dir = os.path.join(data_dir, 'val')
     val_img_dir = os.path.join(val_dir, 'images')
@@ -284,7 +284,7 @@ def load_imagenet(batch_size: int = 64, num_workers: int = 1):
         (train_loader, val_loader): Tuple of DataLoaders.
     """
 
-    root = '/projects/modularai/jgafur/LTH/manuscript/structured_study/.temp/data/imagenette2'
+    root = '/Users/jgafur/LTH/manuscript/structured_study/.temp/imagenette2'
     dataset_dir = os.path.join(root, 'imagenette2-160')
     
     # Check if the dataset is already downloaded
