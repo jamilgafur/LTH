@@ -23,10 +23,10 @@ import os
 
 CHECKPOINT_BASES = {
     "VGG16": {
-        "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*datasetcifar10*")[0] + "/",
-        "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*datasetcifar100*")[0] + "/",
-        "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet*")[0] + "/",
-        "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet*")[0] + "/",
+        "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*datasetcifar10_*")[0] + "/",
+        "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*datasetcifar100_*")[0] + "/",
+        "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*")[0] + "/",
+        "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*")[0] + "/",
     },
     "RegNetX_400MF": {
         "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*datasetcifar10_*")[0] + "/",
@@ -100,6 +100,7 @@ EXPERIMENTS = {
     },
     "RegNetX_400MF": {
         "Cifar10": {
+            "Original Model": None,
             "Last 2": ('stage4.stage4_block6.block.conv1', 'stage4.stage4_block6.block.conv3'),
         }
     }

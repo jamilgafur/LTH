@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Define models and datasets
-models=("VGG16" "RegNetX_400MF")
-datasets=("ImageNet" "TinyImagenNet" "Cifar10" "Cifar100")
-experiment_names=("Stage 3-5" "Stage 2-5")
+models=("VGG16")
+datasets=("Cifar100" )
+experiment_names=("Original Model")
 
 for model in "${models[@]}"; do
   for dataset in "${datasets[@]}"; do
