@@ -53,6 +53,8 @@ def train_and_evaluate(model, train_loader, test_loader, device, epochs=10, post
             _, predicted = preds.max(1)
             correct += (predicted == yb).sum().item()
             total += yb.size(0)
+            # temp
+            return
 
         avg_loss = total_loss / total
         acc = 100 * correct / total
