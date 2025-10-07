@@ -119,9 +119,9 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
 def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device='cpu'):
     """
     Collapse layers between start_layer_name and end_layer_name (inclusive).
-    They must belong to the same container (e.g., 'stage3_block0.block').
-    This function is conservative: it collapses CONV/LINEAR sequences into a
-    single conv/linear that preserves output channels and stride.
+    They must belong to the same container (e.g., 'features').
+    This version fixes channel-mismatch bugs by simulating input BEFORE the start layer,
+    and by deriving correct in_channels from the actual start layer itself.
     """
     print(f"\nCollapsing layers from '{start_layer_name}' to '{end_layer_name}'...")
 
@@ -136,15 +136,18 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
     end_container_name, end_subname = _get_container_and_subname(end_layer_name)
 
     if start_container_name != end_container_name:
-        raise ValueError(f"Start and end layers must be in the same container. Found: {start_container_name}, {end_container_name}")
+        raise ValueError(
+            f"Start and end layers must be in the same container. Found: {start_container_name}, {end_container_name}"
+        )
 
     container = get_layer(model, start_container_name)
     named_layers = list(container.named_children())
 
     start_idx, end_idx = _find_layer_indices(named_layers, start_subname, end_subname)
     if start_idx is None or end_idx is None:
-        raise ValueError(f"Layer names '{start_layer_name}' or '{end_layer_name}' not found inside container '{start_container_name}'.")
-
+        raise ValueError(
+            f"Layer names '{start_layer_name}' or '{end_layer_name}' not found inside container '{start_container_name}'."
+        )
     assert start_idx <= end_idx, "Start index must be <= end index"
     print(f"Collapsing in section '{start_container_name}' from index {start_idx} to {end_idx}")
 
@@ -153,16 +156,28 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
 
     if len(selected_layers) < 2:
         raise ValueError("Need at least 2 Conv2d or Linear layers to collapse.")
-
     layer_type = type(selected_layers[0])
     if not all(isinstance(l, layer_type) for l in selected_layers):
         raise ValueError("Cannot collapse mixed layer types.")
 
-    # simulate input at this container location to infer shapes & strides
-    dummy_input, x = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
-    print(f"  Simulated input shape before collapsing block: {x.shape}")
+    # ✅ FIX 1: ensure correct input shape before start layer
+    try:
+        dummy_input, x = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
+        print(f"  Simulated input shape before collapsing block: {x.shape}")
+    except Exception as e:
+        print(f"[WARN] Hook-based simulation failed: {e}")
+        # fallback — create dummy tensor with start layer’s expected in_channels
+        start_layer = selected_layers[0]
+        if layer_type == nn.Conv2d:
+            H, W = input_shape[-2:]
+            x = torch.randn(1, start_layer.in_channels, H, W, device=device)
+            dummy_input = x.clone()
+            print(f"  Fallback dummy input created with shape {x.shape}")
+        else:
+            x = torch.randn(1, selected_layers[0].in_features, device=device)
+            dummy_input = x.clone()
 
-    # infer in_features/out_features
+    # ✅ FIX 2: derive channels/features from actual start/end layers
     if layer_type == nn.Linear:
         in_features = x.view(x.size(0), -1).size(1)
         print(f"  in_features determined (Linear) as: {in_features}")
@@ -170,7 +185,6 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
             x = layer(x)
         out_features = x.view(x.size(0), -1).size(1)
         print(f"  out_features determined (Linear) as: {out_features}")
-
         collapsed_block = _build_collapsed_block(layer_type, in_features, out_features, x.shape, full_block=full_block)
     else:  # Conv2d
         in_channels = selected_layers[0].in_channels
@@ -179,19 +193,18 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
         final_stride = last_conv.stride if hasattr(last_conv, 'stride') else (1, 1)
         print(f"  in_channels = {in_channels}, out_channels = {out_channels}, final_stride = {final_stride}")
 
-        # forward through selected convs to check final shape and ensure simulation is valid
+        # forward through selected convs to check shapes
         for i, layer in enumerate(selected_layers):
             x = layer(x)
             print(f"    After selected layer {i} ({type(layer).__name__}) output shape: {x.shape}")
 
         out_shape = x.shape
-        collapsed_block = _build_collapsed_block(layer_type, in_channels, out_channels, out_shape,
-                                                 full_block=full_block, stride=final_stride)
+        collapsed_block = _build_collapsed_block(
+            layer_type, in_channels, out_channels, out_shape, full_block=full_block, stride=final_stride
+        )
 
     # Build updated container by replacing start_idx..end_idx with collapsed_block
     updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
-
-    # Replace in parent model and move model to desired device to avoid device mismatches
     _update_container(model, start_container_name, updated_container)
     model.to(device)
 
