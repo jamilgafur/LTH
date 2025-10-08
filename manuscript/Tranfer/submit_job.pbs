@@ -6,13 +6,6 @@
 #PBS -e logs/${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}_error.txt   # Error file for job logs
 #PBS -V                                 # Export environment variables
 
-# Echo the job parameters for debugging purposes
-echo "Job Name: prune_${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}"
-echo "Walltime: 12:00:00"
-echo "GPUs: 1"
-echo "Output Log: logs/${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}_output.txt"
-echo "Error Log: logs/${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}_error.txt"
-
 # Activate the conda environment
 echo "Activating conda environment..."
 conda activate ~/env/lth_env/
@@ -27,5 +20,5 @@ cd ~/LTH/manuscript/Tranfer/
 echo "Executing: ~/env/lth_env/bin/python transfer.py --model $MODEL --dataset $DATASET --experiment $EXPERIMENT --$FLAG"
 
 # Run the Python script with the parameters
-~/env/lth_env/bin/python transfer.py --model $MODEL --dataset $DATASET --experiment "$EXPERIMENT" --$FLAG
+~/env/lth_env/bin/python transfer.py --model $MODEL --dataset $DATASET --experiment "$EXPERIMENT" --$FLAG 
 

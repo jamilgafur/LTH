@@ -23,22 +23,21 @@ import os
 
 CHECKPOINT_BASES = {
     "VGG16": {
-        "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*datasetcifar10_*")[0] + "/",
-        "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*datasetcifar100_*")[0] + "/",
-        "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*")[0] + "/",
-        "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*")[0] + "/",
+        "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*cifar10_*")[0] + "/",
+        "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*cifar100_*")[0] + "/",
+   #     "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*tinyimagenet_*")[0] + "/",
+  #      "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*imagenet_*")[0] + "/",
     },
     "RegNetX_400MF": {
-        "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*datasetcifar10_*")[0] + "/",
-        # "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*datasetcifar100_*")[0] + "/",
-        # "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*")[0] + "/",
-        # "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*")[0] + "/",
+        "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar10_*")[0] + "/",
+        "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar100_*")[0] + "/",
+ #       "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*tinyimagenet_*")[0] + "/",
+#        "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*imagenet_*")[0] + "/",
     }
 }# To make sure that the paths are correct, print them out
 for model, datasets in CHECKPOINT_BASES.items():
     for dataset, path in datasets.items():
         print(f"{model} - {dataset}: {path}")
-
 CHECKPOINT_FILES = {
     "VGG16": {
         "Cifar10": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
@@ -102,7 +101,11 @@ EXPERIMENTS = {
         "Cifar10": {
             "Original Model": None,
             "Last 2": ('stage4.stage4_block6.block.conv1', 'stage4.stage4_block6.block.conv3'),
-        }
+        },
+        "Cifar100": {
+            "Original Model": None,
+            "Last 2": ('stage4.stage4_block6.block.conv1', 'stage4.stage4_block6.block.conv3'),
+        },
     }
 }
 

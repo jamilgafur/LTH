@@ -108,7 +108,7 @@ def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[flo
         decay_list.append(1 - n)
     return decay_list
 
-def load_cifar100(batch_size: int = 2048, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
+def load_cifar100(batch_size: int = 512, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
     train_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.RandomHorizontalFlip(),
@@ -134,7 +134,7 @@ def load_cifar100(batch_size: int = 2048, num_workers: int = 1) -> tuple[DataLoa
     print("CIFAR-100 data shape: ", next(iter(train_loader))[0].shape)
     return train_loader, test_loader
 
-def load_cifar10(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
+def load_cifar10(batch_size: int = 512, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
     train_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.RandomHorizontalFlip(),
