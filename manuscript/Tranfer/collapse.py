@@ -99,13 +99,14 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
     checkpoint = torch.load(model_weights_1, map_location=device)
     model.load_state_dict(checkpoint['model'])
     model.to(device)
-
-    for start, end in compression_set:
+    for compression_set1 in compression_set:
+        print(f"compressing: {compression_set1}")
+        start, end = compression_set1[0], compression_set1[2]
         print(f"\n--- Starting collapse for block: {start} to {end} ---")
         model = _collapse_block(model, start, end, input_shape, device=device)
 
-    print("\n--- Adjusting classifier / head AFTER collapsing all blocks ---")
-    adjust_classifier_input_features(model, input_shape, num_classes=num_classes, device=device)
+        print("\n--- Adjusting classifier / head AFTER collapsing all blocks ---")
+        adjust_classifier_input_features(model, input_shape, num_classes=num_classes, device=device)
 
     # NEW: disable any in-place ReLUs globally to avoid autograd inplace modification errors
     disable_inplace_relu(model)
