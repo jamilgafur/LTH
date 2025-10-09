@@ -153,11 +153,10 @@ def imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader,
     
     return pruner
 
-def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, post_compress_epochs, run_all, experiment_func):
-    """Run all experiments for a given dataset."""
+def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, post_compress_epochs, experiment_func):
+    """Run specified experiment for a given dataset."""
     save_path = f"{model_class.__name__}_{dataset}_{CHECKPOINT_FILES[model_class.__name__][dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
     
-    # Define optimizer, scheduler, and criterion
     def create_optimizer_scheduler(model, learning_rate=1e-3):
         optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
@@ -165,43 +164,39 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
 
     criterion = torch.nn.CrossEntropyLoss()
 
-    # Define the number of pruning steps (this is arbitrary, you can adjust it)
     steps = exponential_decay_list(steps=21)
     steps = [steps[i] for i in range(len(steps)) if i % 3 == 0 or i == len(steps) - 1]
     print(f"Pruning steps: {steps}")
 
-    train_loader, test_loader,input_size, input_channels, num_classes = load_dataset(dataset, model_class.__name__)
+    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, model_class.__name__)
     model_kwargs['num_classes'] = num_classes
     input_tensor = next(iter(train_loader))[0]
     model_kwargs['one_batch'] = input_tensor
-    
-    if run_all:
-        run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain,
-                        model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path,
-                        post_compress_epochs=post_compress_epochs)     
-        run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs,
-                         model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size,
-                            save_path=save_path, post_compress_epochs=post_compress_epochs)
-    else:
-        for name, layers in experiments.items():
-            print(f"\n--- Running experiment: {name} ---")
-            if args.JF:
-                model = run_jf_experiment({name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain,
-                                        model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path,
-                                        post_compress_epochs=post_compress_epochs)
-                if args.imp:
-                    optimizer, scheduler = create_optimizer_scheduler(model)
-                    imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps, pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device, save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
 
-            elif args.Kevin:
-                model = run_kevin_experiment({name: layers}, model_path_000, train_loader, test_loader, device, epochs,
-                                    model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size,
-                                    save_path=save_path, post_compress_epochs=post_compress_epochs)
-                if args.imp:
-                    optimizer, scheduler = create_optimizer_scheduler(model)
-                    imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps, pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device, save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
-            else:
-                raise ValueError("You must specify either --JF or --Kevin to run the corresponding experiment.")
+    for name, layers in experiments.items():
+        print(f"\n--- Running experiment: {name} ---")
+        if args.JF:
+            model = run_jf_experiment({name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain,
+                                      model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path,
+                                      post_compress_epochs=post_compress_epochs)
+            if args.imp:
+                optimizer, scheduler = create_optimizer_scheduler(model)
+                imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
+                          pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
+                          save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
+
+        elif args.Kevin:
+            model = run_kevin_experiment({name: layers}, model_path_000, train_loader, test_loader, device, epochs,
+                                         model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size,
+                                         save_path=save_path, post_compress_epochs=post_compress_epochs)
+            if args.imp:
+                optimizer, scheduler = create_optimizer_scheduler(model)
+                imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
+                          pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
+                          save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
+        else:
+            raise ValueError("You must specify either --JF or --Kevin to run the corresponding experiment.")
+
 # -------------------------------
 # Main Function
 # -------------------------------
@@ -212,36 +207,46 @@ if __name__ == "__main__":
     # Initialize the argument parser
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="RegNetX_400MF", choices=["VGG16", "RegNetX_400MF"], help="Model architecture to use")
-    parser.add_argument("--dataset", type=str, help="Dataset to use (Cifar10, Cifar100, ImageNet, TinyImageNet)",default="Cifar10")
+    parser.add_argument("--dataset", type=str, help="Dataset to use (Cifar10, Cifar100, ImageNet, TinyImageNet)", default="Cifar10")
     parser.add_argument("--epochs", type=int, default=30, help="Number of epochs to train for")
     parser.add_argument("--pretrain", type=int, default=30, help="Number of pretraining epochs")
-    parser.add_argument("--experiment", type=str, help="Experiment to run",default="Last 2")
+    parser.add_argument("--experiment", type=str, required=True, help="Experiment to run")  # Now required
     parser.add_argument("--post_compress_epochs", type=int, default=10, help="Number of post-pruning compression epochs")
-    parser.add_argument("--run_all", action="store_true", help="Run all experiments")
     parser.add_argument("--imp", action="store_true", help="Apply Iterative Magnitude Pruning")
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
+
     args = parser.parse_args()
     print(args)
     print(f"has GPU: {torch.cuda.is_available()}")
+
     model_name = args.model
     dataset = args.dataset
-
     model_class = VGG16 if model_name == "VGG16" else RegNetX_400MF
-    model_kwargs = {}  # Customize based on model
+    model_kwargs = {}
 
-    # Select the checkpoint paths
     base_path = CHECKPOINT_BASES[model_name][dataset]
     model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[model_name][dataset][0])
     model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[model_name][dataset][1])
 
-    # Modify the logic for selecting the experiment dictionary
-    if args.run_all:
-        experiment_dict = EXPERIMENTS[model_name][dataset]  # If running all experiments, use the entire dictionary
-    elif args.experiment is not None:
-        experiment_dict = {args.experiment: EXPERIMENTS[model_name][dataset][args.experiment]}  # If a specific experiment is passed
-    else:
-        raise ValueError("You must specify an experiment with --experiment or use --run_all to run all experiments.")
+    # Ensure selected experiment exists
+    if args.experiment not in EXPERIMENTS[model_name][dataset]:
+        raise ValueError(f"Experiment '{args.experiment}' not found for model '{model_name}' and dataset '{dataset}'.")
 
-    # Example: Run experiments
-    run_experiments_for_dataset(experiment_dict, dataset, model_path_097, model_path_000, None, None, 'cpu', args.epochs, args.pretrain, model_class, model_kwargs, args.post_compress_epochs, args.run_all, experiment_func=imp_prune)
+    experiment_dict = {args.experiment: EXPERIMENTS[model_name][dataset][args.experiment]}
+
+    run_experiments_for_dataset(
+        experiment_dict,
+        dataset,
+        model_path_097,
+        model_path_000,
+        None,
+        None,
+        'cpu',
+        args.epochs,
+        args.pretrain,
+        model_class,
+        model_kwargs,
+        args.post_compress_epochs,
+        experiment_func=imp_prune
+    )
