@@ -16,7 +16,6 @@ for model in "${models[@]}"; do
 
         # Run the command
         eval $command
-        exit
       done
     done
   done
