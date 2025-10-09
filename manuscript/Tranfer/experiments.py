@@ -137,9 +137,9 @@ def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, de
             infer_times=jf_infer_times, mem_usages=jf_mem_usages
         )
 
-    # If only one experiment, load the model's weights from file and return it
-    if len(experiments) == 1:
         final_model_path = os.path.join(save_path, "checkpoints", f"final_JF_{list(experiments.keys())[0]}_{model_class.__name__}_epochs{epochs}.pth").replace(" ", "_")
+        os.makedirs(os.path.dirname(final_model_path), exist_ok=True)
+
         print(f"Looking for final model at: {final_model_path}")
         if os.path.exists(final_model_path):
             final_model = collapse_only(
@@ -167,6 +167,22 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
 
         base_model = model_class(**model_kwargs)
         base_model.load_state_dict(torch.load(model_path_000)['model'])
+
+        # compress
+        if collapse_range is not None:
+            print("Applying compression...")
+            os.makedirs(save_path, exist_ok=True)
+            tmp_path = os.path.join(save_path, "temp_model.pth")
+            torch.save({'model': base_model.state_dict()}, tmp_path)
+            base_model = collapse_only(
+                model_weights_1=tmp_path,
+                compression_set=[collapse_range],
+                model_class=model_class,
+                model_kwargs=model_kwargs,
+                input_shape=model_kwargs['one_batch'].shape,
+                device=device
+            )
+            os.remove(tmp_path)
 
         data = run_experiment(
             model=base_model,
@@ -196,21 +212,14 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
             infer_times=kevin_infer_times, mem_usages=kevin_mem_usages
         )
 
-    if len(experiments) == 1:
         final_model_path = os.path.join(save_path, "checkpoints", f"final_Kevin_{list(experiments.keys())[0]}_{model_class.__name__}_epochs{epochs}.pth").replace(" ", "_")
-        if os.path.exists(final_model_path):
-            final_model = collapse_only(
-                model_weights_1=model_path_000,
-                compression_set=[list(experiments.values())[0]],
-                model_class=model_class,
-                model_kwargs=model_kwargs,
-                input_shape=model_kwargs['one_batch'].shape,
-                device=device
-            )
-            final_model.load_state_dict(torch.load(final_model_path)['model'])
-            final_model.to(device)
-            return final_model
+        os.makedirs(os.path.dirname(final_model_path), exist_ok=True)
+        
+        # save the final model
+        torch.save({'model': base_model.state_dict()}, final_model_path)
+        print(f"Saved final model at: {final_model_path}")
 
+        return base_model
 
 def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs", post_compress_epochs=False):
     model_kwargs = model_kwargs or {}
