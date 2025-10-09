@@ -99,9 +99,10 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
     checkpoint = torch.load(model_weights_1, map_location=device)
     model.load_state_dict(checkpoint['model'])
     model.to(device)
+    print(f"full compression set for model: {compression_set}")
     for compression_set1 in compression_set:
         print(f"compressing: {compression_set1}")
-        start, end = compression_set1[0], compression_set1[2]
+        start, end = compression_set1[0], compression_set1[1]
         print(f"\n--- Starting collapse for block: {start} to {end} ---")
         model = _collapse_block(model, start, end, input_shape, device=device)
 
