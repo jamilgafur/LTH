@@ -15,45 +15,44 @@ from plots import plot_accuracy_loss_curve, plot_results
 from pyPrune.utils import *
 import glob
 
-def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None, device='cuda', epochs=10, workflow='default', exp_name='experiment', collapse_range=None, data_shape=(1, 3, 32, 32), save_path="./runs", post_compress_epochs=False):
-    # Checkpoint directory & filename
+def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None, device='cuda',
+                   epochs=10, workflow='default', exp_name='experiment', collapse_range=None,
+                   data_shape=(1, 3, 32, 32), save_path="./runs", post_compress_epochs=False):
+    
+    # Paths
     ckpt_dir = os.path.join(save_path, "checkpoints")
-    os.makedirs(ckpt_dir, exist_ok=True)
-    ckpt_path = os.path.join(ckpt_dir, get_checkpoint_filename(workflow, exp_name, model.__class__.__name__, epochs))
-    
-    model.to(device)
-    describe_model(model, loader=train_loader, device=device)
-    
-    print(f"[•] Training model: {exp_name}")
-
-    # Check if metrics JSON already exists for this experiment
     metrics_dir = os.path.join(save_path, "metrics")
+    plots_dir = os.path.join(save_path, "plots")
+    os.makedirs(ckpt_dir, exist_ok=True)
     os.makedirs(metrics_dir, exist_ok=True)
+    os.makedirs(plots_dir, exist_ok=True)
+
+    ckpt_path = os.path.join(ckpt_dir, get_checkpoint_filename(workflow, exp_name, model.__class__.__name__, epochs))
+    model.to(device)
+
+    describe_model(model, loader=train_loader, device=device)
+
+    # Check if metrics already exist
     glob_path = os.path.join(metrics_dir, f"{workflow}/*metrics.json")
     json_paths = glob.glob(glob_path)
     data = None
     if json_paths:
-        json_path = json_paths[0]  # Use the first match
+        json_path = json_paths[0]
         with open(json_path, "r") as f:
             all_metrics = json.load(f)
-            if exp_name in all_metrics[list(all_metrics.keys())[0]].keys():
-                print(f"[✓] Found existing results for '{exp_name}' in {json_path}, skipping experiment.")
+            if exp_name in all_metrics.get(list(all_metrics.keys())[0], {}):
+                print(f"[✓] Found existing results for '{exp_name}' in {json_path}, skipping training.")
                 data = all_metrics[list(all_metrics.keys())[0]][exp_name]
-                print(f"Loaded metrics: {data}")
+                plot_accuracy_loss_curve(data['accuracies'], data['losses'], workflow, exp_name, save_dir=plots_dir)
 
-    # Always plot if accuracy/loss exists
-    plots_dir = os.path.join(save_path, "plots")
-    os.makedirs(plots_dir, exist_ok=True)
-    if data is not None and "accuracies" in data and "losses" in data:
-        plot_accuracy_loss_curve(data['accuracies'], data['losses'], workflow, exp_name, save_dir=plots_dir)
-
+    # Train if needed
     if data is None:
-        # Run training and evaluation
+        print(f"[•] Training model: {exp_name}")
         data = train_and_evaluate(model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs)
     else:
         print(f"[✓] Skipping training for '{exp_name}' as results already exist.")
 
-    # Save checkpoint
+    # Save model checkpoint
     torch.save({'model': model.state_dict()}, ckpt_path)
 
     # Save plots
@@ -63,16 +62,16 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     param_count = count_trainable_params(model)
     infer_time, mem_usage = benchmark_model(model, test_loader, device)
 
-    # Update metrics and save to JSON
     data.update({
         "param_count": param_count,
         "inference_time": infer_time,
         "memory_usage": mem_usage,
         "final_accuracy": data["accuracies"][-1] if data["accuracies"] else 0,
     })
+
     save_metrics_json(f"{workflow}/{model.__class__.__name__}_postcomp_{post_compress_epochs}", exp_name, data, base_dir=metrics_dir)
 
-    # Save final model
+    # Final save
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
 
@@ -80,247 +79,120 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     return data
 
 
-def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain, model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs", post_compress_epochs=False):
+def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain,
+                      model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",
+                      post_compress_epochs=False):
+    
     model_kwargs = model_kwargs or {}
-    jf_param_counts, jf_final_accuracies, jf_exp_names = [], [], []
-    jf_infer_times, jf_mem_usages = [], []
-    jf_activations = {}
-
     print("\n=== Running JF experiment ===")
+    exp_name, collapse_range = list(experiments.items())[0]
+    print(f"\nRunning JF experiment: {exp_name}")
 
-    for exp_name, collapse_range in experiments.items():
-        print(f"\nRunning JF experiment: {exp_name}")
-        base_model = model_class(**model_kwargs)
-        describe_model(base_model, loader=train_loader, device=device)
-        base_model.load_state_dict(torch.load(model_path_097)['model'])
+    base_model = model_class(**model_kwargs)
+    base_model.load_state_dict(torch.load(model_path_097)['model'])
 
-        if collapse_range is not None:
-            base_model = collapse_only(
-                model_weights_1=model_path_097,
-                compression_set=[collapse_range],
-                model_class=model_class,
-                model_kwargs=model_kwargs,
-                input_shape=model_kwargs['one_batch'].shape,
-                device=device
-            )
-
-        data = run_experiment(
-            model=base_model,
+    if collapse_range is not None:
+        base_model = collapse_only(
+            model_weights_1=model_path_097,
+            compression_set=[collapse_range],
+            model_class=model_class,
             model_kwargs=model_kwargs,
-            train_loader=train_loader,
-            test_loader=test_loader,
-            device=device,
-            epochs=epochs,
-            workflow="JF",
-            exp_name=exp_name,
-            data_shape=data_shape,
-            save_path=save_path,
-            post_compress_epochs=post_compress_epochs
+            input_shape=model_kwargs['one_batch'].shape,
+            device=device
         )
 
-        param_count = data["param_count"]
-        final_acc = data["final_accuracy"]
-        infer_time = data["inference_time"]
-        mem_usage = data["memory_usage"]
+    data = run_experiment(base_model, model_kwargs, train_loader, test_loader, device, epochs,
+                          workflow="JF", exp_name=exp_name, data_shape=data_shape,
+                          save_path=save_path, post_compress_epochs=post_compress_epochs)
 
-        jf_param_counts.append(param_count)
-        jf_final_accuracies.append(final_acc)
-        jf_infer_times.append(infer_time)
-        jf_mem_usages.append(mem_usage)
-        jf_exp_names.append(exp_name)
+    # Return model for further pruning
+    return base_model
 
-        plot_dir = os.path.join(save_path, "plots")
-        os.makedirs(plot_dir, exist_ok=True)
-        plot_results(
-            jf_param_counts, jf_final_accuracies, jf_exp_names, "JF Experiment",
-            os.path.join(plot_dir, "jf_experiment_results.svg"),
-            infer_times=jf_infer_times, mem_usages=jf_mem_usages
-        )
-
-        final_model_path = os.path.join(save_path, "checkpoints", f"final_JF_{list(experiments.keys())[0]}_{model_class.__name__}_epochs{epochs}.pth").replace(" ", "_")
-        os.makedirs(os.path.dirname(final_model_path), exist_ok=True)
-
-        print(f"Looking for final model at: {final_model_path}")
-        if os.path.exists(final_model_path):
-            final_model = collapse_only(
-                model_weights_1=model_path_097,
-                compression_set=[list(experiments.values())[0]],
-                model_class=model_class,
-                model_kwargs=model_kwargs,
-                input_shape=model_kwargs['one_batch'].shape,
-                device=device
-            )
-            final_model.load_state_dict(torch.load(final_model_path)['model'])
-            final_model.to(device)
-            return final_model
-
-
-def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs, model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs", post_compress_epochs=False):
+def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs,
+                         model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",
+                         post_compress_epochs=False):
+    
     model_kwargs = model_kwargs or {}
-    kevin_param_counts, kevin_final_accuracies, kevin_exp_names = [], [], []
-    kevin_infer_times, kevin_mem_usages = [], []
-
     print("\n=== Running Kevin experiment ===")
+    exp_name, collapse_range = list(experiments.items())[0]
+    print(f"\nRunning Kevin experiment: {exp_name}")
 
-    for exp_name, collapse_range in experiments.items():
-        print(f"\nRunning Kevin experiment: {exp_name}")
+    base_model = model_class(**model_kwargs)
+    base_model.load_state_dict(torch.load(model_path_000)['model'])
 
-        base_model = model_class(**model_kwargs)
-        base_model.load_state_dict(torch.load(model_path_000)['model'])
-
-        # compress
-        if collapse_range is not None:
-            print("Applying compression...")
-            os.makedirs(save_path, exist_ok=True)
-            tmp_path = os.path.join(save_path, "temp_model.pth")
-            torch.save({'model': base_model.state_dict()}, tmp_path)
-            base_model = collapse_only(
-                model_weights_1=tmp_path,
-                compression_set=[collapse_range],
-                model_class=model_class,
-                model_kwargs=model_kwargs,
-                input_shape=model_kwargs['one_batch'].shape,
-                device=device
-            )
-            os.remove(tmp_path)
-
-        data = run_experiment(
-            model=base_model,
+    if collapse_range is not None:
+        tmp_path = os.path.join(save_path, "temp_model.pth")
+        torch.save({'model': base_model.state_dict()}, tmp_path)
+        base_model = collapse_only(
+            model_weights_1=tmp_path,
+            compression_set=[collapse_range],
+            model_class=model_class,
             model_kwargs=model_kwargs,
-            train_loader=train_loader,
-            test_loader=test_loader,
-            device=device,
-            epochs=epochs,
-            workflow="Kevin",
-            exp_name=exp_name,
-            data_shape=data_shape,
-            save_path=save_path,
-            post_compress_epochs=post_compress_epochs
+            input_shape=model_kwargs['one_batch'].shape,
+            device=device
         )
+        os.remove(tmp_path)
 
-        kevin_param_counts.append(data["param_count"])
-        kevin_final_accuracies.append(data["final_accuracy"])
-        kevin_infer_times.append(data["inference_time"])
-        kevin_mem_usages.append(data["memory_usage"])
-        kevin_exp_names.append(exp_name)
+    data = run_experiment(base_model, model_kwargs, train_loader, test_loader, device, epochs,
+                          workflow="Kevin", exp_name=exp_name, data_shape=data_shape,
+                          save_path=save_path, post_compress_epochs=post_compress_epochs)
 
-        plot_dir = os.path.join(save_path, "plots")
-        os.makedirs(plot_dir, exist_ok=True)
-        plot_results(
-            kevin_param_counts, kevin_final_accuracies, kevin_exp_names, "Kevin Experiment",
-            os.path.join(plot_dir, "kevin_experiment_results.svg"),
-            infer_times=kevin_infer_times, mem_usages=kevin_mem_usages
-        )
+    return base_model
 
-        final_model_path = os.path.join(save_path, "checkpoints", f"final_Kevin_{list(experiments.keys())[0]}_{model_class.__name__}_epochs{epochs}.pth").replace(" ", "_")
-        os.makedirs(os.path.dirname(final_model_path), exist_ok=True)
-        
-        # save the final model
-        torch.save({'model': base_model.state_dict()}, final_model_path)
-        print(f"Saved final model at: {final_model_path}")
-
-        return base_model
-
-def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs", post_compress_epochs=False):
+def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs, pretrain,
+                        model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",
+                        post_compress_epochs=False):
+    
     model_kwargs = model_kwargs or {}
-    nick_param_counts, nick_final_accuracies, nick_exp_names = [], [], []
-    nick_infer_times, nick_mem_usages = [], []
-
     print("\n=== Running Nick experiment ===")
+    exp_name, collapse_range = list(experiments.items())[0]
+    print(f"\nRunning Nick experiment: {exp_name}")
 
-    for exp_name, collapse_range in experiments.items():
-        print(f"\nRunning Nick experiment: {exp_name}")
+    base_model = model_class(**model_kwargs)
+    base_model.load_state_dict(torch.load(model_path_000)['model'])
+    base_model.to(device)
 
-        # 1. Load initial model weights (model_path_000)
-        base_model = model_class(**model_kwargs)
-        base_model.load_state_dict(torch.load(model_path_000)['model'])
-        base_model.to(device)
+    # Check pretraining metrics
+    metrics_dir = os.path.join(save_path, "metrics")
+    plots_dir = os.path.join(save_path, "plots")
+    os.makedirs(metrics_dir, exist_ok=True)
+    os.makedirs(plots_dir, exist_ok=True)
 
-        # === Check if pretraining metrics already exist ===
-        metrics_dir = os.path.join(save_path, "metrics")
-        os.makedirs(metrics_dir, exist_ok=True)
-        glob_path = os.path.join(metrics_dir, f"Nick/*metrics.json")
-        json_paths = glob.glob(glob_path)
-        data = None
-        if json_paths:
-            json_path = json_paths[0]
-            with open(json_path, "r") as f:
-                all_metrics = json.load(f)
-                if exp_name in all_metrics[list(all_metrics.keys())[0]].keys():
-                    print(f"[✓] Found existing pretraining results for '{exp_name}' in {json_path}, skipping pretraining.")
-                    data = all_metrics[list(all_metrics.keys())[0]][exp_name]
-                    print(f"Loaded pretraining metrics: {data}")
+    data = None
+    glob_path = os.path.join(metrics_dir, f"Nick/*metrics.json")
+    json_paths = glob.glob(glob_path)
+    if json_paths:
+        json_path = json_paths[0]
+        with open(json_path, "r") as f:
+            all_metrics = json.load(f)
+            if exp_name in all_metrics.get(list(all_metrics.keys())[0], {}):
+                print(f"[✓] Found existing pretraining results for '{exp_name}' in {json_path}")
+                data = all_metrics[list(all_metrics.keys())[0]][exp_name]
+                plot_accuracy_loss_curve(data['accuracies'], data['losses'], "Nick", exp_name, save_dir=plots_dir)
 
-        # Always plot if accuracy/loss exists
-        plots_dir = os.path.join(save_path, "plots")
-        os.makedirs(plots_dir, exist_ok=True)
-        if data and "accuracies" in data and "losses" in data:
-            plot_accuracy_loss_curve(data['accuracies'], data['losses'], "Nick", exp_name, save_dir=plots_dir)
+    if data is None:
+        print(f"Training for {pretrain + epochs} epochs (initial)...")
+        data = train_and_evaluate(base_model, train_loader, test_loader, device, pretrain + epochs, post_compress_epochs=False)
+        save_metrics_json(f"Nick/{model_class.__name__}_pretrain", exp_name, data, base_dir=metrics_dir)
 
-        if data is None:
-            # 2. Train the model for (pretrain + epochs) epochs with initial weights
-            print(f"Training for {pretrain + epochs} epochs (initial weights)...")
-            data = train_and_evaluate(base_model, train_loader, test_loader, device, pretrain + epochs, post_compress_epochs=False)
-
-            # Save pretraining results
-            save_metrics_json(f"Nick/{model_class.__name__}_pretrain", exp_name, data, base_dir=metrics_dir)
-
-        # 3. Apply compression (collapse)
-        if collapse_range is not None:
-            print("Applying compression...")
-            tmp_path = os.path.join(save_path, "temp_model.pth")
-            torch.save({'model': base_model.state_dict()}, tmp_path)
-            base_model = collapse_only(
-                model_weights_1=tmp_path,
-                compression_set=[collapse_range],
-                model_class=model_class,
-                model_kwargs=model_kwargs,
-                input_shape=model_kwargs['one_batch'].shape,
-                device=device
-            )
-            os.remove(tmp_path)
-
-        # 4. Fine-tune the compressed model
-        print(f"Fine-tuning for {epochs} epochs after compression...")
-        data = run_experiment(
-            model=base_model,
+    # Apply compression
+    if collapse_range is not None:
+        tmp_path = os.path.join(save_path, "temp_model.pth")
+        torch.save({'model': base_model.state_dict()}, tmp_path)
+        base_model = collapse_only(
+            model_weights_1=tmp_path,
+            compression_set=[collapse_range],
+            model_class=model_class,
             model_kwargs=model_kwargs,
-            train_loader=train_loader,
-            test_loader=test_loader,
-            device=device,
-            epochs=epochs,
-            workflow="Nick",
-            exp_name=exp_name,
-            data_shape=data_shape,
-            save_path=save_path,
-            post_compress_epochs=post_compress_epochs
+            input_shape=model_kwargs['one_batch'].shape,
+            device=device
         )
+        os.remove(tmp_path)
 
-        # Merge results
-        nick_param_counts.append(data["param_count"])
-        nick_final_accuracies.append(data["final_accuracy"])
-        nick_infer_times.append(data["inference_time"])
-        nick_mem_usages.append(data["memory_usage"])
-        nick_exp_names.append(f"{exp_name}_finetuned")
+    # Fine-tune
+    print(f"Fine-tuning for {epochs} epochs...")
+    data = run_experiment(base_model, model_kwargs, train_loader, test_loader, device, epochs,
+                          workflow="Nick", exp_name=exp_name, data_shape=data_shape,
+                          save_path=save_path, post_compress_epochs=post_compress_epochs)
 
-        # Plot results
-        plot_results(
-            nick_param_counts, nick_final_accuracies, nick_exp_names, "Nick Experiment",
-            os.path.join(plot_dir, "nick_experiment_results.svg"),
-            infer_times=nick_infer_times, mem_usages=nick_mem_usages
-        )
-
-    if len(experiments) == 1:
-        final_model_path = os.path.join(save_path, "checkpoints", f"final_Nick_{list(experiments.keys())[0]}_{model_class.__name__}_epochs{epochs}.pth").replace(" ", "_")
-        if os.path.exists(final_model_path):
-            final_model = collapse_only(
-                model_weights_1=model_path_000,
-                compression_set=[list(experiments.values())[0]],
-                model_class=model_class,
-                model_kwargs=model_kwargs,
-                input_shape=model_kwargs['one_batch'].shape,
-                device=device
-            )
-            final_model.load_state_dict(torch.load(final_model_path)['model'])
-            final_model.to(device)
-            return final_model
+    return base_model
