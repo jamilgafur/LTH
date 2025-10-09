@@ -31,15 +31,21 @@ class XBlock(nn.Module):
         return self.relu(self.block(x) + self.shortcut(x))
 
 class RegNetX_400MF(nn.Module):
-    def __init__(self, num_classes=200, input_shape=(3, 224, 224)):
+    def __init__(self, one_batch=None, num_classes=200):
         super(RegNetX_400MF, self).__init__()
 
-        self.input_shape = input_shape  # (C, H, W)
-        in_channels = input_shape[0]
+        if one_batch is not None:
+            # Extract the input channels and size from the provided batch
+            batch_size, input_channels, height, width = one_batch.shape
+            self.input_channels = input_channels
+            self.input_size = (input_channels, height, width)
+        else:
+            self.input_channels = 3  # Default to 3 channels (RGB)
+            self.input_size = (3, 224, 224)  # Default to (C, H, W)
 
         # Stem
         self.stem = nn.Sequential(OrderedDict([
-            ('stem_conv', nn.Conv2d(in_channels, 32, kernel_size=3, stride=2, padding=1, bias=False)),
+            ('stem_conv', nn.Conv2d(self.input_channels, 32, kernel_size=3, stride=2, padding=1, bias=False)),
             ('stem_bn', nn.BatchNorm2d(32)),
             ('stem_relu', nn.ReLU(inplace=True))
         ]))
@@ -54,7 +60,7 @@ class RegNetX_400MF(nn.Module):
         self.pool = nn.AdaptiveAvgPool2d(1)
 
         # Placeholder for fc; actual size will be calculated dynamically
-        self.fc_input_features = self._get_flattened_feature_size()
+        self.fc_input_features = self._get_flattened_feature_size(one_batch)
         self.fc = nn.Linear(self.fc_input_features, num_classes)
 
     def _make_stage(self, stage_name, in_channels, out_channels, num_blocks, stride):
@@ -66,9 +72,12 @@ class RegNetX_400MF(nn.Module):
             in_channels = out_channels
         return nn.Sequential(OrderedDict(blocks))
 
-    def _get_flattened_feature_size(self):
+    def _get_flattened_feature_size(self, one_batch):
+        # This method calculates the flattened feature size after passing through the network.
         with torch.no_grad():
-            dummy_input = torch.zeros(1, *self.input_shape)
+            # Use the provided batch to get the shape dynamically
+            batch_size, input_channels, height, width = one_batch.shape
+            dummy_input = torch.zeros(1, input_channels, height, width)
             x = self.stem(dummy_input)
             x = self.stage1(x)
             x = self.stage2(x)
@@ -78,6 +87,7 @@ class RegNetX_400MF(nn.Module):
             return x.view(1, -1).size(1)
 
     def forward(self, x):
+        # x is the batch input with shape (batch_size, channels, height, width)
         x = self.stem(x)
         x = self.stage1(x)
         x = self.stage2(x)

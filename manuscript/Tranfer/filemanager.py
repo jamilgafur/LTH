@@ -60,8 +60,8 @@ def load_model_from_checkpoint(ckpt_path, collapse_range, device, model_class=VG
 
     model_kwargs = model_kwargs or {}
     model = model_class(**model_kwargs)
-    import pdb; pdb.set_trace()
     if collapse_range is not None:
+        print(f"Collapsing layers in range: {collapse_range}")
         model = collapse_block(model, *collapse_range)
 
     sd = torch.load(ckpt_path)['model']

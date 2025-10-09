@@ -1,72 +1,118 @@
 import os
 import torch
 from pyPrune.models.Vgg16 import VGG16
+from pyPrune.models.RegNetX import RegNetX_400MF 
 from pyPrune.pruneMethods.IterativePruner import IterativePruner
 from pyPrune.strategies import MagnitudePruningStrategy
 from experiments import *
 from utils import *
 from pyPrune.utils import *
-
-# set seed for reproducibility
 from torch.backends import cudnn
 import random
 import numpy as np
+
+# set seed for reproducibility
 seed = 42
 random.seed(seed)
 np.random.seed(seed)
 torch.manual_seed(seed)
 cudnn.deterministic = True
 cudnn.benchmark = False
+import glob
+import os
 
 CHECKPOINT_BASES = {
-    "Cifar10": "../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain30_finetune10_steps21_batch2048_devicecuda_strategy_magnitude/",
-    "Cifar100": "../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain30_finetune10_steps21_batch2048_devicecuda_strategy_magnitude/",
-    "TinyImageNet": "../structured_study/pruning_checkpoints/Vgg16_datasettinyimagenet_pretrain30_finetune10_steps21_batch2048_devicecuda_strategy_magnitude/",
-    "ImageNet": "../structured_study/pruning_checkpoints/Vgg16_datasetimagenet_pretrain30_finetune10_steps21_batch1024_devicecuda_strategy_magnitude/",
-}
-
+    "VGG16": {
+        "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*cifar10_*")[0] + "/",
+        "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*cifar100_*")[0] + "/",
+   #     "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*tinyimagenet_*")[0] + "/",
+  #      "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*imagenet_*")[0] + "/",
+    },
+    "RegNetX_400MF": {
+        "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar10_*")[0] + "/",
+        "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar100_*")[0] + "/",
+ #       "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*tinyimagenet_*")[0] + "/",
+#        "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*imagenet_*")[0] + "/",
+    }
+}# To make sure that the paths are correct, print them out
+for model, datasets in CHECKPOINT_BASES.items():
+    for dataset, path in datasets.items():
+        print(f"{model} - {dataset}: {path}")
 CHECKPOINT_FILES = {
-    "Cifar10": ("checkpoint_Finetuned_0.945024.pth", "checkpoint_Original_0.000000.pth"),
-    "Cifar100": ("checkpoint_Finetuned_0.914101.pth", "checkpoint_Original_0.000000.pth"),
-    "TinyImageNet": ("checkpoint_Finetuned_0.971853.pth", "checkpoint_Original_0.000000.pth"),
-    "ImageNet": ("checkpoint_Finetuned_0.865782.pth", "checkpoint_Original_0.000000.pth"),
+    "VGG16": {
+        "Cifar10": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar100": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "TinyImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "ImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+    },
+    "RegNetX_400MF": {
+        "Cifar10": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar100": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "TinyImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "ImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+    }
 }
 
 EXPERIMENTS = {
-    "Cifar10": {
-        "Original Model": None,
-        "Last 2": ('conv_12', 'conv_13'),
-        "Stage 5": ('conv_11', 'conv_13'),
-        "Stage 4": ('conv_8', 'conv_11'),
-        "Stage 3": ('conv_5', 'conv_8'),
-        "Stage 4-5": ('conv_8', 'conv_13'),
-        "Stage 3-5": ('conv_5', 'conv_13'),
-        "Stage 2-5": ('conv_3', 'conv_13'),
+    "VGG16": {
+        "Cifar10": {
+            "Original Model": None,
+            "Last 2": ('features.conv_12', 'features.conv_13'),  # Conv layers at the last stage
+            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
+            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
+            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
+            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
+            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
+            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
+        },
+        "Cifar100": {
+            "Original Model": None,
+            "Last 2": ('features.conv_9', 'features.conv_10'),
+            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
+            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
+            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
+            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
+            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
+            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
+        },
+        "TinyImageNet": {
+            "Original Model": None,
+            "Last 2": ('features.conv9', 'features.conv10'),
+            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
+            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
+            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
+            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
+            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
+            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
+        },
+        "ImageNet": {
+            "Original Model": None,
+            "Last 2": ('features.conv9', 'features.conv10'),
+            "Stage 5": ('features.conv8', 'features.conv9'),
+            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
+            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
+            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
+            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
+            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
+            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
+        },
     },
-    "Cifar100": {
-        "Original Model": None,
-        "Last 2": ('conv_12', 'conv_13'),
-        "Stage 5": ('conv_11', 'conv_13'),
-        "Stage 4": ('conv_8', 'conv_11'),
-        "Stage 4-5": ('conv_8', 'conv_13'),
-    },
-    "TinyImageNet": {
-        "Original Model": None,
-        "Last 2": ('conv_12', 'conv_13'),
-        "All Conv Layers": ('conv_1', 'conv_13'),
-    },
-    "ImageNet": {
-        "Original Model": None,
-        "Last 2": ('conv_12', 'conv_13'),
-        "Stage 5": ('conv_11', 'conv_13'),
-        "Stage 4": ('conv_8', 'conv_11'),
-        "All Conv Layers": ('conv_1', 'conv_13'),
-    },
+    "RegNetX_400MF": {
+        "Cifar10": {
+            "Original Model": None,
+            "Last 2": ('stage4.stage4_block6.block.conv1', 'stage4.stage4_block6.block.conv3'),
+        },
+        "Cifar100": {
+            "Original Model": None,
+            "Last 2": ('stage4.stage4_block6.block.conv1', 'stage4.stage4_block6.block.conv3'),
+        },
+    }
 }
 
-# -----------------------------
+# -------------------------------
 # IMP Pruning Logic Integration
-# -----------------------------
+# -------------------------------
+
 def imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps, pretrain_epochs, finetune_epochs, device, save_dir, strategy, patience, experiment_name=None):
     """
     Function to run pruning based on the IterativePruner class.
@@ -107,11 +153,10 @@ def imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader,
     
     return pruner
 
-def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, input_size, post_compress_epochs, run_all, experiment_func):
-    """Run all experiments for a given dataset."""
-    save_path = f"{dataset}_{CHECKPOINT_FILES[dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
+def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, post_compress_epochs, experiment_func):
+    """Run specified experiment for a given dataset."""
+    save_path = f"{model_class.__name__}_{dataset}_{CHECKPOINT_FILES[model_class.__name__][dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
     
-    # Define optimizer, scheduler, and criterion
     def create_optimizer_scheduler(model, learning_rate=1e-3):
         optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
@@ -119,114 +164,89 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
 
     criterion = torch.nn.CrossEntropyLoss()
 
-    # Define the number of pruning steps (this is arbitrary, you can adjust it)
     steps = exponential_decay_list(steps=21)
-    # steps get every thrd step  including the last one
     steps = [steps[i] for i in range(len(steps)) if i % 3 == 0 or i == len(steps) - 1]
     print(f"Pruning steps: {steps}")
-    if run_all:
-        experiment_func(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain,
-                        model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path,
-                        post_compress_epochs=post_compress_epochs)     
-        experiment_func(experiments, model_path_000, train_loader, test_loader, device, epochs,
-                         model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size,
-                            save_path=save_path, post_compress_epochs=post_compress_epochs)
-    else:
-        for name, layers in experiments.items():
-            print(f"\n--- Running experiment: {name} ---")
-            if args.JF:
-                model = run_jf_experiment({name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain,
-                                        model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path,
-                                        post_compress_epochs=post_compress_epochs)
-                if args.imp:
-                    optimizer, scheduler = create_optimizer_scheduler(model)
-                    imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps, pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device, save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
 
-            elif args.Kevin:
-                model = run_kevin_experiment({name: layers}, model_path_000, train_loader, test_loader, device, epochs,
-                                    model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size,
-                                    save_path=save_path, post_compress_epochs=post_compress_epochs)
-                if args.imp:
-                    optimizer, scheduler = create_optimizer_scheduler(model)
-                    imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps, pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device, save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
-            elif args.Nick:
-                model = run_nick_experiment({name: layers}, model_path_000, train_loader, test_loader, device,
-                                        epochs, pretrain,
-                                        model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size,
-                                        save_path=save_path, post_compress_epochs=post_compress_epochs)
-                if args.imp:
-                    optimizer, scheduler = create_optimizer_scheduler(model)
-                    imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps, pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device, save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
+    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, model_class.__name__)
+    model_kwargs['num_classes'] = num_classes
+    input_tensor = next(iter(train_loader))[0]
+    model_kwargs['one_batch'] = input_tensor
 
-def main(model_path_097, model_path_000, experiments, dataset, epochs=30, pretrain=10, model_class=VGG16, model_kwargs=None, post_compress_epochs=True, run_all=False, experiment_func=None):
-    """Main routine to load dataset, run experiments, and plot results."""
-    if not os.path.exists(model_path_097):
-        print(f"Model path {model_path_097} does not exist.")
-        return
-    if not os.path.exists(model_path_000):
-        print(f"Model path {model_path_000} does not exist.")
-        return
+    for name, layers in experiments.items():
+        print(f"\n--- Running experiment: {name} ---")
+        if args.JF:
+            model = run_jf_experiment({name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain,
+                                      model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path,
+                                      post_compress_epochs=post_compress_epochs)
+            if args.imp:
+                optimizer, scheduler = create_optimizer_scheduler(model)
+                imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
+                          pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
+                          save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
 
-    print(f"\n=== Running on dataset: {dataset} | post_compress: {post_compress_epochs} ===")
+        elif args.Kevin:
+            model = run_kevin_experiment({name: layers}, model_path_000, train_loader, test_loader, device, epochs,
+                                         model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size,
+                                         save_path=save_path, post_compress_epochs=post_compress_epochs)
+            if args.imp:
+                optimizer, scheduler = create_optimizer_scheduler(model)
+                imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
+                          pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
+                          save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
+        else:
+            raise ValueError("You must specify either --JF or --Kevin to run the corresponding experiment.")
 
-    # Load dataset
-    train_loader, test_loader, input_size, input_channels, default_num_classes = load_dataset(dataset)
-    device = "cuda"
-
-    # Model kwargs if not provided
-    model_kwargs = model_kwargs or {
-        'num_classes': default_num_classes,
-        'input_size': input_size,
-        'input_channels': input_channels
-    }
-
-    run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, input_size, post_compress_epochs, run_all, experiment_func)
-
+# -------------------------------
+# Main Function
+# -------------------------------
 
 if __name__ == "__main__":
     import argparse
+
+    # Initialize the argument parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", type=str, required=False, default="Cifar10", choices=["Cifar10", "Cifar100", "TinyImageNet", "ImageNet"])
-    parser.add_argument("--experiment", type=str, help="Name of specific experiment to run", default=None)
-    parser.add_argument("--post_compress", action="store_true", help="Use post-compression epochs", default=True)
-    parser.add_argument("--imp", action="store_true", help="Use IMP pruning", default=True)
-    parser.add_argument("--JF", action="store_true", help="Run JF experiment", default=True)
-    parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiment", default=False)
-    parser.add_argument("--Nick", action="store_true", help="Run Nick experiment", default=False)
+    parser.add_argument("--model", type=str, default="RegNetX_400MF", choices=["VGG16", "RegNetX_400MF"], help="Model architecture to use")
+    parser.add_argument("--dataset", type=str, help="Dataset to use (Cifar10, Cifar100, ImageNet, TinyImageNet)", default="Cifar10")
+    parser.add_argument("--epochs", type=int, default=30, help="Number of epochs to train for")
+    parser.add_argument("--pretrain", type=int, default=30, help="Number of pretraining epochs")
+    parser.add_argument("--experiment", type=str, required=True, help="Experiment to run")  # Now required
+    parser.add_argument("--post_compress_epochs", type=int, default=10, help="Number of post-pruning compression epochs")
+    parser.add_argument("--imp", action="store_true", help="Apply Iterative Magnitude Pruning")
+    parser.add_argument("--JF", action="store_true", help="Run JF experiments")
+    parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
+
     args = parser.parse_args()
+    print(args)
+    print(f"has GPU: {torch.cuda.is_available()}")
 
+    model_name = args.model
     dataset = args.dataset
-    experiment_name = args.experiment
-    post_compress_epochs = args.post_compress
-    imp = args.imp
-    if args.JF:
-        experiment_func_name = "run_jf_experiment"
-    elif args.Kevin:
-        experiment_func_name = "run_kevin_experiment"
-    elif args.Nick:
-        experiment_func_name = "run_nick_experiment"
-    else:
-        raise ValueError("At least one of --JF, --Kevin, or --Nick must be specified.")
+    model_class = VGG16 if model_name == "VGG16" else RegNetX_400MF
+    model_kwargs = {}
 
-    # Load paths
-    base_path = CHECKPOINT_BASES[dataset]
-    model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[dataset][0])
-    model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[dataset][1])
+    base_path = CHECKPOINT_BASES[model_name][dataset]
+    model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[model_name][dataset][0])
+    model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[model_name][dataset][1])
 
-    # Load experiments based on provided argument
-    experiment_dict = EXPERIMENTS[dataset]
-    if experiment_name:
-        if experiment_name not in experiment_dict:
-            raise ValueError(f"Experiment '{experiment_name}' not found for dataset '{dataset}'")
-        experiment_dict = {experiment_name: experiment_dict[experiment_name]}
+    # Ensure selected experiment exists
+    if args.experiment not in EXPERIMENTS[model_name][dataset]:
+        raise ValueError(f"Experiment '{args.experiment}' not found for model '{model_name}' and dataset '{dataset}'.")
 
-    print(f"Experiments to run: {list(experiment_dict.keys())}")
+    experiment_dict = {args.experiment: EXPERIMENTS[model_name][dataset][args.experiment]}
 
-    # Map string to actual function
-    experiment_func = globals()[experiment_func_name]
-
-    # Run main function
-    run_all = experiment_name is None  # if no experiment is specified, run all
-    if run_all:
-        print("Running all experiments.")
-    main(model_path_097, model_path_000, experiments=experiment_dict, dataset=dataset, post_compress_epochs=post_compress_epochs, run_all=run_all, experiment_func=experiment_func)
+    run_experiments_for_dataset(
+        experiment_dict,
+        dataset,
+        model_path_097,
+        model_path_000,
+        None,
+        None,
+        'cpu',
+        args.epochs,
+        args.pretrain,
+        model_class,
+        model_kwargs,
+        args.post_compress_epochs,
+        experiment_func=imp_prune
+    )

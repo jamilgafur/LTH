@@ -108,7 +108,7 @@ def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[flo
         decay_list.append(1 - n)
     return decay_list
 
-def load_cifar100(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+def load_cifar100(batch_size: int = 512, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
     train_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.RandomHorizontalFlip(),
@@ -134,7 +134,7 @@ def load_cifar100(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoade
     print("CIFAR-100 data shape: ", next(iter(train_loader))[0].shape)
     return train_loader, test_loader
 
-def load_cifar10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+def load_cifar10(batch_size: int = 512, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
     train_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.RandomHorizontalFlip(),
@@ -159,7 +159,7 @@ def load_cifar10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader
     print("CIFAR-10 data shape: ", next(iter(train_loader))[0].shape)
     return train_loader, test_loader
 
-def load_mnist(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+def load_mnist(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
     transform = transforms.Compose([
         transforms.Resize((32, 32)),
         transforms.ToTensor(),
@@ -178,7 +178,7 @@ def load_mnist(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, 
 
     return train_loader, test_loader
 
-def load_fashionmnist(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+def load_fashionmnist(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.Grayscale(num_output_channels=3),
@@ -199,7 +199,7 @@ def load_fashionmnist(batch_size: int = 64, num_workers: int = 4) -> tuple[DataL
     print("FashionMNIST data shape: ", next(iter(train_loader))[0].shape)
     return train_loader, test_loader
 
-def load_stl10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+def load_stl10(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
@@ -219,7 +219,7 @@ def load_stl10(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, 
     print("STL10 data shape: ", next(iter(train_loader))[0].shape)
     return train_loader, test_loader
 
-def load_caltech101(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+def load_caltech101(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
@@ -241,8 +241,8 @@ def load_caltech101(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoa
     print("Caltech101 data shape: ", next(iter(train_loader))[0].shape)
     return train_loader, test_loader
 
-def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
-    data_dir = '/projects/modularai/jgafur/LTH/manuscript/structured_study/.temp/data/tiny-imagenet-200/'
+def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
+    data_dir = '/Users/jgafur/LTH/manuscript/structured_study/.temp/tiny-imagenet-200/'
     train_dir = os.path.join(data_dir, 'train')
     val_dir = os.path.join(data_dir, 'val')
     val_img_dir = os.path.join(val_dir, 'images')
@@ -272,7 +272,7 @@ def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 4) -> tuple[Data
 
     return train_loader, val_loader
 
-def load_imagenet(batch_size: int = 64, num_workers: int = 4):
+def load_imagenet(batch_size: int = 64, num_workers: int = 1):
     """
     Returns train and validation DataLoaders for the Imagenette2-160 dataset using torchvision.datasets.Imagenette.
 
@@ -284,7 +284,7 @@ def load_imagenet(batch_size: int = 64, num_workers: int = 4):
         (train_loader, val_loader): Tuple of DataLoaders.
     """
 
-    root = '/projects/modularai/jgafur/LTH/manuscript/structured_study/.temp/data/imagenette2'
+    root = '/Users/jgafur/LTH/manuscript/structured_study/.temp/imagenette2'
     dataset_dir = os.path.join(root, 'imagenette2-160')
     
     # Check if the dataset is already downloaded

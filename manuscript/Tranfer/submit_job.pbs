@@ -1,0 +1,24 @@
+#!/bin/bash
+#PBS -N prune_${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}       # Job name (includes experiment name and flag)
+#PBS -l walltime=12:00:00               # Max walltime (12 hours, adjust as needed)
+#PBS -l ngpus=1            # Number of nodes, processors per node, and 1 GPU
+#PBS -o logs/${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}_output.txt  # Output file for job logs
+#PBS -e logs/${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}_error.txt   # Error file for job logs
+#PBS -V                                 # Export environment variables
+
+# Activate the conda environment
+echo "Activating conda environment..."
+conda activate ~/env/lth_env/
+echo "Loaded CUDA and GCC modules..."
+module load cuda/11.1.1_gcc-9.3.0
+module load gcc/9.3.0
+
+# Change to the directory where qsub was called
+cd ~/LTH/manuscript/Tranfer/
+
+# Echo the Python command to be executed
+echo "Executing: ~/env/lth_env/bin/python transfer.py --model $MODEL --dataset $DATASET --experiment $EXPERIMENT --$FLAG"
+
+# Run the Python script with the parameters
+~/env/lth_env/bin/python transfer.py --model $MODEL --dataset $DATASET --experiment "$EXPERIMENT" --$FLAG 
+

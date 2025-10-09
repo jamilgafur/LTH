@@ -50,7 +50,7 @@ parser.add_argument('--finetune_epochs', type=int, default=30)
 parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'])
 parser.add_argument('--save_dir', type=str, default='./pruning_checkpoints/')
 parser.add_argument('--patience', type=int, default=5)
-parser.add_argument('--batch_size', type=int, default=2048)
+parser.add_argument('--batch_size', type=int, default=512)
 parser.add_argument('--num_workers', type=int, default=1)
 parser.add_argument('--strategy', type=str, default='magnitude', choices=['magnitude', 'brain-damage'])
 parser.add_argument('--experimentStep', type=int, default=1)
@@ -183,7 +183,6 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
         print("Save Dir:", save_dir)
         print("Strategy:", strategy)
         print("Early Stopping:", args.patience)
-        import pdb; pdb.set_trace()
 
         # Initialize Pruner
         pruner = IterativePruner(
@@ -306,20 +305,22 @@ def main() -> None:
             raise ValueError(f"Unsupported dataset for VGG16: {dataset}")
 
         input_size = next(iter(train_loader))[0].shape[2:]  # Get input shape for VGG16
-        model = VGG16(num_classes=num_classes, input_size=input_size)
+        model = VGG16(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
 
     elif args.model == 'RegNetX':
         if dataset == 'cifar10':
             train_loader, test_loader = load_cifar10(args.batch_size, args.num_workers)
+        elif dataset == 'cifar100':
+            train_loader, test_loader = load_cifar100(args.batch_size, args.num_workers)
         elif dataset == 'tinyimagenet':
             train_loader, test_loader = load_tiny_imagenet(args.batch_size, args.num_workers)
         elif dataset == 'imagenet':
             train_loader, test_loader = load_imagenet(args.batch_size, args.num_workers)
         else:
             raise ValueError(f"Unsupported dataset for RegNetX: {dataset}")
-
-        input_size = next(iter(train_loader))[0].shape[2:]
-        model = RegNetX_400MF(num_classes=num_classes, input_size=input_size)
+        input_tensor = next(iter(train_loader))[0]
+        input_size = input_tensor.shape[1:]  # Includes channels: (C, H, W)
+        model = RegNetX_400MF(one_batch=input_tensor,num_classes=num_classes)
 
     elif args.model == 'EfficientNet':
         model = EfficientNetB7(num_classes=num_classes)
@@ -338,7 +339,7 @@ def main() -> None:
     print(model)
 
     total_epochs = args.pretrain_epochs + args.finetune_epochs
-    import pdb; pdb.set_trace()
+    
     pruner = initialize_pruner(
         model=model,
         train_loader=train_loader,
