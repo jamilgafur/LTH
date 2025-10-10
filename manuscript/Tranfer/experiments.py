@@ -70,7 +70,23 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     })
 
     save_metrics_json(f"{workflow}/{model.__class__.__name__}_postcomp_{post_compress_epochs}", exp_name, data, base_dir=metrics_dir)
-
+    # load json and call  plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None)
+    # load in all data from json 
+    with open(json_path, "r") as f:
+        all_metrics = json.load(f)
+        params = []
+        accs = []
+        names = []
+        infer_times = []
+        mem_usages = []
+        for exp, metrics in all_metrics.get(workflow, {}).items():
+            params.append(metrics.get("param_count", 0))
+            accs.append(metrics.get("final_accuracy", 0))
+            names.append(exp)
+            infer_times.append(metrics.get("inference_time", 0))
+            mem_usages.append(metrics.get("memory_usage", 0))
+        plot_results(params, accs, names, f"{workflow} Experiments", f"{workflow}_summary.svg",
+                     dataset=workflow, infer_times=infer_times, mem_usages=mem_usages)
     # Final save
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
