@@ -25,14 +25,14 @@ CHECKPOINT_BASES = {
     "VGG16": {
         "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*cifar10_*")[0] + "/",
         "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*cifar100_*")[0] + "/",
-   #     "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*tinyimagenet_*")[0] + "/",
-  #      "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*imagenet_*")[0] + "/",
+        # "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*tinyimagenet_*")[0] + "/",
+        # "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*imagenet_*")[0] + "/",
     },
     "RegNetX_400MF": {
         "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar10_*")[0] + "/",
         "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar100_*")[0] + "/",
- #       "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*tinyimagenet_*")[0] + "/",
-#        "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*imagenet_*")[0] + "/",
+        # "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*tinyimagenet_*")[0] + "/",
+        # "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*imagenet_*")[0] + "/",
     }
 }# To make sure that the paths are correct, print them out
 for model, datasets in CHECKPOINT_BASES.items():
@@ -57,57 +57,88 @@ EXPERIMENTS = {
     "VGG16": {
         "Cifar10": {
             "Original Model": None,
-            "Last 2": ('features.conv_12', 'features.conv_13'),  # Conv layers at the last stage
-            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
-            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
-            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
-            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
-            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
-            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
+            "Last 2": ('features.conv_12', 'features.conv_13'),
+            "Stage 5": ('features.conv_11', 'features.conv_13'),
+            "Stage 4": ('features.conv_8', 'features.conv_10'),
+            "Stage 3": ('features.conv_5', 'features.conv_7'),
+            "Stage 4-5": ('features.conv_8', 'features.conv_13'),
+            "Stage 3-5": ('features.conv_5', 'features.conv_13'),
+            "Stage 2-5": ('features.conv_3', 'features.conv_13'),
         },
         "Cifar100": {
             "Original Model": None,
             "Last 2": ('features.conv_9', 'features.conv_10'),
-            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
-            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
-            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
-            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
-            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
-            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
+            "Stage 5": ('features.conv_11', 'features.conv_13'),
+            "Stage 4": ('features.conv_8', 'features.conv_10'),
+            "Stage 3": ('features.conv_5', 'features.conv_7'),
+            "Stage 4-5": ('features.conv_8', 'features.conv_13'),
+            "Stage 3-5": ('features.conv_5', 'features.conv_13'),
+            "Stage 2-5": ('features.conv_3', 'features.conv_13'),
         },
         "TinyImageNet": {
             "Original Model": None,
             "Last 2": ('features.conv9', 'features.conv10'),
-            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
-            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
-            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
-            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
-            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
-            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
+            "Stage 5": ('features.conv_11', 'features.conv_13'),
+            "Stage 4": ('features.conv_8', 'features.conv_10'),
+            "Stage 3": ('features.conv_5', 'features.conv_7'),
+            "Stage 4-5": ('features.conv_8', 'features.conv_13'),
+            "Stage 3-5": ('features.conv_5', 'features.conv_13'),
+            "Stage 2-5": ('features.conv_3', 'features.conv_13'),
         },
         "ImageNet": {
             "Original Model": None,
             "Last 2": ('features.conv9', 'features.conv10'),
             "Stage 5": ('features.conv8', 'features.conv9'),
-            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
-            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
-            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
-            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
-            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
-            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
+            "Stage 5": ('features.conv_11', 'features.conv_13'),
+            "Stage 4": ('features.conv_8', 'features.conv_10'),
+            "Stage 3": ('features.conv_5', 'features.conv_7'),
+            "Stage 4-5": ('features.conv_8', 'features.conv_13'),
+            "Stage 3-5": ('features.conv_5', 'features.conv_13'),
+            "Stage 2-5": ('features.conv_3', 'features.conv_13'),
         },
     },
     "RegNetX_400MF": {
         "Cifar10": {
             "Original Model": None,
             "Last 2": ('stage4.stage4_block6.block.conv1', 'stage4.stage4_block6.block.conv3'),
+            "Stage 5": ('stage4.stage4_block5.block.conv1', 'stage4.stage4_block5.block.conv3'),
+            "Stage 4": ('stage4.stage4_block3.block.conv1', 'stage4.stage4_block3.block.conv3'),
+            "Stage 3": ('stage3.stage3_block1.block.conv1', 'stage3.stage3_block1.block.conv3'),
+            "Stage 2": ('stage2.stage2_block0.block.conv1', 'stage2.stage2_block0.block.conv3'),
+            "Stage 4-5": ('stage4.stage4_block3.block.conv1', 'stage4.stage4_block6.block.conv3'),
+            "Stage 3-5": ('stage3.stage3_block1.block.conv1', 'stage4.stage4_block6.block.conv3'),
+            "Stage 2-5": ('stage2.stage2_block0.block.conv1', 'stage4.stage4_block6.block.conv3'),
+            "Stage 1-5": ('stage1.stage1_block0.block.conv1', 'stage4.stage4_block6.block.conv3'),
+            # Stage combinations and specific layers
+            "Stage 5 first 2 conv": ('stage5.stage5_block0.block.conv1', 'stage5.stage5_block1.block.conv1'),
+            "Stage 5 last 2 conv": ('stage5.stage5_block4.block.conv3', 'stage5.stage5_block5.block.conv3'),
+            "Stage 4 first 2 conv": ('stage4.stage4_block0.block.conv1', 'stage4.stage4_block1.block.conv1'),
+            "Stage 4 last 2 conv": ('stage4.stage4_block4.block.conv3', 'stage4.stage4_block5.block.conv3'),
+            "Stage 3 first 2 conv": ('stage3.stage3_block0.block.conv1', 'stage3.stage3_block1.block.conv1'),
+            "Stage 3 last 2 conv": ('stage3.stage3_block2.block.conv3', 'stage3.stage3_block3.block.conv3'),
         },
         "Cifar100": {
             "Original Model": None,
             "Last 2": ('stage4.stage4_block6.block.conv1', 'stage4.stage4_block6.block.conv3'),
+            "Stage 5": ('stage4.stage4_block5.block.conv1', 'stage4.stage4_block5.block.conv3'),
+            "Stage 4": ('stage4.stage4_block3.block.conv1', 'stage4.stage4_block3.block.conv3'),
+            "Stage 3": ('stage3.stage3_block1.block.conv1', 'stage3.stage3_block1.block.conv3'),
+            "Stage 2": ('stage2.stage2_block0.block.conv1', 'stage2.stage2_block0.block.conv3'),
+            "Stage 4-5": ('stage4.stage4_block3.block.conv1', 'stage4.stage4_block6.block.conv3'),
+            "Stage 3-5": ('stage3.stage3_block1.block.conv1', 'stage4.stage4_block6.block.conv3'),
+            "Stage 2-5": ('stage2.stage2_block0.block.conv1', 'stage4.stage4_block6.block.conv3'),
+            "Stage 1-5": ('stage1.stage1_block0.block.conv1', 'stage4.stage4_block6.block.conv3'),
+            # Stage combinations and specific layers
+            "Stage 5 first 2 conv": ('stage5.stage5_block0.block.conv1', 'stage5.stage5_block1.block.conv1'),
+            "Stage 5 last 2 conv": ('stage5.stage5_block4.block.conv3', 'stage5.stage5_block5.block.conv3'),
+            "Stage 4 first 2 conv": ('stage4.stage4_block0.block.conv1', 'stage4.stage4_block1.block.conv1'),
+            "Stage 4 last 2 conv": ('stage4.stage4_block4.block.conv3', 'stage4.stage4_block5.block.conv3'),
+            "Stage 3 first 2 conv": ('stage3.stage3_block0.block.conv1', 'stage3.stage3_block1.block.conv1'),
+            "Stage 3 last 2 conv": ('stage3.stage3_block2.block.conv3', 'stage3.stage3_block3.block.conv3'),
         },
     }
 }
+
 
 # -------------------------------
 # IMP Pruning Logic Integration
@@ -142,7 +173,7 @@ def imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader,
         device=device,
         save_dir=save_dir,
         pretrain_epochs=pretrain_epochs,
-        finetune_epochs=10,
+        finetune_epochs=finetune_epochs,
         scheduler=scheduler,
         strategy=MagnitudePruningStrategy.MagnitudePruningStrategy(device=device)
     )
@@ -165,7 +196,6 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
     criterion = torch.nn.CrossEntropyLoss()
 
     steps = exponential_decay_list(steps=21)
-    steps = [steps[i] for i in range(len(steps)) if i % 3 == 0 or i == len(steps) - 1]
     print(f"Pruning steps: {steps}")
 
     train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, model_class.__name__)
