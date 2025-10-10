@@ -20,11 +20,7 @@ import os
 import matplotlib.pyplot as plt
 
 def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None):
-    # Create dataset directory if specified and doesn't exist
-    if dataset:
-        os.makedirs(dataset, exist_ok=True)
-        filename = os.path.join(dataset, filename)
-
+  
     fig, axs = plt.subplots(3, 1, figsize=(16, 18))
 
     axs[0].bar(names, accs, color='skyblue')
@@ -63,6 +59,7 @@ def plot_results(params, accs, names, title, filename, dataset=None, infer_times
         ax.set_xticklabels(names, rotation=30, ha='right')
 
     plt.tight_layout()
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     plt.savefig(filename)
     plt.show()
     print(f"[✓] Saved plot: {filename}")

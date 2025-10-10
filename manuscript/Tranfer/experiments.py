@@ -74,18 +74,23 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     # load in all data from json 
     with open(json_path, "r") as f:
         all_metrics = json.load(f)
+        all_metrics = all_metrics[list(all_metrics.keys())[0]]
         params = []
         accs = []
         names = []
         infer_times = []
         mem_usages = []
-        for exp, metrics in all_metrics.get(workflow, {}).items():
+        #     all_metrics.keys()
+        # dict_keys(['Last 2', 'Original Model'])
+        for name, metrics in all_metrics.items():
+            names.append(name)
             params.append(metrics.get("param_count", 0))
             accs.append(metrics.get("final_accuracy", 0))
-            names.append(exp)
             infer_times.append(metrics.get("inference_time", 0))
             mem_usages.append(metrics.get("memory_usage", 0))
-        plot_results(params, accs, names, f"{workflow} Experiments", f"{workflow}_summary.svg",
+            
+        save_path = json_path.replace("metrics", "plots").replace("json", "svg")
+        plot_results(params, accs, names, f"{workflow} Experiments", save_path,
                      dataset=workflow, infer_times=infer_times, mem_usages=mem_usages)
     # Final save
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
