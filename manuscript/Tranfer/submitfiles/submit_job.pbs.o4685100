@@ -1,0 +1,33 @@
+Activating conda environment...
+Loaded CUDA and GCC modules...
+Executing: ~/env/lth_env/bin/python transfer.py --model VGG16 --dataset TinyImageNet --experiment Stage 3 --JF
+VGG16 - Cifar10: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+VGG16 - Cifar100: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+VGG16 - TinyImageNet: ../structured_study/pruning_checkpoints/Vgg16_datasettinyimagenet_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar10: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar100: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - TinyImageNet: ../structured_study/pruning_checkpoints/RegNetX_datasettinyimagenet_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+Namespace(model='VGG16', dataset='TinyImageNet', epochs=30, pretrain=30, experiment='Stage 3', post_compress_epochs=10, imp=False, JF=True, Kevin=False)
+has GPU: True
+Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
+Loading Tiny ImageNet data...
+
+--- Running experiment: Stage 3 ---
+
+=== Running JF experiment ===
+
+Running JF experiment: Stage 3
+Loading model with weights from '../structured_study/pruning_checkpoints/Vgg16_datasettinyimagenet_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/checkpoint_Finetuned_0.000000.pth'...
+full compression set for model: [('features.conv_5', 'features.conv_7')]
+compressing: ('features.conv_5', 'features.conv_7')
+
+--- Starting collapse for block: features.conv_5 to features.conv_7 ---
+
+Collapsing layers from 'features.conv_5' to 'features.conv_7'...
+Available layers for collapsing: ['features.conv_1', 'features.relu_1', 'features.bn_1', 'features.conv_2', 'features.relu_2', 'features.bn_2', 'features.pool_1', 'features.conv_3', 'features.relu_3', 'features.bn_3', 'features.conv_4', 'features.relu_4', 'features.bn_4', 'features.pool_2', 'features.conv_5', 'features.relu_5', 'features.bn_5', 'features.conv_6', 'features.relu_6', 'features.bn_6', 'features.conv_7', 'features.relu_7', 'features.bn_7', 'features.pool_3', 'features.conv_8', 'features.relu_8', 'features.bn_8', 'features.conv_9', 'features.relu_9', 'features.bn_9', 'features.conv_10', 'features.relu_10', 'features.bn_10', 'features.pool_4', 'features.conv_11', 'features.relu_11', 'features.bn_11', 'features.conv_12', 'features.relu_12', 'features.bn_12', 'features.conv_13', 'features.relu_13', 'features.bn_13', 'features.pool_5', 'classifier.fc_1', 'classifier.relu_1', 'classifier.fc_2', 'classifier.relu_2', 'classifier.fc_3']
+Finding indices for layers 'conv_5' to 'conv_7'...
+  Found start layer 'conv_5' at index 14
+  Found end layer 'conv_7' at index 20
+Collapsing in section 'features' from index 14 to 20
+  Simulated input shape before collapsing block: torch.Size([64, 512, 2, 2])
+  in_channels = 128, out_channels = 256, final_stride = (1, 1)
