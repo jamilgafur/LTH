@@ -137,11 +137,6 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
     start_container_name, start_subname = _get_container_and_subname(start_layer_name)
     end_container_name, end_subname = _get_container_and_subname(end_layer_name)
 
-    if start_container_name != end_container_name:
-        raise ValueError(
-            f"Start and end layers must be in the same container. Found: {start_container_name}, {end_container_name}"
-        )
-
     container = get_layer(model, start_container_name)
     named_layers = list(container.named_children())
 
