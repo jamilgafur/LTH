@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from collections import OrderedDict
 from utils import count_trainable_params, layer_stats
+from uuid import uuid4
 
 # ===============================
 # Layer Collapse Helpers (robust/residual-aware)
@@ -301,8 +302,6 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
 
     else:
         raise NotImplementedError(f"Unsupported layer type for collapsing: {layer_type}")
-
-from uuid import uuid4
 
 def _replace_layers(named_layers, start_idx, end_idx, new_block):
     """

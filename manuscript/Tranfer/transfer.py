@@ -77,7 +77,7 @@ EXPERIMENTS = {
         },
         "TinyImageNet": {
             "Original Model": None,
-            "Last 2": ('features.conv9', 'features.conv10'),
+            "Last 2": ('features.conv_9', 'features.conv_10'),
             "Stage 5": ('features.conv_11', 'features.conv_13'),
             "Stage 4": ('features.conv_8', 'features.conv_10'),
             "Stage 3": ('features.conv_5', 'features.conv_7'),
@@ -87,8 +87,8 @@ EXPERIMENTS = {
         },
         "ImageNet": {
             "Original Model": None,
-            "Last 2": ('features.conv9', 'features.conv10'),
-            "Stage 5": ('features.conv8', 'features.conv9'),
+            "Last 2": ('features.conv_9', 'features.conv_10'),
+            "Stage 5": ('features.conv_8', 'features.conv_9'),
             "Stage 5": ('features.conv_11', 'features.conv_13'),
             "Stage 4": ('features.conv_8', 'features.conv_10'),
             "Stage 3": ('features.conv_5', 'features.conv_7'),

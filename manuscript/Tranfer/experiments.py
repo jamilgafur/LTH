@@ -147,6 +147,7 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
         from datetime import datetime
         formatted_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         tmp_path = os.path.join(save_path, f"temp_model_kevin_{formatted_time}.pth")
+        os.makedirs(save_path, exist_ok=True)
         torch.save({'model': base_model.state_dict()}, tmp_path)
         base_model = collapse_only(
             model_weights_1=tmp_path,
@@ -160,64 +161,6 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
 
     data = run_experiment(base_model, model_kwargs, train_loader, test_loader, device, epochs,
                           workflow="Kevin", exp_name=exp_name, data_shape=data_shape,
-                          save_path=save_path, post_compress_epochs=post_compress_epochs)
-
-    return base_model
-
-def run_nick_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs, pretrain,
-                        model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",
-                        post_compress_epochs=False):
-    
-    model_kwargs = model_kwargs or {}
-    print("\n=== Running Nick experiment ===")
-    exp_name, collapse_range = list(experiments.items())[0]
-    print(f"\nRunning Nick experiment: {exp_name}")
-
-    base_model = model_class(**model_kwargs)
-    base_model.load_state_dict(torch.load(model_path_000)['model'])
-    base_model.to(device)
-
-    # Check pretraining metrics
-    metrics_dir = os.path.join(save_path, "metrics")
-    plots_dir = os.path.join(save_path, "plots")
-    os.makedirs(metrics_dir, exist_ok=True)
-    os.makedirs(plots_dir, exist_ok=True)
-
-    data = None
-    glob_path = os.path.join(metrics_dir, f"Nick/*metrics.json")
-    json_paths = glob.glob(glob_path)
-    if json_paths:
-        json_path = json_paths[0]
-        with open(json_path, "r") as f:
-            all_metrics = json.load(f)
-            if exp_name in all_metrics.get(list(all_metrics.keys())[0], {}):
-                print(f"[✓] Found existing pretraining results for '{exp_name}' in {json_path}")
-                data = all_metrics[list(all_metrics.keys())[0]][exp_name]
-                plot_accuracy_loss_curve(data['accuracies'], data['losses'], "Nick", exp_name, save_dir=plots_dir)
-
-    if data is None:
-        print(f"Training for {pretrain + epochs} epochs (initial)...")
-        data = train_and_evaluate(base_model, train_loader, test_loader, device, pretrain + epochs, post_compress_epochs=False)
-        save_metrics_json(f"Nick/{model_class.__name__}_pretrain", exp_name, data, base_dir=metrics_dir)
-
-    # Apply compression
-    if collapse_range is not None:
-        tmp_path = os.path.join(save_path, "temp_model.pth")
-        torch.save({'model': base_model.state_dict()}, tmp_path)
-        base_model = collapse_only(
-            model_weights_1=tmp_path,
-            compression_set=[collapse_range],
-            model_class=model_class,
-            model_kwargs=model_kwargs,
-            input_shape=model_kwargs['one_batch'].shape,
-            device=device
-        )
-        os.remove(tmp_path)
-
-    # Fine-tune
-    print(f"Fine-tuning for {epochs} epochs...")
-    data = run_experiment(base_model, model_kwargs, train_loader, test_loader, device, epochs,
-                          workflow="Nick", exp_name=exp_name, data_shape=data_shape,
                           save_path=save_path, post_compress_epochs=post_compress_epochs)
 
     return base_model
