@@ -73,6 +73,9 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     save_metrics_json(f"{workflow}/{model.__class__.__name__}_postcomp_{post_compress_epochs}", exp_name, data, base_dir=metrics_dir)
     # load json and call  plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None)
     # load in all data from json 
+    
+    glob_path = os.path.join(metrics_dir, f"{workflow}/*metrics.json")
+    json_paths = glob.glob(glob_path)
     with open(json_path, "r") as f:
         all_metrics = json.load(f)
         all_metrics = all_metrics[list(all_metrics.keys())[0]]
