@@ -142,7 +142,9 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
     base_model.load_state_dict(torch.load(model_path_000)['model'])
 
     if collapse_range is not None:
-        tmp_path = os.path.join(save_path, "temp_model.pth")
+        from datetime import datetime
+        formatted_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        tmp_path = os.path.join(save_path, f"temp_model_kevin_{formatted_time}.pth")
         torch.save({'model': base_model.state_dict()}, tmp_path)
         base_model = collapse_only(
             model_weights_1=tmp_path,
