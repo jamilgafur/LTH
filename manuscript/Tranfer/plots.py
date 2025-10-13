@@ -22,7 +22,10 @@ import matplotlib.pyplot as plt
 def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None):
   
     fig, axs = plt.subplots(3, 1, figsize=(16, 18))
-
+    # sort by params
+    sorted_data = sorted(zip(params, accs, names, infer_times if infer_times else [None]*len(names), mem_usages if mem_usages else [None]*len(names)), key=lambda x: x[0])
+    params, accs, names, infer_times, mem_usages = zip(*sorted_data)
+    
     axs[0].bar(names, accs, color='skyblue')
     axs[0].set_title(f"{dataset if dataset else ''} - {title} - Final Accuracy (%)", fontsize=14)
     axs[0].set_ylabel("Accuracy (%)")

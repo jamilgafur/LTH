@@ -1,3 +1,4 @@
+# experiment.py
 import os
 import torch
 import json
@@ -92,6 +93,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
         save_path = json_path.replace("metrics", "plots").replace("json", "svg")
         plot_results(params, accs, names, f"{workflow} Experiments", save_path,
                      dataset=workflow, infer_times=infer_times, mem_usages=mem_usages)
+        print(f"Saved comparison plot to {save_path}")
     # Final save
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)

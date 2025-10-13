@@ -1,4 +1,3 @@
-# collapse.py (patched)
 import torch
 import torch.nn as nn
 from collections import OrderedDict
@@ -29,7 +28,6 @@ def _set_module_by_path(model, module_path, new_module):
     else:
         setattr(parent, last, new_module)
 
-
 def disable_inplace_relu(model):
     """
     Replace all nn.ReLU(inplace=True) in the model with nn.ReLU(inplace=False), to avoid
@@ -56,7 +54,6 @@ def disable_inplace_relu(model):
             parent[idx] = new_relu
         else:
             setattr(parent, subname, new_relu)
-
 
 def _is_int_str(s):
     try:
@@ -212,10 +209,11 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
 
 def _simulate_input_hook(model, target_layer_path, input_shape, device='cpu'):
     """
-    Safely capture activation at the parent container of target_layer_path by
-    registering a forward hook on that container and executing a single model(dummy_input).
-    This avoids calling composite modules prematurely (fixes RegNet channel mismatch).
-    Returns (dummy_input, activation_tensor) where activation_tensor is the output of the parent container.
+    Safely capture activation *before* the start layer by registering a forward hook
+    on the parent container of `target_layer_path` and executing a single forward.
+    Returns (dummy_input, activation_tensor) where activation_tensor is the input that
+    will be given to the first child inside the parent container (i.e., the activation
+    immediately before the start layer).
     """
     model.eval()
     model.to(device)
@@ -226,20 +224,26 @@ def _simulate_input_hook(model, target_layer_path, input_shape, device='cpu'):
     captured = {}
 
     def hook(module, inp, out):
-        # capture the output of the parent container
-        captured['out'] = out.detach()
+        # capture the *input* to the parent module (this is the activation before child layers)
+        # inp is a tuple; take inp[0]
+        try:
+            captured['in'] = inp[0].detach()
+        except Exception as e:
+            # fallback: if inp isn't what we expected, capture out so we still have something
+            captured['in'] = out.detach()
+            print(f"[WARN] Hook captured 'out' as fallback because inp was not indexable: {e}")
 
     handle = parent_module.register_forward_hook(hook)
     try:
         with torch.no_grad():
-            # run one forward; hook will fill captured['out']
+            # run one forward; hook will fill captured['in']
             model(dummy_input)
     finally:
         handle.remove()
 
-    if 'out' not in captured:
-        raise RuntimeError(f"Failed to capture activation at '{parent_path}' during forward hook simulation.")
-    return dummy_input, captured['out']
+    if 'in' not in captured:
+        raise RuntimeError(f"Failed to capture activation (input) at '{parent_path}' during forward hook simulation.")
+    return dummy_input, captured['in']
 
 def forward_until(model, stop_path, x):
     """
@@ -298,17 +302,18 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
     else:
         raise NotImplementedError(f"Unsupported layer type for collapsing: {layer_type}")
 
+from uuid import uuid4
+
 def _replace_layers(named_layers, start_idx, end_idx, new_block):
     """
     Replace layers start_idx..end_idx inclusive in named_layers with new_block.
-    named_layers: list of (name, module) as returned by container.named_children()
-    Returns an nn.Sequential(OrderedDict(...)) appropriate to set on parent.
     """
     print(f"Replacing layers {start_idx} to {end_idx} with collapsed block...")
     new_layers = []
+    unique_suffix = uuid4().hex[:8]
     for i, (name, layer) in enumerate(named_layers):
         if i == start_idx:
-            new_name = f"collapsed_{named_layers[start_idx][0]}_to_{named_layers[end_idx][0]}"
+            new_name = f"collapsed_{named_layers[start_idx][0]}_to_{named_layers[end_idx][0]}_{unique_suffix}"
             print(f"  Inserting new block as '{new_name}'")
             new_layers.append((new_name, new_block))
         elif start_idx < i <= end_idx:
