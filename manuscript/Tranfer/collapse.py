@@ -1,3 +1,4 @@
+# collapse.py
 import torch
 import torch.nn as nn
 from collections import OrderedDict
@@ -247,40 +248,34 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
 
 def _simulate_input_hook(model, target_layer_path, input_shape, device='cpu'):
     """
-    Safely capture activation *before* the start layer by registering a forward hook
-    on the parent container of `target_layer_path` and executing a single forward.
-    Returns (dummy_input, activation_tensor) where activation_tensor is the input that
-    will be given to the first child inside the parent container (i.e., the activation
-    immediately before the start layer).
+    Capture the activation that will be *input to the target layer*.
+    Works for both direct nn.Conv2d layers (e.g., features.conv_3)
+    and nested blocks (e.g., stage3.stage3_block0.block.conv2).
     """
     model.eval()
     model.to(device)
     dummy_input = torch.randn(input_shape).to(device)
-    parent_path = '.'.join(target_layer_path.split('.')[:-1])
-    parent_module = get_layer(model, parent_path) if parent_path != "" else model
+
+    try:
+        target_module = get_layer(model, target_layer_path)
+    except Exception as e:
+        raise RuntimeError(f"Could not resolve target module '{target_layer_path}': {e}")
 
     captured = {}
 
     def hook(module, inp, out):
-        # capture the *input* to the parent module (this is the activation before child layers)
-        # inp is a tuple; take inp[0]
-        try:
-            captured['in'] = inp[0].detach()
-        except Exception as e:
-            # fallback: if inp isn't what we expected, capture out so we still have something
-            captured['in'] = out.detach()
-            print(f"[WARN] Hook captured 'out' as fallback because inp was not indexable: {e}")
+        # inp is a tuple; grab the first entry
+        captured['in'] = inp[0].detach()
 
-    handle = parent_module.register_forward_hook(hook)
+    handle = target_module.register_forward_hook(hook)
     try:
         with torch.no_grad():
-            # run one forward; hook will fill captured['in']
             model(dummy_input)
     finally:
         handle.remove()
 
     if 'in' not in captured:
-        raise RuntimeError(f"Failed to capture activation (input) at '{parent_path}' during forward hook simulation.")
+        raise RuntimeError(f"Failed to capture activation at {target_layer_path}.")
     return dummy_input, captured['in']
 
 def forward_until(model, stop_path, x):
