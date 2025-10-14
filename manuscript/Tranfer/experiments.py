@@ -54,7 +54,6 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
             print(f"[•] Using GPU: {torch.cuda.get_device_name(0)}")
         else:
             print("[•] No GPU found")
-            raise ValueError("A GPU is required to run this script.")
         
         print(f"[•] Training model: {exp_name}")
         data = train_and_evaluate(model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs)

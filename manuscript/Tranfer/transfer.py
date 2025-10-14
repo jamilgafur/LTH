@@ -291,8 +291,6 @@ if __name__ == "__main__":
     print(f"has GPU: {torch.cuda.is_available()}")
     if torch.cuda.is_available():
         device = torch.device("cuda")
-    else:
-        raise ValueError("No GPU found. A GPU is required to run this script.")
 
     model_name = args.model
     dataset = args.dataset
