@@ -57,6 +57,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
             raise ValueError("A GPU is required to run this script.")
         
         print(f"[•] Training model: {exp_name}")
+        import pdb; pdb.set_trace()
         data = train_and_evaluate(model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs)
     else:
         print(f"[✓] Skipping training for '{exp_name}' as results already exist.")
@@ -113,7 +114,6 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
 
     del model
     return data
-
 
 def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain,
                       model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",

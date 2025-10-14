@@ -25,15 +25,15 @@ CHECKPOINT_BASES = {
     "VGG16": {
         "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*cifar10_*")[0] + "/",
         "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*cifar100_*")[0] + "/",
-        "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*tinyimagenet_*")[0] + "/",
+        # "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*tinyimagenet_*")[0] + "/",
         # "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*imagenet_*")[0] + "/",
     },
-    "RegNetX_400MF": {
-        "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar10_*")[0] + "/",
-        "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar100_*")[0] + "/",
-        "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*tinyimagenet_*")[0] + "/",
-        # "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*imagenet_*")[0] + "/",
-    }
+    # "RegNetX_400MF": {
+    #     "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar10_*")[0] + "/",
+    #     "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar100_*")[0] + "/",
+    #     "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*tinyimagenet_*")[0] + "/",
+    #     # "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*imagenet_*")[0] + "/",
+    # }
 }# To make sure that the paths are correct, print them out
 for model, datasets in CHECKPOINT_BASES.items():
     for dataset, path in datasets.items():
