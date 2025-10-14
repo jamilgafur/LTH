@@ -2,22 +2,18 @@
 
 # Define models and datasets
 models=("VGG16" "RegNetX_400MF")
-datasets=("Cifar10" "Cifar100" "TinyImageNet")
+datasets=("Cifar10" "Cifar100")
 
 # Loop through models
 for model in "${models[@]}"; do
   # Define the experiment names inside the model loop
   if [[ "$model" == "VGG16" ]]; then
-    experiment_names=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
+    experiment_names=("Original Model" "Last 2" "Stage 5" "Stage 4" "Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
   else
-    # If model is RegNetX_400MF, define valid experiments only
-    experiment_names=(
-      "Original Model" "Last 2"
-      "Stage 4" "Stage 3" "Stage 2" "Stage 1"
-      "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 1-5"
-      "Stage 4 last 2 conv" "Stage 3 last 2 conv" "Stage 2 last 2 conv" "Stage 1 last 2 conv"
-      "Stage 4 first 2 conv" "Stage 3 first 2 conv" "Stage 2 first 2 conv" "Stage 1 first 2 conv"
-    )
+    # If model is RegNetX_400MF, define other experiments
+    experiment_names=("Original Model" "Last 2" "Stage 5" "Stage 4" "Stage 3" "Stage 2" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 1-5" \
+                      "Stage 5 last 2 conv" "Stage 4 last 2 conv" "Stage 3 last 2 conv" "Stage 2 last 2 conv" \
+                      "Stage 5 first 2 conv " "Stage 4 first 2 conv" "Stage 3 first 2 conv" "Stage 2 first 2 conv")
   fi
 
   # Loop through datasets
@@ -33,8 +29,9 @@ for model in "${models[@]}"; do
         echo "Executing: $command"
         
         # Run the command
-        eval "$command"
+        eval "$command "
       done
     done
   done
 done
+
