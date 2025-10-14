@@ -125,7 +125,6 @@ def describe_model(model, loader, device='cpu'):
     print("=" * 60)
     print("🔍 Model Summary (via torchinfo)")
     print("=" * 60)
-    layer_stats(model)
     summary(model, input_size=next(iter(loader))[0].shape, device=device)
     print("=" * 60)
 
