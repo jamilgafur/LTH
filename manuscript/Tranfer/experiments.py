@@ -144,7 +144,7 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
     print(f"\nRunning Kevin experiment: {exp_name}")
 
     base_model = model_class(**model_kwargs)
-    base_model.load_state_dict(torch.load(model_path_000)['model'])
+    base_model.load_state_dict(torch.load(model_path_000)['model'], map_location=device)
 
     if collapse_range is not None:
         from datetime import datetime
