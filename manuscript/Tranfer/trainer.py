@@ -9,9 +9,8 @@ import torch.nn as nn
 import tqdm
 def train_and_evaluate(model, train_loader, test_loader, device=None, epochs=10, post_compress_epochs=False):
     if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type == 'cpu':
-        raise ValueError("A GPU is required to run this function.")
+        device = torch.device("cuda")
+    
     if epochs <= 0:
         print("[Warning] Number of training epochs is zero or negative!")
         final_acc = evaluate(model, test_loader, device)
