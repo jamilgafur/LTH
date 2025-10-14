@@ -44,6 +44,7 @@ def train_and_evaluate(model, train_loader, test_loader, device, epochs=10, post
         total_loss = correct = total = 0
         for xb, yb in tqdm.tqdm(train_loader):
             xb, yb = xb.to(device), yb.to(device)
+            model = model.to(device)
             preds = model(xb)
             loss = loss_fn(preds, yb)
             optimizer.zero_grad()
