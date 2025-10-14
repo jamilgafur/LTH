@@ -153,8 +153,6 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
     full_block = named_layers[start_idx:end_idx + 1]
     selected_layers = [layer for _, layer in full_block if isinstance(layer, (nn.Conv2d, nn.Linear))]
 
-    if len(selected_layers) < 2:
-        raise ValueError("Need at least 2 Conv2d or Linear layers to collapse.")
     layer_type = type(selected_layers[0])
     if not all(isinstance(l, layer_type) for l in selected_layers):
         raise ValueError("Cannot collapse mixed layer types.")
