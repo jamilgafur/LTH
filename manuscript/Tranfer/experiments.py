@@ -160,7 +160,9 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
             input_shape=model_kwargs['one_batch'].shape,
             device=device
         )
-        os.remove(tmp_path)
+        # if a temp file was created, remove it
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
 
     data = run_experiment(base_model, model_kwargs, train_loader, test_loader, device, epochs,
                           workflow="Kevin", exp_name=exp_name, data_shape=data_shape,
