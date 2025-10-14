@@ -76,27 +76,29 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     
     glob_path = os.path.join(metrics_dir, f"{workflow}/*metrics.json")
     json_paths = glob.glob(glob_path)
-    with open(json_path, "r") as f:
-        all_metrics = json.load(f)
-        all_metrics = all_metrics[list(all_metrics.keys())[0]]
-        params = []
-        accs = []
-        names = []
-        infer_times = []
-        mem_usages = []
-        #     all_metrics.keys()
-        # dict_keys(['Last 2', 'Original Model'])
-        for name, metrics in all_metrics.items():
-            names.append(name)
-            params.append(metrics.get("param_count", 0))
-            accs.append(metrics.get("final_accuracy", 0))
-            infer_times.append(metrics.get("inference_time", 0))
-            mem_usages.append(metrics.get("memory_usage", 0))
-            
-        save_path = json_path.replace("metrics", "plots").replace("json", "svg")
-        plot_results(params, accs, names, f"{workflow} Experiments", save_path,
-                     dataset=workflow, infer_times=infer_times, mem_usages=mem_usages)
-        print(f"Saved comparison plot to {save_path}")
+    if json_paths:
+        json_path = json_paths[0]
+        with open(json_path, "r") as f:
+            all_metrics = json.load(f)
+            all_metrics = all_metrics[list(all_metrics.keys())[0]]
+            params = []
+            accs = []
+            names = []
+            infer_times = []
+            mem_usages = []
+            #     all_metrics.keys()
+            # dict_keys(['Last 2', 'Original Model'])
+            for name, metrics in all_metrics.items():
+                names.append(name)
+                params.append(metrics.get("param_count", 0))
+                accs.append(metrics.get("final_accuracy", 0))
+                infer_times.append(metrics.get("inference_time", 0))
+                mem_usages.append(metrics.get("memory_usage", 0))
+                
+            save_path = json_path.replace("metrics", "plots").replace("json", "svg")
+            plot_results(params, accs, names, f"{workflow} Experiments", save_path,
+                        dataset=workflow, infer_times=infer_times, mem_usages=mem_usages)
+            print(f"Saved comparison plot to {save_path}")
     # Final save
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
@@ -115,7 +117,8 @@ def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, de
     print(f"\nRunning JF experiment: {exp_name}")
 
     base_model = model_class(**model_kwargs)
-    base_model.load_state_dict(torch.load(model_path_097)['model'])
+    base_model.load_state_dict(torch.load(model_path_097, map_location=torch.device('cpu'))['model'])
+
 
     if collapse_range is not None:
         base_model = collapse_only(
