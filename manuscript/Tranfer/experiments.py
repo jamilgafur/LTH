@@ -56,7 +56,6 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
             print("[•] No GPU found")
         
         print(f"[•] Training model: {exp_name}")
-        import pdb; pdb.set_trace()
         data = train_and_evaluate(model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs)
     else:
         print(f"[✓] Skipping training for '{exp_name}' as results already exist.")
