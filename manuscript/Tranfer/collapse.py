@@ -137,67 +137,63 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
     return model
 
 def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device='cpu'):
-    """
-    Collapse layers between start_layer_name and end_layer_name by:
-    - Replacing them with a copy of the last layer in the block.
-    - Adding an AdaptiveAvgPool2d to match the output shape expected by the next layer.
-    Ensures 4D input for Conv2d and handles both batched and unbatched input shapes.
-    """
     print(f"\nCollapsing layers from '{start_layer_name}' to '{end_layer_name}'...")
 
-    # Get container and layer indices
     start_container_name, start_subname = _get_container_and_subname(start_layer_name)
     end_container_name, end_subname = _get_container_and_subname(end_layer_name)
     container = get_layer(model, start_container_name)
     named_layers = list(container.named_children())
-
     start_idx, end_idx = _find_layer_indices(named_layers, start_subname, end_subname)
     if start_idx is None or end_idx is None:
         raise ValueError(f"Layers '{start_layer_name}' or '{end_layer_name}' not found.")
 
-    # --- Ensure dummy_input is correct 4D shape ---
+    # --- Forward through pre-block layers to get real input shape ---
     if len(input_shape) == 3:
-        # unbatched input: (C, H, W)
         dummy_input = torch.randn(1, *input_shape, device=device)
-    elif len(input_shape) == 4:
-        # already batched: (N, C, H, W)
-        dummy_input = torch.randn(*input_shape, device=device)
     else:
-        raise ValueError(f"Unsupported input_shape for Conv2d: {input_shape}")
-
+        dummy_input = torch.randn(*input_shape, device=device)
     x = dummy_input
-    # Forward until start of block
     for i in range(start_idx):
         x = named_layers[i][1](x)
-    pre_collapse_shape = x.shape
-    print(f"[DEBUG] Input to collapse block shape: {pre_collapse_shape}")
+    in_channels = x.shape[1]  # real input channels to collapsed block
 
-    # Forward through the block to get target output shape
+    # --- Forward through block to get output shape ---
     for i in range(start_idx, end_idx + 1):
         x = named_layers[i][1](x)
-    post_collapse_shape = x.shape
-    print(f"[DEBUG] Output shape after block: {post_collapse_shape}")
+    out_channels = x.shape[1]
+    H, W = x.shape[-2:]
 
-    # Take the last layer in the block
-    last_layer_name, last_layer = named_layers[end_idx]
-    print(f"[DEBUG] Collapsed layer will be a copy of '{last_layer_name}'")
-
-    # Build new collapsed sequence
+    # --- Build conservative collapsed block ---
+    last_layer = named_layers[end_idx][1]
     collapsed_layers = []
-    collapsed_layers.append(last_layer)
+
     if isinstance(last_layer, nn.Conv2d):
-        H, W = post_collapse_shape[-2:]
+        conv = nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=last_layer.out_channels,
+            kernel_size=1,
+            stride=last_layer.stride,
+            padding=0,
+            bias=last_layer.bias is not None
+        )
+        collapsed_layers.append(conv)
+        # preserve BN/ReLU if last layer had it
+        if hasattr(last_layer, 'bn') or isinstance(last_layer, nn.BatchNorm2d):
+            collapsed_layers.append(nn.BatchNorm2d(last_layer.out_channels))
+        if isinstance(last_layer, nn.ReLU):
+            collapsed_layers.append(nn.ReLU(inplace=False))
         collapsed_layers.append(nn.AdaptiveAvgPool2d((H, W)))
 
-    # Replace old layers with collapsed layers
-    updated_layers = named_layers[:start_idx] + [(f"collapsed_{start_idx}", nn.Sequential(*collapsed_layers))] + named_layers[end_idx + 1:]
+    elif isinstance(last_layer, nn.Linear):
+        collapsed_layers.append(nn.Linear(in_features=in_channels, out_features=last_layer.out_features))
 
-    # --- FIX: wrap list into nn.Sequential before updating the container ---
+    # --- Replace layers with new Sequential ---
+    updated_layers = named_layers[:start_idx] + [(f"collapsed_{start_idx}", nn.Sequential(*collapsed_layers))] + named_layers[end_idx + 1:]
     collapsed_seq = nn.Sequential(OrderedDict(updated_layers))
     _update_container(model, start_container_name, collapsed_seq)
-
     model.to(device)
-    print(f"[INFO] Collapsed layers '{start_layer_name}' → '{end_layer_name}' into a single layer with adaptive pooling.")
+
+    print(f"[INFO] Collapsed layers '{start_layer_name}' → '{end_layer_name}' with adjusted in_channels={in_channels} → out_channels={out_channels}")
     return model
 
 def _simulate_input_hook(model, target_layer_path, input_shape, device='cpu'):
