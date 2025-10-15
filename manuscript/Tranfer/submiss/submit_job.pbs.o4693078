@@ -1,0 +1,842 @@
+Activating conda environment...
+Loaded CUDA and GCC modules...
+Executing: ~/env/lth_env/bin/python transfer.py --model RegNetX_400MF --dataset Cifar100 --experiment Stage 2-5 --Kevin
+VGG16 - Cifar10: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+VGG16 - Cifar100: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+VGG16 - TinyImageNet: ../structured_study/pruning_checkpoints/Vgg16_datasettinyimagenet_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar10: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar100: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - TinyImageNet: ../structured_study/pruning_checkpoints/RegNetX_datasettinyimagenet_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+Namespace(model='RegNetX_400MF', dataset='Cifar100', epochs=30, pretrain=30, experiment='Stage 2-5', post_compress_epochs=10, imp=False, JF=False, Kevin=True)
+has GPU: True
+Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
+Loading CIFAR-100 data for RegNetX_400MF...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+
+--- Running experiment: Stage 2-5 ---
+
+=== Running Kevin experiment ===
+
+Running Kevin experiment: Stage 2-5
+[INFO] Loading model with weights from 'RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/temp_model_kevin_2025-10-14 12:47:46.pth'...
+[INFO] Full compression set: [('stage2.stage2_block0.block.conv1', 'stage4.stage4_block6.block.conv3')]
+[DEBUG] Compressing: ('stage2.stage2_block0.block.conv1', 'stage4.stage4_block6.block.conv3')
+
+--- Starting collapse for block: stage2.stage2_block0.block.conv1 to stage4.stage4_block6.block.conv3 ---
+
+Collapsing layers from 'stage2.stage2_block0.block.conv1' to 'stage4.stage4_block6.block.conv3'...
+[DEBUG] Available layers for collapsing: ['stem.stem_conv', 'stem.stem_bn', 'stem.stem_relu', 'stage1.stage1_block0.block.conv1', 'stage1.stage1_block0.block.bn1', 'stage1.stage1_block0.block.relu1', 'stage1.stage1_block0.block.conv2', 'stage1.stage1_block0.block.bn2', 'stage1.stage1_block0.block.relu2', 'stage1.stage1_block0.block.conv3', 'stage1.stage1_block0.block.bn3', 'stage1.stage1_block0.shortcut.shortcut_conv', 'stage1.stage1_block0.shortcut.shortcut_bn', 'stage1.stage1_block0.relu', 'stage2.stage2_block0.block.conv1', 'stage2.stage2_block0.block.bn1', 'stage2.stage2_block0.block.relu1', 'stage2.stage2_block0.block.conv2', 'stage2.stage2_block0.block.bn2', 'stage2.stage2_block0.block.relu2', 'stage2.stage2_block0.block.conv3', 'stage2.stage2_block0.block.bn3', 'stage2.stage2_block0.shortcut.shortcut_conv', 'stage2.stage2_block0.shortcut.shortcut_bn', 'stage2.stage2_block0.relu', 'stage3.stage3_block0.block.conv1', 'stage3.stage3_block0.block.bn1', 'stage3.stage3_block0.block.relu1', 'stage3.stage3_block0.block.conv2', 'stage3.stage3_block0.block.bn2', 'stage3.stage3_block0.block.relu2', 'stage3.stage3_block0.block.conv3', 'stage3.stage3_block0.block.bn3', 'stage3.stage3_block0.shortcut.shortcut_conv', 'stage3.stage3_block0.shortcut.shortcut_bn', 'stage3.stage3_block0.relu', 'stage3.stage3_block1.block.conv1', 'stage3.stage3_block1.block.bn1', 'stage3.stage3_block1.block.relu1', 'stage3.stage3_block1.block.conv2', 'stage3.stage3_block1.block.bn2', 'stage3.stage3_block1.block.relu2', 'stage3.stage3_block1.block.conv3', 'stage3.stage3_block1.block.bn3', 'stage3.stage3_block1.relu', 'stage3.stage3_block2.block.conv1', 'stage3.stage3_block2.block.bn1', 'stage3.stage3_block2.block.relu1', 'stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.bn2', 'stage3.stage3_block2.block.relu2', 'stage3.stage3_block2.block.conv3', 'stage3.stage3_block2.block.bn3', 'stage3.stage3_block2.relu', 'stage3.stage3_block3.block.conv1', 'stage3.stage3_block3.block.bn1', 'stage3.stage3_block3.block.relu1', 'stage3.stage3_block3.block.conv2', 'stage3.stage3_block3.block.bn2', 'stage3.stage3_block3.block.relu2', 'stage3.stage3_block3.block.conv3', 'stage3.stage3_block3.block.bn3', 'stage3.stage3_block3.relu', 'stage4.stage4_block0.block.conv1', 'stage4.stage4_block0.block.bn1', 'stage4.stage4_block0.block.relu1', 'stage4.stage4_block0.block.conv2', 'stage4.stage4_block0.block.bn2', 'stage4.stage4_block0.block.relu2', 'stage4.stage4_block0.block.conv3', 'stage4.stage4_block0.block.bn3', 'stage4.stage4_block0.shortcut.shortcut_conv', 'stage4.stage4_block0.shortcut.shortcut_bn', 'stage4.stage4_block0.relu', 'stage4.stage4_block1.block.conv1', 'stage4.stage4_block1.block.bn1', 'stage4.stage4_block1.block.relu1', 'stage4.stage4_block1.block.conv2', 'stage4.stage4_block1.block.bn2', 'stage4.stage4_block1.block.relu2', 'stage4.stage4_block1.block.conv3', 'stage4.stage4_block1.block.bn3', 'stage4.stage4_block1.relu', 'stage4.stage4_block2.block.conv1', 'stage4.stage4_block2.block.bn1', 'stage4.stage4_block2.block.relu1', 'stage4.stage4_block2.block.conv2', 'stage4.stage4_block2.block.bn2', 'stage4.stage4_block2.block.relu2', 'stage4.stage4_block2.block.conv3', 'stage4.stage4_block2.block.bn3', 'stage4.stage4_block2.relu', 'stage4.stage4_block3.block.conv1', 'stage4.stage4_block3.block.bn1', 'stage4.stage4_block3.block.relu1', 'stage4.stage4_block3.block.conv2', 'stage4.stage4_block3.block.bn2', 'stage4.stage4_block3.block.relu2', 'stage4.stage4_block3.block.conv3', 'stage4.stage4_block3.block.bn3', 'stage4.stage4_block3.relu', 'stage4.stage4_block4.block.conv1', 'stage4.stage4_block4.block.bn1', 'stage4.stage4_block4.block.relu1', 'stage4.stage4_block4.block.conv2', 'stage4.stage4_block4.block.bn2', 'stage4.stage4_block4.block.relu2', 'stage4.stage4_block4.block.conv3', 'stage4.stage4_block4.block.bn3', 'stage4.stage4_block4.relu', 'stage4.stage4_block5.block.conv1', 'stage4.stage4_block5.block.bn1', 'stage4.stage4_block5.block.relu1', 'stage4.stage4_block5.block.conv2', 'stage4.stage4_block5.block.bn2', 'stage4.stage4_block5.block.relu2', 'stage4.stage4_block5.block.conv3', 'stage4.stage4_block5.block.bn3', 'stage4.stage4_block5.relu', 'stage4.stage4_block6.block.conv1', 'stage4.stage4_block6.block.bn1', 'stage4.stage4_block6.block.relu1', 'stage4.stage4_block6.block.conv2', 'stage4.stage4_block6.block.bn2', 'stage4.stage4_block6.block.relu2', 'stage4.stage4_block6.block.conv3', 'stage4.stage4_block6.block.bn3', 'stage4.stage4_block6.relu', 'pool', 'fc']
+[DEBUG] Splitting layer name: stage2.stage2_block0.block.conv1
+[DEBUG] Container: stage2.stage2_block0.block, Subname: conv1
+[DEBUG] Splitting layer name: stage4.stage4_block6.block.conv3
+[DEBUG] Container: stage4.stage4_block6.block, Subname: conv3
+[DEBUG] Accessing layer 'stage2.stage2_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage2'
+[DEBUG] Accessing attribute 'stage2_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Finding indices for layers 'conv1' to 'conv3'...
+[DEBUG] Checking layer: conv1 at index 0
+[DEBUG] Found start layer 'conv1' at index 0
+[DEBUG] Checking layer: bn1 at index 1
+[DEBUG] Checking layer: relu1 at index 2
+[DEBUG] Checking layer: conv2 at index 3
+[DEBUG] Checking layer: bn2 at index 4
+[DEBUG] Checking layer: relu2 at index 5
+[DEBUG] Checking layer: conv3 at index 6
+[DEBUG] Found end layer 'conv3' at index 6
+[DEBUG] Checking layer: bn3 at index 7
+[DEBUG] Collapsing in section 'stage2.stage2_block0.block' from index 0 to 6 (conv1 → conv3)
+[DEBUG] Accessing layer 'stage2.stage2_block0.block.conv1' in the model.
+[DEBUG] Accessing attribute 'stage2'
+[DEBUG] Accessing attribute 'stage2_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Accessing attribute 'conv1'
+[DEBUG] Simulated input shape before collapsing block: torch.Size([512, 24, 16, 16])
+[DEBUG] Accessing layer 'stage2.stage2_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage2'
+[DEBUG] Accessing attribute 'stage2_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] in_channels=24, out_channels=56, stride=(2, 2)
+[DEBUG] After 0 (Conv2d) → torch.Size([512, 56, 16, 16])
+[DEBUG] After 1 (Conv2d) → torch.Size([512, 56, 8, 8])
+[DEBUG] After 2 (Conv2d) → torch.Size([512, 56, 8, 8])
+[DEBUG] Named layers around end index (6):
+   idx=4 name=bn2 type=BatchNorm2d
+   idx=5 name=relu2 type=ReLU
+   idx=6 name=conv3 type=Conv2d
+   idx=7 name=bn3 type=BatchNorm2d
+[DEBUG] Extending collapse range to include trailing BatchNorm2d 'bn3' at index 7
+[DEBUG] Final block will remove indices 0..7: ['conv1', 'bn1', 'relu1', 'conv2', 'bn2', 'relu2', 'conv3', 'bn3']
+[DEBUG] Building collapsed block of type Conv2d with in_features=24, out_features=56, output_shape=torch.Size([512, 56, 8, 8]), stride=(2, 2)
+[DEBUG] Collapsed block end flags -> has_bn: True, has_relu: False
+[DEBUG] Built collapsed Conv block with layers: ['Conv2d', 'BatchNorm2d']
+[DEBUG] Replacing layers 0 to 7 with collapsed block...
+[DEBUG] Inserting new block as 'collapsed_conv1_to_bn3_faa2e775'
+[DEBUG] Removing layer 'bn1' at index 1
+[DEBUG] Removing layer 'relu1' at index 2
+[DEBUG] Removing layer 'conv2' at index 3
+[DEBUG] Removing layer 'bn2' at index 4
+[DEBUG] Removing layer 'relu2' at index 5
+[DEBUG] Removing layer 'conv3' at index 6
+[DEBUG] Removing layer 'bn3' at index 7
+[DEBUG] New container will have 1 children.
+[DEBUG] Updating container at path: stage2.stage2_block0.block
+[DEBUG] Traversing into: stage2
+[DEBUG] Traversing into: stage2_block0
+[DEBUG] Setting new container at final part: block
+[INFO] Collapsed stage2.stage2_block0.block layers stage2.stage2_block0.block.conv1 → stage4.stage4_block6.block.conv3
+[INFO] New trainable params: 11482964
+
+Layer-wise zero parameter stats:
+
+stem.stem_conv.weight: 0/864 zeros (0.00%)
+stem.stem_bn.weight: 0/32 zeros (0.00%)
+stem.stem_bn.bias: 0/32 zeros (0.00%)
+stage1.stage1_block0.block.conv1.weight: 0/768 zeros (0.00%)
+stage1.stage1_block0.block.bn1.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn1.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.conv2.weight: 0/5184 zeros (0.00%)
+stage1.stage1_block0.block.bn2.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn2.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.conv3.weight: 0/576 zeros (0.00%)
+stage1.stage1_block0.block.bn3.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn3.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.shortcut.shortcut_conv.weight: 0/768 zeros (0.00%)
+stage1.stage1_block0.shortcut.shortcut_bn.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.shortcut.shortcut_bn.bias: 0/24 zeros (0.00%)
+stage2.stage2_block0.block.collapsed_conv1_to_bn3_faa2e775.collapsed_conv.0.weight: 0/1344 zeros (0.00%)
+stage2.stage2_block0.block.collapsed_conv1_to_bn3_faa2e775.collapsed_conv.1.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.collapsed_conv1_to_bn3_faa2e775.collapsed_conv.1.bias: 56/56 zeros (100.00%)
+stage2.stage2_block0.shortcut.shortcut_conv.weight: 0/1344 zeros (0.00%)
+stage2.stage2_block0.shortcut.shortcut_bn.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.shortcut.shortcut_bn.bias: 0/56 zeros (0.00%)
+stage3.stage3_block0.block.conv1.weight: 0/8512 zeros (0.00%)
+stage3.stage3_block0.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.conv2.weight: 0/207936 zeros (0.00%)
+stage3.stage3_block0.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.conv3.weight: 0/23104 zeros (0.00%)
+stage3.stage3_block0.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.shortcut.shortcut_conv.weight: 0/8512 zeros (0.00%)
+stage3.stage3_block0.shortcut.shortcut_bn.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.shortcut.shortcut_bn.bias: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.conv1.weight: 0/23104 zeros (0.00%)
+stage3.stage3_block1.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.conv2.weight: 0/207936 zeros (0.00%)
+stage3.stage3_block1.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.conv3.weight: 0/23104 zeros (0.00%)
+stage3.stage3_block1.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv1.weight: 0/23104 zeros (0.00%)
+stage3.stage3_block2.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv2.weight: 0/207936 zeros (0.00%)
+stage3.stage3_block2.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv3.weight: 0/23104 zeros (0.00%)
+stage3.stage3_block2.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv1.weight: 0/23104 zeros (0.00%)
+stage3.stage3_block3.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv2.weight: 0/207936 zeros (0.00%)
+stage3.stage3_block3.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv3.weight: 0/23104 zeros (0.00%)
+stage3.stage3_block3.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn3.bias: 0/152 zeros (0.00%)
+stage4.stage4_block0.block.conv1.weight: 0/55936 zeros (0.00%)
+stage4.stage4_block0.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.conv2.weight: 0/1218816 zeros (0.00%)
+stage4.stage4_block0.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block0.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.shortcut.shortcut_conv.weight: 0/55936 zeros (0.00%)
+stage4.stage4_block0.shortcut.shortcut_bn.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.shortcut.shortcut_bn.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv1.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block1.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv2.weight: 0/1218816 zeros (0.00%)
+stage4.stage4_block1.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block1.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv1.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block2.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv2.weight: 1/1218816 zeros (0.00%)
+stage4.stage4_block2.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block2.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv1.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block3.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv2.weight: 0/1218816 zeros (0.00%)
+stage4.stage4_block3.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block3.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv1.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block4.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv2.weight: 0/1218816 zeros (0.00%)
+stage4.stage4_block4.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block4.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv1.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block5.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv2.weight: 0/1218816 zeros (0.00%)
+stage4.stage4_block5.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block5.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv1.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block6.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv2.weight: 0/1218816 zeros (0.00%)
+stage4.stage4_block6.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block6.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn3.bias: 0/368 zeros (0.00%)
+fc.weight: 0/36800 zeros (0.00%)
+fc.bias: 0/100 zeros (0.00%)
+[DEBUG] Model structure after collapse:
+None
+
+--- Adjusting classifier / head AFTER collapsing all blocks ---
+[INFO] First linear found at: fc
+[DEBUG] Splitting layer name: fc
+[DEBUG] No container, subname: fc
+[DEBUG] Measured flattened features size for head: 368
+[INFO] Replaced top-level linear 'fc' to have in_features=368
+[INFO] Replacing 38 in-place ReLU(s) with out-of-place variants.
+[DEBUG] Found in-place ReLU at: stem.stem_relu
+[DEBUG] Splitting layer name: stem.stem_relu
+[DEBUG] Container: stem, Subname: stem_relu
+[DEBUG] Accessing layer 'stem' in the model.
+[DEBUG] Accessing attribute 'stem'
+[DEBUG] Setting new ReLU at attribute stem_relu
+[DEBUG] Found in-place ReLU at: stage1.stage1_block0.block.relu1
+[DEBUG] Splitting layer name: stage1.stage1_block0.block.relu1
+[DEBUG] Container: stage1.stage1_block0.block, Subname: relu1
+[DEBUG] Accessing layer 'stage1.stage1_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage1'
+[DEBUG] Accessing attribute 'stage1_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage1.stage1_block0.block.relu2
+[DEBUG] Splitting layer name: stage1.stage1_block0.block.relu2
+[DEBUG] Container: stage1.stage1_block0.block, Subname: relu2
+[DEBUG] Accessing layer 'stage1.stage1_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage1'
+[DEBUG] Accessing attribute 'stage1_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage1.stage1_block0.relu
+[DEBUG] Splitting layer name: stage1.stage1_block0.relu
+[DEBUG] Container: stage1.stage1_block0, Subname: relu
+[DEBUG] Accessing layer 'stage1.stage1_block0' in the model.
+[DEBUG] Accessing attribute 'stage1'
+[DEBUG] Accessing attribute 'stage1_block0'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage2.stage2_block0.relu
+[DEBUG] Splitting layer name: stage2.stage2_block0.relu
+[DEBUG] Container: stage2.stage2_block0, Subname: relu
+[DEBUG] Accessing layer 'stage2.stage2_block0' in the model.
+[DEBUG] Accessing attribute 'stage2'
+[DEBUG] Accessing attribute 'stage2_block0'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage3.stage3_block0.block.relu1
+[DEBUG] Splitting layer name: stage3.stage3_block0.block.relu1
+[DEBUG] Container: stage3.stage3_block0.block, Subname: relu1
+[DEBUG] Accessing layer 'stage3.stage3_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage3.stage3_block0.block.relu2
+[DEBUG] Splitting layer name: stage3.stage3_block0.block.relu2
+[DEBUG] Container: stage3.stage3_block0.block, Subname: relu2
+[DEBUG] Accessing layer 'stage3.stage3_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage3.stage3_block0.relu
+[DEBUG] Splitting layer name: stage3.stage3_block0.relu
+[DEBUG] Container: stage3.stage3_block0, Subname: relu
+[DEBUG] Accessing layer 'stage3.stage3_block0' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block0'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage3.stage3_block1.block.relu1
+[DEBUG] Splitting layer name: stage3.stage3_block1.block.relu1
+[DEBUG] Container: stage3.stage3_block1.block, Subname: relu1
+[DEBUG] Accessing layer 'stage3.stage3_block1.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block1'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage3.stage3_block1.block.relu2
+[DEBUG] Splitting layer name: stage3.stage3_block1.block.relu2
+[DEBUG] Container: stage3.stage3_block1.block, Subname: relu2
+[DEBUG] Accessing layer 'stage3.stage3_block1.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block1'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage3.stage3_block1.relu
+[DEBUG] Splitting layer name: stage3.stage3_block1.relu
+[DEBUG] Container: stage3.stage3_block1, Subname: relu
+[DEBUG] Accessing layer 'stage3.stage3_block1' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block1'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage3.stage3_block2.block.relu1
+[DEBUG] Splitting layer name: stage3.stage3_block2.block.relu1
+[DEBUG] Container: stage3.stage3_block2.block, Subname: relu1
+[DEBUG] Accessing layer 'stage3.stage3_block2.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block2'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage3.stage3_block2.block.relu2
+[DEBUG] Splitting layer name: stage3.stage3_block2.block.relu2
+[DEBUG] Container: stage3.stage3_block2.block, Subname: relu2
+[DEBUG] Accessing layer 'stage3.stage3_block2.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block2'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage3.stage3_block2.relu
+[DEBUG] Splitting layer name: stage3.stage3_block2.relu
+[DEBUG] Container: stage3.stage3_block2, Subname: relu
+[DEBUG] Accessing layer 'stage3.stage3_block2' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block2'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage3.stage3_block3.block.relu1
+[DEBUG] Splitting layer name: stage3.stage3_block3.block.relu1
+[DEBUG] Container: stage3.stage3_block3.block, Subname: relu1
+[DEBUG] Accessing layer 'stage3.stage3_block3.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block3'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage3.stage3_block3.block.relu2
+[DEBUG] Splitting layer name: stage3.stage3_block3.block.relu2
+[DEBUG] Container: stage3.stage3_block3.block, Subname: relu2
+[DEBUG] Accessing layer 'stage3.stage3_block3.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block3'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage3.stage3_block3.relu
+[DEBUG] Splitting layer name: stage3.stage3_block3.relu
+[DEBUG] Container: stage3.stage3_block3, Subname: relu
+[DEBUG] Accessing layer 'stage3.stage3_block3' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block3'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block0.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block0.block.relu1
+[DEBUG] Container: stage4.stage4_block0.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block0.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block0.block.relu2
+[DEBUG] Container: stage4.stage4_block0.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block0.relu
+[DEBUG] Splitting layer name: stage4.stage4_block0.relu
+[DEBUG] Container: stage4.stage4_block0, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block0' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block0'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block1.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block1.block.relu1
+[DEBUG] Container: stage4.stage4_block1.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block1.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block1'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block1.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block1.block.relu2
+[DEBUG] Container: stage4.stage4_block1.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block1.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block1'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block1.relu
+[DEBUG] Splitting layer name: stage4.stage4_block1.relu
+[DEBUG] Container: stage4.stage4_block1, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block1' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block1'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block2.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block2.block.relu1
+[DEBUG] Container: stage4.stage4_block2.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block2.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block2'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block2.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block2.block.relu2
+[DEBUG] Container: stage4.stage4_block2.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block2.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block2'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block2.relu
+[DEBUG] Splitting layer name: stage4.stage4_block2.relu
+[DEBUG] Container: stage4.stage4_block2, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block2' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block2'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block3.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block3.block.relu1
+[DEBUG] Container: stage4.stage4_block3.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block3.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block3'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block3.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block3.block.relu2
+[DEBUG] Container: stage4.stage4_block3.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block3.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block3'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block3.relu
+[DEBUG] Splitting layer name: stage4.stage4_block3.relu
+[DEBUG] Container: stage4.stage4_block3, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block3' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block3'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block4.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block4.block.relu1
+[DEBUG] Container: stage4.stage4_block4.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block4.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block4'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block4.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block4.block.relu2
+[DEBUG] Container: stage4.stage4_block4.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block4.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block4'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block4.relu
+[DEBUG] Splitting layer name: stage4.stage4_block4.relu
+[DEBUG] Container: stage4.stage4_block4, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block4' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block4'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block5.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block5.block.relu1
+[DEBUG] Container: stage4.stage4_block5.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block5.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block5'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block5.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block5.block.relu2
+[DEBUG] Container: stage4.stage4_block5.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block5.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block5'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block5.relu
+[DEBUG] Splitting layer name: stage4.stage4_block5.relu
+[DEBUG] Container: stage4.stage4_block5, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block5' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block5'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block6.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block6.block.relu1
+[DEBUG] Container: stage4.stage4_block6.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block6.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block6'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block6.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block6.block.relu2
+[DEBUG] Container: stage4.stage4_block6.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block6.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block6'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block6.relu
+[DEBUG] Splitting layer name: stage4.stage4_block6.relu
+[DEBUG] Container: stage4.stage4_block6, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block6' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block6'
+[DEBUG] Setting new ReLU at attribute relu
+[INFO] Collapse complete. Total trainable params: 11482964
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+====================================================================================================
+Layer (type:depth-idx)                             Output Shape              Param #
+====================================================================================================
+RegNetX_400MF                                      [512, 100]                --
+├─Sequential: 1-1                                  [512, 32, 16, 16]         --
+│    └─Conv2d: 2-1                                 [512, 32, 16, 16]         864
+│    └─BatchNorm2d: 2-2                            [512, 32, 16, 16]         64
+│    └─ReLU: 2-3                                   [512, 32, 16, 16]         --
+├─Sequential: 1-2                                  [512, 24, 16, 16]         --
+│    └─XBlock: 2-4                                 [512, 24, 16, 16]         --
+│    │    └─Sequential: 3-1                        [512, 24, 16, 16]         6,672
+│    │    └─Sequential: 3-2                        [512, 24, 16, 16]         816
+│    │    └─ReLU: 3-3                              [512, 24, 16, 16]         --
+├─Sequential: 1-3                                  [512, 56, 8, 8]           --
+│    └─XBlock: 2-5                                 [512, 56, 8, 8]           --
+│    │    └─Sequential: 3-4                        [512, 56, 8, 8]           1,456
+│    │    └─Sequential: 3-5                        [512, 56, 8, 8]           1,456
+│    │    └─ReLU: 3-6                              [512, 56, 8, 8]           --
+├─Sequential: 1-4                                  [512, 152, 4, 4]          --
+│    └─XBlock: 2-6                                 [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-7                        [512, 152, 4, 4]          240,464
+│    │    └─Sequential: 3-8                        [512, 152, 4, 4]          8,816
+│    │    └─ReLU: 3-9                              [512, 152, 4, 4]          --
+│    └─XBlock: 2-7                                 [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-10                       [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-11                       [512, 152, 4, 4]          --
+│    │    └─ReLU: 3-12                             [512, 152, 4, 4]          --
+│    └─XBlock: 2-8                                 [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-13                       [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-14                       [512, 152, 4, 4]          --
+│    │    └─ReLU: 3-15                             [512, 152, 4, 4]          --
+│    └─XBlock: 2-9                                 [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-16                       [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-17                       [512, 152, 4, 4]          --
+│    │    └─ReLU: 3-18                             [512, 152, 4, 4]          --
+├─Sequential: 1-5                                  [512, 368, 2, 2]          --
+│    └─XBlock: 2-10                                [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-19                       [512, 368, 2, 2]          1,412,384
+│    │    └─Sequential: 3-20                       [512, 368, 2, 2]          56,672
+│    │    └─ReLU: 3-21                             [512, 368, 2, 2]          --
+│    └─XBlock: 2-11                                [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-22                       [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-23                       [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-24                             [512, 368, 2, 2]          --
+│    └─XBlock: 2-12                                [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-25                       [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-26                       [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-27                             [512, 368, 2, 2]          --
+│    └─XBlock: 2-13                                [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-28                       [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-29                       [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-30                             [512, 368, 2, 2]          --
+│    └─XBlock: 2-14                                [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-31                       [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-32                       [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-33                             [512, 368, 2, 2]          --
+│    └─XBlock: 2-15                                [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-34                       [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-35                       [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-36                             [512, 368, 2, 2]          --
+│    └─XBlock: 2-16                                [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-37                       [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-38                       [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-39                             [512, 368, 2, 2]          --
+├─AdaptiveAvgPool2d: 1-6                           [512, 368, 1, 1]          --
+├─Linear: 1-7                                      [512, 100]                36,900
+====================================================================================================
+Total params: 11,482,964
+Trainable params: 11,482,964
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 31.33
+====================================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 947.80
+Params size (MB): 45.93
+Estimated Total Size (MB): 1000.02
+====================================================================================================
+============================================================
+[•] Using GPU: NVIDIA GeForce RTX 2080 Ti
+[•] Training model: Stage 2-5
+[Start training] device:cuda
+[INFO] Training started...
+model on device: cuda:0
+[INFO] Starting Epoch 1 of training...
+Epoch 1: Loss=3.2314, Acc=21.76%
+[INFO] New best accuracy: 21.76% (previous best was 0.00%)
+[INFO] Starting Epoch 2 of training...
+Epoch 2: Loss=2.7153, Acc=31.10%
+[INFO] New best accuracy: 31.10% (previous best was 21.76%)
+[INFO] Starting Epoch 3 of training...
+Epoch 3: Loss=2.5174, Acc=35.03%
+[INFO] New best accuracy: 35.03% (previous best was 31.10%)
+[INFO] Starting Epoch 4 of training...
+Epoch 4: Loss=2.3774, Acc=37.71%
+[INFO] New best accuracy: 37.71% (previous best was 35.03%)
+[INFO] Starting Epoch 5 of training...
+Epoch 5: Loss=2.2729, Acc=39.79%
+[INFO] New best accuracy: 39.79% (previous best was 37.71%)
+[INFO] Starting Epoch 6 of training...
+Epoch 6: Loss=2.1665, Acc=42.03%
+[INFO] New best accuracy: 42.03% (previous best was 39.79%)
+[INFO] Starting Epoch 7 of training...
+Epoch 7: Loss=2.0886, Acc=44.05%
+[INFO] New best accuracy: 44.05% (previous best was 42.03%)
+[INFO] Starting Epoch 8 of training...
+Epoch 8: Loss=2.0270, Acc=45.50%
+[INFO] New best accuracy: 45.50% (previous best was 44.05%)
+[INFO] Starting Epoch 9 of training...
+Epoch 9: Loss=1.9382, Acc=47.10%
+[INFO] New best accuracy: 47.10% (previous best was 45.50%)
+[INFO] Starting Epoch 10 of training...
+Epoch 10: Loss=1.8717, Acc=49.01%
+[INFO] New best accuracy: 49.01% (previous best was 47.10%)
+[INFO] Starting Epoch 11 of training...
+Epoch 11: Loss=1.7954, Acc=50.58%
+[INFO] New best accuracy: 50.58% (previous best was 49.01%)
+[INFO] Starting Epoch 12 of training...
+Epoch 12: Loss=1.7294, Acc=51.94%
+[INFO] New best accuracy: 51.94% (previous best was 50.58%)
+[INFO] Starting Epoch 13 of training...
+Epoch 13: Loss=1.6678, Acc=53.29%
+[INFO] New best accuracy: 53.29% (previous best was 51.94%)
+[INFO] Starting Epoch 14 of training...
+Epoch 14: Loss=1.6034, Acc=55.11%
+[INFO] New best accuracy: 55.11% (previous best was 53.29%)
+[INFO] Starting Epoch 15 of training...
+Epoch 15: Loss=1.5443, Acc=56.40%
+[INFO] New best accuracy: 56.40% (previous best was 55.11%)
+[INFO] Starting Epoch 16 of training...
+Epoch 16: Loss=1.4851, Acc=57.78%
+[INFO] New best accuracy: 57.78% (previous best was 56.40%)
+[INFO] Starting Epoch 17 of training...
+Epoch 17: Loss=1.4165, Acc=59.20%
+[INFO] New best accuracy: 59.20% (previous best was 57.78%)
+[INFO] Starting Epoch 18 of training...
+Epoch 18: Loss=1.3721, Acc=60.22%
+[INFO] New best accuracy: 60.22% (previous best was 59.20%)
+[INFO] Starting Epoch 19 of training...
+Epoch 19: Loss=1.2944, Acc=62.38%
+[INFO] New best accuracy: 62.38% (previous best was 60.22%)
+[INFO] Starting Epoch 20 of training...
+Epoch 20: Loss=1.2352, Acc=63.77%
+[INFO] New best accuracy: 63.77% (previous best was 62.38%)
+[INFO] Starting Epoch 21 of training...
+Epoch 21: Loss=1.1684, Acc=65.26%
+[INFO] New best accuracy: 65.26% (previous best was 63.77%)
+[INFO] Starting Epoch 22 of training...
+Epoch 22: Loss=1.1026, Acc=67.17%
+[INFO] New best accuracy: 67.17% (previous best was 65.26%)
+[INFO] Starting Epoch 23 of training...
+Epoch 23: Loss=1.0425, Acc=68.92%
+[INFO] New best accuracy: 68.92% (previous best was 67.17%)
+[INFO] Starting Epoch 24 of training...
+Epoch 24: Loss=0.9930, Acc=70.13%
+[INFO] New best accuracy: 70.13% (previous best was 68.92%)
+[INFO] Starting Epoch 25 of training...
+Epoch 25: Loss=0.9208, Acc=71.95%
+[INFO] New best accuracy: 71.95% (previous best was 70.13%)
+[INFO] Starting Epoch 26 of training...
+Epoch 26: Loss=0.8570, Acc=73.83%
+[INFO] New best accuracy: 73.83% (previous best was 71.95%)
+[INFO] Starting Epoch 27 of training...
+Epoch 27: Loss=0.7875, Acc=75.40%
+[INFO] New best accuracy: 75.40% (previous best was 73.83%)
+[INFO] Starting Epoch 28 of training...
+Epoch 28: Loss=0.7501, Acc=76.64%
+[INFO] New best accuracy: 76.64% (previous best was 75.40%)
+[INFO] Starting Epoch 29 of training...
+Epoch 29: Loss=0.6813, Acc=78.59%
+[INFO] New best accuracy: 78.59% (previous best was 76.64%)
+[INFO] Starting Epoch 30 of training...
+Epoch 30: Loss=0.6245, Acc=80.41%
+[INFO] New best accuracy: 80.41% (previous best was 78.59%)
+[INFO] Starting Epoch 31 of training...
+Post-compress 31: Loss=0.5884, Acc=81.44%
+[INFO] Post-compression phase, epoch 31...
+[INFO] Improvement detected: 1.0340 increase in accuracy.
+[INFO] Starting Epoch 32 of training...
+Post-compress 32: Loss=0.5502, Acc=82.73%
+[INFO] Post-compression phase, epoch 32...
+[INFO] Improvement detected: 1.2900 increase in accuracy.
+[INFO] Starting Epoch 33 of training...
+Post-compress 33: Loss=0.4889, Acc=84.36%
+[INFO] Post-compression phase, epoch 33...
+[INFO] Improvement detected: 1.6280 increase in accuracy.
+[INFO] Starting Epoch 34 of training...
+Post-compress 34: Loss=0.4483, Acc=85.97%
+[INFO] Post-compression phase, epoch 34...
+[INFO] Improvement detected: 1.6040 increase in accuracy.
+[INFO] Starting Epoch 35 of training...
+Post-compress 35: Loss=0.4218, Acc=86.63%
+[INFO] Post-compression phase, epoch 35...
+[INFO] Improvement detected: 0.6620 increase in accuracy.
+[INFO] Starting Epoch 36 of training...
+Post-compress 36: Loss=0.3936, Acc=87.26%
+[INFO] Post-compression phase, epoch 36...
+[INFO] Improvement detected: 0.6300 increase in accuracy.
+[INFO] Starting Epoch 37 of training...
+Post-compress 37: Loss=0.3614, Acc=88.47%
+[INFO] Post-compression phase, epoch 37...
+[INFO] Improvement detected: 1.2140 increase in accuracy.
+[INFO] Starting Epoch 38 of training...
+Post-compress 38: Loss=0.3330, Acc=89.33%
+[INFO] Post-compression phase, epoch 38...
+[INFO] Improvement detected: 0.8560 increase in accuracy.
+[INFO] Starting Epoch 39 of training...
+Post-compress 39: Loss=0.3160, Acc=89.82%
+[INFO] Post-compression phase, epoch 39...
+[INFO] Improvement detected: 0.4940 increase in accuracy.
+[INFO] Starting Epoch 40 of training...
+Post-compress 40: Loss=0.3028, Acc=90.26%
+[INFO] Post-compression phase, epoch 40...
+[INFO] Improvement detected: 0.4360 increase in accuracy.
+[INFO] Starting Epoch 41 of training...
+Post-compress 41: Loss=0.2862, Acc=90.84%
+[INFO] Post-compression phase, epoch 41...
+[INFO] Improvement detected: 0.5820 increase in accuracy.
+[INFO] Starting Epoch 42 of training...
+Post-compress 42: Loss=0.2670, Acc=91.38%
+[INFO] Post-compression phase, epoch 42...
+[INFO] Improvement detected: 0.5400 increase in accuracy.
+[INFO] Starting Epoch 43 of training...
+Post-compress 43: Loss=0.2373, Acc=92.46%
+[INFO] Post-compression phase, epoch 43...
+[INFO] Improvement detected: 1.0840 increase in accuracy.
+[INFO] Starting Epoch 44 of training...
+Post-compress 44: Loss=0.2329, Acc=92.55%
+[INFO] Post-compression phase, epoch 44...
+[INFO] Improvement detected: 0.0880 increase in accuracy.
+[INFO] Starting Epoch 45 of training...
+Post-compress 45: Loss=0.2221, Acc=92.83%
+[INFO] Post-compression phase, epoch 45...
+[INFO] Improvement detected: 0.2760 increase in accuracy.
+[INFO] Starting Epoch 46 of training...
+Post-compress 46: Loss=0.2127, Acc=93.16%
+[INFO] Post-compression phase, epoch 46...
+[INFO] Improvement detected: 0.3300 increase in accuracy.
+[INFO] Starting Epoch 47 of training...
+Post-compress 47: Loss=0.2144, Acc=93.18%
+[INFO] Post-compression phase, epoch 47...
+[INFO] No significant improvement. Accuracy change: 0.0220
+[INFO] Starting Epoch 48 of training...
+Post-compress 48: Loss=0.2021, Acc=93.40%
+[INFO] Post-compression phase, epoch 48...
+[INFO] Improvement detected: 0.2460 increase in accuracy.
+[INFO] Starting Epoch 49 of training...
+Post-compress 49: Loss=0.1979, Acc=93.69%
+[INFO] Post-compression phase, epoch 49...
+[INFO] Improvement detected: 0.2900 increase in accuracy.
+[INFO] Starting Epoch 50 of training...
+Post-compress 50: Loss=0.1954, Acc=93.73%
+[INFO] Post-compression phase, epoch 50...
+[INFO] No significant improvement. Accuracy change: 0.0340
+[INFO] Starting Epoch 51 of training...
+Post-compress 51: Loss=0.1728, Acc=94.47%
+[INFO] Post-compression phase, epoch 51...
+[INFO] Improvement detected: 0.7720 increase in accuracy.
+[INFO] Starting Epoch 52 of training...
+Post-compress 52: Loss=0.1840, Acc=94.01%
+[INFO] Post-compression phase, epoch 52...
+[INFO] No significant improvement. Accuracy change: -0.4580
+[INFO] Starting Epoch 53 of training...
+Post-compress 53: Loss=0.1781, Acc=94.14%
+[INFO] Post-compression phase, epoch 53...
+[INFO] No significant improvement. Accuracy change: -0.3260
+[INFO] Starting Epoch 54 of training...
+Post-compress 54: Loss=0.1763, Acc=94.35%
+[INFO] Post-compression phase, epoch 54...
+[INFO] No significant improvement. Accuracy change: -0.1160
+[INFO] Starting Epoch 55 of training...
+Post-compress 55: Loss=0.1582, Acc=94.89%
+[INFO] Post-compression phase, epoch 55...
+[INFO] Improvement detected: 0.4280 increase in accuracy.
+[INFO] Starting Epoch 56 of training...
+Post-compress 56: Loss=0.1531, Acc=95.06%
+[INFO] Post-compression phase, epoch 56...
+[INFO] Improvement detected: 0.1620 increase in accuracy.
+[INFO] Starting Epoch 57 of training...
+Post-compress 57: Loss=0.1552, Acc=94.91%
+[INFO] Post-compression phase, epoch 57...
+[INFO] No significant improvement. Accuracy change: -0.1440
+[INFO] Starting Epoch 58 of training...
+Post-compress 58: Loss=0.1428, Acc=95.30%
+[INFO] Post-compression phase, epoch 58...
+[INFO] Improvement detected: 0.2440 increase in accuracy.
+[INFO] Starting Epoch 59 of training...
+Post-compress 59: Loss=0.1444, Acc=95.38%
+[INFO] Post-compression phase, epoch 59...
+[INFO] Improvement detected: 0.0820 increase in accuracy.
+[INFO] Starting Epoch 60 of training...
+Post-compress 60: Loss=0.1291, Acc=95.84%
+[INFO] Post-compression phase, epoch 60...
+[INFO] Improvement detected: 0.4600 increase in accuracy.
+[INFO] Starting Epoch 61 of training...
+Post-compress 61: Loss=0.1411, Acc=95.49%
+[INFO] Post-compression phase, epoch 61...
+[INFO] No significant improvement. Accuracy change: -0.3560
+[INFO] Starting Epoch 62 of training...
+Post-compress 62: Loss=0.1435, Acc=95.35%
+[INFO] Post-compression phase, epoch 62...
+[INFO] No significant improvement. Accuracy change: -0.4920
+[INFO] Starting Epoch 63 of training...
+Post-compress 63: Loss=0.1390, Acc=95.52%
+[INFO] Post-compression phase, epoch 63...
+[INFO] No significant improvement. Accuracy change: -0.3220
+[INFO] Starting Epoch 64 of training...
+Post-compress 64: Loss=0.1405, Acc=95.36%
+[INFO] Post-compression phase, epoch 64...
+[INFO] No significant improvement. Accuracy change: -0.4780
+[INFO] Starting Epoch 65 of training...
+Post-compress 65: Loss=0.1411, Acc=95.43%
+[INFO] Post-compression phase, epoch 65...
+[INFO] No significant improvement. Accuracy change: -0.4100
+[INFO] Stopping early after 35 post-compression epochs due to no significant improvement.
+[INFO] Evaluating model on the test set...
+Final Test Accuracy: 47.86%
+[✓] Saved plot: RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/plots/Kevin_Stage_2-5_metrics.svg
+[✓] Saved metrics to RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/metrics/Kevin/RegNetX_400MF_postcomp_10_metrics.json
+[✓] Saved plot: RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/plots/Kevin/RegNetX_400MF_postcomp_10_plots.svg
+Saved comparison plot to RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/plots/Kevin/RegNetX_400MF_postcomp_10_plots.svg

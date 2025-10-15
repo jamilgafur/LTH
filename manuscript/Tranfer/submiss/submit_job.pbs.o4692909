@@ -1,0 +1,546 @@
+Activating conda environment...
+Loaded CUDA and GCC modules...
+Executing: ~/env/lth_env/bin/python transfer.py --model VGG16 --dataset Cifar10 --experiment Stage 2-5 --Kevin
+VGG16 - Cifar10: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+VGG16 - Cifar100: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+VGG16 - TinyImageNet: ../structured_study/pruning_checkpoints/Vgg16_datasettinyimagenet_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar10: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar100: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - TinyImageNet: ../structured_study/pruning_checkpoints/RegNetX_datasettinyimagenet_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+Namespace(model='VGG16', dataset='Cifar10', epochs=30, pretrain=30, experiment='Stage 2-5', post_compress_epochs=10, imp=False, JF=False, Kevin=True)
+has GPU: True
+Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
+Loading CIFAR-10 data...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+
+--- Running experiment: Stage 2-5 ---
+
+=== Running Kevin experiment ===
+
+Running Kevin experiment: Stage 2-5
+[INFO] Loading model with weights from 'VGG16_Cifar10_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/temp_model_kevin_2025-10-14 12:44:53.pth'...
+[INFO] Full compression set: [('features.conv_3', 'features.conv_13')]
+[DEBUG] Compressing: ('features.conv_3', 'features.conv_13')
+
+--- Starting collapse for block: features.conv_3 to features.conv_13 ---
+
+Collapsing layers from 'features.conv_3' to 'features.conv_13'...
+[DEBUG] Available layers for collapsing: ['features.conv_1', 'features.relu_1', 'features.bn_1', 'features.conv_2', 'features.relu_2', 'features.bn_2', 'features.pool_1', 'features.conv_3', 'features.relu_3', 'features.bn_3', 'features.conv_4', 'features.relu_4', 'features.bn_4', 'features.pool_2', 'features.conv_5', 'features.relu_5', 'features.bn_5', 'features.conv_6', 'features.relu_6', 'features.bn_6', 'features.conv_7', 'features.relu_7', 'features.bn_7', 'features.pool_3', 'features.conv_8', 'features.relu_8', 'features.bn_8', 'features.conv_9', 'features.relu_9', 'features.bn_9', 'features.conv_10', 'features.relu_10', 'features.bn_10', 'features.pool_4', 'features.conv_11', 'features.relu_11', 'features.bn_11', 'features.conv_12', 'features.relu_12', 'features.bn_12', 'features.conv_13', 'features.relu_13', 'features.bn_13', 'features.pool_5', 'classifier.fc_1', 'classifier.relu_1', 'classifier.fc_2', 'classifier.relu_2', 'classifier.fc_3']
+[DEBUG] Splitting layer name: features.conv_3
+[DEBUG] Container: features, Subname: conv_3
+[DEBUG] Splitting layer name: features.conv_13
+[DEBUG] Container: features, Subname: conv_13
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Finding indices for layers 'conv_3' to 'conv_13'...
+[DEBUG] Checking layer: conv_1 at index 0
+[DEBUG] Checking layer: relu_1 at index 1
+[DEBUG] Checking layer: bn_1 at index 2
+[DEBUG] Checking layer: conv_2 at index 3
+[DEBUG] Checking layer: relu_2 at index 4
+[DEBUG] Checking layer: bn_2 at index 5
+[DEBUG] Checking layer: pool_1 at index 6
+[DEBUG] Checking layer: conv_3 at index 7
+[DEBUG] Found start layer 'conv_3' at index 7
+[DEBUG] Checking layer: relu_3 at index 8
+[DEBUG] Checking layer: bn_3 at index 9
+[DEBUG] Checking layer: conv_4 at index 10
+[DEBUG] Checking layer: relu_4 at index 11
+[DEBUG] Checking layer: bn_4 at index 12
+[DEBUG] Checking layer: pool_2 at index 13
+[DEBUG] Checking layer: conv_5 at index 14
+[DEBUG] Checking layer: relu_5 at index 15
+[DEBUG] Checking layer: bn_5 at index 16
+[DEBUG] Checking layer: conv_6 at index 17
+[DEBUG] Checking layer: relu_6 at index 18
+[DEBUG] Checking layer: bn_6 at index 19
+[DEBUG] Checking layer: conv_7 at index 20
+[DEBUG] Checking layer: relu_7 at index 21
+[DEBUG] Checking layer: bn_7 at index 22
+[DEBUG] Checking layer: pool_3 at index 23
+[DEBUG] Checking layer: conv_8 at index 24
+[DEBUG] Checking layer: relu_8 at index 25
+[DEBUG] Checking layer: bn_8 at index 26
+[DEBUG] Checking layer: conv_9 at index 27
+[DEBUG] Checking layer: relu_9 at index 28
+[DEBUG] Checking layer: bn_9 at index 29
+[DEBUG] Checking layer: conv_10 at index 30
+[DEBUG] Checking layer: relu_10 at index 31
+[DEBUG] Checking layer: bn_10 at index 32
+[DEBUG] Checking layer: pool_4 at index 33
+[DEBUG] Checking layer: conv_11 at index 34
+[DEBUG] Checking layer: relu_11 at index 35
+[DEBUG] Checking layer: bn_11 at index 36
+[DEBUG] Checking layer: conv_12 at index 37
+[DEBUG] Checking layer: relu_12 at index 38
+[DEBUG] Checking layer: bn_12 at index 39
+[DEBUG] Checking layer: conv_13 at index 40
+[DEBUG] Found end layer 'conv_13' at index 40
+[DEBUG] Checking layer: relu_13 at index 41
+[DEBUG] Checking layer: bn_13 at index 42
+[DEBUG] Checking layer: pool_5 at index 43
+[DEBUG] Collapsing in section 'features' from index 7 to 40 (conv_3 → conv_13)
+[DEBUG] Accessing layer 'features.conv_3' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Accessing attribute 'conv_3'
+[DEBUG] Simulated input shape before collapsing block: torch.Size([512, 64, 16, 16])
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] in_channels=64, out_channels=512, stride=(1, 1)
+[DEBUG] After 0 (Conv2d) → torch.Size([512, 128, 16, 16])
+[DEBUG] After 1 (Conv2d) → torch.Size([512, 128, 16, 16])
+[DEBUG] After 2 (Conv2d) → torch.Size([512, 256, 16, 16])
+[DEBUG] After 3 (Conv2d) → torch.Size([512, 256, 16, 16])
+[DEBUG] After 4 (Conv2d) → torch.Size([512, 256, 16, 16])
+[DEBUG] After 5 (Conv2d) → torch.Size([512, 512, 16, 16])
+[DEBUG] After 6 (Conv2d) → torch.Size([512, 512, 16, 16])
+[DEBUG] After 7 (Conv2d) → torch.Size([512, 512, 16, 16])
+[DEBUG] After 8 (Conv2d) → torch.Size([512, 512, 16, 16])
+[DEBUG] After 9 (Conv2d) → torch.Size([512, 512, 16, 16])
+[DEBUG] After 10 (Conv2d) → torch.Size([512, 512, 16, 16])
+[DEBUG] Named layers around end index (40):
+   idx=38 name=relu_12 type=ReLU
+   idx=39 name=bn_12 type=BatchNorm2d
+   idx=40 name=conv_13 type=Conv2d
+   idx=41 name=relu_13 type=ReLU
+   idx=42 name=bn_13 type=BatchNorm2d
+[DEBUG] Extending collapse range to include trailing ReLU 'relu_13' at index 41
+[DEBUG] Extending collapse range to include trailing BatchNorm2d 'bn_13' at index 42
+[DEBUG] Final block will remove indices 7..42: ['conv_3', 'relu_3', 'bn_3', 'conv_4', 'relu_4', 'bn_4', 'pool_2', 'conv_5', 'relu_5', 'bn_5', 'conv_6', 'relu_6', 'bn_6', 'conv_7', 'relu_7', 'bn_7', 'pool_3', 'conv_8', 'relu_8', 'bn_8', 'conv_9', 'relu_9', 'bn_9', 'conv_10', 'relu_10', 'bn_10', 'pool_4', 'conv_11', 'relu_11', 'bn_11', 'conv_12', 'relu_12', 'bn_12', 'conv_13', 'relu_13', 'bn_13']
+[DEBUG] Building collapsed block of type Conv2d with in_features=64, out_features=512, output_shape=torch.Size([512, 512, 16, 16]), stride=(1, 1)
+[DEBUG] Collapsed block end flags -> has_bn: True, has_relu: False
+[DEBUG] Built collapsed Conv block with layers: ['Conv2d', 'BatchNorm2d']
+[DEBUG] Replacing layers 7 to 42 with collapsed block...
+[DEBUG] Inserting new block as 'collapsed_conv_3_to_bn_13_f19f3081'
+[DEBUG] Removing layer 'relu_3' at index 8
+[DEBUG] Removing layer 'bn_3' at index 9
+[DEBUG] Removing layer 'conv_4' at index 10
+[DEBUG] Removing layer 'relu_4' at index 11
+[DEBUG] Removing layer 'bn_4' at index 12
+[DEBUG] Removing layer 'pool_2' at index 13
+[DEBUG] Removing layer 'conv_5' at index 14
+[DEBUG] Removing layer 'relu_5' at index 15
+[DEBUG] Removing layer 'bn_5' at index 16
+[DEBUG] Removing layer 'conv_6' at index 17
+[DEBUG] Removing layer 'relu_6' at index 18
+[DEBUG] Removing layer 'bn_6' at index 19
+[DEBUG] Removing layer 'conv_7' at index 20
+[DEBUG] Removing layer 'relu_7' at index 21
+[DEBUG] Removing layer 'bn_7' at index 22
+[DEBUG] Removing layer 'pool_3' at index 23
+[DEBUG] Removing layer 'conv_8' at index 24
+[DEBUG] Removing layer 'relu_8' at index 25
+[DEBUG] Removing layer 'bn_8' at index 26
+[DEBUG] Removing layer 'conv_9' at index 27
+[DEBUG] Removing layer 'relu_9' at index 28
+[DEBUG] Removing layer 'bn_9' at index 29
+[DEBUG] Removing layer 'conv_10' at index 30
+[DEBUG] Removing layer 'relu_10' at index 31
+[DEBUG] Removing layer 'bn_10' at index 32
+[DEBUG] Removing layer 'pool_4' at index 33
+[DEBUG] Removing layer 'conv_11' at index 34
+[DEBUG] Removing layer 'relu_11' at index 35
+[DEBUG] Removing layer 'bn_11' at index 36
+[DEBUG] Removing layer 'conv_12' at index 37
+[DEBUG] Removing layer 'relu_12' at index 38
+[DEBUG] Removing layer 'bn_12' at index 39
+[DEBUG] Removing layer 'conv_13' at index 40
+[DEBUG] Removing layer 'relu_13' at index 41
+[DEBUG] Removing layer 'bn_13' at index 42
+[DEBUG] New container will have 9 children.
+[DEBUG] Updating container at path: features
+[DEBUG] Setting new container at final part: features
+[INFO] Collapsed features layers features.conv_3 → features.conv_13
+[INFO] New trainable params: 18996298
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 0/64 zeros (0.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 0/64 zeros (0.00%)
+features.collapsed_conv_3_to_bn_13_f19f3081.collapsed_conv.0.weight: 0/32768 zeros (0.00%)
+features.collapsed_conv_3_to_bn_13_f19f3081.collapsed_conv.1.weight: 0/512 zeros (0.00%)
+features.collapsed_conv_3_to_bn_13_f19f3081.collapsed_conv.1.bias: 512/512 zeros (100.00%)
+classifier.fc_1.weight: 0/2097152 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.fc_2.weight: 2/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.fc_3.weight: 0/40960 zeros (0.00%)
+classifier.fc_3.bias: 0/10 zeros (0.00%)
+[DEBUG] Model structure after collapse:
+None
+
+--- Adjusting classifier / head AFTER collapsing all blocks ---
+[INFO] First linear found at: classifier.fc_1
+[DEBUG] Splitting layer name: classifier.fc_1
+[DEBUG] Container: classifier, Subname: fc_1
+[DEBUG] Entering _measure_flattened_size_by_forward
+[DEBUG] Registering forward hooks...
+[DEBUG] Hook registered for module: features
+[DEBUG] Hook registered for module: features.conv_1
+[DEBUG] Hook registered for module: features.relu_1
+[DEBUG] Hook registered for module: features.bn_1
+[DEBUG] Hook registered for module: features.conv_2
+[DEBUG] Hook registered for module: features.relu_2
+[DEBUG] Hook registered for module: features.bn_2
+[DEBUG] Hook registered for module: features.pool_1
+[DEBUG] Hook registered for module: features.collapsed_conv_3_to_bn_13_f19f3081
+[DEBUG] Hook registered for module: features.collapsed_conv_3_to_bn_13_f19f3081.collapsed_conv
+[DEBUG] Hook registered for module: features.collapsed_conv_3_to_bn_13_f19f3081.collapsed_conv.0
+[DEBUG] Hook registered for module: features.collapsed_conv_3_to_bn_13_f19f3081.collapsed_conv.1
+[DEBUG] Hook registered for module: features.pool_5
+[DEBUG] Hook registered for module: classifier
+[DEBUG] Hook registered for module: classifier.relu_1
+[DEBUG] Hook registered for module: classifier.relu_2
+[DEBUG] Creating dummy input and performing forward pass...
+[DEBUG] Hook triggered for layer: features.conv_1
+[DEBUG] Hook triggered for layer: features.relu_1
+[DEBUG] Hook triggered for layer: features.bn_1
+[DEBUG] Hook triggered for layer: features.conv_2
+[DEBUG] Hook triggered for layer: features.relu_2
+[DEBUG] Hook triggered for layer: features.bn_2
+[DEBUG] Hook triggered for layer: features.pool_1
+[DEBUG] Hook triggered for layer: features.collapsed_conv_3_to_bn_13_f19f3081.collapsed_conv.0
+[DEBUG] Hook triggered for layer: features.collapsed_conv_3_to_bn_13_f19f3081.collapsed_conv.1
+[DEBUG] Hook triggered for layer: features.collapsed_conv_3_to_bn_13_f19f3081.collapsed_conv
+[DEBUG] Hook triggered for layer: features.collapsed_conv_3_to_bn_13_f19f3081
+[DEBUG] Hook triggered for layer: features.pool_5
+[DEBUG] Hook triggered for layer: features
+[DEBUG] Exception during forward pass: mat1 and mat2 shapes cannot be multiplied (512x32768 and 512x4096)
+[DEBUG] Removing hooks...
+[DEBUG] Searching for last 4D activation...
+[DEBUG] Found activation from layer: features.conv_1 with shape torch.Size([512, 64, 32, 32])
+[DEBUG] Found activation from layer: features.relu_1 with shape torch.Size([512, 64, 32, 32])
+[DEBUG] Found activation from layer: features.bn_1 with shape torch.Size([512, 64, 32, 32])
+[DEBUG] Found activation from layer: features.conv_2 with shape torch.Size([512, 64, 32, 32])
+[DEBUG] Found activation from layer: features.relu_2 with shape torch.Size([512, 64, 32, 32])
+[DEBUG] Found activation from layer: features.bn_2 with shape torch.Size([512, 64, 32, 32])
+[DEBUG] Found activation from layer: features.pool_1 with shape torch.Size([512, 64, 16, 16])
+[DEBUG] Found activation from layer: features.collapsed_conv_3_to_bn_13_f19f3081.collapsed_conv.0 with shape torch.Size([512, 512, 16, 16])
+[DEBUG] Found activation from layer: features.collapsed_conv_3_to_bn_13_f19f3081.collapsed_conv.1 with shape torch.Size([512, 512, 16, 16])
+[DEBUG] Found activation from layer: features.collapsed_conv_3_to_bn_13_f19f3081.collapsed_conv with shape torch.Size([512, 512, 16, 16])
+[DEBUG] Found activation from layer: features.collapsed_conv_3_to_bn_13_f19f3081 with shape torch.Size([512, 512, 16, 16])
+[DEBUG] Found activation from layer: features.pool_5 with shape torch.Size([512, 512, 8, 8])
+[DEBUG] Found activation from layer: features with shape torch.Size([512, 512, 8, 8])
+[DEBUG] Flattened size determined: 32768
+[DEBUG] Fallback flattened size measured as: 32768
+[DEBUG] Accessing layer 'classifier' in the model.
+[DEBUG] Accessing attribute 'classifier'
+[DEBUG] Updating container at path: classifier
+[DEBUG] Setting new container at final part: classifier
+[INFO] Rebuilt sequential head 'classifier' with updated first Linear in_features=32768
+[INFO] Replacing 4 in-place ReLU(s) with out-of-place variants.
+[DEBUG] Found in-place ReLU at: features.relu_1
+[DEBUG] Splitting layer name: features.relu_1
+[DEBUG] Container: features, Subname: relu_1
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_1
+[DEBUG] Found in-place ReLU at: features.relu_2
+[DEBUG] Splitting layer name: features.relu_2
+[DEBUG] Container: features, Subname: relu_2
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_2
+[DEBUG] Found in-place ReLU at: classifier.relu_1
+[DEBUG] Splitting layer name: classifier.relu_1
+[DEBUG] Container: classifier, Subname: relu_1
+[DEBUG] Accessing layer 'classifier' in the model.
+[DEBUG] Accessing attribute 'classifier'
+[DEBUG] Setting new ReLU at attribute relu_1
+[DEBUG] Found in-place ReLU at: classifier.relu_2
+[DEBUG] Splitting layer name: classifier.relu_2
+[DEBUG] Container: classifier, Subname: relu_2
+[DEBUG] Accessing layer 'classifier' in the model.
+[DEBUG] Accessing attribute 'classifier'
+[DEBUG] Setting new ReLU at attribute relu_2
+[INFO] Collapse complete. Total trainable params: 151116874
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+VGG16                                    [512, 10]                 --
+├─Sequential: 1-1                        [512, 512, 8, 8]          --
+│    └─Conv2d: 2-1                       [512, 64, 32, 32]         1,792
+│    └─ReLU: 2-2                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-3                  [512, 64, 32, 32]         128
+│    └─Conv2d: 2-4                       [512, 64, 32, 32]         36,928
+│    └─ReLU: 2-5                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-6                  [512, 64, 32, 32]         128
+│    └─MaxPool2d: 2-7                    [512, 64, 16, 16]         --
+│    └─Sequential: 2-8                   [512, 512, 16, 16]        --
+│    │    └─Sequential: 3-1              [512, 512, 16, 16]        33,792
+│    └─MaxPool2d: 2-9                    [512, 512, 8, 8]          --
+├─Sequential: 1-2                        [512, 10]                 --
+│    └─Linear: 2-10                      [512, 4096]               134,221,824
+│    └─ReLU: 2-11                        [512, 4096]               --
+│    └─Dropout: 2-12                     [512, 4096]               --
+│    └─Linear: 2-13                      [512, 4096]               16,781,312
+│    └─ReLU: 2-14                        [512, 4096]               --
+│    └─Dropout: 2-15                     [512, 4096]               --
+│    └─Linear: 2-16                      [512, 10]                 40,970
+==========================================================================================
+Total params: 151,116,874
+Trainable params: 151,116,874
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 101.93
+==========================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 2181.08
+Params size (MB): 604.47
+Estimated Total Size (MB): 2791.84
+==========================================================================================
+============================================================
+[•] Using GPU: NVIDIA TITAN V
+[•] Training model: Stage 2-5
+[Start training] device:cuda
+[INFO] Training started...
+model on device: cuda:0
+[INFO] Starting Epoch 1 of training...
+Epoch 1: Loss=6.3521, Acc=27.91%
+[INFO] New best accuracy: 27.91% (previous best was 0.00%)
+[INFO] Starting Epoch 2 of training...
+Epoch 2: Loss=1.6403, Acc=38.92%
+[INFO] New best accuracy: 38.92% (previous best was 27.91%)
+[INFO] Starting Epoch 3 of training...
+Epoch 3: Loss=1.5158, Acc=44.14%
+[INFO] New best accuracy: 44.14% (previous best was 38.92%)
+[INFO] Starting Epoch 4 of training...
+Epoch 4: Loss=1.4139, Acc=48.26%
+[INFO] New best accuracy: 48.26% (previous best was 44.14%)
+[INFO] Starting Epoch 5 of training...
+Epoch 5: Loss=1.3566, Acc=50.92%
+[INFO] New best accuracy: 50.92% (previous best was 48.26%)
+[INFO] Starting Epoch 6 of training...
+Epoch 6: Loss=1.2974, Acc=53.37%
+[INFO] New best accuracy: 53.37% (previous best was 50.92%)
+[INFO] Starting Epoch 7 of training...
+Epoch 7: Loss=1.2671, Acc=54.41%
+[INFO] New best accuracy: 54.41% (previous best was 53.37%)
+[INFO] Starting Epoch 8 of training...
+Epoch 8: Loss=1.2421, Acc=55.40%
+[INFO] New best accuracy: 55.40% (previous best was 54.41%)
+[INFO] Starting Epoch 9 of training...
+Epoch 9: Loss=1.2292, Acc=56.51%
+[INFO] New best accuracy: 56.51% (previous best was 55.40%)
+[INFO] Starting Epoch 10 of training...
+Epoch 10: Loss=1.2035, Acc=57.37%
+[INFO] New best accuracy: 57.37% (previous best was 56.51%)
+[INFO] Starting Epoch 11 of training...
+Epoch 11: Loss=1.1745, Acc=58.58%
+[INFO] New best accuracy: 58.58% (previous best was 57.37%)
+[INFO] Starting Epoch 12 of training...
+Epoch 12: Loss=1.1705, Acc=58.74%
+[INFO] New best accuracy: 58.74% (previous best was 58.58%)
+[INFO] Starting Epoch 13 of training...
+Epoch 13: Loss=1.1383, Acc=59.66%
+[INFO] New best accuracy: 59.66% (previous best was 58.74%)
+[INFO] Starting Epoch 14 of training...
+Epoch 14: Loss=1.1263, Acc=60.64%
+[INFO] New best accuracy: 60.64% (previous best was 59.66%)
+[INFO] Starting Epoch 15 of training...
+Epoch 15: Loss=1.1105, Acc=60.57%
+[INFO] Starting Epoch 16 of training...
+Epoch 16: Loss=1.0955, Acc=61.38%
+[INFO] New best accuracy: 61.38% (previous best was 60.64%)
+[INFO] Starting Epoch 17 of training...
+Epoch 17: Loss=1.0913, Acc=61.89%
+[INFO] New best accuracy: 61.89% (previous best was 61.38%)
+[INFO] Starting Epoch 18 of training...
+Epoch 18: Loss=1.0873, Acc=61.77%
+[INFO] Starting Epoch 19 of training...
+Epoch 19: Loss=1.0733, Acc=62.56%
+[INFO] New best accuracy: 62.56% (previous best was 61.89%)
+[INFO] Starting Epoch 20 of training...
+Epoch 20: Loss=1.0535, Acc=62.96%
+[INFO] New best accuracy: 62.96% (previous best was 62.56%)
+[INFO] Starting Epoch 21 of training...
+Epoch 21: Loss=1.0374, Acc=63.87%
+[INFO] New best accuracy: 63.87% (previous best was 62.96%)
+[INFO] Starting Epoch 22 of training...
+Epoch 22: Loss=1.0267, Acc=64.18%
+[INFO] New best accuracy: 64.18% (previous best was 63.87%)
+[INFO] Starting Epoch 23 of training...
+Epoch 23: Loss=1.0205, Acc=64.73%
+[INFO] New best accuracy: 64.73% (previous best was 64.18%)
+[INFO] Starting Epoch 24 of training...
+Epoch 24: Loss=1.0271, Acc=64.31%
+[INFO] Starting Epoch 25 of training...
+Epoch 25: Loss=1.0040, Acc=65.07%
+[INFO] New best accuracy: 65.07% (previous best was 64.73%)
+[INFO] Starting Epoch 26 of training...
+Epoch 26: Loss=1.0101, Acc=65.04%
+[INFO] Starting Epoch 27 of training...
+Epoch 27: Loss=1.0032, Acc=65.36%
+[INFO] New best accuracy: 65.36% (previous best was 65.07%)
+[INFO] Starting Epoch 28 of training...
+Epoch 28: Loss=0.9960, Acc=65.39%
+[INFO] New best accuracy: 65.39% (previous best was 65.36%)
+[INFO] Starting Epoch 29 of training...
+Epoch 29: Loss=0.9865, Acc=65.80%
+[INFO] New best accuracy: 65.80% (previous best was 65.39%)
+[INFO] Starting Epoch 30 of training...
+Epoch 30: Loss=0.9838, Acc=66.05%
+[INFO] New best accuracy: 66.05% (previous best was 65.80%)
+[INFO] Starting Epoch 31 of training...
+Post-compress 31: Loss=0.9800, Acc=66.22%
+[INFO] Post-compression phase, epoch 31...
+[INFO] Improvement detected: 0.1740 increase in accuracy.
+[INFO] Starting Epoch 32 of training...
+Post-compress 32: Loss=0.9741, Acc=66.45%
+[INFO] Post-compression phase, epoch 32...
+[INFO] Improvement detected: 0.2280 increase in accuracy.
+[INFO] Starting Epoch 33 of training...
+Post-compress 33: Loss=0.9750, Acc=66.42%
+[INFO] Post-compression phase, epoch 33...
+[INFO] No significant improvement. Accuracy change: -0.0360
+[INFO] Starting Epoch 34 of training...
+Post-compress 34: Loss=0.9777, Acc=66.32%
+[INFO] Post-compression phase, epoch 34...
+[INFO] No significant improvement. Accuracy change: -0.1300
+[INFO] Starting Epoch 35 of training...
+Post-compress 35: Loss=0.9668, Acc=66.68%
+[INFO] Post-compression phase, epoch 35...
+[INFO] Improvement detected: 0.2260 increase in accuracy.
+[INFO] Starting Epoch 36 of training...
+Post-compress 36: Loss=0.9581, Acc=66.91%
+[INFO] Post-compression phase, epoch 36...
+[INFO] Improvement detected: 0.2280 increase in accuracy.
+[INFO] Starting Epoch 37 of training...
+Post-compress 37: Loss=0.9468, Acc=67.56%
+[INFO] Post-compression phase, epoch 37...
+[INFO] Improvement detected: 0.6500 increase in accuracy.
+[INFO] Starting Epoch 38 of training...
+Post-compress 38: Loss=0.9410, Acc=67.78%
+[INFO] Post-compression phase, epoch 38...
+[INFO] Improvement detected: 0.2200 increase in accuracy.
+[INFO] Starting Epoch 39 of training...
+Post-compress 39: Loss=0.9361, Acc=67.66%
+[INFO] Post-compression phase, epoch 39...
+[INFO] No significant improvement. Accuracy change: -0.1200
+[INFO] Starting Epoch 40 of training...
+Post-compress 40: Loss=0.9318, Acc=68.15%
+[INFO] Post-compression phase, epoch 40...
+[INFO] Improvement detected: 0.3740 increase in accuracy.
+[INFO] Starting Epoch 41 of training...
+Post-compress 41: Loss=0.9214, Acc=68.23%
+[INFO] Post-compression phase, epoch 41...
+[INFO] Improvement detected: 0.0800 increase in accuracy.
+[INFO] Starting Epoch 42 of training...
+Post-compress 42: Loss=0.9232, Acc=68.23%
+[INFO] Post-compression phase, epoch 42...
+[INFO] No significant improvement. Accuracy change: -0.0040
+[INFO] Starting Epoch 43 of training...
+Post-compress 43: Loss=0.9092, Acc=68.78%
+[INFO] Post-compression phase, epoch 43...
+[INFO] Improvement detected: 0.5520 increase in accuracy.
+[INFO] Starting Epoch 44 of training...
+Post-compress 44: Loss=0.9236, Acc=68.37%
+[INFO] Post-compression phase, epoch 44...
+[INFO] No significant improvement. Accuracy change: -0.4140
+[INFO] Starting Epoch 45 of training...
+Post-compress 45: Loss=1.0136, Acc=65.41%
+[INFO] Post-compression phase, epoch 45...
+[INFO] No significant improvement. Accuracy change: -3.3680
+[INFO] Starting Epoch 46 of training...
+Post-compress 46: Loss=0.9443, Acc=67.78%
+[INFO] Post-compression phase, epoch 46...
+[INFO] No significant improvement. Accuracy change: -1.0060
+[INFO] Starting Epoch 47 of training...
+Post-compress 47: Loss=0.9202, Acc=68.68%
+[INFO] Post-compression phase, epoch 47...
+[INFO] No significant improvement. Accuracy change: -0.1060
+[INFO] Starting Epoch 48 of training...
+Post-compress 48: Loss=0.9077, Acc=68.92%
+[INFO] Post-compression phase, epoch 48...
+[INFO] Improvement detected: 0.1400 increase in accuracy.
+[INFO] Starting Epoch 49 of training...
+Post-compress 49: Loss=0.9018, Acc=69.21%
+[INFO] Post-compression phase, epoch 49...
+[INFO] Improvement detected: 0.2900 increase in accuracy.
+[INFO] Starting Epoch 50 of training...
+Post-compress 50: Loss=0.8980, Acc=69.32%
+[INFO] Post-compression phase, epoch 50...
+[INFO] Improvement detected: 0.1080 increase in accuracy.
+[INFO] Starting Epoch 51 of training...
+Post-compress 51: Loss=0.8898, Acc=69.57%
+[INFO] Post-compression phase, epoch 51...
+[INFO] Improvement detected: 0.2540 increase in accuracy.
+[INFO] Starting Epoch 52 of training...
+Post-compress 52: Loss=0.8780, Acc=69.99%
+[INFO] Post-compression phase, epoch 52...
+[INFO] Improvement detected: 0.4180 increase in accuracy.
+[INFO] Starting Epoch 53 of training...
+Post-compress 53: Loss=0.8764, Acc=69.88%
+[INFO] Post-compression phase, epoch 53...
+[INFO] No significant improvement. Accuracy change: -0.1100
+[INFO] Starting Epoch 54 of training...
+Post-compress 54: Loss=0.8683, Acc=70.32%
+[INFO] Post-compression phase, epoch 54...
+[INFO] Improvement detected: 0.3320 increase in accuracy.
+[INFO] Starting Epoch 55 of training...
+Post-compress 55: Loss=0.8686, Acc=70.54%
+[INFO] Post-compression phase, epoch 55...
+[INFO] Improvement detected: 0.2140 increase in accuracy.
+[INFO] Starting Epoch 56 of training...
+Post-compress 56: Loss=0.8702, Acc=70.07%
+[INFO] Post-compression phase, epoch 56...
+[INFO] No significant improvement. Accuracy change: -0.4700
+[INFO] Starting Epoch 57 of training...
+Post-compress 57: Loss=0.8543, Acc=70.84%
+[INFO] Post-compression phase, epoch 57...
+[INFO] Improvement detected: 0.3060 increase in accuracy.
+[INFO] Starting Epoch 58 of training...
+Post-compress 58: Loss=0.8546, Acc=71.14%
+[INFO] Post-compression phase, epoch 58...
+[INFO] Improvement detected: 0.2960 increase in accuracy.
+[INFO] Starting Epoch 59 of training...
+Post-compress 59: Loss=0.8573, Acc=70.56%
+[INFO] Post-compression phase, epoch 59...
+[INFO] No significant improvement. Accuracy change: -0.5800
+[INFO] Starting Epoch 60 of training...
+Post-compress 60: Loss=0.8532, Acc=70.59%
+[INFO] Post-compression phase, epoch 60...
+[INFO] No significant improvement. Accuracy change: -0.5460
+[INFO] Starting Epoch 61 of training...
+Post-compress 61: Loss=0.8433, Acc=71.33%
+[INFO] Post-compression phase, epoch 61...
+[INFO] Improvement detected: 0.1880 increase in accuracy.
+[INFO] Starting Epoch 62 of training...
+Post-compress 62: Loss=0.8226, Acc=72.01%
+[INFO] Post-compression phase, epoch 62...
+[INFO] Improvement detected: 0.6820 increase in accuracy.
+[INFO] Starting Epoch 63 of training...
+Post-compress 63: Loss=0.8392, Acc=71.42%
+[INFO] Post-compression phase, epoch 63...
+[INFO] No significant improvement. Accuracy change: -0.5860
+[INFO] Starting Epoch 64 of training...
+Post-compress 64: Loss=0.8378, Acc=71.54%
+[INFO] Post-compression phase, epoch 64...
+[INFO] No significant improvement. Accuracy change: -0.4680
+[INFO] Starting Epoch 65 of training...
+Post-compress 65: Loss=0.8442, Acc=71.14%
+[INFO] Post-compression phase, epoch 65...
+[INFO] No significant improvement. Accuracy change: -0.8660
+[INFO] Starting Epoch 66 of training...
+Post-compress 66: Loss=0.8291, Acc=71.47%
+[INFO] Post-compression phase, epoch 66...
+[INFO] No significant improvement. Accuracy change: -0.5420
+[INFO] Starting Epoch 67 of training...
+Post-compress 67: Loss=0.8251, Acc=72.00%
+[INFO] Post-compression phase, epoch 67...
+[INFO] No significant improvement. Accuracy change: -0.0140
+[INFO] Stopping early after 37 post-compression epochs due to no significant improvement.
+[INFO] Evaluating model on the test set...
+Final Test Accuracy: 76.10%
+[✓] Saved plot: VGG16_Cifar10_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/plots/Kevin_Stage_2-5_metrics.svg
+[✓] Saved metrics to VGG16_Cifar10_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/metrics/Kevin/VGG16_postcomp_10_metrics.json
+[✓] Saved plot: VGG16_Cifar10_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/plots/Kevin/VGG16_postcomp_10_plots.svg
+Saved comparison plot to VGG16_Cifar10_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/plots/Kevin/VGG16_postcomp_10_plots.svg
