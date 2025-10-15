@@ -132,17 +132,16 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
     disable_inplace_relu(model)
     model.to(device)  # ensure all new modules are moved to correct device
 
-    print(f"[INFO] Collapse complete. Total trainable params: {count_trainable_params(model)} with collapsed blocks: {len(compression_set)} for compression set {compression_set}")
+    print(f"[INFO] Collapse complete. Total trainable params: {count_trainable_params(model)} with collapsed blocks: {len(compression_set)} for compression set {compression_set} on device {device} for input shape {input_shape} with model class {model_class.__name__} and kwargs {model_kwargs}")
     
     return model
-
 
 def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device='cpu'):
     """
     Collapse layers between start_layer_name and end_layer_name by:
     - Replacing them with a copy of the last layer in the block.
     - Adding an AdaptiveAvgPool2d to match the output shape expected by the next layer.
-    This keeps the layer type the same as the last layer of the block and preserves connectivity.
+    Ensures 4D input for Conv2d and handles both batched and unbatched input shapes.
     """
     print(f"\nCollapsing layers from '{start_layer_name}' to '{end_layer_name}'...")
 
@@ -156,15 +155,24 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
     if start_idx is None or end_idx is None:
         raise ValueError(f"Layers '{start_layer_name}' or '{end_layer_name}' not found.")
 
-    # Forward simulate input to get output shape
-    dummy_input = torch.randn(1, *input_shape, device=device)
+    # --- Ensure dummy_input is correct 4D shape ---
+    if len(input_shape) == 3:
+        # unbatched input: (C, H, W)
+        dummy_input = torch.randn(1, *input_shape, device=device)
+    elif len(input_shape) == 4:
+        # already batched: (N, C, H, W)
+        dummy_input = torch.randn(*input_shape, device=device)
+    else:
+        raise ValueError(f"Unsupported input_shape for Conv2d: {input_shape}")
+
     x = dummy_input
+    # Forward until start of block
     for i in range(start_idx):
         x = named_layers[i][1](x)
     pre_collapse_shape = x.shape
     print(f"[DEBUG] Input to collapse block shape: {pre_collapse_shape}")
 
-    # Forward through the block to get the target output shape
+    # Forward through the block to get target output shape
     for i in range(start_idx, end_idx + 1):
         x = named_layers[i][1](x)
     post_collapse_shape = x.shape
@@ -176,16 +184,17 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
 
     # Build new collapsed sequence
     collapsed_layers = []
-    collapsed_layers.append(last_layer)  # use the same layer type
-    # Add adaptive pooling to match output size
+    collapsed_layers.append(last_layer)  # keep same layer type
+
+    # Add adaptive pooling if last layer is Conv2d to ensure output shape consistency
     if isinstance(last_layer, nn.Conv2d):
         H, W = post_collapse_shape[-2:]
         collapsed_layers.append(nn.AdaptiveAvgPool2d((H, W)))
     elif isinstance(last_layer, nn.Linear):
-        # Linear layers typically don't need pooling, just pass
+        # Linear layers typically don't need pooling
         pass
 
-    # Replace old layers with collapsed layers
+    # Replace old layers with collapsed layers in container
     updated_layers = named_layers[:start_idx] + [(f"collapsed_{start_idx}", nn.Sequential(*collapsed_layers))] + named_layers[end_idx + 1:]
     _update_container(model, start_container_name, updated_layers)
     model.to(device)
@@ -193,16 +202,22 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
     print(f"[INFO] Collapsed layers '{start_layer_name}' → '{end_layer_name}' into a single layer with adaptive pooling.")
     return model
 
-
 def _simulate_input_hook(model, target_layer_path, input_shape, device='cpu'):
     """
     Capture the activation that will be *input to the target layer*.
-    Works for both direct nn.Conv2d layers (e.g., features.conv_3)
-    and nested blocks (e.g., stage3.stage3_block0.block.conv2).
+    Works for both direct nn.Conv2d layers and nested blocks.
+    Ensures proper 4D input for Conv2d.
     """
     model.eval()
     model.to(device)
-    dummy_input = torch.randn(input_shape).to(device)
+
+    # --- Robust dummy input ---
+    if len(input_shape) == 3:
+        dummy_input = torch.randn(1, *input_shape, device=device)  # [1, C, H, W]
+    elif len(input_shape) == 4:
+        dummy_input = torch.randn(*input_shape, device=device)      # already batched
+    else:
+        raise ValueError(f"Unsupported input_shape: {input_shape}")
 
     try:
         target_module = get_layer(model, target_layer_path)
@@ -431,15 +446,19 @@ def _replace_layers(named_layers, start_idx, end_idx, new_block):
 def adjust_classifier_input_features(model, input_shape, num_classes=200, device='cpu'):
     """
     Dynamically detect the classifier/head module and adjust its first Linear
-    to match flattened feature size after current backbone. This does NOT assume
-    any attribute name like 'classifier' or 'fc'. Instead:
-      - run a forward pass with hooks to capture activations
-      - find the first Linear module (by named_modules order)
-      - replace the first Linear's in_features to match the measured flattened size
-    If nothing is detected, fall back to inserting model.fc.
+    to match flattened feature size after the current backbone.
+    Ensures dummy inputs are correct 4D tensors.
     """
     model.eval()
     model.to(device)
+
+    # --- Robust dummy input ---
+    if len(input_shape) == 3:
+        dummy = torch.randn(1, *input_shape, device=device)  # [1, C, H, W]
+    elif len(input_shape) == 4:
+        dummy = torch.randn(*input_shape, device=device)      # already batched
+    else:
+        raise ValueError(f"Unsupported input_shape: {input_shape}")
 
     # register hooks to capture module inputs
     activations = {}
@@ -447,22 +466,19 @@ def adjust_classifier_input_features(model, input_shape, num_classes=200, device
 
     def make_hook(name):
         def hook(module, inp, out):
-            # store the input tensor to the module
             activations[name] = {'input_shape': inp[0].shape, 'output_shape': out.shape}
         return hook
 
-    # attach hooks to linear and pooling modules to capture shapes
     for name, module in model.named_modules():
         if isinstance(module, (nn.Conv2d, nn.AdaptiveAvgPool2d, nn.Linear, nn.BatchNorm2d, nn.ReLU, nn.MaxPool2d, nn.Sequential)):
             hooks.append(module.register_forward_hook(make_hook(name)))
 
     try:
         with torch.no_grad():
-            dummy = torch.randn(input_shape).to(device)
             try:
                 model(dummy)
             except Exception:
-                # we swallow exceptions here because head may raise if misconfigured; hooks may still have data
+                # head may raise if misconfigured; hooks may still have data
                 pass
     finally:
         for h in hooks:
@@ -475,9 +491,8 @@ def adjust_classifier_input_features(model, input_shape, num_classes=200, device
         print(f"[INFO] First linear found at: {first_linear_name}")
 
         parent_container_name, linear_subname = _get_container_and_subname(first_linear_name)
-        # measure flattened size from activations if available
-        flattened_size = None
         hooked = activations.get(first_linear_name)
+
         if hooked is not None:
             inp_shape = hooked['input_shape']
             if len(inp_shape) > 2:
@@ -489,13 +504,11 @@ def adjust_classifier_input_features(model, input_shape, num_classes=200, device
             flattened_size = _measure_flattened_size_by_forward(model, input_shape, device)
             print(f"[DEBUG] Fallback flattened size measured as: {flattened_size}")
 
-        # replace first Linear in its parent container
+        # Replace first Linear in its parent container
         if parent_container_name == "":
-            # top-level linear attribute like model.fc (rare)
             orig = getattr(model, first_linear_name)
             if isinstance(orig, nn.Linear):
                 setattr(model, first_linear_name, nn.Linear(flattened_size, orig.out_features))
-                print(f"[INFO] Replaced top-level linear '{first_linear_name}' to have in_features={flattened_size}")
                 model.to(device)
                 model.train()
                 return
@@ -513,11 +526,9 @@ def adjust_classifier_input_features(model, input_shape, num_classes=200, device
                 new_seq = nn.Sequential(OrderedDict(new_children))
                 _update_container(model, parent_container_name, new_seq)
                 model.to(device)
-                print(f"[INFO] Rebuilt sequential head '{parent_container_name}' with updated first Linear in_features={flattened_size}")
                 model.train()
                 return
             else:
-                # parent container not sequential, try replacing attribute in parent_container
                 parts = first_linear_name.split('.')
                 par = '.'.join(parts[:-1])
                 last = parts[-1]
@@ -525,9 +536,8 @@ def adjust_classifier_input_features(model, input_shape, num_classes=200, device
                 orig = getattr(par_container, last)
                 if isinstance(orig, nn.Linear):
                     setattr(par_container, last, nn.Linear(flattened_size, orig.out_features))
-                    _update_container(model, par, par_container)  # ensure update
+                    _update_container(model, par, par_container)
                     model.to(device)
-                    print(f"[INFO] Replaced linear '{first_linear_name}' inside '{par}'")
                     model.train()
                     return
 
