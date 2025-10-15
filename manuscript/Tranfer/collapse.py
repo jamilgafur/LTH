@@ -333,7 +333,7 @@ def forward_until(model, stop_path, x):
         x = current(x)
     return x
 
-def build_collapsed_block(layers):
+def _build_collapsed_block(layers):
     """
     Collapses a sequence of layers into a single nn.Sequential block, 
     without forcibly shrinking spatial dimensions.
