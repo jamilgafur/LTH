@@ -271,7 +271,17 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
         full_block = named_layers[start_idx:end_idx + 1]
         print(f"[DEBUG] Final block will remove indices {start_idx}..{end_idx}: {[n for n,_ in full_block]}")
 
-        collapsed_block = _build_collapsed_block(layer_type, in_channels, out_channels, out_shape, full_block=full_block, stride=final_stride)
+        # --- NEW: detect the last pooling layer inside the block and preserve it inside the collapsed block ---
+        pool_layer = None
+        # full_block is list of (name, module)
+        for nm, mod in reversed(full_block):
+            if isinstance(mod, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
+                pool_layer = mod
+                print(f"[DEBUG] Found pooling layer to preserve inside collapsed block: {nm} ({mod.__class__.__name__})")
+                break
+
+        collapsed_block = _build_collapsed_block(layer_type, in_channels, out_channels, out_shape,
+                                                 full_block=full_block, stride=final_stride, pool_layer=pool_layer)
 
     # --- replace in container ---
     updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
@@ -333,14 +343,15 @@ def forward_until(model, stop_path, x):
         x = current(x)
     return x
 
-def _build_collapsed_block(layer_type, in_features, out_features, output_shape, full_block=None, stride=(1, 1)):
+def _build_collapsed_block(layer_type, in_features, out_features, output_shape, full_block=None, stride=(1, 1), pool_layer: Optional[nn.Module]=None):
     """
     Build a conservative collapsed block:
     - Conv2d -> 1x1 conv mapping in_channels -> out_channels, use final stride,
       include BatchNorm/ReLU if originally present AT THE END of the slice (not anywhere).
     - Linear -> single Linear(in_features, out_features).
+    NEW: if pool_layer is provided, append it at the end to preserve downsampling.
     """
-    print(f"[DEBUG] Building collapsed block of type {layer_type.__name__} with in_features={in_features}, out_features={out_features}, output_shape={output_shape}, stride={stride}")
+    print(f"[DEBUG] Building collapsed block of type {layer_type.__name__} with in_features={in_features}, out_features={out_features}, output_shape={output_shape}, stride={stride}, pool_layer={pool_layer.__class__.__name__ if pool_layer is not None else None}")
 
     if layer_type == nn.Conv2d:
         # detect presence of BN/ReLU at the *end* of the original slice
@@ -373,6 +384,11 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
             seq.append(nn.BatchNorm2d(out_features))
         if has_relu:
             seq.append(nn.ReLU(inplace=False))
+
+        # --- NEW: append pooling if provided to preserve spatial downsampling ---
+        if pool_layer is not None:
+            seq.append(pool_layer)
+            print(f"[DEBUG] Appending preserved pooling layer to collapsed block: {pool_layer.__class__.__name__}")
 
         collapsed = nn.Sequential(OrderedDict([("collapsed_conv", nn.Sequential(*seq))]))
         print(f"[DEBUG] Built collapsed Conv block with layers: {[type(m).__name__ for m in seq]}")
@@ -516,6 +532,7 @@ def _replace_layers(named_layers, start_idx, end_idx, new_block):
             new_layers.append((name, layer))
     print(f"[DEBUG] New container will have {len(new_layers)} children.")
     return nn.Sequential(OrderedDict(new_layers))
+
 def adjust_classifier_input_features(model, input_shape, num_classes=200, device='cpu'):
     """
     Update head so the first Linear receives the feature size it expects,
