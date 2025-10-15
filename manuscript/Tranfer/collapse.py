@@ -333,58 +333,42 @@ def forward_until(model, stop_path, x):
         x = current(x)
     return x
 
+
 def _build_collapsed_block(layer_type, in_features, out_features, output_shape, full_block=None, stride=(1, 1)):
     """
-    Build a conservative collapsed block:
-    - Conv2d -> 1x1 conv mapping in_channels -> out_channels, use final stride,
-      include BatchNorm/ReLU if originally present AT THE END of the slice (not anywhere).
-    - Linear -> single Linear(in_features, out_features).
+    Collapse Conv2d block, ignoring intermediate pooling.
+    Add BN/ReLU if present at the *end* of the block.
     """
-    print(f"[DEBUG] Building collapsed block of type {layer_type.__name__} with in_features={in_features}, out_features={out_features}, output_shape={output_shape}, stride={stride}")
-
     if layer_type == nn.Conv2d:
-        # detect presence of BN/ReLU at the *end* of the original slice
         has_bn = False
         has_relu = False
         if full_block:
-            # full_block is a list of (name, module) pairs or modules depending on call site:
-            # unify to modules list:
-            mods = []
-            if isinstance(full_block[0], tuple) and len(full_block[0]) == 2:
-                mods = [m for _, m in full_block]
-            else:
-                mods = list(full_block)
-
-            # only look at the tail
+            mods = [m for _, m in full_block] if isinstance(full_block[0], tuple) else list(full_block)
+            # Only look at tail for BN/ReLU
             if len(mods) >= 1 and isinstance(mods[-1], nn.ReLU):
                 has_relu = True
-                # if second-to-last is BN keep it as bn then relu
                 if len(mods) >= 2 and isinstance(mods[-2], nn.BatchNorm2d):
                     has_bn = True
             elif len(mods) >= 1 and isinstance(mods[-1], nn.BatchNorm2d):
                 has_bn = True
 
-        print(f"[DEBUG] Collapsed block end flags -> has_bn: {has_bn}, has_relu: {has_relu}")
-
-        # Use a 1x1 conv as a conservative collapsed operator (this is what you had before)
-        conv = nn.Conv2d(in_channels=in_features, out_channels=out_features, kernel_size=1, stride=stride, padding=0, bias=not has_bn)
-        seq = [conv]
+        # Build collapsed block: 1x1 conv, BN/ReLU at end if originally present
+        conv = nn.Conv2d(in_channels=in_features, out_channels=out_features,
+                         kernel_size=1, stride=stride, padding=0, bias=not has_bn)
+        layers = [conv]
         if has_bn:
-            seq.append(nn.BatchNorm2d(out_features))
+            layers.append(nn.BatchNorm2d(out_features))
         if has_relu:
-            seq.append(nn.ReLU(inplace=False))
+            layers.append(nn.ReLU(inplace=False))
 
-        collapsed = nn.Sequential(OrderedDict([("collapsed_conv", nn.Sequential(*seq))]))
-        print(f"[DEBUG] Built collapsed Conv block with layers: {[type(m).__name__ for m in seq]}")
+        collapsed = nn.Sequential(OrderedDict([("collapsed_conv", nn.Sequential(*layers))]))
         return collapsed
 
     elif layer_type == nn.Linear:
-        block = nn.Sequential(OrderedDict([("collapsed_linear", nn.Linear(in_features, out_features))]))
-        print(f"[DEBUG] Built collapsed Linear block: Linear({in_features} -> {out_features})")
-        return block
-
+        return nn.Sequential(OrderedDict([("collapsed_linear", nn.Linear(in_features, out_features))]))
     else:
         raise NotImplementedError(f"Unsupported layer type for collapsing: {layer_type}")
+
 
 def _measure_flattened_size_by_forward(model, input_shape, device):
     """
@@ -516,126 +500,48 @@ def _replace_layers(named_layers, start_idx, end_idx, new_block):
             new_layers.append((name, layer))
     print(f"[DEBUG] New container will have {len(new_layers)} children.")
     return nn.Sequential(OrderedDict(new_layers))
-
 def adjust_classifier_input_features(model, input_shape, num_classes=200, device='cpu'):
     """
-    Dynamically detect the classifier/head module and adjust its first Linear
-    to match flattened feature size after current backbone. This does NOT assume
-    any attribute name like 'classifier' or 'fc'. Instead:
-      - run a forward pass with hooks to capture activations
-      - find the first Linear module (by named_modules order)
-      - replace the first Linear's in_features to match the measured flattened size
-    If nothing is detected, fall back to inserting model.fc.
+    Replace final classifier with one that accepts output of backbone after adaptive pooling.
     """
     model.eval()
     model.to(device)
 
-    # register hooks to capture module inputs
-    activations = {}
-    hooks = []
+    # Insert adaptive pooling if backbone ends with Conv2d
+    last_conv_name = None
+    for name, mod in reversed(list(model.named_modules())):
+        if isinstance(mod, nn.Conv2d):
+            last_conv_name = name
+            break
 
-    def make_hook(name):
-        def hook(module, inp, out):
-            # store the input tensor to the module
-            activations[name] = {'input_shape': inp[0].shape, 'output_shape': out.shape}
-        return hook
+    if last_conv_name:
+        parent_name, subname = _get_container_and_subname(last_conv_name)
+        parent = get_layer(model, parent_name)
+        last_conv = getattr(parent, subname) if not _is_int_str(subname) else parent[int(subname)]
 
-    # attach hooks to linear and pooling modules to capture shapes
-    for name, module in model.named_modules():
-        if isinstance(module, (nn.Conv2d, nn.AdaptiveAvgPool2d, nn.Linear, nn.BatchNorm2d, nn.ReLU, nn.MaxPool2d, nn.Sequential)):
-            hooks.append(module.register_forward_hook(make_hook(name)))
-
-    try:
-        with torch.no_grad():
-            dummy = torch.randn(input_shape).to(device)
-            try:
-                model(dummy)
-            except Exception:
-                # we swallow exceptions here because head may raise if misconfigured; hooks may still have data
-                pass
-    finally:
-        for h in hooks:
-            h.remove()
-
-    # find first Linear's name
-    linear_names = [name for name, mod in model.named_modules() if isinstance(mod, nn.Linear)]
-    if linear_names:
-        first_linear_name = linear_names[0]
-        print(f"[INFO] First linear found at: {first_linear_name}")
-
-        parent_container_name, linear_subname = _get_container_and_subname(first_linear_name)
-        # measure flattened size from activations if available
-        flattened_size = None
-        hooked = activations.get(first_linear_name)
-        if hooked is not None:
-            inp_shape = hooked['input_shape']
-            if len(inp_shape) > 2:
-                flattened_size = int(torch.tensor(inp_shape[1:]).prod().item())
-            else:
-                flattened_size = inp_shape[1]
-            print(f"[DEBUG] Measured flattened features size for head: {flattened_size}")
+        # Replace last conv with Sequential(conv + AdaptiveAvgPool2d(1,1))
+        new_block = nn.Sequential(OrderedDict([
+            ("collapsed_conv", last_conv),
+            ("adaptive_pool", nn.AdaptiveAvgPool2d((1, 1)))
+        ]))
+        if _is_int_str(subname):
+            parent[int(subname)] = new_block
         else:
-            flattened_size = _measure_flattened_size_by_forward(model, input_shape, device)
-            print(f"[DEBUG] Fallback flattened size measured as: {flattened_size}")
+            setattr(parent, subname, new_block)
+        print(f"[INFO] Inserted AdaptiveAvgPool2d after last Conv2d: {last_conv_name}")
 
-        # replace first Linear in its parent container
-        if parent_container_name == "":
-            # top-level linear attribute like model.fc (rare)
-            orig = getattr(model, first_linear_name)
-            if isinstance(orig, nn.Linear):
-                setattr(model, first_linear_name, nn.Linear(flattened_size, orig.out_features))
-                print(f"[INFO] Replaced top-level linear '{first_linear_name}' to have in_features={flattened_size}")
-                model.to(device)
-                model.train()
-                return
+        # Classifier expects flattened size = out_channels
+        in_features = last_conv.out_channels
+        if hasattr(model, 'classifier') and isinstance(model.classifier, nn.Sequential):
+            model.classifier = nn.Sequential(
+                nn.Linear(in_features, 4096),
+                nn.ReLU(inplace=False),
+                nn.Dropout(),
+                nn.Linear(4096, num_classes)
+            )
         else:
-            parent_container = get_layer(model, parent_container_name)
-            if isinstance(parent_container, nn.Sequential):
-                new_children = []
-                replaced = False
-                for name, child in parent_container.named_children():
-                    if (not replaced) and isinstance(child, nn.Linear):
-                        new_children.append((name, nn.Linear(flattened_size, child.out_features)))
-                        replaced = True
-                    else:
-                        new_children.append((name, child))
-                new_seq = nn.Sequential(OrderedDict(new_children))
-                _update_container(model, parent_container_name, new_seq)
-                model.to(device)
-                print(f"[INFO] Rebuilt sequential head '{parent_container_name}' with updated first Linear in_features={flattened_size}")
-                model.train()
-                return
-            else:
-                # parent container not sequential, try replacing attribute in parent_container
-                parts = first_linear_name.split('.')
-                par = '.'.join(parts[:-1])
-                last = parts[-1]
-                par_container = get_layer(model, par)
-                orig = getattr(par_container, last)
-                if isinstance(orig, nn.Linear):
-                    setattr(par_container, last, nn.Linear(flattened_size, orig.out_features))
-                    _update_container(model, par, par_container)  # ensure update
-                    model.to(device)
-                    print(f"[INFO] Replaced linear '{first_linear_name}' inside '{par}'")
-                    model.train()
-                    return
+            model.fc = nn.Linear(in_features, num_classes)
 
-    # fallback: attach a simple head
-    print("[WARN] Could not detect head structure cleanly. Falling back to a simple Linear head.")
-    flattened_size = _measure_flattened_size_by_forward(model, input_shape, device)
-    if hasattr(model, 'fc') and isinstance(getattr(model, 'fc', None), nn.Linear):
-        model.fc = nn.Linear(flattened_size, num_classes)
-        print("[INFO] Replaced model.fc with new head.")
-    elif hasattr(model, 'classifier') and isinstance(getattr(model, 'classifier', None), nn.Sequential):
-        model.classifier = nn.Sequential(
-            nn.Linear(flattened_size, 4096),
-            nn.ReLU(inplace=False),
-            nn.Dropout(),
-            nn.Linear(4096, num_classes)
-        )
-        print("[INFO] Replaced model.classifier with simple head.")
-    else:
-        model.fc = nn.Linear(flattened_size, num_classes)
-        print("[INFO] Set model.fc (new) as fallback head.")
     model.to(device)
     model.train()
+    print(f"[INFO] Adjusted classifier to accept features after adaptive pooling, num_classes={num_classes}")
