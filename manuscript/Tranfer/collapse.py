@@ -333,56 +333,58 @@ def forward_until(model, stop_path, x):
         x = current(x)
     return x
 
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-def _build_collapsed_block(layer_type, in_channels, out_channels, out_shape, full_block=False, stride=1):
+def _build_collapsed_block(layer_type, in_features, out_features, output_shape, full_block=None, stride=(1, 1)):
     """
-    Build a collapsed block for VGG or RegNetX-style layers.
-
-    Args:
-        layer_type (str): Type of block ('conv_bn_relu', 'linear', etc.)
-        in_channels (int): Input channels
-        out_channels (int): Output channels
-        out_shape (tuple): Expected output shape (C, H, W)
-        full_block (bool): Whether to include trailing ReLU/BatchNorm
-        stride (int or tuple): Stride for convolution
-
-    Returns:
-        nn.Sequential: Collapsed block
+    Build a conservative collapsed block:
+    - Conv2d -> 1x1 conv mapping in_channels -> out_channels, use final stride,
+      include BatchNorm/ReLU if originally present AT THE END of the slice (not anywhere).
+    - Linear -> single Linear(in_features, out_features).
     """
-    layers = []
+    print(f"[DEBUG] Building collapsed block of type {layer_type.__name__} with in_features={in_features}, out_features={out_features}, output_shape={output_shape}, stride={stride}")
 
-    if layer_type == 'conv_bn_relu':
-        # Convolution
-        layers.append(nn.Conv2d(
-            in_channels, out_channels,
-            kernel_size=3, stride=stride, padding=1, bias=True
-        ))
-
-        # BatchNorm
-        layers.append(nn.BatchNorm2d(out_channels))
-
-        # Optional ReLU
+    if layer_type == nn.Conv2d:
+        # detect presence of BN/ReLU at the *end* of the original slice
+        has_bn = False
+        has_relu = False
         if full_block:
-            layers.append(nn.ReLU(inplace=False))
+            # full_block is a list of (name, module) pairs or modules depending on call site:
+            # unify to modules list:
+            mods = []
+            if isinstance(full_block[0], tuple) and len(full_block[0]) == 2:
+                mods = [m for _, m in full_block]
+            else:
+                mods = list(full_block)
 
-    elif layer_type == 'linear':
-        # Fully connected layer
-        flattened_size = 1
-        for s in out_shape:
-            flattened_size *= s
-        layers.append(nn.Linear(in_channels, out_channels, bias=True))
-        if full_block:
-            layers.append(nn.ReLU(inplace=False))
+            # only look at the tail
+            if len(mods) >= 1 and isinstance(mods[-1], nn.ReLU):
+                has_relu = True
+                # if second-to-last is BN keep it as bn then relu
+                if len(mods) >= 2 and isinstance(mods[-2], nn.BatchNorm2d):
+                    has_bn = True
+            elif len(mods) >= 1 and isinstance(mods[-1], nn.BatchNorm2d):
+                has_bn = True
+
+        print(f"[DEBUG] Collapsed block end flags -> has_bn: {has_bn}, has_relu: {has_relu}")
+
+        # Use a 1x1 conv as a conservative collapsed operator (this is what you had before)
+        conv = nn.Conv2d(in_channels=in_features, out_channels=out_features, kernel_size=1, stride=stride, padding=0, bias=not has_bn)
+        seq = [conv]
+        if has_bn:
+            seq.append(nn.BatchNorm2d(out_features))
+        if has_relu:
+            seq.append(nn.ReLU(inplace=False))
+
+        collapsed = nn.Sequential(OrderedDict([("collapsed_conv", nn.Sequential(*seq))]))
+        print(f"[DEBUG] Built collapsed Conv block with layers: {[type(m).__name__ for m in seq]}")
+        return collapsed
+
+    elif layer_type == nn.Linear:
+        block = nn.Sequential(OrderedDict([("collapsed_linear", nn.Linear(in_features, out_features))]))
+        print(f"[DEBUG] Built collapsed Linear block: Linear({in_features} -> {out_features})")
+        return block
 
     else:
-        raise ValueError(f"Unsupported layer_type: {layer_type}")
-
-    return nn.Sequential(*layers)
-
+        raise NotImplementedError(f"Unsupported layer type for collapsing: {layer_type}")
 
 def _measure_flattened_size_by_forward(model, input_shape, device):
     """
