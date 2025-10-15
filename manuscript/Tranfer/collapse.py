@@ -333,36 +333,31 @@ def forward_until(model, stop_path, x):
         x = current(x)
     return x
 
-def _build_collapsed_block(layer_type, in_features, out_features, output_shape, full_block=None, stride=(1, 1)):
-    if layer_type == nn.Conv2d:
-        has_bn = False
-        has_relu = False
-        if full_block:
-            mods = [m for _, m in full_block] if isinstance(full_block[0], tuple) else list(full_block)
-            if isinstance(mods[-1], nn.ReLU):
-                has_relu = True
-                if len(mods) >= 2 and isinstance(mods[-2], nn.BatchNorm2d):
-                    has_bn = True
-            elif isinstance(mods[-1], nn.BatchNorm2d):
-                has_bn = True
+def build_collapsed_block(layers):
+    """
+    Collapses a sequence of layers into a single nn.Sequential block, 
+    without forcibly shrinking spatial dimensions.
+    
+    Args:
+        layers (list of nn.Module): Layers to collapse.
+        
+    Returns:
+        nn.Sequential: Collapsed block with same output HxW as input.
+    """
+    collapsed_layers = []
 
-        conv = nn.Conv2d(in_channels=in_features, out_channels=out_features,
-                         kernel_size=1, stride=stride, padding=0, bias=not has_bn)
-        seq = [conv]
-        if has_bn:
-            seq.append(nn.BatchNorm2d(out_features))
-        if has_relu:
-            seq.append(nn.ReLU(inplace=False))
+    for layer in layers:
+        # Skip in-place ReLU; replace with out-of-place
+        if isinstance(layer, nn.ReLU) and layer.inplace:
+            collapsed_layers.append(nn.ReLU(inplace=False))
+        # Skip AdaptiveAvgPool or MaxPool that may reduce to <1x1
+        elif isinstance(layer, (nn.AdaptiveAvgPool2d, nn.MaxPool2d)):
+            # Only include pooling if input H,W > kernel
+            collapsed_layers.append(layer)
+        else:
+            collapsed_layers.append(layer)
 
-        # collapse spatial dimensions
-        seq.append(nn.AdaptiveAvgPool2d(1))
-
-        collapsed = nn.Sequential(*seq)
-        return collapsed
-
-    elif layer_type == nn.Linear:
-        return nn.Sequential(nn.Linear(in_features, out_features))
-
+    return nn.Sequential(*collapsed_layers)
 def _measure_flattened_size_by_forward(model, input_shape, device):
     """
     Fallback helper: forward a dummy input and find the last activation that is 4D (spatial),
