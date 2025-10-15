@@ -333,31 +333,57 @@ def forward_until(model, stop_path, x):
         x = current(x)
     return x
 
-def _build_collapsed_block(layers):
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+def _build_collapsed_block(layer_type, in_channels, out_channels, out_shape, full_block=False, stride=1):
     """
-    Collapses a sequence of layers into a single nn.Sequential block, 
-    without forcibly shrinking spatial dimensions.
-    
+    Build a collapsed block for VGG or RegNetX-style layers.
+
     Args:
-        layers (list of nn.Module): Layers to collapse.
-        
+        layer_type (str): Type of block ('conv_bn_relu', 'linear', etc.)
+        in_channels (int): Input channels
+        out_channels (int): Output channels
+        out_shape (tuple): Expected output shape (C, H, W)
+        full_block (bool): Whether to include trailing ReLU/BatchNorm
+        stride (int or tuple): Stride for convolution
+
     Returns:
-        nn.Sequential: Collapsed block with same output HxW as input.
+        nn.Sequential: Collapsed block
     """
-    collapsed_layers = []
+    layers = []
 
-    for layer in layers:
-        # Skip in-place ReLU; replace with out-of-place
-        if isinstance(layer, nn.ReLU) and layer.inplace:
-            collapsed_layers.append(nn.ReLU(inplace=False))
-        # Skip AdaptiveAvgPool or MaxPool that may reduce to <1x1
-        elif isinstance(layer, (nn.AdaptiveAvgPool2d, nn.MaxPool2d)):
-            # Only include pooling if input H,W > kernel
-            collapsed_layers.append(layer)
-        else:
-            collapsed_layers.append(layer)
+    if layer_type == 'conv_bn_relu':
+        # Convolution
+        layers.append(nn.Conv2d(
+            in_channels, out_channels,
+            kernel_size=3, stride=stride, padding=1, bias=True
+        ))
 
-    return nn.Sequential(*collapsed_layers)
+        # BatchNorm
+        layers.append(nn.BatchNorm2d(out_channels))
+
+        # Optional ReLU
+        if full_block:
+            layers.append(nn.ReLU(inplace=False))
+
+    elif layer_type == 'linear':
+        # Fully connected layer
+        flattened_size = 1
+        for s in out_shape:
+            flattened_size *= s
+        layers.append(nn.Linear(in_channels, out_channels, bias=True))
+        if full_block:
+            layers.append(nn.ReLU(inplace=False))
+
+    else:
+        raise ValueError(f"Unsupported layer_type: {layer_type}")
+
+    return nn.Sequential(*layers)
+
+
 def _measure_flattened_size_by_forward(model, input_shape, device):
     """
     Fallback helper: forward a dummy input and find the last activation that is 4D (spatial),
