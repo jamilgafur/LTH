@@ -184,21 +184,19 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
 
     # Build new collapsed sequence
     collapsed_layers = []
-    collapsed_layers.append(last_layer)  # keep same layer type
-
-    # Add adaptive pooling if last layer is Conv2d to ensure output shape consistency
+    collapsed_layers.append(last_layer)
     if isinstance(last_layer, nn.Conv2d):
         H, W = post_collapse_shape[-2:]
         collapsed_layers.append(nn.AdaptiveAvgPool2d((H, W)))
-    elif isinstance(last_layer, nn.Linear):
-        # Linear layers typically don't need pooling
-        pass
 
-    # Replace old layers with collapsed layers in container
+    # Replace old layers with collapsed layers
     updated_layers = named_layers[:start_idx] + [(f"collapsed_{start_idx}", nn.Sequential(*collapsed_layers))] + named_layers[end_idx + 1:]
-    _update_container(model, start_container_name, updated_layers)
-    model.to(device)
 
+    # --- FIX: wrap list into nn.Sequential before updating the container ---
+    collapsed_seq = nn.Sequential(OrderedDict(updated_layers))
+    _update_container(model, start_container_name, collapsed_seq)
+
+    model.to(device)
     print(f"[INFO] Collapsed layers '{start_layer_name}' → '{end_layer_name}' into a single layer with adaptive pooling.")
     return model
 
