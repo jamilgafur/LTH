@@ -132,7 +132,7 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
     disable_inplace_relu(model)
     model.to(device)  # ensure all new modules are moved to correct device
 
-    print(f"[INFO] Collapse complete. Total trainable params: {count_trainable_params(model)}")
+    print(f"[INFO] Collapse complete. Total trainable params: {count_trainable_params(model)} with collapsed blocks: {len(compression_set)} for compression set {compression_set}")
     
     return model
 
