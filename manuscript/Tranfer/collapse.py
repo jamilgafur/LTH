@@ -135,23 +135,18 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
     print(f"[INFO] Collapse complete. Total trainable params: {count_trainable_params(model)}")
     
     return model
+
+
 def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device='cpu'):
     """
-    Collapse layers between start_layer_name and end_layer_name (inclusive).
-    They must belong to the same container (e.g., 'features').
-    Fixes channel/stride mismatches by simulating input BEFORE the start layer,
-    and aligning collapsed stride with shortcut if present.
+    Collapse layers between start_layer_name and end_layer_name by:
+    - Replacing them with a copy of the last layer in the block.
+    - Adding an AdaptiveAvgPool2d to match the output shape expected by the next layer.
+    This keeps the layer type the same as the last layer of the block and preserves connectivity.
     """
     print(f"\nCollapsing layers from '{start_layer_name}' to '{end_layer_name}'...")
 
-    # Gather candidate modules (for debugging/reporting)
-    build_layer_names = []
-    for name, layer in model.named_modules():
-        if isinstance(layer, (nn.Conv2d, nn.Linear, nn.MaxPool2d, nn.ReLU, nn.AdaptiveAvgPool2d, nn.BatchNorm2d)):
-            build_layer_names.append(name)
-    print(f"[DEBUG] Available layers for collapsing: {build_layer_names}")
-
-    # Get container and indices
+    # Get container and layer indices
     start_container_name, start_subname = _get_container_and_subname(start_layer_name)
     end_container_name, end_subname = _get_container_and_subname(end_layer_name)
     container = get_layer(model, start_container_name)
@@ -159,116 +154,43 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
 
     start_idx, end_idx = _find_layer_indices(named_layers, start_subname, end_subname)
     if start_idx is None or end_idx is None:
-        raise ValueError(
-            f"Layer names '{start_layer_name}' or '{end_layer_name}' not found inside container '{start_container_name}'."
-        )
-    assert start_idx <= end_idx, "Start index must be <= end index"
+        raise ValueError(f"Layers '{start_layer_name}' or '{end_layer_name}' not found.")
 
-    print(f"[DEBUG] Collapsing in section '{start_container_name}' from index {start_idx} to {end_idx} "
-          f"({named_layers[start_idx][0]} → {named_layers[end_idx][0]})")
+    # Forward simulate input to get output shape
+    dummy_input = torch.randn(1, *input_shape, device=device)
+    x = dummy_input
+    for i in range(start_idx):
+        x = named_layers[i][1](x)
+    pre_collapse_shape = x.shape
+    print(f"[DEBUG] Input to collapse block shape: {pre_collapse_shape}")
 
-    # Collect Conv2d/Linear for collapsing
-    full_block = named_layers[start_idx:end_idx + 1]
-    selected_layers = [layer for _, layer in full_block if isinstance(layer, (nn.Conv2d, nn.Linear))]
-    if not selected_layers:
-        raise ValueError("[ERROR] No Conv2d/Linear layers found in selected range to collapse.")
+    # Forward through the block to get the target output shape
+    for i in range(start_idx, end_idx + 1):
+        x = named_layers[i][1](x)
+    post_collapse_shape = x.shape
+    print(f"[DEBUG] Output shape after block: {post_collapse_shape}")
 
-    layer_type = type(selected_layers[0])
-    if not all(isinstance(l, layer_type) for l in selected_layers):
-        raise ValueError("Cannot collapse mixed layer types.")
+    # Take the last layer in the block
+    last_layer_name, last_layer = named_layers[end_idx]
+    print(f"[DEBUG] Collapsed layer will be a copy of '{last_layer_name}'")
 
-    # --- simulate input before start layer ---
-    try:
-        dummy_input, x = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
-        print(f"[DEBUG] Simulated input shape before collapsing block: {x.shape}")
-    except Exception as e:
-        print(f"[WARN] Hook-based simulation failed: {e}")
-        # fallback — make dummy tensor with correct channels
-        start_layer = selected_layers[0]
-        if layer_type == nn.Conv2d:
-            H, W = input_shape[-2:]
-            x = torch.randn(1, start_layer.in_channels, H, W, device=device)
-            dummy_input = x.clone()
-            print(f"[DEBUG] Fallback dummy input created with shape {x.shape}")
-        else:
-            x = torch.randn(1, start_layer.in_features, device=device)
-            dummy_input = x.clone()
+    # Build new collapsed sequence
+    collapsed_layers = []
+    collapsed_layers.append(last_layer)  # use the same layer type
+    # Add adaptive pooling to match output size
+    if isinstance(last_layer, nn.Conv2d):
+        H, W = post_collapse_shape[-2:]
+        collapsed_layers.append(nn.AdaptiveAvgPool2d((H, W)))
+    elif isinstance(last_layer, nn.Linear):
+        # Linear layers typically don't need pooling, just pass
+        pass
 
-    # --- Linear case ---
-    if layer_type == nn.Linear:
-        in_features = x.view(x.size(0), -1).size(1)
-        print(f"[DEBUG] in_features determined (Linear): {in_features}")
-        for layer in selected_layers:
-            x = layer(x)
-        out_features = x.view(x.size(0), -1).size(1)
-        print(f"[DEBUG] out_features determined (Linear): {out_features}")
-        collapsed_block = _build_collapsed_block(layer_type, in_features, out_features, x.shape, full_block=full_block)
-
-    # --- Conv2d case ---
-    else:
-        in_channels = x.shape[1]
-        last_conv = selected_layers[-1]
-        out_channels = last_conv.out_channels
-
-        # compute composite stride
-        def _ensure_tuple_stride(s):
-            if isinstance(s, tuple):
-                return s
-            try:
-                return (int(s), int(s))
-            except Exception:
-                return (1, 1)
-
-        composite_stride = (1, 1)
-        for layer in selected_layers:
-            if hasattr(layer, 'stride'):
-                s = _ensure_tuple_stride(layer.stride)
-                composite_stride = (composite_stride[0] * s[0], composite_stride[1] * s[1])
-
-        # align stride with shortcut if present
-        try:
-            container_module = get_layer(model, start_container_name)
-            if hasattr(container_module, 'shortcut'):
-                sc = getattr(container_module, 'shortcut', None)
-                if sc is not None and hasattr(sc, 'shortcut_conv'):
-                    sc_conv = getattr(sc, 'shortcut_conv')
-                    sc_stride = _ensure_tuple_stride(getattr(sc_conv, 'stride', (1, 1)))
-                    if sc_stride != composite_stride:
-                        print(f"[WARN] Composite stride {composite_stride} != shortcut stride {sc_stride}. Aligning.")
-                        composite_stride = sc_stride
-        except Exception:
-            pass
-        final_stride = composite_stride
-
-        # forward through selected layers to check output shape
-        for i, layer in enumerate(selected_layers):
-            x = layer(x)
-            print(f"[DEBUG] After {i} ({type(layer).__name__}) → {x.shape}")
-        out_shape = x.shape
-
-        # --- extend end_idx to include trailing BN/ReLU after the last conv ---
-        print(f"[DEBUG] Named layers around end index ({end_idx}):")
-        for idx in range(max(0, end_idx - 2), min(len(named_layers), end_idx + 3)):
-            nm, mod = named_layers[idx]
-            print(f" idx={idx} name={nm} type={mod.__class__.__name__}")
-
-        while end_idx + 1 < len(named_layers) and isinstance(named_layers[end_idx + 1][1], (nn.BatchNorm2d, nn.ReLU)):
-            print(f"[DEBUG] Extending collapse range to include trailing {type(named_layers[end_idx + 1][1]).__name__} "
-                  f"'{named_layers[end_idx + 1][0]}' at index {end_idx+1}")
-            end_idx += 1
-
-        full_block = named_layers[start_idx:end_idx + 1]
-        collapsed_block = _build_collapsed_block(layer_type, in_channels, out_channels, out_shape,
-                                                 full_block=full_block, stride=final_stride)
-
-    # --- replace in container ---
-    updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
-    _update_container(model, start_container_name, updated_container)
+    # Replace old layers with collapsed layers
+    updated_layers = named_layers[:start_idx] + [(f"collapsed_{start_idx}", nn.Sequential(*collapsed_layers))] + named_layers[end_idx + 1:]
+    _update_container(model, start_container_name, updated_layers)
     model.to(device)
 
-    print(f"[INFO] Collapsed {start_container_name} layers {start_layer_name} → {end_layer_name}")
-    print(f"[INFO] New trainable params: {count_trainable_params(model)}")
-    print(f"[DEBUG] Model structure after collapse:\n{layer_stats(model)}")
+    print(f"[INFO] Collapsed layers '{start_layer_name}' → '{end_layer_name}' into a single layer with adaptive pooling.")
     return model
 
 
