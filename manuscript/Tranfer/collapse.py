@@ -333,33 +333,41 @@ def forward_until(model, stop_path, x):
         x = current(x)
     return x
 
-
 def _build_collapsed_block(layer_type, in_features, out_features, output_shape, full_block=None, stride=(1, 1)):
     """
-    Collapse Conv2d block, ignoring intermediate pooling.
-    Add BN/ReLU if present at the *end* of the block.
+    Collapse Conv2d block, keeping any MaxPool2d and BN/ReLU layers at the end of the block.
     """
     if layer_type == nn.Conv2d:
         has_bn = False
         has_relu = False
+        has_pool = False
         if full_block:
             mods = [m for _, m in full_block] if isinstance(full_block[0], tuple) else list(full_block)
-            # Only look at tail for BN/ReLU
-            if len(mods) >= 1 and isinstance(mods[-1], nn.ReLU):
-                has_relu = True
-                if len(mods) >= 2 and isinstance(mods[-2], nn.BatchNorm2d):
+            # Check last few layers for BN/ReLU/MaxPool
+            for m in reversed(mods):
+                if isinstance(m, nn.ReLU):
+                    has_relu = True
+                elif isinstance(m, nn.BatchNorm2d):
                     has_bn = True
-            elif len(mods) >= 1 and isinstance(mods[-1], nn.BatchNorm2d):
-                has_bn = True
+                elif isinstance(m, nn.MaxPool2d):
+                    has_pool = True
+                # stop if we reached a Conv2d
+                elif isinstance(m, nn.Conv2d):
+                    break
 
-        # Build collapsed block: 1x1 conv, BN/ReLU at end if originally present
-        conv = nn.Conv2d(in_channels=in_features, out_channels=out_features,
-                         kernel_size=1, stride=stride, padding=0, bias=not has_bn)
-        layers = [conv]
+        # Build collapsed block
+        layers = [nn.Conv2d(in_channels=in_features, out_channels=out_features,
+                            kernel_size=1, stride=stride, padding=0, bias=not has_bn)]
         if has_bn:
             layers.append(nn.BatchNorm2d(out_features))
         if has_relu:
             layers.append(nn.ReLU(inplace=False))
+        if has_pool:
+            # keep original pooling layer
+            # take the last MaxPool2d from full_block as a representative
+            pool_layer = next((m for m in reversed(mods) if isinstance(m, nn.MaxPool2d)), None)
+            if pool_layer:
+                layers.append(pool_layer)
 
         collapsed = nn.Sequential(OrderedDict([("collapsed_conv", nn.Sequential(*layers))]))
         return collapsed
@@ -368,7 +376,6 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
         return nn.Sequential(OrderedDict([("collapsed_linear", nn.Linear(in_features, out_features))]))
     else:
         raise NotImplementedError(f"Unsupported layer type for collapsing: {layer_type}")
-
 
 def _measure_flattened_size_by_forward(model, input_shape, device):
     """
@@ -500,38 +507,40 @@ def _replace_layers(named_layers, start_idx, end_idx, new_block):
             new_layers.append((name, layer))
     print(f"[DEBUG] New container will have {len(new_layers)} children.")
     return nn.Sequential(OrderedDict(new_layers))
+
+
 def adjust_classifier_input_features(model, input_shape, num_classes=200, device='cpu'):
     """
-    Replace final classifier with one that accepts output of backbone after adaptive pooling.
+    Insert a final AdaptiveAvgPool2d((1,1)) after backbone, then adjust classifier.
     """
     model.eval()
     model.to(device)
 
-    # Insert adaptive pooling if backbone ends with Conv2d
-    last_conv_name = None
+    # Find last Conv2d or MaxPool2d to append adaptive pooling
+    last_backbone_name = None
     for name, mod in reversed(list(model.named_modules())):
-        if isinstance(mod, nn.Conv2d):
-            last_conv_name = name
+        if isinstance(mod, (nn.Conv2d, nn.MaxPool2d)):
+            last_backbone_name = name
             break
 
-    if last_conv_name:
-        parent_name, subname = _get_container_and_subname(last_conv_name)
+    if last_backbone_name:
+        parent_name, subname = _get_container_and_subname(last_backbone_name)
         parent = get_layer(model, parent_name)
-        last_conv = getattr(parent, subname) if not _is_int_str(subname) else parent[int(subname)]
+        last_mod = getattr(parent, subname) if not _is_int_str(subname) else parent[int(subname)]
 
-        # Replace last conv with Sequential(conv + AdaptiveAvgPool2d(1,1))
+        # Wrap in sequential: original layer + AdaptiveAvgPool2d
         new_block = nn.Sequential(OrderedDict([
-            ("collapsed_conv", last_conv),
+            ("original", last_mod),
             ("adaptive_pool", nn.AdaptiveAvgPool2d((1, 1)))
         ]))
         if _is_int_str(subname):
             parent[int(subname)] = new_block
         else:
             setattr(parent, subname, new_block)
-        print(f"[INFO] Inserted AdaptiveAvgPool2d after last Conv2d: {last_conv_name}")
+        print(f"[INFO] Added AdaptiveAvgPool2d after last backbone layer: {last_backbone_name}")
 
-        # Classifier expects flattened size = out_channels
-        in_features = last_conv.out_channels
+        # Set classifier Linear input size
+        in_features = last_mod.out_channels if isinstance(last_mod, nn.Conv2d) else output_shape_channels(last_mod, input_shape, device)
         if hasattr(model, 'classifier') and isinstance(model.classifier, nn.Sequential):
             model.classifier = nn.Sequential(
                 nn.Linear(in_features, 4096),
@@ -544,4 +553,14 @@ def adjust_classifier_input_features(model, input_shape, num_classes=200, device
 
     model.to(device)
     model.train()
-    print(f"[INFO] Adjusted classifier to accept features after adaptive pooling, num_classes={num_classes}")
+    print(f"[INFO] Classifier adjusted to accept features after adaptive pooling, num_classes={num_classes}")
+
+def output_shape_channels(module, input_shape, device='cpu'):
+    """
+    Helper: forward dummy input through a module to get channel dimension of output.
+    """
+    module.eval().to(device)
+    with torch.no_grad():
+        x = torch.randn(input_shape).to(device)
+        out = module(x)
+    return out.shape[1]
