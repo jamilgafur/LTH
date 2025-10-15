@@ -124,7 +124,7 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
         print(f"[DEBUG] Compressing: {compression_set1}")
         start, end = compression_set1[0], compression_set1[1]
         print(f"\n--- Starting collapse for block: {start} to {end} ---")
-        model = _collapse_block(model, start, end, input_shape, device=device)
+        model = _collapse_block(model, start, end, named_layers=list(model.named_modules()), layer_type=nn.Conv2d, input_shape=input_shape[1:], device=device)
 
         print("\n--- Adjusting classifier / head AFTER collapsing all blocks ---")
         adjust_classifier_input_features(model, input_shape, num_classes=num_classes, device=device)
