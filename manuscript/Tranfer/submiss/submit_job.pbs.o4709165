@@ -1,0 +1,325 @@
+Activating conda environment...
+Loaded CUDA and GCC modules...
+Executing: ~/env/lth_env/bin/python transfer.py --model RegNetX_400MF --dataset Cifar100 --experiment Original Model --Kevin
+VGG16 - Cifar10: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+VGG16 - Cifar100: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar10: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar100: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+Namespace(model='RegNetX_400MF', dataset='Cifar100', epochs=30, pretrain=30, experiment='Original Model', post_compress_epochs=10, imp=False, JF=False, Kevin=True)
+has GPU: True
+Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
+Loading CIFAR-100 data for RegNetX_400MF...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+
+--- Running experiment: Original Model ---
+
+=== Running Kevin experiment ===
+
+Running Kevin experiment: Original Model
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+RegNetX_400MF                            [512, 100]                --
+├─Sequential: 1-1                        [512, 32, 16, 16]         --
+│    └─Conv2d: 2-1                       [512, 32, 16, 16]         864
+│    └─BatchNorm2d: 2-2                  [512, 32, 16, 16]         64
+│    └─ReLU: 2-3                         [512, 32, 16, 16]         --
+├─Sequential: 1-2                        [512, 24, 16, 16]         --
+│    └─XBlock: 2-4                       [512, 24, 16, 16]         --
+│    │    └─Sequential: 3-1              [512, 24, 16, 16]         6,672
+│    │    └─Sequential: 3-2              [512, 24, 16, 16]         816
+│    │    └─ReLU: 3-3                    [512, 24, 16, 16]         --
+├─Sequential: 1-3                        [512, 56, 8, 8]           --
+│    └─XBlock: 2-5                       [512, 56, 8, 8]           --
+│    │    └─Sequential: 3-4              [512, 56, 8, 8]           33,040
+│    │    └─Sequential: 3-5              [512, 56, 8, 8]           1,456
+│    │    └─ReLU: 3-6                    [512, 56, 8, 8]           --
+├─Sequential: 1-4                        [512, 152, 4, 4]          --
+│    └─XBlock: 2-6                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-7              [512, 152, 4, 4]          240,464
+│    │    └─Sequential: 3-8              [512, 152, 4, 4]          8,816
+│    │    └─ReLU: 3-9                    [512, 152, 4, 4]          --
+│    └─XBlock: 2-7                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-10             [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-11             [512, 152, 4, 4]          --
+│    │    └─ReLU: 3-12                   [512, 152, 4, 4]          --
+│    └─XBlock: 2-8                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-13             [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-14             [512, 152, 4, 4]          --
+│    │    └─ReLU: 3-15                   [512, 152, 4, 4]          --
+│    └─XBlock: 2-9                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-16             [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-17             [512, 152, 4, 4]          --
+│    │    └─ReLU: 3-18                   [512, 152, 4, 4]          --
+├─Sequential: 1-5                        [512, 368, 2, 2]          --
+│    └─XBlock: 2-10                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-19             [512, 368, 2, 2]          1,412,384
+│    │    └─Sequential: 3-20             [512, 368, 2, 2]          56,672
+│    │    └─ReLU: 3-21                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-11                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-22             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-23             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-24                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-12                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-25             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-26             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-27                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-13                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-28             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-29             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-30                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-14                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-31             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-32             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-33                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-15                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-34             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-35             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-36                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-16                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-37             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-38             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-39                   [512, 368, 2, 2]          --
+├─AdaptiveAvgPool2d: 1-6                 [512, 368, 1, 1]          --
+├─Linear: 1-7                            [512, 100]                36,900
+==========================================================================================
+Total params: 11,514,548
+Trainable params: 11,514,548
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 32.49
+==========================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 1094.60
+Params size (MB): 46.06
+Estimated Total Size (MB): 1146.95
+==========================================================================================
+============================================================
+[•] Using GPU: NVIDIA GeForce GTX 1080 Ti
+[•] Training model: Original Model
+[Start training] device:cuda
+[INFO] Training started...
+model on device: cuda:0
+[INFO] Starting Epoch 1 of training...
+Epoch 1: Loss=2.6431, Acc=32.41%
+[INFO] New best accuracy: 32.41% (previous best was 0.00%)
+[INFO] Starting Epoch 2 of training...
+Epoch 2: Loss=2.4488, Acc=36.52%
+[INFO] New best accuracy: 36.52% (previous best was 32.41%)
+[INFO] Starting Epoch 3 of training...
+Epoch 3: Loss=2.3298, Acc=38.69%
+[INFO] New best accuracy: 38.69% (previous best was 36.52%)
+[INFO] Starting Epoch 4 of training...
+Epoch 4: Loss=2.2283, Acc=41.06%
+[INFO] New best accuracy: 41.06% (previous best was 38.69%)
+[INFO] Starting Epoch 5 of training...
+Epoch 5: Loss=2.1379, Acc=42.89%
+[INFO] New best accuracy: 42.89% (previous best was 41.06%)
+[INFO] Starting Epoch 6 of training...
+Epoch 6: Loss=2.0531, Acc=44.75%
+[INFO] New best accuracy: 44.75% (previous best was 42.89%)
+[INFO] Starting Epoch 7 of training...
+Epoch 7: Loss=1.9656, Acc=46.68%
+[INFO] New best accuracy: 46.68% (previous best was 44.75%)
+[INFO] Starting Epoch 8 of training...
+Epoch 8: Loss=1.8870, Acc=48.41%
+[INFO] New best accuracy: 48.41% (previous best was 46.68%)
+[INFO] Starting Epoch 9 of training...
+Epoch 9: Loss=1.8141, Acc=50.25%
+[INFO] New best accuracy: 50.25% (previous best was 48.41%)
+[INFO] Starting Epoch 10 of training...
+Epoch 10: Loss=1.7449, Acc=51.76%
+[INFO] New best accuracy: 51.76% (previous best was 50.25%)
+[INFO] Starting Epoch 11 of training...
+Epoch 11: Loss=1.6662, Acc=53.55%
+[INFO] New best accuracy: 53.55% (previous best was 51.76%)
+[INFO] Starting Epoch 12 of training...
+Epoch 12: Loss=1.6014, Acc=55.06%
+[INFO] New best accuracy: 55.06% (previous best was 53.55%)
+[INFO] Starting Epoch 13 of training...
+Epoch 13: Loss=1.5376, Acc=56.51%
+[INFO] New best accuracy: 56.51% (previous best was 55.06%)
+[INFO] Starting Epoch 14 of training...
+Epoch 14: Loss=1.4597, Acc=58.51%
+[INFO] New best accuracy: 58.51% (previous best was 56.51%)
+[INFO] Starting Epoch 15 of training...
+Epoch 15: Loss=1.4025, Acc=59.56%
+[INFO] New best accuracy: 59.56% (previous best was 58.51%)
+[INFO] Starting Epoch 16 of training...
+Epoch 16: Loss=1.3242, Acc=61.70%
+[INFO] New best accuracy: 61.70% (previous best was 59.56%)
+[INFO] Starting Epoch 17 of training...
+Epoch 17: Loss=1.2594, Acc=63.38%
+[INFO] New best accuracy: 63.38% (previous best was 61.70%)
+[INFO] Starting Epoch 18 of training...
+Epoch 18: Loss=1.1956, Acc=64.84%
+[INFO] New best accuracy: 64.84% (previous best was 63.38%)
+[INFO] Starting Epoch 19 of training...
+Epoch 19: Loss=1.1344, Acc=66.40%
+[INFO] New best accuracy: 66.40% (previous best was 64.84%)
+[INFO] Starting Epoch 20 of training...
+Epoch 20: Loss=1.0606, Acc=68.61%
+[INFO] New best accuracy: 68.61% (previous best was 66.40%)
+[INFO] Starting Epoch 21 of training...
+Epoch 21: Loss=0.9953, Acc=70.15%
+[INFO] New best accuracy: 70.15% (previous best was 68.61%)
+[INFO] Starting Epoch 22 of training...
+Epoch 22: Loss=0.9395, Acc=71.51%
+[INFO] New best accuracy: 71.51% (previous best was 70.15%)
+[INFO] Starting Epoch 23 of training...
+Epoch 23: Loss=0.8729, Acc=73.18%
+[INFO] New best accuracy: 73.18% (previous best was 71.51%)
+[INFO] Starting Epoch 24 of training...
+Epoch 24: Loss=0.8056, Acc=75.39%
+[INFO] New best accuracy: 75.39% (previous best was 73.18%)
+[INFO] Starting Epoch 25 of training...
+Epoch 25: Loss=0.7511, Acc=77.08%
+[INFO] New best accuracy: 77.08% (previous best was 75.39%)
+[INFO] Starting Epoch 26 of training...
+Epoch 26: Loss=0.6799, Acc=78.74%
+[INFO] New best accuracy: 78.74% (previous best was 77.08%)
+[INFO] Starting Epoch 27 of training...
+Epoch 27: Loss=0.6386, Acc=80.03%
+[INFO] New best accuracy: 80.03% (previous best was 78.74%)
+[INFO] Starting Epoch 28 of training...
+Epoch 28: Loss=0.5950, Acc=81.28%
+[INFO] New best accuracy: 81.28% (previous best was 80.03%)
+[INFO] Starting Epoch 29 of training...
+Epoch 29: Loss=0.5579, Acc=82.76%
+[INFO] New best accuracy: 82.76% (previous best was 81.28%)
+[INFO] Starting Epoch 30 of training...
+Epoch 30: Loss=0.5136, Acc=83.78%
+[INFO] New best accuracy: 83.78% (previous best was 82.76%)
+[INFO] Starting Epoch 31 of training...
+Post-compress 31: Loss=0.4611, Acc=85.29%
+[INFO] Post-compression phase, epoch 31...
+[INFO] Improvement detected: 1.5160 increase in accuracy.
+[INFO] Starting Epoch 32 of training...
+Post-compress 32: Loss=0.4301, Acc=86.35%
+[INFO] Post-compression phase, epoch 32...
+[INFO] Improvement detected: 1.0580 increase in accuracy.
+[INFO] Starting Epoch 33 of training...
+Post-compress 33: Loss=0.3949, Acc=87.43%
+[INFO] Post-compression phase, epoch 33...
+[INFO] Improvement detected: 1.0800 increase in accuracy.
+[INFO] Starting Epoch 34 of training...
+Post-compress 34: Loss=0.3604, Acc=88.48%
+[INFO] Post-compression phase, epoch 34...
+[INFO] Improvement detected: 1.0500 increase in accuracy.
+[INFO] Starting Epoch 35 of training...
+Post-compress 35: Loss=0.3248, Acc=89.68%
+[INFO] Post-compression phase, epoch 35...
+[INFO] Improvement detected: 1.1940 increase in accuracy.
+[INFO] Starting Epoch 36 of training...
+Post-compress 36: Loss=0.3146, Acc=89.91%
+[INFO] Post-compression phase, epoch 36...
+[INFO] Improvement detected: 0.2340 increase in accuracy.
+[INFO] Starting Epoch 37 of training...
+Post-compress 37: Loss=0.3037, Acc=90.34%
+[INFO] Post-compression phase, epoch 37...
+[INFO] Improvement detected: 0.4340 increase in accuracy.
+[INFO] Starting Epoch 38 of training...
+Post-compress 38: Loss=0.2803, Acc=91.09%
+[INFO] Post-compression phase, epoch 38...
+[INFO] Improvement detected: 0.7420 increase in accuracy.
+[INFO] Starting Epoch 39 of training...
+Post-compress 39: Loss=0.2617, Acc=91.68%
+[INFO] Post-compression phase, epoch 39...
+[INFO] Improvement detected: 0.5960 increase in accuracy.
+[INFO] Starting Epoch 40 of training...
+Post-compress 40: Loss=0.2487, Acc=92.02%
+[INFO] Post-compression phase, epoch 40...
+[INFO] Improvement detected: 0.3420 increase in accuracy.
+[INFO] Starting Epoch 41 of training...
+Post-compress 41: Loss=0.2328, Acc=92.50%
+[INFO] Post-compression phase, epoch 41...
+[INFO] Improvement detected: 0.4780 increase in accuracy.
+[INFO] Starting Epoch 42 of training...
+Post-compress 42: Loss=0.2198, Acc=93.00%
+[INFO] Post-compression phase, epoch 42...
+[INFO] Improvement detected: 0.5000 increase in accuracy.
+[INFO] Starting Epoch 43 of training...
+Post-compress 43: Loss=0.2178, Acc=92.84%
+[INFO] Post-compression phase, epoch 43...
+[INFO] No significant improvement. Accuracy change: -0.1660
+[INFO] Starting Epoch 44 of training...
+Post-compress 44: Loss=0.2102, Acc=93.34%
+[INFO] Post-compression phase, epoch 44...
+[INFO] Improvement detected: 0.3420 increase in accuracy.
+[INFO] Starting Epoch 45 of training...
+Post-compress 45: Loss=0.1995, Acc=93.68%
+[INFO] Post-compression phase, epoch 45...
+[INFO] Improvement detected: 0.3360 increase in accuracy.
+[INFO] Starting Epoch 46 of training...
+Post-compress 46: Loss=0.1860, Acc=94.02%
+[INFO] Post-compression phase, epoch 46...
+[INFO] Improvement detected: 0.3420 increase in accuracy.
+[INFO] Starting Epoch 47 of training...
+Post-compress 47: Loss=0.1903, Acc=93.99%
+[INFO] Post-compression phase, epoch 47...
+[INFO] No significant improvement. Accuracy change: -0.0360
+[INFO] Starting Epoch 48 of training...
+Post-compress 48: Loss=0.1845, Acc=94.15%
+[INFO] Post-compression phase, epoch 48...
+[INFO] Improvement detected: 0.1240 increase in accuracy.
+[INFO] Starting Epoch 49 of training...
+Post-compress 49: Loss=0.1732, Acc=94.52%
+[INFO] Post-compression phase, epoch 49...
+[INFO] Improvement detected: 0.3700 increase in accuracy.
+[INFO] Starting Epoch 50 of training...
+Post-compress 50: Loss=0.1703, Acc=94.48%
+[INFO] Post-compression phase, epoch 50...
+[INFO] No significant improvement. Accuracy change: -0.0380
+[INFO] Starting Epoch 51 of training...
+Post-compress 51: Loss=0.1756, Acc=94.34%
+[INFO] Post-compression phase, epoch 51...
+[INFO] No significant improvement. Accuracy change: -0.1800
+[INFO] Starting Epoch 52 of training...
+Post-compress 52: Loss=0.1628, Acc=94.67%
+[INFO] Post-compression phase, epoch 52...
+[INFO] Improvement detected: 0.1540 increase in accuracy.
+[INFO] Starting Epoch 53 of training...
+Post-compress 53: Loss=0.1605, Acc=94.76%
+[INFO] Post-compression phase, epoch 53...
+[INFO] Improvement detected: 0.0860 increase in accuracy.
+[INFO] Starting Epoch 54 of training...
+Post-compress 54: Loss=0.1563, Acc=94.96%
+[INFO] Post-compression phase, epoch 54...
+[INFO] Improvement detected: 0.2040 increase in accuracy.
+[INFO] Starting Epoch 55 of training...
+Post-compress 55: Loss=0.1449, Acc=95.30%
+[INFO] Post-compression phase, epoch 55...
+[INFO] Improvement detected: 0.3420 increase in accuracy.
+[INFO] Starting Epoch 56 of training...
+Post-compress 56: Loss=0.1368, Acc=95.59%
+[INFO] Post-compression phase, epoch 56...
+[INFO] Improvement detected: 0.2880 increase in accuracy.
+[INFO] Starting Epoch 57 of training...
+Post-compress 57: Loss=0.1465, Acc=95.17%
+[INFO] Post-compression phase, epoch 57...
+[INFO] No significant improvement. Accuracy change: -0.4200
+[INFO] Starting Epoch 58 of training...
+Post-compress 58: Loss=0.1477, Acc=95.20%
+[INFO] Post-compression phase, epoch 58...
+[INFO] No significant improvement. Accuracy change: -0.3860
+[INFO] Starting Epoch 59 of training...
+Post-compress 59: Loss=0.1381, Acc=95.60%
+[INFO] Post-compression phase, epoch 59...
+[INFO] No significant improvement. Accuracy change: 0.0120
+[INFO] Starting Epoch 60 of training...
+Post-compress 60: Loss=0.1362, Acc=95.58%
+[INFO] Post-compression phase, epoch 60...
+[INFO] No significant improvement. Accuracy change: -0.0120
+[INFO] Starting Epoch 61 of training...
+Post-compress 61: Loss=0.1425, Acc=95.51%
+[INFO] Post-compression phase, epoch 61...
+[INFO] No significant improvement. Accuracy change: -0.0840
+[INFO] Stopping early after 31 post-compression epochs due to no significant improvement.
+[INFO] Evaluating model on the test set...
+Final Test Accuracy: 49.06%
+[✓] Saved plot: RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/plots/Kevin_Original_Model_metrics.svg
+[✓] Saved metrics to RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/metrics/Kevin/RegNetX_400MF_postcomp_10_metrics.json
+[✓] Saved plot: RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/plots/Kevin/RegNetX_400MF_postcomp_10_plots.svg
+Saved comparison plot to RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.000000.pth_epochs30_pretrain30_postcompress10/plots/Kevin/RegNetX_400MF_postcomp_10_plots.svg
