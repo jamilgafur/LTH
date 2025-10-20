@@ -345,32 +345,16 @@ def forward_until(model, stop_path, x):
     return x
 
 def _build_collapsed_block(layer_type, in_features, out_features, output_shape, full_block=None, stride=(1, 1), pool_layer: Optional[nn.Module]=None):
-    """
-    Build a conservative collapsed block:
-    - Conv2d -> 1x1 conv mapping in_channels -> out_channels, use final stride,
-      include BatchNorm/ReLU if originally present AT THE END of the slice (not anywhere).
-    - Linear -> single Linear(in_features, out_features).
-    NEW: if pool_layer is provided, append it at the end to preserve downsampling.
-    """
     print(f"[DEBUG] Building collapsed block of type {layer_type.__name__} with in_features={in_features}, out_features={out_features}, output_shape={output_shape}, stride={stride}, pool_layer={pool_layer.__class__.__name__ if pool_layer is not None else None}")
 
     if layer_type == nn.Conv2d:
-        # detect presence of BN/ReLU at the *end* of the original slice
+        # --- Detect if the last layers are BatchNorm or ReLU ---
         has_bn = False
         has_relu = False
         if full_block:
-            # full_block is a list of (name, module) pairs or modules depending on call site:
-            # unify to modules list:
-            mods = []
-            if isinstance(full_block[0], tuple) and len(full_block[0]) == 2:
-                mods = [m for _, m in full_block]
-            else:
-                mods = list(full_block)
-
-            # only look at the tail
+            mods = [m for _, m in full_block] if isinstance(full_block[0], tuple) else list(full_block)
             if len(mods) >= 1 and isinstance(mods[-1], nn.ReLU):
                 has_relu = True
-                # if second-to-last is BN keep it as bn then relu
                 if len(mods) >= 2 and isinstance(mods[-2], nn.BatchNorm2d):
                     has_bn = True
             elif len(mods) >= 1 and isinstance(mods[-1], nn.BatchNorm2d):
@@ -378,21 +362,27 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
 
         print(f"[DEBUG] Collapsed block end flags -> has_bn: {has_bn}, has_relu: {has_relu}")
 
-        # Use a 1x1 conv as a conservative collapsed operator (this is what you had before)
-        conv = nn.Conv2d(in_channels=in_features, out_channels=out_features, kernel_size=1, stride=stride, padding=0, bias=not has_bn)
-        seq = [conv]
+        # --- New: Bottleneck collapse ---
+        bottleneck_ratio = 0.25
+        bottleneck_channels = max(1, int(in_features * bottleneck_ratio))
+
+        conv1 = nn.Conv2d(in_channels=in_features, out_channels=bottleneck_channels,
+                          kernel_size=1, stride=1, padding=0, bias=False)
+        relu1 = nn.ReLU(inplace=False)
+        conv2 = nn.Conv2d(in_channels=bottleneck_channels, out_channels=out_features,
+                          kernel_size=1, stride=stride, padding=0, bias=not has_bn)
+
+        seq = [conv1, relu1, conv2]
         if has_bn:
-            seq.append(nn.BatchNorm2d(out_features))
+            seq.append(nn.BatchNorm2d(out_channels))
         if has_relu:
             seq.append(nn.ReLU(inplace=False))
-
-        # --- NEW: append pooling if provided to preserve spatial downsampling ---
         if pool_layer is not None:
             seq.append(pool_layer)
             print(f"[DEBUG] Appending preserved pooling layer to collapsed block: {pool_layer.__class__.__name__}")
 
         collapsed = nn.Sequential(OrderedDict([("collapsed_conv", nn.Sequential(*seq))]))
-        print(f"[DEBUG] Built collapsed Conv block with layers: {[type(m).__name__ for m in seq]}")
+        print(f"[DEBUG] Built bottleneck collapsed Conv block with layers: {[type(m).__name__ for m in seq]}")
         return collapsed
 
     elif layer_type == nn.Linear:
@@ -402,6 +392,7 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
 
     else:
         raise NotImplementedError(f"Unsupported layer type for collapsing: {layer_type}")
+
 
 def _measure_flattened_size_by_forward(model, input_shape, device):
     """
@@ -454,40 +445,6 @@ def _measure_flattened_size_by_forward(model, input_shape, device):
         flattened = last.size(1)
     print(f"[DEBUG] Flattened size determined: {flattened}")
     return int(flattened)
-
-def _get_container_and_subname(layer_name):
-    """
-    Extracts the container (e.g., 'features', 'stage3_block0.block') and the subname.
-    """
-    print(f"[DEBUG] Splitting layer name: {layer_name}")
-    if layer_name == "":
-        return "", ""
-    layer_parts = layer_name.split('.')
-    if len(layer_parts) == 1:
-        print(f"[DEBUG] No container, subname: {layer_parts[0]}")
-        return "", layer_parts[0]
-    container = '.'.join(layer_parts[:-1])
-    subname = layer_parts[-1]
-    print(f"[DEBUG] Container: {container}, Subname: {subname}")
-    return container, subname
-
-def _find_layer_indices(named_layers, start_layer_name, end_layer_name):
-    start_idx = end_idx = None
-    print(f"[DEBUG] Finding indices for layers '{start_layer_name}' to '{end_layer_name}'...")
-
-    for i, (name, _) in enumerate(named_layers):
-        print(f"[DEBUG] Checking layer: {name} at index {i}")
-        if name == start_layer_name:
-            start_idx = i
-            print(f"[DEBUG] Found start layer '{start_layer_name}' at index {start_idx}")
-        if name == end_layer_name:
-            end_idx = i
-            print(f"[DEBUG] Found end layer '{end_layer_name}' at index {end_idx}")
-
-    if start_idx is None or end_idx is None:
-        print(f"[DEBUG] Warning: Could not find one or both layer names '{start_layer_name}', '{end_layer_name}' inside the container's children.")
-
-    return start_idx, end_idx
 
 def _update_container(model, container_path, new_container):
     """
@@ -744,3 +701,37 @@ def adjust_classifier_input_features(model, input_shape, num_classes=200, device
         print("[INFO] Set model.fc (new) as fallback head.")
     model.to(device)
     model.train()
+
+def _get_container_and_subname(layer_name):
+    """
+    Extracts the container (e.g., 'features', 'stage3_block0.block') and the subname.
+    """
+    print(f"[DEBUG] Splitting layer name: {layer_name}")
+    if layer_name == "":
+        return "", ""
+    layer_parts = layer_name.split('.')
+    if len(layer_parts) == 1:
+        print(f"[DEBUG] No container, subname: {layer_parts[0]}")
+        return "", layer_parts[0]
+    container = '.'.join(layer_parts[:-1])
+    subname = layer_parts[-1]
+    print(f"[DEBUG] Container: {container}, Subname: {subname}")
+    return container, subname
+
+def _find_layer_indices(named_layers, start_layer_name, end_layer_name):
+    start_idx = end_idx = None
+    print(f"[DEBUG] Finding indices for layers '{start_layer_name}' to '{end_layer_name}'...")
+
+    for i, (name, _) in enumerate(named_layers):
+        print(f"[DEBUG] Checking layer: {name} at index {i}")
+        if name == start_layer_name:
+            start_idx = i
+            print(f"[DEBUG] Found start layer '{start_layer_name}' at index {start_idx}")
+        if name == end_layer_name:
+            end_idx = i
+            print(f"[DEBUG] Found end layer '{end_layer_name}' at index {end_idx}")
+
+    if start_idx is None or end_idx is None:
+        print(f"[DEBUG] Warning: Could not find one or both layer names '{start_layer_name}', '{end_layer_name}' inside the container's children.")
+
+    return start_idx, end_idx
