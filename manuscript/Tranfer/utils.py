@@ -95,6 +95,7 @@ def load_dataset(dataset_name, model_name="VGG16"):
 # Benchmark Inference
 # -------------------------
 def benchmark_model(model, loader, device, num_batches=10):
+    model = torch.jit.script(model) 
     model.eval()
     model.to(device)
     times = []
