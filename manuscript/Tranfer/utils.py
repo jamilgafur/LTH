@@ -110,7 +110,7 @@ def benchmark_model(model, loader, device, num_batches=10):
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             start_time = time.time()
-            output = model(xb)
+            output = tempmodel(xb)
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             times.append(time.time() - start_time)
