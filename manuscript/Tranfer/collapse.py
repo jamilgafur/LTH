@@ -374,7 +374,7 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
 
         seq = [conv1, relu1, conv2]
         if has_bn:
-            seq.append(nn.BatchNorm2d(out_channels))
+            seq.append(nn.BatchNorm2d(out_features))
         if has_relu:
             seq.append(nn.ReLU(inplace=False))
         if pool_layer is not None:
@@ -392,7 +392,6 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
 
     else:
         raise NotImplementedError(f"Unsupported layer type for collapsing: {layer_type}")
-
 
 def _measure_flattened_size_by_forward(model, input_shape, device):
     """
