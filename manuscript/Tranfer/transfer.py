@@ -40,14 +40,14 @@ for model, datasets in CHECKPOINT_BASES.items():
         print(f"{model} - {dataset}: {path}")
 CHECKPOINT_FILES = {
     "VGG16": {
-        "Cifar10": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
-        "Cifar100": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar10": ("checkpoint_Finetuned_0.360000.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar100": ("checkpoint_Finetuned_0.964816.pth", "checkpoint_Original_0.000000.pth"),
         "TinyImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
         "ImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
     },
     "RegNetX_400MF": {
-        "Cifar10": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
-        "Cifar100": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar10": ("checkpoint_Finetuned_0.200000.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar100": ("checkpoint_Finetuned_0.931281.pth", "checkpoint_Original_0.000000.pth"),
         "TinyImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
         "ImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
     }

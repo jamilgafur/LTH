@@ -124,7 +124,7 @@ def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, de
 
     base_model = model_class(**model_kwargs)
     base_model.load_state_dict(torch.load(model_path_097, map_location=torch.device('cpu'))['model'])
-
+    print(f"[INFO] Initialized Model: {describe_model(model, train_loader)}")
 
     if collapse_range is not None:
         base_model = collapse_only(
@@ -154,7 +154,7 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
 
     base_model = model_class(**model_kwargs)
     base_model.load_state_dict(torch.load(model_path_000, map_location="cpu")['model'])
-
+    print(f"[INFO] Initialized Model: {describe_model(model, train_loader)}")
     if collapse_range is not None:
         from datetime import datetime
         formatted_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

@@ -133,7 +133,8 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
     model.to(device)  # ensure all new modules are moved to correct device
 
     print(f"[INFO] Collapse complete. Total trainable params: {count_trainable_params(model)} when compressing {compression_set} with model {model_class.__name__}")
-    
+    print(f"[INFO] Compiling model")
+    model = torch.jit.script(model) 
     return model
 
 def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device='cpu'):
