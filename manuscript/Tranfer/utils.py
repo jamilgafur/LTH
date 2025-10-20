@@ -12,7 +12,7 @@ import time
 from torchinfo import summary
 import numpy as np
 from pyPrune.utils import load_cifar10, load_cifar100, load_tiny_imagenet, load_imagenet
-
+from copy import deepcopy
 def load_dataset(dataset_name, model_name="VGG16"):
     if model_name == "VGG16":
         if dataset_name == "TinyImageNet":
@@ -95,9 +95,9 @@ def load_dataset(dataset_name, model_name="VGG16"):
 # Benchmark Inference
 # -------------------------
 def benchmark_model(model, loader, device, num_batches=10):
-    model = torch.jit.script(model) 
-    model.eval()
-    model.to(device)
+    tempmodel = torch.jit.script(copy.deepcopy(model))
+    tempmodel.eval()
+    tempmodel.to(device)
     times = []
     flops = 0
     with torch.no_grad():
@@ -117,8 +117,8 @@ def benchmark_model(model, loader, device, num_batches=10):
 
             # Measure FLOPs (only on the first batch for simplicity)
             if i == 0:
-                flops = FlopCountAnalysis(model, xb).total()
-
+                flops = FlopCountAnalysis(tempmodel, xb).total()
+    del tempmodel
     avg_time = sum(times) / len(times) if times else 0
     return avg_time, flops
 
