@@ -100,7 +100,8 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
                 params.append(metrics.get("param_count", 0))
                 accs.append(metrics.get("final_accuracy", 0))
                 infer_times.append(metrics.get("inference_time", 0))
-                mem_usages.append(metrics.get("memory_usage", 0))
+                mem_usages.append(metrics.get("memory_usage_mb", 0))
+
                 
             save_path = json_path.replace("metrics", "plots").replace("json", "svg")
             plot_results(params, accs, names, f"{workflow} Experiments", save_path,
