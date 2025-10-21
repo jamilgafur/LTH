@@ -259,11 +259,11 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
             model = run_kevin_experiment({name: layers}, model_path_000, train_loader, test_loader, device, epochs,
                                          model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size,
                                          save_path=save_path, post_compress_epochs=post_compress_epochs)
-            if args.imp:
-                optimizer, scheduler = create_optimizer_scheduler(model)
-                imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
-                          pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
-                          save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
+            # if args.imp:
+            #     optimizer, scheduler = create_optimizer_scheduler(model)
+            #     imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
+            #               pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
+            #               save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
         else:
             raise ValueError("You must specify either --JF or --Kevin to run the corresponding experiment.")
 
