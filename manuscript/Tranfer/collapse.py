@@ -97,28 +97,32 @@ def get_layer(model, layer_name):
 
 def patch_skip_connections(model):
     """
-    Recursively find submodules with .shortcut and patch their forward()
-    to skip the shortcut if the block is within collapsed range.
+    Recursively find residual blocks with .shortcut and patch their forward()
+    to skip shortcut if the block is within collapsed range.
     """
     for name, module in model.named_modules():
         if hasattr(module, 'shortcut') and isinstance(module.shortcut, nn.Module):
 
-            # Save reference to original forward BEFORE patching
-            original_forward_fn = module.forward
+            # Save reference to the ORIGINAL forward to avoid recursive loop
+            original_forward = module.forward
 
-            def make_patched_forward(block_name):
+            def make_patched_forward(orig_forward, block_name):
                 def new_forward(self, x):
                     out = self.block(x)
 
                     if hasattr(self, '_parent_model') and _is_within_collapsed_block(self._parent_model, block_name):
+                        # SKIP the shortcut if collapsed
                         return F.relu(out)
+                    else:
+                        # APPLY the shortcut if not collapsed
+                        return F.relu(out + self.shortcut(x))
 
-                    return F.relu(out + self.shortcut(x))
                 return new_forward
 
+            # Attach metadata and patch safely
             module._parent_model = model
             module._block_path = name
-            module.forward = make_patched_forward(name).__get__(module)
+            module.forward = make_patched_forward(original_forward, name).__get__(module)
             print(f"[PATCH] Patched forward of residual block: {name}")
 
 def compression_set(layers):
