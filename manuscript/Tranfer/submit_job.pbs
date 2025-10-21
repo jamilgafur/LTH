@@ -1,34 +1,45 @@
 #!/bin/bash
 
-# Activate the conda environment
+# --- Environment Setup ---
 echo "Activating conda environment..."
 conda activate ~/env/lth_env/
 echo "Loaded CUDA and GCC modules..."
 module load cuda/11.1.1_gcc-9.3.0
 module load gcc/9.3.0
 
-# Change to the directory where qsub was called
-cd ~/LTH/manuscript/Tranfer/ || exit 1
+# --- Move to script directory ---
+cd ~/LTH/manuscript/Tranfer/ || {
+    echo "Failed to change directory to ~/LTH/manuscript/Tranfer/"
+    exit 1
+}
 
-# Debug: Print variable values
+# --- Debug: Show variable values ---
 echo "MODEL=$MODEL"
 echo "DATASET=$DATASET"
 echo "EXPERIMENT=$EXPERIMENT"
 echo "FLAG=$FLAG"
 
-# Check for unset variables
+# --- Check for required variables ---
 if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$EXPERIMENT" ] || [ -z "$FLAG" ]; then
-  echo "Error: One or more required variables (MODEL, DATASET, EXPERIMENT, FLAG) are not set." >&2
-  exit 1
+    echo "Error: One or more required environment variables (MODEL, DATASET, EXPERIMENT, FLAG) are not set." >&2
+    exit 1
 fi
 
-# Echo the command
+# --- Prepare output file ---
+OUTPUT_FILE="${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}_run.txt"
+
+# Remove existing output file if it exists
+if [ -f "$OUTPUT_FILE" ]; then
+    echo "Removing existing output file: $OUTPUT_FILE"
+    rm "$OUTPUT_FILE"
+fi
+
+# --- Run the Python script ---
 echo "Executing: ~/env/lth_env/bin/python transfer.py --model $MODEL --dataset $DATASET --experiment $EXPERIMENT --$FLAG"
 
-# Run the command and redirect output to file
 ~/env/lth_env/bin/python transfer.py \
-  --model "$MODEL" \
-  --dataset "$DATASET" \
-  --experiment "$EXPERIMENT" \
-  --"$FLAG" \
-  > "${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}_run.txt"
+    --model "$MODEL" \
+    --dataset "$DATASET" \
+    --experiment "$EXPERIMENT" \
+    --"$FLAG" \
+    > "$OUTPUT_FILE" 2>&1
