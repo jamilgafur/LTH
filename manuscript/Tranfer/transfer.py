@@ -278,11 +278,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="RegNetX_400MF", choices=["VGG16", "RegNetX_400MF"], help="Model architecture to use")
     parser.add_argument("--dataset", type=str, help="Dataset to use (Cifar10, Cifar100, ImageNet, TinyImageNet)", default="Cifar10")
-    parser.add_argument("--epochs", type=int, default=30, help="Number of epochs to train for")
-    parser.add_argument("--pretrain", type=int, default=30, help="Number of pretraining epochs")
+    parser.add_argument("--epochs", type=int, default=3, help="Number of epochs to train for")
+    parser.add_argument("--pretrain", type=int, default=3, help="Number of pretraining epochs")
     parser.add_argument("--experiment", type=str, required=True, help="Experiment to run")  # Now required
-    parser.add_argument("--post_compress_epochs", type=int, default=10, help="Number of post-pruning compression epochs")
-    parser.add_argument("--imp", action="store_true", help="Apply Iterative Magnitude Pruning")
+    parser.add_argument("--post_compress_epochs", type=int, default=0, help="Number of post-pruning compression epochs")
+    parser.add_argument("--imp", action="store_false", help="Apply Iterative Magnitude Pruning")
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
 
