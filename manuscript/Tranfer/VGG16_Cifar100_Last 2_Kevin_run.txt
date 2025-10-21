@@ -1,0 +1,587 @@
+VGG16 - Cifar10: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+VGG16 - Cifar100: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar10: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar100: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+Namespace(model='VGG16', dataset='Cifar100', epochs=30, pretrain=30, experiment='Last 2', post_compress_epochs=10, imp=False, JF=False, Kevin=True)
+has GPU: True
+Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
+Loading CIFAR-100 data...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+
+--- Running experiment: Last 2 ---
+
+=== Running Kevin experiment ===
+
+Running Kevin experiment: Last 2
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+VGG16                                    [512, 100]                --
+├─Sequential: 1-1                        [512, 512, 1, 1]          --
+│    └─Conv2d: 2-1                       [512, 64, 32, 32]         1,792
+│    └─ReLU: 2-2                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-3                  [512, 64, 32, 32]         128
+│    └─Conv2d: 2-4                       [512, 64, 32, 32]         36,928
+│    └─ReLU: 2-5                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-6                  [512, 64, 32, 32]         128
+│    └─MaxPool2d: 2-7                    [512, 64, 16, 16]         --
+│    └─Conv2d: 2-8                       [512, 128, 16, 16]        73,856
+│    └─ReLU: 2-9                         [512, 128, 16, 16]        --
+│    └─BatchNorm2d: 2-10                 [512, 128, 16, 16]        256
+│    └─Conv2d: 2-11                      [512, 128, 16, 16]        147,584
+│    └─ReLU: 2-12                        [512, 128, 16, 16]        --
+│    └─BatchNorm2d: 2-13                 [512, 128, 16, 16]        256
+│    └─MaxPool2d: 2-14                   [512, 128, 8, 8]          --
+│    └─Conv2d: 2-15                      [512, 256, 8, 8]          295,168
+│    └─ReLU: 2-16                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-17                 [512, 256, 8, 8]          512
+│    └─Conv2d: 2-18                      [512, 256, 8, 8]          590,080
+│    └─ReLU: 2-19                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-20                 [512, 256, 8, 8]          512
+│    └─Conv2d: 2-21                      [512, 256, 8, 8]          590,080
+│    └─ReLU: 2-22                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-23                 [512, 256, 8, 8]          512
+│    └─MaxPool2d: 2-24                   [512, 256, 4, 4]          --
+│    └─Conv2d: 2-25                      [512, 512, 4, 4]          1,180,160
+│    └─ReLU: 2-26                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-27                 [512, 512, 4, 4]          1,024
+│    └─Conv2d: 2-28                      [512, 512, 4, 4]          2,359,808
+│    └─ReLU: 2-29                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-30                 [512, 512, 4, 4]          1,024
+│    └─Conv2d: 2-31                      [512, 512, 4, 4]          2,359,808
+│    └─ReLU: 2-32                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-33                 [512, 512, 4, 4]          1,024
+│    └─MaxPool2d: 2-34                   [512, 512, 2, 2]          --
+│    └─Conv2d: 2-35                      [512, 512, 2, 2]          2,359,808
+│    └─ReLU: 2-36                        [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-37                 [512, 512, 2, 2]          1,024
+│    └─Conv2d: 2-38                      [512, 512, 2, 2]          2,359,808
+│    └─ReLU: 2-39                        [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-40                 [512, 512, 2, 2]          1,024
+│    └─Conv2d: 2-41                      [512, 512, 2, 2]          2,359,808
+│    └─ReLU: 2-42                        [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-43                 [512, 512, 2, 2]          1,024
+│    └─MaxPool2d: 2-44                   [512, 512, 1, 1]          --
+├─Sequential: 1-2                        [512, 100]                --
+│    └─Linear: 2-45                      [512, 4096]               2,101,248
+│    └─ReLU: 2-46                        [512, 4096]               --
+│    └─Dropout: 2-47                     [512, 4096]               --
+│    └─Linear: 2-48                      [512, 4096]               16,781,312
+│    └─ReLU: 2-49                        [512, 4096]               --
+│    └─Dropout: 2-50                     [512, 4096]               --
+│    └─Linear: 2-51                      [512, 100]                409,700
+==========================================================================================
+Total params: 34,015,396
+Trainable params: 34,015,396
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 170.38
+==========================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 2298.89
+Params size (MB): 136.06
+Estimated Total Size (MB): 2441.24
+==========================================================================================
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 0/64 zeros (0.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 0/64 zeros (0.00%)
+features.conv_3.weight: 0/73728 zeros (0.00%)
+features.conv_3.bias: 0/128 zeros (0.00%)
+features.bn_3.weight: 0/128 zeros (0.00%)
+features.bn_3.bias: 0/128 zeros (0.00%)
+features.conv_4.weight: 0/147456 zeros (0.00%)
+features.conv_4.bias: 0/128 zeros (0.00%)
+features.bn_4.weight: 0/128 zeros (0.00%)
+features.bn_4.bias: 0/128 zeros (0.00%)
+features.conv_5.weight: 0/294912 zeros (0.00%)
+features.conv_5.bias: 0/256 zeros (0.00%)
+features.bn_5.weight: 0/256 zeros (0.00%)
+features.bn_5.bias: 0/256 zeros (0.00%)
+features.conv_6.weight: 0/589824 zeros (0.00%)
+features.conv_6.bias: 0/256 zeros (0.00%)
+features.bn_6.weight: 0/256 zeros (0.00%)
+features.bn_6.bias: 0/256 zeros (0.00%)
+features.conv_7.weight: 0/589824 zeros (0.00%)
+features.conv_7.bias: 0/256 zeros (0.00%)
+features.bn_7.weight: 0/256 zeros (0.00%)
+features.bn_7.bias: 0/256 zeros (0.00%)
+features.conv_8.weight: 0/1179648 zeros (0.00%)
+features.conv_8.bias: 0/512 zeros (0.00%)
+features.bn_8.weight: 0/512 zeros (0.00%)
+features.bn_8.bias: 0/512 zeros (0.00%)
+features.conv_9.weight: 1/2359296 zeros (0.00%)
+features.conv_9.bias: 0/512 zeros (0.00%)
+features.bn_9.weight: 0/512 zeros (0.00%)
+features.bn_9.bias: 0/512 zeros (0.00%)
+features.conv_10.weight: 0/2359296 zeros (0.00%)
+features.conv_10.bias: 0/512 zeros (0.00%)
+features.bn_10.weight: 0/512 zeros (0.00%)
+features.bn_10.bias: 0/512 zeros (0.00%)
+features.conv_11.weight: 0/2359296 zeros (0.00%)
+features.conv_11.bias: 0/512 zeros (0.00%)
+features.bn_11.weight: 0/512 zeros (0.00%)
+features.bn_11.bias: 0/512 zeros (0.00%)
+features.conv_12.weight: 0/2359296 zeros (0.00%)
+features.conv_12.bias: 0/512 zeros (0.00%)
+features.bn_12.weight: 0/512 zeros (0.00%)
+features.bn_12.bias: 0/512 zeros (0.00%)
+features.conv_13.weight: 0/2359296 zeros (0.00%)
+features.conv_13.bias: 0/512 zeros (0.00%)
+features.bn_13.weight: 0/512 zeros (0.00%)
+features.bn_13.bias: 0/512 zeros (0.00%)
+classifier.fc_1.weight: 0/2097152 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.fc_2.weight: 2/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.fc_3.weight: 0/409600 zeros (0.00%)
+classifier.fc_3.bias: 0/100 zeros (0.00%)
+============================================================
+[INFO] Initialized Model: None
+[INFO] Loading model with weights from 'VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs30_pretrain30_postcompress10/temp_model_kevin_2025-10-21 10:53:20.pth'...
+[INFO] Full compression set: [('features.conv_12', 'features.conv_13')]
+[DEBUG] Compressing: ('features.conv_12', 'features.conv_13')
+
+--- Starting collapse for block: features.conv_12 to features.conv_13 ---
+
+Collapsing layers from 'features.conv_12' to 'features.conv_13'...
+[DEBUG] Available layers for collapsing: ['features.conv_1', 'features.relu_1', 'features.bn_1', 'features.conv_2', 'features.relu_2', 'features.bn_2', 'features.pool_1', 'features.conv_3', 'features.relu_3', 'features.bn_3', 'features.conv_4', 'features.relu_4', 'features.bn_4', 'features.pool_2', 'features.conv_5', 'features.relu_5', 'features.bn_5', 'features.conv_6', 'features.relu_6', 'features.bn_6', 'features.conv_7', 'features.relu_7', 'features.bn_7', 'features.pool_3', 'features.conv_8', 'features.relu_8', 'features.bn_8', 'features.conv_9', 'features.relu_9', 'features.bn_9', 'features.conv_10', 'features.relu_10', 'features.bn_10', 'features.pool_4', 'features.conv_11', 'features.relu_11', 'features.bn_11', 'features.conv_12', 'features.relu_12', 'features.bn_12', 'features.conv_13', 'features.relu_13', 'features.bn_13', 'features.pool_5', 'classifier.fc_1', 'classifier.relu_1', 'classifier.fc_2', 'classifier.relu_2', 'classifier.fc_3']
+[DEBUG] Splitting layer name: features.conv_12
+[DEBUG] Container: features, Subname: conv_12
+[DEBUG] Splitting layer name: features.conv_13
+[DEBUG] Container: features, Subname: conv_13
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Finding indices for layers 'conv_12' to 'conv_13'...
+[DEBUG] Checking layer: conv_1 at index 0
+[DEBUG] Checking layer: relu_1 at index 1
+[DEBUG] Checking layer: bn_1 at index 2
+[DEBUG] Checking layer: conv_2 at index 3
+[DEBUG] Checking layer: relu_2 at index 4
+[DEBUG] Checking layer: bn_2 at index 5
+[DEBUG] Checking layer: pool_1 at index 6
+[DEBUG] Checking layer: conv_3 at index 7
+[DEBUG] Checking layer: relu_3 at index 8
+[DEBUG] Checking layer: bn_3 at index 9
+[DEBUG] Checking layer: conv_4 at index 10
+[DEBUG] Checking layer: relu_4 at index 11
+[DEBUG] Checking layer: bn_4 at index 12
+[DEBUG] Checking layer: pool_2 at index 13
+[DEBUG] Checking layer: conv_5 at index 14
+[DEBUG] Checking layer: relu_5 at index 15
+[DEBUG] Checking layer: bn_5 at index 16
+[DEBUG] Checking layer: conv_6 at index 17
+[DEBUG] Checking layer: relu_6 at index 18
+[DEBUG] Checking layer: bn_6 at index 19
+[DEBUG] Checking layer: conv_7 at index 20
+[DEBUG] Checking layer: relu_7 at index 21
+[DEBUG] Checking layer: bn_7 at index 22
+[DEBUG] Checking layer: pool_3 at index 23
+[DEBUG] Checking layer: conv_8 at index 24
+[DEBUG] Checking layer: relu_8 at index 25
+[DEBUG] Checking layer: bn_8 at index 26
+[DEBUG] Checking layer: conv_9 at index 27
+[DEBUG] Checking layer: relu_9 at index 28
+[DEBUG] Checking layer: bn_9 at index 29
+[DEBUG] Checking layer: conv_10 at index 30
+[DEBUG] Checking layer: relu_10 at index 31
+[DEBUG] Checking layer: bn_10 at index 32
+[DEBUG] Checking layer: pool_4 at index 33
+[DEBUG] Checking layer: conv_11 at index 34
+[DEBUG] Checking layer: relu_11 at index 35
+[DEBUG] Checking layer: bn_11 at index 36
+[DEBUG] Checking layer: conv_12 at index 37
+[DEBUG] Found start layer 'conv_12' at index 37
+[DEBUG] Checking layer: relu_12 at index 38
+[DEBUG] Checking layer: bn_12 at index 39
+[DEBUG] Checking layer: conv_13 at index 40
+[DEBUG] Found end layer 'conv_13' at index 40
+[DEBUG] Checking layer: relu_13 at index 41
+[DEBUG] Checking layer: bn_13 at index 42
+[DEBUG] Checking layer: pool_5 at index 43
+[DEBUG] Collapsing in section 'features' from index 37 to 40 (conv_12 → conv_13)
+[DEBUG] Accessing layer 'features.conv_12' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Accessing attribute 'conv_12'
+[DEBUG] Simulated input shape before collapsing block: torch.Size([512, 512, 2, 2])
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] in_channels=512, out_channels=512, stride=(1, 1)
+[DEBUG] After 0 (Conv2d) → torch.Size([512, 512, 2, 2])
+[DEBUG] After 1 (Conv2d) → torch.Size([512, 512, 2, 2])
+[DEBUG] Named layers around end index (40):
+   idx=38 name=relu_12 type=ReLU
+   idx=39 name=bn_12 type=BatchNorm2d
+   idx=40 name=conv_13 type=Conv2d
+   idx=41 name=relu_13 type=ReLU
+   idx=42 name=bn_13 type=BatchNorm2d
+[DEBUG] Extending collapse range to include trailing ReLU 'relu_13' at index 41
+[DEBUG] Extending collapse range to include trailing BatchNorm2d 'bn_13' at index 42
+[DEBUG] Final block will remove indices 37..42: ['conv_12', 'relu_12', 'bn_12', 'conv_13', 'relu_13', 'bn_13']
+[DEBUG] Building collapsed block of type Conv2d with in_features=512, out_features=512, output_shape=torch.Size([512, 512, 2, 2]), stride=(1, 1), pool_layer=None
+[DEBUG] Collapsed block end flags -> has_bn: True, has_relu: False
+[DEBUG] Built bottleneck collapsed Conv block with layers: ['Conv2d', 'ReLU', 'Conv2d', 'BatchNorm2d']
+[DEBUG] Replacing layers 37 to 42 with collapsed block...
+[DEBUG] Inserting new block as 'collapsed_conv_12_to_bn_13_95c1e760'
+[DEBUG] Removing layer 'relu_12' at index 38
+[DEBUG] Removing layer 'bn_12' at index 39
+[DEBUG] Removing layer 'conv_13' at index 40
+[DEBUG] Removing layer 'relu_13' at index 41
+[DEBUG] Removing layer 'bn_13' at index 42
+[DEBUG] New container will have 39 children.
+[DEBUG] Updating container at path: features
+[DEBUG] Setting new container at final part: features
+[INFO] Collapsed features layers features.conv_12 → features.conv_13
+[INFO] New trainable params: 29425828
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 0/64 zeros (0.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 0/64 zeros (0.00%)
+features.conv_3.weight: 0/73728 zeros (0.00%)
+features.conv_3.bias: 0/128 zeros (0.00%)
+features.bn_3.weight: 0/128 zeros (0.00%)
+features.bn_3.bias: 0/128 zeros (0.00%)
+features.conv_4.weight: 0/147456 zeros (0.00%)
+features.conv_4.bias: 0/128 zeros (0.00%)
+features.bn_4.weight: 0/128 zeros (0.00%)
+features.bn_4.bias: 0/128 zeros (0.00%)
+features.conv_5.weight: 0/294912 zeros (0.00%)
+features.conv_5.bias: 0/256 zeros (0.00%)
+features.bn_5.weight: 0/256 zeros (0.00%)
+features.bn_5.bias: 0/256 zeros (0.00%)
+features.conv_6.weight: 0/589824 zeros (0.00%)
+features.conv_6.bias: 0/256 zeros (0.00%)
+features.bn_6.weight: 0/256 zeros (0.00%)
+features.bn_6.bias: 0/256 zeros (0.00%)
+features.conv_7.weight: 0/589824 zeros (0.00%)
+features.conv_7.bias: 0/256 zeros (0.00%)
+features.bn_7.weight: 0/256 zeros (0.00%)
+features.bn_7.bias: 0/256 zeros (0.00%)
+features.conv_8.weight: 0/1179648 zeros (0.00%)
+features.conv_8.bias: 0/512 zeros (0.00%)
+features.bn_8.weight: 0/512 zeros (0.00%)
+features.bn_8.bias: 0/512 zeros (0.00%)
+features.conv_9.weight: 1/2359296 zeros (0.00%)
+features.conv_9.bias: 0/512 zeros (0.00%)
+features.bn_9.weight: 0/512 zeros (0.00%)
+features.bn_9.bias: 0/512 zeros (0.00%)
+features.conv_10.weight: 0/2359296 zeros (0.00%)
+features.conv_10.bias: 0/512 zeros (0.00%)
+features.bn_10.weight: 0/512 zeros (0.00%)
+features.bn_10.bias: 0/512 zeros (0.00%)
+features.conv_11.weight: 0/2359296 zeros (0.00%)
+features.conv_11.bias: 0/512 zeros (0.00%)
+features.bn_11.weight: 0/512 zeros (0.00%)
+features.bn_11.bias: 0/512 zeros (0.00%)
+features.collapsed_conv_12_to_bn_13_95c1e760.collapsed_conv.0.weight: 0/65536 zeros (0.00%)
+features.collapsed_conv_12_to_bn_13_95c1e760.collapsed_conv.2.weight: 0/65536 zeros (0.00%)
+features.collapsed_conv_12_to_bn_13_95c1e760.collapsed_conv.3.weight: 0/512 zeros (0.00%)
+features.collapsed_conv_12_to_bn_13_95c1e760.collapsed_conv.3.bias: 512/512 zeros (100.00%)
+classifier.fc_1.weight: 0/2097152 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.fc_2.weight: 2/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.fc_3.weight: 0/409600 zeros (0.00%)
+classifier.fc_3.bias: 0/100 zeros (0.00%)
+[DEBUG] Model structure after collapse:
+None
+
+--- Adjusting classifier / head AFTER collapsing all blocks ---
+[INFO] First linear found at: classifier.fc_1
+[DEBUG] Splitting layer name: classifier.fc_1
+[DEBUG] Container: classifier, Subname: fc_1
+[DEBUG] Measured flattened features size for head (from hooks): 512
+[DEBUG] Accessing layer 'classifier' in the model.
+[DEBUG] Accessing attribute 'classifier'
+[DEBUG] Updating container at path: classifier
+[DEBUG] Setting new container at final part: classifier
+[INFO] Rebuilt sequential head 'classifier' with adjusted first Linear/pool
+[INFO] Replacing 13 in-place ReLU(s) with out-of-place variants.
+[DEBUG] Found in-place ReLU at: features.relu_1
+[DEBUG] Splitting layer name: features.relu_1
+[DEBUG] Container: features, Subname: relu_1
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_1
+[DEBUG] Found in-place ReLU at: features.relu_2
+[DEBUG] Splitting layer name: features.relu_2
+[DEBUG] Container: features, Subname: relu_2
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_2
+[DEBUG] Found in-place ReLU at: features.relu_3
+[DEBUG] Splitting layer name: features.relu_3
+[DEBUG] Container: features, Subname: relu_3
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_3
+[DEBUG] Found in-place ReLU at: features.relu_4
+[DEBUG] Splitting layer name: features.relu_4
+[DEBUG] Container: features, Subname: relu_4
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_4
+[DEBUG] Found in-place ReLU at: features.relu_5
+[DEBUG] Splitting layer name: features.relu_5
+[DEBUG] Container: features, Subname: relu_5
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_5
+[DEBUG] Found in-place ReLU at: features.relu_6
+[DEBUG] Splitting layer name: features.relu_6
+[DEBUG] Container: features, Subname: relu_6
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_6
+[DEBUG] Found in-place ReLU at: features.relu_7
+[DEBUG] Splitting layer name: features.relu_7
+[DEBUG] Container: features, Subname: relu_7
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_7
+[DEBUG] Found in-place ReLU at: features.relu_8
+[DEBUG] Splitting layer name: features.relu_8
+[DEBUG] Container: features, Subname: relu_8
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_8
+[DEBUG] Found in-place ReLU at: features.relu_9
+[DEBUG] Splitting layer name: features.relu_9
+[DEBUG] Container: features, Subname: relu_9
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_9
+[DEBUG] Found in-place ReLU at: features.relu_10
+[DEBUG] Splitting layer name: features.relu_10
+[DEBUG] Container: features, Subname: relu_10
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_10
+[DEBUG] Found in-place ReLU at: features.relu_11
+[DEBUG] Splitting layer name: features.relu_11
+[DEBUG] Container: features, Subname: relu_11
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_11
+[DEBUG] Found in-place ReLU at: classifier.relu_1
+[DEBUG] Splitting layer name: classifier.relu_1
+[DEBUG] Container: classifier, Subname: relu_1
+[DEBUG] Accessing layer 'classifier' in the model.
+[DEBUG] Accessing attribute 'classifier'
+[DEBUG] Setting new ReLU at attribute relu_1
+[DEBUG] Found in-place ReLU at: classifier.relu_2
+[DEBUG] Splitting layer name: classifier.relu_2
+[DEBUG] Container: classifier, Subname: relu_2
+[DEBUG] Accessing layer 'classifier' in the model.
+[DEBUG] Accessing attribute 'classifier'
+[DEBUG] Setting new ReLU at attribute relu_2
+[INFO] Collapse complete. Total trainable params: 29425828 when compressing [('features.conv_12', 'features.conv_13')] with model VGG16
+[INFO] Compiling model
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+VGG16                                    [512, 100]                --
+├─Sequential: 1-1                        [512, 512, 1, 1]          --
+│    └─Conv2d: 2-1                       [512, 64, 32, 32]         1,792
+│    └─ReLU: 2-2                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-3                  [512, 64, 32, 32]         128
+│    └─Conv2d: 2-4                       [512, 64, 32, 32]         36,928
+│    └─ReLU: 2-5                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-6                  [512, 64, 32, 32]         128
+│    └─MaxPool2d: 2-7                    [512, 64, 16, 16]         --
+│    └─Conv2d: 2-8                       [512, 128, 16, 16]        73,856
+│    └─ReLU: 2-9                         [512, 128, 16, 16]        --
+│    └─BatchNorm2d: 2-10                 [512, 128, 16, 16]        256
+│    └─Conv2d: 2-11                      [512, 128, 16, 16]        147,584
+│    └─ReLU: 2-12                        [512, 128, 16, 16]        --
+│    └─BatchNorm2d: 2-13                 [512, 128, 16, 16]        256
+│    └─MaxPool2d: 2-14                   [512, 128, 8, 8]          --
+│    └─Conv2d: 2-15                      [512, 256, 8, 8]          295,168
+│    └─ReLU: 2-16                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-17                 [512, 256, 8, 8]          512
+│    └─Conv2d: 2-18                      [512, 256, 8, 8]          590,080
+│    └─ReLU: 2-19                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-20                 [512, 256, 8, 8]          512
+│    └─Conv2d: 2-21                      [512, 256, 8, 8]          590,080
+│    └─ReLU: 2-22                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-23                 [512, 256, 8, 8]          512
+│    └─MaxPool2d: 2-24                   [512, 256, 4, 4]          --
+│    └─Conv2d: 2-25                      [512, 512, 4, 4]          1,180,160
+│    └─ReLU: 2-26                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-27                 [512, 512, 4, 4]          1,024
+│    └─Conv2d: 2-28                      [512, 512, 4, 4]          2,359,808
+│    └─ReLU: 2-29                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-30                 [512, 512, 4, 4]          1,024
+│    └─Conv2d: 2-31                      [512, 512, 4, 4]          2,359,808
+│    └─ReLU: 2-32                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-33                 [512, 512, 4, 4]          1,024
+│    └─MaxPool2d: 2-34                   [512, 512, 2, 2]          --
+│    └─Conv2d: 2-35                      [512, 512, 2, 2]          2,359,808
+│    └─ReLU: 2-36                        [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-37                 [512, 512, 2, 2]          1,024
+│    └─Sequential: 2-38                  [512, 512, 2, 2]          --
+│    │    └─Sequential: 3-1              [512, 512, 2, 2]          132,096
+│    └─MaxPool2d: 2-39                   [512, 512, 1, 1]          --
+├─Sequential: 1-2                        [512, 100]                --
+│    └─Linear: 2-40                      [512, 4096]               2,101,248
+│    └─ReLU: 2-41                        [512, 4096]               --
+│    └─Dropout: 2-42                     [512, 4096]               --
+│    └─Linear: 2-43                      [512, 4096]               16,781,312
+│    └─ReLU: 2-44                        [512, 4096]               --
+│    └─Dropout: 2-45                     [512, 4096]               --
+│    └─Linear: 2-46                      [512, 100]                409,700
+==========================================================================================
+Total params: 29,425,828
+Trainable params: 29,425,828
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 160.98
+==========================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 2284.21
+Params size (MB): 117.70
+Estimated Total Size (MB): 2408.20
+==========================================================================================
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 0/64 zeros (0.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 0/64 zeros (0.00%)
+features.conv_3.weight: 0/73728 zeros (0.00%)
+features.conv_3.bias: 0/128 zeros (0.00%)
+features.bn_3.weight: 0/128 zeros (0.00%)
+features.bn_3.bias: 0/128 zeros (0.00%)
+features.conv_4.weight: 0/147456 zeros (0.00%)
+features.conv_4.bias: 0/128 zeros (0.00%)
+features.bn_4.weight: 0/128 zeros (0.00%)
+features.bn_4.bias: 0/128 zeros (0.00%)
+features.conv_5.weight: 0/294912 zeros (0.00%)
+features.conv_5.bias: 0/256 zeros (0.00%)
+features.bn_5.weight: 0/256 zeros (0.00%)
+features.bn_5.bias: 0/256 zeros (0.00%)
+features.conv_6.weight: 0/589824 zeros (0.00%)
+features.conv_6.bias: 0/256 zeros (0.00%)
+features.bn_6.weight: 0/256 zeros (0.00%)
+features.bn_6.bias: 0/256 zeros (0.00%)
+features.conv_7.weight: 0/589824 zeros (0.00%)
+features.conv_7.bias: 0/256 zeros (0.00%)
+features.bn_7.weight: 0/256 zeros (0.00%)
+features.bn_7.bias: 0/256 zeros (0.00%)
+features.conv_8.weight: 0/1179648 zeros (0.00%)
+features.conv_8.bias: 0/512 zeros (0.00%)
+features.bn_8.weight: 0/512 zeros (0.00%)
+features.bn_8.bias: 0/512 zeros (0.00%)
+features.conv_9.weight: 1/2359296 zeros (0.00%)
+features.conv_9.bias: 0/512 zeros (0.00%)
+features.bn_9.weight: 0/512 zeros (0.00%)
+features.bn_9.bias: 0/512 zeros (0.00%)
+features.conv_10.weight: 0/2359296 zeros (0.00%)
+features.conv_10.bias: 0/512 zeros (0.00%)
+features.bn_10.weight: 0/512 zeros (0.00%)
+features.bn_10.bias: 0/512 zeros (0.00%)
+features.conv_11.weight: 0/2359296 zeros (0.00%)
+features.conv_11.bias: 0/512 zeros (0.00%)
+features.bn_11.weight: 0/512 zeros (0.00%)
+features.bn_11.bias: 0/512 zeros (0.00%)
+features.collapsed_conv_12_to_bn_13_95c1e760.collapsed_conv.0.weight: 0/65536 zeros (0.00%)
+features.collapsed_conv_12_to_bn_13_95c1e760.collapsed_conv.2.weight: 0/65536 zeros (0.00%)
+features.collapsed_conv_12_to_bn_13_95c1e760.collapsed_conv.3.weight: 0/512 zeros (0.00%)
+features.collapsed_conv_12_to_bn_13_95c1e760.collapsed_conv.3.bias: 512/512 zeros (100.00%)
+classifier.fc_1.weight: 0/2097152 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.fc_2.weight: 2/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.fc_3.weight: 0/409600 zeros (0.00%)
+classifier.fc_3.bias: 0/100 zeros (0.00%)
+============================================================
+[•] Using GPU: NVIDIA GeForce GTX 1080 Ti
+[•] Training model: Last 2
+[Start training] device:cuda
+[INFO] Training started...
+model on device: cuda:0
+[INFO] Starting Epoch 1 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:04<07:05,  4.39s/it]  2%|▏         | 2/98 [00:04<03:02,  1.90s/it]  3%|▎         | 3/98 [00:04<01:44,  1.10s/it]  4%|▍         | 4/98 [00:04<01:11,  1.31it/s]  5%|▌         | 5/98 [00:05<00:52,  1.78it/s]  6%|▌         | 6/98 [00:05<00:46,  1.97it/s]  7%|▋         | 7/98 [00:05<00:36,  2.46it/s]  8%|▊         | 8/98 [00:05<00:30,  2.94it/s]  9%|▉         | 9/98 [00:06<00:29,  3.04it/s] 10%|█         | 10/98 [00:06<00:25,  3.45it/s] 11%|█         | 11/98 [00:06<00:22,  3.82it/s] 12%|█▏        | 12/98 [00:06<00:23,  3.64it/s] 13%|█▎        | 13/98 [00:07<00:23,  3.58it/s] 14%|█▍        | 14/98 [00:07<00:21,  3.83it/s] 15%|█▌        | 15/98 [00:07<00:27,  3.05it/s] 16%|█▋        | 16/98 [00:08<00:26,  3.13it/s] 17%|█▋        | 17/98 [00:08<00:23,  3.50it/s] 18%|█▊        | 18/98 [00:09<00:30,  2.65it/s] 19%|█▉        | 19/98 [00:09<00:28,  2.82it/s] 20%|██        | 20/98 [00:10<00:40,  1.93it/s] 21%|██▏       | 21/98 [00:10<00:32,  2.36it/s] 22%|██▏       | 22/98 [00:10<00:26,  2.82it/s] 23%|██▎       | 23/98 [00:10<00:25,  2.93it/s] 24%|██▍       | 24/98 [00:11<00:39,  1.86it/s] 26%|██▌       | 25/98 [00:12<00:31,  2.30it/s] 27%|██▋       | 26/98 [00:12<00:26,  2.74it/s] 28%|██▊       | 27/98 [00:12<00:22,  3.17it/s] 29%|██▊       | 28/98 [00:13<00:32,  2.16it/s] 30%|██▉       | 29/98 [00:13<00:26,  2.62it/s] 31%|███       | 30/98 [00:13<00:22,  3.06it/s] 32%|███▏      | 31/98 [00:13<00:19,  3.39it/s] 33%|███▎      | 32/98 [00:14<00:29,  2.26it/s] 34%|███▎      | 33/98 [00:15<00:25,  2.51it/s] 35%|███▍      | 34/98 [00:15<00:21,  2.95it/s] 36%|███▌      | 35/98 [00:15<00:18,  3.37it/s] 37%|███▋      | 36/98 [00:16<00:26,  2.38it/s] 38%|███▊      | 37/98 [00:16<00:21,  2.85it/s] 39%|███▉      | 38/98 [00:16<00:20,  2.97it/s] 40%|███▉      | 39/98 [00:16<00:17,  3.39it/s] 41%|████      | 40/98 [00:17<00:24,  2.40it/s] 42%|████▏     | 41/98 [00:17<00:20,  2.83it/s] 43%|████▎     | 42/98 [00:18<00:20,  2.73it/s] 44%|████▍     | 43/98 [00:18<00:17,  3.17it/s] 45%|████▍     | 44/98 [00:19<00:24,  2.17it/s] 46%|████▌     | 45/98 [00:19<00:21,  2.42it/s] 47%|████▋     | 46/98 [00:19<00:18,  2.87it/s] 48%|████▊     | 47/98 [00:19<00:15,  3.29it/s] 49%|████▉     | 48/98 [00:20<00:22,  2.21it/s] 50%|█████     | 49/98 [00:20<00:18,  2.65it/s] 51%|█████     | 50/98 [00:21<00:15,  3.09it/s] 52%|█████▏    | 51/98 [00:21<00:13,  3.49it/s] 53%|█████▎    | 52/98 [00:22<00:21,  2.12it/s] 54%|█████▍    | 53/98 [00:22<00:17,  2.57it/s] 55%|█████▌    | 54/98 [00:22<00:14,  3.01it/s] 56%|█████▌    | 55/98 [00:22<00:12,  3.41it/s] 57%|█████▋    | 56/98 [00:23<00:18,  2.25it/s] 58%|█████▊    | 57/98 [00:23<00:15,  2.69it/s] 59%|█████▉    | 58/98 [00:23<00:12,  3.12it/s] 60%|██████    | 59/98 [00:24<00:11,  3.52it/s] 61%|██████    | 60/98 [00:25<00:18,  2.00it/s] 62%|██████▏   | 61/98 [00:25<00:15,  2.44it/s] 63%|██████▎   | 62/98 [00:25<00:12,  2.89it/s] 64%|██████▍   | 63/98 [00:25<00:10,  3.31it/s] 65%|██████▌   | 64/98 [00:26<00:16,  2.08it/s] 66%|██████▋   | 65/98 [00:26<00:13,  2.52it/s] 67%|██████▋   | 66/98 [00:27<00:10,  2.96it/s] 68%|██████▊   | 67/98 [00:27<00:09,  3.37it/s] 69%|██████▉   | 68/98 [00:28<00:14,  2.09it/s] 70%|███████   | 69/98 [00:28<00:11,  2.54it/s] 71%|███████▏  | 70/98 [00:28<00:09,  2.98it/s] 72%|███████▏  | 71/98 [00:28<00:07,  3.39it/s] 73%|███████▎  | 72/98 [00:29<00:12,  2.10it/s] 74%|███████▍  | 73/98 [00:29<00:09,  2.54it/s] 76%|███████▌  | 74/98 [00:30<00:08,  2.98it/s] 77%|███████▋  | 75/98 [00:30<00:06,  3.39it/s] 78%|███████▊  | 76/98 [00:31<00:10,  2.10it/s] 79%|███████▊  | 77/98 [00:31<00:08,  2.54it/s] 80%|███████▉  | 78/98 [00:31<00:06,  2.98it/s] 81%|████████  | 79/98 [00:31<00:05,  3.39it/s] 82%|████████▏ | 80/98 [00:32<00:08,  2.24it/s] 83%|████████▎ | 81/98 [00:32<00:06,  2.68it/s] 84%|████████▎ | 82/98 [00:32<00:05,  3.12it/s] 85%|████████▍ | 83/98 [00:33<00:04,  3.51it/s] 86%|████████▌ | 84/98 [00:33<00:05,  2.63it/s] 87%|████████▋ | 85/98 [00:33<00:04,  3.08it/s] 88%|████████▊ | 86/98 [00:34<00:03,  3.48it/s] 89%|████████▉ | 87/98 [00:34<00:02,  3.83it/s] 90%|████████▉ | 88/98 [00:34<00:03,  3.30it/s] 91%|█████████ | 89/98 [00:34<00:02,  3.68it/s] 92%|█████████▏| 90/98 [00:35<00:02,  3.99it/s] 93%|█████████▎| 91/98 [00:35<00:01,  4.25it/s] 94%|█████████▍| 92/98 [00:35<00:01,  3.44it/s] 95%|█████████▍| 93/98 [00:35<00:01,  3.88it/s] 96%|█████████▌| 94/98 [00:36<00:00,  4.52it/s] 97%|█████████▋| 95/98 [00:36<00:00,  5.06it/s] 98%|█████████▊| 96/98 [00:36<00:00,  5.45it/s] 99%|█████████▉| 97/98 [00:36<00:00,  5.90it/s]100%|██████████| 98/98 [00:37<00:00,  3.37it/s]100%|██████████| 98/98 [00:37<00:00,  2.64it/s]
+Epoch 1: Loss=2.2327, Acc=40.57%
+[INFO] New best accuracy: 40.57% (previous best was 0.00%)
+[INFO] Starting Epoch 2 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:05,  1.29s/it]  2%|▏         | 2/98 [00:01<01:02,  1.54it/s]  3%|▎         | 3/98 [00:01<00:46,  2.04it/s]  4%|▍         | 4/98 [00:01<00:35,  2.66it/s]  5%|▌         | 5/98 [00:02<00:32,  2.87it/s]  6%|▌         | 6/98 [00:02<00:27,  3.36it/s]  7%|▋         | 7/98 [00:03<00:42,  2.16it/s]  8%|▊         | 8/98 [00:03<00:34,  2.64it/s]  9%|▉         | 9/98 [00:03<00:28,  3.10it/s] 10%|█         | 10/98 [00:03<00:25,  3.51it/s] 11%|█         | 11/98 [00:04<00:41,  2.11it/s] 12%|█▏        | 12/98 [00:04<00:33,  2.56it/s] 13%|█▎        | 13/98 [00:05<00:28,  3.01it/s] 14%|█▍        | 14/98 [00:05<00:24,  3.42it/s] 15%|█▌        | 15/98 [00:06<00:35,  2.36it/s] 16%|█▋        | 16/98 [00:06<00:30,  2.65it/s] 17%|█▋        | 17/98 [00:06<00:26,  3.08it/s] 18%|█▊        | 18/98 [00:06<00:22,  3.48it/s] 19%|█▉        | 19/98 [00:07<00:30,  2.62it/s] 20%|██        | 20/98 [00:07<00:25,  3.06it/s] 21%|██▏       | 21/98 [00:07<00:22,  3.46it/s] 22%|██▏       | 22/98 [00:07<00:19,  3.82it/s] 23%|██▎       | 23/98 [00:08<00:31,  2.36it/s] 24%|██▍       | 24/98 [00:08<00:26,  2.81it/s] 26%|██▌       | 25/98 [00:09<00:22,  3.23it/s] 27%|██▋       | 26/98 [00:09<00:19,  3.61it/s] 28%|██▊       | 27/98 [00:09<00:26,  2.68it/s] 29%|██▊       | 28/98 [00:10<00:22,  3.11it/s] 30%|██▉       | 29/98 [00:10<00:19,  3.51it/s] 31%|███       | 30/98 [00:10<00:17,  3.85it/s] 32%|███▏      | 31/98 [00:11<00:28,  2.37it/s] 33%|███▎      | 32/98 [00:11<00:23,  2.82it/s] 34%|███▎      | 33/98 [00:11<00:20,  3.24it/s] 35%|███▍      | 34/98 [00:11<00:17,  3.62it/s] 36%|███▌      | 35/98 [00:12<00:23,  2.68it/s] 37%|███▋      | 36/98 [00:12<00:19,  3.11it/s] 38%|███▊      | 37/98 [00:12<00:17,  3.51it/s] 39%|███▉      | 38/98 [00:13<00:15,  3.85it/s] 40%|███▉      | 39/98 [00:13<00:23,  2.55it/s] 41%|████      | 40/98 [00:14<00:19,  2.99it/s] 42%|████▏     | 41/98 [00:14<00:16,  3.40it/s] 43%|████▎     | 42/98 [00:14<00:14,  3.76it/s] 44%|████▍     | 43/98 [00:15<00:21,  2.53it/s] 45%|████▍     | 44/98 [00:15<00:18,  2.97it/s] 46%|████▌     | 45/98 [00:15<00:15,  3.38it/s] 47%|████▋     | 46/98 [00:15<00:13,  3.74it/s] 48%|████▊     | 47/98 [00:16<00:20,  2.52it/s] 49%|████▉     | 48/98 [00:16<00:16,  2.96it/s] 50%|█████     | 49/98 [00:16<00:14,  3.37it/s] 51%|█████     | 50/98 [00:17<00:12,  3.74it/s] 52%|█████▏    | 51/98 [00:17<00:15,  2.96it/s] 53%|█████▎    | 52/98 [00:17<00:13,  3.38it/s] 54%|█████▍    | 53/98 [00:17<00:12,  3.74it/s] 55%|█████▌    | 54/98 [00:18<00:10,  4.05it/s] 56%|█████▌    | 55/98 [00:18<00:17,  2.42it/s] 57%|█████▋    | 56/98 [00:19<00:14,  2.86it/s] 58%|█████▊    | 57/98 [00:19<00:12,  3.29it/s] 59%|█████▉    | 58/98 [00:19<00:10,  3.66it/s] 60%|██████    | 59/98 [00:20<00:15,  2.44it/s] 61%|██████    | 60/98 [00:20<00:12,  2.96it/s] 62%|██████▏   | 61/98 [00:20<00:10,  3.37it/s] 63%|██████▎   | 62/98 [00:20<00:09,  3.73it/s] 64%|██████▍   | 63/98 [00:21<00:13,  2.52it/s] 65%|██████▌   | 64/98 [00:21<00:11,  2.96it/s] 66%|██████▋   | 65/98 [00:21<00:09,  3.37it/s] 67%|██████▋   | 66/98 [00:22<00:08,  3.74it/s] 68%|██████▊   | 67/98 [00:22<00:10,  2.89it/s] 69%|██████▉   | 68/98 [00:22<00:09,  3.30it/s] 70%|███████   | 69/98 [00:23<00:08,  3.42it/s] 71%|███████▏  | 70/98 [00:23<00:07,  3.78it/s] 72%|███████▏  | 71/98 [00:23<00:06,  4.07it/s] 73%|███████▎  | 72/98 [00:23<00:06,  4.31it/s] 74%|███████▍  | 73/98 [00:23<00:05,  4.50it/s] 76%|███████▌  | 74/98 [00:24<00:05,  4.64it/s] 77%|███████▋  | 75/98 [00:24<00:06,  3.32it/s] 78%|███████▊  | 76/98 [00:24<00:05,  3.69it/s] 79%|███████▊  | 77/98 [00:25<00:05,  4.01it/s] 80%|███████▉  | 78/98 [00:25<00:04,  4.26it/s] 81%|████████  | 79/98 [00:25<00:05,  3.52it/s] 82%|████████▏ | 80/98 [00:25<00:04,  3.86it/s] 83%|████████▎ | 81/98 [00:26<00:04,  4.14it/s] 84%|████████▎ | 82/98 [00:26<00:03,  4.37it/s] 85%|████████▍ | 83/98 [00:26<00:05,  2.94it/s] 86%|████████▌ | 84/98 [00:27<00:04,  3.35it/s] 87%|████████▋ | 85/98 [00:27<00:03,  3.72it/s] 88%|████████▊ | 86/98 [00:27<00:02,  4.03it/s] 89%|████████▉ | 87/98 [00:27<00:03,  3.41it/s] 90%|████████▉ | 88/98 [00:28<00:02,  3.77it/s] 91%|█████████ | 89/98 [00:28<00:02,  4.07it/s] 92%|█████████▏| 90/98 [00:28<00:01,  4.31it/s] 93%|█████████▎| 91/98 [00:28<00:02,  3.20it/s] 94%|█████████▍| 92/98 [00:29<00:01,  3.59it/s] 95%|█████████▍| 93/98 [00:29<00:01,  3.92it/s] 96%|█████████▌| 94/98 [00:29<00:00,  4.54it/s] 97%|█████████▋| 95/98 [00:29<00:00,  5.11it/s] 98%|█████████▊| 96/98 [00:29<00:00,  5.62it/s] 99%|█████████▉| 97/98 [00:29<00:00,  6.05it/s]100%|██████████| 98/98 [00:30<00:00,  3.26it/s]
+Epoch 2: Loss=1.8234, Acc=50.60%
+[INFO] New best accuracy: 50.60% (previous best was 40.57%)
+[INFO] Starting Epoch 3 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:24,  1.49s/it]  2%|▏         | 2/98 [00:01<01:10,  1.37it/s]  3%|▎         | 3/98 [00:01<00:46,  2.05it/s]  4%|▍         | 4/98 [00:02<00:35,  2.67it/s]  5%|▌         | 5/98 [00:02<00:39,  2.38it/s]  6%|▌         | 6/98 [00:02<00:31,  2.90it/s]  7%|▋         | 7/98 [00:02<00:27,  3.36it/s]  8%|▊         | 8/98 [00:03<00:23,  3.75it/s]  9%|▉         | 9/98 [00:03<00:30,  2.95it/s] 10%|█         | 10/98 [00:03<00:26,  3.37it/s] 11%|█         | 11/98 [00:04<00:23,  3.75it/s] 12%|█▏        | 12/98 [00:04<00:21,  4.06it/s] 13%|█▎        | 13/98 [00:04<00:24,  3.41it/s] 14%|█▍        | 14/98 [00:04<00:22,  3.77it/s] 15%|█▌        | 15/98 [00:05<00:20,  4.08it/s] 16%|█▋        | 16/98 [00:05<00:19,  4.32it/s] 17%|█▋        | 17/98 [00:05<00:25,  3.20it/s] 18%|█▊        | 18/98 [00:05<00:22,  3.59it/s] 19%|█▉        | 19/98 [00:06<00:20,  3.92it/s] 20%|██        | 20/98 [00:06<00:18,  4.19it/s] 21%|██▏       | 21/98 [00:06<00:24,  3.15it/s] 22%|██▏       | 22/98 [00:07<00:21,  3.55it/s] 23%|██▎       | 23/98 [00:07<00:19,  3.89it/s] 24%|██▍       | 24/98 [00:07<00:17,  4.16it/s] 26%|██▌       | 25/98 [00:07<00:23,  3.14it/s] 27%|██▋       | 26/98 [00:08<00:20,  3.54it/s] 28%|██▊       | 27/98 [00:08<00:18,  3.88it/s] 29%|██▊       | 28/98 [00:08<00:16,  4.16it/s] 30%|██▉       | 29/98 [00:09<00:21,  3.14it/s] 31%|███       | 30/98 [00:09<00:19,  3.54it/s] 32%|███▏      | 31/98 [00:09<00:17,  3.88it/s] 33%|███▎      | 32/98 [00:09<00:15,  4.16it/s] 34%|███▎      | 33/98 [00:10<00:18,  3.47it/s] 35%|███▍      | 34/98 [00:10<00:16,  3.82it/s] 36%|███▌      | 35/98 [00:10<00:15,  4.11it/s] 37%|███▋      | 36/98 [00:10<00:14,  4.34it/s] 38%|███▊      | 37/98 [00:11<00:20,  2.93it/s] 39%|███▉      | 38/98 [00:11<00:17,  3.35it/s] 40%|███▉      | 39/98 [00:11<00:15,  3.71it/s] 41%|████      | 40/98 [00:11<00:14,  4.03it/s] 42%|████▏     | 41/98 [00:12<00:18,  3.09it/s] 43%|████▎     | 42/98 [00:12<00:16,  3.49it/s] 44%|████▍     | 43/98 [00:12<00:14,  3.84it/s] 45%|████▍     | 44/98 [00:12<00:13,  4.12it/s] 46%|████▌     | 45/98 [00:13<00:16,  3.13it/s] 47%|████▋     | 46/98 [00:13<00:14,  3.52it/s] 48%|████▊     | 47/98 [00:13<00:13,  3.87it/s] 49%|████▉     | 48/98 [00:14<00:12,  4.15it/s] 50%|█████     | 49/98 [00:14<00:15,  3.13it/s] 51%|█████     | 50/98 [00:14<00:13,  3.54it/s] 52%|█████▏    | 51/98 [00:14<00:12,  3.88it/s] 53%|█████▎    | 52/98 [00:15<00:11,  4.16it/s] 54%|█████▍    | 53/98 [00:15<00:14,  3.14it/s] 55%|█████▌    | 54/98 [00:15<00:12,  3.54it/s] 56%|█████▌    | 55/98 [00:16<00:11,  3.88it/s] 57%|█████▋    | 56/98 [00:16<00:10,  4.16it/s] 58%|█████▊    | 57/98 [00:16<00:13,  3.14it/s] 59%|█████▉    | 58/98 [00:16<00:11,  3.53it/s] 60%|██████    | 59/98 [00:17<00:10,  3.88it/s] 61%|██████    | 60/98 [00:17<00:09,  4.16it/s] 62%|██████▏   | 61/98 [00:17<00:11,  3.14it/s] 63%|██████▎   | 62/98 [00:18<00:10,  3.53it/s] 64%|██████▍   | 63/98 [00:18<00:14,  2.45it/s] 65%|██████▌   | 64/98 [00:18<00:11,  2.89it/s] 66%|██████▋   | 65/98 [00:19<00:09,  3.31it/s] 67%|██████▋   | 66/98 [00:19<00:08,  3.69it/s] 68%|██████▊   | 67/98 [00:20<00:14,  2.17it/s] 69%|██████▉   | 68/98 [00:20<00:11,  2.62it/s] 70%|███████   | 69/98 [00:20<00:09,  3.05it/s] 71%|███████▏  | 70/98 [00:20<00:08,  3.46it/s] 72%|███████▏  | 71/98 [00:21<00:08,  3.10it/s] 73%|███████▎  | 72/98 [00:21<00:07,  3.50it/s] 74%|███████▍  | 73/98 [00:21<00:06,  3.85it/s] 76%|███████▌  | 74/98 [00:21<00:05,  4.13it/s] 77%|███████▋  | 75/98 [00:22<00:08,  2.86it/s] 78%|███████▊  | 76/98 [00:22<00:06,  3.28it/s] 79%|███████▊  | 77/98 [00:22<00:05,  3.66it/s] 80%|███████▉  | 78/98 [00:23<00:05,  3.98it/s] 81%|████████  | 79/98 [00:23<00:05,  3.38it/s] 82%|████████▏ | 80/98 [00:23<00:04,  3.74it/s] 83%|████████▎ | 81/98 [00:23<00:04,  4.05it/s] 84%|████████▎ | 82/98 [00:24<00:03,  4.29it/s] 85%|████████▍ | 83/98 [00:24<00:04,  3.19it/s] 86%|████████▌ | 84/98 [00:24<00:03,  3.58it/s] 87%|████████▋ | 85/98 [00:24<00:03,  3.92it/s] 88%|████████▊ | 86/98 [00:25<00:02,  4.19it/s] 89%|████████▉ | 87/98 [00:25<00:03,  3.48it/s] 90%|████████▉ | 88/98 [00:25<00:02,  3.83it/s] 91%|█████████ | 89/98 [00:25<00:02,  4.12it/s] 92%|█████████▏| 90/98 [00:26<00:01,  4.35it/s] 93%|█████████▎| 91/98 [00:26<00:02,  3.22it/s] 94%|█████████▍| 92/98 [00:26<00:01,  3.60it/s] 95%|█████████▍| 93/98 [00:27<00:01,  4.26it/s] 96%|█████████▌| 94/98 [00:27<00:00,  4.68it/s] 97%|█████████▋| 95/98 [00:27<00:00,  5.17it/s] 98%|█████████▊| 96/98 [00:27<00:00,  5.68it/s] 99%|█████████▉| 97/98 [00:27<00:00,  6.09it/s]100%|██████████| 98/98 [00:27<00:00,  3.53it/s]
+Epoch 3: Loss=1.6810, Acc=54.53%
+[INFO] New best accuracy: 54.53% (previous best was 50.60%)
+[INFO] Starting Epoch 4 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:10,  1.35s/it]  2%|▏         | 2/98 [00:01<01:04,  1.49it/s]  3%|▎         | 3/98 [00:01<00:43,  2.19it/s]  4%|▍         | 4/98 [00:01<00:33,  2.82it/s]  5%|▌         | 5/98 [00:02<00:37,  2.46it/s]  6%|▌         | 6/98 [00:02<00:30,  2.97it/s]  7%|▋         | 7/98 [00:02<00:26,  3.42it/s]  8%|▊         | 8/98 [00:03<00:23,  3.81it/s]  9%|▉         | 9/98 [00:03<00:27,  3.27it/s] 10%|█         | 10/98 [00:03<00:24,  3.66it/s] 11%|█         | 11/98 [00:03<00:24,  3.56it/s] 12%|█▏        | 12/98 [00:04<00:27,  3.15it/s] 13%|█▎        | 13/98 [00:04<00:26,  3.20it/s] 14%|█▍        | 14/98 [00:04<00:23,  3.59it/s] 15%|█▌        | 15/98 [00:05<00:26,  3.17it/s] 16%|█▋        | 16/98 [00:05<00:27,  2.94it/s] 17%|█▋        | 17/98 [00:05<00:24,  3.35it/s] 18%|█▊        | 18/98 [00:06<00:21,  3.72it/s] 19%|█▉        | 19/98 [00:06<00:21,  3.60it/s] 20%|██        | 20/98 [00:06<00:29,  2.67it/s] 21%|██▏       | 21/98 [00:07<00:24,  3.10it/s] 22%|██▏       | 22/98 [00:07<00:21,  3.50it/s] 23%|██▎       | 23/98 [00:07<00:19,  3.85it/s] 24%|██▍       | 24/98 [00:08<00:26,  2.76it/s] 26%|██▌       | 25/98 [00:08<00:22,  3.19it/s] 27%|██▋       | 26/98 [00:08<00:20,  3.58it/s] 28%|██▊       | 27/98 [00:08<00:18,  3.91it/s] 29%|██▊       | 28/98 [00:09<00:27,  2.57it/s] 30%|██▉       | 29/98 [00:09<00:22,  3.01it/s] 31%|███       | 30/98 [00:09<00:19,  3.42it/s] 32%|███▏      | 31/98 [00:10<00:17,  3.78it/s] 33%|███▎      | 32/98 [00:10<00:24,  2.74it/s] 34%|███▎      | 33/98 [00:10<00:20,  3.17it/s] 35%|███▍      | 34/98 [00:11<00:17,  3.56it/s] 36%|███▌      | 35/98 [00:11<00:16,  3.90it/s] 37%|███▋      | 36/98 [00:12<00:28,  2.18it/s] 38%|███▊      | 37/98 [00:12<00:23,  2.62it/s] 39%|███▉      | 38/98 [00:12<00:20,  2.88it/s] 40%|███▉      | 39/98 [00:12<00:17,  3.30it/s] 41%|████      | 40/98 [00:13<00:24,  2.37it/s] 42%|████▏     | 41/98 [00:13<00:20,  2.81it/s] 43%|████▎     | 42/98 [00:13<00:17,  3.24it/s] 44%|████▍     | 43/98 [00:14<00:15,  3.62it/s] 45%|████▍     | 44/98 [00:14<00:21,  2.48it/s] 46%|████▌     | 45/98 [00:15<00:18,  2.92it/s] 47%|████▋     | 46/98 [00:15<00:15,  3.34it/s] 48%|████▊     | 47/98 [00:15<00:13,  3.71it/s] 49%|████▉     | 48/98 [00:16<00:19,  2.51it/s] 50%|█████     | 49/98 [00:16<00:16,  2.95it/s] 51%|█████     | 50/98 [00:16<00:14,  3.36it/s] 52%|█████▏    | 51/98 [00:16<00:12,  3.73it/s] 53%|█████▎    | 52/98 [00:17<00:18,  2.51it/s] 54%|█████▍    | 53/98 [00:17<00:15,  2.95it/s] 55%|█████▌    | 54/98 [00:17<00:13,  3.37it/s] 56%|█████▌    | 55/98 [00:18<00:11,  3.73it/s] 57%|█████▋    | 56/98 [00:18<00:16,  2.52it/s] 58%|█████▊    | 57/98 [00:18<00:13,  2.96it/s] 59%|█████▉    | 58/98 [00:19<00:11,  3.37it/s] 60%|██████    | 59/98 [00:19<00:10,  3.73it/s] 61%|██████    | 60/98 [00:19<00:11,  3.25it/s] 62%|██████▏   | 61/98 [00:19<00:10,  3.63it/s] 63%|██████▎   | 62/98 [00:20<00:09,  3.96it/s] 64%|██████▍   | 63/98 [00:20<00:08,  4.22it/s] 65%|██████▌   | 64/98 [00:20<00:11,  2.89it/s] 66%|██████▋   | 65/98 [00:21<00:09,  3.31it/s] 67%|██████▋   | 66/98 [00:21<00:08,  3.68it/s] 68%|██████▊   | 67/98 [00:21<00:07,  4.00it/s] 69%|██████▉   | 68/98 [00:22<00:10,  2.75it/s] 70%|███████   | 69/98 [00:22<00:08,  3.27it/s] 71%|███████▏  | 70/98 [00:22<00:07,  3.65it/s] 72%|███████▏  | 71/98 [00:22<00:06,  3.97it/s] 73%|███████▎  | 72/98 [00:23<00:11,  2.35it/s] 74%|███████▍  | 73/98 [00:23<00:08,  2.87it/s] 76%|███████▌  | 74/98 [00:23<00:07,  3.29it/s] 77%|███████▋  | 75/98 [00:24<00:06,  3.66it/s] 78%|███████▊  | 76/98 [00:24<00:08,  2.49it/s] 79%|███████▊  | 77/98 [00:25<00:07,  2.93it/s] 80%|███████▉  | 78/98 [00:25<00:05,  3.35it/s] 81%|████████  | 79/98 [00:25<00:05,  3.72it/s] 82%|████████▏ | 80/98 [00:26<00:08,  2.18it/s] 83%|████████▎ | 81/98 [00:26<00:06,  2.63it/s] 84%|████████▎ | 82/98 [00:26<00:05,  3.06it/s] 85%|████████▍ | 83/98 [00:26<00:04,  3.47it/s] 86%|████████▌ | 84/98 [00:27<00:05,  2.43it/s] 87%|████████▋ | 85/98 [00:27<00:04,  2.87it/s] 88%|████████▊ | 86/98 [00:28<00:03,  3.29it/s] 89%|████████▉ | 87/98 [00:28<00:02,  3.67it/s] 90%|████████▉ | 88/98 [00:29<00:04,  2.17it/s] 91%|█████████ | 89/98 [00:29<00:03,  2.61it/s] 92%|█████████▏| 90/98 [00:29<00:02,  3.05it/s] 93%|█████████▎| 91/98 [00:29<00:02,  3.45it/s] 94%|█████████▍| 92/98 [00:30<00:01,  3.10it/s] 95%|█████████▍| 93/98 [00:30<00:01,  3.75it/s] 96%|█████████▌| 94/98 [00:30<00:00,  4.24it/s] 97%|█████████▋| 95/98 [00:30<00:00,  4.86it/s] 98%|█████████▊| 96/98 [00:30<00:00,  5.39it/s] 99%|█████████▉| 97/98 [00:30<00:00,  5.85it/s]100%|██████████| 98/98 [00:30<00:00,  3.16it/s]
+Epoch 4: Loss=1.5565, Acc=57.62%
+[INFO] New best accuracy: 57.62% (previous best was 54.53%)
+[INFO] Starting Epoch 5 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:22,  1.47s/it]  2%|▏         | 2/98 [00:01<01:15,  1.28it/s]  3%|▎         | 3/98 [00:01<00:49,  1.94it/s]  4%|▍         | 4/98 [00:02<00:36,  2.56it/s]  5%|▌         | 5/98 [00:02<00:36,  2.54it/s]  6%|▌         | 6/98 [00:02<00:30,  3.05it/s]  7%|▋         | 7/98 [00:02<00:26,  3.49it/s]  8%|▊         | 8/98 [00:03<00:23,  3.86it/s]  9%|▉         | 9/98 [00:03<00:26,  3.30it/s] 10%|█         | 10/98 [00:03<00:26,  3.31it/s] 11%|█         | 11/98 [00:04<00:23,  3.69it/s] 12%|█▏        | 12/98 [00:04<00:21,  4.01it/s] 13%|█▎        | 13/98 [00:04<00:22,  3.78it/s] 14%|█▍        | 14/98 [00:04<00:23,  3.63it/s] 15%|█▌        | 15/98 [00:05<00:20,  3.96it/s] 16%|█▋        | 16/98 [00:05<00:19,  4.22it/s] 17%|█▋        | 17/98 [00:05<00:23,  3.50it/s] 18%|█▊        | 18/98 [00:05<00:23,  3.45it/s] 19%|█▉        | 19/98 [00:06<00:20,  3.80it/s] 20%|██        | 20/98 [00:06<00:19,  4.10it/s] 21%|██▏       | 21/98 [00:06<00:20,  3.83it/s] 22%|██▏       | 22/98 [00:07<00:23,  3.30it/s] 23%|██▎       | 23/98 [00:07<00:20,  3.68it/s] 24%|██▍       | 24/98 [00:07<00:18,  4.00it/s] 26%|██▌       | 25/98 [00:07<00:17,  4.25it/s] 27%|██▋       | 26/98 [00:08<00:22,  3.18it/s] 28%|██▊       | 27/98 [00:08<00:19,  3.57it/s] 29%|██▊       | 28/98 [00:08<00:17,  3.90it/s] 30%|██▉       | 29/98 [00:08<00:16,  4.18it/s] 31%|███       | 30/98 [00:09<00:19,  3.48it/s] 32%|███▏      | 31/98 [00:09<00:17,  3.83it/s] 33%|███▎      | 32/98 [00:09<00:16,  4.12it/s] 34%|███▎      | 33/98 [00:09<00:14,  4.35it/s] 35%|███▍      | 34/98 [00:10<00:17,  3.56it/s] 36%|███▌      | 35/98 [00:10<00:16,  3.90it/s] 37%|███▋      | 36/98 [00:11<00:24,  2.55it/s] 38%|███▊      | 37/98 [00:11<00:20,  3.01it/s] 39%|███▉      | 38/98 [00:11<00:17,  3.42it/s] 40%|███▉      | 39/98 [00:11<00:15,  3.78it/s] 41%|████      | 40/98 [00:12<00:28,  2.06it/s] 42%|████▏     | 41/98 [00:12<00:22,  2.50it/s] 43%|████▎     | 42/98 [00:13<00:19,  2.94it/s] 44%|████▍     | 43/98 [00:13<00:16,  3.36it/s] 45%|████▍     | 44/98 [00:14<00:23,  2.33it/s] 46%|████▌     | 45/98 [00:14<00:19,  2.79it/s] 47%|████▋     | 46/98 [00:14<00:17,  3.01it/s] 48%|████▊     | 47/98 [00:14<00:14,  3.42it/s] 49%|████▉     | 48/98 [00:15<00:18,  2.75it/s] 50%|█████     | 49/98 [00:15<00:15,  3.16it/s] 51%|█████     | 50/98 [00:15<00:14,  3.32it/s] 52%|█████▏    | 51/98 [00:15<00:12,  3.69it/s] 53%|█████▎    | 52/98 [00:16<00:16,  2.71it/s] 54%|█████▍    | 53/98 [00:16<00:14,  3.14it/s] 55%|█████▌    | 54/98 [00:16<00:12,  3.53it/s] 56%|█████▌    | 55/98 [00:17<00:11,  3.87it/s] 57%|█████▋    | 56/98 [00:17<00:15,  2.77it/s] 58%|█████▊    | 57/98 [00:17<00:12,  3.20it/s] 59%|█████▉    | 58/98 [00:18<00:11,  3.59it/s] 60%|██████    | 59/98 [00:18<00:09,  3.92it/s] 61%|██████    | 60/98 [00:18<00:13,  2.73it/s] 62%|██████▏   | 61/98 [00:19<00:11,  3.24it/s] 63%|██████▎   | 62/98 [00:19<00:09,  3.62it/s] 64%|██████▍   | 63/98 [00:19<00:08,  3.95it/s] 65%|██████▌   | 64/98 [00:20<00:12,  2.74it/s] 66%|██████▋   | 65/98 [00:20<00:11,  2.96it/s] 67%|██████▋   | 66/98 [00:20<00:09,  3.37it/s] 68%|██████▊   | 67/98 [00:20<00:08,  3.74it/s] 69%|██████▉   | 68/98 [00:20<00:07,  4.05it/s] 70%|███████   | 69/98 [00:21<00:06,  4.29it/s] 71%|███████▏  | 70/98 [00:21<00:06,  4.48it/s] 72%|███████▏  | 71/98 [00:21<00:05,  4.63it/s] 73%|███████▎  | 72/98 [00:22<00:07,  3.32it/s] 74%|███████▍  | 73/98 [00:22<00:06,  3.69it/s] 76%|███████▌  | 74/98 [00:22<00:05,  4.01it/s] 77%|███████▋  | 75/98 [00:22<00:05,  4.26it/s] 78%|███████▊  | 76/98 [00:23<00:06,  3.18it/s] 79%|███████▊  | 77/98 [00:23<00:05,  3.57it/s] 80%|███████▉  | 78/98 [00:23<00:05,  3.91it/s] 81%|████████  | 79/98 [00:23<00:04,  4.18it/s] 82%|████████▏ | 80/98 [00:24<00:05,  3.15it/s] 83%|████████▎ | 81/98 [00:24<00:04,  3.54it/s] 84%|████████▎ | 82/98 [00:24<00:04,  3.88it/s] 85%|████████▍ | 83/98 [00:24<00:03,  4.16it/s] 86%|████████▌ | 84/98 [00:25<00:04,  3.42it/s] 87%|████████▋ | 85/98 [00:25<00:03,  3.44it/s] 88%|████████▊ | 86/98 [00:25<00:03,  3.80it/s] 89%|████████▉ | 87/98 [00:25<00:02,  4.09it/s] 90%|████████▉ | 88/98 [00:26<00:02,  3.44it/s] 91%|█████████ | 89/98 [00:26<00:02,  3.79it/s] 92%|█████████▏| 90/98 [00:26<00:01,  4.09it/s] 93%|█████████▎| 91/98 [00:26<00:01,  4.33it/s] 94%|█████████▍| 92/98 [00:27<00:01,  3.55it/s] 95%|█████████▍| 93/98 [00:27<00:01,  4.19it/s] 96%|█████████▌| 94/98 [00:27<00:00,  4.64it/s] 97%|█████████▋| 95/98 [00:27<00:00,  5.21it/s] 98%|█████████▊| 96/98 [00:27<00:00,  5.67it/s] 99%|█████████▉| 97/98 [00:28<00:00,  6.08it/s]100%|██████████| 98/98 [00:28<00:00,  3.47it/s]
+Epoch 5: Loss=1.4550, Acc=59.98%
+[INFO] New best accuracy: 59.98% (previous best was 57.62%)
+[INFO] Starting Epoch 6 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:12,  1.36s/it]  2%|▏         | 2/98 [00:01<01:05,  1.47it/s]  3%|▎         | 3/98 [00:01<00:43,  2.17it/s]  4%|▍         | 4/98 [00:01<00:33,  2.80it/s]  5%|▌         | 5/98 [00:02<00:38,  2.45it/s]  6%|▌         | 6/98 [00:02<00:37,  2.46it/s]  7%|▋         | 7/98 [00:03<00:30,  2.95it/s]  8%|▊         | 8/98 [00:03<00:26,  3.40it/s]  9%|▉         | 9/98 [00:03<00:29,  3.05it/s] 10%|█         | 10/98 [00:04<00:36,  2.43it/s] 11%|█         | 11/98 [00:04<00:30,  2.88it/s] 12%|█▏        | 12/98 [00:04<00:25,  3.31it/s] 13%|█▎        | 13/98 [00:04<00:23,  3.69it/s] 14%|█▍        | 14/98 [00:05<00:38,  2.17it/s] 15%|█▌        | 15/98 [00:05<00:31,  2.61it/s] 16%|█▋        | 16/98 [00:06<00:26,  3.05it/s] 17%|█▋        | 17/98 [00:06<00:23,  3.46it/s] 18%|█▊        | 18/98 [00:06<00:28,  2.84it/s] 19%|█▉        | 19/98 [00:07<00:24,  3.26it/s] 20%|██        | 20/98 [00:07<00:21,  3.64it/s] 21%|██▏       | 21/98 [00:07<00:19,  3.96it/s] 22%|██▏       | 22/98 [00:08<00:27,  2.80it/s] 23%|██▎       | 23/98 [00:08<00:23,  3.23it/s] 24%|██▍       | 24/98 [00:08<00:20,  3.61it/s] 26%|██▌       | 25/98 [00:08<00:18,  3.94it/s] 27%|██▋       | 26/98 [00:09<00:23,  3.05it/s] 28%|██▊       | 27/98 [00:09<00:20,  3.46it/s] 29%|██▊       | 28/98 [00:09<00:18,  3.81it/s] 30%|██▉       | 29/98 [00:09<00:16,  4.10it/s] 31%|███       | 30/98 [00:10<00:23,  2.85it/s] 32%|███▏      | 31/98 [00:10<00:20,  3.27it/s] 33%|███▎      | 32/98 [00:10<00:18,  3.65it/s] 34%|███▎      | 33/98 [00:10<00:16,  3.97it/s] 35%|███▍      | 34/98 [00:11<00:20,  3.07it/s] 36%|███▌      | 35/98 [00:11<00:18,  3.47it/s] 37%|███▋      | 36/98 [00:11<00:16,  3.82it/s] 38%|███▊      | 37/98 [00:12<00:14,  4.11it/s] 39%|███▉      | 38/98 [00:12<00:21,  2.85it/s] 40%|███▉      | 39/98 [00:12<00:18,  3.28it/s] 41%|████      | 40/98 [00:13<00:15,  3.65it/s] 42%|████▏     | 41/98 [00:13<00:14,  3.98it/s] 43%|████▎     | 42/98 [00:13<00:18,  2.98it/s] 44%|████▍     | 43/98 [00:14<00:17,  3.17it/s] 45%|████▍     | 44/98 [00:14<00:15,  3.56it/s] 46%|████▌     | 45/98 [00:14<00:13,  3.90it/s] 47%|████▋     | 46/98 [00:14<00:17,  3.03it/s] 48%|████▊     | 47/98 [00:15<00:14,  3.44it/s] 49%|████▉     | 48/98 [00:15<00:13,  3.79it/s] 50%|█████     | 49/98 [00:15<00:11,  4.09it/s] 51%|█████     | 50/98 [00:16<00:16,  2.85it/s] 52%|█████▏    | 51/98 [00:16<00:14,  3.27it/s] 53%|█████▎    | 52/98 [00:16<00:12,  3.65it/s] 54%|█████▍    | 53/98 [00:16<00:11,  3.97it/s] 55%|█████▌    | 54/98 [00:17<00:14,  3.06it/s] 56%|█████▌    | 55/98 [00:17<00:12,  3.47it/s] 57%|█████▋    | 56/98 [00:17<00:10,  3.82it/s] 58%|█████▊    | 57/98 [00:17<00:09,  4.11it/s] 59%|█████▉    | 58/98 [00:18<00:14,  2.85it/s] 60%|██████    | 59/98 [00:18<00:11,  3.28it/s] 61%|██████    | 60/98 [00:18<00:10,  3.65it/s] 62%|██████▏   | 61/98 [00:19<00:09,  3.98it/s] 63%|██████▎   | 62/98 [00:19<00:11,  3.04it/s] 64%|██████▍   | 63/98 [00:19<00:10,  3.48it/s] 65%|██████▌   | 64/98 [00:19<00:08,  3.83it/s] 66%|██████▋   | 65/98 [00:20<00:08,  4.12it/s] 67%|██████▋   | 66/98 [00:20<00:11,  2.86it/s] 68%|██████▊   | 67/98 [00:20<00:09,  3.28it/s] 69%|██████▉   | 68/98 [00:21<00:08,  3.66it/s] 70%|███████   | 69/98 [00:21<00:07,  3.98it/s] 71%|███████▏  | 70/98 [00:21<00:09,  3.07it/s] 72%|███████▏  | 71/98 [00:22<00:07,  3.47it/s] 73%|███████▎  | 72/98 [00:22<00:06,  3.82it/s] 74%|███████▍  | 73/98 [00:22<00:06,  4.11it/s] 76%|███████▌  | 74/98 [00:23<00:08,  2.86it/s] 77%|███████▋  | 75/98 [00:23<00:07,  3.28it/s] 78%|███████▊  | 76/98 [00:23<00:06,  3.65it/s] 79%|███████▊  | 77/98 [00:23<00:05,  3.98it/s] 80%|███████▉  | 78/98 [00:24<00:06,  3.07it/s] 81%|████████  | 79/98 [00:24<00:05,  3.47it/s] 82%|████████▏ | 80/98 [00:24<00:04,  3.82it/s] 83%|████████▎ | 81/98 [00:24<00:04,  4.11it/s] 84%|████████▎ | 82/98 [00:25<00:05,  2.85it/s] 85%|████████▍ | 83/98 [00:25<00:04,  3.28it/s] 86%|████████▌ | 84/98 [00:25<00:03,  3.65it/s] 87%|████████▋ | 85/98 [00:25<00:03,  3.98it/s] 88%|████████▊ | 86/98 [00:26<00:03,  3.07it/s] 89%|████████▉ | 87/98 [00:26<00:03,  3.47it/s] 90%|████████▉ | 88/98 [00:26<00:02,  3.82it/s] 91%|█████████ | 89/98 [00:27<00:02,  4.11it/s] 92%|█████████▏| 90/98 [00:27<00:02,  2.85it/s] 93%|█████████▎| 91/98 [00:27<00:02,  3.50it/s] 94%|█████████▍| 92/98 [00:27<00:01,  4.01it/s] 95%|█████████▍| 93/98 [00:28<00:01,  4.64it/s] 96%|█████████▌| 94/98 [00:28<00:00,  5.00it/s] 97%|█████████▋| 95/98 [00:28<00:00,  5.53it/s] 98%|█████████▊| 96/98 [00:28<00:00,  5.98it/s] 99%|█████████▉| 97/98 [00:28<00:00,  6.08it/s]100%|██████████| 98/98 [00:28<00:00,  3.40it/s]
+Epoch 6: Loss=1.3608, Acc=62.57%
+[INFO] New best accuracy: 62.57% (previous best was 59.98%)
+[INFO] Starting Epoch 7 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:11,  1.35s/it]  2%|▏         | 2/98 [00:01<01:04,  1.48it/s]  3%|▎         | 3/98 [00:01<00:43,  2.19it/s]  4%|▍         | 4/98 [00:01<00:33,  2.81it/s]  5%|▌         | 5/98 [00:02<00:34,  2.69it/s]  6%|▌         | 6/98 [00:02<00:28,  3.19it/s]  7%|▋         | 7/98 [00:02<00:31,  2.93it/s]  8%|▊         | 8/98 [00:03<00:26,  3.37it/s]  9%|▉         | 9/98 [00:03<00:26,  3.36it/s] 10%|█         | 10/98 [00:03<00:23,  3.74it/s] 11%|█         | 11/98 [00:04<00:26,  3.25it/s] 12%|█▏        | 12/98 [00:04<00:23,  3.63it/s] 13%|█▎        | 13/98 [00:04<00:21,  3.96it/s] 14%|█▍        | 14/98 [00:04<00:22,  3.75it/s] 15%|█▌        | 15/98 [00:05<00:25,  3.26it/s] 16%|█▋        | 16/98 [00:05<00:22,  3.64it/s] 17%|█▋        | 17/98 [00:05<00:20,  3.96it/s] 18%|█▊        | 18/98 [00:05<00:21,  3.75it/s] 19%|█▉        | 19/98 [00:06<00:24,  3.26it/s] 20%|██        | 20/98 [00:06<00:21,  3.64it/s] 21%|██▏       | 21/98 [00:06<00:19,  3.96it/s] 22%|██▏       | 22/98 [00:06<00:17,  4.23it/s] 23%|██▎       | 23/98 [00:07<00:23,  3.17it/s] 24%|██▍       | 24/98 [00:07<00:20,  3.56it/s] 26%|██▌       | 25/98 [00:07<00:18,  3.90it/s] 27%|██▋       | 26/98 [00:07<00:17,  4.17it/s] 28%|██▊       | 27/98 [00:08<00:22,  3.15it/s] 29%|██▊       | 28/98 [00:08<00:19,  3.54it/s] 30%|██▉       | 29/98 [00:08<00:17,  3.88it/s] 31%|███       | 30/98 [00:09<00:16,  4.16it/s] 32%|███▏      | 31/98 [00:09<00:19,  3.47it/s] 33%|███▎      | 32/98 [00:09<00:17,  3.82it/s] 34%|███▎      | 33/98 [00:09<00:15,  4.11it/s] 35%|███▍      | 34/98 [00:10<00:14,  4.34it/s] 36%|███▌      | 35/98 [00:10<00:19,  3.21it/s] 37%|███▋      | 36/98 [00:10<00:17,  3.60it/s] 38%|███▊      | 37/98 [00:10<00:15,  3.93it/s] 39%|███▉      | 38/98 [00:11<00:14,  4.20it/s] 40%|███▉      | 39/98 [00:11<00:16,  3.49it/s] 41%|████      | 40/98 [00:11<00:15,  3.84it/s] 42%|████▏     | 41/98 [00:11<00:13,  4.12it/s] 43%|████▎     | 42/98 [00:12<00:12,  4.35it/s] 44%|████▍     | 43/98 [00:12<00:17,  3.22it/s] 45%|████▍     | 44/98 [00:12<00:14,  3.60it/s] 46%|████▌     | 45/98 [00:13<00:13,  3.93it/s] 47%|████▋     | 46/98 [00:13<00:12,  4.20it/s] 48%|████▊     | 47/98 [00:13<00:16,  3.16it/s] 49%|████▉     | 48/98 [00:13<00:14,  3.55it/s] 50%|█████     | 49/98 [00:14<00:12,  3.89it/s] 51%|█████     | 50/98 [00:14<00:11,  4.17it/s] 52%|█████▏    | 51/98 [00:14<00:14,  3.14it/s] 53%|█████▎    | 52/98 [00:15<00:13,  3.54it/s] 54%|█████▍    | 53/98 [00:15<00:11,  3.88it/s] 55%|█████▌    | 54/98 [00:15<00:10,  4.16it/s] 56%|█████▌    | 55/98 [00:15<00:13,  3.14it/s] 57%|█████▋    | 56/98 [00:16<00:11,  3.54it/s] 58%|█████▊    | 57/98 [00:16<00:10,  3.88it/s] 59%|█████▉    | 58/98 [00:16<00:09,  4.16it/s] 60%|██████    | 59/98 [00:16<00:11,  3.47it/s] 61%|██████    | 60/98 [00:17<00:09,  3.82it/s] 62%|██████▏   | 61/98 [00:17<00:09,  4.11it/s] 63%|██████▎   | 62/98 [00:17<00:08,  4.34it/s] 64%|██████▍   | 63/98 [00:18<00:10,  3.21it/s] 65%|██████▌   | 64/98 [00:18<00:09,  3.60it/s] 66%|██████▋   | 65/98 [00:18<00:08,  3.93it/s] 67%|██████▋   | 66/98 [00:18<00:07,  4.20it/s] 68%|██████▊   | 67/98 [00:19<00:08,  3.49it/s] 69%|██████▉   | 68/98 [00:19<00:07,  3.84it/s] 70%|███████   | 69/98 [00:19<00:07,  4.12it/s] 71%|███████▏  | 70/98 [00:19<00:06,  4.35it/s] 72%|███████▏  | 71/98 [00:20<00:08,  3.22it/s] 73%|███████▎  | 72/98 [00:20<00:07,  3.60it/s] 74%|███████▍  | 73/98 [00:20<00:06,  3.93it/s] 76%|███████▌  | 74/98 [00:20<00:05,  4.20it/s] 77%|███████▋  | 75/98 [00:21<00:07,  3.16it/s] 78%|███████▊  | 76/98 [00:21<00:06,  3.55it/s] 79%|███████▊  | 77/98 [00:21<00:05,  3.89it/s] 80%|███████▉  | 78/98 [00:21<00:04,  4.17it/s] 81%|████████  | 79/98 [00:22<00:06,  3.14it/s] 82%|████████▏ | 80/98 [00:22<00:05,  3.54it/s] 83%|████████▎ | 81/98 [00:22<00:04,  3.88it/s] 84%|████████▎ | 82/98 [00:22<00:03,  4.16it/s] 85%|████████▍ | 83/98 [00:23<00:04,  3.47it/s] 86%|████████▌ | 84/98 [00:23<00:03,  3.82it/s] 87%|████████▋ | 85/98 [00:23<00:03,  4.11it/s] 88%|████████▊ | 86/98 [00:23<00:02,  4.34it/s] 89%|████████▉ | 87/98 [00:24<00:03,  3.21it/s] 90%|████████▉ | 88/98 [00:24<00:02,  3.60it/s] 91%|█████████ | 89/98 [00:24<00:02,  3.93it/s] 92%|█████████▏| 90/98 [00:25<00:01,  4.20it/s] 93%|█████████▎| 91/98 [00:25<00:02,  3.16it/s] 94%|█████████▍| 92/98 [00:25<00:01,  3.55it/s] 95%|█████████▍| 93/98 [00:25<00:01,  3.89it/s] 96%|█████████▌| 94/98 [00:26<00:00,  4.17it/s] 97%|█████████▋| 95/98 [00:26<00:00,  4.09it/s] 98%|█████████▊| 96/98 [00:26<00:00,  4.71it/s] 99%|█████████▉| 97/98 [00:26<00:00,  5.28it/s]100%|██████████| 98/98 [00:26<00:00,  3.66it/s]
+Epoch 7: Loss=1.3240, Acc=63.88%
+[INFO] New best accuracy: 63.88% (previous best was 62.57%)
+[INFO] Starting Epoch 8 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:11,  1.35s/it]  2%|▏         | 2/98 [00:01<01:04,  1.48it/s]  3%|▎         | 3/98 [00:01<00:43,  2.18it/s]  4%|▍         | 4/98 [00:01<00:33,  2.81it/s]  5%|▌         | 5/98 [00:02<00:37,  2.45it/s]  6%|▌         | 6/98 [00:02<00:31,  2.97it/s]  7%|▋         | 7/98 [00:02<00:26,  3.42it/s]  8%|▊         | 8/98 [00:03<00:23,  3.80it/s]  9%|▉         | 9/98 [00:03<00:27,  3.27it/s] 10%|█         | 10/98 [00:03<00:24,  3.66it/s] 11%|█         | 11/98 [00:03<00:21,  3.99it/s] 12%|█▏        | 12/98 [00:04<00:20,  4.25it/s] 13%|█▎        | 13/98 [00:04<00:26,  3.17it/s] 14%|█▍        | 14/98 [00:04<00:23,  3.56it/s] 15%|█▌        | 15/98 [00:04<00:21,  3.90it/s] 16%|█▋        | 16/98 [00:05<00:19,  4.18it/s] 17%|█▋        | 17/98 [00:05<00:23,  3.48it/s] 18%|█▊        | 18/98 [00:05<00:20,  3.83it/s] 19%|█▉        | 19/98 [00:05<00:19,  4.12it/s] 20%|██        | 20/98 [00:06<00:17,  4.35it/s] 21%|██▏       | 21/98 [00:06<00:21,  3.56it/s] 22%|██▏       | 22/98 [00:06<00:19,  3.90it/s] 23%|██▎       | 23/98 [00:06<00:17,  4.17it/s] 24%|██▍       | 24/98 [00:07<00:16,  4.39it/s] 26%|██▌       | 25/98 [00:07<00:22,  3.23it/s] 27%|██▋       | 26/98 [00:07<00:19,  3.62it/s] 28%|██▊       | 27/98 [00:08<00:18,  3.94it/s] 29%|██▊       | 28/98 [00:08<00:16,  4.21it/s] 30%|██▉       | 29/98 [00:08<00:19,  3.49it/s] 31%|███       | 30/98 [00:08<00:17,  3.84it/s] 32%|███▏      | 31/98 [00:09<00:16,  4.13it/s] 33%|███▎      | 32/98 [00:09<00:15,  4.36it/s] 34%|███▎      | 33/98 [00:09<00:20,  3.22it/s] 35%|███▍      | 34/98 [00:09<00:17,  3.60it/s] 36%|███▌      | 35/98 [00:10<00:16,  3.93it/s] 37%|███▋      | 36/98 [00:10<00:14,  4.20it/s] 38%|███▊      | 37/98 [00:10<00:19,  3.16it/s] 39%|███▉      | 38/98 [00:11<00:16,  3.55it/s] 40%|███▉      | 39/98 [00:11<00:15,  3.89it/s] 41%|████      | 40/98 [00:11<00:13,  4.17it/s] 42%|████▏     | 41/98 [00:11<00:16,  3.47it/s] 43%|████▎     | 42/98 [00:12<00:14,  3.82it/s] 44%|████▍     | 43/98 [00:12<00:13,  4.11it/s] 45%|████▍     | 44/98 [00:12<00:12,  4.35it/s] 46%|████▌     | 45/98 [00:12<00:16,  3.21it/s] 47%|████▋     | 46/98 [00:13<00:14,  3.60it/s] 48%|████▊     | 47/98 [00:13<00:12,  3.93it/s] 49%|████▉     | 48/98 [00:13<00:11,  4.20it/s] 50%|█████     | 49/98 [00:14<00:15,  3.16it/s] 51%|█████     | 50/98 [00:14<00:13,  3.55it/s] 52%|█████▏    | 51/98 [00:14<00:12,  3.89it/s] 53%|█████▎    | 52/98 [00:14<00:11,  4.17it/s] 54%|█████▍    | 53/98 [00:15<00:12,  3.47it/s] 55%|█████▌    | 54/98 [00:15<00:11,  3.82it/s] 56%|█████▌    | 55/98 [00:15<00:10,  4.11it/s] 57%|█████▋    | 56/98 [00:15<00:09,  4.34it/s] 58%|█████▊    | 57/98 [00:16<00:12,  3.21it/s] 59%|█████▉    | 58/98 [00:16<00:11,  3.60it/s] 60%|██████    | 59/98 [00:16<00:09,  3.93it/s] 61%|██████    | 60/98 [00:16<00:09,  4.20it/s] 62%|██████▏   | 61/98 [00:17<00:11,  3.16it/s] 63%|██████▎   | 62/98 [00:17<00:10,  3.55it/s] 64%|██████▍   | 63/98 [00:17<00:09,  3.89it/s] 65%|██████▌   | 64/98 [00:17<00:08,  4.17it/s] 66%|██████▋   | 65/98 [00:18<00:10,  3.14it/s] 67%|██████▋   | 66/98 [00:18<00:09,  3.54it/s] 68%|██████▊   | 67/98 [00:18<00:07,  3.88it/s] 69%|██████▉   | 68/98 [00:18<00:07,  4.16it/s] 70%|███████   | 69/98 [00:19<00:08,  3.47it/s] 71%|███████▏  | 70/98 [00:19<00:07,  3.82it/s] 72%|███████▏  | 71/98 [00:19<00:06,  4.11it/s] 73%|███████▎  | 72/98 [00:19<00:05,  4.34it/s] 74%|███████▍  | 73/98 [00:20<00:07,  3.21it/s] 76%|███████▌  | 74/98 [00:20<00:06,  3.60it/s] 77%|███████▋  | 75/98 [00:20<00:05,  3.93it/s] 78%|███████▊  | 76/98 [00:21<00:05,  4.20it/s] 79%|███████▊  | 77/98 [00:21<00:06,  3.16it/s] 80%|███████▉  | 78/98 [00:21<00:05,  3.55it/s] 81%|████████  | 79/98 [00:21<00:04,  3.89it/s] 82%|████████▏ | 80/98 [00:22<00:04,  4.17it/s] 83%|████████▎ | 81/98 [00:22<00:05,  3.14it/s] 84%|████████▎ | 82/98 [00:22<00:04,  3.54it/s] 85%|████████▍ | 83/98 [00:23<00:03,  3.88it/s] 86%|████████▌ | 84/98 [00:23<00:03,  4.16it/s] 87%|████████▋ | 85/98 [00:23<00:03,  3.47it/s] 88%|████████▊ | 86/98 [00:23<00:03,  3.82it/s] 89%|████████▉ | 87/98 [00:24<00:02,  4.11it/s] 90%|████████▉ | 88/98 [00:24<00:02,  4.34it/s] 91%|█████████ | 89/98 [00:24<00:02,  3.17it/s] 92%|█████████▏| 90/98 [00:25<00:02,  3.26it/s] 93%|█████████▎| 91/98 [00:25<00:01,  3.64it/s] 94%|█████████▍| 92/98 [00:25<00:01,  3.97it/s] 95%|█████████▍| 93/98 [00:25<00:01,  4.23it/s] 96%|█████████▌| 94/98 [00:25<00:00,  4.84it/s] 97%|█████████▋| 95/98 [00:25<00:00,  4.96it/s] 98%|█████████▊| 96/98 [00:26<00:00,  5.49it/s] 99%|█████████▉| 97/98 [00:26<00:00,  5.92it/s]100%|██████████| 98/98 [00:26<00:00,  3.72it/s]
+Epoch 8: Loss=1.2739, Acc=64.94%
+[INFO] New best accuracy: 64.94% (previous best was 63.88%)
+[INFO] Starting Epoch 9 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:52,  1.78s/it]  2%|▏         | 2/98 [00:01<01:21,  1.18it/s]  3%|▎         | 3/98 [00:02<00:52,  1.81it/s]  4%|▍         | 4/98 [00:02<00:38,  2.42it/s]  5%|▌         | 5/98 [00:03<00:51,  1.81it/s]  6%|▌         | 6/98 [00:03<00:39,  2.31it/s]  7%|▋         | 7/98 [00:03<00:32,  2.80it/s]  8%|▊         | 8/98 [00:03<00:27,  3.26it/s]  9%|▉         | 9/98 [00:04<00:35,  2.51it/s] 10%|█         | 10/98 [00:04<00:29,  2.97it/s] 11%|█         | 11/98 [00:04<00:25,  3.39it/s] 12%|█▏        | 12/98 [00:04<00:22,  3.76it/s] 13%|█▎        | 13/98 [00:05<00:31,  2.72it/s] 14%|█▍        | 14/98 [00:05<00:26,  3.16it/s] 15%|█▌        | 15/98 [00:05<00:23,  3.55it/s] 16%|█▋        | 16/98 [00:06<00:21,  3.89it/s] 17%|█▋        | 17/98 [00:06<00:31,  2.56it/s] 18%|█▊        | 18/98 [00:07<00:26,  3.00it/s] 19%|█▉        | 19/98 [00:07<00:23,  3.41it/s] 20%|██        | 20/98 [00:07<00:20,  3.77it/s] 21%|██▏       | 21/98 [00:08<00:30,  2.53it/s] 22%|██▏       | 22/98 [00:08<00:25,  2.97it/s] 23%|██▎       | 23/98 [00:08<00:22,  3.38it/s] 24%|██▍       | 24/98 [00:08<00:19,  3.74it/s] 26%|██▌       | 25/98 [00:09<00:28,  2.52it/s] 27%|██▋       | 26/98 [00:09<00:24,  2.96it/s] 28%|██▊       | 27/98 [00:09<00:21,  3.37it/s] 29%|██▊       | 28/98 [00:10<00:18,  3.74it/s] 30%|██▉       | 29/98 [00:10<00:23,  2.96it/s] 31%|███       | 30/98 [00:10<00:20,  3.38it/s] 32%|███▏      | 31/98 [00:10<00:17,  3.74it/s] 33%|███▎      | 32/98 [00:11<00:16,  4.05it/s] 34%|███▎      | 33/98 [00:11<00:25,  2.52it/s] 35%|███▍      | 34/98 [00:12<00:21,  3.00it/s] 36%|███▌      | 35/98 [00:12<00:19,  3.19it/s] 37%|███▋      | 36/98 [00:12<00:17,  3.58it/s] 38%|███▊      | 37/98 [00:12<00:19,  3.17it/s] 39%|███▉      | 38/98 [00:13<00:16,  3.56it/s] 40%|███▉      | 39/98 [00:13<00:15,  3.90it/s] 41%|████      | 40/98 [00:13<00:13,  4.17it/s] 42%|████▏     | 41/98 [00:14<00:22,  2.57it/s] 43%|████▎     | 42/98 [00:14<00:18,  3.07it/s] 44%|████▍     | 43/98 [00:14<00:15,  3.53it/s] 45%|████▍     | 44/98 [00:14<00:13,  3.87it/s] 46%|████▌     | 45/98 [00:15<00:12,  4.15it/s] 47%|████▋     | 46/98 [00:15<00:11,  4.38it/s] 48%|████▊     | 47/98 [00:15<00:11,  4.55it/s] 49%|████▉     | 48/98 [00:15<00:10,  4.67it/s] 50%|█████     | 49/98 [00:16<00:14,  3.34it/s] 51%|█████     | 50/98 [00:16<00:12,  3.71it/s] 52%|█████▏    | 51/98 [00:16<00:11,  4.02it/s] 53%|█████▎    | 52/98 [00:16<00:10,  4.27it/s] 54%|█████▍    | 53/98 [00:17<00:14,  3.19it/s] 55%|█████▌    | 54/98 [00:17<00:12,  3.57it/s] 56%|█████▌    | 55/98 [00:17<00:11,  3.91it/s] 57%|█████▋    | 56/98 [00:17<00:10,  4.18it/s] 58%|█████▊    | 57/98 [00:18<00:13,  3.15it/s] 59%|█████▉    | 58/98 [00:18<00:11,  3.54it/s] 60%|██████    | 59/98 [00:18<00:10,  3.88it/s] 61%|██████    | 60/98 [00:18<00:09,  4.16it/s] 62%|██████▏   | 61/98 [00:19<00:11,  3.14it/s] 63%|██████▎   | 62/98 [00:19<00:10,  3.54it/s] 64%|██████▍   | 63/98 [00:19<00:09,  3.88it/s] 65%|██████▌   | 64/98 [00:20<00:08,  4.16it/s] 66%|██████▋   | 65/98 [00:20<00:09,  3.42it/s] 67%|██████▋   | 66/98 [00:20<00:09,  3.44it/s] 68%|██████▊   | 67/98 [00:20<00:08,  3.80it/s] 69%|██████▉   | 68/98 [00:21<00:07,  4.09it/s] 70%|███████   | 69/98 [00:21<00:08,  3.44it/s] 71%|███████▏  | 70/98 [00:21<00:07,  3.79it/s] 72%|███████▏  | 71/98 [00:21<00:06,  4.09it/s] 73%|███████▎  | 72/98 [00:22<00:06,  4.32it/s] 74%|███████▍  | 73/98 [00:22<00:08,  2.93it/s] 76%|███████▌  | 74/98 [00:22<00:07,  3.34it/s] 77%|███████▋  | 75/98 [00:23<00:06,  3.71it/s] 78%|███████▊  | 76/98 [00:23<00:05,  4.02it/s] 79%|███████▊  | 77/98 [00:23<00:07,  2.82it/s] 80%|███████▉  | 78/98 [00:24<00:06,  3.25it/s] 81%|████████  | 79/98 [00:24<00:05,  3.63it/s] 82%|████████▏ | 80/98 [00:24<00:04,  3.95it/s] 83%|████████▎ | 81/98 [00:25<00:06,  2.80it/s] 84%|████████▎ | 82/98 [00:25<00:04,  3.23it/s] 85%|████████▍ | 83/98 [00:25<00:04,  3.61it/s] 86%|████████▌ | 84/98 [00:25<00:03,  3.94it/s] 87%|████████▋ | 85/98 [00:26<00:04,  3.05it/s] 88%|████████▊ | 86/98 [00:26<00:03,  3.46it/s] 89%|████████▉ | 87/98 [00:26<00:02,  3.81it/s] 90%|████████▉ | 88/98 [00:26<00:02,  4.10it/s] 91%|█████████ | 89/98 [00:27<00:03,  2.85it/s] 92%|█████████▏| 90/98 [00:27<00:02,  3.27it/s] 93%|█████████▎| 91/98 [00:27<00:01,  3.65it/s] 94%|█████████▍| 92/98 [00:28<00:01,  3.97it/s] 95%|█████████▍| 93/98 [00:28<00:01,  4.23it/s] 96%|█████████▌| 94/98 [00:28<00:00,  4.44it/s] 97%|█████████▋| 95/98 [00:28<00:00,  4.59it/s] 98%|█████████▊| 96/98 [00:28<00:00,  5.17it/s] 99%|█████████▉| 97/98 [00:28<00:00,  5.62it/s]100%|██████████| 98/98 [00:29<00:00,  3.37it/s]
+Epoch 9: Loss=1.1746, Acc=67.58%
+[INFO] New best accuracy: 67.58% (previous best was 64.94%)
+[INFO] Starting Epoch 10 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:04,  1.28s/it]  2%|▏         | 2/98 [00:01<01:18,  1.22it/s]  3%|▎         | 3/98 [00:01<00:51,  1.86it/s]  4%|▍         | 4/98 [00:02<00:38,  2.47it/s]  5%|▌         | 5/98 [00:02<00:30,  3.02it/s]  6%|▌         | 6/98 [00:02<00:32,  2.82it/s]  7%|▋         | 7/98 [00:02<00:27,  3.29it/s]  8%|▊         | 8/98 [00:03<00:24,  3.69it/s]  9%|▉         | 9/98 [00:03<00:22,  4.02it/s] 10%|█         | 10/98 [00:03<00:28,  3.06it/s] 11%|█         | 11/98 [00:04<00:35,  2.44it/s] 12%|█▏        | 12/98 [00:04<00:29,  2.89it/s] 13%|█▎        | 13/98 [00:04<00:25,  3.31it/s] 14%|█▍        | 14/98 [00:05<00:22,  3.69it/s] 15%|█▌        | 15/98 [00:05<00:38,  2.17it/s] 16%|█▋        | 16/98 [00:06<00:31,  2.62it/s] 17%|█▋        | 17/98 [00:06<00:26,  3.05it/s] 18%|█▊        | 18/98 [00:06<00:23,  3.46it/s] 19%|█▉        | 19/98 [00:07<00:32,  2.42it/s] 20%|██        | 20/98 [00:07<00:27,  2.87it/s] 21%|██▏       | 21/98 [00:07<00:23,  3.29it/s] 22%|██▏       | 22/98 [00:07<00:20,  3.67it/s] 23%|██▎       | 23/98 [00:08<00:18,  3.98it/s] 24%|██▍       | 24/98 [00:08<00:17,  4.24it/s] 26%|██▌       | 25/98 [00:08<00:16,  4.44it/s] 27%|██▋       | 26/98 [00:08<00:15,  4.60it/s] 28%|██▊       | 27/98 [00:09<00:21,  3.31it/s] 29%|██▊       | 28/98 [00:09<00:19,  3.68it/s] 30%|██▉       | 29/98 [00:09<00:17,  4.00it/s] 31%|███       | 30/98 [00:09<00:15,  4.25it/s] 32%|███▏      | 31/98 [00:10<00:21,  3.18it/s] 33%|███▎      | 32/98 [00:10<00:18,  3.57it/s] 34%|███▎      | 33/98 [00:10<00:16,  3.90it/s] 35%|███▍      | 34/98 [00:10<00:15,  4.18it/s] 36%|███▌      | 35/98 [00:11<00:18,  3.48it/s] 37%|███▋      | 36/98 [00:11<00:16,  3.83it/s] 38%|███▊      | 37/98 [00:11<00:14,  4.12it/s] 39%|███▉      | 38/98 [00:11<00:13,  4.35it/s] 40%|███▉      | 39/98 [00:12<00:16,  3.56it/s] 41%|████      | 40/98 [00:12<00:14,  3.90it/s] 42%|████▏     | 41/98 [00:12<00:13,  4.17it/s] 43%|████▎     | 42/98 [00:12<00:12,  4.39it/s] 44%|████▍     | 43/98 [00:13<00:17,  3.23it/s] 45%|████▍     | 44/98 [00:13<00:14,  3.61it/s] 46%|████▌     | 45/98 [00:13<00:13,  3.94it/s] 47%|████▋     | 46/98 [00:13<00:12,  4.21it/s] 48%|████▊     | 47/98 [00:14<00:16,  3.16it/s] 49%|████▉     | 48/98 [00:14<00:14,  3.55it/s] 50%|█████     | 49/98 [00:14<00:12,  3.89it/s] 51%|█████     | 50/98 [00:15<00:11,  4.17it/s] 52%|█████▏    | 51/98 [00:15<00:13,  3.47it/s] 53%|█████▎    | 52/98 [00:15<00:12,  3.82it/s] 54%|█████▍    | 53/98 [00:15<00:10,  4.11it/s] 55%|█████▌    | 54/98 [00:16<00:10,  4.34it/s] 56%|█████▌    | 55/98 [00:16<00:13,  3.21it/s] 57%|█████▋    | 56/98 [00:16<00:11,  3.60it/s] 58%|█████▊    | 57/98 [00:16<00:10,  3.93it/s] 59%|█████▉    | 58/98 [00:17<00:09,  4.20it/s] 60%|██████    | 59/98 [00:17<00:12,  3.16it/s] 61%|██████    | 60/98 [00:17<00:10,  3.55it/s] 62%|██████▏   | 61/98 [00:18<00:09,  3.89it/s] 63%|██████▎   | 62/98 [00:18<00:08,  4.17it/s] 64%|██████▍   | 63/98 [00:18<00:11,  3.14it/s] 65%|██████▌   | 64/98 [00:18<00:09,  3.54it/s] 66%|██████▋   | 65/98 [00:19<00:08,  3.88it/s] 67%|██████▋   | 66/98 [00:19<00:07,  4.16it/s] 68%|██████▊   | 67/98 [00:19<00:09,  3.14it/s] 69%|██████▉   | 68/98 [00:20<00:08,  3.54it/s] 70%|███████   | 69/98 [00:20<00:07,  3.88it/s] 71%|███████▏  | 70/98 [00:20<00:06,  4.16it/s] 72%|███████▏  | 71/98 [00:20<00:07,  3.47it/s] 73%|███████▎  | 72/98 [00:21<00:06,  3.82it/s] 74%|███████▍  | 73/98 [00:21<00:06,  4.11it/s] 76%|███████▌  | 74/98 [00:21<00:05,  4.34it/s] 77%|███████▋  | 75/98 [00:21<00:07,  3.21it/s] 78%|███████▊  | 76/98 [00:22<00:06,  3.60it/s] 79%|███████▊  | 77/98 [00:22<00:05,  3.93it/s] 80%|███████▉  | 78/98 [00:22<00:04,  4.20it/s] 81%|████████  | 79/98 [00:23<00:06,  3.16it/s] 82%|████████▏ | 80/98 [00:23<00:05,  3.55it/s] 83%|████████▎ | 81/98 [00:23<00:04,  3.89it/s] 84%|████████▎ | 82/98 [00:23<00:03,  4.17it/s] 85%|████████▍ | 83/98 [00:23<00:03,  3.83it/s] 86%|████████▌ | 84/98 [00:24<00:03,  4.17it/s] 87%|████████▋ | 85/98 [00:24<00:02,  4.39it/s] 88%|████████▊ | 86/98 [00:24<00:02,  4.56it/s] 89%|████████▉ | 87/98 [00:25<00:03,  3.29it/s] 90%|████████▉ | 88/98 [00:25<00:02,  3.67it/s] 91%|█████████ | 89/98 [00:25<00:02,  3.99it/s] 92%|█████████▏| 90/98 [00:25<00:01,  4.25it/s] 93%|█████████▎| 91/98 [00:26<00:02,  3.18it/s] 94%|█████████▍| 92/98 [00:26<00:01,  3.57it/s] 95%|█████████▍| 93/98 [00:26<00:01,  3.90it/s] 96%|█████████▌| 94/98 [00:26<00:00,  4.18it/s] 97%|█████████▋| 95/98 [00:27<00:00,  4.10it/s] 98%|█████████▊| 96/98 [00:27<00:00,  4.71it/s] 99%|█████████▉| 97/98 [00:27<00:00,  5.28it/s]100%|██████████| 98/98 [00:27<00:00,  3.57it/s]
+Epoch 10: Loss=1.0869, Acc=69.73%
+[INFO] New best accuracy: 69.73% (previous best was 67.58%)
+[INFO] Starting Epoch 11 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:11,  1.35s/it]  2%|▏         | 2/98 [00:01<01:04,  1.48it/s]  3%|▎         | 3/98 [00:01<00:43,  2.19it/s]  4%|▍         | 4/98 [00:01<00:33,  2.81it/s]  5%|▌         | 5/98 [00:02<00:34,  2.69it/s]  6%|▌         | 6/98 [00:02<00:28,  3.19it/s]  7%|▋         | 7/98 [00:02<00:25,  3.62it/s]  8%|▊         | 8/98 [00:03<00:37,  2.43it/s]  9%|▉         | 9/98 [00:03<00:30,  2.90it/s] 10%|█         | 10/98 [00:03<00:26,  3.33it/s] 11%|█         | 11/98 [00:04<00:23,  3.71it/s] 12%|█▏        | 12/98 [00:05<00:42,  2.03it/s] 13%|█▎        | 13/98 [00:05<00:34,  2.48it/s] 14%|█▍        | 14/98 [00:05<00:28,  2.92it/s] 15%|█▌        | 15/98 [00:05<00:24,  3.34it/s] 16%|█▋        | 16/98 [00:06<00:35,  2.32it/s] 17%|█▋        | 17/98 [00:06<00:28,  2.85it/s] 18%|█▊        | 18/98 [00:06<00:24,  3.27it/s] 19%|█▉        | 19/98 [00:06<00:21,  3.65it/s] 20%|██        | 20/98 [00:07<00:28,  2.69it/s] 21%|██▏       | 21/98 [00:07<00:24,  3.12it/s] 22%|██▏       | 22/98 [00:07<00:21,  3.52it/s] 23%|██▎       | 23/98 [00:08<00:19,  3.86it/s] 24%|██▍       | 24/98 [00:08<00:27,  2.70it/s] 26%|██▌       | 25/98 [00:08<00:22,  3.22it/s] 27%|██▋       | 26/98 [00:09<00:19,  3.61it/s] 28%|██▊       | 27/98 [00:09<00:18,  3.94it/s] 29%|██▊       | 28/98 [00:09<00:25,  2.79it/s] 30%|██▉       | 29/98 [00:10<00:21,  3.22it/s] 31%|███       | 30/98 [00:10<00:18,  3.61it/s] 32%|███▏      | 31/98 [00:10<00:17,  3.94it/s] 33%|███▎      | 32/98 [00:11<00:24,  2.73it/s] 34%|███▎      | 33/98 [00:11<00:20,  3.22it/s] 35%|███▍      | 34/98 [00:11<00:17,  3.64it/s] 36%|███▌      | 35/98 [00:11<00:15,  3.97it/s] 37%|███▋      | 36/98 [00:12<00:16,  3.75it/s] 38%|███▊      | 37/98 [00:12<00:15,  4.06it/s] 39%|███▉      | 38/98 [00:12<00:13,  4.30it/s] 40%|███▉      | 39/98 [00:12<00:13,  4.49it/s] 41%|████      | 40/98 [00:13<00:16,  3.62it/s] 42%|████▏     | 41/98 [00:13<00:14,  3.95it/s] 43%|████▎     | 42/98 [00:13<00:13,  4.22it/s] 44%|████▍     | 43/98 [00:13<00:12,  4.42it/s] 45%|████▍     | 44/98 [00:14<00:16,  3.24it/s] 46%|████▌     | 45/98 [00:14<00:14,  3.63it/s] 47%|████▋     | 46/98 [00:14<00:13,  3.95it/s] 48%|████▊     | 47/98 [00:14<00:12,  4.22it/s] 49%|████▉     | 48/98 [00:15<00:15,  3.16it/s] 50%|█████     | 49/98 [00:15<00:13,  3.56it/s] 51%|█████     | 50/98 [00:15<00:12,  3.89it/s] 52%|█████▏    | 51/98 [00:15<00:11,  4.17it/s] 53%|█████▎    | 52/98 [00:16<00:18,  2.45it/s] 54%|█████▍    | 53/98 [00:16<00:15,  2.89it/s] 55%|█████▌    | 54/98 [00:17<00:13,  3.31it/s] 56%|█████▌    | 55/98 [00:17<00:11,  3.69it/s] 57%|█████▋    | 56/98 [00:17<00:13,  3.21it/s] 58%|█████▊    | 57/98 [00:17<00:11,  3.62it/s] 59%|█████▉    | 58/98 [00:18<00:10,  3.94it/s] 60%|██████    | 59/98 [00:18<00:09,  4.21it/s] 61%|██████    | 60/98 [00:18<00:12,  3.16it/s] 62%|██████▏   | 61/98 [00:18<00:10,  3.55it/s] 63%|██████▎   | 62/98 [00:19<00:09,  3.89it/s] 64%|██████▍   | 63/98 [00:19<00:08,  4.17it/s] 65%|██████▌   | 64/98 [00:19<00:09,  3.47it/s] 66%|██████▋   | 65/98 [00:19<00:08,  3.82it/s] 67%|██████▋   | 66/98 [00:20<00:07,  4.11it/s] 68%|██████▊   | 67/98 [00:20<00:07,  4.34it/s] 69%|██████▉   | 68/98 [00:20<00:10,  2.93it/s] 70%|███████   | 69/98 [00:21<00:08,  3.35it/s] 71%|███████▏  | 70/98 [00:21<00:07,  3.71it/s] 72%|███████▏  | 71/98 [00:21<00:06,  4.03it/s] 73%|███████▎  | 72/98 [00:21<00:07,  3.40it/s] 74%|███████▍  | 73/98 [00:22<00:06,  3.76it/s] 76%|███████▌  | 74/98 [00:22<00:05,  4.07it/s] 77%|███████▋  | 75/98 [00:22<00:05,  4.31it/s] 78%|███████▊  | 76/98 [00:23<00:06,  3.20it/s] 79%|███████▊  | 77/98 [00:23<00:05,  3.59it/s] 80%|███████▉  | 78/98 [00:23<00:05,  3.92it/s] 81%|████████  | 79/98 [00:23<00:04,  4.19it/s] 82%|████████▏ | 80/98 [00:24<00:05,  3.15it/s] 83%|████████▎ | 81/98 [00:24<00:04,  3.55it/s] 84%|████████▎ | 82/98 [00:24<00:04,  3.89it/s] 85%|████████▍ | 83/98 [00:24<00:03,  4.16it/s] 86%|████████▌ | 84/98 [00:25<00:04,  3.14it/s] 87%|████████▋ | 85/98 [00:25<00:03,  3.54it/s] 88%|████████▊ | 86/98 [00:25<00:03,  3.88it/s] 89%|████████▉ | 87/98 [00:25<00:02,  4.16it/s] 90%|████████▉ | 88/98 [00:26<00:02,  3.47it/s] 91%|█████████ | 89/98 [00:26<00:02,  3.82it/s] 92%|█████████▏| 90/98 [00:26<00:01,  4.11it/s] 93%|█████████▎| 91/98 [00:26<00:01,  4.34it/s] 94%|█████████▍| 92/98 [00:27<00:01,  3.56it/s] 95%|█████████▍| 93/98 [00:27<00:01,  3.89it/s] 96%|█████████▌| 94/98 [00:27<00:00,  4.53it/s] 97%|█████████▋| 95/98 [00:27<00:00,  4.71it/s] 98%|█████████▊| 96/98 [00:27<00:00,  5.25it/s] 99%|█████████▉| 97/98 [00:28<00:00,  5.74it/s]100%|██████████| 98/98 [00:28<00:00,  3.48it/s]
+Epoch 11: Loss=1.0454, Acc=70.77%
+[INFO] New best accuracy: 70.77% (previous best was 69.73%)
+[INFO] Starting Epoch 12 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:13,  1.37s/it]  2%|▏         | 2/98 [00:01<01:05,  1.46it/s]  3%|▎         | 3/98 [00:01<00:43,  2.16it/s]  4%|▍         | 4/98 [00:01<00:33,  2.79it/s]  5%|▌         | 5/98 [00:02<00:35,  2.64it/s]  6%|▌         | 6/98 [00:02<00:31,  2.88it/s]  7%|▋         | 7/98 [00:02<00:27,  3.34it/s]  8%|▊         | 8/98 [00:03<00:24,  3.74it/s]  9%|▉         | 9/98 [00:03<00:30,  2.94it/s] 10%|█         | 10/98 [00:03<00:26,  3.37it/s] 11%|█         | 11/98 [00:03<00:23,  3.74it/s] 12%|█▏        | 12/98 [00:04<00:23,  3.61it/s] 13%|█▎        | 13/98 [00:04<00:24,  3.52it/s] 14%|█▍        | 14/98 [00:04<00:21,  3.87it/s] 15%|█▌        | 15/98 [00:04<00:20,  4.15it/s] 16%|█▋        | 16/98 [00:05<00:26,  3.14it/s] 17%|█▋        | 17/98 [00:05<00:22,  3.53it/s] 18%|█▊        | 18/98 [00:05<00:20,  3.87it/s] 19%|█▉        | 19/98 [00:06<00:19,  4.15it/s] 20%|██        | 20/98 [00:06<00:27,  2.87it/s] 21%|██▏       | 21/98 [00:06<00:23,  3.29it/s] 22%|██▏       | 22/98 [00:07<00:20,  3.67it/s] 23%|██▎       | 23/98 [00:07<00:18,  3.99it/s] 24%|██▍       | 24/98 [00:07<00:24,  3.07it/s] 26%|██▌       | 25/98 [00:07<00:21,  3.47it/s] 27%|██▋       | 26/98 [00:08<00:18,  3.82it/s] 28%|██▊       | 27/98 [00:08<00:17,  4.11it/s] 29%|██▊       | 28/98 [00:08<00:24,  2.86it/s] 30%|██▉       | 29/98 [00:09<00:21,  3.28it/s] 31%|███       | 30/98 [00:09<00:18,  3.66it/s] 32%|███▏      | 31/98 [00:09<00:16,  3.98it/s] 33%|███▎      | 32/98 [00:10<00:21,  3.07it/s] 34%|███▎      | 33/98 [00:10<00:18,  3.47it/s] 35%|███▍      | 34/98 [00:10<00:16,  3.82it/s] 36%|███▌      | 35/98 [00:10<00:15,  4.11it/s] 37%|███▋      | 36/98 [00:11<00:19,  3.12it/s] 38%|███▊      | 37/98 [00:11<00:17,  3.52it/s] 39%|███▉      | 38/98 [00:11<00:15,  3.86it/s] 40%|███▉      | 39/98 [00:11<00:14,  4.15it/s] 41%|████      | 40/98 [00:12<00:18,  3.14it/s] 42%|████▏     | 41/98 [00:12<00:16,  3.53it/s] 43%|████▎     | 42/98 [00:12<00:14,  3.87it/s] 44%|████▍     | 43/98 [00:12<00:13,  4.15it/s] 45%|████▍     | 44/98 [00:13<00:17,  3.14it/s] 46%|████▌     | 45/98 [00:13<00:14,  3.53it/s] 47%|████▋     | 46/98 [00:13<00:13,  3.87it/s] 48%|████▊     | 47/98 [00:13<00:12,  4.16it/s] 49%|████▉     | 48/98 [00:14<00:14,  3.47it/s] 50%|█████     | 49/98 [00:14<00:12,  3.82it/s] 51%|█████     | 50/98 [00:14<00:11,  4.11it/s] 52%|█████▏    | 51/98 [00:14<00:10,  4.34it/s] 53%|█████▎    | 52/98 [00:15<00:14,  3.21it/s] 54%|█████▍    | 53/98 [00:15<00:12,  3.60it/s] 55%|█████▌    | 54/98 [00:15<00:11,  3.93it/s] 56%|█████▌    | 55/98 [00:16<00:10,  4.20it/s] 57%|█████▋    | 56/98 [00:16<00:13,  3.16it/s] 58%|█████▊    | 57/98 [00:16<00:11,  3.55it/s] 59%|█████▉    | 58/98 [00:16<00:10,  3.89it/s] 60%|██████    | 59/98 [00:17<00:09,  4.17it/s] 61%|██████    | 60/98 [00:17<00:12,  3.14it/s] 62%|██████▏   | 61/98 [00:17<00:10,  3.54it/s] 63%|██████▎   | 62/98 [00:18<00:09,  3.88it/s] 64%|██████▍   | 63/98 [00:18<00:08,  4.16it/s] 65%|██████▌   | 64/98 [00:18<00:10,  3.14it/s] 66%|██████▋   | 65/98 [00:18<00:09,  3.54it/s] 67%|██████▋   | 66/98 [00:19<00:08,  3.88it/s] 68%|██████▊   | 67/98 [00:19<00:07,  4.16it/s] 69%|██████▉   | 68/98 [00:19<00:09,  3.14it/s] 70%|███████   | 69/98 [00:20<00:08,  3.53it/s] 71%|███████▏  | 70/98 [00:20<00:07,  3.88it/s] 72%|███████▏  | 71/98 [00:20<00:06,  4.16it/s] 73%|███████▎  | 72/98 [00:20<00:08,  3.14it/s] 74%|███████▍  | 73/98 [00:21<00:07,  3.53it/s] 76%|███████▌  | 74/98 [00:21<00:06,  3.88it/s] 77%|███████▋  | 75/98 [00:21<00:05,  4.16it/s] 78%|███████▊  | 76/98 [00:22<00:07,  3.14it/s] 79%|███████▊  | 77/98 [00:22<00:05,  3.53it/s] 80%|███████▉  | 78/98 [00:22<00:05,  3.88it/s] 81%|████████  | 79/98 [00:22<00:04,  4.16it/s] 82%|████████▏ | 80/98 [00:23<00:05,  3.14it/s] 83%|████████▎ | 81/98 [00:23<00:04,  3.53it/s] 84%|████████▎ | 82/98 [00:23<00:04,  3.88it/s] 85%|████████▍ | 83/98 [00:23<00:03,  4.16it/s] 86%|████████▌ | 84/98 [00:24<00:04,  3.14it/s] 87%|████████▋ | 85/98 [00:24<00:03,  3.53it/s] 88%|████████▊ | 86/98 [00:24<00:03,  3.88it/s] 89%|████████▉ | 87/98 [00:24<00:02,  4.16it/s] 90%|████████▉ | 88/98 [00:25<00:03,  3.14it/s] 91%|█████████ | 89/98 [00:25<00:02,  3.53it/s] 92%|█████████▏| 90/98 [00:25<00:02,  3.88it/s] 93%|█████████▎| 91/98 [00:25<00:01,  4.16it/s] 94%|█████████▍| 92/98 [00:26<00:01,  3.87it/s] 95%|█████████▍| 93/98 [00:26<00:01,  4.51it/s] 96%|█████████▌| 94/98 [00:26<00:00,  4.89it/s] 97%|█████████▋| 95/98 [00:26<00:00,  5.44it/s] 98%|█████████▊| 96/98 [00:26<00:00,  5.86it/s] 99%|█████████▉| 97/98 [00:26<00:00,  6.24it/s]100%|██████████| 98/98 [00:27<00:00,  3.62it/s]
+Epoch 12: Loss=0.9962, Acc=72.04%
+[INFO] New best accuracy: 72.04% (previous best was 70.77%)
+[INFO] Starting Epoch 13 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:03,  1.27s/it]  2%|▏         | 2/98 [00:01<01:01,  1.56it/s]  3%|▎         | 3/98 [00:01<00:41,  2.27it/s]  4%|▍         | 4/98 [00:01<00:32,  2.90it/s]  5%|▌         | 5/98 [00:02<00:37,  2.49it/s]  6%|▌         | 6/98 [00:02<00:30,  3.01it/s]  7%|▋         | 7/98 [00:02<00:26,  3.46it/s]  8%|▊         | 8/98 [00:02<00:23,  3.83it/s]  9%|▉         | 9/98 [00:03<00:29,  2.98it/s] 10%|█         | 10/98 [00:03<00:25,  3.40it/s] 11%|█         | 11/98 [00:03<00:23,  3.77it/s] 12%|█▏        | 12/98 [00:04<00:21,  4.08it/s] 13%|█▎        | 13/98 [00:04<00:24,  3.42it/s] 14%|█▍        | 14/98 [00:04<00:22,  3.78it/s] 15%|█▌        | 15/98 [00:04<00:20,  4.08it/s] 16%|█▋        | 16/98 [00:05<00:18,  4.32it/s] 17%|█▋        | 17/98 [00:05<00:25,  3.20it/s] 18%|█▊        | 18/98 [00:05<00:22,  3.59it/s] 19%|█▉        | 19/98 [00:05<00:20,  3.92it/s] 20%|██        | 20/98 [00:06<00:18,  4.19it/s] 21%|██▏       | 21/98 [00:06<00:22,  3.49it/s] 22%|██▏       | 22/98 [00:06<00:19,  3.83it/s] 23%|██▎       | 23/98 [00:06<00:18,  4.12it/s] 24%|██▍       | 24/98 [00:07<00:17,  4.35it/s] 26%|██▌       | 25/98 [00:07<00:22,  3.22it/s] 27%|██▋       | 26/98 [00:07<00:19,  3.60it/s] 28%|██▊       | 27/98 [00:08<00:18,  3.93it/s] 29%|██▊       | 28/98 [00:08<00:16,  4.20it/s] 30%|██▉       | 29/98 [00:08<00:21,  3.16it/s] 31%|███       | 30/98 [00:08<00:19,  3.55it/s] 32%|███▏      | 31/98 [00:09<00:21,  3.15it/s] 33%|███▎      | 32/98 [00:09<00:18,  3.55it/s] 34%|███▎      | 33/98 [00:09<00:16,  3.89it/s] 35%|███▍      | 34/98 [00:09<00:15,  4.16it/s] 36%|███▌      | 35/98 [00:10<00:21,  2.87it/s] 37%|███▋      | 36/98 [00:10<00:18,  3.29it/s] 38%|███▊      | 37/98 [00:10<00:16,  3.67it/s] 39%|███▉      | 38/98 [00:11<00:15,  3.99it/s] 40%|███▉      | 39/98 [00:11<00:21,  2.80it/s] 41%|████      | 40/98 [00:11<00:17,  3.24it/s] 42%|████▏     | 41/98 [00:12<00:15,  3.62it/s] 43%|████▎     | 42/98 [00:12<00:14,  3.95it/s] 44%|████▍     | 43/98 [00:12<00:19,  2.80it/s] 45%|████▍     | 44/98 [00:13<00:16,  3.23it/s] 46%|████▌     | 45/98 [00:13<00:14,  3.61it/s] 47%|████▋     | 46/98 [00:13<00:13,  3.94it/s] 48%|████▊     | 47/98 [00:14<00:18,  2.80it/s] 49%|████▉     | 48/98 [00:14<00:15,  3.22it/s] 50%|█████     | 49/98 [00:14<00:13,  3.61it/s] 51%|█████     | 50/98 [00:14<00:12,  3.94it/s] 52%|█████▏    | 51/98 [00:15<00:15,  3.05it/s] 53%|█████▎    | 52/98 [00:15<00:13,  3.45it/s] 54%|█████▍    | 53/98 [00:15<00:11,  3.81it/s] 55%|█████▌    | 54/98 [00:15<00:10,  4.10it/s] 56%|█████▌    | 55/98 [00:16<00:12,  3.44it/s] 57%|█████▋    | 56/98 [00:16<00:11,  3.80it/s] 58%|█████▊    | 57/98 [00:16<00:10,  4.09it/s] 59%|█████▉    | 58/98 [00:16<00:09,  4.33it/s] 60%|██████    | 59/98 [00:17<00:12,  3.21it/s] 61%|██████    | 60/98 [00:17<00:10,  3.59it/s] 62%|██████▏   | 61/98 [00:17<00:09,  3.92it/s] 63%|██████▎   | 62/98 [00:17<00:08,  4.20it/s] 64%|██████▍   | 63/98 [00:18<00:11,  3.16it/s] 65%|██████▌   | 64/98 [00:18<00:09,  3.55it/s] 66%|██████▋   | 65/98 [00:18<00:08,  3.89it/s] 67%|██████▋   | 66/98 [00:19<00:07,  4.17it/s] 68%|██████▊   | 67/98 [00:19<00:08,  3.47it/s] 69%|██████▉   | 68/98 [00:19<00:07,  3.82it/s] 70%|███████   | 69/98 [00:19<00:07,  4.11it/s] 71%|███████▏  | 70/98 [00:20<00:06,  4.34it/s] 72%|███████▏  | 71/98 [00:20<00:09,  2.93it/s] 73%|███████▎  | 72/98 [00:20<00:07,  3.35it/s] 74%|███████▍  | 73/98 [00:21<00:06,  3.72it/s] 76%|███████▌  | 74/98 [00:21<00:05,  4.03it/s] 77%|███████▋  | 75/98 [00:21<00:06,  3.40it/s] 78%|███████▊  | 76/98 [00:21<00:05,  3.76it/s] 79%|███████▊  | 77/98 [00:22<00:05,  4.07it/s] 80%|███████▉  | 78/98 [00:22<00:04,  4.31it/s] 81%|████████  | 79/98 [00:22<00:05,  3.54it/s] 82%|████████▏ | 80/98 [00:22<00:04,  3.88it/s] 83%|████████▎ | 81/98 [00:23<00:04,  4.16it/s] 84%|████████▎ | 82/98 [00:23<00:03,  4.38it/s] 85%|████████▍ | 83/98 [00:23<00:04,  3.23it/s] 86%|████████▌ | 84/98 [00:23<00:03,  3.61it/s] 87%|████████▋ | 85/98 [00:24<00:03,  3.94it/s] 88%|████████▊ | 86/98 [00:24<00:02,  4.21it/s] 89%|████████▉ | 87/98 [00:24<00:03,  3.49it/s] 90%|████████▉ | 88/98 [00:24<00:02,  3.84it/s] 91%|█████████ | 89/98 [00:25<00:02,  4.13it/s] 92%|█████████▏| 90/98 [00:25<00:01,  4.36it/s] 93%|█████████▎| 91/98 [00:26<00:02,  2.61it/s] 94%|█████████▍| 92/98 [00:26<00:01,  3.15it/s] 95%|█████████▍| 93/98 [00:26<00:01,  3.80it/s] 96%|█████████▌| 94/98 [00:26<00:00,  4.16it/s] 97%|█████████▋| 95/98 [00:26<00:00,  4.77it/s] 98%|█████████▊| 96/98 [00:26<00:00,  5.33it/s] 99%|█████████▉| 97/98 [00:27<00:00,  5.80it/s]100%|██████████| 98/98 [00:27<00:00,  3.61it/s]
+Epoch 13: Loss=0.9773, Acc=72.68%
+[INFO] New best accuracy: 72.68% (previous best was 72.04%)
+[INFO] Starting Epoch 14 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:25,  1.49s/it]  2%|▏         | 2/98 [00:01<01:10,  1.36it/s]  3%|▎         | 3/98 [00:01<00:46,  2.04it/s]  4%|▍         | 4/98 [00:02<00:35,  2.66it/s]  5%|▌         | 5/98 [00:02<00:49,  1.89it/s]  6%|▌         | 6/98 [00:03<00:38,  2.40it/s]  7%|▋         | 7/98 [00:03<00:31,  2.89it/s]  8%|▊         | 8/98 [00:03<00:26,  3.34it/s]  9%|▉         | 9/98 [00:04<00:37,  2.35it/s] 10%|█         | 10/98 [00:04<00:31,  2.81it/s] 11%|█         | 11/98 [00:04<00:26,  3.25it/s] 12%|█▏        | 12/98 [00:04<00:23,  3.64it/s] 13%|█▎        | 13/98 [00:05<00:29,  2.91it/s] 14%|█▍        | 14/98 [00:05<00:25,  3.33it/s] 15%|█▌        | 15/98 [00:05<00:22,  3.71it/s] 16%|█▋        | 16/98 [00:05<00:20,  4.02it/s] 17%|█▋        | 17/98 [00:06<00:28,  2.82it/s] 18%|█▊        | 18/98 [00:06<00:24,  3.25it/s] 19%|█▉        | 19/98 [00:06<00:21,  3.63it/s] 20%|██        | 20/98 [00:07<00:19,  3.95it/s] 21%|██▏       | 21/98 [00:07<00:25,  3.06it/s] 22%|██▏       | 22/98 [00:07<00:21,  3.46it/s] 23%|██▎       | 23/98 [00:07<00:19,  3.81it/s] 24%|██▍       | 24/98 [00:08<00:18,  4.11it/s] 26%|██▌       | 25/98 [00:08<00:23,  3.12it/s] 27%|██▋       | 26/98 [00:08<00:20,  3.52it/s] 28%|██▊       | 27/98 [00:09<00:18,  3.86it/s] 29%|██▊       | 28/98 [00:09<00:16,  4.14it/s] 30%|██▉       | 29/98 [00:09<00:24,  2.87it/s] 31%|███       | 30/98 [00:10<00:20,  3.29it/s] 32%|███▏      | 31/98 [00:10<00:18,  3.66it/s] 33%|███▎      | 32/98 [00:10<00:16,  3.98it/s] 34%|███▎      | 33/98 [00:10<00:19,  3.38it/s] 35%|███▍      | 34/98 [00:11<00:17,  3.74it/s] 36%|███▌      | 35/98 [00:11<00:15,  4.05it/s] 37%|███▋      | 36/98 [00:11<00:14,  4.29it/s] 38%|███▊      | 37/98 [00:12<00:20,  2.92it/s] 39%|███▉      | 38/98 [00:12<00:18,  3.33it/s] 40%|███▉      | 39/98 [00:12<00:15,  3.70it/s] 41%|████      | 40/98 [00:12<00:14,  4.02it/s] 42%|████▏     | 41/98 [00:13<00:18,  3.08it/s] 43%|████▎     | 42/98 [00:13<00:16,  3.48it/s] 44%|████▍     | 43/98 [00:13<00:14,  3.83it/s] 45%|████▍     | 44/98 [00:13<00:13,  4.12it/s] 46%|████▌     | 45/98 [00:14<00:18,  2.86it/s] 47%|████▋     | 46/98 [00:14<00:15,  3.28it/s] 48%|████▊     | 47/98 [00:14<00:13,  3.66it/s] 49%|████▉     | 48/98 [00:14<00:12,  3.98it/s] 50%|█████     | 49/98 [00:15<00:14,  3.38it/s] 51%|█████     | 50/98 [00:15<00:12,  3.74it/s] 52%|█████▏    | 51/98 [00:15<00:11,  4.05it/s] 53%|█████▎    | 52/98 [00:15<00:10,  4.29it/s] 54%|█████▍    | 53/98 [00:16<00:15,  2.92it/s] 55%|█████▌    | 54/98 [00:16<00:13,  3.33it/s] 56%|█████▌    | 55/98 [00:16<00:11,  3.70it/s] 57%|█████▋    | 56/98 [00:17<00:10,  4.02it/s] 58%|█████▊    | 57/98 [00:17<00:13,  3.08it/s] 59%|█████▉    | 58/98 [00:17<00:11,  3.48it/s] 60%|██████    | 59/98 [00:18<00:10,  3.83it/s] 61%|██████    | 60/98 [00:18<00:09,  4.12it/s] 62%|██████▏   | 61/98 [00:18<00:11,  3.13it/s] 63%|██████▎   | 62/98 [00:18<00:10,  3.52it/s] 64%|██████▍   | 63/98 [00:19<00:09,  3.86it/s] 65%|██████▌   | 64/98 [00:19<00:08,  4.15it/s] 66%|██████▋   | 65/98 [00:19<00:10,  3.14it/s] 67%|██████▋   | 66/98 [00:20<00:09,  3.53it/s] 68%|██████▊   | 67/98 [00:20<00:08,  3.87it/s] 69%|██████▉   | 68/98 [00:20<00:07,  4.15it/s] 70%|███████   | 69/98 [00:21<00:11,  2.45it/s] 71%|███████▏  | 70/98 [00:21<00:09,  2.89it/s] 72%|███████▏  | 71/98 [00:21<00:08,  3.31it/s] 73%|███████▎  | 72/98 [00:21<00:07,  3.68it/s] 74%|███████▍  | 73/98 [00:22<00:06,  4.00it/s] 76%|███████▌  | 74/98 [00:22<00:05,  4.25it/s] 77%|███████▋  | 75/98 [00:22<00:05,  4.45it/s] 78%|███████▊  | 76/98 [00:22<00:04,  4.60it/s] 79%|███████▊  | 77/98 [00:23<00:05,  3.68it/s] 80%|███████▉  | 78/98 [00:23<00:05,  3.99it/s] 81%|████████  | 79/98 [00:23<00:04,  4.25it/s] 82%|████████▏ | 80/98 [00:23<00:04,  4.45it/s] 83%|████████▎ | 81/98 [00:24<00:05,  3.25it/s] 84%|████████▎ | 82/98 [00:24<00:04,  3.64it/s] 85%|████████▍ | 83/98 [00:24<00:03,  3.96it/s] 86%|████████▌ | 84/98 [00:24<00:03,  4.22it/s] 87%|████████▋ | 85/98 [00:25<00:04,  3.17it/s] 88%|████████▊ | 86/98 [00:25<00:03,  3.56it/s] 89%|████████▉ | 87/98 [00:25<00:02,  3.90it/s] 90%|████████▉ | 88/98 [00:25<00:02,  4.17it/s] 91%|█████████ | 89/98 [00:26<00:02,  3.15it/s] 92%|█████████▏| 90/98 [00:26<00:02,  3.54it/s] 93%|█████████▎| 91/98 [00:26<00:01,  3.88it/s] 94%|█████████▍| 92/98 [00:26<00:01,  4.16it/s] 95%|█████████▍| 93/98 [00:27<00:01,  3.87it/s] 96%|█████████▌| 94/98 [00:27<00:00,  4.51it/s] 97%|█████████▋| 95/98 [00:27<00:00,  4.90it/s] 98%|█████████▊| 96/98 [00:27<00:00,  5.43it/s] 99%|█████████▉| 97/98 [00:27<00:00,  5.87it/s]100%|██████████| 98/98 [00:28<00:00,  3.50it/s]
+Epoch 14: Loss=0.9269, Acc=73.88%
+[INFO] New best accuracy: 73.88% (previous best was 72.68%)
+[INFO] Starting Epoch 15 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:14,  1.38s/it]  2%|▏         | 2/98 [00:01<01:05,  1.46it/s]  3%|▎         | 3/98 [00:01<00:48,  1.96it/s]  4%|▍         | 4/98 [00:02<00:36,  2.58it/s]  5%|▌         | 5/98 [00:02<00:33,  2.81it/s]  6%|▌         | 6/98 [00:02<00:27,  3.30it/s]  7%|▋         | 7/98 [00:03<00:42,  2.15it/s]  8%|▊         | 8/98 [00:03<00:34,  2.62it/s]  9%|▉         | 9/98 [00:03<00:28,  3.08it/s] 10%|█         | 10/98 [00:03<00:25,  3.50it/s] 11%|█         | 11/98 [00:04<00:30,  2.85it/s] 12%|█▏        | 12/98 [00:04<00:26,  3.27it/s] 13%|█▎        | 13/98 [00:04<00:23,  3.66it/s] 14%|█▍        | 14/98 [00:05<00:21,  3.98it/s] 15%|█▌        | 15/98 [00:05<00:24,  3.38it/s] 16%|█▋        | 16/98 [00:05<00:21,  3.74it/s] 17%|█▋        | 17/98 [00:05<00:20,  4.05it/s] 18%|█▊        | 18/98 [00:06<00:18,  4.29it/s] 19%|█▉        | 19/98 [00:06<00:22,  3.53it/s] 20%|██        | 20/98 [00:06<00:20,  3.87it/s] 21%|██▏       | 21/98 [00:06<00:18,  4.16it/s] 22%|██▏       | 22/98 [00:07<00:17,  4.38it/s] 23%|██▎       | 23/98 [00:07<00:20,  3.57it/s] 24%|██▍       | 24/98 [00:07<00:25,  2.89it/s] 26%|██▌       | 25/98 [00:08<00:22,  3.31it/s] 27%|██▋       | 26/98 [00:08<00:19,  3.68it/s] 28%|██▊       | 27/98 [00:08<00:17,  4.00it/s] 29%|██▊       | 28/98 [00:09<00:24,  2.82it/s] 30%|██▉       | 29/98 [00:09<00:21,  3.24it/s] 31%|███       | 30/98 [00:09<00:18,  3.62it/s] 32%|███▏      | 31/98 [00:09<00:16,  3.95it/s] 33%|███▎      | 32/98 [00:10<00:23,  2.80it/s] 34%|███▎      | 33/98 [00:10<00:20,  3.23it/s] 35%|███▍      | 34/98 [00:10<00:17,  3.61it/s] 36%|███▌      | 35/98 [00:10<00:15,  3.94it/s] 37%|███▋      | 36/98 [00:11<00:24,  2.58it/s] 38%|███▊      | 37/98 [00:11<00:20,  3.02it/s] 39%|███▉      | 38/98 [00:12<00:17,  3.42it/s] 40%|███▉      | 39/98 [00:12<00:15,  3.78it/s] 41%|████      | 40/98 [00:12<00:22,  2.53it/s] 42%|████▏     | 41/98 [00:13<00:19,  2.97it/s] 43%|████▎     | 42/98 [00:13<00:16,  3.38it/s] 44%|████▍     | 43/98 [00:13<00:14,  3.75it/s] 45%|████▍     | 44/98 [00:14<00:21,  2.52it/s] 46%|████▌     | 45/98 [00:14<00:17,  2.96it/s] 47%|████▋     | 46/98 [00:14<00:15,  3.37it/s] 48%|████▊     | 47/98 [00:14<00:13,  3.74it/s] 49%|████▉     | 48/98 [00:15<00:16,  2.97it/s] 50%|█████     | 49/98 [00:15<00:14,  3.38it/s] 51%|█████     | 50/98 [00:15<00:12,  3.74it/s] 52%|█████▏    | 51/98 [00:15<00:11,  4.05it/s] 53%|█████▎    | 52/98 [00:16<00:16,  2.83it/s] 54%|█████▍    | 53/98 [00:16<00:13,  3.26it/s] 55%|█████▌    | 54/98 [00:16<00:12,  3.64it/s] 56%|█████▌    | 55/98 [00:17<00:10,  3.96it/s] 57%|█████▋    | 56/98 [00:17<00:13,  3.06it/s] 58%|█████▊    | 57/98 [00:17<00:11,  3.46it/s] 59%|█████▉    | 58/98 [00:18<00:10,  3.82it/s] 60%|██████    | 59/98 [00:18<00:09,  4.11it/s] 61%|██████    | 60/98 [00:18<00:13,  2.85it/s] 62%|██████▏   | 61/98 [00:19<00:11,  3.28it/s] 63%|██████▎   | 62/98 [00:19<00:09,  3.65it/s] 64%|██████▍   | 63/98 [00:19<00:08,  3.97it/s] 65%|██████▌   | 64/98 [00:19<00:11,  3.07it/s] 66%|██████▋   | 65/98 [00:20<00:09,  3.47it/s] 67%|██████▋   | 66/98 [00:20<00:08,  3.82it/s] 68%|██████▊   | 67/98 [00:20<00:07,  4.11it/s] 69%|██████▉   | 68/98 [00:21<00:10,  2.85it/s] 70%|███████   | 69/98 [00:21<00:08,  3.28it/s] 71%|███████▏  | 70/98 [00:21<00:07,  3.65it/s] 72%|███████▏  | 71/98 [00:21<00:06,  3.98it/s] 73%|███████▎  | 72/98 [00:22<00:08,  3.07it/s] 74%|███████▍  | 73/98 [00:22<00:07,  3.47it/s] 76%|███████▌  | 74/98 [00:22<00:06,  3.82it/s] 77%|███████▋  | 75/98 [00:22<00:05,  4.11it/s] 78%|███████▊  | 76/98 [00:23<00:07,  2.86it/s] 79%|███████▊  | 77/98 [00:23<00:06,  3.28it/s] 80%|███████▉  | 78/98 [00:23<00:05,  3.65it/s] 81%|████████  | 79/98 [00:24<00:04,  3.98it/s] 82%|████████▏ | 80/98 [00:24<00:06,  2.81it/s] 83%|████████▎ | 81/98 [00:24<00:05,  3.23it/s] 84%|████████▎ | 82/98 [00:25<00:04,  3.62it/s] 85%|████████▍ | 83/98 [00:25<00:03,  3.94it/s] 86%|████████▌ | 84/98 [00:26<00:05,  2.40it/s] 87%|████████▋ | 85/98 [00:26<00:04,  2.84it/s] 88%|████████▊ | 86/98 [00:26<00:03,  3.26it/s] 89%|████████▉ | 87/98 [00:26<00:03,  3.64it/s] 90%|████████▉ | 88/98 [00:27<00:03,  2.69it/s] 91%|█████████ | 89/98 [00:27<00:02,  3.12it/s] 92%|█████████▏| 90/98 [00:27<00:02,  3.52it/s] 93%|█████████▎| 91/98 [00:27<00:01,  3.86it/s] 94%|█████████▍| 92/98 [00:28<00:01,  3.30it/s] 95%|█████████▍| 93/98 [00:28<00:01,  3.94it/s] 96%|█████████▌| 94/98 [00:28<00:00,  4.27it/s] 97%|█████████▋| 95/98 [00:28<00:00,  4.67it/s] 98%|█████████▊| 96/98 [00:28<00:00,  5.24it/s] 99%|█████████▉| 97/98 [00:29<00:00,  5.73it/s]100%|██████████| 98/98 [00:29<00:00,  3.36it/s]
+Epoch 15: Loss=0.8629, Acc=75.45%
+[INFO] New best accuracy: 75.45% (previous best was 73.88%)
+[INFO] Starting Epoch 16 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:01<02:23,  1.48s/it]  2%|▏         | 2/98 [00:01<01:10,  1.37it/s]  3%|▎         | 3/98 [00:01<00:46,  2.05it/s]  4%|▍         | 4/98 [00:02<00:35,  2.68it/s]  5%|▌         | 5/98 [00:02<00:42,  2.20it/s]  6%|▌         | 6/98 [00:03<00:43,  2.13it/s]  7%|▋         | 7/98 [00:03<00:34,  2.62it/s]  8%|▊         | 8/98 [00:03<00:29,  3.09it/s]  9%|▉         | 9/98 [00:03<00:28,  3.16it/s] 10%|█         | 10/98 [00:04<00:30,  2.92it/s] 11%|█         | 11/98 [00:04<00:25,  3.35it/s] 12%|█▏        | 12/98 [00:04<00:23,  3.72it/s] 13%|█▎        | 13/98 [00:05<00:26,  3.24it/s] 14%|█▍        | 14/98 [00:05<00:25,  3.27it/s] 15%|█▌        | 15/98 [00:05<00:22,  3.65it/s] 16%|█▋        | 16/98 [00:05<00:20,  3.97it/s] 17%|█▋        | 17/98 [00:06<00:26,  3.06it/s] 18%|█▊        | 18/98 [00:06<00:23,  3.47it/s] 19%|█▉        | 19/98 [00:06<00:20,  3.82it/s] 20%|██        | 20/98 [00:06<00:18,  4.11it/s] 21%|██▏       | 21/98 [00:07<00:26,  2.85it/s] 22%|██▏       | 22/98 [00:07<00:23,  3.28it/s] 23%|██▎       | 23/98 [00:07<00:20,  3.65it/s] 24%|██▍       | 24/98 [00:08<00:18,  3.98it/s] 26%|██▌       | 25/98 [00:08<00:25,  2.81it/s] 27%|██▋       | 26/98 [00:08<00:22,  3.23it/s] 28%|██▊       | 27/98 [00:09<00:19,  3.62it/s] 29%|██▊       | 28/98 [00:09<00:17,  3.94it/s] 30%|██▉       | 29/98 [00:09<00:22,  3.05it/s] 31%|███       | 30/98 [00:09<00:19,  3.46it/s] 32%|███▏      | 31/98 [00:10<00:17,  3.81it/s] 33%|███▎      | 32/98 [00:10<00:16,  4.10it/s] 34%|███▎      | 33/98 [00:10<00:22,  2.85it/s] 35%|███▍      | 34/98 [00:11<00:19,  3.27it/s] 36%|███▌      | 35/98 [00:11<00:17,  3.65it/s] 37%|███▋      | 36/98 [00:11<00:15,  3.97it/s] 38%|███▊      | 37/98 [00:12<00:19,  3.07it/s] 39%|███▉      | 38/98 [00:12<00:17,  3.47it/s] 40%|███▉      | 39/98 [00:12<00:15,  3.82it/s] 41%|████      | 40/98 [00:12<00:14,  4.11it/s] 42%|████▏     | 41/98 [00:13<00:19,  2.85it/s] 43%|████▎     | 42/98 [00:13<00:17,  3.28it/s] 44%|████▍     | 43/98 [00:13<00:15,  3.65it/s] 45%|████▍     | 44/98 [00:13<00:13,  3.98it/s] 46%|████▌     | 45/98 [00:14<00:15,  3.38it/s] 47%|████▋     | 46/98 [00:14<00:13,  3.74it/s] 48%|████▊     | 47/98 [00:14<00:12,  4.05it/s] 49%|████▉     | 48/98 [00:14<00:11,  4.29it/s] 50%|█████     | 49/98 [00:15<00:13,  3.53it/s] 51%|█████     | 50/98 [00:15<00:12,  3.87it/s] 52%|█████▏    | 51/98 [00:15<00:11,  4.15it/s] 53%|█████▎    | 52/98 [00:15<00:10,  4.38it/s] 54%|█████▍    | 53/98 [00:16<00:13,  3.23it/s] 55%|█████▌    | 54/98 [00:16<00:12,  3.61it/s] 56%|█████▌    | 55/98 [00:16<00:10,  3.94it/s] 57%|█████▋    | 56/98 [00:16<00:09,  4.21it/s] 58%|█████▊    | 57/98 [00:17<00:11,  3.49it/s] 59%|█████▉    | 58/98 [00:17<00:10,  3.84it/s] 60%|██████    | 59/98 [00:17<00:09,  4.13it/s] 61%|██████    | 60/98 [00:17<00:08,  4.35it/s] 62%|██████▏   | 61/98 [00:18<00:11,  3.22it/s] 63%|██████▎   | 62/98 [00:18<00:09,  3.60it/s] 64%|██████▍   | 63/98 [00:18<00:08,  3.93it/s] 65%|██████▌   | 64/98 [00:19<00:08,  4.20it/s] 66%|██████▋   | 65/98 [00:19<00:09,  3.49it/s] 67%|██████▋   | 66/98 [00:19<00:09,  3.44it/s] 68%|██████▊   | 67/98 [00:19<00:08,  3.80it/s] 69%|██████▉   | 68/98 [00:20<00:07,  4.09it/s] 70%|███████   | 69/98 [00:20<00:08,  3.44it/s] 71%|███████▏  | 70/98 [00:20<00:09,  3.09it/s] 72%|███████▏  | 71/98 [00:21<00:07,  3.49it/s] 73%|███████▎  | 72/98 [00:21<00:06,  3.84it/s] 74%|███████▍  | 73/98 [00:21<00:06,  4.12it/s] 76%|███████▌  | 74/98 [00:22<00:07,  3.13it/s] 77%|███████▋  | 75/98 [00:22<00:06,  3.52it/s] 78%|███████▊  | 76/98 [00:22<00:05,  3.87it/s] 79%|███████▊  | 77/98 [00:22<00:05,  4.15it/s] 80%|███████▉  | 78/98 [00:23<00:06,  3.14it/s] 81%|████████  | 79/98 [00:23<00:05,  3.53it/s] 82%|████████▏ | 80/98 [00:23<00:04,  3.87it/s] 83%|████████▎ | 81/98 [00:23<00:04,  4.15it/s] 84%|████████▎ | 82/98 [00:24<00:05,  3.14it/s] 85%|████████▍ | 83/98 [00:24<00:04,  3.53it/s] 86%|████████▌ | 84/98 [00:24<00:03,  3.87it/s] 87%|████████▋ | 85/98 [00:24<00:03,  4.16it/s] 88%|████████▊ | 86/98 [00:25<00:04,  2.80it/s] 89%|████████▉ | 87/98 [00:25<00:03,  3.02it/s] 90%|████████▉ | 88/98 [00:25<00:02,  3.43it/s] 91%|█████████ | 89/98 [00:26<00:02,  3.78it/s] 92%|█████████▏| 90/98 [00:26<00:02,  3.28it/s] 93%|█████████▎| 91/98 [00:26<00:01,  3.66it/s] 94%|█████████▍| 92/98 [00:26<00:01,  3.98it/s] 95%|█████████▍| 93/98 [00:27<00:01,  4.61it/s] 96%|█████████▌| 94/98 [00:27<00:00,  4.65it/s] 97%|█████████▋| 95/98 [00:27<00:00,  4.84it/s] 98%|█████████▊| 96/98 [00:27<00:00,  5.38it/s] 99%|█████████▉| 97/98 [00:27<00:00,  5.83it/s]
