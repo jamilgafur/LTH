@@ -99,6 +99,29 @@ def get_layer(model, layer_name):
             layer = getattr(layer, part)
     return layer
 
+def patch_skip_connections(model):
+    """
+    Recursively find submodules with .shortcut and patch their forward()
+    to skip the shortcut if the block is within collapsed range.
+    """
+    for name, module in model.named_modules():
+        if hasattr(module, 'shortcut') and isinstance(module.shortcut, nn.Module):
+            original_forward = module.forward
+
+            def make_patched_forward(forward_fn, block_name):
+                def new_forward(self, x):
+                    out = self.block(x)
+
+                    if hasattr(self, '_parent_model') and _is_within_collapsed_block(self._parent_model, block_name):
+                        return F.relu(out)
+                    return F.relu(out + self.shortcut(x))
+                return new_forward
+
+            module._parent_model = model
+            module._block_path = name
+            module.forward = make_patched_forward(module.forward, name).__get__(module)
+            print(f"[PATCH] Patched forward of residual block: {name}")
+
 def compression_set(layers):
     """
     Example of compressing layers. Replace this with actual compression logic.
@@ -106,6 +129,20 @@ def compression_set(layers):
     for layer in layers:
         print(f"[DEBUG] Compressing layer: {layer}")
         # Add compression logic here (e.g., pruning, quantization)
+
+def _is_within_collapsed_block(model, block_path):
+    """
+    Returns True if the block is within any collapsed range.
+    Assumes block_path like 'stage3.stage3_block2'
+    """
+    if not hasattr(model, '_collapsed_blocks'):
+        return False
+
+    for start_path, end_path in model._collapsed_blocks:
+        if block_path in start_path or block_path in end_path or start_path.startswith(block_path) or end_path.startswith(block_path):
+            print(f"[SKIP-CONN] Skipping shortcut for block '{block_path}' due to collapse: {start_path} → {end_path}")
+            return True
+    return False
 
 def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=None, input_shape=(1, 3, 32, 32), device='cpu'):
     model_kwargs = model_kwargs or {}
@@ -116,25 +153,34 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
     checkpoint = torch.load(model_weights_1, map_location=device)
     model.load_state_dict(checkpoint['model'])
     model.to(device)
-    
+
+    # Track collapsed layer ranges
+    model._collapsed_blocks = []
+
     print(f"[INFO] Full compression set: {compression_set}")
-    
+
     for compression_set1 in compression_set:
         print(f"[DEBUG] Compressing: {compression_set1}")
         start, end = compression_set1[0], compression_set1[1]
         print(f"\n--- Starting collapse for block: {start} to {end} ---")
+
         model = _collapse_block(model, start, end, input_shape, device=device)
 
-        print("\n--- Adjusting classifier / head AFTER collapsing all blocks ---")
-        adjust_classifier_input_features(model, input_shape, num_classes=num_classes, device=device)
+        # Save the collapsed range
+        model._collapsed_blocks.append((start, end))
 
-    # NEW: disable any in-place ReLUs globally to avoid autograd inplace modification errors
+    print("\n--- Adjusting classifier / head AFTER collapsing all blocks ---")
+    adjust_classifier_input_features(model, input_shape, num_classes=num_classes, device=device)
+
     disable_inplace_relu(model)
-    model.to(device)  # ensure all new modules are moved to correct device
+    model.to(device)
+
+    # Patch residual blocks to skip invalid shortcut connections
+    patch_skip_connections(model)
 
     print(f"[INFO] Collapse complete. Total trainable params: {count_trainable_params(model)} when compressing {compression_set} with model {model_class.__name__}")
     print(f"[INFO] Compiling model")
-    
+
     return model
 
 def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device='cpu'):
