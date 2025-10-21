@@ -412,7 +412,7 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
         print(f"[DEBUG] Collapsed block end flags -> has_bn: {has_bn}, has_relu: {has_relu}")
 
         # --- New: Bottleneck collapse ---
-        bottleneck_ratio = 0.25
+        bottleneck_ratio = 0.75
         bottleneck_channels = max(1, int(in_features * bottleneck_ratio))
 
         conv1 = nn.Conv2d(in_channels=in_features, out_channels=bottleneck_channels,
