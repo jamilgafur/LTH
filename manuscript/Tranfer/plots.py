@@ -52,10 +52,9 @@ def plot_results(params, accs, names, title, filename, dataset=None, infer_times
         axs[1].axis('off')
 
     if mem_usages:
-        mem_mb = [m / 1e6 for m in mem_usages]
-        axs[2].bar(names, mem_mb, color='green')
-        axs[2].set_title("FLOPs (Millions)", fontsize=14)
-        axs[2].set_ylabel("FLOPs (Millions)")
+        axs[2].bar(names, mem_usages, color='green')
+        axs[2].set_title("Memory Usage (MB)", fontsize=14)
+        axs[2].set_ylabel("Memory (MB)")
         axs[2].grid(True)
     else:
         axs[2].axis('off')
