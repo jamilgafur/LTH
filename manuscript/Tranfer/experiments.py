@@ -111,6 +111,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     torch.save({'model': model.state_dict()}, final_path)
 
     del model
+    print(f"[✓] Experiment '{exp_name}' completed. Checkpoints and metrics saved. full data: {data}")
     return data
 
 def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain,

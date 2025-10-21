@@ -1,5 +1,8 @@
 import os
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.set_loglevel(logging.ERROR)
+
 def plot_accuracy_loss_curve(acc_list, loss_list, workflow, experiment, save_dir="plots"):
     os.makedirs(save_dir, exist_ok=True)
     plt.figure(figsize=(12, 6))
