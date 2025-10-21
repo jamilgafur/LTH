@@ -771,7 +771,7 @@ def _find_layer_indices(named_layers, start_layer_name, end_layer_name):
     print(f"[DEBUG] Finding indices for layers '{start_layer_name}' to '{end_layer_name}'...")
 
     for i, (name, _) in enumerate(named_layers):
-        print(f"[DEBUG] Checking layer: {name} at index {i}")
+        # print(f"[DEBUG] Checking layer: {name} at index {i}")
         if name == start_layer_name:
             start_idx = i
             print(f"[DEBUG] Found start layer '{start_layer_name}' at index {start_idx}")
