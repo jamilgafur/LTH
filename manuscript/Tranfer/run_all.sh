@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define models and datasets
-models=("VGG16" "RegNetX_400MF")
+models=("VGG16")
 datasets=("Cifar10" "Cifar100" )
 
 # Loop through models
