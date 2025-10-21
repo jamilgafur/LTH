@@ -6,10 +6,6 @@ from utils import count_trainable_params, layer_stats
 from uuid import uuid4
 from typing import Optional
 
-# ===============================
-# Layer Collapse Helpers (robust/residual-aware)
-# ===============================
-
 def _set_module_by_path(model, module_path, new_module):
     """
     Replace module referenced by module_path (dot-separated). Handles numeric indices for Sequential.
@@ -106,20 +102,23 @@ def patch_skip_connections(model):
     """
     for name, module in model.named_modules():
         if hasattr(module, 'shortcut') and isinstance(module.shortcut, nn.Module):
-            original_forward = module.forward
 
-            def make_patched_forward(forward_fn, block_name):
+            # Save reference to original forward BEFORE patching
+            original_forward_fn = module.forward
+
+            def make_patched_forward(block_name):
                 def new_forward(self, x):
                     out = self.block(x)
 
                     if hasattr(self, '_parent_model') and _is_within_collapsed_block(self._parent_model, block_name):
                         return F.relu(out)
+
                     return F.relu(out + self.shortcut(x))
                 return new_forward
 
             module._parent_model = model
             module._block_path = name
-            module.forward = make_patched_forward(module.forward, name).__get__(module)
+            module.forward = make_patched_forward(name).__get__(module)
             print(f"[PATCH] Patched forward of residual block: {name}")
 
 def compression_set(layers):
