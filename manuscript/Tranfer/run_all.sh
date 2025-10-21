@@ -26,7 +26,7 @@ for model in "${models[@]}"; do
     # Loop through experiment names
     for experiment in "${experiment_names[@]}"; do
       # Loop through flags
-      for flag in "Kevin"; do
+      for flag in "JF" "Kevin"; do
         # Properly quote the variables with spaces and commas
         command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"$experiment\",FLAG=\"$flag\" submit_job.pbs"
         
