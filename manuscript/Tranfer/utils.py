@@ -94,33 +94,70 @@ def load_dataset(dataset_name, model_name="VGG16"):
 # -------------------------
 # Benchmark Inference
 # -------------------------
-def benchmark_model(model, loader, device, num_batches=10):
+def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5):
+    """
+    Returns: (avg_time_seconds, flops_total, peak_memory_mb)
+    """
+    from copy import deepcopy
     tempmodel = deepcopy(model)
     tempmodel.eval()
     tempmodel.to(device)
+
     times = []
     flops = 0
+    peak_mem = 0
+
+    # warmup
     with torch.no_grad():
+        it = iter(loader)
+        for _ in range(warmup_batches):
+            try:
+                xb, _ = next(it)
+            except StopIteration:
+                break
+            xb = xb.to(device)
+            _ = tempmodel(xb)
+
+        # timed runs
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats(device)
         for i, (xb, _) in enumerate(loader):
             if i >= num_batches:
                 break
             xb = xb.to(device)
 
-            # Measure inference time
             if torch.cuda.is_available():
+                # GPU timing using events
+                starter = torch.cuda.Event(enable_timing=True)
+                ender = torch.cuda.Event(enable_timing=True)
                 torch.cuda.synchronize()
-            start_time = time.time()
-            output = tempmodel(xb)
-            if torch.cuda.is_available():
+                starter.record()
+                _ = tempmodel(xb)
+                ender.record()
                 torch.cuda.synchronize()
-            times.append(time.time() - start_time)
+                times.append(starter.elapsed_time(ender) / 1000.0)  # ms -> s
+            else:
+                start = time.time()
+                _ = tempmodel(xb)
+                times.append(time.time() - start)
 
-            # Measure FLOPs (only on the first batch for simplicity)
             if i == 0:
-                flops = FlopCountAnalysis(tempmodel, xb).total()
+                try:
+                    # FlopCountAnalysis may require CPU tensors or the model on CPU depending on implementation.
+                    # If it works on device, use device tensor; else move tempmodel/x to cpu for FlopCountAnalysis.
+                    flops = FlopCountAnalysis(tempmodel, xb).total()
+                except Exception:
+                    try:
+                        flops = FlopCountAnalysis(tempmodel.cpu(), xb.cpu()).total()
+                    except Exception:
+                        flops = 0
+
+        if torch.cuda.is_available():
+            peak_mem = torch.cuda.max_memory_allocated(device) / (1024 ** 2)  # MB
+
     del tempmodel
-    avg_time = sum(times) / len(times) if times else 0
-    return avg_time, flops
+    avg_time = sum(times) / len(times) if times else 0.0
+    return avg_time, flops, peak_mem
 
 def describe_model(model, loader, device='cpu'):
     print("=" * 60)

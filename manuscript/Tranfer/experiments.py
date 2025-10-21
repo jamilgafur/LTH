@@ -67,13 +67,12 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     plot_accuracy_loss_curve(data['accuracies'], data['losses'], workflow, exp_name, save_dir=plots_dir)
 
     # Benchmarking
-    param_count = count_trainable_params(model)
-    infer_time, mem_usage = benchmark_model(model, test_loader, device)
-
+    infer_time, flops, mem_usage = benchmark_model(model, test_loader, device)
     data.update({
         "param_count": param_count,
         "inference_time": infer_time,
-        "memory_usage": mem_usage,
+        "flops": flops,
+        "memory_usage_mb": mem_usage,
         "final_accuracy": data["accuracies"][-1] if data["accuracies"] else 0,
     })
 
