@@ -208,13 +208,19 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
     return diagnostics
 
 
+
 # =====================================================
-# === Cross-Experiment Comparison Plot
+# === Cross-Experiment Comparison Plot (Extended)
 # =====================================================
-def plot_memory_per_layer_across_experiments(metrics_dir, save_dir, title="Memory per Layer Comparison"):
-    print("[DEBUG] Generating memory per-layer comparison plot...")
+def plot_memory_per_layer_across_experiments(metrics_dir, save_dir, title="Per-Layer Diagnostics Across Experiments"):
+    """
+    Compare per-layer Params, Activation Sizes, and Memory Decomposition
+    across multiple experiments (JF, Kevin, etc.).
+    """
+    print("[DEBUG] Generating extended cross-experiment diagnostics plot...")
+
     json_paths = glob.glob(os.path.join(metrics_dir, "*/*metrics.json"))
-    all_data = []
+    all_params, all_activations, all_memory = [], [], []
 
     for path in json_paths:
         with open(path, "r") as f:
@@ -222,32 +228,91 @@ def plot_memory_per_layer_across_experiments(metrics_dir, save_dir, title="Memor
             for exp_group in experiments.values():
                 for exp_name, exp_data in exp_group.items():
                     diag = exp_data.get("diagnostics", {})
+
+                    # --- Params/FLOPs ---
                     if "per_layer_params_flops" in diag:
                         for entry in diag["per_layer_params_flops"]:
-                            all_data.append({
+                            all_params.append({
                                 "experiment": exp_name,
                                 "layer": entry["layer"],
                                 "params": entry.get("params", 0),
-                                "flops": entry.get("flops", 0)
+                                "flops": entry.get("flops", 0),
                             })
-    if not all_data:
-        print("[!] No per-layer diagnostics found in JSONs.")
-        return
-    
-    df = pd.DataFrame(all_data)
-    df_summary = df.groupby(["experiment", "layer"]).sum().reset_index()
 
-    plt.figure(figsize=(14, 7))
-    sns.barplot(data=df_summary, x="layer", y="params", hue="experiment")
-    plt.xticks(rotation=90)
-    plt.title(title)
-    plt.ylabel("Parameters per Layer")
-    plt.tight_layout()
+                    # --- Activation sizes ---
+                    if "activation_sizes" in diag:
+                        for entry in diag["activation_sizes"]:
+                            all_activations.append({
+                                "experiment": exp_name,
+                                "layer": entry["layer"],
+                                "activation_MB": entry.get("activation_MB", 0),
+                            })
+
+                    # --- Memory decomposition ---
+                    if "memory_decomposition" in diag:
+                        mem_dict = diag["memory_decomposition"]
+                        for layer_name, values in mem_dict.items():
+                            all_memory.append({
+                                "experiment": exp_name,
+                                "layer": layer_name,
+                                "forward_MB": values.get("forward_MB", 0),
+                                "backward_MB": values.get("backward_MB", 0),
+                                "total_MB": values.get("total_MB", 0),
+                            })
+
+    if not all_params and not all_activations and not all_memory:
+        print("[!] No diagnostics found in JSON files.")
+        return
+
     os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, "memory_per_layer_comparison.png")
+    fig, axs = plt.subplots(3, 1, figsize=(16, 18), sharex=True)
+    fig.suptitle(title, fontsize=16)
+
+    # --- Params per layer ---
+    if all_params:
+        df_params = pd.DataFrame(all_params)
+        sns.barplot(data=df_params, x="layer", y="params", hue="experiment", ax=axs[0])
+        axs[0].set_title("Parameters per Layer")
+        axs[0].set_ylabel("Params")
+        axs[0].legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        axs[0].grid(True)
+
+    # --- Activation sizes ---
+    if all_activations:
+        df_act = pd.DataFrame(all_activations)
+        sns.barplot(data=df_act, x="layer", y="activation_MB", hue="experiment", ax=axs[1])
+        axs[1].set_title("Activation Size per Layer (MB)")
+        axs[1].set_ylabel("Activation (MB)")
+        axs[1].legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        axs[1].grid(True)
+
+    # --- Memory decomposition ---
+    if all_memory:
+        df_mem = pd.DataFrame(all_memory)
+        df_mem_melted = df_mem.melt(
+            id_vars=["experiment", "layer"],
+            value_vars=["forward_MB", "backward_MB", "total_MB"],
+            var_name="memory_type",
+            value_name="memory_MB",
+        )
+        sns.barplot(
+            data=df_mem_melted, x="layer", y="memory_MB",
+            hue="experiment", ax=axs[2]
+        )
+        axs[2].set_title("Memory Usage per Layer (Forward + Backward + Total)")
+        axs[2].set_ylabel("Memory (MB)")
+        axs[2].legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        axs[2].grid(True)
+
+    for ax in axs:
+        ax.set_xlabel("Layer")
+        ax.tick_params(axis="x", rotation=90)
+
+    plt.tight_layout(rect=[0, 0, 0.85, 0.97])
+    save_path = os.path.join(save_dir, "cross_experiment_per_layer_diagnostics.png")
     plt.savefig(save_path)
     plt.close()
-    print(f"[✓] Saved cross-experiment per-layer memory plot: {save_path}")
+    print(f"[✓] Saved extended per-layer diagnostics plot: {save_path}")
 
 
 # =====================================================
