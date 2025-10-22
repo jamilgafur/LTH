@@ -239,6 +239,7 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
             print(f"[!] Error in {func.__name__}: {e}")
 
     print(f"[✓] Diagnostics complete for {exp_name}.")
+    print(f"[✓] Saved diagnostics results: \n{diagnostics}")
     return diagnostics
 
 
@@ -394,7 +395,7 @@ def debug_tensor_shape(tensor, description="Tensor"):
         print(f"{description} Shape: {tensor.shape}")
     else:
         print(f"{description} is None!")
-        
+
 def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
     base_name = list(metrics_dict.keys())[0]
     base_acc = metrics_dict[base_name]["final_accuracy"]
