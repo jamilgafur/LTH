@@ -307,12 +307,8 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
                                                 full_block=full_block, stride=final_stride,
                                                 pool_layer=pool_layer)
 
-    # --- replace in container ---
-    updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
-    _update_container(model, start_container_name, updated_container)
-    model.to(device)
 
-        # --- DEBUG PARAM CHECK ---
+    # --- DEBUG PARAM CHECK ---
     pre_params = count_trainable_params(model)
     print(f"[DEBUG] Parameters BEFORE collapse: {pre_params:,}")
 
@@ -412,7 +408,12 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
         bottleneck_ratio = 0.75
         bottleneck_channels = max(1, int(in_features * bottleneck_ratio))
 
-        conv1 = nn.Conv2d(in_features, bottleneck_channels, kernel_size=1, stride=1, padding=0, bias=False)
+        # Replace stride=(1,1), padding=0 convs with:
+        kernels = [m.kernel_size[0] if hasattr(m, "kernel_size") else 1 for m in full_block if isinstance(m, nn.Conv2d)]
+        paddings = [m.padding[0] if hasattr(m, "padding") else 0 for m in full_block if isinstance(m, nn.Conv2d)]
+        k_eff = sum(kernels) - (len(kernels) - 1)
+        p_eff = paddings[0] if paddings else 0
+        conv1 = nn.Conv2d(in_features, bottleneck_channels, kernel_size=k_eff, stride=stride, padding=p_eff, bias=False)
         relu1 = nn.ReLU(inplace=False)
         conv2 = nn.Conv2d(bottleneck_channels, out_features, kernel_size=1, stride=stride, padding=0, bias=not has_bn)
 
