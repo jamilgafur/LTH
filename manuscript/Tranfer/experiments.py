@@ -683,6 +683,9 @@ def plot_memory_per_layer_across_experiments(metrics_dir, save_dir, title="Per-L
             if not is_dict_like(exp_group):
                 continue
             for exp_name, exp_data in exp_group.items():
+                print(f"[DEBUG] Processing experiment '{exp_name}' from {path}...")
+                print(f"[DEBUG] Experiment data: {exp_data}")
+                
                 if not is_dict_like(exp_data):
                     print(f"[!] Warning: Experiment '{exp_name}' data is not a dict. Skipping diagnostics.")
                     continue
