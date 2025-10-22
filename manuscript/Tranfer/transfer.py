@@ -252,8 +252,8 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
             # if args.imp:
             #     optimizer, scheduler = create_optimizer_scheduler(model)
             #     imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
-                          pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
-                          save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
+                        #   pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
+                        #   save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
 
         elif args.Kevin:
             model = run_kevin_experiment({name: layers}, model_path_000, train_loader, test_loader, device, epochs,
