@@ -80,41 +80,30 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     model.to(device)
     describe_model(model, loader=train_loader, device=device)
 
-    # Load existing metrics if they exist
-    glob_path = os.path.join(metrics_dir, f"{workflow}/*metrics.json")
-    json_paths = glob.glob(glob_path)
+    # Train / Load metrics
     data = None
-    if json_paths:
-        json_path = json_paths[0]
+    model_root = f"{model.__class__.__name__}_{train_loader.dataset.__class__.__name__}"
+    json_path = os.path.join(metrics_dir, f"{model_root}_metrics.json")
+    if os.path.exists(json_path):
         with open(json_path, "r") as f:
             all_metrics = json.load(f)
-            first_key = list(all_metrics.keys())[0] if all_metrics else None
-            if first_key and exp_name in all_metrics.get(first_key, {}):
+            if exp_name in all_metrics.get(model_root, {}):
                 print(f"[✓] Found existing results for '{exp_name}' in {json_path}, skipping training.")
-                data = all_metrics[first_key][exp_name]
+                data = all_metrics[model_root][exp_name]
                 plot_accuracy_loss_curve(data['accuracies'], data['losses'], workflow, exp_name, save_dir=plots_dir)
 
-    # Train if needed
     if data is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         print(f"[•] Using device: {device}")
-        print(f"[•] Training model: {exp_name}")
         data = train_and_evaluate(model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs)
-    else:
-        print(f"[✓] Skipping training for '{exp_name}' as results already exist.")
 
     # Save checkpoint
     torch.save({'model': model.state_dict()}, ckpt_path)
 
-    # Plot accuracy/loss
-    plot_accuracy_loss_curve(data['accuracies'], data['losses'], workflow, exp_name, save_dir=plots_dir)
-
     # Benchmark core metrics
-    print(f"[DEBUG] Running benchmark on '{exp_name}'")
     param_count = count_trainable_params(model)
     infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device)
-
     data.update({
         "param_count": param_count,
         "inference_time": infer_time,
@@ -124,7 +113,6 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     })
 
     # Run diagnostics
-    print(f"[DEBUG] Running full diagnostics for '{exp_name}'")
     diagnostics = run_full_diagnostics(
         model, data_shape, {exp_name: data}, plots_dir, exp_name,
         collapse_range=collapse_range, device=device
@@ -132,68 +120,89 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     data["diagnostics"] = diagnostics
 
     # Save metrics safely
-    # Get model root (so we don’t prefix with workflow)
-    model_root = f"{model.__class__.__name__}_{train_loader.dataset.__class__.__name__}"
-    json_path = safe_update_metrics_json(model_root, exp_name, data, base_dir=metrics_dir)
+    safe_update_metrics_json(model_root, exp_name, data, base_dir=metrics_dir)
 
+    # === Cross-experiment unified plots ===
+    plot_memory_per_layer_across_experiments(metrics_dir, plots_dir, title=f"Per-Layer Diagnostics Across {workflow} Experiments")
+    plot_unified_metrics(metrics_dir, plots_dir, workflow)
 
-    # Comparison plot across experiments in this workflow
-    glob_path = os.path.join(metrics_dir, f"{workflow}/*metrics.json")
-    json_paths = glob.glob(glob_path)
-    if json_paths:
-        json_path = json_paths[0]
-        with open(json_path, "r") as f:
-            all_metrics = json.load(f)
-            all_metrics = all_metrics[list(all_metrics.keys())[0]]
-
-            params, accs, names, infer_times_list, mem_usages = [], [], [], [], []
-            for name, metrics in all_metrics.items():
-                names.append(name)
-                params.append(metrics.get("param_count", 0))
-                accs.append(metrics.get("final_accuracy", 0))
-                infer_times_list.append(metrics.get("inference_time", 0))
-                mem_usages.append(metrics.get("total_size_mb", 0))
-
-            model_root = os.path.splitext(os.path.basename(json_path))[0].replace("_metrics", "")
-            plots_out_dir = os.path.join(plots_dir, model_root)
-            os.makedirs(plots_out_dir, exist_ok=True)
-
-            save_path_plot = os.path.join(plots_out_dir, f"{exp_name}_metrics.svg")
-            plot_results(
-                params, accs, names, f"{model_root} Experiments", save_path_plot,
-                dataset=model_root, infer_times=infer_times_list, mem_usages=mem_usages, flops=None
-            )
-            print(f"[✓] Saved metrics summary: {save_path_plot}")
-
-            print(f"[✓] Saved comparison plot to {save_path_plot}")
-
-    # Final checkpoint save
+    # Final checkpoint
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
 
     print(f"[✓] Experiment '{exp_name}' completed. Checkpoints and metrics saved.")
-    plot_memory_per_layer_across_experiments("./runs/metrics", "./runs/plots",
-                                             title=f"Per-Layer Diagnostics Across {workflow} Experiments")
-
-    plot_results(
-        [data["param_count"]], [data["final_accuracy"]], [exp_name],
-        f"{workflow} - {exp_name} Summary", f"{exp_name}_summary.svg",
-        dataset=workflow, infer_times=[data["inference_time"]],
-        mem_usages=[data["total_size_mb"]], flops=[data["flops"]]
-    )
     return data
 
 # =====================================================
 # === Diagnostics and Plot Functions ===
 # =====================================================
+def plot_unified_metrics(metrics_dir, save_dir, workflow):
+    """Generates unified comparison plots for all experiments in a workflow."""
+    os.makedirs(save_dir, exist_ok=True)
+    json_paths = glob.glob(os.path.join(metrics_dir, "*metrics.json"))
+    if not json_paths: return
+
+    all_data = []
+    for path in json_paths:
+        with open(path, "r") as f:
+            for exp_group in json.load(f).values():
+                for name, m in exp_group.items():
+                    all_data.append({
+                        "Experiment": name,
+                        "Params": m.get("param_count", 0),
+                        "Accuracy": m.get("final_accuracy", 0),
+                        "FLOPs": m.get("flops", 0),
+                        "Inference Time": m.get("inference_time", 0),
+                        "Memory": m.get("total_size_mb", 0)
+                    })
+    df = pd.DataFrame(all_data)
+    if df.empty: return
+
+    # === Accuracy vs Params ===
+    plt.figure(figsize=(8,6))
+    sns.scatterplot(data=df, x="Params", y="Accuracy", hue="Experiment", style="Experiment", s=100)
+    plt.xscale("log")
+    plt.xlabel("Parameters (log scale)")
+    plt.ylabel("Accuracy (%)")
+    plt.title(f"Accuracy vs Parameters — {workflow}")
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"{workflow}_accuracy_vs_params.svg"))
+    plt.close()
+
+    # === FLOPs vs Memory ===
+    plt.figure(figsize=(8,6))
+    sns.scatterplot(data=df, x="FLOPs", y="Memory", hue="Experiment", style="Experiment", s=100)
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.xlabel("FLOPs (log)")
+    plt.ylabel("Memory (MB, log)")
+    plt.title(f"FLOPs vs Memory — {workflow}")
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"{workflow}_flops_vs_memory.svg"))
+    plt.close()
+
+    # === Accuracy vs Memory ===
+    plt.figure(figsize=(8,6))
+    sns.scatterplot(data=df, x="Memory", y="Accuracy", hue="Experiment", style="Experiment", s=100)
+    plt.xlabel("Memory (MB)")
+    plt.ylabel("Accuracy (%)")
+    plt.title(f"Accuracy vs Memory — {workflow}")
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"{workflow}_accuracy_vs_memory.svg"))
+    plt.close()
+
+    print(f"[✓] Saved unified metrics plots for workflow '{workflow}'")
 
 def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, collapse_range=None, device="cuda"):
     print(f"[•] Running diagnostics for {exp_name}...")
     os.makedirs(save_dir, exist_ok=True)
     model.to(device)
     model.eval()
-    print(f"[DEBUG] Input shape for diagnostics: {input_shape}")
-    # Ensure the input has 4 dimensions: (B, C, H, W)
+
+    # Ensure 4D input
     if len(input_shape) == 2:
         input_tensor = torch.randn((1, 3, *input_shape), device=device)
     elif len(input_shape) == 3:
@@ -201,67 +210,28 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
     else:
         input_tensor = torch.randn(input_shape, device=device)
 
-
     diagnostics = {}
-
-    # Per-layer params & FLOPs
-    try:
-        print("[DEBUG] Running per-layer params/FLOPs analysis...")
-        df_params = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
-        diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records")
-    except Exception as e:
-        print(f"[!] Error in per-layer params/FLOPs analysis: {e}")
-
-    # Activation sizes
-    try:
-        print("[DEBUG] Running activation size analysis...")
-        df_act = analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
-        diagnostics["activation_sizes"] = df_act.to_dict(orient="records")
-    except Exception as e:
-        print(f"[!] Error in activation sizes analysis: {e}")
-
-    # Memory decomposition
+    try: diagnostics["per_layer_params_flops"] = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name).to_dict(orient="records")
+    except Exception as e: print(f"[!] Params/FLOPs analysis error: {e}")
+    try: diagnostics["activation_sizes"] = analyze_activation_sizes(model, input_tensor, save_dir, exp_name).to_dict(orient="records")
+    except Exception as e: print(f"[!] Activation analysis error: {e}")
     try:
         if torch.cuda.is_available():
-            print("[DEBUG] Running memory decomposition analysis...")
-            parts = memory_decomposition(model, input_tensor, save_dir, exp_name)
-            diagnostics["memory_decomposition"] = parts
-        else:
-            print("[•] Skipping memory decomposition (CUDA not available).")
-    except Exception as e:
-        print(f"[!] Error in memory decomposition: {e}")
+            diagnostics["memory_decomposition"] = memory_decomposition(model, input_tensor, save_dir, exp_name)
+    except Exception as e: print(f"[!] Memory decomposition error: {e}")
 
-    # FLOPs vs Latency plot (no diagnostics object)
-    try:
-        print("[DEBUG] Plotting FLOPs vs Latency...")
-        plot_flops_vs_latency(metrics_dict, save_dir, exp_name)
-    except Exception as e:
-        print(f"[!] Error in FLOPs vs Latency plot: {e}")
+    # Plots
+    try: plot_flops_vs_latency(metrics_dict, save_dir, exp_name)
+    except Exception as e: print(f"[!] FLOPs vs latency plot error: {e}")
+    try: analyze_collapse_effects(model, collapse_range, save_dir, exp_name)
+    except Exception as e: print(f"[!] Collapse effects error: {e}")
 
-    # Collapse-effect analysis (optional)
-    try:
-        print("[DEBUG] Analyzing collapse effects...")
-        analyze_collapse_effects(model, collapse_range, save_dir, exp_name)
-    except Exception as e:
-        print(f"[!] Error in collapse effects analysis: {e}")
+    # Additional plots
+    for func in [plot_delta_accuracy_vs_params, plot_flops_vs_memory, plot_accuracy_vs_memory, plot_heatmap, plot_stage_collapse_cost_curve]:
+        try: func(metrics_dict, save_dir, exp_name)
+        except Exception as e: print(f"[!] {func.__name__} error: {e}")
 
-    # Additional visuals
-    extended_funcs = [
-        plot_delta_accuracy_vs_params,
-        plot_flops_vs_memory,
-        plot_accuracy_vs_memory,
-        plot_heatmap,
-        plot_stage_collapse_cost_curve,
-    ]
-    for func in extended_funcs:
-        try:
-            print(f"[DEBUG] Running {func.__name__}...")
-            func(metrics_dict, save_dir, exp_name)
-        except Exception as e:
-            print(f"[!] Error in {func.__name__}: {e}")
-
-    print(f"[✓] Diagnostics complete for {exp_name}.")
-    print(f"[✓] Saved diagnostics results: \n{diagnostics}")
+    print(f"[✓] Diagnostics complete for {exp_name}")
     return diagnostics
 
 
