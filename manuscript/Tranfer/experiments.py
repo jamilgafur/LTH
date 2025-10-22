@@ -7,8 +7,9 @@ from torchvision import datasets
 from torch.utils.data import DataLoader
 from collections import OrderedDict
 import torch.nn as nn
-from pyPrune.models.Vgg16 import VGG16  # Ensure this import matches your project structure
+from pyPrune.models.Vgg16 import VGG16  
 from utils import *
+from fvcore.nn import FlopCountAnalysis
 from filemanager import *
 from collapse import collapse_only
 from trainer import train_and_evaluate
@@ -21,13 +22,11 @@ import json
 import glob
 from copy import deepcopy
 import torch
-from torchprofile import profile_macs  # Import the package for profiling FLOPs
 import torch
 import os
 import json
 import glob
 from copy import deepcopy
-from torchprofile import profile_macs  # Import package for profiling FLOPs
 def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None, device='cuda',
                    epochs=10, workflow='default', exp_name='experiment', collapse_range=None,
                    data_shape=(1, 3, 32, 32), save_path="./runs", post_compress_epochs=False):
