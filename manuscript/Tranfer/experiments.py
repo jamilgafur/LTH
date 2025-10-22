@@ -449,20 +449,52 @@ def predict_collapse_parameters(in_channels, out_channels, kernel_size, num_laye
 def run_full_diagnostics(model, input_tensor, metrics_dict, save_dir, exp_name, collapse_range=None):
     print(f"[•] Running diagnostics for {exp_name}...")
     os.makedirs(save_dir, exist_ok=True)
-
-    analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
-    analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
-    memory_decomposition(model, input_tensor, save_dir, exp_name)
-    plot_flops_vs_latency(metrics_dict, save_dir, exp_name)
-    analyze_collapse_effects(model, collapse_range, save_dir, exp_name)
+    try:
+        analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] Error in per-layer params/FLOPs analysis: {e}")
+    try:
+        analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] Error in activation sizes analysis: {e}")
+    try:
+        memory_decomposition(model, input_tensor, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] Error in memory decomposition: {e}")
+    try:
+        plot_flops_vs_latency(metrics_dict, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] Error in FLOPs vs Latency plot: {e}")
+    try:
+        analyze_collapse_effects(model, collapse_range, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] Error in collapse effects analysis: {e}")
 
     # Extended diagnostics
-    plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name)
-    plot_flops_vs_memory(metrics_dict, save_dir, exp_name)
-    plot_stage_parameter_density(model, save_dir, exp_name)
-    plot_accuracy_vs_memory(metrics_dict, save_dir, exp_name)
-    plot_heatmap(metrics_dict, save_dir, exp_name)
-    plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name)
+    try:
+        plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] Error in delta accuracy vs params plot: {e}")
+    try:
+        plot_flops_vs_memory(metrics_dict, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] Error in FLOPs vs Memory plot: {e}")
+    try:
+        plot_stage_parameter_density(model, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] Error in stage parameter density plot: {e}")
+    try:
+        plot_accuracy_vs_memory(metrics_dict, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] Error in accuracy vs memory plot: {e}")
+    try:
+        plot_heatmap(metrics_dict, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] Error in heatmap plot: {e}")
+    try:
+        plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] Error in stage collapse cost curve plot: {e}")
 
     print(f"[✓] Diagnostics complete for {exp_name}. Results saved in {save_dir}.")
 
