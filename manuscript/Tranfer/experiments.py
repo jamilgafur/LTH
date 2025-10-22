@@ -241,33 +241,37 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
     print(f"[✓] Diagnostics complete for {exp_name}.")
     return diagnostics
 
-# ===================================
-# The rest of the plotting & summary routines
-# (include functions: analyze_per_layer_params_flops, analyze_activation_sizes,
-# memory_decomposition, plot_flops_vs_latency,
-# plot_delta_accuracy_vs_params, plot_flops_vs_memory,
-# plot_stage_parameter_density, plot_accuracy_vs_memory,
-# plot_heatmap, plot_stage_collapse_cost_curve, analyze_collapse_effects,
-# predict_collapse_parameters, etc.)
-#
-# For brevity I’m including them below as one block
-# ===================================
 
 def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
     model.eval()
+
+    # Debug the input tensor shape
+    debug_tensor_shape(input_tensor, "Input Tensor")
+
+    # Ensure input tensor is 4D (batch_size, channels, height, width)
+    if len(input_tensor.shape) == 3:
+        print("Input tensor is missing batch dimension, adding batch size of 1.")
+        input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension
+
+    debug_tensor_shape(input_tensor, "Input Tensor (After Batch Dimension Check)")
+
     with torch.no_grad():
         flops = FlopCountAnalysis(model, input_tensor)
         per_module_flops = flops.by_module()
 
     layer_data = []
     for name, module in model.named_modules():
-        if len(list(module.children())) == 0:
+        if len(list(module.children())) == 0:  # Skip non-leaf nodes (i.e., not directly trained modules)
             params = sum(p.numel() for p in module.parameters())
-            layer_data.append({"layer": name, "params": params, "flops": per_module_flops.get(name, 0)})
+            flops_for_layer = per_module_flops.get(name, 0)
+            layer_data.append({"layer": name, "params": params, "flops": flops_for_layer})
+            print(f"Layer: {name}, Params: {params}, FLOPs: {flops_for_layer}")
 
+    # Create DataFrame and save it
     df = pd.DataFrame(layer_data)
     df.to_csv(os.path.join(save_dir, f"{exp_name}_layer_params_flops.csv"), index=False)
 
+    # Plot params and FLOPs per layer
     fig, axes = plt.subplots(2, 1, figsize=(12, 8))
     df.plot(x="layer", y="params", kind="bar", ax=axes[0], color="skyblue", legend=False)
     axes[0].set_title("Parameters per Layer")
@@ -278,25 +282,44 @@ def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{exp_name}_params_flops_layers.png"))
     plt.close(fig)
+
     return df
 
 def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
     activations = {}
+
     def hook(name):
         def fn(_, __, output):
             if isinstance(output, torch.Tensor):
                 activations[name] = output.numel()
         return fn
 
+    # Debug the input tensor shape
+    debug_tensor_shape(input_tensor, "Input Tensor (For Activation Analysis)")
+
+    # Ensure input tensor is 4D
+    if len(input_tensor.shape) == 3:
+        print("Input tensor is missing batch dimension, adding batch size of 1.")
+        input_tensor = input_tensor.unsqueeze(0)
+
+    debug_tensor_shape(input_tensor, "Input Tensor (After Batch Dimension Check)")
+
+    # Register hooks to track activations
     hooks = [m.register_forward_hook(hook(n)) for n, m in model.named_modules() if isinstance(m, (nn.Conv2d, nn.Linear))]
+    
     model.eval()
     with torch.no_grad():
         _ = model(input_tensor)
-    for h in hooks: h.remove()
+    
+    # Remove hooks after analysis
+    for h in hooks:
+        h.remove()
 
+    # Create DataFrame of activations and save it
     df = pd.DataFrame(list(activations.items()), columns=["layer", "activation_elements"])
     df.to_csv(os.path.join(save_dir, f"{exp_name}_activation_sizes.csv"), index=False)
 
+    # Plot activation sizes
     plt.figure(figsize=(10, 6))
     sns.barplot(data=df, x="layer", y="activation_elements", color="lightgreen")
     plt.xticks(rotation=90)
@@ -304,36 +327,57 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{exp_name}_activation_heatmap.png"))
     plt.close()
+
     return df
 
 def memory_decomposition(model, input_tensor, save_dir, exp_name):
-    param_mem = sum(p.numel() for p in model.parameters()) * 4 / 1e6
+    # Debug input tensor shape
+    debug_tensor_shape(input_tensor, "Input Tensor (For Memory Decomposition)")
+
+    # Ensure input tensor is 4D
+    if len(input_tensor.shape) == 3:
+        print("Input tensor is missing batch dimension, adding batch size of 1.")
+        input_tensor = input_tensor.unsqueeze(0)
+
+    debug_tensor_shape(input_tensor, "Input Tensor (After Batch Dimension Check)")
+
+    param_mem = sum(p.numel() for p in model.parameters()) * 4 / 1e6  # MB (assuming FP32)
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
+
     with torch.no_grad():
         _ = model(input_tensor)
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
-        peak_mem = torch.cuda.max_memory_allocated() / 1e6
-    else:
-        peak_mem = None
+
+    peak_mem = torch.cuda.max_memory_allocated() / 1e6 if torch.cuda.is_available() else None
 
     activation_mem = max(peak_mem - param_mem, 0) if peak_mem is not None else None
     parts = {"Params_MB": param_mem, "Activations+Temps_MB": activation_mem, "Peak_MB": peak_mem}
-    plt.figure(figsize=(6,6))
+    
+    # Debug memory decomposition details
+    print(f"Memory Decomposition: Params: {param_mem}MB, Activations: {activation_mem}MB, Peak: {peak_mem}MB")
+
+    # Plot memory usage
+    plt.figure(figsize=(6, 6))
     plt.bar(parts.keys(), parts.values(), color=["steelblue", "salmon", "gold"])
     plt.title(f"Memory Breakdown — {exp_name}")
     plt.ylabel("Memory (MB)")
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{exp_name}_memory_breakdown.png"))
     plt.close()
+
     return parts
 
 def plot_flops_vs_latency(metrics_dict, save_dir, exp_name):
+    # Extract FLOPs and latency data for the plot
     flops = [v["flops"] for v in metrics_dict.values()]
     times = [v["inference_time"] for v in metrics_dict.values()]
     names = list(metrics_dict.keys())
-    plt.figure(figsize=(8,6))
+
+    # Debug the collected metrics
+    print(f"FLOPs: {flops}")
+    print(f"Latency Times: {times}")
+
+    plt.figure(figsize=(8, 6))
     plt.scatter(flops, times, color="orange")
     for i, txt in enumerate(names):
         plt.annotate(txt, (flops[i], times[i]))
@@ -344,6 +388,13 @@ def plot_flops_vs_latency(metrics_dict, save_dir, exp_name):
     plt.savefig(os.path.join(save_dir, f"{exp_name}_flops_vs_latency.png"))
     plt.close()
 
+def debug_tensor_shape(tensor, description="Tensor"):
+    """ Helper function to debug tensor shapes. """
+    if tensor is not None:
+        print(f"{description} Shape: {tensor.shape}")
+    else:
+        print(f"{description} is None!")
+        
 def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
     base_name = list(metrics_dict.keys())[0]
     base_acc = metrics_dict[base_name]["final_accuracy"]
