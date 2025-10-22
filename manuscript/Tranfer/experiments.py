@@ -131,7 +131,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     safe_update_metrics_json(model_root, exp_name, data, base_dir=metrics_dir)
 
     # Cross-experiment plots
-    plot_memory_per_layer_across_experiments(metrics_dir, plots_dir, workflow)
+    plot_memory_per_layer_across_experiments(glob.glob(os.path.join(metrics_dir, "*.json")), plots_dir, workflow)
     plot_unified_metrics(metrics_dir, plots_dir, workflow)
 
     # Final checkpoint
