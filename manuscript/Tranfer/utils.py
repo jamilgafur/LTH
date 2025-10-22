@@ -94,20 +94,40 @@ def load_dataset(dataset_name, model_name="VGG16"):
 # -------------------------
 # Benchmark Inference
 # -------------------------
+import torch
+import time
+from copy import deepcopy
+from fvcore.nn import FlopCountAnalysis
+
 def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5):
     """
-    Returns: (avg_time_seconds, flops_total, total_size_mb)
+    Returns: (avg_time_seconds, flops_total, total_feature_map_size_mb)
+
+    total_feature_map_size_mb = cumulative size of all intermediate feature maps (excluding input and output),
+    measured during one forward pass (batch 0).
     """
-    from copy import deepcopy
     tempmodel = deepcopy(model)
     tempmodel.eval()
     tempmodel.to(device)
 
     times = []
     flops = 0
-    total_size_mb = 0
+    feature_map_sizes = []
 
-    # warmup
+    feature_maps = []
+
+    # ---- Register hooks to capture feature maps ----
+    def hook_fn(module, input, output):
+        if isinstance(output, torch.Tensor):
+            feature_maps.append(output)
+        elif isinstance(output, (list, tuple)):
+            feature_maps.extend(o for o in output if isinstance(o, torch.Tensor))
+
+    hooks = []
+    for name, module in tempmodel.named_modules():
+        if isinstance(module, (torch.nn.Conv2d, torch.nn.ReLU, torch.nn.BatchNorm2d, torch.nn.Linear)):
+            hooks.append(module.register_forward_hook(hook_fn))
+
     with torch.no_grad():
         it = iter(loader)
         for _ in range(warmup_batches):
@@ -118,16 +138,20 @@ def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5):
             xb = xb.to(device)
             _ = tempmodel(xb)
 
-        # timed runs
         if torch.cuda.is_available():
             torch.cuda.reset_peak_memory_stats(device)
-        for i, (xb, _) in enumerate(loader):
-            if i >= num_batches:
+
+        it = iter(loader)
+        for i in range(num_batches):
+            try:
+                xb, _ = next(it)
+            except StopIteration:
                 break
             xb = xb.to(device)
 
+            feature_maps.clear()
+
             if torch.cuda.is_available():
-                # GPU timing using events
                 starter = torch.cuda.Event(enable_timing=True)
                 ender = torch.cuda.Event(enable_timing=True)
                 torch.cuda.synchronize()
@@ -141,10 +165,16 @@ def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5):
                 _ = tempmodel(xb)
                 times.append(time.time() - start)
 
+            # Only collect feature map size for the first batch
             if i == 0:
+                total_bytes = 0
+                for fmap in feature_maps:
+                    # Total number of elements in the tensor * size of each element (assume float32 = 4 bytes)
+                    total_bytes += fmap.numel() * 4
+                feature_map_sizes.append(total_bytes / (1024 ** 2))  # Convert to MB
+
+                # FLOPs
                 try:
-                    # FlopCountAnalysis may require CPU tensors or the model on CPU depending on implementation.
-                    # If it works on device, use device tensor; else move tempmodel/x to cpu for FlopCountAnalysis.
                     flops = FlopCountAnalysis(tempmodel, xb).total()
                 except Exception:
                     try:
@@ -153,16 +183,18 @@ def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5):
                         flops = 0
 
         if torch.cuda.is_available():
-            peak_mem = torch.cuda.max_memory_allocated(device) / (1024 ** 2)  # MB
+            peak_mem = torch.cuda.max_memory_allocated(device) / (1024 ** 2)
+
+    # Remove hooks
+    for h in hooks:
+        h.remove()
 
     del tempmodel
 
-    # Calculate the estimated total size of the model (in MB)
-    param_count = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    total_size_mb = (param_count * 4) / (1024 ** 2)  # 4 bytes per float32 parameter
-
     avg_time = sum(times) / len(times) if times else 0.0
-    return avg_time, flops, total_size_mb
+    total_feature_map_size_mb = feature_map_sizes[0] if feature_map_sizes else 0.0
+
+    return avg_time, flops, total_feature_map_size_mb
 
 def describe_model(model, loader, device='cpu'):
     print("=" * 60)
