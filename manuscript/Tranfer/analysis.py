@@ -1,4 +1,51 @@
 
+import os
+import glob
+import json
+import torch
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import torch.nn as nn
+from datetime import datetime
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+from collections import OrderedDict
+from fvcore.nn import FlopCountAnalysis
+from copy import deepcopy
+
+from pyPrune.models.Vgg16 import VGG16
+from pyPrune.utils import *
+from utils import *
+from filemanager import *
+from collapse import collapse_only
+from trainer import train_and_evaluate
+from plots import *
+
+
+import os
+import glob
+import json
+import torch
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import torch.nn as nn
+from datetime import datetime
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+from collections import OrderedDict
+from fvcore.nn import FlopCountAnalysis
+from copy import deepcopy
+
+from pyPrune.models.Vgg16 import VGG16
+from pyPrune.utils import *
+from utils import *
+from filemanager import *
+from analysis import *
+from collapse import collapse_only
+from trainer import train_and_evaluate
+from plots import plot_accuracy_loss_curve, plot_results
 # -------------------------
 # Diagnostics (robust)
 # -------------------------
@@ -404,11 +451,18 @@ def plot_memory_per_layer_across_experiments(metrics_dir, save_dir, title="Per-L
     plt.close()
     print(f"[✓] Saved extended per-layer diagnostics plot: {save_path}")
 
+def debug_tensor_shape(tensor, description="Tensor"):
+    """ Helper function to debug tensor shapes. """
+    if tensor is not None:
+        print(f"{description} Shape: {tensor.shape}")
+    else:
+        print(f"{description} is None!")
+
+
+import numpy as np
+
 # -------------------------
-# Unified metrics plots (safe)
-# -------------------------
-# -------------------------
-# Unified metrics plots (wrap non-dict metrics)
+# Unified metrics plots (wrap non-dict metrics, average lists)
 # -------------------------
 def plot_unified_metrics(metrics_dir, save_dir, workflow):
     ensure_dir(save_dir)
@@ -443,9 +497,10 @@ def plot_unified_metrics(metrics_dir, save_dir, workflow):
                 # Convert values to float safely
                 def safe_float(x):
                     try:
-                        # If list with one element, take the first
-                        if isinstance(x, list) and len(x) == 1:
-                            return float(x[0])
+                        if isinstance(x, list):
+                            if not x:  # empty list
+                                return 0.0
+                            return float(np.mean(x))
                         return float(x)
                     except Exception:
                         return 0.0
@@ -503,11 +558,3 @@ def plot_unified_metrics(metrics_dir, save_dir, workflow):
     plt.close()
 
     print(f"[✓] Saved unified metrics plots for workflow '{workflow}'")
-
-
-def debug_tensor_shape(tensor, description="Tensor"):
-    """ Helper function to debug tensor shapes. """
-    if tensor is not None:
-        print(f"{description} Shape: {tensor.shape}")
-    else:
-        print(f"{description} is None!")
