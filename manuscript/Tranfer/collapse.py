@@ -95,35 +95,37 @@ def get_layer(model, layer_name):
             layer = getattr(layer, part)
     return layer
 
+import torch.nn.functional as F
+
 def patch_skip_connections(model):
     """
-    Recursively find residual blocks with .shortcut and patch their forward()
-    to skip shortcut if the block is within collapsed range.
+    Patch residual blocks to skip shortcuts safely.
+    Avoid circular references by storing only block names, not full model.
     """
+    collapsed_paths = getattr(model, "_collapsed_blocks", [])
+
     for name, module in model.named_modules():
         if hasattr(module, 'shortcut') and isinstance(module.shortcut, nn.Module):
-
-            # Save reference to the ORIGINAL forward to avoid recursive loop
+            # save original forward
             original_forward = module.forward
 
             def make_patched_forward(orig_forward, block_name):
                 def new_forward(self, x):
                     out = self.block(x)
-
-                    if hasattr(self, '_parent_model') and _is_within_collapsed_block(self._parent_model, block_name):
-                        # SKIP the shortcut if collapsed
+                    # check if this block is within collapsed ranges
+                    skip_shortcut = any(
+                        block_name.startswith(start) or block_name.startswith(end)
+                        for start, end in collapsed_paths
+                    )
+                    if skip_shortcut:
                         return F.relu(out)
                     else:
-                        # APPLY the shortcut if not collapsed
                         return F.relu(out + self.shortcut(x))
-
                 return new_forward
 
-            # Attach metadata and patch safely
-            module._parent_model = model
-            module._block_path = name
+            # patch forward safely
             module.forward = make_patched_forward(original_forward, name).__get__(module)
-            print(f"[PATCH] Patched forward of residual block: {name}")
+            print(f"[PATCH] Patched residual block forward: {name}")
 
 def compression_set(layers):
     """
@@ -366,53 +368,58 @@ def forward_until(model, stop_path, x):
     return x
 
 def _build_collapsed_block(layer_type, in_features, out_features, output_shape, full_block=None, stride=(1, 1), pool_layer: Optional[nn.Module]=None):
-    print(f"[DEBUG] Building collapsed block of type {layer_type.__name__} with in_features={in_features}, out_features={out_features}, output_shape={output_shape}, stride={stride}, pool_layer={pool_layer.__class__.__name__ if pool_layer is not None else None}")
+    """
+    Build a collapsed block safely.
+    Clones any original modules (like pooling) to avoid circular references.
+    Adds bottleneck if Conv2d, and preserves BN/ReLU if present.
+    """
+    print(f"[DEBUG] Building collapsed block: {layer_type.__name__}, in={in_features}, out={out_features}, stride={stride}")
+
+    seq = []
 
     if layer_type == nn.Conv2d:
-        # --- Detect if the last layers are BatchNorm or ReLU ---
-        has_bn = False
-        has_relu = False
+        # Detect if last layers in full_block are BN/ReLU
+        has_bn = has_relu = False
         if full_block:
             mods = [m for _, m in full_block] if isinstance(full_block[0], tuple) else list(full_block)
-            if len(mods) >= 1 and isinstance(mods[-1], nn.ReLU):
+            if isinstance(mods[-1], nn.ReLU):
                 has_relu = True
                 if len(mods) >= 2 and isinstance(mods[-2], nn.BatchNorm2d):
                     has_bn = True
-            elif len(mods) >= 1 and isinstance(mods[-1], nn.BatchNorm2d):
+            elif isinstance(mods[-1], nn.BatchNorm2d):
                 has_bn = True
 
-        print(f"[DEBUG] Collapsed block end flags -> has_bn: {has_bn}, has_relu: {has_relu}")
-
-        # --- New: Bottleneck collapse ---
+        # Bottleneck collapse
         bottleneck_ratio = 0.75
         bottleneck_channels = max(1, int(in_features * bottleneck_ratio))
 
-        conv1 = nn.Conv2d(in_channels=in_features, out_channels=bottleneck_channels,
-                          kernel_size=1, stride=1, padding=0, bias=False)
+        conv1 = nn.Conv2d(in_features, bottleneck_channels, kernel_size=1, stride=1, padding=0, bias=False)
         relu1 = nn.ReLU(inplace=False)
-        conv2 = nn.Conv2d(in_channels=bottleneck_channels, out_channels=out_features,
-                          kernel_size=1, stride=stride, padding=0, bias=not has_bn)
+        conv2 = nn.Conv2d(bottleneck_channels, out_features, kernel_size=1, stride=stride, padding=0, bias=not has_bn)
 
-        seq = [conv1, relu1, conv2]
+        seq.extend([conv1, relu1, conv2])
+
         if has_bn:
             seq.append(nn.BatchNorm2d(out_features))
         if has_relu:
             seq.append(nn.ReLU(inplace=False))
-        if pool_layer is not None:
-            seq.append(pool_layer)
-            print(f"[DEBUG] Appending preserved pooling layer to collapsed block: {pool_layer.__class__.__name__}")
 
-        collapsed = nn.Sequential(OrderedDict([("collapsed_conv", nn.Sequential(*seq))]))
-        print(f"[DEBUG] Built bottleneck collapsed Conv block with layers: {[type(m).__name__ for m in seq]}")
-        return collapsed
+        # clone pool layer if exists
+        if pool_layer is not None:
+            seq.append(copy.deepcopy(pool_layer))
+            print(f"[DEBUG] Appending cloned pooling layer: {pool_layer.__class__.__name__}")
 
     elif layer_type == nn.Linear:
-        block = nn.Sequential(OrderedDict([("collapsed_linear", nn.Linear(in_features, out_features))]))
-        print(f"[DEBUG] Built collapsed Linear block: Linear({in_features} -> {out_features})")
-        return block
+        seq.append(nn.Linear(in_features, out_features))
+        print(f"[DEBUG] Built collapsed Linear: {in_features} -> {out_features}")
 
     else:
-        raise NotImplementedError(f"Unsupported layer type for collapsing: {layer_type}")
+        raise NotImplementedError(f"Unsupported layer type: {layer_type}")
+
+    # Flatten into a single nn.Sequential
+    collapsed = nn.Sequential(OrderedDict([(f"layer_{i}", layer) for i, layer in enumerate(seq)]))
+    print(f"[DEBUG] Collapsed block layers: {[type(m).__name__ for m in collapsed]}")
+    return collapsed
 
 def _measure_flattened_size_by_forward(model, input_shape, device):
     """
