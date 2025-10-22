@@ -114,7 +114,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
 
     # Run diagnostics
     diagnostics = run_full_diagnostics(
-        model, data_shape, {exp_name: data}, plots_dir, exp_name,
+        model, data_shape, {exp_name: data}, metrics_dir, exp_name,
         collapse_range=collapse_range, device=device
     )
     data["diagnostics"] = diagnostics
