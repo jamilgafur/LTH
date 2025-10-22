@@ -94,7 +94,6 @@ def load_dataset(dataset_name, model_name="VGG16"):
 # -------------------------
 # Benchmark Inference
 # -------------------------
-from torchprofile import profile_macs  # Import necessary FLOPs package
 def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5):
     """
     Returns: (avg_time_seconds, flops_total, total_size_mb)
