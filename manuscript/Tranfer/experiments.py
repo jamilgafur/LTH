@@ -814,7 +814,8 @@ def plot_unified_metrics(metrics_dir, save_dir, workflow):
                 continue
             for name, m in exp_group.items():
                 if not is_dict_like(m):
-                    print(f"[!] Warning: Skipping experiment '{name}' because its data is not a dict.")
+                    print(f"[!] Warning: Skipping experiment '{name}' because its data is not a dict. It is {m}")
+                    
                     continue
                 all_data.append({
                     "Experiment": name,
