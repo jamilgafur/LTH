@@ -114,7 +114,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
 
     # Run diagnostics
     diagnostics = run_full_diagnostics(
-        model, data_shape, {exp_name: data}, metrics_dir, exp_name,
+        model, data_shape, {exp_name: data}, plots_dir, exp_name,
         collapse_range=collapse_range, device=device
     )
     data["diagnostics"] = diagnostics
@@ -198,11 +198,17 @@ def plot_unified_metrics(metrics_dir, save_dir, workflow):
 
 def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, collapse_range=None, device="cuda"):
     print(f"[•] Running diagnostics for {exp_name}...")
+    print(f"[•] Save directory: {save_dir}")
+    print(f"[•] Input shape: {input_shape}")
+    print(f"[•] metrics_dict keys: {list(metrics_dict.keys())}")
+    print(f"[•] Device: {device}")
+    print(f"[•] Collapse range: {collapse_range}")
+    print(f"[•] Model summary: {describe_model(model)}")
     os.makedirs(save_dir, exist_ok=True)
     model.to(device)
     model.eval()
 
-    # Ensure 4D input
+    # Ensure input tensor is 4D
     if len(input_shape) == 2:
         input_tensor = torch.randn((1, 3, *input_shape), device=device)
     elif len(input_shape) == 3:
@@ -211,25 +217,49 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
         input_tensor = torch.randn(input_shape, device=device)
 
     diagnostics = {}
-    try: diagnostics["per_layer_params_flops"] = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name).to_dict(orient="records")
-    except Exception as e: print(f"[!] Params/FLOPs analysis error: {e}")
-    try: diagnostics["activation_sizes"] = analyze_activation_sizes(model, input_tensor, save_dir, exp_name).to_dict(orient="records")
-    except Exception as e: print(f"[!] Activation analysis error: {e}")
+
+    # Per-layer parameters and FLOPs
     try:
-        if torch.cuda.is_available():
-            diagnostics["memory_decomposition"] = memory_decomposition(model, input_tensor, save_dir, exp_name)
-    except Exception as e: print(f"[!] Memory decomposition error: {e}")
+        df_params = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
+        diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records") if hasattr(df_params, "to_dict") else df_params
+    except Exception as e:
+        print(f"[!] Params/FLOPs analysis error: {e}")
+        diagnostics["per_layer_params_flops"] = []
+
+    # Activation sizes
+    try:
+        df_act = analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
+        diagnostics["activation_sizes"] = df_act.to_dict(orient="records") if hasattr(df_act, "to_dict") else df_act
+    except Exception as e:
+        print(f"[!] Activation analysis error: {e}")
+        diagnostics["activation_sizes"] = []
+
+    # Memory decomposition
+    try:
+        mem = memory_decomposition(model, input_tensor, save_dir, exp_name)
+        diagnostics["memory_decomposition"] = mem if isinstance(mem, dict) else {"memory": mem}
+    except Exception as e:
+        print(f"[!] Memory decomposition error: {e}")
+        diagnostics["memory_decomposition"] = {}
 
     # Plots
-    try: plot_flops_vs_latency(metrics_dict, save_dir, exp_name)
-    except Exception as e: print(f"[!] FLOPs vs latency plot error: {e}")
-    try: analyze_collapse_effects(model, collapse_range, save_dir, exp_name)
-    except Exception as e: print(f"[!] Collapse effects error: {e}")
+    try:
+        plot_flops_vs_latency(metrics_dict, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] FLOPs vs latency plot error: {e}")
+
+    try:
+        analyze_collapse_effects(model, collapse_range, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] Collapse effects error: {e}")
 
     # Additional plots
-    for func in [plot_delta_accuracy_vs_params, plot_flops_vs_memory, plot_accuracy_vs_memory, plot_heatmap, plot_stage_collapse_cost_curve]:
-        try: func(metrics_dict, save_dir, exp_name)
-        except Exception as e: print(f"[!] {func.__name__} error: {e}")
+    for func in [plot_delta_accuracy_vs_params, plot_flops_vs_memory, plot_accuracy_vs_memory,
+                 plot_heatmap, plot_stage_collapse_cost_curve]:
+        try:
+            func(metrics_dict, save_dir, exp_name)
+        except Exception as e:
+            print(f"[!] {func.__name__} error: {e}")
 
     print(f"[✓] Diagnostics complete for {exp_name}")
     return diagnostics
@@ -638,7 +668,7 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
         torch.save({'model': base_model.state_dict()}, tmp_path)
         base_model = collapse_only(
             model_weights_1=tmp_path,
-            compression_set=[collapse_range],
+            compression_set=[collapse_range],K)
             model_class=model_class,
             model_kwargs=model_kwargs,
             input_shape=model_kwargs['one_batch'].shape,
