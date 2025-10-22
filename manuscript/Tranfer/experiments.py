@@ -226,7 +226,6 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
     extended_funcs = [
         plot_delta_accuracy_vs_params,
         plot_flops_vs_memory,
-        plot_stage_parameter_density,
         plot_accuracy_vs_memory,
         plot_heatmap,
         plot_stage_collapse_cost_curve,
@@ -437,28 +436,6 @@ def plot_flops_vs_memory(metrics_dict, save_dir, exp_name):
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{exp_name}_flops_vs_memory.png"))
     plt.close()
-
-def plot_stage_parameter_density(model, save_dir, exp_name):
-    stage_params, stage_names = [], []
-    for name, module in model.named_modules():
-        if isinstance(module, nn.Conv2d):
-            params = sum(p.numel() for p in module.parameters())
-            stage = name.split(".")[0]
-            stage_params.append(params)
-            stage_names.append(stage)
-    df = pd.DataFrame({"stage": stage_names, "params": stage_params})
-    df = df.groupby("stage").sum().reset_index()
-    df["norm_params"] = df["params"] / df["params"].sum() * 100
-
-    plt.figure(figsize=(10,5))
-    sns.barplot(data=df, x="stage", y="norm_params", color="teal")
-    plt.title(f"Parameter Density per Stage — {exp_name}")
-    plt.ylabel("Share of Total Params (%)")
-    plt.xlabel("Stage")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_stage_param_density.png"))
-    plt.close()
-    return df
 
 def plot_accuracy_vs_memory(metrics_dict, save_dir, exp_name):
     accs = [v["final_accuracy"] for v in metrics_dict.values()]
