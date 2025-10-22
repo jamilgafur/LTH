@@ -13,7 +13,7 @@ def _set_module_by_path(model, module_path, new_module):
     if module_path == "":
         raise ValueError("_set_module_by_path: cannot replace root module")
     
-    #print(f"[DEBUG] _set_module_by_path: Replacing module at path '{module_path}'")
+    print(f"[DEBUG] _set_module_by_path: Replacing module at path '{module_path}'")
     
     parts = module_path.split('.')
     parent = model
@@ -24,14 +24,14 @@ def _set_module_by_path(model, module_path, new_module):
             parent = getattr(parent, part)
     last = parts[-1]
     
-    #print(f"[DEBUG] Parent module: {parent}, Last part: {last}")
+    print(f"[DEBUG] Parent module: {parent}, Last part: {last}")
     
     if last.isdigit():
         idx = int(last)
-        #print(f"[DEBUG] Replacing at index {idx}")
+        print(f"[DEBUG] Replacing at index {idx}")
         parent[idx] = new_module
     else:
-        #print(f"[DEBUG] Setting new module at attribute {last}")
+        print(f"[DEBUG] Setting new module at attribute {last}")
         setattr(parent, last, new_module)
 
 def disable_inplace_relu(model):
@@ -51,7 +51,7 @@ def disable_inplace_relu(model):
 
     print(f"[INFO] Replacing {len(to_replace)} in-place ReLU(s) with out-of-place variants.")
     for name in to_replace:
-        #print(f"[DEBUG] Found in-place ReLU at: {name}")
+        print(f"[DEBUG] Found in-place ReLU at: {name}")
         container, subname = _get_container_and_subname(name)
         parent = get_layer(model, container) if container != "" else model
         # set new non-inplace ReLU in parent
@@ -59,10 +59,10 @@ def disable_inplace_relu(model):
         # if subname is a numeric index in Sequential
         if subname.isdigit():
             idx = int(subname)
-            #print(f"[DEBUG] Replacing ReLU at index {idx}")
+            print(f"[DEBUG] Replacing ReLU at index {idx}")
             parent[idx] = new_relu
         else:
-            #print(f"[DEBUG] Setting new ReLU at attribute {subname}")
+            print(f"[DEBUG] Setting new ReLU at attribute {subname}")
             setattr(parent, subname, new_relu)
 
 def _is_int_str(s):
@@ -82,16 +82,16 @@ def get_layer(model, layer_name):
     if layer_name == "":
         print("[DEBUG] get_layer: requested root model")
         return model
-    # #print(f"[DEBUG] Accessing layer '{layer_name}' in the model.")
+    print(f"[DEBUG] Accessing layer '{layer_name}' in the model.")
     layer_parts = layer_name.split('.')
     layer = model
     for part in layer_parts:
         if _is_int_str(part):
             idx = int(part)
-            # #print(f"[DEBUG] Accessing index {idx}")
+            print(f"[DEBUG] Accessing index {idx}")
             layer = layer[idx]
         else:
-            # #print(f"[DEBUG] Accessing attribute '{part}'")
+            print(f"[DEBUG] Accessing attribute '{part}'")
             layer = getattr(layer, part)
     return layer
 
@@ -130,7 +130,7 @@ def compression_set(layers):
     Example of compressing layers. Replace this with actual compression logic.
     """
     for layer in layers:
-        #print(f"[DEBUG] Compressing layer: {layer}")
+        print(f"[DEBUG] Compressing layer: {layer}")
         # Add compression logic here (e.g., pruning, quantization)
 
 def _is_within_collapsed_block(model, block_path):
@@ -160,10 +160,10 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
     # Track collapsed layer ranges
     model._collapsed_blocks = []
 
-    # print(f"[INFO] Full compression set: {compression_set}")
+    print(f"[INFO] Full compression set: {compression_set}")
 
     for compression_set1 in compression_set:
-        #print(f"[DEBUG] Compressing: {compression_set1}")
+        print(f"[DEBUG] Compressing: {compression_set1}")
         start, end = compression_set1[0], compression_set1[1]
         print(f"\n--- Starting collapse for block: {start} to {end} ---")
 
@@ -202,7 +202,7 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
         if isinstance(layer, (nn.Conv2d, nn.Linear, nn.MaxPool2d, nn.ReLU,
                               nn.AdaptiveAvgPool2d, nn.BatchNorm2d)):
             build_layer_names.append(name)
-    # #print(f"[DEBUG] Available layers for collapsing: {build_layer_names}")
+    print(f"[DEBUG] Available layers for collapsing: {build_layer_names}")
 
     start_container_name, start_subname = _get_container_and_subname(start_layer_name)
     end_container_name, end_subname = _get_container_and_subname(end_layer_name)
@@ -218,8 +218,8 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
             f"Layer names '{start_layer_name}' or '{end_layer_name}' not found inside container '{start_container_name}'."
         )
     assert start_idx <= end_idx, "Start index must be <= end index"
-    # #print(f"[DEBUG] Collapsing in section '{start_container_name}' from index {start_idx} to {end_idx} "
-        #   f"({named_layers[start_idx][0]} → {named_layers[end_idx][0]})"
+    print(f"[DEBUG] Collapsing in section '{start_container_name}' from index {start_idx} to {end_idx} "
+          f"({named_layers[start_idx][0]} → {named_layers[end_idx][0]})")
 
     # collect only Conv2d/Linear for collapsing (preserve original selection logic)
     full_block = named_layers[start_idx:end_idx + 1]
@@ -234,7 +234,7 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
     # --- simulate input before start layer ---
     try:
         dummy_input, x = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
-        #print(f"[DEBUG] Simulated input shape before collapsing block: {x.shape}")
+        print(f"[DEBUG] Simulated input shape before collapsing block: {x.shape}")
     except Exception as e:
         print(f"[WARN] Hook-based simulation failed: {e}")
         # fallback — make dummy tensor with correct channels
@@ -243,7 +243,7 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
             H, W = input_shape[-2:]
             x = torch.randn(1, start_layer.in_channels, H, W, device=device)
             dummy_input = x.clone()
-            #print(f"[DEBUG] Fallback dummy input created with shape {x.shape}")
+            print(f"[DEBUG] Fallback dummy input created with shape {x.shape}")
         else:
             x = torch.randn(1, start_layer.in_features, device=device)
             dummy_input = x.clone()
@@ -251,15 +251,14 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
     # --- Linear case ---
     if layer_type == nn.Linear:
         in_features = x.view(x.size(0), -1).size(1)
-        #print(f"[DEBUG] in_features determined (Linear): {in_features}")
+        print(f"[DEBUG] in_features determined (Linear): {in_features}")
         for layer in selected_layers:
             x = layer(x)
         out_features = x.view(x.size(0), -1).size(1)
-        #print(f"[DEBUG] out_features determined (Linear): {out_features}")
+        print(f"[DEBUG] out_features determined (Linear): {out_features}")
         # Build collapsed block for Linear (keeps same behavior as before)
         collapsed_block = _build_collapsed_block(layer_type, in_features, out_features, x.shape, full_block=full_block)
 
-    # --- Conv2d case ---
     else:
         in_channels = x.shape[1]
         last_conv = selected_layers[-1]
@@ -306,7 +305,6 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
                                                 full_block=full_block, stride=final_stride,
                                                 pool_layer=pool_layer)
 
-
     # --- replace in container ---
     updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
     _update_container(model, start_container_name, updated_container)
@@ -314,7 +312,7 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
 
     print(f"[INFO] Collapsed {start_container_name} layers {start_layer_name} → {end_layer_name}")
     print(f"[INFO] New trainable params: {count_trainable_params(model)}")
-    #print(f"[DEBUG] Model structure after collapse:\n{layer_stats(model)}")
+    print(f"[DEBUG] Model structure after collapse:\n{layer_stats(model)}")
     return model
 
 def _simulate_input_hook(model, target_layer_path, input_shape, device='cpu'):
@@ -368,7 +366,7 @@ def forward_until(model, stop_path, x):
     return x
 
 def _build_collapsed_block(layer_type, in_features, out_features, output_shape, full_block=None, stride=(1, 1), pool_layer: Optional[nn.Module]=None):
-    #print(f"[DEBUG] Building collapsed block of type {layer_type.__name__} with in_features={in_features}, out_features={out_features}, output_shape={output_shape}, stride={stride}, pool_layer={pool_layer.__class__.__name__ if pool_layer is not None else None}")
+    print(f"[DEBUG] Building collapsed block of type {layer_type.__name__} with in_features={in_features}, out_features={out_features}, output_shape={output_shape}, stride={stride}, pool_layer={pool_layer.__class__.__name__ if pool_layer is not None else None}")
 
     if layer_type == nn.Conv2d:
         # --- Detect if the last layers are BatchNorm or ReLU ---
@@ -383,7 +381,7 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
             elif len(mods) >= 1 and isinstance(mods[-1], nn.BatchNorm2d):
                 has_bn = True
 
-        #print(f"[DEBUG] Collapsed block end flags -> has_bn: {has_bn}, has_relu: {has_relu}")
+        print(f"[DEBUG] Collapsed block end flags -> has_bn: {has_bn}, has_relu: {has_relu}")
 
         # --- New: Bottleneck collapse ---
         bottleneck_ratio = 0.75
@@ -402,15 +400,15 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
             seq.append(nn.ReLU(inplace=False))
         if pool_layer is not None:
             seq.append(pool_layer)
-            #print(f"[DEBUG] Appending preserved pooling layer to collapsed block: {pool_layer.__class__.__name__}")
+            print(f"[DEBUG] Appending preserved pooling layer to collapsed block: {pool_layer.__class__.__name__}")
 
         collapsed = nn.Sequential(OrderedDict([("collapsed_conv", nn.Sequential(*seq))]))
-        #print(f"[DEBUG] Built bottleneck collapsed Conv block with layers: {[type(m).__name__ for m in seq]}")
+        print(f"[DEBUG] Built bottleneck collapsed Conv block with layers: {[type(m).__name__ for m in seq]}")
         return collapsed
 
     elif layer_type == nn.Linear:
         block = nn.Sequential(OrderedDict([("collapsed_linear", nn.Linear(in_features, out_features))]))
-        #print(f"[DEBUG] Built collapsed Linear block: Linear({in_features} -> {out_features})")
+        print(f"[DEBUG] Built collapsed Linear block: Linear({in_features} -> {out_features})")
         return block
 
     else:
@@ -429,14 +427,14 @@ def _measure_flattened_size_by_forward(model, input_shape, device):
 
     def make_hook(name):
         def hook(module, inp, out):
-            #print(f"[DEBUG] Hook triggered for layer: {name}")
+            print(f"[DEBUG] Hook triggered for layer: {name}")
             activations[name] = out.detach()
         return hook
 
     print("[DEBUG] Registering forward hooks...")
     for name, module in model.named_modules():
         if isinstance(module, (nn.Conv2d, nn.AdaptiveAvgPool2d, nn.MaxPool2d, nn.BatchNorm2d, nn.ReLU, nn.Sequential)):
-            #print(f"[DEBUG] Hook registered for module: {name}")
+            print(f"[DEBUG] Hook registered for module: {name}")
             hooks.append(module.register_forward_hook(make_hook(name)))
 
     try:
@@ -447,7 +445,7 @@ def _measure_flattened_size_by_forward(model, input_shape, device):
                 model(dummy)
                 print("[DEBUG] Forward pass completed.")
             except Exception as e:
-                #print(f"[DEBUG] Exception during forward pass: {e}")
+                print(f"[DEBUG] Exception during forward pass: {e}")
     finally:
         print("[DEBUG] Removing hooks...")
         for h in hooks:
@@ -456,7 +454,7 @@ def _measure_flattened_size_by_forward(model, input_shape, device):
     print("[DEBUG] Searching for last 4D activation...")
     last = None
     for n, act in activations.items():
-        #print(f"[DEBUG] Found activation from layer: {n} with shape {act.shape}")
+        print(f"[DEBUG] Found activation from layer: {n} with shape {act.shape}")
         last = act
     if last is None:
         print("[DEBUG] No activation found.")
@@ -465,7 +463,7 @@ def _measure_flattened_size_by_forward(model, input_shape, device):
         flattened = last.view(last.size(0), -1).size(1)
     else:
         flattened = last.size(1)
-    #print(f"[DEBUG] Flattened size determined: {flattened}")
+    print(f"[DEBUG] Flattened size determined: {flattened}")
     return int(flattened)
 
 def _update_container(model, container_path, new_container):
@@ -473,19 +471,19 @@ def _update_container(model, container_path, new_container):
     Replace the module at `container_path` in `model` with `new_container`.
     container_path is a dot-separated string specifying nested modules.
     """
-    #print(f"[DEBUG] Updating container at path: {container_path}")
+    print(f"[DEBUG] Updating container at path: {container_path}")
     if container_path == "":
         raise ValueError("Cannot replace the root model container with a new container.")
     parts = container_path.split('.')
     parent = model
     for part in parts[:-1]:
-        #print(f"[DEBUG] Traversing into: {part}")
+        print(f"[DEBUG] Traversing into: {part}")
         if _is_int_str(part):
             parent = parent[int(part)]
         else:
             parent = getattr(parent, part)
     last = parts[-1]
-    #print(f"[DEBUG] Setting new container at final part: {last}")
+    print(f"[DEBUG] Setting new container at final part: {last}")
     if _is_int_str(last):
         idx = int(last)
         parent[idx] = new_container
@@ -497,20 +495,20 @@ def _replace_layers(named_layers, start_idx, end_idx, new_block):
     Replace layers start_idx..end_idx inclusive in named_layers with new_block.
     Returns a new nn.Sequential built from the original named_layers with the slice replaced.
     """
-    #print(f"[DEBUG] Replacing layers {start_idx} to {end_idx} with collapsed block...")
+    print(f"[DEBUG] Replacing layers {start_idx} to {end_idx} with collapsed block...")
     new_layers = []
     unique_suffix = uuid4().hex[:8]
     for i, (name, layer) in enumerate(named_layers):
         if i == start_idx:
             new_name = f"collapsed_{named_layers[start_idx][0]}_to_{named_layers[end_idx][0]}_{unique_suffix}"
-            #print(f"[DEBUG] Inserting new block as '{new_name}'")
+            print(f"[DEBUG] Inserting new block as '{new_name}'")
             new_layers.append((new_name, new_block))
         elif start_idx < i <= end_idx:
-            #print(f"[DEBUG] Removing layer '{name}' at index {i}")
+            print(f"[DEBUG] Removing layer '{name}' at index {i}")
             continue
         else:
             new_layers.append((name, layer))
-    #print(f"[DEBUG] New container will have {len(new_layers)} children.")
+    print(f"[DEBUG] New container will have {len(new_layers)} children.")
     return nn.Sequential(OrderedDict(new_layers))
 
 def adjust_classifier_input_features(model, input_shape, num_classes=200, device='cpu'):
@@ -573,11 +571,11 @@ def adjust_classifier_input_features(model, input_shape, num_classes=200, device
             else:
                 flattened_size = inp_shape[1]
 
-            #print(f"[DEBUG] Measured flattened features size for head (from hooks): {flattened_size}")
+            print(f"[DEBUG] Measured flattened features size for head (from hooks): {flattened_size}")
         else:
             # fallback measurement function (keeps old behavior)
             flattened_size = _measure_flattened_size_by_forward(model, input_shape, device)
-            #print(f"[DEBUG] Fallback flattened size measured as: {flattened_size}")
+            print(f"[DEBUG] Fallback flattened size measured as: {flattened_size}")
 
         # Now, instead of changing Linear.in_features, insert adaptive pool to match Linear's expected in_features
         # Find the original Linear module
@@ -728,32 +726,32 @@ def _get_container_and_subname(layer_name):
     """
     Extracts the container (e.g., 'features', 'stage3_block0.block') and the subname.
     """
-    #print(f"[DEBUG] Splitting layer name: {layer_name}")
+    print(f"[DEBUG] Splitting layer name: {layer_name}")
     if layer_name == "":
         return "", ""
     layer_parts = layer_name.split('.')
     if len(layer_parts) == 1:
-        #print(f"[DEBUG] No container, subname: {layer_parts[0]}")
+        print(f"[DEBUG] No container, subname: {layer_parts[0]}")
         return "", layer_parts[0]
     container = '.'.join(layer_parts[:-1])
     subname = layer_parts[-1]
-    #print(f"[DEBUG] Container: {container}, Subname: {subname}")
+    print(f"[DEBUG] Container: {container}, Subname: {subname}")
     return container, subname
 
 def _find_layer_indices(named_layers, start_layer_name, end_layer_name):
     start_idx = end_idx = None
-    #print(f"[DEBUG] Finding indices for layers '{start_layer_name}' to '{end_layer_name}'...")
+    print(f"[DEBUG] Finding indices for layers '{start_layer_name}' to '{end_layer_name}'...")
 
     for i, (name, _) in enumerate(named_layers):
-        # #print(f"[DEBUG] Checking layer: {name} at index {i}")
+        # print(f"[DEBUG] Checking layer: {name} at index {i}")
         if name == start_layer_name:
             start_idx = i
-            #print(f"[DEBUG] Found start layer '{start_layer_name}' at index {start_idx}")
+            print(f"[DEBUG] Found start layer '{start_layer_name}' at index {start_idx}")
         if name == end_layer_name:
             end_idx = i
-            #print(f"[DEBUG] Found end layer '{end_layer_name}' at index {end_idx}")
+            print(f"[DEBUG] Found end layer '{end_layer_name}' at index {end_idx}")
 
     if start_idx is None or end_idx is None:
-        #print(f"[DEBUG] Warning: Could not find one or both layer names '{start_layer_name}', '{end_layer_name}' inside the container's children.")
+        print(f"[DEBUG] Warning: Could not find one or both layer names '{start_layer_name}', '{end_layer_name}' inside the container's children.")
 
     return start_idx, end_idx
