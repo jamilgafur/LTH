@@ -126,7 +126,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     diagnostics = run_full_diagnostics(model, data_shape, {exp_name: data}, plots_dir, exp_name,
                                        collapse_range=collapse_range, device=device)
     data["diagnostics"] = diagnostics
-    plot_results(data, workflow, exp_name, plots_dir)
+    plot_results(data, workflow, exp_name, plots_dir,filename=f"{workflow}_{exp_name}_results.svg",
     # Save metrics
     safe_update_metrics_json(model_root, exp_name, data, base_dir=metrics_dir)
 
