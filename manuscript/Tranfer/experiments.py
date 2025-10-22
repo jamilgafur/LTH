@@ -26,33 +26,37 @@ from plots import plot_accuracy_loss_curve, plot_results
 # =====================================================
 # === Safe JSON Merging (HPC Compatible)
 # =====================================================
-def safe_update_metrics_json(workflow_path, exp_name, new_data, base_dir="./runs/metrics"):
+def safe_update_metrics_json(model_root, exp_name, new_data, base_dir="./runs/metrics"):
     """
-    Safely merges new metrics into existing JSON.
-    Prevents overwriting when running in parallel (HPC/data-parallel).
+    Safely merges new experiment data into model-level JSON (HPC-safe).
+    Saved as: <base_dir>/<model_root>_metrics.json
     """
-    json_path = os.path.join(base_dir, f"{workflow_path}_metrics.json")
-    os.makedirs(os.path.dirname(json_path), exist_ok=True)
+    os.makedirs(base_dir, exist_ok=True)
+    json_path = os.path.join(base_dir, f"{model_root}_metrics.json")
+
     try:
+        # Load if exists
         if os.path.exists(json_path):
             with open(json_path, "r") as f:
                 existing = json.load(f)
         else:
             existing = {}
 
-        # Use workflow_path last segment as root key if needed
-        model_root = workflow_path.split("/")[-1]
-        if model_root not in existing:
-            existing[model_root] = {}
+        # Merge experiment
+        existing[exp_name] = new_data
 
-        existing[model_root][exp_name] = new_data
-
-        with open(json_path, "w") as f:
+        # Atomic write
+        tmp_path = json_path + ".tmp"
+        with open(tmp_path, "w") as f:
             json.dump(existing, f, indent=4)
-        print(f"[✓] Safely merged metrics for '{exp_name}' → {json_path}")
+        os.replace(tmp_path, json_path)
+
+        print(f"[✓] Saved metrics for '{exp_name}' → {json_path}")
+        return json_path
 
     except Exception as e:
-        print(f"[!] Failed to safely merge metrics JSON: {e}")
+        print(f"[!] Failed to update metrics JSON: {e}")
+        return None
 
 # =====================================================
 # === Core Experiment Function ===
@@ -128,12 +132,10 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     data["diagnostics"] = diagnostics
 
     # Save metrics safely
-    safe_update_metrics_json(
-        f"{workflow}/{model.__class__.__name__}_postcomp_{post_compress_epochs}",
-        exp_name,
-        data,
-        base_dir=metrics_dir,
-    )
+    # Get model root (so we don’t prefix with workflow)
+    model_root = f"{model.__class__.__name__}_{train_loader.dataset.__class__.__name__}"
+    json_path = safe_update_metrics_json(model_root, exp_name, data, base_dir=metrics_dir)
+
 
     # Comparison plot across experiments in this workflow
     glob_path = os.path.join(metrics_dir, f"{workflow}/*metrics.json")
@@ -152,11 +154,17 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
                 infer_times_list.append(metrics.get("inference_time", 0))
                 mem_usages.append(metrics.get("total_size_mb", 0))
 
-            save_path_plot = json_path.replace("metrics", "plots").replace("json", "svg")
+            model_root = os.path.splitext(os.path.basename(json_path))[0].replace("_metrics", "")
+            plots_out_dir = os.path.join(plots_dir, model_root)
+            os.makedirs(plots_out_dir, exist_ok=True)
+
+            save_path_plot = os.path.join(plots_out_dir, f"{exp_name}_metrics.svg")
             plot_results(
-                params, accs, names, f"{workflow} Experiments", save_path_plot,
-                dataset=workflow, infer_times=infer_times_list, mem_usages=mem_usages, flops=None
+                params, accs, names, f"{model_root} Experiments", save_path_plot,
+                dataset=model_root, infer_times=infer_times_list, mem_usages=mem_usages, flops=None
             )
+            print(f"[✓] Saved metrics summary: {save_path_plot}")
+
             print(f"[✓] Saved comparison plot to {save_path_plot}")
 
     # Final checkpoint save
