@@ -203,7 +203,6 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
     print(f"[•] metrics_dict keys: {list(metrics_dict.keys())}")
     print(f"[•] Device: {device}")
     print(f"[•] Collapse range: {collapse_range}")
-    print(f"[•] Model summary: {describe_model(model)}")
     os.makedirs(save_dir, exist_ok=True)
     model.to(device)
     model.eval()
