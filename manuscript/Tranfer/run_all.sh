@@ -10,8 +10,7 @@ datasets=("Cifar10")
 for model in "${models[@]}"; do
   # Define the experiment names inside the model loop
   if [[ "$model" == "VGG16" ]]; then
-    experiment_names=("Original Model"  "Last 2" "Stage 4" )
-    #"Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
+    experiment_names=("Original Model"  "Last 2" "Stage 4" "Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
   else
     # If model is RegNetX_400MF, define valid experiments only
     experiment_names=(
