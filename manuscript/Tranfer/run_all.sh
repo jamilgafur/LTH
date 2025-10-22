@@ -1,10 +1,8 @@
 #!/bin/bash
 
 # Define models and datasets
-models=("VGG16" )
-# "RegNetX_400MF")
-datasets=("Cifar10")
-# "Cifar100" )
+models=("VGG16" "RegNetX_400MF")
+datasets=("Cifar10" "Cifar100" )
 
 # Loop through models
 for model in "${models[@]}"; do
