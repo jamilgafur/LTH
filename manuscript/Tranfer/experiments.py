@@ -445,8 +445,14 @@ def predict_collapse_parameters(in_channels, out_channels, kernel_size, num_laye
     }
 
 # === Run All Diagnostics ===
+def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, collapse_range=None, device="cuda"):
+    print(f"[•] Running diagnostics for {exp_name}...")
+    os.makedirs(save_dir, exist_ok=True)
 
-def run_full_diagnostics(model, input_tensor, metrics_dict, save_dir, exp_name, collapse_range=None):
+    model.to(device)
+    model.eval()
+    input_tensor = torch.randn(input_shape, device=device)
+
     print(f"[•] Running diagnostics for {exp_name}...")
     os.makedirs(save_dir, exist_ok=True)
     try:
