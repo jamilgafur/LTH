@@ -185,7 +185,15 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
     os.makedirs(save_dir, exist_ok=True)
     model.to(device)
     model.eval()
-    input_tensor = torch.randn(input_shape, device=device)
+    print(f"[DEBUG] Input shape for diagnostics: {input_shape}")
+    # Ensure the input has 4 dimensions: (B, C, H, W)
+    if len(input_shape) == 2:
+        input_tensor = torch.randn((1, 3, *input_shape), device=device)
+    elif len(input_shape) == 3:
+        input_tensor = torch.randn((1, *input_shape), device=device)
+    else:
+        input_tensor = torch.randn(input_shape, device=device)
+
 
     diagnostics = {}
 
