@@ -25,13 +25,13 @@ import os
 CHECKPOINT_BASES = {
     "VGG16": {
         "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*cifar10_*")[0] + "/",
-        "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*cifar100_*")[0] + "/",
+        # "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*cifar100_*")[0] + "/",
 #        "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*tinyimagenet_*")[0] + "/",
         # "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*imagenet_*")[0] + "/",
     },
     "RegNetX_400MF": {
-        "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar10_*")[0] + "/",
-        "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar100_*")[0] + "/",
+        # "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar10_*")[0] + "/",
+        # "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar100_*")[0] + "/",
 #        "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*tinyimagenet_*")[0] + "/",
         # "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*imagenet_*")[0] + "/",
     }
@@ -277,10 +277,10 @@ if __name__ == "__main__":
 
     # Initialize the argument parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="RegNetX_400MF", choices=["VGG16", "RegNetX_400MF"], help="Model architecture to use")
+    parser.add_argument("--model", type=str, default="VGG16", choices=["VGG16", "RegNetX_400MF"], help="Model architecture to use")
     parser.add_argument("--dataset", type=str, help="Dataset to use (Cifar10, Cifar100, ImageNet, TinyImageNet)", default="Cifar10")
-    parser.add_argument("--epochs", type=int, default=30, help="Number of epochs to train for")
-    parser.add_argument("--pretrain", type=int, default=10, help="Number of pretraining epochs")
+    parser.add_argument("--epochs", type=int, default=1, help="Number of epochs to train for")
+    parser.add_argument("--pretrain", type=int, default=1, help="Number of pretraining epochs")
     parser.add_argument("--experiment", type=str, required=True, help="Experiment to run")  # Now required
     parser.add_argument("--post_compress_epochs", type=int, default=0, help="Number of post-pruning compression epochs")
     parser.add_argument("--imp", action="store_false", help="Apply Iterative Magnitude Pruning")

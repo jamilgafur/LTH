@@ -53,7 +53,6 @@ def safe_update_metrics_json(model_root, exp_name, new_data, base_dir="./runs/me
         with open(tmp_path, "w") as f:
             json.dump(existing, f, indent=4)
         os.replace(tmp_path, json_path)
-
         print(f"[✓] Saved metrics for '{exp_name}' → {json_path}")
         return json_path
     except Exception as e:
@@ -85,60 +84,121 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     data = None
     model_root = f"{model.__class__.__name__}_{train_loader.dataset.__class__.__name__}"
     json_path = os.path.join(metrics_dir, f"{model_root}_metrics.json")
+    
+
+    all_metrics = {}
     if os.path.exists(json_path):
         with open(json_path, "r") as f:
-            all_metrics = json.load(f)
-            if not is_dict_like(all_metrics):
-                print(f"[!] Warning: metrics JSON {json_path} malformed (not dict). Ignoring preloaded metrics.")
+            try:
+                all_metrics = json.load(f)
+            except Exception:
+                print(f"[!] Warning: could not parse {json_path}, starting fresh.")
                 all_metrics = {}
-            exp_group = all_metrics.get(model_root, all_metrics) if is_dict_like(all_metrics) else {}
-            # exp_group may be dict mapping exp_name->data
-            if is_dict_like(exp_group) and exp_name in exp_group and is_dict_like(exp_group[exp_name]):
-                print(f"[✓] Found existing results for '{exp_name}' in {json_path}, skipping training.")
-                data = exp_group[exp_name]
-                plot_accuracy_loss_curve(data.get('accuracies', []), data.get('losses', []), workflow, exp_name, save_dir=plots_dir)
-            else:
-                # sometimes older files stored experiments directly under root; try fallback
-                if is_dict_like(all_metrics) and exp_name in all_metrics and is_dict_like(all_metrics[exp_name]):
-                    data = all_metrics[exp_name]
-                    plot_accuracy_loss_curve(data.get('accuracies', []), data.get('losses', []), workflow, exp_name, save_dir=plots_dir)
 
+        if not is_dict_like(all_metrics):
+            print(f"[!] Warning: metrics JSON {json_path} malformed (not dict). Ignoring preloaded metrics.")
+            all_metrics = {}
+
+        exp_group = all_metrics.get(model_root, all_metrics) if is_dict_like(all_metrics) else {}
+        # exp_group may be dict mapping exp_name->data
+        if is_dict_like(exp_group) and exp_name in exp_group and is_dict_like(exp_group[exp_name]):
+            data = exp_group[exp_name]
+            print(f"[✓] Found existing results for '{exp_name}' in {json_path}.")
+            plot_accuracy_loss_curve(
+                data.get('accuracies', []),
+                data.get('losses', []),
+                workflow,
+                exp_name,
+                save_dir=plots_dir
+            )
+
+            # ✅ Check if diagnostics exist, if not, compute and update JSON
+            if "diagnostics" not in data or not data["diagnostics"]:
+                print(f"[•] Diagnostics missing for '{exp_name}', running now...")
+                diagnostics = run_full_diagnostics(
+                    model, data_shape, {exp_name: data}, plots_dir, exp_name,
+                    collapse_range=collapse_range, device=device
+                )
+                data["diagnostics"] = diagnostics
+                # Update the JSON with new diagnostics
+                safe_update_metrics_json(model_root, f"{exp_name}_{workflow}", data, base_dir=metrics_dir)
+                print(f"[✓] Diagnostics added for '{exp_name}'.")
+            else:
+                print(f"[✓] Diagnostics already exist for '{exp_name}' — skipping.")
+
+    # If experiment data not found, run new training
     if data is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
         print(f"[•] Using device: {device}")
-        data = train_and_evaluate(model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs)
+        data = train_and_evaluate(
+            model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs
+        )
 
-    torch.save({'model': model.state_dict()}, ckpt_path)
+        torch.save({'model': model.state_dict()}, ckpt_path)
 
-    # Benchmark & attach core metrics
-    param_count = count_trainable_params(model)
-    infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device)
-    data.update({
-        "param_count": param_count,
-        "inference_time": infer_time,
-        "flops": flops,
-        "total_size_mb": total_size_mb,
-        "final_accuracy": data.get("accuracies", [0])[-1] if data.get("accuracies") else 0,
-    })
+        # Benchmark & attach core metrics
+        param_count = count_trainable_params(model)
+        infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device)
+        data.update({
+            "param_count": param_count,
+            "inference_time": infer_time,
+            "flops": flops,
+            "total_size_mb": total_size_mb,
+            "final_accuracy": data.get("accuracies", [0])[-1] if data.get("accuracies") else 0,
+        })
 
-    # Run diagnostics
-    diagnostics = run_full_diagnostics(model, data_shape, {exp_name: data}, plots_dir, exp_name,
-                                       collapse_range=collapse_range, device=device)
-    data["diagnostics"] = diagnostics
-    # Save metrics
-    safe_update_metrics_json(model_root, exp_name, data, base_dir=metrics_dir)
+        # Run diagnostics
+        diagnostics = run_full_diagnostics(
+            model, data_shape, {exp_name: data}, plots_dir, exp_name,
+            collapse_range=collapse_range, device=device
+        )
+        data["diagnostics"] = diagnostics
+
+        # Save metrics JSON
+        safe_update_metrics_json(model_root, f"{exp_name}_{workflow}", data, base_dir=metrics_dir)
+
+    # Load all updated metrics (for plotting)
+    with open(json_path, "r") as f:
+        metrics_dict = json.load(f)
+    norm_metrics = normalize_metrics(metrics_dict)
+
+    # Plots (each function is robust to input)
+    for func in [plot_flops_vs_latency, analyze_collapse_effects, plot_delta_accuracy_vs_params,
+                 plot_flops_vs_memory, plot_accuracy_vs_memory, plot_heatmap, plot_stage_collapse_cost_curve]:
+        try:
+            if func.__name__ == "analyze_collapse_effects":
+                try:
+                    func(model, collapse_range, plots_dir, exp_name)
+                except TypeError:
+                    func(norm_metrics, plots_dir, exp_name)
+            else:
+                func(norm_metrics, plots_dir, exp_name)
+        except Exception as e:
+            print(f"[!] {func.__name__} error: {e}")
 
     # Cross-experiment plots
     plot_memory_per_layer_across_experiments(glob.glob(os.path.join(metrics_dir, "*.json")), plots_dir, workflow)
     plot_unified_metrics(metrics_dir, plots_dir, workflow)
 
+    # Plot final summary
+    plot_results(
+        params=[data.get("param_count", 0)],
+        accs=[data.get("final_accuracy", 0)],
+        names=[exp_name],
+        title=f"Results of {exp_name}",
+        filename=os.path.join(plots_dir, f"{exp_name}_results.png"),
+        dataset=train_loader.dataset.__class__.__name__,
+        infer_times=[data.get("inference_time", 0)],
+        mem_usages=[data.get("total_size_mb", 0)],
+        flops=[data.get("flops", 0)],
+        total_sizes=[data.get("total_size_mb", 0)],
+    )
+
     # Final checkpoint
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
 
-    # def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None, flops=None, total_sizes=None):
-    plot_results(data, workflow, exp_name, plots_dir,filename=f"{workflow}_{exp_name}_results.svg",dataset=test_loader.dataset.__class__.__name__, infer_times=[data['inference_time']], mem_usages=[data['diagnostics']['total_memory_usage_mb']], flops=[data['flops']], total_sizes=[data['total_size_mb']])
     print(f"[✓] Experiment '{exp_name}' completed. Checkpoints and metrics saved.")
     return data
 

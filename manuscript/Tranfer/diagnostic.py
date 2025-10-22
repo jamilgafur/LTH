@@ -39,7 +39,7 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
         input_tensor = torch.randn((1, *input_shape), device=device)
     else:
         input_tensor = torch.randn(input_shape, device=device)
-
+    
     diagnostics = {}
 
     # Per-layer params/FLOPs (returns DataFrame or [] on error)
@@ -65,26 +65,6 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
     except Exception as e:
         print(f"[!] Memory decomposition error: {e}")
         diagnostics["memory_decomposition"] = {}
-
-    # Ensure metrics_dict normalized for plotting helpers
-    norm_metrics = normalize_metrics(metrics_dict)
-
-    # Plots (each function is robust to input)
-    for func in [plot_flops_vs_latency, analyze_collapse_effects, plot_delta_accuracy_vs_params,
-                 plot_flops_vs_memory, plot_accuracy_vs_memory, plot_heatmap, plot_stage_collapse_cost_curve]:
-        try:
-            # analyze_collapse_effects has a different signature (model, collapse_range, save_dir, exp_name)
-            if func.__name__ == "analyze_collapse_effects":
-                # call the collapse analysis that uses actual model + collapse_range
-                try:
-                    func(model, collapse_range, save_dir, exp_name)
-                except TypeError:
-                    # fallback if a metrics-based variant exists
-                    func(norm_metrics, save_dir, exp_name)
-            else:
-                func(norm_metrics, save_dir, exp_name)
-        except Exception as e:
-            print(f"[!] {func.__name__} error: {e}")
 
     print(f"[✓] Diagnostics complete for {exp_name}")
     return diagnostics
@@ -147,13 +127,9 @@ def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
         axes[0].set_title("Parameters per Layer")
         axes[0].tick_params(axis='x', rotation=90)
 
-    # FLOPs
-    if unique_layers > 30:
-        pass  # already represented in heatmap transpose
-    else:
-        df.plot(x="layer", y="flops", kind="bar", ax=axes[1], color="salmon", legend=False)
-        axes[1].set_title("FLOPs per Layer")
-        axes[1].tick_params(axis='x', rotation=90)
+    df.plot(x="layer", y="flops", kind="bar", ax=axes[1], color="salmon", legend=False)
+    axes[1].set_title("FLOPs per Layer")
+    axes[1].tick_params(axis='x', rotation=90)
 
     plt.tight_layout()
     svg_path = os.path.join(save_dir, f"{exp_name}_params_flops_layers.svg")
@@ -588,6 +564,9 @@ def plot_unified_metrics(metrics_dir, save_dir, workflow):
         print("[!] No valid metrics data found for unified plots.")
         return
 
+    print("[DEBUG] Data for plotting:")
+    print(df)
+
     ensure_dir(save_dir)
 
     # Accuracy vs Params
@@ -627,6 +606,7 @@ def plot_unified_metrics(metrics_dir, save_dir, workflow):
     plt.close()
 
     print(f"[✓] Saved unified metrics plots for workflow '{workflow}'")
+
 # -------------------------
 # Robust plotting helpers
 # -------------------------
@@ -642,6 +622,9 @@ def plot_flops_vs_latency(metrics_dict, save_dir, exp_name):
         m = metrics[n] if is_dict_like(metrics[n]) else {}
         flops.append(float(m.get("flops", 0)))
         times.append(float(m.get("inference_time", 0)))
+
+    print(f"[DEBUG] FLOPs: {flops}")
+    print(f"[DEBUG] Times: {times}")
 
     if not any(flops) and not any(times):
         return
@@ -685,6 +668,8 @@ def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
             d_params = 0.0
         deltas.append({"name": name, "ΔAcc": d_acc, "ΔParams(%)": d_params})
 
+    print(f"[DEBUG] Delta Accuracy vs Params Data: {deltas}")
+
     if not deltas:
         return
     df = pd.DataFrame(deltas)
@@ -709,6 +694,10 @@ def plot_flops_vs_memory(metrics_dict, save_dir, exp_name):
     names = list(metrics.keys())
     flops = [float(metrics[n].get("flops", 0)) if is_dict_like(metrics[n]) else 0 for n in names]
     mems = [float(metrics[n].get("total_size_mb", 0) or metrics[n].get("memory") or 0) if is_dict_like(metrics[n]) else 0 for n in names]
+    
+    print(f"[DEBUG] FLOPs: {flops}")
+    print(f"[DEBUG] Memory: {mems}")
+
     if not any(flops) and not any(mems):
         return
     ensure_dir(save_dir)
@@ -732,6 +721,10 @@ def plot_accuracy_vs_memory(metrics_dict, save_dir, exp_name):
     names = list(metrics.keys())
     accs = [float(metrics[n].get("final_accuracy", 0)) if is_dict_like(metrics[n]) else 0 for n in names]
     mems = [float(metrics[n].get("total_size_mb", 0) or metrics[n].get("memory") or 0) if is_dict_like(metrics[n]) else 0 for n in names]
+    
+    print(f"[DEBUG] Accuracy: {accs}")
+    print(f"[DEBUG] Memory: {mems}")
+
     if not any(accs) and not any(mems):
         return
     ensure_dir(save_dir)
@@ -762,6 +755,9 @@ def plot_heatmap(metrics_dict, save_dir, exp_name):
             "Inference Time": v.get("inference_time", 0),
             "Memory (MB)": v.get("total_size_mb", 0)
         })
+    
+    print(f"[DEBUG] Heatmap Rows: {rows}")
+
     if not rows:
         return
     df = pd.DataFrame(rows).set_index("Model")
@@ -786,6 +782,9 @@ def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
             continue
         rows.append({"Model": name, "Params": v.get("param_count", 0),
                      "Time": v.get("inference_time", 0), "Accuracy": v.get("final_accuracy", 0)})
+    
+    print(f"[DEBUG] Collapse Curve Rows: {rows}")
+
     if not rows:
         return
     df = pd.DataFrame(rows).sort_values("Model")
