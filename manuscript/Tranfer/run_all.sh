@@ -16,10 +16,10 @@ for model in "${models[@]}"; do
     experiment_names=(
       "Original Model" "Last 2"
       "Stage 4" "Stage 3"
-      # "Stage 2" "Stage 1"
-      #"Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 1-5"
-      #"Stage 4 last 2 conv" "Stage 3 last 2 conv" "Stage 2 last 2 conv" "Stage 1 last 2 conv"
-      #"Stage 4 first 2 conv" "Stage 3 first 2 conv" "Stage 2 first 2 conv" "Stage 1 first 2 conv"
+      "Stage 2" "Stage 1"
+      "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 1-5"
+      "Stage 4 last 2 conv" "Stage 3 last 2 conv" "Stage 2 last 2 conv" "Stage 1 last 2 conv"
+      "Stage 4 first 2 conv" "Stage 3 first 2 conv" "Stage 2 first 2 conv" "Stage 1 first 2 conv"
     )
   fi
 
