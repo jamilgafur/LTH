@@ -1,45 +1,24 @@
 # experiment.py
 
+# Standard libraries
 import os
 import glob
 import json
+from datetime import datetime
+from copy import deepcopy
+from collections import OrderedDict
+
+# Third-party libraries
 import torch
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import torch.nn as nn
-from datetime import datetime
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
-from collections import OrderedDict
 from fvcore.nn import FlopCountAnalysis
-from copy import deepcopy
 
-from pyPrune.models.Vgg16 import VGG16
-from pyPrune.utils import *
-from utils import *
-from filemanager import *
-from collapse import collapse_only
-from trainer import train_and_evaluate
-from plots import *
-
-# experiment.py (patched for robust diagnostics & plotting)
-
-import os
-import glob
-import json
-import torch
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-import torch.nn as nn
-from datetime import datetime
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
-from collections import OrderedDict
-from fvcore.nn import FlopCountAnalysis
-from copy import deepcopy
-
+# Local modules
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.utils import *
 from utils import *
@@ -47,6 +26,7 @@ from filemanager import *
 from collapse import collapse_only
 from trainer import train_and_evaluate
 from plots import plot_accuracy_loss_curve, plot_results
+
 
 # -------------------------
 # Safe JSON Merging
