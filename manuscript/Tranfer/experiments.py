@@ -42,6 +42,11 @@ def safe_update_metrics_json(model_root, exp_name, new_data, base_dir="./runs/me
         else:
             existing = {}
 
+        # Ensure the structure is a dict
+        if not isinstance(existing, dict):
+            print(f"[!] Warning: Existing JSON is not a dict. Converting to empty dict.")
+            existing = {}
+
         # Merge experiment
         existing[exp_name] = new_data
 
@@ -87,10 +92,19 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     if os.path.exists(json_path):
         with open(json_path, "r") as f:
             all_metrics = json.load(f)
-            if exp_name in all_metrics.get(model_root, {}):
-                print(f"[✓] Found existing results for '{exp_name}' in {json_path}, skipping training.")
-                data = all_metrics[model_root][exp_name]
-                plot_accuracy_loss_curve(data['accuracies'], data['losses'], workflow, exp_name, save_dir=plots_dir)
+            if not isinstance(all_metrics, dict):
+                print(f"[!] Warning: Loaded metrics JSON is not a dict. Skipping preloaded metrics.")
+                all_metrics = {}
+            exp_group = all_metrics.get(model_root, {})
+            if isinstance(exp_group, dict) and exp_name in exp_group:
+                exp_data = exp_group[exp_name]
+                if isinstance(exp_data, dict):
+                    print(f"[✓] Found existing results for '{exp_name}' in {json_path}, skipping training.")
+                    data = exp_data
+                    plot_accuracy_loss_curve(data.get('accuracies', []), data.get('losses', []),
+                                             workflow, exp_name, save_dir=plots_dir)
+                else:
+                    print(f"[!] Warning: Experiment '{exp_name}' data is not a dict. Skipping preloaded metrics.")
 
     if data is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -109,7 +123,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
         "inference_time": infer_time,
         "flops": flops,
         "total_size_mb": total_size_mb,
-        "final_accuracy": data["accuracies"][-1] if data.get("accuracies") else 0,
+        "final_accuracy": data.get("accuracies", [0])[-1] if data.get("accuracies") else 0,
     })
 
     # Run diagnostics
@@ -136,66 +150,6 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
 # =====================================================
 # === Diagnostics and Plot Functions ===
 # =====================================================
-def plot_unified_metrics(metrics_dir, save_dir, workflow):
-    """Generates unified comparison plots for all experiments in a workflow."""
-    os.makedirs(save_dir, exist_ok=True)
-    json_paths = glob.glob(os.path.join(metrics_dir, "*metrics.json"))
-    if not json_paths: return
-
-    all_data = []
-    for path in json_paths:
-        with open(path, "r") as f:
-            for exp_group in json.load(f).values():
-                for name, m in exp_group.items():
-                    all_data.append({
-                        "Experiment": name,
-                        "Params": m.get("param_count", 0),
-                        "Accuracy": m.get("final_accuracy", 0),
-                        "FLOPs": m.get("flops", 0),
-                        "Inference Time": m.get("inference_time", 0),
-                        "Memory": m.get("total_size_mb", 0)
-                    })
-    df = pd.DataFrame(all_data)
-    if df.empty: return
-
-    # === Accuracy vs Params ===
-    plt.figure(figsize=(8,6))
-    sns.scatterplot(data=df, x="Params", y="Accuracy", hue="Experiment", style="Experiment", s=100)
-    plt.xscale("log")
-    plt.xlabel("Parameters (log scale)")
-    plt.ylabel("Accuracy (%)")
-    plt.title(f"Accuracy vs Parameters — {workflow}")
-    plt.grid(True, linestyle="--", alpha=0.6)
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{workflow}_accuracy_vs_params.svg"))
-    plt.close()
-
-    # === FLOPs vs Memory ===
-    plt.figure(figsize=(8,6))
-    sns.scatterplot(data=df, x="FLOPs", y="Memory", hue="Experiment", style="Experiment", s=100)
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.xlabel("FLOPs (log)")
-    plt.ylabel("Memory (MB, log)")
-    plt.title(f"FLOPs vs Memory — {workflow}")
-    plt.grid(True, linestyle="--", alpha=0.6)
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{workflow}_flops_vs_memory.svg"))
-    plt.close()
-
-    # === Accuracy vs Memory ===
-    plt.figure(figsize=(8,6))
-    sns.scatterplot(data=df, x="Memory", y="Accuracy", hue="Experiment", style="Experiment", s=100)
-    plt.xlabel("Memory (MB)")
-    plt.ylabel("Accuracy (%)")
-    plt.title(f"Accuracy vs Memory — {workflow}")
-    plt.grid(True, linestyle="--", alpha=0.6)
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{workflow}_accuracy_vs_memory.svg"))
-    plt.close()
-
-    print(f"[✓] Saved unified metrics plots for workflow '{workflow}'")
-
 def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, collapse_range=None, device="cuda"):
     print(f"[•] Running diagnostics for {exp_name}...")
     print(f"[•] Save directory: {save_dir}")
@@ -242,19 +196,8 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
         diagnostics["memory_decomposition"] = {}
 
     # Plots
-    try:
-        plot_flops_vs_latency(metrics_dict, save_dir, exp_name)
-    except Exception as e:
-        print(f"[!] FLOPs vs latency plot error: {e}")
-
-    try:
-        analyze_collapse_effects(model, collapse_range, save_dir, exp_name)
-    except Exception as e:
-        print(f"[!] Collapse effects error: {e}")
-
-    # Additional plots
-    for func in [plot_delta_accuracy_vs_params, plot_flops_vs_memory, plot_accuracy_vs_memory,
-                 plot_heatmap, plot_stage_collapse_cost_curve]:
+    for func in [plot_flops_vs_latency, analyze_collapse_effects, plot_delta_accuracy_vs_params,
+                 plot_flops_vs_memory, plot_accuracy_vs_memory, plot_heatmap, plot_stage_collapse_cost_curve]:
         try:
             func(metrics_dict, save_dir, exp_name)
         except Exception as e:
@@ -262,295 +205,6 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
 
     print(f"[✓] Diagnostics complete for {exp_name}")
     return diagnostics
-
-
-def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
-    model.eval()
-
-    # Debug the input tensor shape
-    debug_tensor_shape(input_tensor, "Input Tensor")
-
-    # Ensure input tensor is 4D (batch_size, channels, height, width)
-    if len(input_tensor.shape) == 3:
-        print("Input tensor is missing batch dimension, adding batch size of 1.")
-        input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension
-
-    debug_tensor_shape(input_tensor, "Input Tensor (After Batch Dimension Check)")
-
-    with torch.no_grad():
-        flops = FlopCountAnalysis(model, input_tensor)
-        per_module_flops = flops.by_module()
-
-    layer_data = []
-    for name, module in model.named_modules():
-        if len(list(module.children())) == 0:  # Skip non-leaf nodes (i.e., not directly trained modules)
-            params = sum(p.numel() for p in module.parameters())
-            flops_for_layer = per_module_flops.get(name, 0)
-            layer_data.append({"layer": name, "params": params, "flops": flops_for_layer})
-            print(f"Layer: {name}, Params: {params}, FLOPs: {flops_for_layer}")
-
-    # Create DataFrame and save it
-    df = pd.DataFrame(layer_data)
-    df.to_csv(os.path.join(save_dir, f"{exp_name}_layer_params_flops.csv"), index=False)
-
-    # Plot params and FLOPs per layer
-    fig, axes = plt.subplots(2, 1, figsize=(12, 8))
-    df.plot(x="layer", y="params", kind="bar", ax=axes[0], color="skyblue", legend=False)
-    axes[0].set_title("Parameters per Layer")
-    axes[0].tick_params(axis='x', rotation=90)
-    df.plot(x="layer", y="flops", kind="bar", ax=axes[1], color="salmon", legend=False)
-    axes[1].set_title("FLOPs per Layer")
-    axes[1].tick_params(axis='x', rotation=90)
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_params_flops_layers.svg"))
-    plt.close(fig)
-
-    return df
-
-def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
-    activations = {}
-
-    def hook(name):
-        def fn(_, __, output):
-            if isinstance(output, torch.Tensor):
-                activations[name] = output.numel()
-        return fn
-
-    # Debug the input tensor shape
-    debug_tensor_shape(input_tensor, "Input Tensor (For Activation Analysis)")
-
-    # Ensure input tensor is 4D
-    if len(input_tensor.shape) == 3:
-        print("Input tensor is missing batch dimension, adding batch size of 1.")
-        input_tensor = input_tensor.unsqueeze(0)
-
-    debug_tensor_shape(input_tensor, "Input Tensor (After Batch Dimension Check)")
-
-    # Register hooks to track activations
-    hooks = [m.register_forward_hook(hook(n)) for n, m in model.named_modules() if isinstance(m, (nn.Conv2d, nn.Linear))]
-    
-    model.eval()
-    with torch.no_grad():
-        _ = model(input_tensor)
-    
-    # Remove hooks after analysis
-    for h in hooks:
-        h.remove()
-
-    # Create DataFrame of activations and save it
-    df = pd.DataFrame(list(activations.items()), columns=["layer", "activation_elements"])
-    df.to_csv(os.path.join(save_dir, f"{exp_name}_activation_sizes.csv"), index=False)
-
-    # Plot activation sizes
-    plt.figure(figsize=(10, 6))
-    sns.barplot(data=df, x="layer", y="activation_elements", color="lightgreen")
-    plt.xticks(rotation=90)
-    plt.title("Activation Size per Layer (# elements)")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_activation_heatmap.svg"))
-    plt.close()
-
-    return df
-
-def memory_decomposition(model, input_tensor, save_dir, exp_name):
-    # Debug input tensor shape
-    debug_tensor_shape(input_tensor, "Input Tensor (For Memory Decomposition)")
-
-    # Ensure input tensor is 4D
-    if len(input_tensor.shape) == 3:
-        print("Input tensor is missing batch dimension, adding batch size of 1.")
-        input_tensor = input_tensor.unsqueeze(0)
-
-    debug_tensor_shape(input_tensor, "Input Tensor (After Batch Dimension Check)")
-
-    param_mem = sum(p.numel() for p in model.parameters()) * 4 / 1e6  # MB (assuming FP32)
-    if torch.cuda.is_available():
-        torch.cuda.reset_peak_memory_stats()
-
-    with torch.no_grad():
-        _ = model(input_tensor)
-
-    peak_mem = torch.cuda.max_memory_allocated() / 1e6 if torch.cuda.is_available() else None
-
-    activation_mem = max(peak_mem - param_mem, 0) if peak_mem is not None else None
-    parts = {"Params_MB": param_mem, "Activations+Temps_MB": activation_mem, "Peak_MB": peak_mem}
-    
-    # Debug memory decomposition details
-    print(f"Memory Decomposition: Params: {param_mem}MB, Activations: {activation_mem}MB, Peak: {peak_mem}MB")
-
-    # Plot memory usage
-    plt.figure(figsize=(6, 6))
-    plt.bar(parts.keys(), parts.values(), color=["steelblue", "salmon", "gold"])
-    plt.title(f"Memory Breakdown — {exp_name}")
-    plt.ylabel("Memory (MB)")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_memory_breakdown.svg"))
-    plt.close()
-
-    return parts
-
-def plot_flops_vs_latency(metrics_dict, save_dir, exp_name):
-    # Extract FLOPs and latency data for the plot
-    flops = [v["flops"] for v in metrics_dict.values()]
-    times = [v["inference_time"] for v in metrics_dict.values()]
-    names = list(metrics_dict.keys())
-
-    # Debug the collected metrics
-    print(f"FLOPs: {flops}")
-    print(f"Latency Times: {times}")
-
-    plt.figure(figsize=(8, 6))
-    plt.scatter(flops, times, color="orange")
-    for i, txt in enumerate(names):
-        plt.annotate(txt, (flops[i], times[i]))
-    plt.xlabel("FLOPs")
-    plt.ylabel("Inference Time (s)")
-    plt.title(f"FLOPs vs Inference Time — {exp_name}")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_flops_vs_latency.svg"))
-    plt.close()
-
-def debug_tensor_shape(tensor, description="Tensor"):
-    """ Helper function to debug tensor shapes. """
-    if tensor is not None:
-        print(f"{description} Shape: {tensor.shape}")
-    else:
-        print(f"{description} is None!")
-
-def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
-    base_name = list(metrics_dict.keys())[0]
-    base_acc = metrics_dict[base_name]["final_accuracy"]
-    base_params = metrics_dict[base_name]["param_count"]
-
-    deltas = []
-    for name, data in metrics_dict.items():
-        d_acc = data["final_accuracy"] - base_acc
-        d_params = (data["param_count"] - base_params) / base_params * 100
-        deltas.append({"name": name, "ΔAcc": d_acc, "ΔParams(%)": d_params})
-
-    df = pd.DataFrame(deltas)
-    plt.figure(figsize=(8,6))
-    plt.scatter(df["ΔParams(%)"], df["ΔAcc"], c="blue")
-    for _, r in df.iterrows():
-        plt.annotate(r["name"], (r["ΔParams(%)"], r["ΔAcc"]))
-    plt.axhline(0, color="gray", linestyle="--")
-    plt.axvline(0, color="gray", linestyle="--")
-    plt.xlabel("Δ Parameters (%)")
-    plt.ylabel("Δ Accuracy")
-    plt.title(f"Compression Efficiency — {exp_name}")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_delta_acc_vs_params.svg"))
-    plt.close()
-
-def plot_flops_vs_memory(metrics_dict, save_dir, exp_name):
-    flops = [v["flops"] for v in metrics_dict.values()]
-    mems = [v.get("total_size_mb", 0) for v in metrics_dict.values()]
-    names = list(metrics_dict.keys())
-    plt.figure(figsize=(8,6))
-    plt.scatter(flops, mems, color="purple")
-    for i, n in enumerate(names):
-        plt.annotate(n, (flops[i], mems[i]))
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.xlabel("FLOPs (log)")
-    plt.ylabel("Total Memory (MB, log)")
-    plt.title(f"FLOPs vs Memory — {exp_name}")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_flops_vs_memory.svg"))
-    plt.close()
-
-def plot_accuracy_vs_memory(metrics_dict, save_dir, exp_name):
-    accs = [v["final_accuracy"] for v in metrics_dict.values()]
-    mems = [v["total_size_mb"] for v in metrics_dict.values()]
-    names = list(metrics_dict.keys())
-    plt.figure(figsize=(8,6))
-    plt.scatter(mems, accs, c="green")
-    for i, n in enumerate(names):
-        plt.annotate(n, (mems[i], accs[i]))
-    plt.xlabel("Model Size (MB)")
-    plt.ylabel("Accuracy (%)")
-    plt.title(f"Accuracy vs Memory — {exp_name}")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_acc_vs_memory.svg"))
-    plt.close()
-
-def plot_heatmap(metrics_dict, save_dir, exp_name):
-    df = pd.DataFrame([
-        {
-            "Model": name,
-            "Accuracy": v["final_accuracy"],
-            "Params": v["param_count"],
-            "FLOPs": v["flops"],
-            "Inference Time": v["inference_time"],
-            "Memory (MB)": v["total_size_mb"]
-        }
-        for name, v in metrics_dict.items()
-    ])
-    df_norm = df.set_index("Model").apply(lambda x: (x - x.min()) / (x.max() - x.min()))
-    plt.figure(figsize=(10,6))
-    sns.heatmap(df_norm, annot=True, cmap="coolwarm")
-    plt.title(f"Normalized Metrics Heatmap — {exp_name}")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_metrics_heatmap.svg"))
-    plt.close()
-
-def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
-    df = pd.DataFrame([
-        {"Model": name, "Params": v["param_count"], "Time": v["inference_time"], "Accuracy": v["final_accuracy"]}
-        for name, v in metrics_dict.items()
-    ])
-    df = df.sort_values("Model")
-    plt.figure(figsize=(9,6))
-    plt.plot(df["Model"], df["Params"], label="Parameters", marker="o")
-    plt.plot(df["Model"], df["Time"], label="Inference Time", marker="s")
-    plt.plot(df["Model"], df["Accuracy"], label="Accuracy", marker="^")
-    plt.xticks(rotation=45)
-    plt.legend()
-    plt.title(f"Stage Collapse Cost Curve — {exp_name}")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.svg"))
-    plt.close()
-
-def predict_collapse_parameters(in_channels, out_channels, kernel_size, num_layers_collapsed):
-    """Theoretical expected parameters after collapsing n layers."""
-    original_params = num_layers_collapsed * (in_channels * out_channels * kernel_size * kernel_size + out_channels)
-    collapsed_params = in_channels * out_channels * kernel_size * kernel_size + out_channels
-    delta = collapsed_params - original_params
-    return {
-        "original": original_params,
-        "collapsed": collapsed_params,
-        "delta": delta
-    }
-
-def analyze_collapse_effects(model, collapse_range, save_dir, exp_name):
-    if not collapse_range:
-        return
-    start_stage, end_stage = collapse_range
-    stage_channels = [64, 128, 256, 512, 512, 4096]
-    in_ch = stage_channels[start_stage - 1]
-    out_ch = stage_channels[end_stage - 1]
-    num_layers = (end_stage - start_stage + 1) * 3  # approximate
-
-    pred = predict_collapse_parameters(in_ch, out_ch, 3, num_layers)
-    observed_params = count_trainable_params(model)
-    df = pd.DataFrame([{
-        "stage_range": f"{start_stage}-{end_stage}",
-        "predicted_params": pred["collapsed"],
-        "original_est": pred["original"],
-        "delta_predicted": pred["delta"],
-        "observed_total": observed_params
-    }])
-    df.to_csv(os.path.join(save_dir, f"{exp_name}_collapse_prediction.csv"), index=False)
-
-    plt.figure(figsize=(8, 5))
-    plt.bar(["Original","Predicted Collapsed","Observed Total"],
-            [pred["original"], pred["collapsed"], observed_params],
-            color=["gray","orange","blue"])
-    plt.ylabel("Parameter Count")
-    plt.title(f"Collapse {start_stage}-{end_stage} Parameter Comparison")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_prediction.svg"))
-    plt.close()
 
 # =====================================================
 # === Cross-Experiment Comparison (Extended)
@@ -563,30 +217,33 @@ def plot_memory_per_layer_across_experiments(metrics_dir, save_dir, title="Per-L
     for path in json_paths:
         with open(path, "r") as f:
             experiments = json.load(f)
+            if not isinstance(experiments, dict):
+                print(f"[!] Warning: JSON at {path} is not a dict. Skipping.")
+                continue
             for exp_group in experiments.values():
+                if not isinstance(exp_group, dict):
+                    continue
                 for exp_name, exp_data in exp_group.items():
-                    # Ensure exp_data is a dict
-                    if isinstance(exp_data, list):
-                        print(f"[!] Warning: Experiment '{exp_name}' data is a list. Converting to empty diagnostics.")
-                        diag = {}
-                    elif isinstance(exp_data, dict):
-                        diag = exp_data.get("diagnostics", {})
-                    else:
-                        diag = {}
-                    
+                    if not isinstance(exp_data, dict):
+                        print(f"[!] Warning: Experiment '{exp_name}' data is not a dict. Skipping diagnostics.")
+                        continue
+                    diag = exp_data.get("diagnostics", {})
+
                     # Params
                     for entry in diag.get("per_layer_params_flops", []):
-                        all_params.append({"experiment": exp_name, "layer": entry["layer"], "params": entry.get("params", 0)})
+                        all_params.append({"experiment": exp_name, "layer": entry.get("layer", ""),
+                                           "params": entry.get("params", 0)})
 
                     # Activations
                     for entry in diag.get("activation_sizes", []):
-                        all_activations.append({"experiment": exp_name, "layer": entry["layer"], "activation_elements": entry.get("activation_elements", 0)})
+                        all_activations.append({"experiment": exp_name, "layer": entry.get("layer", ""),
+                                                "activation_elements": entry.get("activation_elements", 0)})
 
                     # Memory
                     if "memory_decomposition" in diag:
                         parts = diag["memory_decomposition"]
-                        for cat in ["Params_MB","Activations+Temps_MB","Peak_MB"]:
-                            all_memory.append({"experiment": exp_name, "category": cat, "value": parts.get(cat,0)})
+                        for cat in ["Params_MB", "Activations+Temps_MB", "Peak_MB"]:
+                            all_memory.append({"experiment": exp_name, "category": cat, "value": parts.get(cat, 0)})
 
     if not (all_params or all_activations or all_memory):
         print("[!] No diagnostics found in JSON files.")
@@ -628,63 +285,73 @@ def plot_memory_per_layer_across_experiments(metrics_dir, save_dir, title="Per-L
     print(f"[✓] Saved extended per-layer diagnostics plot: {save_path}")
 
 # =====================================================
-# === Experiment Entry Points (JF & Kevin) ===
+# === Unified Metrics Plotting (Safe) ===
 # =====================================================
-def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain,
-                      model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",
-                      post_compress_epochs=False):
+def plot_unified_metrics(metrics_dir, save_dir, workflow):
+    os.makedirs(save_dir, exist_ok=True)
+    json_paths = glob.glob(os.path.join(metrics_dir, "*metrics.json"))
+    if not json_paths:
+        return
 
-    model_kwargs = model_kwargs or {}
-    print("\n=== Running JF experiment ===")
-    exp_name, collapse_range = list(experiments.items())[0]
-    base_model = model_class(**model_kwargs)
-    base_model.load_state_dict(torch.load(model_path_097, map_location='cpu')['model'])
-    print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
+    all_data = []
+    for path in json_paths:
+        with open(path, "r") as f:
+            content = json.load(f)
+            if not isinstance(content, dict):
+                continue
+            for exp_group in content.values():
+                if not isinstance(exp_group, dict):
+                    continue
+                for name, m in exp_group.items():
+                    if not isinstance(m, dict):
+                        print(f"[!] Warning: Experiment '{name}' data is not a dict. Skipping.")
+                        continue
+                    all_data.append({
+                        "Experiment": name,
+                        "Params": m.get("param_count", 0),
+                        "Accuracy": m.get("final_accuracy", 0),
+                        "FLOPs": m.get("flops", 0),
+                        "Inference Time": m.get("inference_time", 0),
+                        "Memory": m.get("total_size_mb", 0)
+                    })
+    df = pd.DataFrame(all_data)
+    if df.empty:
+        return
 
-    if collapse_range:
-        base_model = collapse_only(
-            model_weights_1=model_path_097,
-            compression_set=[collapse_range],
-            model_class=model_class,
-            model_kwargs=model_kwargs,
-            input_shape=model_kwargs['one_batch'].shape,
-            device=device
-        )
+    # === Accuracy vs Params ===
+    plt.figure(figsize=(8,6))
+    sns.scatterplot(data=df, x="Params", y="Accuracy", hue="Experiment", style="Experiment", s=100)
+    plt.xscale("log")
+    plt.xlabel("Parameters (log scale)")
+    plt.ylabel("Accuracy (%)")
+    plt.title(f"Accuracy vs Parameters — {workflow}")
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"{workflow}_accuracy_vs_params.svg"))
+    plt.close()
 
-    data = run_experiment(base_model, model_kwargs, train_loader, test_loader, device, epochs,
-                          workflow="JF", exp_name=exp_name, data_shape=data_shape,
-                          save_path=save_path, post_compress_epochs=post_compress_epochs)
-    return base_model
+    # === FLOPs vs Memory ===
+    plt.figure(figsize=(8,6))
+    sns.scatterplot(data=df, x="FLOPs", y="Memory", hue="Experiment", style="Experiment", s=100)
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.xlabel("FLOPs (log)")
+    plt.ylabel("Memory (MB, log)")
+    plt.title(f"FLOPs vs Memory — {workflow}")
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"{workflow}_flops_vs_memory.svg"))
+    plt.close()
 
-def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs,
-                         model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",
-                         post_compress_epochs=False):
+    # === Accuracy vs Memory ===
+    plt.figure(figsize=(8,6))
+    sns.scatterplot(data=df, x="Memory", y="Accuracy", hue="Experiment", style="Experiment", s=100)
+    plt.xlabel("Memory (MB)")
+    plt.ylabel("Accuracy (%)")
+    plt.title(f"Accuracy vs Memory — {workflow}")
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"{workflow}_accuracy_vs_memory.svg"))
+    plt.close()
 
-    model_kwargs = model_kwargs or {}
-    print("\n=== Running Kevin experiment ===")
-    exp_name, collapse_range = list(experiments.items())[0]
-    base_model = model_class(**model_kwargs)
-    base_model.load_state_dict(torch.load(model_path_000, map_location='cpu')['model'])
-    print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
-
-    if collapse_range:
-        formatted_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        tmp_path = os.path.join(save_path, f"temp_model_kevin_{formatted_time}.pth")
-        os.makedirs(save_path, exist_ok=True)
-        torch.save({'model': base_model.state_dict()}, tmp_path)
-        base_model = collapse_only(
-            model_weights_1=tmp_path,
-            compression_set=[collapse_range],
-            model_class=model_class,
-            model_kwargs=model_kwargs,
-            input_shape=model_kwargs['one_batch'].shape,
-            device=device
-        )
-
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
-
-    data = run_experiment(base_model, model_kwargs, train_loader, test_loader, device, epochs,
-                          workflow="Kevin", exp_name=exp_name, data_shape=data_shape,
-                          save_path=save_path, post_compress_epochs=post_compress_epochs)
-    return base_model
+    print(f"[✓] Saved unified metrics plots for workflow '{workflow}'")
