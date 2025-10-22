@@ -82,6 +82,7 @@ def plot_results(params, accs, names, title, filename, dataset=None, infer_times
 
     # Tight layout and save the plot
     plt.tight_layout()
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     plt.savefig(filename)
     plt.show()
 

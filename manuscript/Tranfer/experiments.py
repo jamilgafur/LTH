@@ -130,10 +130,6 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     return data
 
 
-# =====================================================
-# === Diagnostic Visualizations (Research Section) ===
-# =====================================================
-
 def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
     base_name = list(metrics_dict.keys())[0]
     base_acc = metrics_dict[base_name]["final_accuracy"]
@@ -256,6 +252,181 @@ def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
     plt.title(f"Stage Collapse Cost Curve — {exp_name}")
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.png"))
+    plt.close()
+
+
+# (1) Per-layer parameters & FLOPs
+def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
+    model.eval()
+    with torch.no_grad():
+        flops = FlopCountAnalysis(model, input_tensor)
+        per_module_flops = flops.by_module()
+    
+    layer_data = []
+    for name, module in model.named_modules():
+        if len(list(module.children())) == 0:  # leaf layer
+            params = sum(p.numel() for p in module.parameters())
+            layer_data.append({
+                "layer": name,
+                "params": params,
+                "flops": per_module_flops.get(name, 0)
+            })
+    
+    df = pd.DataFrame(layer_data)
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_layer_params_flops.csv"), index=False)
+
+    fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+    df.plot(x="layer", y="params", kind="bar", ax=axes[0], color="skyblue", legend=False)
+    axes[0].set_title("Parameters per Layer")
+    axes[0].tick_params(axis='x', rotation=90)
+    df.plot(x="layer", y="flops", kind="bar", ax=axes[1], color="salmon", legend=False)
+    axes[1].set_title("FLOPs per Layer")
+    axes[1].tick_params(axis='x', rotation=90)
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_params_flops_layers.png"))
+    plt.close(fig)
+    return df
+
+
+# (2) Activation footprint heatmap
+def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
+    activations = {}
+    def hook(name):
+        def fn(_, __, output):
+            if isinstance(output, torch.Tensor):
+                activations[name] = np.prod(output.shape)
+        return fn
+
+    hooks = [m.register_forward_hook(hook(n)) for n, m in model.named_modules() if isinstance(m, (nn.Conv2d, nn.Linear))]
+    model.eval()
+    with torch.no_grad():
+        _ = model(input_tensor)
+    for h in hooks: h.remove()
+
+    df = pd.DataFrame(list(activations.items()), columns=["layer", "activation_size"])
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_activation_sizes.csv"), index=False)
+
+    plt.figure(figsize=(10, 6))
+    sns.barplot(data=df, x="layer", y="activation_size", color="lightgreen")
+    plt.xticks(rotation=90)
+    plt.title("Activation Size per Layer (elements)")
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_activation_heatmap.png"))
+    plt.close()
+    return df
+
+
+# (3) Predicted vs Observed Params/FLOPs scatter
+def plot_predicted_vs_observed(pred_df, observed_df, save_dir, exp_name):
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+    ax[0].scatter(pred_df["pred_params"], observed_df["params"], color="blue")
+    ax[0].plot([pred_df["pred_params"].min(), pred_df["pred_params"].max()],
+               [pred_df["pred_params"].min(), pred_df["pred_params"].max()], 'k--')
+    ax[0].set_title("Predicted vs Observed Params")
+    ax[0].set_xlabel("Predicted")
+    ax[0].set_ylabel("Observed")
+
+    ax[1].scatter(pred_df["pred_flops"], observed_df["flops"], color="red")
+    ax[1].plot([pred_df["pred_flops"].min(), pred_df["pred_flops"].max()],
+               [pred_df["pred_flops"].min(), pred_df["pred_flops"].max()], 'k--')
+    ax[1].set_title("Predicted vs Observed FLOPs")
+    ax[1].set_xlabel("Predicted")
+    ax[1].set_ylabel("Observed")
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_pred_vs_obs.png"))
+    plt.close(fig)
+
+
+# (4) FLOPs vs Inference Time scatter
+def plot_flops_vs_latency(metrics_dict, save_dir, exp_name):
+    flops = [v["flops"] for v in metrics_dict.values()]
+    times = [v["inference_time"] for v in metrics_dict.values()]
+    names = list(metrics_dict.keys())
+    plt.figure(figsize=(8,6))
+    plt.scatter(flops, times, color="orange")
+    for i, txt in enumerate(names):
+        plt.annotate(txt, (flops[i], times[i]))
+    plt.xlabel("FLOPs")
+    plt.ylabel("Inference Time (s)")
+    plt.title(f"FLOPs vs Inference Time — {exp_name}")
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_flops_vs_latency.png"))
+    plt.close()
+
+
+# (5) Memory decomposition
+def memory_decomposition(model, input_tensor, save_dir, exp_name):
+    param_mem = sum(p.numel() for p in model.parameters()) * 4 / 1e6
+    torch.cuda.reset_peak_memory_stats()
+    with torch.no_grad():
+        _ = model(input_tensor)
+    torch.cuda.synchronize()
+    peak_mem = torch.cuda.max_memory_allocated() / 1e6
+    activation_mem = max(peak_mem - param_mem, 0)
+    parts = {"Params": param_mem, "Activations+Temps": activation_mem}
+    plt.figure(figsize=(6,6))
+    plt.bar(parts.keys(), parts.values(), color=["steelblue", "salmon"])
+    plt.title(f"Memory Breakdown — {exp_name}")
+    plt.ylabel("Memory (MB)")
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_memory_breakdown.png"))
+    plt.close()
+    return parts
+
+
+# (9) Summary table combining all metrics
+def generate_layer_summary_table(model, input_tensor, save_dir, exp_name):
+    with torch.no_grad():
+        flops = FlopCountAnalysis(model, input_tensor)
+        per_module_flops = flops.by_module()
+
+    rows = []
+    for name, module in model.named_modules():
+        if len(list(module.children())) == 0:
+            params = sum(p.numel() for p in module.parameters())
+            shape = None
+            if hasattr(module, 'weight'):
+                shape = list(module.weight.shape)
+            rows.append({
+                "layer": name,
+                "param_count": params,
+                "flops": per_module_flops.get(name, 0),
+                "weight_shape": shape
+            })
+    df = pd.DataFrame(rows)
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_layer_summary.csv"), index=False)
+    return df
+
+def analyze_collapse_effects(model, collapse_range, save_dir, exp_name):
+    if not collapse_range:
+        return
+    start_stage, end_stage = collapse_range
+    # Approximation: assume each stage doubles filters
+    stage_channels = [64, 128, 256, 512, 512, 4096]
+    in_ch = stage_channels[start_stage - 1]
+    out_ch = stage_channels[end_stage - 1]
+    num_layers = (end_stage - start_stage + 1) * 3  # assume 3 convs per stage
+
+    pred = predict_collapse_parameters(in_ch, out_ch, 3, num_layers)
+    observed_params = count_trainable_params(model)
+    df = pd.DataFrame([{
+        "stage_range": f"{start_stage}-{end_stage}",
+        "predicted_params": pred["collapsed"],
+        "original_est": pred["original"],
+        "delta_predicted": pred["delta"],
+        "observed_total": observed_params
+    }])
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_collapse_prediction.csv"), index=False)
+
+    plt.figure(figsize=(8, 5))
+    plt.bar(["Original", "Predicted Collapsed", "Observed Total"],
+            [pred["original"], pred["collapsed"], observed_params],
+            color=["gray", "orange", "blue"])
+    plt.ylabel("Parameter Count")
+    plt.title(f"Collapse {start_stage}-{end_stage} Parameter Comparison")
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_prediction.png"))
     plt.close()
 
 
