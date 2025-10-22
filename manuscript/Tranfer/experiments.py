@@ -668,12 +668,13 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
         torch.save({'model': base_model.state_dict()}, tmp_path)
         base_model = collapse_only(
             model_weights_1=tmp_path,
-            compression_set=[collapse_range],K)
+            compression_set=[collapse_range],
             model_class=model_class,
             model_kwargs=model_kwargs,
             input_shape=model_kwargs['one_batch'].shape,
             device=device
         )
+
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
 
