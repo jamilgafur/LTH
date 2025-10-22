@@ -157,59 +157,106 @@ import torch
 import time
 from copy import deepcopy
 from fvcore.nn import FlopCountAnalysis
+from torch.utils.data import DataLoader
 
 def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5):
     """
     Returns: (avg_time_seconds, flops_total, total_feature_map_size_mb)
 
-    total_feature_map_size_mb = cumulative size of all intermediate feature maps (excluding input and output),
-    measured during one forward pass (batch 0).
+    Notes:
+    - Uses a local DataLoader with num_workers=0 to ensure forward runs in the main process
+      (avoids worker deaths hiding OOMs).
+    - Hooks only accumulate the number of bytes of feature maps (do NOT keep tensors).
     """
+    # clone model to avoid modifying original
     tempmodel = deepcopy(model)
     tempmodel.eval()
     tempmodel.to(device)
 
     times = []
     flops = 0
-    feature_map_sizes = []
+    total_feature_map_size_mb = 0.0
 
-    feature_maps = []
+    # Build a single-process DataLoader from the provided loader's dataset & batch_size
+    # Fallback to small defaults if attributes are missing.
+    dataset = getattr(loader, "dataset", None)
+    batch_size = getattr(loader, "batch_size", 1)
+    if dataset is None:
+        # If loader doesn't expose dataset (rare), fall back to iterating the loader directly
+        data_iterable = loader
+        def make_iterable():
+            return iter(data_iterable)
+        use_loader_obj = False
+    else:
+        safe_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False,
+                                 num_workers=0, pin_memory=False)
+        def make_iterable():
+            return iter(safe_loader)
+        use_loader_obj = True
 
-    # ---- Register hooks to capture feature maps ----
-    def hook_fn(module, input, output):
-        if isinstance(output, torch.Tensor):
-            feature_maps.append(output)
-        elif isinstance(output, (list, tuple)):
-            feature_maps.extend(o for o in output if isinstance(o, torch.Tensor))
+    # Helper to register lightweight hooks that accumulate bytes instead of storing tensors.
+    def register_size_hooks(mod):
+        acc = {"bytes": 0}
+        hooks = []
 
-    hooks = []
-    for name, module in tempmodel.named_modules():
-        if isinstance(module, (torch.nn.Conv2d, torch.nn.ReLU, torch.nn.BatchNorm2d, torch.nn.Linear)):
-            hooks.append(module.register_forward_hook(hook_fn))
+        def make_hook(name):
+            def hook(module, input, output):
+                # safe: only inspect size/numel, do NOT store the tensor
+                try:
+                    if isinstance(output, torch.Tensor):
+                        acc["bytes"] += output.numel() * output.element_size()
+                    elif isinstance(output, (list, tuple)):
+                        for o in output:
+                            if isinstance(o, torch.Tensor):
+                                acc["bytes"] += o.numel() * o.element_size()
+                except Exception:
+                    # be resilient: if anything goes wrong in hook, skip adding
+                    pass
+            return hook
 
-    with torch.no_grad():
-        it = iter(loader)
-        for _ in range(warmup_batches):
-            try:
-                xb, _ = next(it)
-            except StopIteration:
-                break
-            xb = xb.to(device)
+        for _, m in mod.named_modules():
+            # Limit to typical feature-producing modules (keeps number of hooks manageable)
+            if isinstance(m, (torch.nn.Conv2d, torch.nn.AdaptiveAvgPool2d,
+                              torch.nn.MaxPool2d, torch.nn.BatchNorm2d,
+                              torch.nn.ReLU, torch.nn.Linear)):
+                hooks.append(m.register_forward_hook(make_hook(None)))
+        return hooks, acc
+
+    # Warmup passes (use the safe single-process iterable)
+    it = make_iterable()
+    for _ in range(warmup_batches):
+        try:
+            xb, _ = next(it)
+        except StopIteration:
+            break
+        xb = xb.to(device)
+        with torch.no_grad():
             _ = tempmodel(xb)
 
-        if torch.cuda.is_available():
+    # Reset peak stats if using CUDA
+    if torch.cuda.is_available():
+        try:
             torch.cuda.reset_peak_memory_stats(device)
+        except Exception:
+            pass
 
-        it = iter(loader)
-        for i in range(num_batches):
-            try:
-                xb, _ = next(it)
-            except StopIteration:
-                break
-            xb = xb.to(device)
+    # Measurement passes
+    it = make_iterable()
+    for i in range(num_batches):
+        try:
+            xb, _ = next(it)
+        except StopIteration:
+            break
+        xb = xb.to(device)
 
-            feature_maps.clear()
+        # For the *first* measured batch, attach size hooks so we compute total feature-map bytes
+        size_hooks = []
+        size_acc = None
+        if i == 0:
+            size_hooks, size_acc = register_size_hooks(tempmodel)
 
+        # Time the forward (CUDA events if available)
+        with torch.no_grad():
             if torch.cuda.is_available():
                 starter = torch.cuda.Event(enable_timing=True)
                 ender = torch.cuda.Event(enable_timing=True)
@@ -224,34 +271,38 @@ def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5):
                 _ = tempmodel(xb)
                 times.append(time.time() - start)
 
-            # Only collect feature map size for the first batch
-            if i == 0:
-                total_bytes = 0
-                for fmap in feature_maps:
-                    # Total number of elements in the tensor * size of each element (assume float32 = 4 bytes)
-                    total_bytes += fmap.numel() * 4
-                feature_map_sizes.append(total_bytes / (1024 ** 2))  # Convert to MB
-
-                # FLOPs
+        # After forward, capture total bytes for first batch (if measured)
+        if i == 0 and size_acc is not None:
+            total_bytes = size_acc.get("bytes", 0)
+            total_feature_map_size_mb = total_bytes / (1024 ** 2)
+            # Compute FLOPs for this batch (best-effort with fallbacks)
+            try:
+                flops = FlopCountAnalysis(tempmodel, xb).total()
+            except Exception:
                 try:
-                    flops = FlopCountAnalysis(tempmodel, xb).total()
+                    flops = FlopCountAnalysis(tempmodel.cpu(), xb.cpu()).total()
                 except Exception:
-                    try:
-                        flops = FlopCountAnalysis(tempmodel.cpu(), xb.cpu()).total()
-                    except Exception:
-                        flops = 0
+                    flops = 0
 
-        if torch.cuda.is_available():
+        # Remove size hooks for safety after first batch
+        if size_hooks:
+            for h in size_hooks:
+                h.remove()
+
+    # peak memory (if desired)
+    if torch.cuda.is_available():
+        try:
             peak_mem = torch.cuda.max_memory_allocated(device) / (1024 ** 2)
+        except Exception:
+            peak_mem = None
 
-    # Remove hooks
-    for h in hooks:
-        h.remove()
-
-    del tempmodel
+    # cleanup
+    try:
+        del tempmodel
+    except Exception:
+        pass
 
     avg_time = sum(times) / len(times) if times else 0.0
-    total_feature_map_size_mb = feature_map_sizes[0] if feature_map_sizes else 0.0
 
     return avg_time, flops, total_feature_map_size_mb
 
