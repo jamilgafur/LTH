@@ -259,6 +259,8 @@ def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
 def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
     model.eval()
     with torch.no_grad():
+        if isinstance(input_tensor, tuple):
+            input_tensor = input_tensor[0]
         flops = FlopCountAnalysis(model, input_tensor)
         per_module_flops = flops.by_module()
     
