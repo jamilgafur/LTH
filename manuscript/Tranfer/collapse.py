@@ -312,9 +312,28 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
     _update_container(model, start_container_name, updated_container)
     model.to(device)
 
-    print(f"[INFO] Collapsed {start_container_name} layers {start_layer_name} → {end_layer_name}")
-    print(f"[INFO] New trainable params: {count_trainable_params(model)}")
+        # --- DEBUG PARAM CHECK ---
+    pre_params = count_trainable_params(model)
+    print(f"[DEBUG] Parameters BEFORE collapse: {pre_params:,}")
+
+    # expected_params was already computed above for Conv2d; define fallback for Linear
+    if layer_type == nn.Linear:
+        expected_params = (in_features * out_features) + out_features
+
+    # replace layers
+    updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
+    _update_container(model, start_container_name, updated_container)
+    model.to(device)
+
+    post_params = count_trainable_params(model)
+    print(f"[DEBUG] Parameters AFTER collapse: {post_params:,}")
+    print(f"[DEBUG] Expected parameters for collapsed block: {expected_params:,}")
+    print(f"[DEBUG] ΔParams = {pre_params - post_params:+,}")
+
+    print(f"[INFO] ✅ Collapsed {start_container_name} layers {start_layer_name} → {end_layer_name}")
+    print(f"[INFO] Model now has {post_params:,} trainable parameters (was {pre_params:,})")
     print(f"[DEBUG] Model structure after collapse:\n{layer_stats(model)}")
+
     return model
 
 def _simulate_input_hook(model, target_layer_path, input_shape, device='cpu'):
