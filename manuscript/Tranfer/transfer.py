@@ -40,7 +40,7 @@ for model, datasets in CHECKPOINT_BASES.items():
         print(f"{model} - {dataset}: {path}")
 CHECKPOINT_FILES = {
     "VGG16": {
-        "Cifar10": ("checkpoint_Finetuned_0.360000.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar10": ("checkpoint_Finetuned_0.200000.pth", "checkpoint_Original_0.000000.pth"),
         "Cifar100": ("checkpoint_Finetuned_0.964816.pth", "checkpoint_Original_0.000000.pth"),
         "TinyImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
         "ImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
@@ -249,9 +249,9 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
             model = run_jf_experiment({name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain,
                                       model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path,
                                       post_compress_epochs=post_compress_epochs)
-            if args.imp:
-                optimizer, scheduler = create_optimizer_scheduler(model)
-                imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
+            # if args.imp:
+            #     optimizer, scheduler = create_optimizer_scheduler(model)
+            #     imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
                           pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
                           save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
 
