@@ -219,7 +219,7 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
         )
     assert start_idx <= end_idx, "Start index must be <= end index"
     # #print(f"[DEBUG] Collapsing in section '{start_container_name}' from index {start_idx} to {end_idx} "
-          f"({named_layers[start_idx][0]} → {named_layers[end_idx][0]})")
+        #   f"({named_layers[start_idx][0]} → {named_layers[end_idx][0]})"
 
     # collect only Conv2d/Linear for collapsing (preserve original selection logic)
     full_block = named_layers[start_idx:end_idx + 1]
