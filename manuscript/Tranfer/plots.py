@@ -4,8 +4,9 @@ import matplotlib.pyplot as plt
 import matplotlib
 import logging
 from utils import ensure_dir
-from analysis import *
 from experiments import normalize_metrics, is_dict_like
+import pandas as pd
+import seaborn as sns
 matplotlib.set_loglevel('ERROR')
 
 
