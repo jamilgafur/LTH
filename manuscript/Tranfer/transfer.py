@@ -6,7 +6,7 @@ from pyPrune.models.RegNetX import RegNetX_400MF
 from pyPrune.pruneMethods.IterativePruner import IterativePruner
 from pyPrune.strategies import MagnitudePruningStrategy
 from experiments import *
-from utils import *
+from utils import  *
 from pyPrune.utils import *
 from torch.backends import cudnn
 import random

@@ -3,9 +3,9 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib
 import logging
-from utils import *
+from utils import ensure_dir
 from analysis import *
-from experiments import *
+from experiments import normalize_metrics, is_dict_like
 matplotlib.set_loglevel('ERROR')
 
 

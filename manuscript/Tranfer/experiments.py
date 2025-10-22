@@ -44,7 +44,7 @@ from pyPrune.models.Vgg16 import VGG16
 from pyPrune.utils import *
 from utils import *
 from filemanager import *
-from analysis import *
+from analysis import run_full_diagnostics, plot_memory_per_layer_across_experiments, plot_unified_metrics
 from collapse import collapse_only
 from trainer import train_and_evaluate
 from plots import plot_accuracy_loss_curve, plot_results
