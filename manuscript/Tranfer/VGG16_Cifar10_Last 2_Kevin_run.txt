@@ -3,7 +3,7 @@ VGG16 - Cifar100: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_
 RegNetX_400MF - Cifar10: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
 RegNetX_400MF - Cifar100: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
 Namespace(model='VGG16', dataset='Cifar10', epochs=1, pretrain=0, experiment='Last 2', post_compress_epochs=0, imp=True, JF=False, Kevin=True)
-has GPU: True
+has GPU: False
 Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
 Loading CIFAR-10 data...
 CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
@@ -145,7 +145,7 @@ classifier.fc_3.weight: 0/40960 zeros (0.00%)
 classifier.fc_3.bias: 0/10 zeros (0.00%)
 ============================================================
 [INFO] Initialized Model: None
-[INFO] Loading model with weights from 'VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain0_postcompress0/temp_model_kevin_2025-10-22_08-49-12.pth'...
+[INFO] Loading model with weights from 'VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain0_postcompress0/temp_model_kevin_2025-10-22_09-02-27.pth'...
 [INFO] Full compression set: [('features.conv_12', 'features.conv_13')]
 [DEBUG] Compressing: ('features.conv_12', 'features.conv_13')
 
@@ -172,7 +172,7 @@ Collapsing layers from 'features.conv_12' to 'features.conv_13'...
 [DEBUG] Building collapsed block: Conv2d, in=512, out=512, stride=(1, 1)
 [DEBUG] Collapsed block layers: ['Conv2d', 'ReLU', 'Conv2d']
 [DEBUG] Replacing layers 37 to 40 with collapsed block...
-[DEBUG] Inserting new block as 'collapsed_conv_12_to_conv_13_864c49cb'
+[DEBUG] Inserting new block as 'collapsed_conv_12_to_conv_13_3decd9e6'
 [DEBUG] Removing layer 'relu_12' at index 38
 [DEBUG] Removing layer 'bn_12' at index 39
 [DEBUG] Removing layer 'conv_13' at index 40
@@ -228,9 +228,9 @@ features.conv_11.weight: 0/2359296 zeros (0.00%)
 features.conv_11.bias: 0/512 zeros (0.00%)
 features.bn_11.weight: 0/512 zeros (0.00%)
 features.bn_11.bias: 0/512 zeros (0.00%)
-features.collapsed_conv_12_to_conv_13_864c49cb.layer_0.weight: 0/196608 zeros (0.00%)
-features.collapsed_conv_12_to_conv_13_864c49cb.layer_2.weight: 0/196608 zeros (0.00%)
-features.collapsed_conv_12_to_conv_13_864c49cb.layer_2.bias: 0/512 zeros (0.00%)
+features.collapsed_conv_12_to_conv_13_3decd9e6.layer_0.weight: 0/196608 zeros (0.00%)
+features.collapsed_conv_12_to_conv_13_3decd9e6.layer_2.weight: 0/196608 zeros (0.00%)
+features.collapsed_conv_12_to_conv_13_3decd9e6.layer_2.bias: 0/512 zeros (0.00%)
 features.bn_13.weight: 0/512 zeros (0.00%)
 features.bn_13.bias: 0/512 zeros (0.00%)
 classifier.fc_1.weight: 0/2097152 zeros (0.00%)
@@ -458,9 +458,9 @@ features.conv_11.weight: 0/2359296 zeros (0.00%)
 features.conv_11.bias: 0/512 zeros (0.00%)
 features.bn_11.weight: 0/512 zeros (0.00%)
 features.bn_11.bias: 0/512 zeros (0.00%)
-features.collapsed_conv_12_to_conv_13_864c49cb.layer_0.weight: 0/196608 zeros (0.00%)
-features.collapsed_conv_12_to_conv_13_864c49cb.layer_2.weight: 0/196608 zeros (0.00%)
-features.collapsed_conv_12_to_conv_13_864c49cb.layer_2.bias: 0/512 zeros (0.00%)
+features.collapsed_conv_12_to_conv_13_3decd9e6.layer_0.weight: 0/196608 zeros (0.00%)
+features.collapsed_conv_12_to_conv_13_3decd9e6.layer_2.weight: 0/196608 zeros (0.00%)
+features.collapsed_conv_12_to_conv_13_3decd9e6.layer_2.bias: 0/512 zeros (0.00%)
 features.bn_13.weight: 0/512 zeros (0.00%)
 features.bn_13.bias: 0/512 zeros (0.00%)
 classifier.fc_1.weight: 0/2097152 zeros (0.00%)
@@ -470,46 +470,10 @@ classifier.fc_2.bias: 0/4096 zeros (0.00%)
 classifier.fc_3.weight: 0/40960 zeros (0.00%)
 classifier.fc_3.bias: 0/10 zeros (0.00%)
 ============================================================
-[•] Using device: cuda
+[•] Using device: cpu
 [•] Training model: Last 2
-[Start training] device:cuda
+[Start training] device:cpu
 [INFO] Training started...
-model on device: cuda:0
+model on device: cpu
 [INFO] Starting Epoch 1 of training...
-  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:05<08:08,  5.04s/it]  3%|▎         | 3/98 [00:05<02:13,  1.40s/it]  4%|▍         | 4/98 [00:05<01:29,  1.05it/s]  5%|▌         | 5/98 [00:05<01:05,  1.42it/s]  6%|▌         | 6/98 [00:05<00:49,  1.85it/s]  7%|▋         | 7/98 [00:05<00:39,  2.31it/s]  8%|▊         | 8/98 [00:06<00:32,  2.77it/s]  9%|▉         | 9/98 [00:06<00:27,  3.21it/s] 10%|█         | 10/98 [00:07<00:37,  2.32it/s] 11%|█         | 11/98 [00:07<00:34,  2.54it/s] 12%|█▏        | 12/98 [00:07<00:31,  2.76it/s] 13%|█▎        | 13/98 [00:07<00:29,  2.91it/s] 14%|█▍        | 14/98 [00:08<00:42,  1.96it/s] 15%|█▌        | 15/98 [00:09<00:39,  2.09it/s] 16%|█▋        | 16/98 [00:09<00:34,  2.36it/s] 17%|█▋        | 17/98 [00:09<00:29,  2.76it/s] 18%|█▊        | 18/98 [00:10<00:43,  1.82it/s] 19%|█▉        | 19/98 [00:11<00:46,  1.68it/s] 20%|██        | 20/98 [00:11<00:41,  1.87it/s] 21%|██▏       | 21/98 [00:12<00:33,  2.29it/s] 22%|██▏       | 22/98 [00:12<00:34,  2.20it/s] 23%|██▎       | 23/98 [00:13<00:51,  1.46it/s] 24%|██▍       | 24/98 [00:14<00:41,  1.78it/s] 26%|██▌       | 25/98 [00:14<00:33,  2.20it/s] 27%|██▋       | 26/98 [00:14<00:29,  2.45it/s] 28%|██▊       | 27/98 [00:15<00:48,  1.47it/s] 29%|██▊       | 28/98 [00:16<00:39,  1.78it/s] 30%|██▉       | 29/98 [00:16<00:31,  2.21it/s] 31%|███       | 30/98 [00:16<00:25,  2.64it/s] 32%|███▏      | 31/98 [00:17<00:42,  1.59it/s] 33%|███▎      | 32/98 [00:18<00:38,  1.71it/s] 34%|███▎      | 33/98 [00:18<00:30,  2.13it/s] 35%|███▍      | 34/98 [00:18<00:24,  2.57it/s] 36%|███▌      | 35/98 [00:19<00:41,  1.51it/s] 37%|███▋      | 36/98 [00:20<00:38,  1.63it/s] 38%|███▊      | 37/98 [00:20<00:29,  2.04it/s] 39%|███▉      | 38/98 [00:20<00:24,  2.48it/s] 40%|███▉      | 39/98 [00:22<00:41,  1.42it/s] 41%|████      | 40/98 [00:22<00:33,  1.72it/s] 42%|████▏     | 41/98 [00:22<00:26,  2.14it/s] 43%|████▎     | 42/98 [00:22<00:21,  2.59it/s] 44%|████▍     | 43/98 [00:24<00:38,  1.45it/s] 45%|████▍     | 44/98 [00:24<00:29,  1.84it/s] 46%|████▌     | 45/98 [00:24<00:23,  2.27it/s] 47%|████▋     | 46/98 [00:24<00:19,  2.71it/s] 48%|████▊     | 47/98 [00:26<00:36,  1.41it/s] 49%|████▉     | 48/98 [00:26<00:27,  1.80it/s] 50%|█████     | 49/98 [00:26<00:22,  2.23it/s] 51%|█████     | 50/98 [00:27<00:17,  2.67it/s] 52%|█████▏    | 51/98 [00:28<00:29,  1.60it/s] 53%|█████▎    | 52/98 [00:28<00:22,  2.02it/s] 54%|█████▍    | 53/98 [00:28<00:18,  2.46it/s] 55%|█████▌    | 54/98 [00:28<00:15,  2.90it/s] 56%|█████▌    | 55/98 [00:30<00:25,  1.66it/s] 57%|█████▋    | 56/98 [00:30<00:20,  2.08it/s] 58%|█████▊    | 57/98 [00:30<00:16,  2.52it/s] 59%|█████▉    | 58/98 [00:30<00:14,  2.72it/s] 60%|██████    | 59/98 [00:31<00:21,  1.79it/s] 61%|██████    | 60/98 [00:32<00:20,  1.85it/s] 62%|██████▏   | 61/98 [00:32<00:16,  2.28it/s] 63%|██████▎   | 62/98 [00:32<00:13,  2.73it/s] 64%|██████▍   | 63/98 [00:33<00:19,  1.80it/s] 65%|██████▌   | 64/98 [00:34<00:18,  1.85it/s] 66%|██████▋   | 65/98 [00:34<00:14,  2.28it/s] 67%|██████▋   | 66/98 [00:34<00:11,  2.73it/s] 68%|██████▊   | 67/98 [00:35<00:16,  1.90it/s] 69%|██████▉   | 68/98 [00:36<00:16,  1.82it/s] 70%|███████   | 69/98 [00:36<00:13,  2.23it/s] 71%|███████▏  | 70/98 [00:36<00:11,  2.50it/s] 72%|███████▏  | 71/98 [00:37<00:14,  1.82it/s] 73%|███████▎  | 72/98 [00:37<00:12,  2.11it/s] 74%|███████▍  | 73/98 [00:37<00:09,  2.54it/s] 76%|███████▌  | 74/98 [00:38<00:08,  2.99it/s] 77%|███████▋  | 75/98 [00:39<00:12,  1.77it/s] 78%|███████▊  | 76/98 [00:39<00:10,  2.06it/s] 79%|███████▊  | 77/98 [00:39<00:08,  2.50it/s] 80%|███████▉  | 78/98 [00:39<00:06,  2.94it/s] 81%|████████  | 79/98 [00:41<00:12,  1.52it/s] 82%|████████▏ | 80/98 [00:41<00:09,  1.92it/s] 83%|████████▎ | 81/98 [00:41<00:07,  2.36it/s] 84%|████████▎ | 82/98 [00:41<00:05,  2.80it/s] 85%|████████▍ | 83/98 [00:43<00:10,  1.37it/s] 86%|████████▌ | 84/98 [00:43<00:07,  1.75it/s] 87%|████████▋ | 85/98 [00:43<00:05,  2.18it/s] 88%|████████▊ | 86/98 [00:44<00:04,  2.62it/s] 89%|████████▉ | 87/98 [00:45<00:07,  1.46it/s] 90%|████████▉ | 88/98 [00:45<00:05,  1.75it/s] 91%|█████████ | 89/98 [00:46<00:04,  2.17it/s] 92%|█████████▏| 90/98 [00:46<00:03,  2.62it/s] 93%|█████████▎| 91/98 [00:47<00:04,  1.45it/s] 94%|█████████▍| 92/98 [00:47<00:03,  1.75it/s] 95%|█████████▍| 93/98 [00:48<00:02,  2.18it/s] 96%|█████████▌| 94/98 [00:48<00:01,  2.62it/s] 97%|█████████▋| 95/98 [00:49<00:01,  2.06it/s] 99%|█████████▉| 97/98 [00:49<00:00,  3.33it/s]100%|██████████| 98/98 [00:49<00:00,  1.98it/s]
-Epoch 1: Loss=0.9429, Acc=70.15%
-[INFO] New best accuracy: 70.15% (previous best was 0.00%)
-[INFO] Training complete after 1 epochs.
-[INFO] Evaluating model on the test set...
-Final Test Accuracy: 75.42%
-[✓] Saved plot: VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain0_postcompress0/plots/Kevin_Last_2_metrics.svg
-[DEBUG] Running benchmark on 'Last 2'
-2025-10-22 08:50:31,573 - WARNING - Unsupported operator aten::max_pool2d encountered 5 time(s)
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/seaborn/matrix.py:202: RuntimeWarning: All-NaN slice encountered
-  vmin = np.nanmin(calc_data)
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/seaborn/matrix.py:207: RuntimeWarning: All-NaN slice encountered
-  vmax = np.nanmax(calc_data)
-[DEBUG] Running full diagnostics for 'Last 2'
-[•] Running diagnostics for Last 2...
-[DEBUG] Running per-layer params/FLOPs analysis...
-[!] Error in per-layer params/FLOPs analysis: Expected 3D (unbatched) or 4D (batched) input to conv2d, but got input of size: [32, 32]
-[DEBUG] Running activation size analysis...
-[!] Error in activation sizes analysis: Expected 3D (unbatched) or 4D (batched) input to conv2d, but got input of size: [32, 32]
-[DEBUG] Running memory decomposition analysis...
-[!] Error in memory decomposition: Expected 3D (unbatched) or 4D (batched) input to conv2d, but got input of size: [32, 32]
-[DEBUG] Plotting FLOPs vs Latency...
-[DEBUG] Analyzing collapse effects...
-[DEBUG] Running plot_delta_accuracy_vs_params...
-[DEBUG] Running plot_flops_vs_memory...
-[DEBUG] Running plot_stage_parameter_density...
-[!] Error in plot_stage_parameter_density: 'dict' object has no attribute 'named_modules'
-[DEBUG] Running plot_accuracy_vs_memory...
-[DEBUG] Running plot_heatmap...
-[DEBUG] Running plot_stage_collapse_cost_curve...
-[✓] Diagnostics complete for Last 2.
-[✓] Safely merged metrics for 'Last 2' → VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain0_postcompress0/metrics/Kevin/VGG16_postcomp_0_metrics.json
-[✓] Saved plot: Kevin/VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain0_postcompress0/plots/Kevin/VGG16_postcomp_0_plots.svg
-[✓] Saved comparison plot to VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain0_postcompress0/plots/Kevin/VGG16_postcomp_0_plots.svg
-[✓] Experiment 'Last 2' completed. Checkpoints and metrics saved.
-[DEBUG] Generating extended cross-experiment per-layer diagnostics plot...
-[!] No diagnostics found in JSON files.
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:20<33:14, 20.57s/it]  2%|▏         | 2/98 [00:36<29:00, 18.13s/it]  3%|▎         | 3/98 [00:54<27:56, 17.65s/it]  4%|▍         | 4/98 [01:10<27:10, 17.35s/it]  5%|▌         | 5/98 [01:29<27:17, 17.60s/it]  6%|▌         | 6/98 [01:46<26:46, 17.46s/it]  7%|▋         | 7/98 [02:02<25:58, 17.12s/it]  8%|▊         | 8/98 [02:18<25:17, 16.86s/it]  9%|▉         | 9/98 [02:35<25:03, 16.89s/it] 10%|█         | 10/98 [02:52<24:43, 16.86s/it] 11%|█         | 11/98 [03:10<24:40, 17.02s/it] 12%|█▏        | 12/98 [03:27<24:31, 17.11s/it] 13%|█▎        | 13/98 [03:44<24:08, 17.04s/it] 14%|█▍        | 14/98 [04:01<23:53, 17.07s/it] 15%|█▌        | 15/98 [04:19<23:56, 17.31s/it] 16%|█▋        | 16/98 [04:36<23:27, 17.16s/it] 17%|█▋        | 17/98 [04:54<23:29, 17.40s/it] 18%|█▊        | 18/98 [05:12<23:47, 17.85s/it] 19%|█▉        | 19/98 [05:30<23:13, 17.64s/it]
