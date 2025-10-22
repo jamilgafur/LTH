@@ -56,5 +56,6 @@ def plot_results(params, accs, names, title, filename, dataset=None, infer_times
         axs[3].set_ylabel("Size (MB)")
 
     plt.tight_layout()
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     plt.savefig(filename)
     plt.close()
