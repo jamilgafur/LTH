@@ -14,6 +14,64 @@ from torchinfo import summary
 import numpy as np
 from pyPrune.utils import load_cifar10, load_cifar100, load_tiny_imagenet, load_imagenet
 from copy import deepcopy
+
+
+
+# -------------------------
+# Helper utilities
+# -------------------------
+def ensure_dir(d):
+    os.makedirs(d, exist_ok=True)
+
+def is_dict_like(x):
+    return isinstance(x, dict)
+
+def normalize_metrics(metrics):
+    """
+    Normalize incoming metrics into a dict[str -> dict] mapping for plotting functions.
+    Accepts:
+      - dict mapping experiment_name -> metrics (ideal)
+      - list of dicts (will pick 'name'/'experiment' if present, else index-based)
+      - single dict that might contain nested dicts
+    Returns dict.
+    """
+    if is_dict_like(metrics):
+        # If it looks like {exp_name: { ... }}, keep only dict values
+        # If metrics itself is single experiment (contains final_accuracy etc), wrap it
+        contains_nested = any(isinstance(v, dict) for v in metrics.values())
+        if contains_nested:
+            result = {k: v for k, v in metrics.items() if isinstance(v, dict)}
+            # If result empty but metrics seems like one experiment record, wrap it
+            if not result and metrics and all(k in metrics for k in ("accuracies", "losses", "param_count")):
+                return {"metric_record": metrics}
+            return result
+        # fallback: treat as single experiment
+        if all(k in metrics for k in ("accuracies", "losses", "param_count")):
+            return {"metric_record": metrics}
+        return {}
+    elif isinstance(metrics, list):
+        out = {}
+        for i, entry in enumerate(metrics):
+            if not is_dict_like(entry):
+                continue
+            name = entry.get("name") or entry.get("experiment") or f"exp_{i}"
+            out[name] = entry
+        return out
+    else:
+        return {}
+
+def safe_get(d, key, default=None):
+    if not is_dict_like(d):
+        return default
+    return d.get(key, default)
+
+def timestamped_filename(base):
+    t = datetime.now().strftime("%Y%m%d_%H%M%S")
+    name, ext = os.path.splitext(base)
+    return f"{name}_{t}{ext}" if ext else f"{base}_{t}"
+
+
+
 def load_dataset(dataset_name, model_name="VGG16"):
     if model_name == "VGG16":
         if dataset_name == "TinyImageNet":
