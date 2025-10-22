@@ -21,6 +21,7 @@ from fvcore.nn import FlopCountAnalysis
 # Local modules
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.utils import *
+from plots import *
 from utils import *
 from filemanager import *
 from collapse import collapse_only
