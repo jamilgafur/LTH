@@ -3,6 +3,9 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib
 import logging
+from utils import *
+from analysis import *
+from experiments import *
 matplotlib.set_loglevel('ERROR')
 
 
