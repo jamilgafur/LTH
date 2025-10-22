@@ -557,7 +557,7 @@ def analyze_collapse_effects(model, collapse_range, save_dir, exp_name):
 # =====================================================
 def plot_memory_per_layer_across_experiments(metrics_dir, save_dir, title="Per-Layer Diagnostics Across Experiments"):
     print("[DEBUG] Generating extended cross-experiment per-layer diagnostics plot...")
-    json_paths = glob.glob(os.path.join(metrics_dir, "*metrics.json"))  # <-- Fixed glob
+    json_paths = glob.glob(os.path.join(metrics_dir, "*metrics.json"))
     all_params, all_activations, all_memory = [], [], []
 
     for path in json_paths:
@@ -565,8 +565,15 @@ def plot_memory_per_layer_across_experiments(metrics_dir, save_dir, title="Per-L
             experiments = json.load(f)
             for exp_group in experiments.values():
                 for exp_name, exp_data in exp_group.items():
-                    diag = exp_data.get("diagnostics", {})
-
+                    # Ensure exp_data is a dict
+                    if isinstance(exp_data, list):
+                        print(f"[!] Warning: Experiment '{exp_name}' data is a list. Converting to empty diagnostics.")
+                        diag = {}
+                    elif isinstance(exp_data, dict):
+                        diag = exp_data.get("diagnostics", {})
+                    else:
+                        diag = {}
+                    
                     # Params
                     for entry in diag.get("per_layer_params_flops", []):
                         all_params.append({"experiment": exp_name, "layer": entry["layer"], "params": entry.get("params", 0)})
