@@ -42,6 +42,7 @@ from pyPrune.models.Vgg16 import VGG16
 from pyPrune.utils import *
 from utils import *
 from filemanager import *
+from plots import plot_flops_vs_latency, plot_delta_accuracy_vs_params, plot_flops_vs_memory, plot_accuracy_vs_memory, plot_heatmap, plot_stage_collapse_cost_curve 
 from analysis import *
 from collapse import collapse_only
 from trainer import train_and_evaluate
