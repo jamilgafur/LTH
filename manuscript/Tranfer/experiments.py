@@ -120,6 +120,8 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
             )
             print(f"Saved comparison plot to {save_path_plot}")
 
+    run_full_diagnostics(model, data_shape, {exp_name: data}, plots_dir, exp_name, collapse_range=collapse_range)
+
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
 
