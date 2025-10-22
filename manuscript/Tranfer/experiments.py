@@ -174,6 +174,13 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     print(f"[✓] Experiment '{exp_name}' completed. Checkpoints and metrics saved.")
     plot_memory_per_layer_across_experiments("./runs/metrics", "./runs/plots",
                                              title=f"Per-Layer Diagnostics Across {workflow} Experiments")
+
+    plot_results(
+        [data["param_count"]], [data["final_accuracy"]], [exp_name],
+        f"{workflow} - {exp_name} Summary", f"{exp_name}_summary.svg",
+        dataset=workflow, infer_times=[data["inference_time"]],
+        mem_usages=[data["total_size_mb"]], flops=[data["flops"]]
+    )
     return data
 
 # =====================================================
@@ -296,7 +303,7 @@ def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
     axes[1].set_title("FLOPs per Layer")
     axes[1].tick_params(axis='x', rotation=90)
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_params_flops_layers.png"))
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_params_flops_layers.svg"))
     plt.close(fig)
 
     return df
@@ -341,7 +348,7 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
     plt.xticks(rotation=90)
     plt.title("Activation Size per Layer (# elements)")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_activation_heatmap.png"))
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_activation_heatmap.svg"))
     plt.close()
 
     return df
@@ -378,7 +385,7 @@ def memory_decomposition(model, input_tensor, save_dir, exp_name):
     plt.title(f"Memory Breakdown — {exp_name}")
     plt.ylabel("Memory (MB)")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_memory_breakdown.png"))
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_memory_breakdown.svg"))
     plt.close()
 
     return parts
@@ -401,7 +408,7 @@ def plot_flops_vs_latency(metrics_dict, save_dir, exp_name):
     plt.ylabel("Inference Time (s)")
     plt.title(f"FLOPs vs Inference Time — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_flops_vs_latency.png"))
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_flops_vs_latency.svg"))
     plt.close()
 
 def debug_tensor_shape(tensor, description="Tensor"):
@@ -433,7 +440,7 @@ def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
     plt.ylabel("Δ Accuracy")
     plt.title(f"Compression Efficiency — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_delta_acc_vs_params.png"))
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_delta_acc_vs_params.svg"))
     plt.close()
 
 def plot_flops_vs_memory(metrics_dict, save_dir, exp_name):
@@ -450,7 +457,7 @@ def plot_flops_vs_memory(metrics_dict, save_dir, exp_name):
     plt.ylabel("Total Memory (MB, log)")
     plt.title(f"FLOPs vs Memory — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_flops_vs_memory.png"))
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_flops_vs_memory.svg"))
     plt.close()
 
 def plot_accuracy_vs_memory(metrics_dict, save_dir, exp_name):
@@ -465,7 +472,7 @@ def plot_accuracy_vs_memory(metrics_dict, save_dir, exp_name):
     plt.ylabel("Accuracy (%)")
     plt.title(f"Accuracy vs Memory — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_acc_vs_memory.png"))
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_acc_vs_memory.svg"))
     plt.close()
 
 def plot_heatmap(metrics_dict, save_dir, exp_name):
@@ -485,7 +492,7 @@ def plot_heatmap(metrics_dict, save_dir, exp_name):
     sns.heatmap(df_norm, annot=True, cmap="coolwarm")
     plt.title(f"Normalized Metrics Heatmap — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_metrics_heatmap.png"))
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_metrics_heatmap.svg"))
     plt.close()
 
 def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
@@ -502,7 +509,7 @@ def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
     plt.legend()
     plt.title(f"Stage Collapse Cost Curve — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.png"))
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.svg"))
     plt.close()
 
 def predict_collapse_parameters(in_channels, out_channels, kernel_size, num_layers_collapsed):
@@ -543,7 +550,7 @@ def analyze_collapse_effects(model, collapse_range, save_dir, exp_name):
     plt.ylabel("Parameter Count")
     plt.title(f"Collapse {start_stage}-{end_stage} Parameter Comparison")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_prediction.png"))
+    plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_prediction.svg"))
     plt.close()
 
 # =====================================================
@@ -551,7 +558,7 @@ def analyze_collapse_effects(model, collapse_range, save_dir, exp_name):
 # =====================================================
 def plot_memory_per_layer_across_experiments(metrics_dir, save_dir, title="Per-Layer Diagnostics Across Experiments"):
     print("[DEBUG] Generating extended cross-experiment per-layer diagnostics plot...")
-    json_paths = glob.glob(os.path.join(metrics_dir, "*/*metrics.json"))
+    json_paths = glob.glob(os.path.join(metrics_dir, "*metrics.json"))  # <-- Fixed glob
     all_params, all_activations, all_memory = [], [], []
 
     for path in json_paths:
@@ -561,77 +568,55 @@ def plot_memory_per_layer_across_experiments(metrics_dir, save_dir, title="Per-L
                 for exp_name, exp_data in exp_group.items():
                     diag = exp_data.get("diagnostics", {})
 
-                    if "per_layer_params_flops" in diag:
-                        for entry in diag["per_layer_params_flops"]:
-                            all_params.append({
-                                "experiment": exp_name,
-                                "layer": entry["layer"],
-                                "params": entry.get("params", 0),
-                            })
+                    # Params
+                    for entry in diag.get("per_layer_params_flops", []):
+                        all_params.append({"experiment": exp_name, "layer": entry["layer"], "params": entry.get("params", 0)})
 
-                    if "activation_sizes" in diag:
-                        for entry in diag["activation_sizes"]:
-                            all_activations.append({
-                                "experiment": exp_name,
-                                "layer": entry["layer"],
-                                "activation_elements": entry.get("activation_elements", 0),
-                            })
+                    # Activations
+                    for entry in diag.get("activation_sizes", []):
+                        all_activations.append({"experiment": exp_name, "layer": entry["layer"], "activation_elements": entry.get("activation_elements", 0)})
 
+                    # Memory
                     if "memory_decomposition" in diag:
                         parts = diag["memory_decomposition"]
-                        all_memory.append({
-                            "experiment": exp_name,
-                            "category": "Params_MB",
-                            "value": parts.get("Params_MB", 0)
-                        })
-                        all_memory.append({
-                            "experiment": exp_name,
-                            "category": "Activations+Temps_MB",
-                            "value": parts.get("Activations+Temps_MB", 0)
-                        })
-                        all_memory.append({
-                            "experiment": exp_name,
-                            "category": "Peak_MB",
-                            "value": parts.get("Peak_MB", 0)
-                        })
+                        for cat in ["Params_MB","Activations+Temps_MB","Peak_MB"]:
+                            all_memory.append({"experiment": exp_name, "category": cat, "value": parts.get(cat,0)})
 
     if not (all_params or all_activations or all_memory):
         print("[!] No diagnostics found in JSON files.")
         return
 
     os.makedirs(save_dir, exist_ok=True)
-    fig, axs = plt.subplots(3, 1, figsize=(16, 18), sharex=False)
+    fig, axs = plt.subplots(3, 1, figsize=(16, 18))
     fig.suptitle(title, fontsize=16)
 
-    # Params per layer
+    # Parameters per layer
     if all_params:
         df_p = pd.DataFrame(all_params)
         sns.barplot(data=df_p, x="layer", y="params", hue="experiment", ax=axs[0])
-        axs[0].set_title("Parameters per Layer")
-        axs[0].set_ylabel("Params")
-        axs[0].tick_params(axis="x", rotation=90)
-        axs[0].grid(True)
+        axs[0].set_yscale("log")
+        axs[0].set_xticklabels(axs[0].get_xticklabels(), rotation=45, ha="right")
+        axs[0].set_ylabel("Params (log scale)")
+        axs[0].grid(True, axis="y", linestyle="--", alpha=0.7)
 
     # Activation sizes per layer
     if all_activations:
         df_a = pd.DataFrame(all_activations)
         sns.barplot(data=df_a, x="layer", y="activation_elements", hue="experiment", ax=axs[1])
-        axs[1].set_title("Activation Size per Layer (# elements)")
-        axs[1].set_ylabel("Activation Elements")
-        axs[1].tick_params(axis="x", rotation=90)
-        axs[1].grid(True)
+        axs[1].set_yscale("log")
+        axs[1].set_xticklabels(axs[1].get_xticklabels(), rotation=45, ha="right")
+        axs[1].set_ylabel("Activation Elements (log scale)")
+        axs[1].grid(True, axis="y", linestyle="--", alpha=0.7)
 
-    # Memory decomposition overall
+    # Memory decomposition
     if all_memory:
         df_m = pd.DataFrame(all_memory)
         sns.barplot(data=df_m, x="category", y="value", hue="experiment", ax=axs[2])
-        axs[2].set_title("Memory Decomposition by Category")
         axs[2].set_ylabel("Memory (MB)")
-        axs[2].tick_params(axis="x", rotation=45)
-        axs[2].grid(True)
+        axs[2].grid(True, axis="y", linestyle="--", alpha=0.7)
 
     plt.tight_layout(rect=[0,0,0.85,0.95])
-    save_path = os.path.join(save_dir, "cross_experiment_per_layer_diagnostics.png")
+    save_path = os.path.join(save_dir, "cross_experiment_per_layer_diagnostics.svg")
     plt.savefig(save_path)
     plt.close()
     print(f"[✓] Saved extended per-layer diagnostics plot: {save_path}")
