@@ -1,3 +1,4 @@
+# Transfer.py
 import os
 import torch
 from pyPrune.models.Vgg16 import VGG16
