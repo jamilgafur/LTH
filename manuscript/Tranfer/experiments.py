@@ -126,7 +126,6 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     diagnostics = run_full_diagnostics(model, data_shape, {exp_name: data}, plots_dir, exp_name,
                                        collapse_range=collapse_range, device=device)
     data["diagnostics"] = diagnostics
-    plot_results(data, workflow, exp_name, plots_dir,filename=f"{workflow}_{exp_name}_results.svg")
     # Save metrics
     safe_update_metrics_json(model_root, exp_name, data, base_dir=metrics_dir)
 
@@ -138,6 +137,8 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
 
+    # def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None, flops=None, total_sizes=None):
+    plot_results(data, workflow, exp_name, plots_dir,filename=f"{workflow}_{exp_name}_results.svg",dataset=test_loader.dataset.__class__.__name__, infer_times=[data['inference_time']], mem_usages=[data['diagnostics']['total_memory_usage_mb']], flops=[data['flops']], total_sizes=[data['total_size_mb']])
     print(f"[✓] Experiment '{exp_name}' completed. Checkpoints and metrics saved.")
     return data
 
