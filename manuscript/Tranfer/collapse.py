@@ -387,13 +387,15 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
         bottleneck_ratio = 0.75
         bottleneck_channels = max(1, int(in_features * bottleneck_ratio))
 
-        conv1 = nn.Conv2d(in_channels=in_features, out_channels=bottleneck_channels,
-                          kernel_size=1, stride=1, padding=0, bias=False)
-        relu1 = nn.ReLU(inplace=False)
-        conv2 = nn.Conv2d(in_channels=bottleneck_channels, out_channels=out_features,
-                          kernel_size=1, stride=stride, padding=0, bias=not has_bn)
+        conv = nn.Conv2d(in_channels=in_features, out_channels=out_features,
+                 kernel_size=3, stride=stride, padding=1, bias=not has_bn)
+        seq = [conv]
+        if has_bn:
+            seq.append(nn.BatchNorm2d(out_features))
+        seq.append(nn.ReLU(inplace=False))
+        if pool_layer is not None:
+            seq.append(pool_layer)
 
-        seq = [conv1, relu1, conv2]
         if has_bn:
             seq.append(nn.BatchNorm2d(out_features))
         if has_relu:
