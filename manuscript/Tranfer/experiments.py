@@ -429,6 +429,18 @@ def analyze_collapse_effects(model, collapse_range, save_dir, exp_name):
     plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_prediction.png"))
     plt.close()
 
+def predict_collapse_parameters(in_channels, out_channels, kernel_size, num_layers_collapsed):
+    """Theoretical expected parameters after collapsing n layers."""
+    # Original parameters before collapse
+    original_params = num_layers_collapsed * (in_channels * out_channels * kernel_size * kernel_size + out_channels)
+    # After collapse — a single equivalent convolution layer
+    collapsed_params = in_channels * out_channels * kernel_size * kernel_size + out_channels
+    delta = collapsed_params - original_params
+    return {
+        "original": original_params,
+        "collapsed": collapsed_params,
+        "delta": delta
+    }
 
 # === Run All Diagnostics ===
 
