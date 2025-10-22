@@ -21,52 +21,40 @@ def plot_accuracy_loss_curve(acc_list, loss_list, workflow, experiment, save_dir
     plt.close()
     print(f"[✓] Saved plot: {filename}")
 
-import os
-import matplotlib.pyplot as plt
+def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None, flops=None, total_sizes=None):
+    fig, axs = plt.subplots(4, 1, figsize=(16, 20))  # We now have 4 subplots
 
-def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None):
-  
-    fig, axs = plt.subplots(3, 1, figsize=(16, 18))
-    # sort by params
-    sorted_data = sorted(zip(params, accs, names, infer_times if infer_times else [None]*len(names), mem_usages if mem_usages else [None]*len(names)), key=lambda x: x[0])
-    params, accs, names, infer_times, mem_usages = zip(*sorted_data)
-    
+    # Sort by params
+    sorted_data = sorted(zip(params, accs, names, infer_times if infer_times else [None]*len(names),
+                             mem_usages if mem_usages else [None]*len(names),
+                             flops if flops else [None]*len(names),
+                             total_sizes if total_sizes else [None]*len(names)),
+                         key=lambda x: x[0])
+
+    params, accs, names, infer_times, mem_usages, flops, total_sizes = zip(*sorted_data)
+
     axs[0].bar(names, accs, color='skyblue')
-    axs[0].set_title(f"{dataset if dataset else ''} - {title} - Final Accuracy (%)", fontsize=14)
-    axs[0].set_ylabel("Accuracy (%)")
-    axs[0].grid(True)
-
-    ax0_twin = axs[0].twinx()
-    ax0_twin.plot(names, params, 'ro--', label='Trainable Parameters (log)', linewidth=2)
-    ax0_twin.set_ylabel('Trainable Parameters', color='red')
-    ax0_twin.set_yscale('log')
-    ax0_twin.tick_params(axis='y', colors='red')
-    for i, param in enumerate(params):
-        ax0_twin.annotate(f'{param:,}', xy=(i, param), xytext=(0, -15),
-                          textcoords='offset points', ha='center', fontsize=9, color='red')
+    axs[0].set_title(f"{dataset if dataset else ''} Accuracy vs Number of Parameters")
+    axs[0].set_xlabel("Model")
+    axs[0].set_ylabel("Accuracy")
+    
+    axs[1].bar(names, params, color='lightgreen')
+    axs[1].set_title(f"{dataset if dataset else ''} Number of Parameters")
+    axs[1].set_xlabel("Model")
+    axs[1].set_ylabel("Params (Millions)")
 
     if infer_times:
-        axs[1].bar(names, infer_times, color='orange')
-        axs[1].set_title("Inference Time (avg per batch in seconds)", fontsize=14)
-        axs[1].set_ylabel("Time (s)")
-        axs[1].grid(True)
-    else:
-        axs[1].axis('off')
+        axs[2].bar(names, infer_times, color='lightcoral')
+        axs[2].set_title("Inference Time (seconds)")
+        axs[2].set_xlabel("Model")
+        axs[2].set_ylabel("Time (seconds)")
 
-    if mem_usages:
-        axs[2].bar(names, mem_usages, color='green')
-        axs[2].set_title("Memory Usage (MB)", fontsize=14)
-        axs[2].set_ylabel("Memory (MB)")
-        axs[2].grid(True)
-    else:
-        axs[2].axis('off')
-
-    for ax in axs:
-        ax.set_xticks(range(len(names)))
-        ax.set_xticklabels(names, rotation=30, ha='right')
+    if total_sizes:
+        axs[3].bar(names, total_sizes, color='lightgoldenrodyellow')
+        axs[3].set_title("Estimated Total Size (MB)")
+        axs[3].set_xlabel("Model")
+        axs[3].set_ylabel("Size (MB)")
 
     plt.tight_layout()
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
     plt.savefig(filename)
-    plt.show()
-    print(f"[✓] Saved plot: {filename}")
+    plt.close()

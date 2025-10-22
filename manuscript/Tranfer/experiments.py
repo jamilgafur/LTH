@@ -15,7 +15,19 @@ from trainer import train_and_evaluate
 from plots import plot_accuracy_loss_curve, plot_results
 from pyPrune.utils import *
 import glob
-
+import torch
+import os
+import json
+import glob
+from copy import deepcopy
+import torch
+from torchprofile import profile_macs  # Import the package for profiling FLOPs
+import torch
+import os
+import json
+import glob
+from copy import deepcopy
+from torchprofile import profile_macs  # Import package for profiling FLOPs
 def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None, device='cuda',
                    epochs=10, workflow='default', exp_name='experiment', collapse_range=None,
                    data_shape=(1, 3, 32, 32), save_path="./runs", post_compress_epochs=False):
@@ -28,6 +40,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     os.makedirs(metrics_dir, exist_ok=True)
     os.makedirs(plots_dir, exist_ok=True)
 
+    # Save checkpoint path
     ckpt_path = os.path.join(ckpt_dir, get_checkpoint_filename(workflow, exp_name, model.__class__.__name__, epochs))
     model.to(device)
 
@@ -63,24 +76,25 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     # Save model checkpoint
     torch.save({'model': model.state_dict()}, ckpt_path)
 
-    # Save plots
+    # Save accuracy/loss curve plot
     plot_accuracy_loss_curve(data['accuracies'], data['losses'], workflow, exp_name, save_dir=plots_dir)
 
     # Benchmarking
     param_count = count_trainable_params(model)
-    infer_time, flops, mem_usage = benchmark_model(model, test_loader, device)
+    infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device)
+
     data.update({
         "param_count": param_count,
         "inference_time": infer_time,
         "flops": flops,
-        "memory_usage_mb": mem_usage,
+        "total_size_mb": total_size_mb,  # Using total size in MB instead of memory usage
         "final_accuracy": data["accuracies"][-1] if data["accuracies"] else 0,
     })
 
+    # Save metrics to JSON
     save_metrics_json(f"{workflow}/{model.__class__.__name__}_postcomp_{post_compress_epochs}", exp_name, data, base_dir=metrics_dir)
-    # load json and call  plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None)
-    # load in all data from json 
-    
+
+    # Load the metrics for plotting comparison
     glob_path = os.path.join(metrics_dir, f"{workflow}/*metrics.json")
     json_paths = glob.glob(glob_path)
     if json_paths:
@@ -88,32 +102,40 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
         with open(json_path, "r") as f:
             all_metrics = json.load(f)
             all_metrics = all_metrics[list(all_metrics.keys())[0]]
+
             params = []
             accs = []
             names = []
             infer_times = []
             mem_usages = []
-            #     all_metrics.keys()
-            # dict_keys(['Last 2', 'Original Model'])
+            flops = []
+            total_sizes = []  # List to store total size for plotting
+
+            # Iterate through each model's metrics to prepare data for plotting
             for name, metrics in all_metrics.items():
                 names.append(name)
                 params.append(metrics.get("param_count", 0))
                 accs.append(metrics.get("final_accuracy", 0))
                 infer_times.append(metrics.get("inference_time", 0))
                 mem_usages.append(metrics.get("memory_usage_mb", 0))
+                flops.append(metrics.get("flops", 0))  # Collect FLOPs
+                total_sizes.append(metrics.get("total_size_mb", 0))  # Collect Total Size in MB
 
-                
+            # Save comparison plot
             save_path = json_path.replace("metrics", "plots").replace("json", "svg")
             plot_results(params, accs, names, f"{workflow} Experiments", save_path,
-                        dataset=workflow, infer_times=infer_times, mem_usages=mem_usages)
+                        dataset=workflow, infer_times=infer_times, mem_usages=mem_usages, flops=flops, total_sizes=total_sizes)
             print(f"Saved comparison plot to {save_path}")
-    # Final save
+
+    # Final model save
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
 
     del model
     print(f"[✓] Experiment '{exp_name}' completed. Checkpoints and metrics saved. full data: {data}")
     return data
+
+
 
 def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain,
                       model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",

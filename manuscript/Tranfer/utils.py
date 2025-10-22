@@ -94,9 +94,10 @@ def load_dataset(dataset_name, model_name="VGG16"):
 # -------------------------
 # Benchmark Inference
 # -------------------------
+from torchprofile import profile_macs  # Import necessary FLOPs package
 def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5):
     """
-    Returns: (avg_time_seconds, flops_total, peak_memory_mb)
+    Returns: (avg_time_seconds, flops_total, total_size_mb)
     """
     from copy import deepcopy
     tempmodel = deepcopy(model)
@@ -105,7 +106,7 @@ def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5):
 
     times = []
     flops = 0
-    peak_mem = 0
+    total_size_mb = 0
 
     # warmup
     with torch.no_grad():
@@ -156,8 +157,13 @@ def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5):
             peak_mem = torch.cuda.max_memory_allocated(device) / (1024 ** 2)  # MB
 
     del tempmodel
+
+    # Calculate the estimated total size of the model (in MB)
+    param_count = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    total_size_mb = (param_count * 4) / (1024 ** 2)  # 4 bytes per float32 parameter
+
     avg_time = sum(times) / len(times) if times else 0.0
-    return avg_time, flops, peak_mem
+    return avg_time, flops, total_size_mb
 
 def describe_model(model, loader, device='cpu'):
     print("=" * 60)
@@ -166,8 +172,6 @@ def describe_model(model, loader, device='cpu'):
     summary(model, input_size=next(iter(loader))[0].shape, device=device)
     layer_stats(model)
     print("=" * 60)
-
-
 
 # ===============================
 # Basic Counting Utilities
