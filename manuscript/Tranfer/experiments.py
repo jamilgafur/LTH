@@ -262,8 +262,16 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
     for func in [plot_flops_vs_latency, analyze_collapse_effects, plot_delta_accuracy_vs_params,
                  plot_flops_vs_memory, plot_accuracy_vs_memory, plot_heatmap, plot_stage_collapse_cost_curve]:
         try:
-            # these functions expect a dict mapping name->metrics
-            func(norm_metrics, save_dir, exp_name)
+            # analyze_collapse_effects has a different signature (model, collapse_range, save_dir, exp_name)
+            if func.__name__ == "analyze_collapse_effects":
+                # call the collapse analysis that uses actual model + collapse_range
+                try:
+                    func(model, collapse_range, save_dir, exp_name)
+                except TypeError:
+                    # fallback if a metrics-based variant exists
+                    func(norm_metrics, save_dir, exp_name)
+            else:
+                func(norm_metrics, save_dir, exp_name)
         except Exception as e:
             print(f"[!] {func.__name__} error: {e}")
 
@@ -283,8 +291,19 @@ def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
     debug_tensor_shape(input_tensor, "Input Tensor (After Batch Dimension Check)")
 
     with torch.no_grad():
-        flops = FlopCountAnalysis(model, input_tensor)
-        per_module_flops = flops.by_module()
+        try:
+            flops = FlopCountAnalysis(model, input_tensor)
+            per_module_flops = flops.by_module()
+            # optionally total flops:
+            try:
+                total_flops_val = flops.total()
+            except Exception:
+                total_flops_val = None
+        except Exception as e:
+            print(f"[!] FlopCountAnalysis failed: {e} — continuing with empty FLOPs map")
+            per_module_flops = {}
+            total_flops_val = None
+
 
     layer_data = []
     for name, module in model.named_modules():
@@ -307,8 +326,10 @@ def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
     unique_layers = df["layer"].nunique()
     if unique_layers > 30:
         # pivot (experiments would usually be aggregated later) - show log10 values for compactness
-        df_plot = df.set_index("layer")[["params", "flops"]].applymap(lambda x: (x if x <= 0 else float(x)))
-        sns.heatmap(df_plot.applymap(lambda x: (0 if x is None else x)).T, ax=axes[0])
+        df_plot = df.set_index("layer")[["params", "flops"]].astype(float).where(lambda x: x > 0, other=0.0)
+        # transpose for heatmap
+        sns.heatmap(df_plot.T.fillna(0.0), ax=axes[0])
+
         axes[0].set_title("Parameters & FLOPs per Layer (Heatmap)")
     else:
         df.plot(x="layer", y="params", kind="bar", ax=axes[0], color="skyblue", legend=False)
@@ -436,7 +457,8 @@ def memory_decomposition(model, input_tensor, save_dir, exp_name):
     plt.figure(figsize=(6, 6))
     cats = list(parts.keys())
     vals = [parts[k] for k in cats]
-    sns.barplot(x=cats, y=vals, palette=["steelblue", "salmon", "gold"])
+    plt.bar(cats, vals, color=["steelblue", "salmon", "gold"])
+
     plt.title(f"Memory Breakdown — {exp_name}")
     plt.ylabel("Memory (MB)")
     plt.tight_layout()
@@ -585,7 +607,8 @@ def plot_heatmap(metrics_dict, save_dir, exp_name):
         return
     df = pd.DataFrame(rows).set_index("Model")
     # Normalize columns for heatmap stability
-    df_norm = df.apply(lambda x: (x - x.min()) / (x.max() - x.min()) if x.max() != x.min() else 0)
+    df_norm = df.apply(lambda x: (x - x.min()) / (x.max() - x.min()) if x.max() != x.min() else (x * 0.0))
+
     ensure_dir(save_dir)
     plt.figure(figsize=(10, 6))
     sns.heatmap(df_norm, annot=True, cmap="coolwarm")
@@ -672,6 +695,15 @@ def plot_memory_per_layer_across_experiments(metrics_dir, save_dir, title="Per-L
         try:
             with open(path, "r") as f:
                 experiments = json.load(f)
+
+            # If the file is a "flat" metric dict (top-level keys are 'accuracies', 'final_accuracy', etc.)
+            # wrap it under a synthetic experiment name (filename) so downstream logic is consistent.
+            if is_dict_like(experiments):
+                # detect typical metric keys
+                if any(k in experiments for k in ("accuracies", "losses", "final_accuracy", "param_count", "flops")):
+                    basename = os.path.splitext(os.path.basename(path))[0]
+                    experiments = {basename: experiments}
+
         except Exception:
             print(f"[!] Could not read JSON at {path}, skipping.")
             continue
@@ -685,7 +717,7 @@ def plot_memory_per_layer_across_experiments(metrics_dir, save_dir, title="Per-L
             for exp_name, exp_data in exp_group.items():
                 print(f"[DEBUG] Processing experiment '{exp_name}' from {path}...")
                 print(f"[DEBUG] Experiment data: {exp_data}")
-                
+
                 if not is_dict_like(exp_data):
                     print(f"[!] Warning: Experiment '{exp_name}' data is not a dict. Skipping diagnostics.")
                     continue
