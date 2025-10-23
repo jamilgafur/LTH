@@ -86,7 +86,20 @@ def plot_results(params, accs, names, title, filename, dataset=None, infer_times
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     plt.savefig(filename)
     plt.show()
-
+    # save the data as csv
+    data = {
+        'Model': names,
+        'Parameters': params,
+        'Accuracy': accs,
+        'Inference Time (s)': infer_times,
+        'Memory Usage (bytes)': mem_usages,
+        'FLOPs': flops
+        'Total Size (bytes)': total_sizes
+    }
+    df = pd.DataFrame(data)
+    csv_filename = filename.replace('.svg', '.csv')
+    df.to_csv(csv_filename, index=False)
+    
     print(f"[✓] Saved plot: {filename}")
 
 
