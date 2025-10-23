@@ -6,6 +6,7 @@ from utils import count_trainable_params, layer_stats
 from uuid import uuid4
 from typing import Optional
 from copy import deepcopy
+import copy
 
 def _set_module_by_path(model, module_path, new_module):
     """
