@@ -299,202 +299,6 @@ def analyze_collapse_effects(model, collapse_range, save_dir, exp_name):
 # -------------------------
 # Cross-experiment per-layer aggregation (robust + readable)
 # -------------------------
-def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name, dtype_bytes=4):
-    """
-    Plot per-layer activation memory (MB) across experiments.
-
-    metrics_sources can be:
-      - dict: mapping experiment_name -> metrics-dict
-      - str: path to a single JSON file. The file may either:
-          * represent one experiment (contains "diagnostics"), or
-          * contain many experiments as top-level keys (each value a metrics dict)
-      - list of str: list of JSON file paths (each file may be a single experiment or a mapping)
-
-    dtype_bytes: bytes per activation element (default 4 for float32).
-    """
-    import os
-    import json
-    import matplotlib.pyplot as plt
-    import pandas as pd
-    import seaborn as sns
-    from collections import defaultdict
-
-    # helper to ensure save dir
-    try:
-        ensure_dir(save_dir)
-    except NameError:
-        os.makedirs(save_dir, exist_ok=True)
-
-    # load a JSON file
-    def _load_json(path):
-        with open(path, 'r') as f:
-            return json.load(f)
-
-    # normalize a single metrics-like object into a dict mapping experiment_name -> metrics_dict
-    def _metrics_from_obj(obj, default_name):
-        """
-        If obj is a mapping whose values are per-experiment dicts, return it directly.
-        Else if obj itself appears to be a single experiment dict (has 'diagnostics' or 'final_accuracy' etc.),
-        return {default_name: obj}.
-        """
-        if isinstance(obj, dict):
-            # detect if top-level appears to be multiple experiments:
-            # heuristic: many values are dicts and at least one has diagnostics/accuracies keys
-            multi_like = False
-            candidate_count = 0
-            for v in obj.values():
-                if isinstance(v, dict):
-                    candidate_count += 1
-                    if any(k in v for k in ("diagnostics", "accuracies", "final_accuracy", "param_count")):
-                        multi_like = True
-                        break
-            if multi_like and candidate_count >= 1:
-                return dict(obj)  # treat top-level keys as experiments
-            # else treat as single experiment
-            return {default_name: dict(obj)}
-        # not a dict -> can't handle
-        return {default_name: {"__raw__": obj}}
-
-    # Build unified metrics mapping
-    metrics = {}
-
-    # If caller passed already a dict of metrics
-    if isinstance(metrics_sources, dict):
-        metrics = metrics_sources.copy()
-    elif isinstance(metrics_sources, str):
-        # single file path
-        try:
-            loaded = _load_json(metrics_sources)
-        except Exception as e:
-            raise RuntimeError(f"Failed to load JSON from {metrics_sources}: {e}")
-        name_hint = os.path.splitext(os.path.basename(metrics_sources))[0]
-        metrics = _metrics_from_obj(loaded, name_hint)
-    elif isinstance(metrics_sources, (list, tuple)):
-        # list of paths (or possibly a mixture)
-        for path in metrics_sources:
-            if isinstance(path, str) and os.path.isfile(path):
-                try:
-                    loaded = _load_json(path)
-                except Exception:
-                    # skip unreadable files
-                    continue
-                name_hint = os.path.splitext(os.path.basename(path))[0]
-                obj_map = _metrics_from_obj(loaded, name_hint)
-                # if there are duplicates, prefix with filename when necessary
-                for k, v in obj_map.items():
-                    if k in metrics:
-                        new_k = f"{name_hint}__{k}"
-                        metrics[new_k] = v
-                    else:
-                        metrics[k] = v
-            elif isinstance(path, dict):
-                # if the list contained pre-loaded dicts
-                for k, v in path.items():
-                    if k in metrics:
-                        metrics[f"{k}_dup"] = v
-                    else:
-                        metrics[k] = v
-            else:
-                # ignore invalid entries
-                continue
-    else:
-        raise ValueError("metrics_sources must be a dict, a path (str), or a list of paths/dicts.")
-
-    if not metrics:
-        # nothing to plot
-        return
-
-    # Extract per-layer activation sizes and convert to MB
-    # We'll build: layer_name -> {experiment_name: memory_mb}
-    per_layer_mem = defaultdict(dict)
-    experiment_names = []
-
-    for exp_name_key, metric_obj in metrics.items():
-        experiment_names.append(exp_name_key)
-        # metric_obj may not be a dict (coerced earlier), guard
-        if not isinstance(metric_obj, dict):
-            continue
-
-        diagnostics = metric_obj.get("diagnostics") or metric_obj.get("diagnostic") or {}
-
-        # If diagnostics missing, try legacy keys
-        if not diagnostics:
-            # sometimes the JSON has activation_sizes at top level
-            if "activation_sizes" in metric_obj:
-                diagnostics = {"activation_sizes": metric_obj.get("activation_sizes")}
-            else:
-                diagnostics = {}
-
-        activation_sizes = diagnostics.get("activation_sizes", [])
-        # activation_sizes expected as list of {"layer": name, "activation_elements": N}
-        if activation_sizes and isinstance(activation_sizes, (list, tuple)):
-            for item in activation_sizes:
-                if not isinstance(item, dict):
-                    continue
-                layer = item.get("layer") or item.get("name") or item.get("layer_name")
-                elems = item.get("activation_elements") or item.get("elements") or item.get("activation_size")
-                try:
-                    elems = float(elems)
-                except Exception:
-                    elems = 0.0
-                mem_mb = (elems * float(dtype_bytes)) / 1e6
-                per_layer_mem[layer][exp_name_key] = mem_mb
-        else:
-            # fallback: some diagnostics include activation element counts under different keys
-            # try to extract from 'per_layer_params_flops' sizes (not ideal)
-            alt = diagnostics.get("per_layer_params_flops", [])
-            if alt and isinstance(alt, (list, tuple)):
-                # not activation sizes, but include as a fallback to show something
-                for item in alt:
-                    if not isinstance(item, dict):
-                        continue
-                    layer = item.get("layer")
-                    # use params as proxy (very rough) -> convert params to bytes
-                    params = item.get("params", 0)
-                    try:
-                        params = float(params)
-                    except Exception:
-                        params = 0.0
-                    mem_mb = (params * float(dtype_bytes)) / 1e6
-                    per_layer_mem[layer][exp_name_key] = mem_mb
-            # if nothing, continue (will be NaN)
-            continue
-
-    if not per_layer_mem:
-        # nothing extracted
-        return
-
-    # Create DataFrame: index = layers, columns = experiments
-    df = pd.DataFrame(per_layer_mem).T.fillna(0.0)  # currently dict keyed by layer -> {exp: mem}
-    # After T, rows are experiments -> we want index = layers, so transpose back:
-    df = df.T  # now index=layers, columns=experiments
-    # Ensure all experiments appear as columns (even if missing)
-    for e in experiment_names:
-        if e not in df.columns:
-            df[e] = 0.0
-
-    # Sort layers by total memory descending for clearer heatmap
-    df["total_mb"] = df.sum(axis=1)
-    df = df.sort_values("total_mb", ascending=False).drop(columns=["total_mb"])
-
-    if df.empty:
-        return
-
-    # Plot heatmap
-    plt.figure(figsize=(max(8, min(0.4 * len(df.index), 24)), max(6, min(0.5 * len(df.columns), 16))))
-    sns.set_theme()  # let seaborn choose nice defaults
-    ax = sns.heatmap(df, annot=True, fmt=".2f", cmap="viridis", cbar_kws={"label": "Activation Memory (MB)"})
-    ax.set_xlabel("Experiment")
-    ax.set_ylabel("Layer")
-    plt.title(f"Per-layer Activation Memory (MB) — {exp_name}")
-    plt.tight_layout()
-
-    outpath = os.path.join(save_dir, f"{exp_name}_per_layer_activation_memory_heatmap.svg")
-    plt.savefig(outpath)
-    plt.close()
-
-    print(f"[✓] Saved per-layer activation memory heatmap: {outpath}")
-    return outpath
 
 def debug_tensor_shape(tensor, description="Tensor"):
     """ Helper function to debug tensor shapes. """
@@ -825,3 +629,201 @@ def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.svg"))
     plt.close()
+
+
+    def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name, dtype_bytes=4):
+    """
+    Plot per-layer activation memory (MB) across experiments.
+
+    metrics_sources can be:
+      - dict: mapping experiment_name -> metrics-dict
+      - str: path to a single JSON file. The file may either:
+          * represent one experiment (contains "diagnostics"), or
+          * contain many experiments as top-level keys (each value a metrics dict)
+      - list of str: list of JSON file paths (each file may be a single experiment or a mapping)
+
+    dtype_bytes: bytes per activation element (default 4 for float32).
+    """
+    import os
+    import json
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    import seaborn as sns
+    from collections import defaultdict
+
+    # helper to ensure save dir
+    try:
+        ensure_dir(save_dir)
+    except NameError:
+        os.makedirs(save_dir, exist_ok=True)
+
+    # load a JSON file
+    def _load_json(path):
+        with open(path, 'r') as f:
+            return json.load(f)
+
+    # normalize a single metrics-like object into a dict mapping experiment_name -> metrics_dict
+    def _metrics_from_obj(obj, default_name):
+        """
+        If obj is a mapping whose values are per-experiment dicts, return it directly.
+        Else if obj itself appears to be a single experiment dict (has 'diagnostics' or 'final_accuracy' etc.),
+        return {default_name: obj}.
+        """
+        if isinstance(obj, dict):
+            # detect if top-level appears to be multiple experiments:
+            # heuristic: many values are dicts and at least one has diagnostics/accuracies keys
+            multi_like = False
+            candidate_count = 0
+            for v in obj.values():
+                if isinstance(v, dict):
+                    candidate_count += 1
+                    if any(k in v for k in ("diagnostics", "accuracies", "final_accuracy", "param_count")):
+                        multi_like = True
+                        break
+            if multi_like and candidate_count >= 1:
+                return dict(obj)  # treat top-level keys as experiments
+            # else treat as single experiment
+            return {default_name: dict(obj)}
+        # not a dict -> can't handle
+        return {default_name: {"__raw__": obj}}
+
+    # Build unified metrics mapping
+    metrics = {}
+
+    # If caller passed already a dict of metrics
+    if isinstance(metrics_sources, dict):
+        metrics = metrics_sources.copy()
+    elif isinstance(metrics_sources, str):
+        # single file path
+        try:
+            loaded = _load_json(metrics_sources)
+        except Exception as e:
+            raise RuntimeError(f"Failed to load JSON from {metrics_sources}: {e}")
+        name_hint = os.path.splitext(os.path.basename(metrics_sources))[0]
+        metrics = _metrics_from_obj(loaded, name_hint)
+    elif isinstance(metrics_sources, (list, tuple)):
+        # list of paths (or possibly a mixture)
+        for path in metrics_sources:
+            if isinstance(path, str) and os.path.isfile(path):
+                try:
+                    loaded = _load_json(path)
+                except Exception:
+                    # skip unreadable files
+                    continue
+                name_hint = os.path.splitext(os.path.basename(path))[0]
+                obj_map = _metrics_from_obj(loaded, name_hint)
+                # if there are duplicates, prefix with filename when necessary
+                for k, v in obj_map.items():
+                    if k in metrics:
+                        new_k = f"{name_hint}__{k}"
+                        metrics[new_k] = v
+                    else:
+                        metrics[k] = v
+            elif isinstance(path, dict):
+                # if the list contained pre-loaded dicts
+                for k, v in path.items():
+                    if k in metrics:
+                        metrics[f"{k}_dup"] = v
+                    else:
+                        metrics[k] = v
+            else:
+                # ignore invalid entries
+                continue
+    else:
+        raise ValueError("metrics_sources must be a dict, a path (str), or a list of paths/dicts.")
+
+    if not metrics:
+        # nothing to plot
+        return
+
+    # Extract per-layer activation sizes and convert to MB
+    # We'll build: layer_name -> {experiment_name: memory_mb}
+    per_layer_mem = defaultdict(dict)
+    experiment_names = []
+
+    for exp_name_key, metric_obj in metrics.items():
+        experiment_names.append(exp_name_key)
+        # metric_obj may not be a dict (coerced earlier), guard
+        if not isinstance(metric_obj, dict):
+            continue
+
+        diagnostics = metric_obj.get("diagnostics") or metric_obj.get("diagnostic") or {}
+
+        # If diagnostics missing, try legacy keys
+        if not diagnostics:
+            # sometimes the JSON has activation_sizes at top level
+            if "activation_sizes" in metric_obj:
+                diagnostics = {"activation_sizes": metric_obj.get("activation_sizes")}
+            else:
+                diagnostics = {}
+
+        activation_sizes = diagnostics.get("activation_sizes", [])
+        # activation_sizes expected as list of {"layer": name, "activation_elements": N}
+        if activation_sizes and isinstance(activation_sizes, (list, tuple)):
+            for item in activation_sizes:
+                if not isinstance(item, dict):
+                    continue
+                layer = item.get("layer") or item.get("name") or item.get("layer_name")
+                elems = item.get("activation_elements") or item.get("elements") or item.get("activation_size")
+                try:
+                    elems = float(elems)
+                except Exception:
+                    elems = 0.0
+                mem_mb = (elems * float(dtype_bytes)) / 1e6
+                per_layer_mem[layer][exp_name_key] = mem_mb
+        else:
+            # fallback: some diagnostics include activation element counts under different keys
+            # try to extract from 'per_layer_params_flops' sizes (not ideal)
+            alt = diagnostics.get("per_layer_params_flops", [])
+            if alt and isinstance(alt, (list, tuple)):
+                # not activation sizes, but include as a fallback to show something
+                for item in alt:
+                    if not isinstance(item, dict):
+                        continue
+                    layer = item.get("layer")
+                    # use params as proxy (very rough) -> convert params to bytes
+                    params = item.get("params", 0)
+                    try:
+                        params = float(params)
+                    except Exception:
+                        params = 0.0
+                    mem_mb = (params * float(dtype_bytes)) / 1e6
+                    per_layer_mem[layer][exp_name_key] = mem_mb
+            # if nothing, continue (will be NaN)
+            continue
+
+    if not per_layer_mem:
+        # nothing extracted
+        return
+
+    # Create DataFrame: index = layers, columns = experiments
+    df = pd.DataFrame(per_layer_mem).T.fillna(0.0)  # currently dict keyed by layer -> {exp: mem}
+    # After T, rows are experiments -> we want index = layers, so transpose back:
+    df = df.T  # now index=layers, columns=experiments
+    # Ensure all experiments appear as columns (even if missing)
+    for e in experiment_names:
+        if e not in df.columns:
+            df[e] = 0.0
+
+    # Sort layers by total memory descending for clearer heatmap
+    df["total_mb"] = df.sum(axis=1)
+    df = df.sort_values("total_mb", ascending=False).drop(columns=["total_mb"])
+
+    if df.empty:
+        return
+
+    # Plot heatmap
+    plt.figure(figsize=(max(8, min(0.4 * len(df.index), 24)), max(6, min(0.5 * len(df.columns), 16))))
+    sns.set_theme()  # let seaborn choose nice defaults
+    ax = sns.heatmap(df, annot=True, fmt=".2f", cmap="viridis", cbar_kws={"label": "Activation Memory (MB)"})
+    ax.set_xlabel("Experiment")
+    ax.set_ylabel("Layer")
+    plt.title(f"Per-layer Activation Memory (MB) — {exp_name}")
+    plt.tight_layout()
+
+    outpath = os.path.join(save_dir, f"{exp_name}_per_layer_activation_memory_heatmap.svg")
+    plt.savefig(outpath)
+    plt.close()
+
+    print(f"[✓] Saved per-layer activation memory heatmap: {outpath}")
+    return outpath
