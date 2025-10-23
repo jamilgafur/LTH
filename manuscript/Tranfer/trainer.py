@@ -7,8 +7,9 @@ import torch.optim as optim
 import torch.optim as optim
 import torch.nn as nn
 import tqdm
-def train_and_evaluate(model, train_loader, test_loader, device, epochs=10, post_compress_epochs=False):
-    device = torch.device("cuda")
+def train_and_evaluate(model, train_loader, test_loader, device=None, epochs=10, post_compress_epochs=False):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"[Start training] device:{device}")
     if epochs <= 0:
         print("[Warning] Number of training epochs is zero or negative!")
         final_acc = evaluate(model, test_loader, device)
@@ -44,6 +45,7 @@ def train_and_evaluate(model, train_loader, test_loader, device, epochs=10, post
         total_loss = correct = total = 0
         for xb, yb in tqdm.tqdm(train_loader):
             xb, yb = xb.to(device), yb.to(device)
+            model = model.to(device)
             preds = model(xb)
             loss = loss_fn(preds, yb)
             optimizer.zero_grad()

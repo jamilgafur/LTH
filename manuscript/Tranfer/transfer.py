@@ -1,3 +1,4 @@
+# Transfer.py
 import os
 import torch
 from pyPrune.models.Vgg16 import VGG16
@@ -5,7 +6,7 @@ from pyPrune.models.RegNetX import RegNetX_400MF
 from pyPrune.pruneMethods.IterativePruner import IterativePruner
 from pyPrune.strategies import MagnitudePruningStrategy
 from experiments import *
-from utils import *
+from utils import  *
 from pyPrune.utils import *
 from torch.backends import cudnn
 import random
@@ -25,14 +26,14 @@ CHECKPOINT_BASES = {
     "VGG16": {
         "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*cifar10_*")[0] + "/",
         "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*cifar100_*")[0] + "/",
-   #     "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*tinyimagenet_*")[0] + "/",
-  #      "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*imagenet_*")[0] + "/",
+    #    "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*tinyimagenet_*")[0] + "/",
+    #     "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*Vgg16*imagenet_*")[0] + "/",
     },
     "RegNetX_400MF": {
         "Cifar10": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar10_*")[0] + "/",
         "Cifar100": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*cifar100_*")[0] + "/",
- #       "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*tinyimagenet_*")[0] + "/",
-#        "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*imagenet_*")[0] + "/",
+    #    "TinyImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*tinyimagenet_*")[0] + "/",
+    #     "ImageNet": glob.glob("../structured_study/pruning_checkpoints/*RegNetX*imagenet_*")[0] + "/",
     }
 }# To make sure that the paths are correct, print them out
 for model, datasets in CHECKPOINT_BASES.items():
@@ -40,14 +41,14 @@ for model, datasets in CHECKPOINT_BASES.items():
         print(f"{model} - {dataset}: {path}")
 CHECKPOINT_FILES = {
     "VGG16": {
-        "Cifar10": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
-        "Cifar100": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar10": ("checkpoint_Finetuned_0.200000.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar100": ("checkpoint_Finetuned_0.964816.pth", "checkpoint_Original_0.000000.pth"),
         "TinyImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
         "ImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
     },
     "RegNetX_400MF": {
-        "Cifar10": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
-        "Cifar100": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar10": ("checkpoint_Finetuned_0.200000.pth", "checkpoint_Original_0.000000.pth"),
+        "Cifar100": ("checkpoint_Finetuned_0.931281.pth", "checkpoint_Original_0.000000.pth"),
         "TinyImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
         "ImageNet": ("checkpoint_Finetuned_0.000000.pth", "checkpoint_Original_0.000000.pth"),
     }
@@ -57,57 +58,128 @@ EXPERIMENTS = {
     "VGG16": {
         "Cifar10": {
             "Original Model": None,
-            "Last 2": ('features.conv_12', 'features.conv_13'),  # Conv layers at the last stage
-            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
-            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
-            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
-            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
-            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
-            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
+            "Last 2": ("features.conv_12", "features.conv_13"),
+            "Stage 5": ("features.conv_11", "features.conv_13"),
+            "Stage 4": ("features.conv_8", "features.conv_10"),
+            "Stage 3": ("features.conv_5", "features.conv_7"),
+            "Stage 4-5": ("features.conv_8", "features.conv_13"),
+            "Stage 3-5": ("features.conv_5", "features.conv_13"),
+            "Stage 2-5": ("features.conv_3", "features.conv_13"),
         },
         "Cifar100": {
             "Original Model": None,
-            "Last 2": ('features.conv_9', 'features.conv_10'),
-            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
-            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
-            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
-            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
-            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
-            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
+            "Last 2": ("features.conv_12", "features.conv_13"),
+            "Stage 5": ("features.conv_11", "features.conv_13"),
+            "Stage 4": ("features.conv_8", "features.conv_10"),
+            "Stage 3": ("features.conv_5", "features.conv_7"),
+            "Stage 4-5": ("features.conv_8", "features.conv_13"),
+            "Stage 3-5": ("features.conv_5", "features.conv_13"),
+            "Stage 2-5": ("features.conv_3", "features.conv_13"),
         },
         "TinyImageNet": {
             "Original Model": None,
-            "Last 2": ('features.conv9', 'features.conv10'),
-            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
-            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
-            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
-            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
-            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
-            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
+            "Last 2": ("features.conv_12", "features.conv_13"),
+            "Stage 5": ("features.conv_11", "features.conv_13"),
+            "Stage 4": ("features.conv_8", "features.conv_10"),
+            "Stage 3": ("features.conv_5", "features.conv_7"),
+            "Stage 4-5": ("features.conv_8", "features.conv_13"),
+            "Stage 3-5": ("features.conv_5", "features.conv_13"),
+            "Stage 2-5": ("features.conv_3", "features.conv_13"),
         },
         "ImageNet": {
             "Original Model": None,
-            "Last 2": ('features.conv9', 'features.conv10'),
-            "Stage 5": ('features.conv8', 'features.conv9'),
-            "Stage 5": ('features.conv_11', 'features.conv_13'),  # Last convolution block
-            "Stage 4": ('features.conv_8', 'features.conv_10'),  # Mid convolution block
-            "Stage 3": ('features.conv_5', 'features.conv_7'),  # Earlier convolution block
-            "Stage 4-5": ('features.conv_8', 'features.conv_13'),  # Combine mid and late conv layers
-            "Stage 3-5": ('features.conv_5', 'features.conv_13'),  # Combine early and late conv layers
-            "Stage 2-5": ('features.conv_3', 'features.conv_13'),  # Combine early and late conv layers
+            "Last 2": ("features.conv_12", "features.conv_13"),
+            "Stage 5": ("features.conv_11", "features.conv_13"),
+            "Stage 4": ("features.conv_8", "features.conv_10"),
+            "Stage 3": ("features.conv_5", "features.conv_7"),
+            "Stage 4-5": ("features.conv_8", "features.conv_13"),
+            "Stage 3-5": ("features.conv_5", "features.conv_13"),
+            "Stage 2-5": ("features.conv_3", "features.conv_13"),
         },
     },
     "RegNetX_400MF": {
         "Cifar10": {
             "Original Model": None,
-            "Last 2": ('stage4.stage4_block6.block.conv1', 'stage4.stage4_block6.block.conv3'),
+
+            # Last block of stage4
+            "Last 2": ("stage4.stage4_block6.block.conv1", "stage4.stage4_block6.block.conv3"),
+
+            # Middle of network
+            "Stage 5": ("stage4.stage4_block5.block.conv1", "stage4.stage4_block5.block.conv3"),
+            "Stage 4": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block3.block.conv3"),
+            "Stage 3": ("stage3.stage3_block1.block.conv1", "stage3.stage3_block1.block.conv3"),
+            "Stage 2": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),
+
+            # Ranges of stages
+            "Stage 4-5": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block6.block.conv3"),
+            "Stage 3-5": ("stage3.stage3_block1.block.conv1", "stage4.stage4_block6.block.conv3"),
+            "Stage 2-5": ("stage2.stage2_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
+            "Stage 1-5": ("stage1.stage1_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
+
+            # First 2 conv layers in each stage
+            "Stage 1 first 2 conv": ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv2"),
+            "Stage 2 first 2 conv": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv2"),
+            "Stage 3 first 2 conv": ("stage3.stage3_block0.block.conv1", "stage3.stage3_block1.block.conv1"),
+            "Stage 4 first 2 conv": ("stage4.stage4_block0.block.conv1", "stage4.stage4_block1.block.conv1"),
+
+            # Last 2 conv layers in each stage
+            "Stage 1 last 2 conv": ("stage1.stage1_block0.block.conv2", "stage1.stage1_block0.block.conv3"),
+            "Stage 2 last 2 conv": ("stage2.stage2_block0.block.conv2", "stage2.stage2_block0.block.conv3"),
+            "Stage 3 last 2 conv": ("stage3.stage3_block2.block.conv3", "stage3.stage3_block3.block.conv3"),
+            "Stage 4 last 2 conv": ("stage4.stage4_block4.block.conv3", "stage4.stage4_block5.block.conv3"),
         },
         "Cifar100": {
             "Original Model": None,
-            "Last 2": ('stage4.stage4_block6.block.conv1', 'stage4.stage4_block6.block.conv3'),
+
+            "Last 2": ("stage4.stage4_block6.block.conv1", "stage4.stage4_block6.block.conv3"),
+            "Stage 5": ("stage4.stage4_block5.block.conv1", "stage4.stage4_block5.block.conv3"),
+            "Stage 4": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block3.block.conv3"),
+            "Stage 3": ("stage3.stage3_block1.block.conv1", "stage3.stage3_block1.block.conv3"),
+            "Stage 2": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),
+
+            "Stage 4-5": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block6.block.conv3"),
+            "Stage 3-5": ("stage3.stage3_block1.block.conv1", "stage4.stage4_block6.block.conv3"),
+            "Stage 2-5": ("stage2.stage2_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
+            "Stage 1-5": ("stage1.stage1_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
+
+            "Stage 1 first 2 conv": ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv2"),
+            "Stage 2 first 2 conv": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv2"),
+            "Stage 3 first 2 conv": ("stage3.stage3_block0.block.conv1", "stage3.stage3_block1.block.conv1"),
+            "Stage 4 first 2 conv": ("stage4.stage4_block0.block.conv1", "stage4.stage4_block1.block.conv1"),
+
+            "Stage 1 last 2 conv": ("stage1.stage1_block0.block.conv2", "stage1.stage1_block0.block.conv3"),
+            "Stage 2 last 2 conv": ("stage2.stage2_block0.block.conv2", "stage2.stage2_block0.block.conv3"),
+            "Stage 3 last 2 conv": ("stage3.stage3_block2.block.conv3", "stage3.stage3_block3.block.conv3"),
+            "Stage 4 last 2 conv": ("stage4.stage4_block4.block.conv3", "stage4.stage4_block5.block.conv3"),
+        },
+        "TinyImageNet": {
+            "Original Model": None,
+
+            "Last 2": ("stage4.stage4_block6.block.conv1", "stage4.stage4_block6.block.conv3"),
+            "Stage 5": ("stage4.stage4_block5.block.conv1", "stage4.stage4_block5.block.conv3"),
+            "Stage 4": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block3.block.conv3"),
+            "Stage 3": ("stage3.stage3_block1.block.conv1", "stage3.stage3_block1.block.conv3"),
+            "Stage 2": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),
+
+            "Stage 4-5": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block6.block.conv3"),
+            "Stage 3-5": ("stage3.stage3_block1.block.conv1", "stage4.stage4_block6.block.conv3"),
+            "Stage 2-5": ("stage2.stage2_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
+            "Stage 1-5": ("stage1.stage1_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
+
+            "Stage 1 first 2 conv": ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv2"),
+            "Stage 2 first 2 conv": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv2"),
+            "Stage 3 first 2 conv": ("stage3.stage3_block0.block.conv1", "stage3.stage3_block1.block.conv1"),
+            "Stage 4 first 2 conv": ("stage4.stage4_block0.block.conv1", "stage4.stage4_block1.block.conv1"),
+
+            "Stage 1 last 2 conv": ("stage1.stage1_block0.block.conv2", "stage1.stage1_block0.block.conv3"),
+            "Stage 2 last 2 conv": ("stage2.stage2_block0.block.conv2", "stage2.stage2_block0.block.conv3"),
+            "Stage 3 last 2 conv": ("stage3.stage3_block2.block.conv3", "stage3.stage3_block3.block.conv3"),
+            "Stage 4 last 2 conv": ("stage4.stage4_block4.block.conv3", "stage4.stage4_block5.block.conv3"),
         },
     }
 }
+
+
 
 # -------------------------------
 # IMP Pruning Logic Integration
@@ -142,7 +214,7 @@ def imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader,
         device=device,
         save_dir=save_dir,
         pretrain_epochs=pretrain_epochs,
-        finetune_epochs=10,
+        finetune_epochs=finetune_epochs,
         scheduler=scheduler,
         strategy=MagnitudePruningStrategy.MagnitudePruningStrategy(device=device)
     )
@@ -165,7 +237,6 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
     criterion = torch.nn.CrossEntropyLoss()
 
     steps = exponential_decay_list(steps=21)
-    steps = [steps[i] for i in range(len(steps)) if i % 3 == 0 or i == len(steps) - 1]
     print(f"Pruning steps: {steps}")
 
     train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, model_class.__name__)
@@ -179,21 +250,21 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
             model = run_jf_experiment({name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain,
                                       model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path,
                                       post_compress_epochs=post_compress_epochs)
-            if args.imp:
-                optimizer, scheduler = create_optimizer_scheduler(model)
-                imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
-                          pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
-                          save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
+            # if args.imp:
+            #     optimizer, scheduler = create_optimizer_scheduler(model)
+            #     imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
+                        #   pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
+                        #   save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
 
         elif args.Kevin:
             model = run_kevin_experiment({name: layers}, model_path_000, train_loader, test_loader, device, epochs,
                                          model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size,
                                          save_path=save_path, post_compress_epochs=post_compress_epochs)
-            if args.imp:
-                optimizer, scheduler = create_optimizer_scheduler(model)
-                imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
-                          pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
-                          save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
+            # if args.imp:
+            #     optimizer, scheduler = create_optimizer_scheduler(model)
+            #     imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
+            #               pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
+            #               save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
         else:
             raise ValueError("You must specify either --JF or --Kevin to run the corresponding experiment.")
 
@@ -206,19 +277,21 @@ if __name__ == "__main__":
 
     # Initialize the argument parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="RegNetX_400MF", choices=["VGG16", "RegNetX_400MF"], help="Model architecture to use")
+    parser.add_argument("--model", type=str, default="VGG16", choices=["VGG16", "RegNetX_400MF"], help="Model architecture to use")
     parser.add_argument("--dataset", type=str, help="Dataset to use (Cifar10, Cifar100, ImageNet, TinyImageNet)", default="Cifar10")
-    parser.add_argument("--epochs", type=int, default=30, help="Number of epochs to train for")
-    parser.add_argument("--pretrain", type=int, default=30, help="Number of pretraining epochs")
+    parser.add_argument("--epochs", type=int, default=1, help="Number of epochs to train for")
+    parser.add_argument("--pretrain", type=int, default=1, help="Number of pretraining epochs")
     parser.add_argument("--experiment", type=str, required=True, help="Experiment to run")  # Now required
-    parser.add_argument("--post_compress_epochs", type=int, default=10, help="Number of post-pruning compression epochs")
-    parser.add_argument("--imp", action="store_true", help="Apply Iterative Magnitude Pruning")
+    parser.add_argument("--post_compress_epochs", type=int, default=0, help="Number of post-pruning compression epochs")
+    parser.add_argument("--imp", action="store_false", help="Apply Iterative Magnitude Pruning")
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
 
     args = parser.parse_args()
     print(args)
     print(f"has GPU: {torch.cuda.is_available()}")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
 
     model_name = args.model
     dataset = args.dataset
