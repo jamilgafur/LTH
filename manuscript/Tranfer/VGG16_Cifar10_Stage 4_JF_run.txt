@@ -1,7 +1,344 @@
-Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 8, in <module>
-    from experiments import *
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 252
-    def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs,
-    ^
-IndentationError: expected an indented block after function definition on line 248
+VGG16 - Cifar10: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+VGG16 - Cifar100: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar10: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar100: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+Namespace(model='VGG16', dataset='Cifar10', epochs=1, pretrain=1, experiment='Stage 4', post_compress_epochs=0, imp=True, JF=True, Kevin=False)
+has GPU: True
+Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
+Loading CIFAR-10 data...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+
+--- Running experiment: Stage 4 ---
+
+=== Running JF experiment ===
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+VGG16                                    [512, 10]                 --
+├─Sequential: 1-1                        [512, 512, 1, 1]          --
+│    └─Conv2d: 2-1                       [512, 64, 32, 32]         1,792
+│    └─ReLU: 2-2                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-3                  [512, 64, 32, 32]         128
+│    └─Conv2d: 2-4                       [512, 64, 32, 32]         36,928
+│    └─ReLU: 2-5                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-6                  [512, 64, 32, 32]         128
+│    └─MaxPool2d: 2-7                    [512, 64, 16, 16]         --
+│    └─Conv2d: 2-8                       [512, 128, 16, 16]        73,856
+│    └─ReLU: 2-9                         [512, 128, 16, 16]        --
+│    └─BatchNorm2d: 2-10                 [512, 128, 16, 16]        256
+│    └─Conv2d: 2-11                      [512, 128, 16, 16]        147,584
+│    └─ReLU: 2-12                        [512, 128, 16, 16]        --
+│    └─BatchNorm2d: 2-13                 [512, 128, 16, 16]        256
+│    └─MaxPool2d: 2-14                   [512, 128, 8, 8]          --
+│    └─Conv2d: 2-15                      [512, 256, 8, 8]          295,168
+│    └─ReLU: 2-16                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-17                 [512, 256, 8, 8]          512
+│    └─Conv2d: 2-18                      [512, 256, 8, 8]          590,080
+│    └─ReLU: 2-19                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-20                 [512, 256, 8, 8]          512
+│    └─Conv2d: 2-21                      [512, 256, 8, 8]          590,080
+│    └─ReLU: 2-22                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-23                 [512, 256, 8, 8]          512
+│    └─MaxPool2d: 2-24                   [512, 256, 4, 4]          --
+│    └─Conv2d: 2-25                      [512, 512, 4, 4]          1,180,160
+│    └─ReLU: 2-26                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-27                 [512, 512, 4, 4]          1,024
+│    └─Conv2d: 2-28                      [512, 512, 4, 4]          2,359,808
+│    └─ReLU: 2-29                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-30                 [512, 512, 4, 4]          1,024
+│    └─Conv2d: 2-31                      [512, 512, 4, 4]          2,359,808
+│    └─ReLU: 2-32                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-33                 [512, 512, 4, 4]          1,024
+│    └─MaxPool2d: 2-34                   [512, 512, 2, 2]          --
+│    └─Conv2d: 2-35                      [512, 512, 2, 2]          2,359,808
+│    └─ReLU: 2-36                        [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-37                 [512, 512, 2, 2]          1,024
+│    └─Conv2d: 2-38                      [512, 512, 2, 2]          2,359,808
+│    └─ReLU: 2-39                        [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-40                 [512, 512, 2, 2]          1,024
+│    └─Conv2d: 2-41                      [512, 512, 2, 2]          2,359,808
+│    └─ReLU: 2-42                        [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-43                 [512, 512, 2, 2]          1,024
+│    └─MaxPool2d: 2-44                   [512, 512, 1, 1]          --
+├─Sequential: 1-2                        [512, 10]                 --
+│    └─Linear: 2-45                      [512, 4096]               2,101,248
+│    └─ReLU: 2-46                        [512, 4096]               --
+│    └─Dropout: 2-47                     [512, 4096]               --
+│    └─Linear: 2-48                      [512, 4096]               16,781,312
+│    └─ReLU: 2-49                        [512, 4096]               --
+│    └─Dropout: 2-50                     [512, 4096]               --
+│    └─Linear: 2-51                      [512, 10]                 40,970
+==========================================================================================
+Total params: 33,646,666
+Trainable params: 33,646,666
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 170.19
+==========================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 2298.52
+Params size (MB): 134.59
+Estimated Total Size (MB): 2439.40
+==========================================================================================
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 0/64 zeros (0.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 0/64 zeros (0.00%)
+features.conv_3.weight: 0/73728 zeros (0.00%)
+features.conv_3.bias: 0/128 zeros (0.00%)
+features.bn_3.weight: 0/128 zeros (0.00%)
+features.bn_3.bias: 0/128 zeros (0.00%)
+features.conv_4.weight: 0/147456 zeros (0.00%)
+features.conv_4.bias: 0/128 zeros (0.00%)
+features.bn_4.weight: 0/128 zeros (0.00%)
+features.bn_4.bias: 0/128 zeros (0.00%)
+features.conv_5.weight: 0/294912 zeros (0.00%)
+features.conv_5.bias: 0/256 zeros (0.00%)
+features.bn_5.weight: 0/256 zeros (0.00%)
+features.bn_5.bias: 0/256 zeros (0.00%)
+features.conv_6.weight: 0/589824 zeros (0.00%)
+features.conv_6.bias: 0/256 zeros (0.00%)
+features.bn_6.weight: 0/256 zeros (0.00%)
+features.bn_6.bias: 0/256 zeros (0.00%)
+features.conv_7.weight: 0/589824 zeros (0.00%)
+features.conv_7.bias: 0/256 zeros (0.00%)
+features.bn_7.weight: 0/256 zeros (0.00%)
+features.bn_7.bias: 0/256 zeros (0.00%)
+features.conv_8.weight: 0/1179648 zeros (0.00%)
+features.conv_8.bias: 0/512 zeros (0.00%)
+features.bn_8.weight: 0/512 zeros (0.00%)
+features.bn_8.bias: 0/512 zeros (0.00%)
+features.conv_9.weight: 1/2359296 zeros (0.00%)
+features.conv_9.bias: 0/512 zeros (0.00%)
+features.bn_9.weight: 0/512 zeros (0.00%)
+features.bn_9.bias: 0/512 zeros (0.00%)
+features.conv_10.weight: 0/2359296 zeros (0.00%)
+features.conv_10.bias: 0/512 zeros (0.00%)
+features.bn_10.weight: 0/512 zeros (0.00%)
+features.bn_10.bias: 0/512 zeros (0.00%)
+features.conv_11.weight: 0/2359296 zeros (0.00%)
+features.conv_11.bias: 0/512 zeros (0.00%)
+features.bn_11.weight: 0/512 zeros (0.00%)
+features.bn_11.bias: 0/512 zeros (0.00%)
+features.conv_12.weight: 0/2359296 zeros (0.00%)
+features.conv_12.bias: 0/512 zeros (0.00%)
+features.bn_12.weight: 0/512 zeros (0.00%)
+features.bn_12.bias: 0/512 zeros (0.00%)
+features.conv_13.weight: 0/2359296 zeros (0.00%)
+features.conv_13.bias: 0/512 zeros (0.00%)
+features.bn_13.weight: 0/512 zeros (0.00%)
+features.bn_13.bias: 0/512 zeros (0.00%)
+classifier.fc_1.weight: 0/2097152 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.fc_2.weight: 2/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.fc_3.weight: 0/40960 zeros (0.00%)
+classifier.fc_3.bias: 0/10 zeros (0.00%)
+============================================================
+[INFO] Initialized Model: None
+[INFO] Loading model with weights from '../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/checkpoint_Finetuned_0.200000.pth'...
+[INFO] Full compression set: [('features.conv_8', 'features.conv_10')]
+[DEBUG] Compressing: ('features.conv_8', 'features.conv_10')
+
+--- Starting collapse for block: features.conv_8 to features.conv_10 ---
+
+Collapsing layers from 'features.conv_8' to 'features.conv_10'...
+[DEBUG] Available layers for collapsing: ['features.conv_1', 'features.relu_1', 'features.bn_1', 'features.conv_2', 'features.relu_2', 'features.bn_2', 'features.pool_1', 'features.conv_3', 'features.relu_3', 'features.bn_3', 'features.conv_4', 'features.relu_4', 'features.bn_4', 'features.pool_2', 'features.conv_5', 'features.relu_5', 'features.bn_5', 'features.conv_6', 'features.relu_6', 'features.bn_6', 'features.conv_7', 'features.relu_7', 'features.bn_7', 'features.pool_3', 'features.conv_8', 'features.relu_8', 'features.bn_8', 'features.conv_9', 'features.relu_9', 'features.bn_9', 'features.conv_10', 'features.relu_10', 'features.bn_10', 'features.pool_4', 'features.conv_11', 'features.relu_11', 'features.bn_11', 'features.conv_12', 'features.relu_12', 'features.bn_12', 'features.conv_13', 'features.relu_13', 'features.bn_13', 'features.pool_5', 'classifier.fc_1', 'classifier.relu_1', 'classifier.fc_2', 'classifier.relu_2', 'classifier.fc_3']
+[DEBUG] Splitting layer name: features.conv_8
+[DEBUG] Container: features, Subname: conv_8
+[DEBUG] Splitting layer name: features.conv_10
+[DEBUG] Container: features, Subname: conv_10
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Finding indices for layers 'conv_8' to 'conv_10'...
+[DEBUG] Found start layer 'conv_8' at index 24
+[DEBUG] Found end layer 'conv_10' at index 30
+[DEBUG] Collapsing in section 'features' from index 24 to 30 (conv_8 → conv_10)
+[DEBUG] Accessing layer 'features.conv_8' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Accessing attribute 'conv_8'
+[DEBUG] Simulated input shape before collapsing block: torch.Size([512, 256, 4, 4])
+[INFO] Effective kernel size for collapse: 7x7
+[INFO] Expected trainable parameters (collapsed conv): 6,423,040
+[DEBUG] Building collapsed block: Conv2d, in=256, out=512, stride=(1, 1)
+[DEBUG] Built collapsed Conv2d: 256 -> 512, kernel_size=1, stride=(1, 1), padding=0
+[DEBUG] Collapsed block layers: ['Conv2d']
+[DEBUG] Parameters BEFORE collapse: 33,646,666
+[DEBUG] Replacing layers 24 to 30 with collapsed block...
+[DEBUG] Inserting new block as 'collapsed_conv_8_to_conv_10_053bc373'
+[DEBUG] Removing layer 'relu_8' at index 25
+[DEBUG] Removing layer 'bn_8' at index 26
+[DEBUG] Removing layer 'conv_9' at index 27
+[DEBUG] Removing layer 'relu_9' at index 28
+[DEBUG] Removing layer 'bn_9' at index 29
+[DEBUG] Removing layer 'conv_10' at index 30
+[DEBUG] New container will have 38 children.
+[DEBUG] Updating container at path: features
+[DEBUG] Setting new container at final part: features
+[DEBUG] Parameters AFTER collapse: 27,875,914
+[DEBUG] Expected parameters for collapsed block: 6,423,040
+[DEBUG] ΔParams = +5,770,752
+[INFO] ✅ Collapsed features layers features.conv_8 → features.conv_10
+[INFO] Model now has 27,875,914 trainable parameters (was 33,646,666)
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 0/64 zeros (0.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 0/64 zeros (0.00%)
+features.conv_3.weight: 0/73728 zeros (0.00%)
+features.conv_3.bias: 0/128 zeros (0.00%)
+features.bn_3.weight: 0/128 zeros (0.00%)
+features.bn_3.bias: 0/128 zeros (0.00%)
+features.conv_4.weight: 0/147456 zeros (0.00%)
+features.conv_4.bias: 0/128 zeros (0.00%)
+features.bn_4.weight: 0/128 zeros (0.00%)
+features.bn_4.bias: 0/128 zeros (0.00%)
+features.conv_5.weight: 0/294912 zeros (0.00%)
+features.conv_5.bias: 0/256 zeros (0.00%)
+features.bn_5.weight: 0/256 zeros (0.00%)
+features.bn_5.bias: 0/256 zeros (0.00%)
+features.conv_6.weight: 0/589824 zeros (0.00%)
+features.conv_6.bias: 0/256 zeros (0.00%)
+features.bn_6.weight: 0/256 zeros (0.00%)
+features.bn_6.bias: 0/256 zeros (0.00%)
+features.conv_7.weight: 0/589824 zeros (0.00%)
+features.conv_7.bias: 0/256 zeros (0.00%)
+features.bn_7.weight: 0/256 zeros (0.00%)
+features.bn_7.bias: 0/256 zeros (0.00%)
+features.collapsed_conv_8_to_conv_10_053bc373.layer_0.weight: 0/131072 zeros (0.00%)
+features.bn_10.weight: 0/512 zeros (0.00%)
+features.bn_10.bias: 0/512 zeros (0.00%)
+features.conv_11.weight: 0/2359296 zeros (0.00%)
+features.conv_11.bias: 0/512 zeros (0.00%)
+features.bn_11.weight: 0/512 zeros (0.00%)
+features.bn_11.bias: 0/512 zeros (0.00%)
+features.conv_12.weight: 0/2359296 zeros (0.00%)
+features.conv_12.bias: 0/512 zeros (0.00%)
+features.bn_12.weight: 0/512 zeros (0.00%)
+features.bn_12.bias: 0/512 zeros (0.00%)
+features.conv_13.weight: 0/2359296 zeros (0.00%)
+features.conv_13.bias: 0/512 zeros (0.00%)
+features.bn_13.weight: 0/512 zeros (0.00%)
+features.bn_13.bias: 0/512 zeros (0.00%)
+classifier.fc_1.weight: 0/2097152 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.fc_2.weight: 2/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.fc_3.weight: 0/40960 zeros (0.00%)
+classifier.fc_3.bias: 0/10 zeros (0.00%)
+[DEBUG] Model structure after collapse:
+None
+
+--- Adjusting classifier / head AFTER collapsing all blocks ---
+[INFO] First linear found at: classifier.fc_1
+[DEBUG] Splitting layer name: classifier.fc_1
+[DEBUG] Container: classifier, Subname: fc_1
+[DEBUG] Measured flattened features size for head (from hooks): 512
+[DEBUG] Accessing layer 'classifier' in the model.
+[DEBUG] Accessing attribute 'classifier'
+[DEBUG] Updating container at path: classifier
+[DEBUG] Setting new container at final part: classifier
+[INFO] Rebuilt sequential head 'classifier' with adjusted first Linear/pool
+[INFO] Replacing 13 in-place ReLU(s) with out-of-place variants.
+[DEBUG] Found in-place ReLU at: features.relu_1
+[DEBUG] Splitting layer name: features.relu_1
+[DEBUG] Container: features, Subname: relu_1
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_1
+[DEBUG] Found in-place ReLU at: features.relu_2
+[DEBUG] Splitting layer name: features.relu_2
+[DEBUG] Container: features, Subname: relu_2
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_2
+[DEBUG] Found in-place ReLU at: features.relu_3
+[DEBUG] Splitting layer name: features.relu_3
+[DEBUG] Container: features, Subname: relu_3
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_3
+[DEBUG] Found in-place ReLU at: features.relu_4
+[DEBUG] Splitting layer name: features.relu_4
+[DEBUG] Container: features, Subname: relu_4
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_4
+[DEBUG] Found in-place ReLU at: features.relu_5
+[DEBUG] Splitting layer name: features.relu_5
+[DEBUG] Container: features, Subname: relu_5
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_5
+[DEBUG] Found in-place ReLU at: features.relu_6
+[DEBUG] Splitting layer name: features.relu_6
+[DEBUG] Container: features, Subname: relu_6
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_6
+[DEBUG] Found in-place ReLU at: features.relu_7
+[DEBUG] Splitting layer name: features.relu_7
+[DEBUG] Container: features, Subname: relu_7
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_7
+[DEBUG] Found in-place ReLU at: features.relu_10
+[DEBUG] Splitting layer name: features.relu_10
+[DEBUG] Container: features, Subname: relu_10
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_10
+[DEBUG] Found in-place ReLU at: features.relu_11
+[DEBUG] Splitting layer name: features.relu_11
+[DEBUG] Container: features, Subname: relu_11
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_11
+[DEBUG] Found in-place ReLU at: features.relu_12
+[DEBUG] Splitting layer name: features.relu_12
+[DEBUG] Container: features, Subname: relu_12
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_12
+[DEBUG] Found in-place ReLU at: features.relu_13
+[DEBUG] Splitting layer name: features.relu_13
+[DEBUG] Container: features, Subname: relu_13
+[DEBUG] Accessing layer 'features' in the model.
+[DEBUG] Accessing attribute 'features'
+[DEBUG] Setting new ReLU at attribute relu_13
+[DEBUG] Found in-place ReLU at: classifier.relu_1
+[DEBUG] Splitting layer name: classifier.relu_1
+[DEBUG] Container: classifier, Subname: relu_1
+[DEBUG] Accessing layer 'classifier' in the model.
+[DEBUG] Accessing attribute 'classifier'
+[DEBUG] Setting new ReLU at attribute relu_1
+[DEBUG] Found in-place ReLU at: classifier.relu_2
+[DEBUG] Splitting layer name: classifier.relu_2
+[DEBUG] Container: classifier, Subname: relu_2
+[DEBUG] Accessing layer 'classifier' in the model.
+[DEBUG] Accessing attribute 'classifier'
+[DEBUG] Setting new ReLU at attribute relu_2
+[INFO] Collapse complete. Total trainable params: 27875914 when compressing [('features.conv_8', 'features.conv_10')] with model VGG16
+[INFO] Compiling model
+[•] Starting experiment 'Stage 4' in workflow 'JF'
+[•] Using device: cuda
+[Start training] device:cuda
+[INFO] Training started...
+model on device: cuda:0
+[INFO] Starting Epoch 1 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:08<14:30,  8.97s/it]  2%|▏         | 2/98 [00:09<06:02,  3.77s/it]  3%|▎         | 3/98 [00:09<03:21,  2.12s/it]  4%|▍         | 4/98 [00:09<02:08,  1.36s/it]  5%|▌         | 5/98 [00:09<01:27,  1.06it/s]  6%|▌         | 6/98 [00:09<01:03,  1.45it/s]  7%|▋         | 7/98 [00:10<00:48,  1.88it/s]  8%|▊         | 8/98 [00:10<00:38,  2.35it/s]  9%|▉         | 9/98 [00:10<00:31,  2.81it/s] 10%|█         | 10/98 [00:10<00:27,  3.24it/s] 11%|█         | 11/98 [00:11<00:34,  2.52it/s] 12%|█▏        | 12/98 [00:11<00:36,  2.34it/s] 13%|█▎        | 13/98 [00:11<00:30,  2.79it/s] 14%|█▍        | 14/98 [00:12<00:36,  2.30it/s] 15%|█▌        | 15/98 [00:13<00:37,  2.22it/s] 16%|█▋        | 16/98 [00:13<00:43,  1.90it/s] 17%|█▋        | 17/98 [00:13<00:34,  2.33it/s] 18%|█▊        | 18/98 [00:14<00:40,  1.96it/s] 19%|█▉        | 19/98 [00:14<00:33,  2.38it/s] 20%|██        | 20/98 [00:15<00:32,  2.44it/s] 21%|██▏       | 21/98 [00:15<00:26,  2.88it/s] 22%|██▏       | 22/98 [00:16<00:43,  1.74it/s] 23%|██▎       | 23/98 [00:16<00:36,  2.04it/s] 24%|██▍       | 24/98 [00:17<00:36,  2.02it/s] 26%|██▌       | 25/98 [00:17<00:29,  2.46it/s] 27%|██▋       | 26/98 [00:18<00:37,  1.91it/s] 28%|██▊       | 27/98 [00:18<00:30,  2.34it/s] 29%|██▊       | 28/98 [00:19<00:37,  1.86it/s] 30%|██▉       | 29/98 [00:19<00:30,  2.29it/s] 31%|███       | 30/98 [00:19<00:28,  2.35it/s] 32%|███▏      | 31/98 [00:20<00:26,  2.58it/s] 33%|███▎      | 32/98 [00:21<00:43,  1.51it/s] 34%|███▎      | 33/98 [00:21<00:34,  1.91it/s] 35%|███▍      | 34/98 [00:21<00:27,  2.35it/s] 36%|███▌      | 35/98 [00:22<00:22,  2.79it/s] 37%|███▋      | 36/98 [00:23<00:43,  1.43it/s] 38%|███▊      | 37/98 [00:23<00:33,  1.81it/s] 39%|███▉      | 38/98 [00:24<00:26,  2.25it/s] 40%|███▉      | 39/98 [00:24<00:21,  2.69it/s] 41%|████      | 40/98 [00:25<00:37,  1.54it/s] 42%|████▏     | 41/98 [00:25<00:29,  1.94it/s] 43%|████▎     | 42/98 [00:25<00:23,  2.36it/s] 44%|████▍     | 43/98 [00:26<00:21,  2.61it/s] 45%|████▍     | 44/98 [00:27<00:35,  1.52it/s] 46%|████▌     | 45/98 [00:27<00:27,  1.92it/s] 47%|████▋     | 46/98 [00:27<00:22,  2.36it/s] 48%|████▊     | 47/98 [00:28<00:18,  2.80it/s] 49%|████▉     | 48/98 [00:29<00:26,  1.92it/s] 50%|█████     | 49/98 [00:29<00:20,  2.34it/s] 51%|█████     | 50/98 [00:29<00:17,  2.81it/s] 52%|█████▏    | 51/98 [00:29<00:14,  3.23it/s] 53%|█████▎    | 52/98 [00:31<00:33,  1.38it/s] 54%|█████▍    | 53/98 [00:31<00:25,  1.76it/s] 55%|█████▌    | 54/98 [00:31<00:20,  2.17it/s] 56%|█████▌    | 55/98 [00:31<00:16,  2.58it/s]
