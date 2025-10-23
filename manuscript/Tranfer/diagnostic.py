@@ -631,7 +631,7 @@ def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
     plt.close()
 
 
-    def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name, dtype_bytes=4):
+def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name, dtype_bytes=4):
     """
     Plot per-layer activation memory (MB) across experiments.
 
