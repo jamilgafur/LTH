@@ -248,10 +248,6 @@ def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, de
 def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs,
                          model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",
                          post_compress_epochs=False):
-
-def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs,
-                         model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",
-                         post_compress_epochs=False):
     
     model_kwargs = model_kwargs or {}
     print("\n=== Running Kevin experiment ===")
