@@ -610,6 +610,7 @@ def plot_unified_metrics(metrics_dir, save_dir, workflow):
 # -------------------------
 # Robust plotting helpers
 # -------------------------
+
 def plot_flops_vs_latency(metrics_dict, save_dir, exp_name):
     metrics = normalize_metrics(metrics_dict)
     if not metrics:
@@ -628,6 +629,10 @@ def plot_flops_vs_latency(metrics_dict, save_dir, exp_name):
 
     if not any(flops) and not any(times):
         return
+
+    # Save the data to CSV
+    df_flops_latency = pd.DataFrame({"Model": names, "FLOPs": flops, "Inference Time (s)": times})
+    df_flops_latency.to_csv(os.path.join(save_dir, f"{exp_name}_flops_vs_latency.csv"), index=False)
 
     ensure_dir(save_dir)
     plt.figure(figsize=(8, 6))
@@ -673,6 +678,10 @@ def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
     if not deltas:
         return
     df = pd.DataFrame(deltas)
+
+    # Save the data to CSV
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_delta_acc_vs_params.csv"), index=False)
+
     ensure_dir(save_dir)
     plt.figure(figsize=(8, 6))
     sns.scatterplot(data=df, x="ΔParams(%)", y="ΔAcc")
@@ -700,6 +709,11 @@ def plot_flops_vs_memory(metrics_dict, save_dir, exp_name):
 
     if not any(flops) and not any(mems):
         return
+    
+    # Save the data to CSV
+    df_flops_memory = pd.DataFrame({"Model": names, "FLOPs": flops, "Memory (MB)": mems})
+    df_flops_memory.to_csv(os.path.join(save_dir, f"{exp_name}_flops_vs_memory.csv"), index=False)
+
     ensure_dir(save_dir)
     plt.figure(figsize=(8, 6))
     sns.scatterplot(x=flops, y=mems)
@@ -727,6 +741,11 @@ def plot_accuracy_vs_memory(metrics_dict, save_dir, exp_name):
 
     if not any(accs) and not any(mems):
         return
+    
+    # Save the data to CSV
+    df_acc_memory = pd.DataFrame({"Model": names, "Accuracy": accs, "Memory (MB)": mems})
+    df_acc_memory.to_csv(os.path.join(save_dir, f"{exp_name}_acc_vs_memory.csv"), index=False)
+
     ensure_dir(save_dir)
     plt.figure(figsize=(8, 6))
     sns.scatterplot(x=mems, y=accs)
@@ -764,6 +783,9 @@ def plot_heatmap(metrics_dict, save_dir, exp_name):
     # Normalize columns for heatmap stability
     df_norm = df.apply(lambda x: (x - x.min()) / (x.max() - x.min()) if x.max() != x.min() else (x * 0.0))
 
+    # Save the data to CSV
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_metrics.csv"))
+
     ensure_dir(save_dir)
     plt.figure(figsize=(10, 6))
     sns.heatmap(df_norm, annot=True, cmap="coolwarm")
@@ -788,6 +810,10 @@ def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
     if not rows:
         return
     df = pd.DataFrame(rows).sort_values("Model")
+
+    # Save the data to CSV
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.csv"), index=False)
+
     ensure_dir(save_dir)
     plt.figure(figsize=(9, 6))
     plt.plot(df["Model"], df["Params"], label="Parameters", marker="o")

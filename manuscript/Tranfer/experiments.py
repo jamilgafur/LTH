@@ -185,6 +185,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
         plot_results(params, accs, names, f"{workflow} Experiments", save_path,
                     dataset=workflow, infer_times=infer_times, mem_usages=mem_usages, flops=flops, total_sizes=total_sizes)
         print(f"Saved comparison plot to {save_path}")
+
     norm_metrics = normalize_metrics(all_metrics)
 
     # Plots (each function is robust to input)
