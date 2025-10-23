@@ -175,7 +175,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
             params.append(metrics.get("param_count", 0))
             accs.append(metrics.get("final_accuracy", 0))
             infer_times.append(metrics.get("inference_time", 0))
-            mem_usages.append(metrics.get("memory_usage_mb", 0))
+            mem_usages.append(metrics.get("total_size_mb", 0))
             flops.append(metrics.get("flops", 0))  # Collect FLOPs
             total_sizes.append(metrics.get("total_size_mb", 0))  # Collect Total Size in MB
 
