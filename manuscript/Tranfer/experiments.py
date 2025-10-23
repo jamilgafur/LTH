@@ -78,7 +78,6 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
         ckpt_dir, get_checkpoint_filename(workflow, exp_name, model.__class__.__name__, epochs)
     )
     model.to(device)
-    describe_model(model, loader=train_loader, device=device)
 
     # Load existing metrics (if valid)
     data = None
@@ -250,6 +249,10 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
                          model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",
                          post_compress_epochs=False):
 
+def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs,
+                         model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",
+                         post_compress_epochs=False):
+    
     model_kwargs = model_kwargs or {}
     print("\n=== Running Kevin experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
@@ -270,6 +273,7 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
             input_shape=model_kwargs['one_batch'].shape,
             device=device
         )
+        os.remove(tmp_path)
 
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
