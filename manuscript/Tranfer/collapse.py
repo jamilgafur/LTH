@@ -415,11 +415,10 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
         paddings = [m.padding[0] if hasattr(m, "padding") else 0 for m in full_block if isinstance(m, nn.Conv2d)]
         k_eff = sum(kernels) - (len(kernels) - 1)
         p_eff = paddings[0] if paddings else 0
-        conv1 = nn.Conv2d(in_features, bottleneck_channels, kernel_size=k_eff, stride=stride, padding=p_eff, bias=False)
-        relu1 = nn.ReLU(inplace=False)
-        conv2 = nn.Conv2d(bottleneck_channels, out_features, kernel_size=1, stride=stride, padding=0, bias=not has_bn)
-
-        seq.extend([conv1, relu1, conv2])
+        conv1 = nn.Conv2d(in_features, out_features, kernel_size=k_eff, stride=stride, padding=p_eff, bias=False)
+        print(f"[DEBUG] Built collapsed Conv2d: {in_features} -> {out_features}, kernel_size={k_eff}, stride={stride}, padding={p_eff}")
+        
+        seq.extend([conv1])
 
         if has_bn:
             seq.append(nn.BatchNorm2d(out_features))
