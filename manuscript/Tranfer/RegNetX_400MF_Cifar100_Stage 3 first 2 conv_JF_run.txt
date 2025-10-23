@@ -1,0 +1,1173 @@
+VGG16 - Cifar10: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+VGG16 - Cifar100: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar10: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar100: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+Namespace(model='RegNetX_400MF', dataset='Cifar100', epochs=1, pretrain=1, experiment='Stage 3 first 2 conv', post_compress_epochs=0, imp=True, JF=True, Kevin=False)
+has GPU: True
+Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
+Loading CIFAR-100 data for RegNetX_400MF...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+
+--- Running experiment: Stage 3 first 2 conv ---
+
+=== Running JF experiment ===
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+RegNetX_400MF                            [512, 100]                --
+├─Sequential: 1-1                        [512, 32, 16, 16]         --
+│    └─Conv2d: 2-1                       [512, 32, 16, 16]         864
+│    └─BatchNorm2d: 2-2                  [512, 32, 16, 16]         64
+│    └─ReLU: 2-3                         [512, 32, 16, 16]         --
+├─Sequential: 1-2                        [512, 24, 16, 16]         --
+│    └─XBlock: 2-4                       [512, 24, 16, 16]         --
+│    │    └─Sequential: 3-1              [512, 24, 16, 16]         6,672
+│    │    └─Sequential: 3-2              [512, 24, 16, 16]         816
+│    │    └─ReLU: 3-3                    [512, 24, 16, 16]         --
+├─Sequential: 1-3                        [512, 56, 8, 8]           --
+│    └─XBlock: 2-5                       [512, 56, 8, 8]           --
+│    │    └─Sequential: 3-4              [512, 56, 8, 8]           33,040
+│    │    └─Sequential: 3-5              [512, 56, 8, 8]           1,456
+│    │    └─ReLU: 3-6                    [512, 56, 8, 8]           --
+├─Sequential: 1-4                        [512, 152, 4, 4]          --
+│    └─XBlock: 2-6                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-7              [512, 152, 4, 4]          240,464
+│    │    └─Sequential: 3-8              [512, 152, 4, 4]          8,816
+│    │    └─ReLU: 3-9                    [512, 152, 4, 4]          --
+│    └─XBlock: 2-7                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-10             [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-11             [512, 152, 4, 4]          --
+│    │    └─ReLU: 3-12                   [512, 152, 4, 4]          --
+│    └─XBlock: 2-8                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-13             [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-14             [512, 152, 4, 4]          --
+│    │    └─ReLU: 3-15                   [512, 152, 4, 4]          --
+│    └─XBlock: 2-9                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-16             [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-17             [512, 152, 4, 4]          --
+│    │    └─ReLU: 3-18                   [512, 152, 4, 4]          --
+├─Sequential: 1-5                        [512, 368, 2, 2]          --
+│    └─XBlock: 2-10                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-19             [512, 368, 2, 2]          1,412,384
+│    │    └─Sequential: 3-20             [512, 368, 2, 2]          56,672
+│    │    └─ReLU: 3-21                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-11                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-22             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-23             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-24                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-12                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-25             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-26             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-27                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-13                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-28             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-29             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-30                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-14                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-31             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-32             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-33                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-15                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-34             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-35             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-36                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-16                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-37             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-38             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-39                   [512, 368, 2, 2]          --
+├─AdaptiveAvgPool2d: 1-6                 [512, 368, 1, 1]          --
+├─Linear: 1-7                            [512, 100]                36,900
+==========================================================================================
+Total params: 11,514,548
+Trainable params: 11,514,548
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 32.49
+==========================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 1094.60
+Params size (MB): 46.06
+Estimated Total Size (MB): 1146.95
+==========================================================================================
+
+Layer-wise zero parameter stats:
+
+stem.stem_conv.weight: 84/864 zeros (9.72%)
+stem.stem_bn.weight: 0/32 zeros (0.00%)
+stem.stem_bn.bias: 0/32 zeros (0.00%)
+stage1.stage1_block0.block.conv1.weight: 100/768 zeros (13.02%)
+stage1.stage1_block0.block.bn1.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn1.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.conv2.weight: 1328/5184 zeros (25.62%)
+stage1.stage1_block0.block.bn2.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn2.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.conv3.weight: 80/576 zeros (13.89%)
+stage1.stage1_block0.block.bn3.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn3.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.shortcut.shortcut_conv.weight: 111/768 zeros (14.45%)
+stage1.stage1_block0.shortcut.shortcut_bn.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.shortcut.shortcut_bn.bias: 0/24 zeros (0.00%)
+stage2.stage2_block0.block.conv1.weight: 209/1344 zeros (15.55%)
+stage2.stage2_block0.block.bn1.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.bn1.bias: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.conv2.weight: 14268/28224 zeros (50.55%)
+stage2.stage2_block0.block.bn2.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.bn2.bias: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.conv3.weight: 733/3136 zeros (23.37%)
+stage2.stage2_block0.block.bn3.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.bn3.bias: 0/56 zeros (0.00%)
+stage2.stage2_block0.shortcut.shortcut_conv.weight: 191/1344 zeros (14.21%)
+stage2.stage2_block0.shortcut.shortcut_bn.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.shortcut.shortcut_bn.bias: 0/56 zeros (0.00%)
+stage3.stage3_block0.block.conv1.weight: 2112/8512 zeros (24.81%)
+stage3.stage3_block0.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.conv2.weight: 169125/207936 zeros (81.34%)
+stage3.stage3_block0.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.conv3.weight: 9133/23104 zeros (39.53%)
+stage3.stage3_block0.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.shortcut.shortcut_conv.weight: 2103/8512 zeros (24.71%)
+stage3.stage3_block0.shortcut.shortcut_bn.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.shortcut.shortcut_bn.bias: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.conv1.weight: 9233/23104 zeros (39.96%)
+stage3.stage3_block1.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.conv2.weight: 179893/207936 zeros (86.51%)
+stage3.stage3_block1.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.conv3.weight: 9121/23104 zeros (39.48%)
+stage3.stage3_block1.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv1.weight: 9154/23104 zeros (39.62%)
+stage3.stage3_block2.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv2.weight: 182792/207936 zeros (87.91%)
+stage3.stage3_block2.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv3.weight: 9073/23104 zeros (39.27%)
+stage3.stage3_block2.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv1.weight: 9310/23104 zeros (40.30%)
+stage3.stage3_block3.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv2.weight: 184920/207936 zeros (88.93%)
+stage3.stage3_block3.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv3.weight: 9272/23104 zeros (40.13%)
+stage3.stage3_block3.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn3.bias: 0/152 zeros (0.00%)
+stage4.stage4_block0.block.conv1.weight: 22748/55936 zeros (40.67%)
+stage4.stage4_block0.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.conv2.weight: 1206059/1218816 zeros (98.95%)
+stage4.stage4_block0.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.conv3.weight: 83712/135424 zeros (61.81%)
+stage4.stage4_block0.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.shortcut.shortcut_conv.weight: 22333/55936 zeros (39.93%)
+stage4.stage4_block0.shortcut.shortcut_bn.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.shortcut.shortcut_bn.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv1.weight: 85623/135424 zeros (63.23%)
+stage4.stage4_block1.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv2.weight: 1214963/1218816 zeros (99.68%)
+stage4.stage4_block1.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv3.weight: 85193/135424 zeros (62.91%)
+stage4.stage4_block1.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv1.weight: 86433/135424 zeros (63.82%)
+stage4.stage4_block2.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv2.weight: 1217995/1218816 zeros (99.93%)
+stage4.stage4_block2.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv3.weight: 85951/135424 zeros (63.47%)
+stage4.stage4_block2.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv1.weight: 86865/135424 zeros (64.14%)
+stage4.stage4_block3.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv2.weight: 1217972/1218816 zeros (99.93%)
+stage4.stage4_block3.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv3.weight: 85902/135424 zeros (63.43%)
+stage4.stage4_block3.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv1.weight: 86493/135424 zeros (63.87%)
+stage4.stage4_block4.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv2.weight: 1218140/1218816 zeros (99.94%)
+stage4.stage4_block4.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv3.weight: 85931/135424 zeros (63.45%)
+stage4.stage4_block4.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv1.weight: 86604/135424 zeros (63.95%)
+stage4.stage4_block5.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv2.weight: 1217812/1218816 zeros (99.92%)
+stage4.stage4_block5.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv3.weight: 85451/135424 zeros (63.10%)
+stage4.stage4_block5.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv1.weight: 86442/135424 zeros (63.83%)
+stage4.stage4_block6.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv2.weight: 1216726/1218816 zeros (99.83%)
+stage4.stage4_block6.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv3.weight: 84974/135424 zeros (62.75%)
+stage4.stage4_block6.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn3.bias: 0/368 zeros (0.00%)
+fc.weight: 0/36800 zeros (0.00%)
+fc.bias: 0/100 zeros (0.00%)
+============================================================
+[INFO] Initialized Model: None
+[INFO] Loading model with weights from '../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/checkpoint_Finetuned_0.931281.pth'...
+[INFO] Full compression set: [('stage3.stage3_block0.block.conv1', 'stage3.stage3_block1.block.conv1')]
+[DEBUG] Compressing: ('stage3.stage3_block0.block.conv1', 'stage3.stage3_block1.block.conv1')
+
+--- Starting collapse for block: stage3.stage3_block0.block.conv1 to stage3.stage3_block1.block.conv1 ---
+
+Collapsing layers from 'stage3.stage3_block0.block.conv1' to 'stage3.stage3_block1.block.conv1'...
+[DEBUG] Available layers for collapsing: ['stem.stem_conv', 'stem.stem_bn', 'stem.stem_relu', 'stage1.stage1_block0.block.conv1', 'stage1.stage1_block0.block.bn1', 'stage1.stage1_block0.block.relu1', 'stage1.stage1_block0.block.conv2', 'stage1.stage1_block0.block.bn2', 'stage1.stage1_block0.block.relu2', 'stage1.stage1_block0.block.conv3', 'stage1.stage1_block0.block.bn3', 'stage1.stage1_block0.shortcut.shortcut_conv', 'stage1.stage1_block0.shortcut.shortcut_bn', 'stage1.stage1_block0.relu', 'stage2.stage2_block0.block.conv1', 'stage2.stage2_block0.block.bn1', 'stage2.stage2_block0.block.relu1', 'stage2.stage2_block0.block.conv2', 'stage2.stage2_block0.block.bn2', 'stage2.stage2_block0.block.relu2', 'stage2.stage2_block0.block.conv3', 'stage2.stage2_block0.block.bn3', 'stage2.stage2_block0.shortcut.shortcut_conv', 'stage2.stage2_block0.shortcut.shortcut_bn', 'stage2.stage2_block0.relu', 'stage3.stage3_block0.block.conv1', 'stage3.stage3_block0.block.bn1', 'stage3.stage3_block0.block.relu1', 'stage3.stage3_block0.block.conv2', 'stage3.stage3_block0.block.bn2', 'stage3.stage3_block0.block.relu2', 'stage3.stage3_block0.block.conv3', 'stage3.stage3_block0.block.bn3', 'stage3.stage3_block0.shortcut.shortcut_conv', 'stage3.stage3_block0.shortcut.shortcut_bn', 'stage3.stage3_block0.relu', 'stage3.stage3_block1.block.conv1', 'stage3.stage3_block1.block.bn1', 'stage3.stage3_block1.block.relu1', 'stage3.stage3_block1.block.conv2', 'stage3.stage3_block1.block.bn2', 'stage3.stage3_block1.block.relu2', 'stage3.stage3_block1.block.conv3', 'stage3.stage3_block1.block.bn3', 'stage3.stage3_block1.relu', 'stage3.stage3_block2.block.conv1', 'stage3.stage3_block2.block.bn1', 'stage3.stage3_block2.block.relu1', 'stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.bn2', 'stage3.stage3_block2.block.relu2', 'stage3.stage3_block2.block.conv3', 'stage3.stage3_block2.block.bn3', 'stage3.stage3_block2.relu', 'stage3.stage3_block3.block.conv1', 'stage3.stage3_block3.block.bn1', 'stage3.stage3_block3.block.relu1', 'stage3.stage3_block3.block.conv2', 'stage3.stage3_block3.block.bn2', 'stage3.stage3_block3.block.relu2', 'stage3.stage3_block3.block.conv3', 'stage3.stage3_block3.block.bn3', 'stage3.stage3_block3.relu', 'stage4.stage4_block0.block.conv1', 'stage4.stage4_block0.block.bn1', 'stage4.stage4_block0.block.relu1', 'stage4.stage4_block0.block.conv2', 'stage4.stage4_block0.block.bn2', 'stage4.stage4_block0.block.relu2', 'stage4.stage4_block0.block.conv3', 'stage4.stage4_block0.block.bn3', 'stage4.stage4_block0.shortcut.shortcut_conv', 'stage4.stage4_block0.shortcut.shortcut_bn', 'stage4.stage4_block0.relu', 'stage4.stage4_block1.block.conv1', 'stage4.stage4_block1.block.bn1', 'stage4.stage4_block1.block.relu1', 'stage4.stage4_block1.block.conv2', 'stage4.stage4_block1.block.bn2', 'stage4.stage4_block1.block.relu2', 'stage4.stage4_block1.block.conv3', 'stage4.stage4_block1.block.bn3', 'stage4.stage4_block1.relu', 'stage4.stage4_block2.block.conv1', 'stage4.stage4_block2.block.bn1', 'stage4.stage4_block2.block.relu1', 'stage4.stage4_block2.block.conv2', 'stage4.stage4_block2.block.bn2', 'stage4.stage4_block2.block.relu2', 'stage4.stage4_block2.block.conv3', 'stage4.stage4_block2.block.bn3', 'stage4.stage4_block2.relu', 'stage4.stage4_block3.block.conv1', 'stage4.stage4_block3.block.bn1', 'stage4.stage4_block3.block.relu1', 'stage4.stage4_block3.block.conv2', 'stage4.stage4_block3.block.bn2', 'stage4.stage4_block3.block.relu2', 'stage4.stage4_block3.block.conv3', 'stage4.stage4_block3.block.bn3', 'stage4.stage4_block3.relu', 'stage4.stage4_block4.block.conv1', 'stage4.stage4_block4.block.bn1', 'stage4.stage4_block4.block.relu1', 'stage4.stage4_block4.block.conv2', 'stage4.stage4_block4.block.bn2', 'stage4.stage4_block4.block.relu2', 'stage4.stage4_block4.block.conv3', 'stage4.stage4_block4.block.bn3', 'stage4.stage4_block4.relu', 'stage4.stage4_block5.block.conv1', 'stage4.stage4_block5.block.bn1', 'stage4.stage4_block5.block.relu1', 'stage4.stage4_block5.block.conv2', 'stage4.stage4_block5.block.bn2', 'stage4.stage4_block5.block.relu2', 'stage4.stage4_block5.block.conv3', 'stage4.stage4_block5.block.bn3', 'stage4.stage4_block5.relu', 'stage4.stage4_block6.block.conv1', 'stage4.stage4_block6.block.bn1', 'stage4.stage4_block6.block.relu1', 'stage4.stage4_block6.block.conv2', 'stage4.stage4_block6.block.bn2', 'stage4.stage4_block6.block.relu2', 'stage4.stage4_block6.block.conv3', 'stage4.stage4_block6.block.bn3', 'stage4.stage4_block6.relu', 'pool', 'fc']
+[DEBUG] Splitting layer name: stage3.stage3_block0.block.conv1
+[DEBUG] Container: stage3.stage3_block0.block, Subname: conv1
+[DEBUG] Splitting layer name: stage3.stage3_block1.block.conv1
+[DEBUG] Container: stage3.stage3_block1.block, Subname: conv1
+[DEBUG] Accessing layer 'stage3.stage3_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Finding indices for layers 'conv1' to 'conv1'...
+[DEBUG] Found start layer 'conv1' at index 0
+[DEBUG] Found end layer 'conv1' at index 0
+[DEBUG] Collapsing in section 'stage3.stage3_block0.block' from index 0 to 0 (conv1 → conv1)
+[DEBUG] Accessing layer 'stage3.stage3_block0.block.conv1' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Accessing attribute 'conv1'
+[DEBUG] Simulated input shape before collapsing block: torch.Size([512, 56, 8, 8])
+[INFO] Effective kernel size for collapse: 1x1
+[INFO] Expected trainable parameters (collapsed conv): 8,664
+[DEBUG] Building collapsed block: Conv2d, in=56, out=152, stride=(1, 1)
+[DEBUG] Built collapsed Conv2d: 56 -> 152, kernel_size=1, stride=(1, 1), padding=0
+[DEBUG] Collapsed block layers: ['Conv2d']
+[DEBUG] Parameters BEFORE collapse: 11,514,548
+[DEBUG] Replacing layers 0 to 0 with collapsed block...
+[DEBUG] Inserting new block as 'collapsed_conv1_to_conv1_2a4a5ea4'
+[DEBUG] New container will have 8 children.
+[DEBUG] Updating container at path: stage3.stage3_block0.block
+[DEBUG] Traversing into: stage3
+[DEBUG] Traversing into: stage3_block0
+[DEBUG] Setting new container at final part: block
+[DEBUG] Parameters AFTER collapse: 11,514,548
+[DEBUG] Expected parameters for collapsed block: 8,664
+[DEBUG] ΔParams = +0
+[INFO] ✅ Collapsed stage3.stage3_block0.block layers stage3.stage3_block0.block.conv1 → stage3.stage3_block1.block.conv1
+[INFO] Model now has 11,514,548 trainable parameters (was 11,514,548)
+
+Layer-wise zero parameter stats:
+
+stem.stem_conv.weight: 84/864 zeros (9.72%)
+stem.stem_bn.weight: 0/32 zeros (0.00%)
+stem.stem_bn.bias: 0/32 zeros (0.00%)
+stage1.stage1_block0.block.conv1.weight: 100/768 zeros (13.02%)
+stage1.stage1_block0.block.bn1.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn1.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.conv2.weight: 1328/5184 zeros (25.62%)
+stage1.stage1_block0.block.bn2.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn2.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.conv3.weight: 80/576 zeros (13.89%)
+stage1.stage1_block0.block.bn3.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn3.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.shortcut.shortcut_conv.weight: 111/768 zeros (14.45%)
+stage1.stage1_block0.shortcut.shortcut_bn.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.shortcut.shortcut_bn.bias: 0/24 zeros (0.00%)
+stage2.stage2_block0.block.conv1.weight: 209/1344 zeros (15.55%)
+stage2.stage2_block0.block.bn1.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.bn1.bias: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.conv2.weight: 14268/28224 zeros (50.55%)
+stage2.stage2_block0.block.bn2.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.bn2.bias: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.conv3.weight: 733/3136 zeros (23.37%)
+stage2.stage2_block0.block.bn3.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.bn3.bias: 0/56 zeros (0.00%)
+stage2.stage2_block0.shortcut.shortcut_conv.weight: 191/1344 zeros (14.21%)
+stage2.stage2_block0.shortcut.shortcut_bn.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.shortcut.shortcut_bn.bias: 0/56 zeros (0.00%)
+stage3.stage3_block0.block.collapsed_conv1_to_conv1_2a4a5ea4.layer_0.weight: 0/8512 zeros (0.00%)
+stage3.stage3_block0.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.conv2.weight: 169125/207936 zeros (81.34%)
+stage3.stage3_block0.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.conv3.weight: 9133/23104 zeros (39.53%)
+stage3.stage3_block0.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.shortcut.shortcut_conv.weight: 2103/8512 zeros (24.71%)
+stage3.stage3_block0.shortcut.shortcut_bn.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.shortcut.shortcut_bn.bias: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.conv1.weight: 9233/23104 zeros (39.96%)
+stage3.stage3_block1.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.conv2.weight: 179893/207936 zeros (86.51%)
+stage3.stage3_block1.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.conv3.weight: 9121/23104 zeros (39.48%)
+stage3.stage3_block1.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv1.weight: 9154/23104 zeros (39.62%)
+stage3.stage3_block2.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv2.weight: 182792/207936 zeros (87.91%)
+stage3.stage3_block2.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv3.weight: 9073/23104 zeros (39.27%)
+stage3.stage3_block2.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv1.weight: 9310/23104 zeros (40.30%)
+stage3.stage3_block3.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv2.weight: 184920/207936 zeros (88.93%)
+stage3.stage3_block3.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv3.weight: 9272/23104 zeros (40.13%)
+stage3.stage3_block3.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn3.bias: 0/152 zeros (0.00%)
+stage4.stage4_block0.block.conv1.weight: 22748/55936 zeros (40.67%)
+stage4.stage4_block0.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.conv2.weight: 1206059/1218816 zeros (98.95%)
+stage4.stage4_block0.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.conv3.weight: 83712/135424 zeros (61.81%)
+stage4.stage4_block0.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.shortcut.shortcut_conv.weight: 22333/55936 zeros (39.93%)
+stage4.stage4_block0.shortcut.shortcut_bn.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.shortcut.shortcut_bn.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv1.weight: 85623/135424 zeros (63.23%)
+stage4.stage4_block1.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv2.weight: 1214963/1218816 zeros (99.68%)
+stage4.stage4_block1.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv3.weight: 85193/135424 zeros (62.91%)
+stage4.stage4_block1.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv1.weight: 86433/135424 zeros (63.82%)
+stage4.stage4_block2.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv2.weight: 1217995/1218816 zeros (99.93%)
+stage4.stage4_block2.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv3.weight: 85951/135424 zeros (63.47%)
+stage4.stage4_block2.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv1.weight: 86865/135424 zeros (64.14%)
+stage4.stage4_block3.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv2.weight: 1217972/1218816 zeros (99.93%)
+stage4.stage4_block3.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv3.weight: 85902/135424 zeros (63.43%)
+stage4.stage4_block3.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv1.weight: 86493/135424 zeros (63.87%)
+stage4.stage4_block4.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv2.weight: 1218140/1218816 zeros (99.94%)
+stage4.stage4_block4.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv3.weight: 85931/135424 zeros (63.45%)
+stage4.stage4_block4.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv1.weight: 86604/135424 zeros (63.95%)
+stage4.stage4_block5.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv2.weight: 1217812/1218816 zeros (99.92%)
+stage4.stage4_block5.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv3.weight: 85451/135424 zeros (63.10%)
+stage4.stage4_block5.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv1.weight: 86442/135424 zeros (63.83%)
+stage4.stage4_block6.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv2.weight: 1216726/1218816 zeros (99.83%)
+stage4.stage4_block6.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv3.weight: 84974/135424 zeros (62.75%)
+stage4.stage4_block6.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn3.bias: 0/368 zeros (0.00%)
+fc.weight: 0/36800 zeros (0.00%)
+fc.bias: 0/100 zeros (0.00%)
+[DEBUG] Model structure after collapse:
+None
+
+--- Adjusting classifier / head AFTER collapsing all blocks ---
+[INFO] First linear found at: fc
+[DEBUG] Splitting layer name: fc
+[DEBUG] No container, subname: fc
+[DEBUG] Measured flattened features size for head (from hooks): 368
+[INFO] Head flattened size matches Linear.in_features. No changes needed.
+[INFO] Replacing 40 in-place ReLU(s) with out-of-place variants.
+[DEBUG] Found in-place ReLU at: stem.stem_relu
+[DEBUG] Splitting layer name: stem.stem_relu
+[DEBUG] Container: stem, Subname: stem_relu
+[DEBUG] Accessing layer 'stem' in the model.
+[DEBUG] Accessing attribute 'stem'
+[DEBUG] Setting new ReLU at attribute stem_relu
+[DEBUG] Found in-place ReLU at: stage1.stage1_block0.block.relu1
+[DEBUG] Splitting layer name: stage1.stage1_block0.block.relu1
+[DEBUG] Container: stage1.stage1_block0.block, Subname: relu1
+[DEBUG] Accessing layer 'stage1.stage1_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage1'
+[DEBUG] Accessing attribute 'stage1_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage1.stage1_block0.block.relu2
+[DEBUG] Splitting layer name: stage1.stage1_block0.block.relu2
+[DEBUG] Container: stage1.stage1_block0.block, Subname: relu2
+[DEBUG] Accessing layer 'stage1.stage1_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage1'
+[DEBUG] Accessing attribute 'stage1_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage1.stage1_block0.relu
+[DEBUG] Splitting layer name: stage1.stage1_block0.relu
+[DEBUG] Container: stage1.stage1_block0, Subname: relu
+[DEBUG] Accessing layer 'stage1.stage1_block0' in the model.
+[DEBUG] Accessing attribute 'stage1'
+[DEBUG] Accessing attribute 'stage1_block0'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage2.stage2_block0.block.relu1
+[DEBUG] Splitting layer name: stage2.stage2_block0.block.relu1
+[DEBUG] Container: stage2.stage2_block0.block, Subname: relu1
+[DEBUG] Accessing layer 'stage2.stage2_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage2'
+[DEBUG] Accessing attribute 'stage2_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage2.stage2_block0.block.relu2
+[DEBUG] Splitting layer name: stage2.stage2_block0.block.relu2
+[DEBUG] Container: stage2.stage2_block0.block, Subname: relu2
+[DEBUG] Accessing layer 'stage2.stage2_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage2'
+[DEBUG] Accessing attribute 'stage2_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage2.stage2_block0.relu
+[DEBUG] Splitting layer name: stage2.stage2_block0.relu
+[DEBUG] Container: stage2.stage2_block0, Subname: relu
+[DEBUG] Accessing layer 'stage2.stage2_block0' in the model.
+[DEBUG] Accessing attribute 'stage2'
+[DEBUG] Accessing attribute 'stage2_block0'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage3.stage3_block0.block.relu1
+[DEBUG] Splitting layer name: stage3.stage3_block0.block.relu1
+[DEBUG] Container: stage3.stage3_block0.block, Subname: relu1
+[DEBUG] Accessing layer 'stage3.stage3_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage3.stage3_block0.block.relu2
+[DEBUG] Splitting layer name: stage3.stage3_block0.block.relu2
+[DEBUG] Container: stage3.stage3_block0.block, Subname: relu2
+[DEBUG] Accessing layer 'stage3.stage3_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage3.stage3_block0.relu
+[DEBUG] Splitting layer name: stage3.stage3_block0.relu
+[DEBUG] Container: stage3.stage3_block0, Subname: relu
+[DEBUG] Accessing layer 'stage3.stage3_block0' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block0'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage3.stage3_block1.block.relu1
+[DEBUG] Splitting layer name: stage3.stage3_block1.block.relu1
+[DEBUG] Container: stage3.stage3_block1.block, Subname: relu1
+[DEBUG] Accessing layer 'stage3.stage3_block1.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block1'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage3.stage3_block1.block.relu2
+[DEBUG] Splitting layer name: stage3.stage3_block1.block.relu2
+[DEBUG] Container: stage3.stage3_block1.block, Subname: relu2
+[DEBUG] Accessing layer 'stage3.stage3_block1.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block1'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage3.stage3_block1.relu
+[DEBUG] Splitting layer name: stage3.stage3_block1.relu
+[DEBUG] Container: stage3.stage3_block1, Subname: relu
+[DEBUG] Accessing layer 'stage3.stage3_block1' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block1'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage3.stage3_block2.block.relu1
+[DEBUG] Splitting layer name: stage3.stage3_block2.block.relu1
+[DEBUG] Container: stage3.stage3_block2.block, Subname: relu1
+[DEBUG] Accessing layer 'stage3.stage3_block2.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block2'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage3.stage3_block2.block.relu2
+[DEBUG] Splitting layer name: stage3.stage3_block2.block.relu2
+[DEBUG] Container: stage3.stage3_block2.block, Subname: relu2
+[DEBUG] Accessing layer 'stage3.stage3_block2.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block2'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage3.stage3_block2.relu
+[DEBUG] Splitting layer name: stage3.stage3_block2.relu
+[DEBUG] Container: stage3.stage3_block2, Subname: relu
+[DEBUG] Accessing layer 'stage3.stage3_block2' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block2'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage3.stage3_block3.block.relu1
+[DEBUG] Splitting layer name: stage3.stage3_block3.block.relu1
+[DEBUG] Container: stage3.stage3_block3.block, Subname: relu1
+[DEBUG] Accessing layer 'stage3.stage3_block3.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block3'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage3.stage3_block3.block.relu2
+[DEBUG] Splitting layer name: stage3.stage3_block3.block.relu2
+[DEBUG] Container: stage3.stage3_block3.block, Subname: relu2
+[DEBUG] Accessing layer 'stage3.stage3_block3.block' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block3'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage3.stage3_block3.relu
+[DEBUG] Splitting layer name: stage3.stage3_block3.relu
+[DEBUG] Container: stage3.stage3_block3, Subname: relu
+[DEBUG] Accessing layer 'stage3.stage3_block3' in the model.
+[DEBUG] Accessing attribute 'stage3'
+[DEBUG] Accessing attribute 'stage3_block3'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block0.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block0.block.relu1
+[DEBUG] Container: stage4.stage4_block0.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block0.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block0.block.relu2
+[DEBUG] Container: stage4.stage4_block0.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block0.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block0'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block0.relu
+[DEBUG] Splitting layer name: stage4.stage4_block0.relu
+[DEBUG] Container: stage4.stage4_block0, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block0' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block0'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block1.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block1.block.relu1
+[DEBUG] Container: stage4.stage4_block1.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block1.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block1'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block1.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block1.block.relu2
+[DEBUG] Container: stage4.stage4_block1.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block1.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block1'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block1.relu
+[DEBUG] Splitting layer name: stage4.stage4_block1.relu
+[DEBUG] Container: stage4.stage4_block1, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block1' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block1'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block2.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block2.block.relu1
+[DEBUG] Container: stage4.stage4_block2.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block2.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block2'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block2.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block2.block.relu2
+[DEBUG] Container: stage4.stage4_block2.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block2.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block2'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block2.relu
+[DEBUG] Splitting layer name: stage4.stage4_block2.relu
+[DEBUG] Container: stage4.stage4_block2, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block2' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block2'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block3.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block3.block.relu1
+[DEBUG] Container: stage4.stage4_block3.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block3.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block3'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block3.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block3.block.relu2
+[DEBUG] Container: stage4.stage4_block3.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block3.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block3'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block3.relu
+[DEBUG] Splitting layer name: stage4.stage4_block3.relu
+[DEBUG] Container: stage4.stage4_block3, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block3' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block3'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block4.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block4.block.relu1
+[DEBUG] Container: stage4.stage4_block4.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block4.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block4'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block4.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block4.block.relu2
+[DEBUG] Container: stage4.stage4_block4.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block4.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block4'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block4.relu
+[DEBUG] Splitting layer name: stage4.stage4_block4.relu
+[DEBUG] Container: stage4.stage4_block4, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block4' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block4'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block5.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block5.block.relu1
+[DEBUG] Container: stage4.stage4_block5.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block5.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block5'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block5.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block5.block.relu2
+[DEBUG] Container: stage4.stage4_block5.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block5.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block5'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block5.relu
+[DEBUG] Splitting layer name: stage4.stage4_block5.relu
+[DEBUG] Container: stage4.stage4_block5, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block5' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block5'
+[DEBUG] Setting new ReLU at attribute relu
+[DEBUG] Found in-place ReLU at: stage4.stage4_block6.block.relu1
+[DEBUG] Splitting layer name: stage4.stage4_block6.block.relu1
+[DEBUG] Container: stage4.stage4_block6.block, Subname: relu1
+[DEBUG] Accessing layer 'stage4.stage4_block6.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block6'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu1
+[DEBUG] Found in-place ReLU at: stage4.stage4_block6.block.relu2
+[DEBUG] Splitting layer name: stage4.stage4_block6.block.relu2
+[DEBUG] Container: stage4.stage4_block6.block, Subname: relu2
+[DEBUG] Accessing layer 'stage4.stage4_block6.block' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block6'
+[DEBUG] Accessing attribute 'block'
+[DEBUG] Setting new ReLU at attribute relu2
+[DEBUG] Found in-place ReLU at: stage4.stage4_block6.relu
+[DEBUG] Splitting layer name: stage4.stage4_block6.relu
+[DEBUG] Container: stage4.stage4_block6, Subname: relu
+[DEBUG] Accessing layer 'stage4.stage4_block6' in the model.
+[DEBUG] Accessing attribute 'stage4'
+[DEBUG] Accessing attribute 'stage4_block6'
+[DEBUG] Setting new ReLU at attribute relu
+[PATCH] Patched residual block forward: stage1.stage1_block0
+[PATCH] Patched residual block forward: stage2.stage2_block0
+[PATCH] Patched residual block forward: stage3.stage3_block0
+[PATCH] Patched residual block forward: stage3.stage3_block1
+[PATCH] Patched residual block forward: stage3.stage3_block2
+[PATCH] Patched residual block forward: stage3.stage3_block3
+[PATCH] Patched residual block forward: stage4.stage4_block0
+[PATCH] Patched residual block forward: stage4.stage4_block1
+[PATCH] Patched residual block forward: stage4.stage4_block2
+[PATCH] Patched residual block forward: stage4.stage4_block3
+[PATCH] Patched residual block forward: stage4.stage4_block4
+[PATCH] Patched residual block forward: stage4.stage4_block5
+[PATCH] Patched residual block forward: stage4.stage4_block6
+[INFO] Collapse complete. Total trainable params: 11514548 when compressing [('stage3.stage3_block0.block.conv1', 'stage3.stage3_block1.block.conv1')] with model RegNetX_400MF
+[INFO] Compiling model
+[•] Starting experiment 'Stage 3 first 2 conv' in workflow 'JF'
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+RegNetX_400MF                            [512, 100]                --
+├─Sequential: 1-1                        [512, 32, 16, 16]         --
+│    └─Conv2d: 2-1                       [512, 32, 16, 16]         864
+│    └─BatchNorm2d: 2-2                  [512, 32, 16, 16]         64
+│    └─ReLU: 2-3                         [512, 32, 16, 16]         --
+├─Sequential: 1-2                        [512, 24, 16, 16]         --
+│    └─XBlock: 2-4                       [512, 24, 16, 16]         --
+│    │    └─Sequential: 3-1              [512, 24, 16, 16]         6,672
+│    │    └─Sequential: 3-2              [512, 24, 16, 16]         816
+├─Sequential: 1-3                        [512, 56, 8, 8]           --
+│    └─XBlock: 2-5                       [512, 56, 8, 8]           --
+│    │    └─Sequential: 3-3              [512, 56, 8, 8]           33,040
+│    │    └─Sequential: 3-4              [512, 56, 8, 8]           1,456
+├─Sequential: 1-4                        [512, 152, 4, 4]          --
+│    └─XBlock: 2-6                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-5              [512, 152, 4, 4]          240,464
+│    │    └─Sequential: 3-6              [512, 152, 4, 4]          8,816
+│    └─XBlock: 2-7                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-7              [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-8              [512, 152, 4, 4]          --
+│    └─XBlock: 2-8                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-9              [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-10             [512, 152, 4, 4]          --
+│    └─XBlock: 2-9                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-11             [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-12             [512, 152, 4, 4]          --
+├─Sequential: 1-5                        [512, 368, 2, 2]          --
+│    └─XBlock: 2-10                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-13             [512, 368, 2, 2]          1,412,384
+│    │    └─Sequential: 3-14             [512, 368, 2, 2]          56,672
+│    └─XBlock: 2-11                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-15             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-16             [512, 368, 2, 2]          --
+│    └─XBlock: 2-12                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-17             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-18             [512, 368, 2, 2]          --
+│    └─XBlock: 2-13                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-19             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-20             [512, 368, 2, 2]          --
+│    └─XBlock: 2-14                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-21             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-22             [512, 368, 2, 2]          --
+│    └─XBlock: 2-15                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-23             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-24             [512, 368, 2, 2]          --
+│    └─XBlock: 2-16                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-25             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-26             [512, 368, 2, 2]          --
+├─AdaptiveAvgPool2d: 1-6                 [512, 368, 1, 1]          --
+├─Linear: 1-7                            [512, 100]                36,900
+==========================================================================================
+Total params: 11,514,548
+Trainable params: 11,514,548
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 32.49
+==========================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 1094.60
+Params size (MB): 46.06
+Estimated Total Size (MB): 1146.95
+==========================================================================================
+
+Layer-wise zero parameter stats:
+
+stem.stem_conv.weight: 84/864 zeros (9.72%)
+stem.stem_bn.weight: 0/32 zeros (0.00%)
+stem.stem_bn.bias: 0/32 zeros (0.00%)
+stage1.stage1_block0.block.conv1.weight: 100/768 zeros (13.02%)
+stage1.stage1_block0.block.bn1.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn1.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.conv2.weight: 1328/5184 zeros (25.62%)
+stage1.stage1_block0.block.bn2.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn2.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.conv3.weight: 80/576 zeros (13.89%)
+stage1.stage1_block0.block.bn3.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn3.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.shortcut.shortcut_conv.weight: 111/768 zeros (14.45%)
+stage1.stage1_block0.shortcut.shortcut_bn.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.shortcut.shortcut_bn.bias: 0/24 zeros (0.00%)
+stage2.stage2_block0.block.conv1.weight: 209/1344 zeros (15.55%)
+stage2.stage2_block0.block.bn1.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.bn1.bias: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.conv2.weight: 14268/28224 zeros (50.55%)
+stage2.stage2_block0.block.bn2.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.bn2.bias: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.conv3.weight: 733/3136 zeros (23.37%)
+stage2.stage2_block0.block.bn3.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.bn3.bias: 0/56 zeros (0.00%)
+stage2.stage2_block0.shortcut.shortcut_conv.weight: 191/1344 zeros (14.21%)
+stage2.stage2_block0.shortcut.shortcut_bn.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.shortcut.shortcut_bn.bias: 0/56 zeros (0.00%)
+stage3.stage3_block0.block.collapsed_conv1_to_conv1_2a4a5ea4.layer_0.weight: 0/8512 zeros (0.00%)
+stage3.stage3_block0.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.conv2.weight: 169125/207936 zeros (81.34%)
+stage3.stage3_block0.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.conv3.weight: 9133/23104 zeros (39.53%)
+stage3.stage3_block0.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.shortcut.shortcut_conv.weight: 2103/8512 zeros (24.71%)
+stage3.stage3_block0.shortcut.shortcut_bn.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.shortcut.shortcut_bn.bias: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.conv1.weight: 9233/23104 zeros (39.96%)
+stage3.stage3_block1.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.conv2.weight: 179893/207936 zeros (86.51%)
+stage3.stage3_block1.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.conv3.weight: 9121/23104 zeros (39.48%)
+stage3.stage3_block1.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv1.weight: 9154/23104 zeros (39.62%)
+stage3.stage3_block2.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv2.weight: 182792/207936 zeros (87.91%)
+stage3.stage3_block2.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv3.weight: 9073/23104 zeros (39.27%)
+stage3.stage3_block2.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv1.weight: 9310/23104 zeros (40.30%)
+stage3.stage3_block3.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv2.weight: 184920/207936 zeros (88.93%)
+stage3.stage3_block3.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv3.weight: 9272/23104 zeros (40.13%)
+stage3.stage3_block3.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn3.bias: 0/152 zeros (0.00%)
+stage4.stage4_block0.block.conv1.weight: 22748/55936 zeros (40.67%)
+stage4.stage4_block0.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.conv2.weight: 1206059/1218816 zeros (98.95%)
+stage4.stage4_block0.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.conv3.weight: 83712/135424 zeros (61.81%)
+stage4.stage4_block0.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.shortcut.shortcut_conv.weight: 22333/55936 zeros (39.93%)
+stage4.stage4_block0.shortcut.shortcut_bn.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.shortcut.shortcut_bn.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv1.weight: 85623/135424 zeros (63.23%)
+stage4.stage4_block1.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv2.weight: 1214963/1218816 zeros (99.68%)
+stage4.stage4_block1.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv3.weight: 85193/135424 zeros (62.91%)
+stage4.stage4_block1.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv1.weight: 86433/135424 zeros (63.82%)
+stage4.stage4_block2.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv2.weight: 1217995/1218816 zeros (99.93%)
+stage4.stage4_block2.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv3.weight: 85951/135424 zeros (63.47%)
+stage4.stage4_block2.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv1.weight: 86865/135424 zeros (64.14%)
+stage4.stage4_block3.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv2.weight: 1217972/1218816 zeros (99.93%)
+stage4.stage4_block3.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv3.weight: 85902/135424 zeros (63.43%)
+stage4.stage4_block3.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv1.weight: 86493/135424 zeros (63.87%)
+stage4.stage4_block4.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv2.weight: 1218140/1218816 zeros (99.94%)
+stage4.stage4_block4.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv3.weight: 85931/135424 zeros (63.45%)
+stage4.stage4_block4.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv1.weight: 86604/135424 zeros (63.95%)
+stage4.stage4_block5.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv2.weight: 1217812/1218816 zeros (99.92%)
+stage4.stage4_block5.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv3.weight: 85451/135424 zeros (63.10%)
+stage4.stage4_block5.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv1.weight: 86442/135424 zeros (63.83%)
+stage4.stage4_block6.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv2.weight: 1216726/1218816 zeros (99.83%)
+stage4.stage4_block6.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv3.weight: 84974/135424 zeros (62.75%)
+stage4.stage4_block6.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn3.bias: 0/368 zeros (0.00%)
+fc.weight: 0/36800 zeros (0.00%)
+fc.bias: 0/100 zeros (0.00%)
+============================================================
+[•] Using device: cuda
+[Start training] device:cuda
+[INFO] Training started...
+model on device: cuda:0
+[INFO] Starting Epoch 1 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:03<05:51,  3.63s/it]  3%|▎         | 3/98 [00:03<01:36,  1.01s/it]  4%|▍         | 4/98 [00:04<01:08,  1.36it/s]  5%|▌         | 5/98 [00:04<00:54,  1.70it/s]  6%|▌         | 6/98 [00:04<00:45,  2.03it/s]  7%|▋         | 7/98 [00:04<00:36,  2.48it/s]  8%|▊         | 8/98 [00:05<00:30,  2.93it/s]  9%|▉         | 9/98 [00:05<00:29,  3.07it/s] 10%|█         | 10/98 [00:05<00:25,  3.44it/s] 11%|█         | 11/98 [00:05<00:25,  3.44it/s] 12%|█▏        | 12/98 [00:06<00:25,  3.40it/s] 13%|█▎        | 13/98 [00:06<00:22,  3.73it/s] 14%|█▍        | 14/98 [00:06<00:23,  3.63it/s] 15%|█▌        | 15/98 [00:06<00:23,  3.57it/s] 16%|█▋        | 16/98 [00:07<00:21,  3.89it/s] 17%|█▋        | 17/98 [00:07<00:21,  3.71it/s] 18%|█▊        | 18/98 [00:08<00:29,  2.70it/s] 19%|█▉        | 19/98 [00:08<00:25,  3.09it/s] 20%|██        | 20/98 [00:08<00:24,  3.20it/s] 21%|██▏       | 21/98 [00:08<00:23,  3.26it/s] 22%|██▏       | 22/98 [00:09<00:32,  2.33it/s] 23%|██▎       | 23/98 [00:09<00:28,  2.59it/s] 24%|██▍       | 24/98 [00:10<00:24,  3.01it/s] 26%|██▌       | 25/98 [00:10<00:21,  3.41it/s] 27%|██▋       | 26/98 [00:10<00:30,  2.40it/s] 28%|██▊       | 27/98 [00:11<00:26,  2.63it/s] 29%|██▊       | 28/98 [00:11<00:23,  3.04it/s] 30%|██▉       | 29/98 [00:11<00:21,  3.18it/s] 31%|███       | 30/98 [00:12<00:29,  2.31it/s] 32%|███▏      | 31/98 [00:12<00:24,  2.74it/s] 33%|███▎      | 32/98 [00:12<00:20,  3.15it/s] 34%|███▎      | 33/98 [00:13<00:19,  3.26it/s] 35%|███▍      | 34/98 [00:13<00:29,  2.18it/s] 36%|███▌      | 35/98 [00:14<00:23,  2.63it/s] 37%|███▋      | 36/98 [00:14<00:20,  3.07it/s] 38%|███▊      | 37/98 [00:14<00:17,  3.45it/s] 39%|███▉      | 38/98 [00:15<00:26,  2.28it/s] 40%|███▉      | 39/98 [00:15<00:21,  2.72it/s] 41%|████      | 40/98 [00:15<00:18,  3.16it/s] 42%|████▏     | 41/98 [00:15<00:16,  3.52it/s] 43%|████▎     | 42/98 [00:16<00:22,  2.44it/s] 44%|████▍     | 43/98 [00:16<00:19,  2.87it/s] 45%|████▍     | 44/98 [00:17<00:17,  3.04it/s] 46%|████▌     | 45/98 [00:17<00:15,  3.41it/s] 47%|████▋     | 46/98 [00:18<00:21,  2.42it/s] 48%|████▊     | 47/98 [00:18<00:17,  2.88it/s] 49%|████▉     | 48/98 [00:18<00:13,  3.59it/s] 50%|█████     | 49/98 [00:18<00:12,  3.91it/s] 51%|█████     | 50/98 [00:19<00:21,  2.23it/s] 52%|█████▏    | 51/98 [00:19<00:17,  2.67it/s] 53%|█████▎    | 52/98 [00:19<00:14,  3.11it/s] 54%|█████▍    | 53/98 [00:20<00:12,  3.53it/s] 55%|█████▌    | 54/98 [00:20<00:12,  3.47it/s] 56%|█████▌    | 55/98 [00:20<00:16,  2.60it/s] 57%|█████▋    | 56/98 [00:21<00:13,  3.04it/s] 58%|█████▊    | 57/98 [00:21<00:11,  3.44it/s] 59%|█████▉    | 58/98 [00:21<00:11,  3.45it/s] 60%|██████    | 59/98 [00:22<00:18,  2.11it/s] 61%|██████    | 60/98 [00:22<00:15,  2.39it/s] 62%|██████▏   | 61/98 [00:23<00:13,  2.80it/s] 63%|██████▎   | 62/98 [00:23<00:11,  3.22it/s] 64%|██████▍   | 63/98 [00:23<00:15,  2.33it/s] 65%|██████▌   | 64/98 [00:24<00:12,  2.79it/s] 66%|██████▋   | 65/98 [00:24<00:10,  3.21it/s] 67%|██████▋   | 66/98 [00:24<00:09,  3.28it/s] 68%|██████▊   | 67/98 [00:25<00:13,  2.37it/s] 69%|██████▉   | 68/98 [00:25<00:09,  3.02it/s] 70%|███████   | 69/98 [00:25<00:09,  3.16it/s] 71%|███████▏  | 70/98 [00:25<00:07,  3.53it/s] 72%|███████▏  | 71/98 [00:26<00:09,  2.86it/s] 73%|███████▎  | 72/98 [00:26<00:07,  3.30it/s] 74%|███████▍  | 73/98 [00:26<00:06,  3.65it/s] 76%|███████▌  | 74/98 [00:27<00:06,  3.95it/s] 77%|███████▋  | 75/98 [00:27<00:08,  2.83it/s] 78%|███████▊  | 76/98 [00:27<00:06,  3.54it/s] 79%|███████▊  | 77/98 [00:28<00:05,  3.54it/s] 80%|███████▉  | 78/98 [00:28<00:05,  3.85it/s] 81%|████████  | 79/98 [00:28<00:06,  3.02it/s] 82%|████████▏ | 80/98 [00:28<00:05,  3.42it/s] 83%|████████▎ | 81/98 [00:29<00:04,  3.75it/s] 84%|████████▎ | 82/98 [00:29<00:04,  3.66it/s] 85%|████████▍ | 83/98 [00:29<00:05,  2.95it/s] 86%|████████▌ | 84/98 [00:30<00:04,  3.34it/s] 87%|████████▋ | 85/98 [00:30<00:03,  3.68it/s] 88%|████████▊ | 86/98 [00:30<00:03,  3.61it/s] 89%|████████▉ | 87/98 [00:31<00:04,  2.66it/s] 90%|████████▉ | 88/98 [00:31<00:03,  3.08it/s] 91%|█████████ | 89/98 [00:31<00:02,  3.17it/s] 92%|█████████▏| 90/98 [00:32<00:02,  3.22it/s] 93%|█████████▎| 91/98 [00:32<00:02,  2.50it/s] 94%|█████████▍| 92/98 [00:32<00:02,  2.97it/s] 95%|█████████▍| 93/98 [00:32<00:01,  3.76it/s] 97%|█████████▋| 95/98 [00:33<00:00,  5.19it/s]100%|██████████| 98/98 [00:33<00:00,  7.75it/s]100%|██████████| 98/98 [00:33<00:00,  2.93it/s]
+Epoch 1: Loss=3.0802, Acc=24.59%
+[INFO] New best accuracy: 24.59% (previous best was 0.00%)
+[INFO] Training complete after 1 epochs.
+[INFO] Evaluating model on the test set...
+2025-10-23 13:17:29,320 - WARNING - Unsupported operator aten::add encountered 13 time(s)
+2025-10-23 13:17:29,320 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage1.stage1_block0.relu, stage2.stage2_block0.relu, stage3.stage3_block0.relu, stage3.stage3_block1.relu, stage3.stage3_block1.shortcut, stage3.stage3_block2.relu, stage3.stage3_block2.shortcut, stage3.stage3_block3.relu, stage3.stage3_block3.shortcut, stage4.stage4_block0.relu, stage4.stage4_block1.relu, stage4.stage4_block1.shortcut, stage4.stage4_block2.relu, stage4.stage4_block2.shortcut, stage4.stage4_block3.relu, stage4.stage4_block3.shortcut, stage4.stage4_block4.relu, stage4.stage4_block4.shortcut, stage4.stage4_block5.relu, stage4.stage4_block5.shortcut, stage4.stage4_block6.relu, stage4.stage4_block6.shortcut
+2025-10-23 13:17:31,459 - WARNING - Unsupported operator aten::add encountered 13 time(s)
+2025-10-23 13:17:31,459 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage1.stage1_block0.relu, stage2.stage2_block0.relu, stage3.stage3_block0.relu, stage3.stage3_block1.relu, stage3.stage3_block1.shortcut, stage3.stage3_block2.relu, stage3.stage3_block2.shortcut, stage3.stage3_block3.relu, stage3.stage3_block3.shortcut, stage4.stage4_block0.relu, stage4.stage4_block1.relu, stage4.stage4_block1.shortcut, stage4.stage4_block2.relu, stage4.stage4_block2.shortcut, stage4.stage4_block3.relu, stage4.stage4_block3.shortcut, stage4.stage4_block4.relu, stage4.stage4_block4.shortcut, stage4.stage4_block5.relu, stage4.stage4_block5.shortcut, stage4.stage4_block6.relu, stage4.stage4_block6.shortcut
+Final Test Accuracy: 31.49%
+[•] Running diagnostics for Stage 3 first 2 conv...
+Input Tensor Shape: torch.Size([1, 3, 32, 32])
+Input Tensor (After Batch Dimension Check) Shape: torch.Size([1, 3, 32, 32])
+[✓] Saved per-layer params/flops CSV: RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.931281.pth_epochs1_pretrain1_postcompress0/plots/Stage 3 first 2 conv_layer_params_flops.csv and plot: RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.931281.pth_epochs1_pretrain1_postcompress0/plots/Stage 3 first 2 conv_params_flops_layers.svg
+[✓] Saved activation sizes CSV: RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.931281.pth_epochs1_pretrain1_postcompress0/plots/Stage 3 first 2 conv_activation_sizes.csv and plot: RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.931281.pth_epochs1_pretrain1_postcompress0/plots/Stage 3 first 2 conv_activation_sizes.svg
+Memory Decomposition: Params: 46.058192MB, Activations: 79.64292800000001MB, Peak: 125.70112MB
+[✓] Saved memory decomposition plot: RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.931281.pth_epochs1_pretrain1_postcompress0/plots/Stage 3 first 2 conv_memory_breakdown.svg
+[✓] Diagnostics complete for Stage 3 first 2 conv
+[✓] Saved metrics for 'Stage 3 first 2 conv_JF' → RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.931281.pth_epochs1_pretrain1_postcompress0/metrics/RegNetX_400MF_CIFAR100_metrics.json
+[✓] Saved plot: RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.931281.pth_epochs1_pretrain1_postcompress0/plots/RegNetX_400MF_CIFAR100_plots.svg
+Saved comparison plot to RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.931281.pth_epochs1_pretrain1_postcompress0/plots/RegNetX_400MF_CIFAR100_plots.svg
+[DEBUG] FLOPs: [30714494976.0, 29835657216.0, 29835657216.0, 32612155392.0, 30714494976.0, 29835657216.0, 29835657216.0, 30714494976.0, 31434080256.0, 31434080256.0, 29835657216.0, 32612155392.0, 31844597760.0, 31844597760.0, 30714494976.0, 32612155392.0, 32612155392.0, 31926386688.0, 31926386688.0, 32612155392.0]
+[DEBUG] Times: [0.020952376174926755, 0.01046291992664337, 0.0200356032371521, 0.021849793481826786, 0.010830772733688354, 0.019665998411178588, 0.019354198408126834, 0.010918332862854003, 0.010493860793113706, 0.020997433662414553, 0.019457942581176755, 0.02163874702453613, 0.0210211570262909, 0.021170614433288572, 0.021480996847152708, 0.011077959895133969, 0.02131907501220703, 0.011026177620887758, 0.010739224052429197, 0.011083288073539733]
+[DEBUG] Delta Accuracy vs Params Data: [{'name': 'Stage 3_JF', 'ΔAcc': 0.0, 'ΔParams(%)': 0.0}, {'name': 'Stage 4_Kevin', 'ΔAcc': 5.902000000000001, 'ΔParams(%)': -9.962545090357976}, {'name': 'Last 2_JF', 'ΔAcc': 0.9460000000000015, 'ΔParams(%)': -9.962545090357976}, {'name': 'Original Model_Kevin', 'ΔAcc': 5.994, 'ΔParams(%)': 2.0530891880633524}, {'name': 'Stage 3_Kevin', 'ΔAcc': 4.3919999999999995, 'ΔParams(%)': 0.0}, {'name': 'Last 2_Kevin', 'ΔAcc': 5.231999999999999, 'ΔParams(%)': -9.962545090357976}, {'name': 'Stage 4-5_JF', 'ΔAcc': 1.4239999999999995, 'ΔParams(%)': -9.962545090357976}, {'name': 'Stage 3-5_Kevin', 'ΔAcc': 4.3919999999999995, 'ΔParams(%)': 0.0}, {'name': 'Stage 2-5_JF', 'ΔAcc': -2.6739999999999995, 'ΔParams(%)': 1.7731611553767204}, {'name': 'Stage 2_Kevin', 'ΔAcc': 1.7520000000000024, 'ΔParams(%)': 1.7731611553767204}, {'name': 'Stage 4-5_Kevin', 'ΔAcc': 5.954000000000001, 'ΔParams(%)': -9.962545090357976}, {'name': 'Stage 4 last 2 conv_Kevin', 'ΔAcc': 6.116, 'ΔParams(%)': 2.0530891880633524}, {'name': 'Stage 1-5_Kevin', 'ΔAcc': 3.314, 'ΔParams(%)': 2.0011876379299647}, {'name': 'Stage 1-5_JF', 'ΔAcc': -2.0559999999999974, 'ΔParams(%)': 2.0011876379299647}, {'name': 'Stage 3-5_JF', 'ΔAcc': -0.21199999999999974, 'ΔParams(%)': 0.0}, {'name': 'Stage 4 last 2 conv_JF', 'ΔAcc': 1.9860000000000007, 'ΔParams(%)': 2.0530891880633524}, {'name': 'Stage 3 last 2 conv_JF', 'ΔAcc': 0.4700000000000024, 'ΔParams(%)': 2.0530891880633524}, {'name': 'Stage 1 last 2 conv_JF', 'ΔAcc': -1.404, 'ΔParams(%)': 2.006718130976965}, {'name': 'Stage 1 first 2 conv_JF', 'ΔAcc': -1.2459999999999987, 'ΔParams(%)': 2.006718130976965}, {'name': 'Stage 3 first 2 conv_JF', 'ΔAcc': -1.5700000000000003, 'ΔParams(%)': 2.0530891880633524}]
+[DEBUG] FLOPs: [30714494976.0, 29835657216.0, 29835657216.0, 32612155392.0, 30714494976.0, 29835657216.0, 29835657216.0, 30714494976.0, 31434080256.0, 31434080256.0, 29835657216.0, 32612155392.0, 31844597760.0, 31844597760.0, 30714494976.0, 32612155392.0, 32612155392.0, 31926386688.0, 31926386688.0, 32612155392.0]
+[DEBUG] Memory: [670.2890625, 681.5390625, 681.5390625, 756.9140625, 670.2890625, 681.5390625, 681.5390625, 670.2890625, 593.7890625, 593.7890625, 681.5390625, 698.7890625, 626.7890625, 626.7890625, 670.2890625, 698.7890625, 698.7890625, 662.7890625, 662.7890625, 698.7890625]
+[DEBUG] Accuracy: [26.162, 32.064, 27.108, 32.156, 30.554, 31.394, 27.586, 30.554, 23.488, 27.914, 32.116, 32.278, 29.476, 24.106, 25.95, 28.148, 26.632, 24.758, 24.916, 24.592]
+[DEBUG] Memory: [670.2890625, 681.5390625, 681.5390625, 756.9140625, 670.2890625, 681.5390625, 681.5390625, 670.2890625, 593.7890625, 593.7890625, 681.5390625, 698.7890625, 626.7890625, 626.7890625, 670.2890625, 698.7890625, 698.7890625, 662.7890625, 662.7890625, 698.7890625]
+[DEBUG] Heatmap Rows: [{'Model': 'Stage 3_JF', 'Accuracy': 26.162, 'Params': 11282900, 'FLOPs': 30714494976, 'Inference Time': 0.020952376174926755, 'Memory (MB)': 670.2890625}, {'Model': 'Stage 4_Kevin', 'Accuracy': 32.064, 'Params': 10158836, 'FLOPs': 29835657216, 'Inference Time': 0.01046291992664337, 'Memory (MB)': 681.5390625}, {'Model': 'Last 2_JF', 'Accuracy': 27.108, 'Params': 10158836, 'FLOPs': 29835657216, 'Inference Time': 0.0200356032371521, 'Memory (MB)': 681.5390625}, {'Model': 'Original Model_Kevin', 'Accuracy': 32.156, 'Params': 11514548, 'FLOPs': 32612155392, 'Inference Time': 0.021849793481826786, 'Memory (MB)': 756.9140625}, {'Model': 'Stage 3_Kevin', 'Accuracy': 30.554, 'Params': 11282900, 'FLOPs': 30714494976, 'Inference Time': 0.010830772733688354, 'Memory (MB)': 670.2890625}, {'Model': 'Last 2_Kevin', 'Accuracy': 31.394, 'Params': 10158836, 'FLOPs': 29835657216, 'Inference Time': 0.019665998411178588, 'Memory (MB)': 681.5390625}, {'Model': 'Stage 4-5_JF', 'Accuracy': 27.586, 'Params': 10158836, 'FLOPs': 29835657216, 'Inference Time': 0.019354198408126834, 'Memory (MB)': 681.5390625}, {'Model': 'Stage 3-5_Kevin', 'Accuracy': 30.554, 'Params': 11282900, 'FLOPs': 30714494976, 'Inference Time': 0.010918332862854003, 'Memory (MB)': 670.2890625}, {'Model': 'Stage 2-5_JF', 'Accuracy': 23.488, 'Params': 11482964, 'FLOPs': 31434080256, 'Inference Time': 0.010493860793113706, 'Memory (MB)': 593.7890625}, {'Model': 'Stage 2_Kevin', 'Accuracy': 27.914, 'Params': 11482964, 'FLOPs': 31434080256, 'Inference Time': 0.020997433662414553, 'Memory (MB)': 593.7890625}, {'Model': 'Stage 4-5_Kevin', 'Accuracy': 32.116, 'Params': 10158836, 'FLOPs': 29835657216, 'Inference Time': 0.019457942581176755, 'Memory (MB)': 681.5390625}, {'Model': 'Stage 4 last 2 conv_Kevin', 'Accuracy': 32.278, 'Params': 11514548, 'FLOPs': 32612155392, 'Inference Time': 0.02163874702453613, 'Memory (MB)': 698.7890625}, {'Model': 'Stage 1-5_Kevin', 'Accuracy': 29.476, 'Params': 11508692, 'FLOPs': 31844597760, 'Inference Time': 0.0210211570262909, 'Memory (MB)': 626.7890625}, {'Model': 'Stage 1-5_JF', 'Accuracy': 24.106, 'Params': 11508692, 'FLOPs': 31844597760, 'Inference Time': 0.021170614433288572, 'Memory (MB)': 626.7890625}, {'Model': 'Stage 3-5_JF', 'Accuracy': 25.95, 'Params': 11282900, 'FLOPs': 30714494976, 'Inference Time': 0.021480996847152708, 'Memory (MB)': 670.2890625}, {'Model': 'Stage 4 last 2 conv_JF', 'Accuracy': 28.148, 'Params': 11514548, 'FLOPs': 32612155392, 'Inference Time': 0.011077959895133969, 'Memory (MB)': 698.7890625}, {'Model': 'Stage 3 last 2 conv_JF', 'Accuracy': 26.632, 'Params': 11514548, 'FLOPs': 32612155392, 'Inference Time': 0.02131907501220703, 'Memory (MB)': 698.7890625}, {'Model': 'Stage 1 last 2 conv_JF', 'Accuracy': 24.758, 'Params': 11509316, 'FLOPs': 31926386688, 'Inference Time': 0.011026177620887758, 'Memory (MB)': 662.7890625}, {'Model': 'Stage 1 first 2 conv_JF', 'Accuracy': 24.916, 'Params': 11509316, 'FLOPs': 31926386688, 'Inference Time': 0.010739224052429197, 'Memory (MB)': 662.7890625}, {'Model': 'Stage 3 first 2 conv_JF', 'Accuracy': 24.592, 'Params': 11514548, 'FLOPs': 32612155392, 'Inference Time': 0.011083288073539733, 'Memory (MB)': 698.7890625}]
+[DEBUG] Collapse Curve Rows: [{'Model': 'Stage 3_JF', 'Params': 11282900, 'Time': 0.020952376174926755, 'Accuracy': 26.162}, {'Model': 'Stage 4_Kevin', 'Params': 10158836, 'Time': 0.01046291992664337, 'Accuracy': 32.064}, {'Model': 'Last 2_JF', 'Params': 10158836, 'Time': 0.0200356032371521, 'Accuracy': 27.108}, {'Model': 'Original Model_Kevin', 'Params': 11514548, 'Time': 0.021849793481826786, 'Accuracy': 32.156}, {'Model': 'Stage 3_Kevin', 'Params': 11282900, 'Time': 0.010830772733688354, 'Accuracy': 30.554}, {'Model': 'Last 2_Kevin', 'Params': 10158836, 'Time': 0.019665998411178588, 'Accuracy': 31.394}, {'Model': 'Stage 4-5_JF', 'Params': 10158836, 'Time': 0.019354198408126834, 'Accuracy': 27.586}, {'Model': 'Stage 3-5_Kevin', 'Params': 11282900, 'Time': 0.010918332862854003, 'Accuracy': 30.554}, {'Model': 'Stage 2-5_JF', 'Params': 11482964, 'Time': 0.010493860793113706, 'Accuracy': 23.488}, {'Model': 'Stage 2_Kevin', 'Params': 11482964, 'Time': 0.020997433662414553, 'Accuracy': 27.914}, {'Model': 'Stage 4-5_Kevin', 'Params': 10158836, 'Time': 0.019457942581176755, 'Accuracy': 32.116}, {'Model': 'Stage 4 last 2 conv_Kevin', 'Params': 11514548, 'Time': 0.02163874702453613, 'Accuracy': 32.278}, {'Model': 'Stage 1-5_Kevin', 'Params': 11508692, 'Time': 0.0210211570262909, 'Accuracy': 29.476}, {'Model': 'Stage 1-5_JF', 'Params': 11508692, 'Time': 0.021170614433288572, 'Accuracy': 24.106}, {'Model': 'Stage 3-5_JF', 'Params': 11282900, 'Time': 0.021480996847152708, 'Accuracy': 25.95}, {'Model': 'Stage 4 last 2 conv_JF', 'Params': 11514548, 'Time': 0.011077959895133969, 'Accuracy': 28.148}, {'Model': 'Stage 3 last 2 conv_JF', 'Params': 11514548, 'Time': 0.02131907501220703, 'Accuracy': 26.632}, {'Model': 'Stage 1 last 2 conv_JF', 'Params': 11509316, 'Time': 0.011026177620887758, 'Accuracy': 24.758}, {'Model': 'Stage 1 first 2 conv_JF', 'Params': 11509316, 'Time': 0.010739224052429197, 'Accuracy': 24.916}, {'Model': 'Stage 3 first 2 conv_JF', 'Params': 11514548, 'Time': 0.011083288073539733, 'Accuracy': 24.592}]
+[✓] Saved per-layer activation memory heatmap: RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.931281.pth_epochs1_pretrain1_postcompress0/plots/JF_per_layer_activation_memory_heatmap.svg
+[DEBUG] Processing file: RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.931281.pth_epochs1_pretrain1_postcompress0/metrics/RegNetX_400MF_CIFAR100_metrics.json
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [26.162]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 26.162
+[DEBUG] Wrapping non-dict experiment 'losses' data: [3.0092416010284424]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11282900
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.020952376174926755
+[DEBUG] Wrapping non-dict experiment 'flops' data: 30714494976
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 670.2890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [32.064]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 32.064
+[DEBUG] Wrapping non-dict experiment 'losses' data: [2.6686950329589845]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 10158836
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.01046291992664337
+[DEBUG] Wrapping non-dict experiment 'flops' data: 29835657216
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 681.5390625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [27.108]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 27.108
+[DEBUG] Wrapping non-dict experiment 'losses' data: [3.008064040374756]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 10158836
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.0200356032371521
+[DEBUG] Wrapping non-dict experiment 'flops' data: 29835657216
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 681.5390625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [32.156]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 32.156
+[DEBUG] Wrapping non-dict experiment 'losses' data: [2.655961951370239]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11514548
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.021849793481826786
+[DEBUG] Wrapping non-dict experiment 'flops' data: 32612155392
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 756.9140625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [30.554]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 30.554
+[DEBUG] Wrapping non-dict experiment 'losses' data: [2.7360504513549806]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11282900
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.010830772733688354
+[DEBUG] Wrapping non-dict experiment 'flops' data: 30714494976
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 670.2890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [31.394]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 31.394
+[DEBUG] Wrapping non-dict experiment 'losses' data: [2.7303229947662353]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 10158836
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.019665998411178588
+[DEBUG] Wrapping non-dict experiment 'flops' data: 29835657216
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 681.5390625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [27.586]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 27.586
+[DEBUG] Wrapping non-dict experiment 'losses' data: [2.9382604322052]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 10158836
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.019354198408126834
+[DEBUG] Wrapping non-dict experiment 'flops' data: 29835657216
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 681.5390625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [30.554]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 30.554
+[DEBUG] Wrapping non-dict experiment 'losses' data: [2.7360504513549806]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11282900
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.010918332862854003
+[DEBUG] Wrapping non-dict experiment 'flops' data: 30714494976
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 670.2890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [23.488]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 23.488
+[DEBUG] Wrapping non-dict experiment 'losses' data: [3.1349884330749513]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11482964
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.010493860793113706
+[DEBUG] Wrapping non-dict experiment 'flops' data: 31434080256
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 593.7890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [27.914]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 27.914
+[DEBUG] Wrapping non-dict experiment 'losses' data: [2.8559178816223145]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11482964
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.020997433662414553
+[DEBUG] Wrapping non-dict experiment 'flops' data: 31434080256
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 593.7890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [32.116]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 32.116
+[DEBUG] Wrapping non-dict experiment 'losses' data: [2.6679817417144776]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 10158836
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.019457942581176755
+[DEBUG] Wrapping non-dict experiment 'flops' data: 29835657216
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 681.5390625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [32.278]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 32.278
+[DEBUG] Wrapping non-dict experiment 'losses' data: [2.662041082839966]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11514548
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.02163874702453613
+[DEBUG] Wrapping non-dict experiment 'flops' data: 32612155392
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 698.7890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [29.476]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 29.476
+[DEBUG] Wrapping non-dict experiment 'losses' data: [2.7984583489227295]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11508692
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.0210211570262909
+[DEBUG] Wrapping non-dict experiment 'flops' data: 31844597760
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 626.7890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [24.106]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 24.106
+[DEBUG] Wrapping non-dict experiment 'losses' data: [3.13022952583313]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11508692
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.021170614433288572
+[DEBUG] Wrapping non-dict experiment 'flops' data: 31844597760
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 626.7890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [25.95]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 25.95
+[DEBUG] Wrapping non-dict experiment 'losses' data: [3.0193652555847166]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11282900
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.021480996847152708
+[DEBUG] Wrapping non-dict experiment 'flops' data: 30714494976
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 670.2890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [28.148]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 28.148
+[DEBUG] Wrapping non-dict experiment 'losses' data: [2.9324011711883546]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11514548
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.011077959895133969
+[DEBUG] Wrapping non-dict experiment 'flops' data: 32612155392
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 698.7890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [26.632]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 26.632
+[DEBUG] Wrapping non-dict experiment 'losses' data: [2.991674850540161]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11514548
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.02131907501220703
+[DEBUG] Wrapping non-dict experiment 'flops' data: 32612155392
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 698.7890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [24.758]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 24.758
+[DEBUG] Wrapping non-dict experiment 'losses' data: [3.084299361114502]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11509316
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.011026177620887758
+[DEBUG] Wrapping non-dict experiment 'flops' data: 31926386688
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 662.7890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [24.916]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 24.916
+[DEBUG] Wrapping non-dict experiment 'losses' data: [3.081349215621948]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11509316
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.010739224052429197
+[DEBUG] Wrapping non-dict experiment 'flops' data: 31926386688
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 662.7890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [24.592]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 24.592
+[DEBUG] Wrapping non-dict experiment 'losses' data: [3.080207683181763]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11514548
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.011083288073539733
+[DEBUG] Wrapping non-dict experiment 'flops' data: 32612155392
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 698.7890625
+[DEBUG] Wrapping non-dict experiment 'accuracies' data: [27.606]
+[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 27.606
+[DEBUG] Wrapping non-dict experiment 'losses' data: [2.8888279913330077]
+[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
+[DEBUG] Wrapping non-dict experiment 'param_count' data: 11486212
+[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.02078672785758972
+[DEBUG] Wrapping non-dict experiment 'flops' data: 31540510720
+[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 614.7890625
+[DEBUG] Data for plotting:
+               Experiment      Params  ...  Inference Time      Memory
+0              accuracies         0.0  ...        0.000000    0.000000
+1          final_accuracy         0.0  ...        0.000000    0.000000
+2                  losses         0.0  ...        0.000000    0.000000
+3    total_epochs_trained         0.0  ...        0.000000    0.000000
+4             param_count  11282900.0  ...        0.000000    0.000000
+..                    ...         ...  ...             ...         ...
+184           param_count  11486212.0  ...        0.000000    0.000000
+185        inference_time         0.0  ...        0.020787    0.000000
+186                 flops         0.0  ...        0.000000    0.000000
+187         total_size_mb         0.0  ...        0.000000  614.789062
+188           diagnostics         0.0  ...        0.000000    0.000000
+
+[189 rows x 6 columns]
+[✓] Saved unified metrics plots for workflow 'JF'
+[✓] Experiment 'Stage 3 first 2 conv' completed. Checkpoints and metrics saved.

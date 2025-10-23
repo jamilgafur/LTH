@@ -94,7 +94,6 @@ def plot_results(params, accs, names, title, filename, dataset=None, infer_times
         'Inference Time (s)': infer_times,
         'Memory Usage (bytes)': mem_usages,
         'FLOPs': flops
-        'Total Size (bytes)': total_sizes
     }
     df = pd.DataFrame(data)
     csv_filename = filename.replace('.svg', '.csv')
