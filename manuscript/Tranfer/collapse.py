@@ -415,6 +415,9 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
         paddings = [m.padding[0] if hasattr(m, "padding") else 0 for m in full_block if isinstance(m, nn.Conv2d)]
         k_eff = sum(kernels) - (len(kernels) - 1)
         p_eff = paddings[0] if paddings else 0
+        # 1x1 conv to bottleneck
+        k_eff =  1
+        p_eff = 0
         conv1 = nn.Conv2d(in_features, out_features, kernel_size=k_eff, stride=stride, padding=p_eff, bias=False)
         print(f"[DEBUG] Built collapsed Conv2d: {in_features} -> {out_features}, kernel_size={k_eff}, stride={stride}, padding={p_eff}")
         
