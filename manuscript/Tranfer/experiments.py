@@ -158,10 +158,34 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
         # Save metrics JSON
         safe_update_metrics_json(model_root, f"{exp_name}_{workflow}", data, base_dir=metrics_dir)
 
-    # Load all updated metrics (for plotting)
     with open(json_path, "r") as f:
-        metrics_dict = json.load(f)
-    norm_metrics = normalize_metrics(metrics_dict)
+        all_metrics = json.load(f)
+
+        params = []
+        accs = []
+        names = []
+        infer_times = []
+        mem_usages = []
+        flops = []
+        total_sizes = []  # List to store total size for plotting
+
+        # Iterate through each model's metrics to prepare data for plotting
+        for name, metrics in all_metrics.items():
+            names.append(name)
+            params.append(metrics.get("param_count", 0))
+            accs.append(metrics.get("final_accuracy", 0))
+            infer_times.append(metrics.get("inference_time", 0))
+            mem_usages.append(metrics.get("memory_usage_mb", 0))
+            flops.append(metrics.get("flops", 0))  # Collect FLOPs
+            total_sizes.append(metrics.get("total_size_mb", 0))  # Collect Total Size in MB
+
+        # Save comparison plot
+        save_path = json_path.replace("metrics", "plots").replace("json", "svg")
+        
+        plot_results(params, accs, names, f"{workflow} Experiments", save_path,
+                    dataset=workflow, infer_times=infer_times, mem_usages=mem_usages, flops=flops, total_sizes=total_sizes)
+        print(f"Saved comparison plot to {save_path}")
+    norm_metrics = normalize_metrics(all_metrics)
 
     # Plots (each function is robust to input)
     for func in [plot_flops_vs_latency, analyze_collapse_effects, plot_delta_accuracy_vs_params,
@@ -180,20 +204,6 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     # Cross-experiment plots
     plot_memory_per_layer_across_experiments(glob.glob(os.path.join(metrics_dir, "*.json")), plots_dir, workflow)
     plot_unified_metrics(metrics_dir, plots_dir, workflow)
-
-    # Plot final summary
-    plot_results(
-        params=[data.get("param_count", 0)],
-        accs=[data.get("final_accuracy", 0)],
-        names=[exp_name],
-        title=f"Results of {exp_name}",
-        filename=os.path.join(plots_dir, f"{exp_name}_results.png"),
-        dataset=train_loader.dataset.__class__.__name__,
-        infer_times=[data.get("inference_time", 0)],
-        mem_usages=[data.get("total_size_mb", 0)],
-        flops=[data.get("flops", 0)],
-        total_sizes=[data.get("total_size_mb", 0)],
-    )
 
     # Final checkpoint
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
