@@ -31,10 +31,8 @@ import matplotlib.pyplot as plt
 def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None, flops=None, total_sizes=None):
     # Create the figure and subplots
     fig, axs = plt.subplots(3, 1, figsize=(16, 18))  # 3 subplots (accuracy + params, inference time, memory usage)
-    # sort everything by names
-    sorted_data = sorted(zip(params, accs, names, infer_times if infer_times else [0]*len(names),
-                             mem_usages if mem_usages else [0]*len(names),
-                             flops if flops else [0]*len(names)), key=lambda x: x[2])
+    # sort everything by params
+    sorted_data = sorted(zip(params, accs, names, infer_times or [], mem_usages or [], flops or []), key=lambda x: x[0])
     params, accs, names, infer_times, mem_usages, flops = zip(*sorted_data)
     # Plot Accuracy vs Model (Bar Plot)
     axs[0].bar(names, accs, color='skyblue')
