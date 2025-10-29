@@ -416,22 +416,26 @@ def forward_until(model, stop_path, x):
             current = getattr(current, part)
         x = current(x)
     return x
-
 def _build_collapsed_block(layer_type, in_features, out_features, output_shape, full_block=None, stride=(1, 1), pool_layer: Optional[nn.Module]=None):
     """
     Build a collapsed block safely.
     Clones any original modules (like pooling) to avoid circular references.
     Adds bottleneck if Conv2d, and preserves BN/ReLU if present.
+    Returns an nn.Sequential containing the collapsed modules.
     """
     print(f"[DEBUG] Building collapsed block: {layer_type.__name__}, in={in_features}, out={out_features}, stride={stride}")
 
-    seq = []
+    seq_modules = []
 
     if layer_type == nn.Conv2d:
         # Detect if last layers in full_block are BN/ReLU
         has_bn = has_relu = False
         if full_block:
-            mods = [m for _, m in full_block] if isinstance(full_block[0], tuple) else list(full_block)
+            # full_block can be list of (name, module) or list of modules
+            if isinstance(full_block[0], tuple):
+                mods = [m for _, m in full_block]
+            else:
+                mods = list(full_block)
             if isinstance(mods[-1], nn.ReLU):
                 has_relu = True
                 if len(mods) >= 2 and isinstance(mods[-2], nn.BatchNorm2d):
@@ -439,36 +443,37 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
             elif isinstance(mods[-1], nn.BatchNorm2d):
                 has_bn = True
 
-        # Bottleneck collapse
-        bottleneck_ratio = 0.75
-        bottleneck_channels = max(1, int(in_features * bottleneck_ratio))
-
-        # Replace stride=(1,1), padding=0 convs with:
-        kernels = [m.kernel_size[0] if hasattr(m, "kernel_size") else 1 for m in full_block if isinstance(m, nn.Conv2d)]
-        paddings = [m.padding[0] if hasattr(m, "padding") else 0 for m in full_block if isinstance(m, nn.Conv2d)]
-        k_eff = sum(kernels) - (len(kernels) - 1)
-        p_eff = paddings[0] if paddings else 0
-        # 1x1 conv to bottleneck
-        k_eff =  1
+        # Simplified bottleneck collapse: single conv that maps in_features -> out_features
+        # Note: you previously set k_eff = 1 and p_eff = 0; follow that here.
+        k_eff = 1
         p_eff = 0
+
         conv1 = nn.Conv2d(in_features, out_features, kernel_size=k_eff, stride=stride, padding=p_eff, bias=False)
         print(f"[DEBUG] Built collapsed Conv2d: {in_features} -> {out_features}, kernel_size={k_eff}, stride={stride}, padding={p_eff}")
-        
-        seq.extend([conv1])
+        seq_modules.append(conv1)
 
         if has_bn:
-            seq.append(nn.BatchNorm2d(out_features))
+            seq_modules.append(nn.BatchNorm2d(out_features))
         if has_relu:
-            seq.append(nn.ReLU(inplace=False))
+            seq_modules.append(nn.ReLU(inplace=False))
 
         # clone pool layer if exists
         if pool_layer is not None:
-            seq.append(copy.deepcopy(pool_layer))
+            seq_modules.append(copy.deepcopy(pool_layer))
             print(f"[DEBUG] Appending cloned pooling layer: {pool_layer.__class__.__name__}")
 
     elif layer_type == nn.Linear:
-        seq.append(nn.Linear(in_features, out_features))
+        linear = nn.Linear(in_features, out_features)
+        seq_modules.append(linear)
         print(f"[DEBUG] Built collapsed Linear: {in_features} -> {out_features}")
+
+    else:
+        raise ValueError(f"Unsupported layer_type for collapse: {layer_type}")
+
+    # wrap into an nn.Sequential with deterministic names
+    collapsed = nn.Sequential(OrderedDict([(f"layer_{i}", m) for i, m in enumerate(seq_modules)]))
+    print(f"[DEBUG] Collapsed block layers: {[type(m).__name__ for m in collapsed]}")
+    return collapsed
 
 def _update_container(model, container_path, new_container):
     """
