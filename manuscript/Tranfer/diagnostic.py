@@ -429,6 +429,10 @@ def plot_unified_metrics(metrics_dir, save_dir, workflow):
     plt.savefig(os.path.join(save_dir, f"{workflow}_accuracy_vs_memory.svg"))
     plt.close()
 
+    # Save data
+    df.to_csv(os.path.join(save_dir, f"{workflow}_unified_metrics.csv"), index=False)
+    
+
     print(f"[✓] Saved unified metrics plots for workflow '{workflow}'")
 
 # -------------------------
@@ -471,6 +475,7 @@ def plot_flops_vs_latency(metrics_dict, save_dir, exp_name):
     file_svg = os.path.join(save_dir, f"{exp_name}_flops_vs_latency.svg")
     plt.tight_layout()
     plt.savefig(file_svg)
+    df_flops_latency.to_csv(os.path.join(save_dir, f"{exp_name}_flops_vs_latency.csv"), index=False)
     plt.close()
 
 def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
@@ -518,6 +523,7 @@ def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
     plt.title(f"Compression Efficiency — {exp_name}")
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{exp_name}_delta_acc_vs_params.svg"))
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_delta_acc_vs_params.csv"), index=False)
     plt.close()
 
 def plot_flops_vs_memory(metrics_dict, save_dir, exp_name):
@@ -550,6 +556,7 @@ def plot_flops_vs_memory(metrics_dict, save_dir, exp_name):
     plt.title(f"FLOPs vs Memory — {exp_name}")
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{exp_name}_flops_vs_memory.svg"))
+    df_flops_memory.to_csv(os.path.join(save_dir, f"{exp_name}_flops_vs_memory.csv"), index=False)
     plt.close()
 
 def plot_accuracy_vs_memory(metrics_dict, save_dir, exp_name):
@@ -580,6 +587,7 @@ def plot_accuracy_vs_memory(metrics_dict, save_dir, exp_name):
     plt.title(f"Accuracy vs Memory — {exp_name}")
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{exp_name}_acc_vs_memory.svg"))
+    df_acc_memory.to_csv(os.path.join(save_dir, f"{exp_name}_acc_vs_memory.csv"), index=False)
     plt.close()
 
 def plot_heatmap(metrics_dict, save_dir, exp_name):
@@ -616,6 +624,7 @@ def plot_heatmap(metrics_dict, save_dir, exp_name):
     plt.title(f"Normalized Metrics Heatmap — {exp_name}")
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{exp_name}_metrics_heatmap.svg"))
+    df_norm.to_csv(os.path.join(save_dir, f"{exp_name}_metrics_heatmap.csv"))
     plt.close()
 
 def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
@@ -648,6 +657,8 @@ def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
     plt.title(f"Stage Collapse Cost Curve — {exp_name}")
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.svg"))
+    # save data
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.csv"), index=False)
     plt.close()
 
 
@@ -842,6 +853,8 @@ def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name
     plt.tight_layout()
 
     outpath = os.path.join(save_dir, f"{exp_name}_per_layer_activation_memory_heatmap.svg")
+    # save data
+    df.to_csv(outpath.replace('.svg', '.csv'))
     plt.savefig(outpath)
     plt.close()
 
