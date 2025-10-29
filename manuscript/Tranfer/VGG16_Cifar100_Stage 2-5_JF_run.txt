@@ -1,9 +1,11 @@
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA driver initialization failed, you might not have a CUDA gpu. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
+  return torch._C._cuda_getDeviceCount() > 0
 VGG16 - Cifar10: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
 VGG16 - Cifar100: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
 RegNetX_400MF - Cifar10: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
 RegNetX_400MF - Cifar100: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
 Namespace(model='VGG16', dataset='Cifar100', epochs=1, pretrain=1, experiment='Stage 2-5', post_compress_epochs=0, imp=True, JF=True, Kevin=False)
-has GPU: True
+has GPU: False
 Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
 Loading CIFAR-100 data...
 CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
@@ -175,7 +177,7 @@ Collapsing layers from 'features.conv_3' to 'features.conv_13'...
 [DEBUG] Collapsed block layers: ['Conv2d', 'MaxPool2d']
 [DEBUG] Parameters BEFORE collapse: 34,015,396
 [DEBUG] Replacing layers 7 to 40 with collapsed block...
-[DEBUG] Inserting new block as 'collapsed_conv_3_to_conv_13_8d402f5e'
+[DEBUG] Inserting new block as 'collapsed_conv_3_to_conv_13_8b644da3'
 [DEBUG] Removing layer 'relu_3' at index 8
 [DEBUG] Removing layer 'bn_3' at index 9
 [DEBUG] Removing layer 'conv_4' at index 10
@@ -228,7 +230,7 @@ features.conv_2.weight: 16662/36864 zeros (45.20%)
 features.conv_2.bias: 0/64 zeros (0.00%)
 features.bn_2.weight: 0/64 zeros (0.00%)
 features.bn_2.bias: 0/64 zeros (0.00%)
-features.collapsed_conv_3_to_conv_13_8d402f5e.layer_0.weight: 0/32768 zeros (0.00%)
+features.collapsed_conv_3_to_conv_13_8b644da3.layer_0.weight: 0/32768 zeros (0.00%)
 features.bn_13.weight: 0/512 zeros (0.00%)
 features.bn_13.bias: 0/512 zeros (0.00%)
 classifier.fc_1.weight: 1254846/2097152 zeros (59.84%)
@@ -254,9 +256,9 @@ None
 [DEBUG] Hook registered for module: features.relu_2
 [DEBUG] Hook registered for module: features.bn_2
 [DEBUG] Hook registered for module: features.pool_1
-[DEBUG] Hook registered for module: features.collapsed_conv_3_to_conv_13_8d402f5e
-[DEBUG] Hook registered for module: features.collapsed_conv_3_to_conv_13_8d402f5e.layer_0
-[DEBUG] Hook registered for module: features.collapsed_conv_3_to_conv_13_8d402f5e.layer_1
+[DEBUG] Hook registered for module: features.collapsed_conv_3_to_conv_13_8b644da3
+[DEBUG] Hook registered for module: features.collapsed_conv_3_to_conv_13_8b644da3.layer_0
+[DEBUG] Hook registered for module: features.collapsed_conv_3_to_conv_13_8b644da3.layer_1
 [DEBUG] Hook registered for module: features.relu_13
 [DEBUG] Hook registered for module: features.bn_13
 [DEBUG] Hook registered for module: features.pool_5
@@ -271,9 +273,9 @@ None
 [DEBUG] Hook triggered for layer: features.relu_2
 [DEBUG] Hook triggered for layer: features.bn_2
 [DEBUG] Hook triggered for layer: features.pool_1
-[DEBUG] Hook triggered for layer: features.collapsed_conv_3_to_conv_13_8d402f5e.layer_0
-[DEBUG] Hook triggered for layer: features.collapsed_conv_3_to_conv_13_8d402f5e.layer_1
-[DEBUG] Hook triggered for layer: features.collapsed_conv_3_to_conv_13_8d402f5e
+[DEBUG] Hook triggered for layer: features.collapsed_conv_3_to_conv_13_8b644da3.layer_0
+[DEBUG] Hook triggered for layer: features.collapsed_conv_3_to_conv_13_8b644da3.layer_1
+[DEBUG] Hook triggered for layer: features.collapsed_conv_3_to_conv_13_8b644da3
 [DEBUG] Hook triggered for layer: features.relu_13
 [DEBUG] Hook triggered for layer: features.bn_13
 [DEBUG] Hook triggered for layer: features.pool_5
@@ -288,9 +290,9 @@ None
 [DEBUG] Found activation from layer: features.relu_2 with shape torch.Size([512, 64, 32, 32])
 [DEBUG] Found activation from layer: features.bn_2 with shape torch.Size([512, 64, 32, 32])
 [DEBUG] Found activation from layer: features.pool_1 with shape torch.Size([512, 64, 16, 16])
-[DEBUG] Found activation from layer: features.collapsed_conv_3_to_conv_13_8d402f5e.layer_0 with shape torch.Size([512, 512, 16, 16])
-[DEBUG] Found activation from layer: features.collapsed_conv_3_to_conv_13_8d402f5e.layer_1 with shape torch.Size([512, 512, 8, 8])
-[DEBUG] Found activation from layer: features.collapsed_conv_3_to_conv_13_8d402f5e with shape torch.Size([512, 512, 8, 8])
+[DEBUG] Found activation from layer: features.collapsed_conv_3_to_conv_13_8b644da3.layer_0 with shape torch.Size([512, 512, 16, 16])
+[DEBUG] Found activation from layer: features.collapsed_conv_3_to_conv_13_8b644da3.layer_1 with shape torch.Size([512, 512, 8, 8])
+[DEBUG] Found activation from layer: features.collapsed_conv_3_to_conv_13_8b644da3 with shape torch.Size([512, 512, 8, 8])
 [DEBUG] Found activation from layer: features.relu_13 with shape torch.Size([512, 512, 8, 8])
 [DEBUG] Found activation from layer: features.bn_13 with shape torch.Size([512, 512, 8, 8])
 [DEBUG] Found activation from layer: features.pool_5 with shape torch.Size([512, 512, 4, 4])
@@ -336,146 +338,5 @@ None
 [INFO] Collapse complete. Total trainable params: 50822308 when compressing [('features.conv_3', 'features.conv_13')] with model VGG16
 [INFO] Compiling model
 [•] Starting experiment 'Stage 2-5' in workflow 'JF'
-[•] Using device: cuda
-[Start training] device:cuda
-[INFO] Training started...
-model on device: cuda:0
-[INFO] Starting Epoch 1 of training...
-  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:03<04:52,  3.02s/it]  3%|▎         | 3/98 [00:03<01:18,  1.21it/s]  4%|▍         | 4/98 [00:03<00:54,  1.74it/s]  6%|▌         | 6/98 [00:03<00:31,  2.95it/s]  7%|▋         | 7/98 [00:03<00:25,  3.61it/s]  9%|▉         | 9/98 [00:03<00:17,  4.97it/s] 10%|█         | 10/98 [00:04<00:32,  2.74it/s] 11%|█         | 11/98 [00:05<00:32,  2.68it/s] 13%|█▎        | 13/98 [00:05<00:22,  3.82it/s] 14%|█▍        | 14/98 [00:06<00:37,  2.21it/s] 15%|█▌        | 15/98 [00:06<00:38,  2.16it/s] 17%|█▋        | 17/98 [00:07<00:25,  3.19it/s] 18%|█▊        | 18/98 [00:08<00:37,  2.13it/s] 19%|█▉        | 19/98 [00:08<00:41,  1.90it/s] 20%|██        | 20/98 [00:08<00:32,  2.41it/s] 21%|██▏       | 21/98 [00:08<00:25,  3.03it/s] 22%|██▏       | 22/98 [00:09<00:39,  1.93it/s] 23%|██▎       | 23/98 [00:10<00:42,  1.76it/s] 26%|██▌       | 25/98 [00:10<00:26,  2.79it/s] 27%|██▋       | 26/98 [00:11<00:35,  2.04it/s] 28%|██▊       | 27/98 [00:12<00:38,  1.84it/s] 30%|██▉       | 29/98 [00:12<00:24,  2.81it/s] 31%|███       | 30/98 [00:13<00:32,  2.07it/s] 32%|███▏      | 31/98 [00:14<00:34,  1.95it/s] 33%|███▎      | 32/98 [00:14<00:26,  2.48it/s] 35%|███▍      | 34/98 [00:15<00:31,  2.05it/s] 36%|███▌      | 35/98 [00:16<00:32,  1.95it/s] 38%|███▊      | 37/98 [00:16<00:21,  2.87it/s] 39%|███▉      | 38/98 [00:17<00:30,  1.94it/s] 40%|███▉      | 39/98 [00:17<00:31,  1.87it/s] 41%|████      | 40/98 [00:18<00:24,  2.36it/s] 43%|████▎     | 42/98 [00:19<00:26,  2.09it/s] 44%|████▍     | 43/98 [00:19<00:29,  1.89it/s] 45%|████▍     | 44/98 [00:19<00:22,  2.37it/s] 46%|████▌     | 45/98 [00:20<00:19,  2.75it/s] 47%|████▋     | 46/98 [00:20<00:25,  2.07it/s] 48%|████▊     | 47/98 [00:21<00:27,  1.84it/s] 49%|████▉     | 48/98 [00:21<00:20,  2.40it/s] 50%|█████     | 49/98 [00:22<00:20,  2.43it/s] 51%|█████     | 50/98 [00:22<00:22,  2.14it/s] 52%|█████▏    | 51/98 [00:23<00:26,  1.77it/s] 53%|█████▎    | 52/98 [00:23<00:19,  2.34it/s] 54%|█████▍    | 53/98 [00:23<00:16,  2.78it/s] 55%|█████▌    | 54/98 [00:24<00:20,  2.17it/s] 56%|█████▌    | 55/98 [00:25<00:21,  1.99it/s] 58%|█████▊    | 57/98 [00:25<00:13,  3.15it/s] 59%|█████▉    | 58/98 [00:25<00:14,  2.76it/s] 60%|██████    | 59/98 [00:26<00:15,  2.49it/s] 61%|██████    | 60/98 [00:26<00:13,  2.91it/s] 62%|██████▏   | 61/98 [00:26<00:10,  3.63it/s] 63%|██████▎   | 62/98 [00:27<00:12,  2.95it/s] 64%|██████▍   | 63/98 [00:27<00:14,  2.41it/s] 65%|██████▌   | 64/98 [00:27<00:10,  3.10it/s] 66%|██████▋   | 65/98 [00:27<00:08,  3.89it/s] 67%|██████▋   | 66/98 [00:28<00:10,  3.04it/s] 68%|██████▊   | 67/98 [00:29<00:12,  2.44it/s] 69%|██████▉   | 68/98 [00:29<00:09,  3.15it/s] 71%|███████▏  | 70/98 [00:29<00:08,  3.19it/s] 72%|███████▏  | 71/98 [00:30<00:10,  2.63it/s] 74%|███████▍  | 73/98 [00:30<00:06,  3.79it/s] 76%|███████▌  | 74/98 [00:31<00:07,  3.14it/s] 77%|███████▋  | 75/98 [00:31<00:08,  2.72it/s] 78%|███████▊  | 76/98 [00:31<00:07,  3.14it/s] 80%|███████▉  | 78/98 [00:32<00:05,  3.46it/s] 81%|████████  | 79/98 [00:32<00:07,  2.60it/s] 83%|████████▎ | 81/98 [00:33<00:04,  3.69it/s] 84%|████████▎ | 82/98 [00:33<00:03,  4.29it/s] 85%|████████▍ | 83/98 [00:34<00:06,  2.39it/s] 87%|████████▋ | 85/98 [00:34<00:03,  3.47it/s] 89%|████████▉ | 87/98 [00:35<00:04,  2.60it/s] 90%|████████▉ | 88/98 [00:35<00:03,  3.07it/s] 92%|█████████▏| 90/98 [00:35<00:01,  4.14it/s] 93%|█████████▎| 91/98 [00:36<00:02,  3.11it/s] 94%|█████████▍| 92/98 [00:36<00:01,  3.47it/s] 95%|█████████▍| 93/98 [00:36<00:01,  4.14it/s] 96%|█████████▌| 94/98 [00:36<00:00,  4.89it/s] 97%|█████████▋| 95/98 [00:37<00:00,  4.15it/s]100%|██████████| 98/98 [00:37<00:00,  7.49it/s]100%|██████████| 98/98 [00:37<00:00,  2.62it/s]
-Epoch 1: Loss=3.9793, Acc=15.31%
-[INFO] New best accuracy: 15.31% (previous best was 0.00%)
-[INFO] Training complete after 1 epochs.
-[INFO] Evaluating model on the test set...
-2025-10-23 16:18:58,901 - WARNING - Unsupported operator aten::max_pool2d encountered 3 time(s)
-2025-10-23 16:19:00,895 - WARNING - Unsupported operator aten::max_pool2d encountered 3 time(s)
-Final Test Accuracy: 31.44%
-[•] Running diagnostics for Stage 2-5...
-Input Tensor Shape: torch.Size([1, 3, 32, 32])
-Input Tensor (After Batch Dimension Check) Shape: torch.Size([1, 3, 32, 32])
-[✓] Saved per-layer params/flops CSV: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/Stage 2-5_layer_params_flops.csv and plot: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/Stage 2-5_params_flops_layers.svg
-[✓] Saved activation sizes CSV: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/Stage 2-5_activation_sizes.csv and plot: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/Stage 2-5_activation_sizes.svg
-Memory Decomposition: Params: 203.289232MB, Activations: 221.548912MB, Peak: 424.838144MB
-[✓] Saved memory decomposition plot: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/Stage 2-5_memory_breakdown.svg
-[✓] Diagnostics complete for Stage 2-5
-[✓] Saved metrics for 'Stage 2-5_JF' → VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/metrics/VGG16_CIFAR100_metrics.json
-[✓] Saved plot: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/VGG16_CIFAR100_plots.svg
-Saved comparison plot to VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/VGG16_CIFAR100_plots.svg
-[DEBUG] FLOPs: [123251720192.0, 123234942976.0, 161384235008.0, 161384235008.0, 64676167680.0, 50675580928.0]
-[DEBUG] Times: [0.014303627204895022, 0.013824582386016845, 0.042543745613098136, 0.04472665624618531, 0.01027281596660614, 0.010056022453308104]
-[DEBUG] Delta Accuracy vs Params Data: [{'name': 'Stage 4_JF', 'ΔAcc': 0.0, 'ΔParams(%)': 0.0}, {'name': 'Stage 3_JF', 'ΔAcc': -9.738, 'ΔParams(%)': 15.320313472529518}, {'name': 'Last 2_JF', 'ΔAcc': 6.908000000000001, 'ΔParams(%)': 4.646034837613815}, {'name': 'Last 2_Kevin', 'ΔAcc': 22.130000000000003, 'ΔParams(%)': 4.646034837613815}, {'name': 'Stage 3-5_Kevin', 'ΔAcc': -1.6999999999999993, 'ΔParams(%)': -8.261530929545438}, {'name': 'Stage 2-5_JF', 'ΔAcc': -6.033999999999999, 'ΔParams(%)': 79.93608982998688}]
-[DEBUG] FLOPs: [123251720192.0, 123234942976.0, 161384235008.0, 161384235008.0, 64676167680.0, 50675580928.0]
-[DEBUG] Memory: [1617.1953125, 1521.1953125, 1701.1953125, 1701.1953125, 1348.1953125, 1296.1953125]
-[DEBUG] Accuracy: [21.342, 11.604, 28.25, 43.472, 19.642, 15.308]
-[DEBUG] Memory: [1617.1953125, 1521.1953125, 1701.1953125, 1701.1953125, 1348.1953125, 1296.1953125]
-[DEBUG] Heatmap Rows: [{'Model': 'Stage 4_JF', 'Accuracy': 21.342, 'Params': 28244644, 'FLOPs': 123251720192, 'Inference Time': 0.014303627204895022, 'Memory (MB)': 1617.1953125}, {'Model': 'Stage 3_JF', 'Accuracy': 11.604, 'Params': 32571812, 'FLOPs': 123234942976, 'Inference Time': 0.013824582386016845, 'Memory (MB)': 1521.1953125}, {'Model': 'Last 2_JF', 'Accuracy': 28.25, 'Params': 29556900, 'FLOPs': 161384235008, 'Inference Time': 0.042543745613098136, 'Memory (MB)': 1701.1953125}, {'Model': 'Last 2_Kevin', 'Accuracy': 43.472, 'Params': 29556900, 'FLOPs': 161384235008, 'Inference Time': 0.04472665624618531, 'Memory (MB)': 1701.1953125}, {'Model': 'Stage 3-5_Kevin', 'Accuracy': 19.642, 'Params': 25911204, 'FLOPs': 64676167680, 'Inference Time': 0.01027281596660614, 'Memory (MB)': 1348.1953125}, {'Model': 'Stage 2-5_JF', 'Accuracy': 15.308, 'Params': 50822308, 'FLOPs': 50675580928, 'Inference Time': 0.010056022453308104, 'Memory (MB)': 1296.1953125}]
-[DEBUG] Collapse Curve Rows: [{'Model': 'Stage 4_JF', 'Params': 28244644, 'Time': 0.014303627204895022, 'Accuracy': 21.342}, {'Model': 'Stage 3_JF', 'Params': 32571812, 'Time': 0.013824582386016845, 'Accuracy': 11.604}, {'Model': 'Last 2_JF', 'Params': 29556900, 'Time': 0.042543745613098136, 'Accuracy': 28.25}, {'Model': 'Last 2_Kevin', 'Params': 29556900, 'Time': 0.04472665624618531, 'Accuracy': 43.472}, {'Model': 'Stage 3-5_Kevin', 'Params': 25911204, 'Time': 0.01027281596660614, 'Accuracy': 19.642}, {'Model': 'Stage 2-5_JF', 'Params': 50822308, 'Time': 0.010056022453308104, 'Accuracy': 15.308}]
-[✓] Saved per-layer activation memory heatmap: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/JF_per_layer_activation_memory_heatmap.svg
-[DEBUG] Processing file: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/metrics/VGG16_CIFAR100_metrics.json
-[DEBUG] Wrapping non-dict experiment 'accuracies' data: [21.342]
-[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 21.342
-[DEBUG] Wrapping non-dict experiment 'losses' data: [3.0386845500183104]
-[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
-[DEBUG] Wrapping non-dict experiment 'param_count' data: 28244644
-[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.014303627204895022
-[DEBUG] Wrapping non-dict experiment 'flops' data: 123251720192
-[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 1617.1953125
-[DEBUG] Wrapping non-dict experiment 'accuracies' data: [11.604]
-[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 11.604
-[DEBUG] Wrapping non-dict experiment 'losses' data: [3.6011329424285887]
-[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
-[DEBUG] Wrapping non-dict experiment 'param_count' data: 32571812
-[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.013824582386016845
-[DEBUG] Wrapping non-dict experiment 'flops' data: 123234942976
-[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 1521.1953125
-[DEBUG] Wrapping non-dict experiment 'accuracies' data: [28.25]
-[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 28.25
-[DEBUG] Wrapping non-dict experiment 'losses' data: [2.7561245625305175]
-[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
-[DEBUG] Wrapping non-dict experiment 'param_count' data: 29556900
-[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.042543745613098136
-[DEBUG] Wrapping non-dict experiment 'flops' data: 161384235008
-[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 1701.1953125
-[DEBUG] Wrapping non-dict experiment 'accuracies' data: [43.472]
-[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 43.472
-[DEBUG] Wrapping non-dict experiment 'losses' data: [2.123017846984863]
-[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
-[DEBUG] Wrapping non-dict experiment 'param_count' data: 29556900
-[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.04472665624618531
-[DEBUG] Wrapping non-dict experiment 'flops' data: 161384235008
-[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 1701.1953125
-[DEBUG] Wrapping non-dict experiment 'accuracies' data: [19.642]
-[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 19.642
-[DEBUG] Wrapping non-dict experiment 'losses' data: [3.374654697113037]
-[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
-[DEBUG] Wrapping non-dict experiment 'param_count' data: 25911204
-[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.01027281596660614
-[DEBUG] Wrapping non-dict experiment 'flops' data: 64676167680
-[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 1348.1953125
-[DEBUG] Wrapping non-dict experiment 'accuracies' data: [15.308]
-[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 15.308
-[DEBUG] Wrapping non-dict experiment 'losses' data: [3.9792584856414797]
-[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
-[DEBUG] Wrapping non-dict experiment 'param_count' data: 50822308
-[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.010056022453308104
-[DEBUG] Wrapping non-dict experiment 'flops' data: 50675580928
-[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 1296.1953125
-[DEBUG] Data for plotting:
-              Experiment      Params  ...  Inference Time       Memory
-0             accuracies         0.0  ...        0.000000     0.000000
-1         final_accuracy         0.0  ...        0.000000     0.000000
-2                 losses         0.0  ...        0.000000     0.000000
-3   total_epochs_trained         0.0  ...        0.000000     0.000000
-4            param_count  28244644.0  ...        0.000000     0.000000
-5         inference_time         0.0  ...        0.014304     0.000000
-6                  flops         0.0  ...        0.000000     0.000000
-7          total_size_mb         0.0  ...        0.000000  1617.195312
-8            diagnostics         0.0  ...        0.000000     0.000000
-9             accuracies         0.0  ...        0.000000     0.000000
-10        final_accuracy         0.0  ...        0.000000     0.000000
-11                losses         0.0  ...        0.000000     0.000000
-12  total_epochs_trained         0.0  ...        0.000000     0.000000
-13           param_count  32571812.0  ...        0.000000     0.000000
-14        inference_time         0.0  ...        0.013825     0.000000
-15                 flops         0.0  ...        0.000000     0.000000
-16         total_size_mb         0.0  ...        0.000000  1521.195312
-17           diagnostics         0.0  ...        0.000000     0.000000
-18            accuracies         0.0  ...        0.000000     0.000000
-19        final_accuracy         0.0  ...        0.000000     0.000000
-20                losses         0.0  ...        0.000000     0.000000
-21  total_epochs_trained         0.0  ...        0.000000     0.000000
-22           param_count  29556900.0  ...        0.000000     0.000000
-23        inference_time         0.0  ...        0.042544     0.000000
-24                 flops         0.0  ...        0.000000     0.000000
-25         total_size_mb         0.0  ...        0.000000  1701.195312
-26           diagnostics         0.0  ...        0.000000     0.000000
-27            accuracies         0.0  ...        0.000000     0.000000
-28        final_accuracy         0.0  ...        0.000000     0.000000
-29                losses         0.0  ...        0.000000     0.000000
-30  total_epochs_trained         0.0  ...        0.000000     0.000000
-31           param_count  29556900.0  ...        0.000000     0.000000
-32        inference_time         0.0  ...        0.044727     0.000000
-33                 flops         0.0  ...        0.000000     0.000000
-34         total_size_mb         0.0  ...        0.000000  1701.195312
-35           diagnostics         0.0  ...        0.000000     0.000000
-36            accuracies         0.0  ...        0.000000     0.000000
-37        final_accuracy         0.0  ...        0.000000     0.000000
-38                losses         0.0  ...        0.000000     0.000000
-39  total_epochs_trained         0.0  ...        0.000000     0.000000
-40           param_count  25911204.0  ...        0.000000     0.000000
-41        inference_time         0.0  ...        0.010273     0.000000
-42                 flops         0.0  ...        0.000000     0.000000
-43         total_size_mb         0.0  ...        0.000000  1348.195312
-44           diagnostics         0.0  ...        0.000000     0.000000
-45            accuracies         0.0  ...        0.000000     0.000000
-46        final_accuracy         0.0  ...        0.000000     0.000000
-47                losses         0.0  ...        0.000000     0.000000
-48  total_epochs_trained         0.0  ...        0.000000     0.000000
-49           param_count  50822308.0  ...        0.000000     0.000000
-50        inference_time         0.0  ...        0.010056     0.000000
-51                 flops         0.0  ...        0.000000     0.000000
-52         total_size_mb         0.0  ...        0.000000  1296.195312
-53           diagnostics         0.0  ...        0.000000     0.000000
-
-[54 rows x 6 columns]
-[✓] Saved unified metrics plots for workflow 'JF'
-[✓] Experiment 'Stage 2-5' completed. Checkpoints and metrics saved.
+[•] Using device: cpu
+[!] Warning: CUDA not available.

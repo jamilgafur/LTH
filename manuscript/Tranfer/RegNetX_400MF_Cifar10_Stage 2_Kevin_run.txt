@@ -1,11 +1,9 @@
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
-  return torch._C._cuda_getDeviceCount() > 0
 VGG16 - Cifar10: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
 VGG16 - Cifar100: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
 RegNetX_400MF - Cifar10: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
 RegNetX_400MF - Cifar100: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
 Namespace(model='RegNetX_400MF', dataset='Cifar10', epochs=1, pretrain=1, experiment='Stage 2', post_compress_epochs=0, imp=True, JF=False, Kevin=True)
-has GPU: False
+has GPU: True
 Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
 Loading CIFAR-10 data for RegNetX_400MF...
 CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
@@ -232,7 +230,7 @@ fc.weight: 0/3680 zeros (0.00%)
 fc.bias: 0/10 zeros (0.00%)
 ============================================================
 [INFO] Initialized Model: None
-[INFO] Loading model with weights from 'RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/temp_model_kevin_2025-10-23_16-22-36.pth'...
+[INFO] Loading model with weights from 'RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/temp_model_kevin_2025-10-29_07-04-17.pth'...
 [INFO] Full compression set: [('stage2.stage2_block0.block.conv1', 'stage2.stage2_block0.block.conv3')]
 [DEBUG] Compressing: ('stage2.stage2_block0.block.conv1', 'stage2.stage2_block0.block.conv3')
 
@@ -265,7 +263,7 @@ Collapsing layers from 'stage2.stage2_block0.block.conv1' to 'stage2.stage2_bloc
 [DEBUG] Collapsed block layers: ['Conv2d']
 [DEBUG] Parameters BEFORE collapse: 11,481,338
 [DEBUG] Replacing layers 0 to 6 with collapsed block...
-[DEBUG] Inserting new block as 'collapsed_conv1_to_conv3_9d1f70b6'
+[DEBUG] Inserting new block as 'collapsed_conv1_to_conv3_79d54ca8'
 [DEBUG] Removing layer 'bn1' at index 1
 [DEBUG] Removing layer 'relu1' at index 2
 [DEBUG] Removing layer 'conv2' at index 3
@@ -300,7 +298,7 @@ stage1.stage1_block0.block.bn3.bias: 0/24 zeros (0.00%)
 stage1.stage1_block0.shortcut.shortcut_conv.weight: 0/768 zeros (0.00%)
 stage1.stage1_block0.shortcut.shortcut_bn.weight: 0/24 zeros (0.00%)
 stage1.stage1_block0.shortcut.shortcut_bn.bias: 0/24 zeros (0.00%)
-stage2.stage2_block0.block.collapsed_conv1_to_conv3_9d1f70b6.layer_0.weight: 0/1344 zeros (0.00%)
+stage2.stage2_block0.block.collapsed_conv1_to_conv3_79d54ca8.layer_0.weight: 0/1344 zeros (0.00%)
 stage2.stage2_block0.block.bn3.weight: 0/56 zeros (0.00%)
 stage2.stage2_block0.block.bn3.bias: 0/56 zeros (0.00%)
 stage2.stage2_block0.shortcut.shortcut_conv.weight: 0/1344 zeros (0.00%)
@@ -728,5 +726,65 @@ None
 [INFO] Collapse complete. Total trainable params: 11449754 when compressing [('stage2.stage2_block0.block.conv1', 'stage2.stage2_block0.block.conv3')] with model RegNetX_400MF
 [INFO] Compiling model
 [•] Starting experiment 'Stage 2' in workflow 'Kevin'
-[•] Using device: cpu
-[!] Warning: CUDA not available.
+[•] Using device: cuda
+[Start training] device:cuda
+[INFO] Training started...
+model on device: cuda:0
+[INFO] Starting Epoch 1 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:04<06:51,  4.24s/it]  2%|▏         | 2/98 [00:04<02:53,  1.81s/it]  3%|▎         | 3/98 [00:04<01:38,  1.03s/it]  4%|▍         | 4/98 [00:04<01:05,  1.43it/s]  5%|▌         | 5/98 [00:04<00:48,  1.92it/s]  6%|▌         | 6/98 [00:05<00:37,  2.43it/s]  7%|▋         | 7/98 [00:05<00:31,  2.92it/s]  8%|▊         | 8/98 [00:05<00:26,  3.37it/s]  9%|▉         | 9/98 [00:05<00:23,  3.75it/s] 10%|█         | 10/98 [00:05<00:21,  4.06it/s] 11%|█         | 11/98 [00:06<00:20,  4.31it/s] 12%|█▏        | 12/98 [00:06<00:19,  4.50it/s] 13%|█▎        | 13/98 [00:06<00:18,  4.64it/s] 14%|█▍        | 14/98 [00:06<00:17,  4.74it/s] 15%|█▌        | 15/98 [00:06<00:17,  4.82it/s] 16%|█▋        | 16/98 [00:07<00:16,  4.87it/s] 17%|█▋        | 17/98 [00:07<00:18,  4.28it/s] 18%|█▊        | 18/98 [00:07<00:17,  4.47it/s] 19%|█▉        | 19/98 [00:07<00:21,  3.62it/s] 20%|██        | 20/98 [00:08<00:19,  3.94it/s] 21%|██▏       | 21/98 [00:08<00:20,  3.70it/s] 22%|██▏       | 22/98 [00:08<00:18,  4.05it/s] 23%|██▎       | 23/98 [00:09<00:21,  3.42it/s] 24%|██▍       | 24/98 [00:09<00:19,  3.78it/s] 26%|██▌       | 25/98 [00:09<00:22,  3.28it/s] 27%|██▋       | 26/98 [00:09<00:19,  3.65it/s] 28%|██▊       | 27/98 [00:10<00:20,  3.54it/s] 29%|██▊       | 28/98 [00:10<00:17,  3.89it/s] 30%|██▉       | 29/98 [00:10<00:20,  3.33it/s] 31%|███       | 30/98 [00:10<00:18,  3.71it/s] 32%|███▏      | 31/98 [00:11<00:20,  3.24it/s] 33%|███▎      | 32/98 [00:11<00:18,  3.60it/s] 34%|███▎      | 33/98 [00:11<00:20,  3.20it/s] 35%|███▍      | 34/98 [00:12<00:17,  3.58it/s] 36%|███▌      | 35/98 [00:12<00:17,  3.50it/s] 37%|███▋      | 36/98 [00:12<00:16,  3.85it/s] 38%|███▊      | 37/98 [00:13<00:18,  3.32it/s] 39%|███▉      | 38/98 [00:13<00:16,  3.69it/s] 40%|███▉      | 39/98 [00:13<00:16,  3.57it/s] 41%|████      | 40/98 [00:13<00:14,  3.91it/s] 42%|████▏     | 41/98 [00:14<00:15,  3.72it/s] 43%|████▎     | 42/98 [00:14<00:13,  4.03it/s] 44%|████▍     | 43/98 [00:14<00:16,  3.40it/s] 45%|████▍     | 44/98 [00:14<00:14,  3.77it/s] 46%|████▌     | 45/98 [00:15<00:14,  3.63it/s] 47%|████▋     | 46/98 [00:15<00:13,  3.95it/s] 48%|████▊     | 47/98 [00:15<00:15,  3.36it/s] 49%|████▉     | 48/98 [00:15<00:13,  3.73it/s] 50%|█████     | 49/98 [00:16<00:13,  3.60it/s] 51%|█████     | 50/98 [00:16<00:12,  3.93it/s] 52%|█████▏    | 51/98 [00:16<00:14,  3.34it/s] 53%|█████▎    | 52/98 [00:17<00:12,  3.72it/s] 54%|█████▍    | 53/98 [00:17<00:12,  3.60it/s] 55%|█████▌    | 54/98 [00:17<00:11,  3.93it/s] 56%|█████▌    | 55/98 [00:17<00:12,  3.35it/s] 57%|█████▋    | 56/98 [00:18<00:11,  3.73it/s] 58%|█████▊    | 57/98 [00:18<00:11,  3.60it/s] 59%|█████▉    | 58/98 [00:18<00:10,  3.93it/s] 60%|██████    | 59/98 [00:19<00:12,  3.05it/s] 61%|██████    | 60/98 [00:19<00:11,  3.45it/s] 62%|██████▏   | 61/98 [00:19<00:09,  3.81it/s] 63%|██████▎   | 62/98 [00:19<00:08,  4.10it/s] 64%|██████▍   | 63/98 [00:20<00:11,  3.12it/s] 65%|██████▌   | 64/98 [00:20<00:09,  3.51it/s] 66%|██████▋   | 65/98 [00:20<00:08,  3.86it/s] 67%|██████▋   | 66/98 [00:20<00:07,  4.14it/s] 68%|██████▊   | 67/98 [00:21<00:09,  3.13it/s] 69%|██████▉   | 68/98 [00:21<00:08,  3.53it/s] 70%|███████   | 69/98 [00:21<00:07,  3.87it/s] 71%|███████▏  | 70/98 [00:21<00:06,  4.15it/s] 72%|███████▏  | 71/98 [00:22<00:08,  3.12it/s] 73%|███████▎  | 72/98 [00:22<00:07,  3.54it/s] 74%|███████▍  | 73/98 [00:22<00:06,  3.88it/s] 76%|███████▌  | 74/98 [00:23<00:05,  4.16it/s] 77%|███████▋  | 75/98 [00:23<00:07,  3.12it/s] 78%|███████▊  | 76/98 [00:23<00:06,  3.55it/s] 79%|███████▊  | 77/98 [00:23<00:05,  3.89it/s] 80%|███████▉  | 78/98 [00:24<00:04,  4.16it/s] 81%|████████  | 79/98 [00:24<00:06,  2.87it/s] 82%|████████▏ | 80/98 [00:24<00:05,  3.29it/s] 83%|████████▎ | 81/98 [00:25<00:04,  3.67it/s] 84%|████████▎ | 82/98 [00:25<00:04,  3.99it/s] 85%|████████▍ | 83/98 [00:25<00:04,  3.07it/s] 86%|████████▌ | 84/98 [00:26<00:04,  3.46it/s] 87%|████████▋ | 85/98 [00:26<00:03,  3.83it/s] 88%|████████▊ | 86/98 [00:26<00:02,  4.12it/s] 89%|████████▉ | 87/98 [00:27<00:03,  2.86it/s] 90%|████████▉ | 88/98 [00:27<00:03,  3.28it/s] 91%|█████████ | 89/98 [00:27<00:02,  3.66it/s] 92%|█████████▏| 90/98 [00:27<00:02,  3.98it/s] 93%|█████████▎| 91/98 [00:28<00:02,  3.35it/s] 94%|█████████▍| 92/98 [00:28<00:01,  3.75it/s] 95%|█████████▍| 93/98 [00:28<00:01,  4.06it/s] 96%|█████████▌| 94/98 [00:28<00:00,  4.30it/s] 97%|█████████▋| 95/98 [00:28<00:00,  3.96it/s] 99%|█████████▉| 97/98 [00:29<00:00,  5.55it/s]100%|██████████| 98/98 [00:29<00:00,  3.51it/s]100%|██████████| 98/98 [00:29<00:00,  3.29it/s]
+Epoch 1: Loss=1.2553, Acc=55.16%
+[INFO] New best accuracy: 55.16% (previous best was 0.00%)
+[INFO] Training complete after 1 epochs.
+[INFO] Evaluating model on the test set...
+2025-10-29 07:04:56,013 - WARNING - Unsupported operator aten::add encountered 13 time(s)
+2025-10-29 07:04:56,013 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage1.stage1_block0.relu, stage2.stage2_block0.relu, stage3.stage3_block0.relu, stage3.stage3_block1.relu, stage3.stage3_block1.shortcut, stage3.stage3_block2.relu, stage3.stage3_block2.shortcut, stage3.stage3_block3.relu, stage3.stage3_block3.shortcut, stage4.stage4_block0.relu, stage4.stage4_block1.relu, stage4.stage4_block1.shortcut, stage4.stage4_block2.relu, stage4.stage4_block2.shortcut, stage4.stage4_block3.relu, stage4.stage4_block3.shortcut, stage4.stage4_block4.relu, stage4.stage4_block4.shortcut, stage4.stage4_block5.relu, stage4.stage4_block5.shortcut, stage4.stage4_block6.relu, stage4.stage4_block6.shortcut
+2025-10-29 07:04:58,898 - WARNING - Unsupported operator aten::add encountered 13 time(s)
+2025-10-29 07:04:58,898 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage1.stage1_block0.relu, stage2.stage2_block0.relu, stage3.stage3_block0.relu, stage3.stage3_block1.relu, stage3.stage3_block1.shortcut, stage3.stage3_block2.relu, stage3.stage3_block2.shortcut, stage3.stage3_block3.relu, stage3.stage3_block3.shortcut, stage4.stage4_block0.relu, stage4.stage4_block1.relu, stage4.stage4_block1.shortcut, stage4.stage4_block2.relu, stage4.stage4_block2.shortcut, stage4.stage4_block3.relu, stage4.stage4_block3.shortcut, stage4.stage4_block4.relu, stage4.stage4_block4.shortcut, stage4.stage4_block5.relu, stage4.stage4_block5.shortcut, stage4.stage4_block6.relu, stage4.stage4_block6.shortcut
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:118: UserWarning: Tight layout not applied. tight_layout cannot make Axes height small enough to accommodate all Axes decorations.
+  plt.tight_layout()
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:205: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(parts.keys()), y=list(parts.values()), palette=["steelblue", "salmon", "gold"])
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:48: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=list(accs), ax=axs[0], palette="Blues_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:66: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=list(infer_times), ax=axs[1], palette="Oranges_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:74: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=mem_mb, ax=axs[2], palette="Greens_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:313: UserWarning: Tight layout not applied. The left and right margins cannot be made large enough to accommodate all Axes decorations.
+  plt.tight_layout()
+Final Test Accuracy: 62.26%
+[•] Running diagnostics for Stage 2...
+[✓] Diagnostics complete for Stage 2
+[✓] Saved metrics for 'Stage 2_Kevin' → RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/RegNetX_400MF_CIFAR10_metrics.json
+[✓] Saved plot: RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/plots/RegNetX_400MF_CIFAR10_plots.svg
+Saved comparison plot to RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/plots/RegNetX_400MF_CIFAR10_plots.svg
+[DEBUG] FLOPs: [29818699776.0, 32595197952.0, 30697537536.0, 31417122816.0]
+[DEBUG] Times: [0.017677990341186525, 0.018423864030838014, 0.0201919328212738, 0.017476851272583006]
+[DEBUG] Delta Accuracy vs Params Data: [{'name': 'Stage 4_Kevin', 'ΔAcc': 0.0, 'ΔParams(%)': 0.0}, {'name': 'Original Model_JF', 'ΔAcc': 1.9739999999999895, 'ΔParams(%)': 13.388920349220879}, {'name': 'Stage 3_Kevin', 'ΔAcc': -2.1060000000000088, 'ΔParams(%)': 11.101180312209832}, {'name': 'Stage 2_Kevin', 'ΔAcc': -11.89800000000001, 'ΔParams(%)': 13.07699889369803}]
+[DEBUG] FLOPs: [29818699776.0, 32595197952.0, 30697537536.0, 31417122816.0]
+[DEBUG] Memory: [681.36328125, 756.73828125, 670.11328125, 593.61328125]
+[DEBUG] Accuracy: [67.058, 69.032, 64.952, 55.16]
+[DEBUG] Memory: [681.36328125, 756.73828125, 670.11328125, 593.61328125]
+[DEBUG] Heatmap Rows: [{'Model': 'Stage 4_Kevin', 'Accuracy': 67.058, 'Params': 10125626, 'FLOPs': 29818699776, 'Inference Time': 0.017677990341186525, 'Memory (MB)': 681.36328125}, {'Model': 'Original Model_JF', 'Accuracy': 69.032, 'Params': 11481338, 'FLOPs': 32595197952, 'Inference Time': 0.018423864030838014, 'Memory (MB)': 756.73828125}, {'Model': 'Stage 3_Kevin', 'Accuracy': 64.952, 'Params': 11249690, 'FLOPs': 30697537536, 'Inference Time': 0.0201919328212738, 'Memory (MB)': 670.11328125}, {'Model': 'Stage 2_Kevin', 'Accuracy': 55.16, 'Params': 11449754, 'FLOPs': 31417122816, 'Inference Time': 0.017476851272583006, 'Memory (MB)': 593.61328125}]
+[DEBUG] Collapse Curve Rows: [{'Model': 'Stage 4_Kevin', 'Params': 10125626, 'Time': 0.017677990341186525, 'Accuracy': 67.058}, {'Model': 'Original Model_JF', 'Params': 11481338, 'Time': 0.018423864030838014, 'Accuracy': 69.032}, {'Model': 'Stage 3_Kevin', 'Params': 11249690, 'Time': 0.0201919328212738, 'Accuracy': 64.952}, {'Model': 'Stage 2_Kevin', 'Params': 11449754, 'Time': 0.017476851272583006, 'Accuracy': 55.16}]
+[✓] Experiment 'Stage 2' completed. Checkpoints and metrics saved.

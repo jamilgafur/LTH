@@ -14,6 +14,8 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 ============================================================
 🔍 Model Summary (via torchinfo)
 ============================================================
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
 ==========================================================================================
 Layer (type:depth-idx)                   Output Shape              Param #
 ==========================================================================================
@@ -145,7 +147,7 @@ classifier.fc_3.weight: 0/409600 zeros (0.00%)
 classifier.fc_3.bias: 0/100 zeros (0.00%)
 ============================================================
 [INFO] Initialized Model: None
-[INFO] Loading model with weights from 'VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/temp_model_kevin_2025-10-23_16-17-26.pth'...
+[INFO] Loading model with weights from 'VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/temp_model_kevin_2025-10-29_07-02-33.pth'...
 [INFO] Full compression set: [('features.conv_5', 'features.conv_13')]
 [DEBUG] Compressing: ('features.conv_5', 'features.conv_13')
 
@@ -175,7 +177,7 @@ Collapsing layers from 'features.conv_5' to 'features.conv_13'...
 [DEBUG] Collapsed block layers: ['Conv2d', 'MaxPool2d']
 [DEBUG] Parameters BEFORE collapse: 34,015,396
 [DEBUG] Replacing layers 14 to 40 with collapsed block...
-[DEBUG] Inserting new block as 'collapsed_conv_5_to_conv_13_234fd251'
+[DEBUG] Inserting new block as 'collapsed_conv_5_to_conv_13_a1f72c9e'
 [DEBUG] Removing layer 'relu_5' at index 15
 [DEBUG] Removing layer 'bn_5' at index 16
 [DEBUG] Removing layer 'conv_6' at index 17
@@ -229,7 +231,7 @@ features.conv_4.weight: 0/147456 zeros (0.00%)
 features.conv_4.bias: 0/128 zeros (0.00%)
 features.bn_4.weight: 0/128 zeros (0.00%)
 features.bn_4.bias: 0/128 zeros (0.00%)
-features.collapsed_conv_5_to_conv_13_234fd251.layer_0.weight: 0/65536 zeros (0.00%)
+features.collapsed_conv_5_to_conv_13_a1f72c9e.layer_0.weight: 0/65536 zeros (0.00%)
 features.bn_13.weight: 0/512 zeros (0.00%)
 features.bn_13.bias: 0/512 zeros (0.00%)
 classifier.fc_1.weight: 0/2097152 zeros (0.00%)
@@ -262,9 +264,9 @@ None
 [DEBUG] Hook registered for module: features.relu_4
 [DEBUG] Hook registered for module: features.bn_4
 [DEBUG] Hook registered for module: features.pool_2
-[DEBUG] Hook registered for module: features.collapsed_conv_5_to_conv_13_234fd251
-[DEBUG] Hook registered for module: features.collapsed_conv_5_to_conv_13_234fd251.layer_0
-[DEBUG] Hook registered for module: features.collapsed_conv_5_to_conv_13_234fd251.layer_1
+[DEBUG] Hook registered for module: features.collapsed_conv_5_to_conv_13_a1f72c9e
+[DEBUG] Hook registered for module: features.collapsed_conv_5_to_conv_13_a1f72c9e.layer_0
+[DEBUG] Hook registered for module: features.collapsed_conv_5_to_conv_13_a1f72c9e.layer_1
 [DEBUG] Hook registered for module: features.relu_13
 [DEBUG] Hook registered for module: features.bn_13
 [DEBUG] Hook registered for module: features.pool_5
@@ -286,9 +288,9 @@ None
 [DEBUG] Hook triggered for layer: features.relu_4
 [DEBUG] Hook triggered for layer: features.bn_4
 [DEBUG] Hook triggered for layer: features.pool_2
-[DEBUG] Hook triggered for layer: features.collapsed_conv_5_to_conv_13_234fd251.layer_0
-[DEBUG] Hook triggered for layer: features.collapsed_conv_5_to_conv_13_234fd251.layer_1
-[DEBUG] Hook triggered for layer: features.collapsed_conv_5_to_conv_13_234fd251
+[DEBUG] Hook triggered for layer: features.collapsed_conv_5_to_conv_13_a1f72c9e.layer_0
+[DEBUG] Hook triggered for layer: features.collapsed_conv_5_to_conv_13_a1f72c9e.layer_1
+[DEBUG] Hook triggered for layer: features.collapsed_conv_5_to_conv_13_a1f72c9e
 [DEBUG] Hook triggered for layer: features.relu_13
 [DEBUG] Hook triggered for layer: features.bn_13
 [DEBUG] Hook triggered for layer: features.pool_5
@@ -310,9 +312,9 @@ None
 [DEBUG] Found activation from layer: features.relu_4 with shape torch.Size([512, 128, 16, 16])
 [DEBUG] Found activation from layer: features.bn_4 with shape torch.Size([512, 128, 16, 16])
 [DEBUG] Found activation from layer: features.pool_2 with shape torch.Size([512, 128, 8, 8])
-[DEBUG] Found activation from layer: features.collapsed_conv_5_to_conv_13_234fd251.layer_0 with shape torch.Size([512, 512, 8, 8])
-[DEBUG] Found activation from layer: features.collapsed_conv_5_to_conv_13_234fd251.layer_1 with shape torch.Size([512, 512, 4, 4])
-[DEBUG] Found activation from layer: features.collapsed_conv_5_to_conv_13_234fd251 with shape torch.Size([512, 512, 4, 4])
+[DEBUG] Found activation from layer: features.collapsed_conv_5_to_conv_13_a1f72c9e.layer_0 with shape torch.Size([512, 512, 8, 8])
+[DEBUG] Found activation from layer: features.collapsed_conv_5_to_conv_13_a1f72c9e.layer_1 with shape torch.Size([512, 512, 4, 4])
+[DEBUG] Found activation from layer: features.collapsed_conv_5_to_conv_13_a1f72c9e with shape torch.Size([512, 512, 4, 4])
 [DEBUG] Found activation from layer: features.relu_13 with shape torch.Size([512, 512, 4, 4])
 [DEBUG] Found activation from layer: features.bn_13 with shape torch.Size([512, 512, 4, 4])
 [DEBUG] Found activation from layer: features.pool_5 with shape torch.Size([512, 512, 2, 2])
@@ -375,141 +377,54 @@ None
 [INFO] Training started...
 model on device: cuda:0
 [INFO] Starting Epoch 1 of training...
-  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:04<06:41,  4.14s/it]  3%|▎         | 3/98 [00:04<01:46,  1.12s/it]  4%|▍         | 4/98 [00:04<01:12,  1.30it/s]  5%|▌         | 5/98 [00:04<00:53,  1.73it/s]  6%|▌         | 6/98 [00:04<00:42,  2.19it/s]  7%|▋         | 7/98 [00:04<00:34,  2.66it/s]  8%|▊         | 8/98 [00:05<00:26,  3.43it/s]  9%|▉         | 9/98 [00:05<00:23,  3.81it/s] 10%|█         | 10/98 [00:05<00:24,  3.65it/s] 11%|█         | 11/98 [00:06<00:32,  2.68it/s] 12%|█▏        | 12/98 [00:06<00:27,  3.12it/s] 13%|█▎        | 13/98 [00:06<00:22,  3.86it/s] 14%|█▍        | 14/98 [00:07<00:40,  2.10it/s] 15%|█▌        | 15/98 [00:07<00:37,  2.20it/s] 16%|█▋        | 16/98 [00:07<00:28,  2.87it/s] 17%|█▋        | 17/98 [00:08<00:24,  3.30it/s] 18%|█▊        | 18/98 [00:09<00:41,  1.95it/s] 19%|█▉        | 19/98 [00:09<00:33,  2.39it/s] 20%|██        | 20/98 [00:09<00:25,  3.08it/s] 21%|██▏       | 21/98 [00:09<00:21,  3.50it/s] 22%|██▏       | 22/98 [00:10<00:44,  1.69it/s] 23%|██▎       | 23/98 [00:11<00:35,  2.11it/s] 26%|██▌       | 25/98 [00:11<00:23,  3.09it/s] 27%|██▋       | 26/98 [00:12<00:40,  1.77it/s] 29%|██▊       | 28/98 [00:12<00:26,  2.68it/s] 30%|██▉       | 29/98 [00:13<00:22,  3.00it/s] 31%|███       | 30/98 [00:14<00:37,  1.81it/s] 32%|███▏      | 31/98 [00:14<00:30,  2.20it/s] 34%|███▎      | 33/98 [00:14<00:21,  3.08it/s] 35%|███▍      | 34/98 [00:16<00:35,  1.81it/s] 36%|███▌      | 35/98 [00:16<00:27,  2.27it/s] 37%|███▋      | 36/98 [00:16<00:23,  2.66it/s] 38%|███▊      | 37/98 [00:16<00:20,  3.05it/s] 39%|███▉      | 38/98 [00:17<00:36,  1.66it/s] 40%|███▉      | 39/98 [00:18<00:27,  2.17it/s] 41%|████      | 40/98 [00:18<00:22,  2.62it/s] 42%|████▏     | 41/98 [00:18<00:18,  3.05it/s] 43%|████▎     | 42/98 [00:19<00:32,  1.71it/s] 44%|████▍     | 43/98 [00:19<00:24,  2.26it/s] 45%|████▍     | 44/98 [00:19<00:19,  2.71it/s] 46%|████▌     | 45/98 [00:20<00:15,  3.45it/s] 47%|████▋     | 46/98 [00:21<00:27,  1.88it/s] 48%|████▊     | 47/98 [00:21<00:20,  2.48it/s] 49%|████▉     | 48/98 [00:21<00:17,  2.93it/s] 50%|█████     | 49/98 [00:21<00:13,  3.71it/s] 51%|█████     | 50/98 [00:22<00:25,  1.91it/s] 52%|█████▏    | 51/98 [00:22<00:19,  2.38it/s] 53%|█████▎    | 52/98 [00:22<00:15,  3.03it/s] 54%|█████▍    | 53/98 [00:23<00:12,  3.50it/s] 55%|█████▌    | 54/98 [00:24<00:20,  2.13it/s] 56%|█████▌    | 55/98 [00:24<00:15,  2.75it/s] 57%|█████▋    | 56/98 [00:24<00:13,  3.21it/s] 58%|█████▊    | 57/98 [00:24<00:11,  3.61it/s] 59%|█████▉    | 58/98 [00:25<00:22,  1.81it/s] 60%|██████    | 59/98 [00:25<00:17,  2.23it/s] 61%|██████    | 60/98 [00:26<00:13,  2.86it/s] 62%|██████▏   | 61/98 [00:26<00:11,  3.35it/s] 63%|██████▎   | 62/98 [00:27<00:20,  1.74it/s] 64%|██████▍   | 63/98 [00:27<00:15,  2.19it/s] 65%|██████▌   | 64/98 [00:27<00:11,  2.85it/s] 66%|██████▋   | 65/98 [00:27<00:10,  3.29it/s] 67%|██████▋   | 66/98 [00:29<00:20,  1.58it/s] 68%|██████▊   | 67/98 [00:29<00:14,  2.11it/s] 69%|██████▉   | 68/98 [00:29<00:11,  2.56it/s] 70%|███████   | 69/98 [00:29<00:09,  3.00it/s] 71%|███████▏  | 70/98 [00:31<00:16,  1.69it/s] 72%|███████▏  | 71/98 [00:31<00:12,  2.24it/s] 73%|███████▎  | 72/98 [00:31<00:09,  2.69it/s] 76%|███████▌  | 74/98 [00:32<00:12,  2.00it/s] 77%|███████▋  | 75/98 [00:32<00:09,  2.49it/s] 78%|███████▊  | 76/98 [00:32<00:07,  2.87it/s] 79%|███████▊  | 77/98 [00:33<00:05,  3.51it/s] 80%|███████▉  | 78/98 [00:34<00:10,  1.87it/s] 81%|████████  | 79/98 [00:34<00:07,  2.43it/s] 82%|████████▏ | 80/98 [00:34<00:05,  3.11it/s] 83%|████████▎ | 81/98 [00:34<00:04,  3.90it/s] 84%|████████▎ | 82/98 [00:35<00:08,  1.87it/s] 86%|████████▌ | 84/98 [00:35<00:04,  2.98it/s] 87%|████████▋ | 85/98 [00:36<00:03,  3.59it/s] 88%|████████▊ | 86/98 [00:37<00:05,  2.01it/s] 89%|████████▉ | 87/98 [00:37<00:04,  2.43it/s] 90%|████████▉ | 88/98 [00:37<00:03,  3.06it/s] 91%|█████████ | 89/98 [00:37<00:02,  3.47it/s] 92%|█████████▏| 90/98 [00:38<00:04,  1.81it/s] 94%|█████████▍| 92/98 [00:39<00:02,  2.88it/s] 95%|█████████▍| 93/98 [00:39<00:01,  3.48it/s] 96%|█████████▌| 94/98 [00:39<00:01,  2.86it/s] 98%|█████████▊| 96/98 [00:39<00:00,  4.44it/s]100%|██████████| 98/98 [00:40<00:00,  5.64it/s]100%|██████████| 98/98 [00:40<00:00,  2.44it/s]
-Epoch 1: Loss=3.3747, Acc=19.64%
-[INFO] New best accuracy: 19.64% (previous best was 0.00%)
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:02<04:06,  2.54s/it]  3%|▎         | 3/98 [00:02<01:08,  1.39it/s]  5%|▌         | 5/98 [00:02<00:37,  2.49it/s]  6%|▌         | 6/98 [00:03<00:29,  3.12it/s]  8%|▊         | 8/98 [00:03<00:20,  4.45it/s] 10%|█         | 10/98 [00:03<00:18,  4.65it/s] 12%|█▏        | 12/98 [00:03<00:15,  5.73it/s] 13%|█▎        | 13/98 [00:04<00:16,  5.01it/s] 14%|█▍        | 14/98 [00:04<00:20,  4.09it/s] 16%|█▋        | 16/98 [00:04<00:15,  5.31it/s] 17%|█▋        | 17/98 [00:05<00:20,  3.90it/s] 18%|█▊        | 18/98 [00:05<00:19,  4.12it/s] 20%|██        | 20/98 [00:05<00:14,  5.40it/s] 21%|██▏       | 21/98 [00:06<00:23,  3.33it/s] 22%|██▏       | 22/98 [00:06<00:19,  3.97it/s] 24%|██▍       | 24/98 [00:06<00:14,  5.27it/s] 26%|██▌       | 25/98 [00:07<00:20,  3.54it/s] 27%|██▋       | 26/98 [00:07<00:17,  4.20it/s] 29%|██▊       | 28/98 [00:07<00:12,  5.52it/s] 30%|██▉       | 29/98 [00:08<00:19,  3.62it/s] 31%|███       | 30/98 [00:08<00:15,  4.29it/s] 32%|███▏      | 31/98 [00:08<00:13,  5.03it/s] 33%|███▎      | 32/98 [00:08<00:13,  5.03it/s] 34%|███▎      | 33/98 [00:09<00:18,  3.54it/s] 36%|███▌      | 35/98 [00:09<00:12,  4.96it/s] 37%|███▋      | 36/98 [00:09<00:12,  4.97it/s] 38%|███▊      | 37/98 [00:09<00:16,  3.60it/s] 39%|███▉      | 38/98 [00:10<00:17,  3.53it/s] 41%|████      | 40/98 [00:10<00:11,  4.90it/s] 42%|████▏     | 41/98 [00:10<00:14,  3.99it/s] 43%|████▎     | 42/98 [00:11<00:14,  3.80it/s] 44%|████▍     | 43/98 [00:11<00:12,  4.55it/s] 45%|████▍     | 44/98 [00:11<00:11,  4.67it/s] 46%|████▌     | 45/98 [00:11<00:12,  4.19it/s] 47%|████▋     | 46/98 [00:12<00:13,  3.90it/s] 48%|████▊     | 47/98 [00:12<00:10,  4.75it/s] 49%|████▉     | 48/98 [00:12<00:10,  4.82it/s] 50%|█████     | 49/98 [00:12<00:11,  4.26it/s] 51%|█████     | 50/98 [00:12<00:12,  3.93it/s] 53%|█████▎    | 52/98 [00:13<00:09,  4.85it/s] 54%|█████▍    | 53/98 [00:13<00:11,  3.93it/s] 55%|█████▌    | 54/98 [00:13<00:10,  4.17it/s] 57%|█████▋    | 56/98 [00:14<00:09,  4.49it/s] 58%|█████▊    | 57/98 [00:14<00:11,  3.48it/s] 60%|██████    | 59/98 [00:14<00:08,  4.70it/s] 61%|██████    | 60/98 [00:15<00:07,  4.77it/s] 62%|██████▏   | 61/98 [00:15<00:12,  3.05it/s] 64%|██████▍   | 63/98 [00:16<00:08,  4.26it/s] 66%|██████▋   | 65/98 [00:17<00:10,  3.01it/s] 68%|██████▊   | 67/98 [00:17<00:07,  3.96it/s] 70%|███████   | 69/98 [00:18<00:09,  3.15it/s] 72%|███████▏  | 71/98 [00:18<00:06,  4.03it/s] 73%|███████▎  | 72/98 [00:18<00:05,  4.54it/s] 74%|███████▍  | 73/98 [00:19<00:08,  2.92it/s] 77%|███████▋  | 75/98 [00:19<00:05,  3.98it/s] 79%|███████▊  | 77/98 [00:20<00:06,  3.30it/s] 81%|████████  | 79/98 [00:20<00:04,  4.24it/s] 82%|████████▏ | 80/98 [00:20<00:03,  4.77it/s] 83%|████████▎ | 81/98 [00:21<00:05,  2.97it/s] 85%|████████▍ | 83/98 [00:21<00:03,  4.06it/s] 86%|████████▌ | 84/98 [00:21<00:03,  4.65it/s] 87%|████████▋ | 85/98 [00:22<00:03,  3.28it/s] 88%|████████▊ | 86/98 [00:22<00:03,  3.94it/s] 90%|████████▉ | 88/98 [00:22<00:01,  5.27it/s] 91%|█████████ | 89/98 [00:23<00:02,  3.03it/s] 93%|█████████▎| 91/98 [00:23<00:01,  4.19it/s] 95%|█████████▍| 93/98 [00:23<00:01,  4.72it/s] 97%|█████████▋| 95/98 [00:24<00:00,  5.92it/s] 99%|█████████▉| 97/98 [00:24<00:00,  6.48it/s]100%|██████████| 98/98 [00:24<00:00,  4.03it/s]
+Epoch 1: Loss=3.4184, Acc=19.29%
+[INFO] New best accuracy: 19.29% (previous best was 0.00%)
 [INFO] Training complete after 1 epochs.
 [INFO] Evaluating model on the test set...
-2025-10-23 16:18:42,052 - WARNING - Unsupported operator aten::max_pool2d encountered 4 time(s)
-2025-10-23 16:18:44,461 - WARNING - Unsupported operator aten::max_pool2d encountered 4 time(s)
-Final Test Accuracy: 35.74%
+2025-10-29 07:03:20,361 - WARNING - Unsupported operator aten::max_pool2d encountered 4 time(s)
+2025-10-29 07:03:23,213 - WARNING - Unsupported operator aten::max_pool2d encountered 4 time(s)
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:205: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(parts.keys()), y=list(parts.values()), palette=["steelblue", "salmon", "gold"])
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:48: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=list(accs), ax=axs[0], palette="Blues_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:66: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=list(infer_times), ax=axs[1], palette="Oranges_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:74: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=mem_mb, ax=axs[2], palette="Greens_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:313: UserWarning: Tight layout not applied. The left and right margins cannot be made large enough to accommodate all Axes decorations.
+  plt.tight_layout()
+Final Test Accuracy: 36.26%
 [•] Running diagnostics for Stage 3-5...
-Input Tensor Shape: torch.Size([1, 3, 32, 32])
-Input Tensor (After Batch Dimension Check) Shape: torch.Size([1, 3, 32, 32])
-[✓] Saved per-layer params/flops CSV: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/Stage 3-5_layer_params_flops.csv and plot: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/Stage 3-5_params_flops_layers.svg
-[✓] Saved activation sizes CSV: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/Stage 3-5_activation_sizes.csv and plot: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/Stage 3-5_activation_sizes.svg
-Memory Decomposition: Params: 103.644816MB, Activations: 122.546544MB, Peak: 226.19136MB
-[✓] Saved memory decomposition plot: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/Stage 3-5_memory_breakdown.svg
 [✓] Diagnostics complete for Stage 3-5
 [✓] Saved metrics for 'Stage 3-5_Kevin' → VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/metrics/VGG16_CIFAR100_metrics.json
 [✓] Saved plot: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/VGG16_CIFAR100_plots.svg
 Saved comparison plot to VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/VGG16_CIFAR100_plots.svg
-[DEBUG] FLOPs: [123251720192.0, 123234942976.0, 161384235008.0, 161384235008.0, 64676167680.0]
-[DEBUG] Times: [0.014303627204895022, 0.013824582386016845, 0.042543745613098136, 0.04472665624618531, 0.01027281596660614]
-[DEBUG] Delta Accuracy vs Params Data: [{'name': 'Stage 4_JF', 'ΔAcc': 0.0, 'ΔParams(%)': 0.0}, {'name': 'Stage 3_JF', 'ΔAcc': -9.738, 'ΔParams(%)': 15.320313472529518}, {'name': 'Last 2_JF', 'ΔAcc': 6.908000000000001, 'ΔParams(%)': 4.646034837613815}, {'name': 'Last 2_Kevin', 'ΔAcc': 22.130000000000003, 'ΔParams(%)': 4.646034837613815}, {'name': 'Stage 3-5_Kevin', 'ΔAcc': -1.6999999999999993, 'ΔParams(%)': -8.261530929545438}]
-[DEBUG] FLOPs: [123251720192.0, 123234942976.0, 161384235008.0, 161384235008.0, 64676167680.0]
-[DEBUG] Memory: [1617.1953125, 1521.1953125, 1701.1953125, 1701.1953125, 1348.1953125]
-[DEBUG] Accuracy: [21.342, 11.604, 28.25, 43.472, 19.642]
-[DEBUG] Memory: [1617.1953125, 1521.1953125, 1701.1953125, 1701.1953125, 1348.1953125]
-[DEBUG] Heatmap Rows: [{'Model': 'Stage 4_JF', 'Accuracy': 21.342, 'Params': 28244644, 'FLOPs': 123251720192, 'Inference Time': 0.014303627204895022, 'Memory (MB)': 1617.1953125}, {'Model': 'Stage 3_JF', 'Accuracy': 11.604, 'Params': 32571812, 'FLOPs': 123234942976, 'Inference Time': 0.013824582386016845, 'Memory (MB)': 1521.1953125}, {'Model': 'Last 2_JF', 'Accuracy': 28.25, 'Params': 29556900, 'FLOPs': 161384235008, 'Inference Time': 0.042543745613098136, 'Memory (MB)': 1701.1953125}, {'Model': 'Last 2_Kevin', 'Accuracy': 43.472, 'Params': 29556900, 'FLOPs': 161384235008, 'Inference Time': 0.04472665624618531, 'Memory (MB)': 1701.1953125}, {'Model': 'Stage 3-5_Kevin', 'Accuracy': 19.642, 'Params': 25911204, 'FLOPs': 64676167680, 'Inference Time': 0.01027281596660614, 'Memory (MB)': 1348.1953125}]
-[DEBUG] Collapse Curve Rows: [{'Model': 'Stage 4_JF', 'Params': 28244644, 'Time': 0.014303627204895022, 'Accuracy': 21.342}, {'Model': 'Stage 3_JF', 'Params': 32571812, 'Time': 0.013824582386016845, 'Accuracy': 11.604}, {'Model': 'Last 2_JF', 'Params': 29556900, 'Time': 0.042543745613098136, 'Accuracy': 28.25}, {'Model': 'Last 2_Kevin', 'Params': 29556900, 'Time': 0.04472665624618531, 'Accuracy': 43.472}, {'Model': 'Stage 3-5_Kevin', 'Params': 25911204, 'Time': 0.01027281596660614, 'Accuracy': 19.642}]
-[✓] Saved per-layer activation memory heatmap: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/Kevin_per_layer_activation_memory_heatmap.svg
-[DEBUG] Processing file: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/metrics/VGG16_CIFAR100_metrics.json
-[DEBUG] Wrapping non-dict experiment 'accuracies' data: [21.342]
-[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 21.342
-[DEBUG] Wrapping non-dict experiment 'losses' data: [3.0386845500183104]
-[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
-[DEBUG] Wrapping non-dict experiment 'param_count' data: 28244644
-[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.014303627204895022
-[DEBUG] Wrapping non-dict experiment 'flops' data: 123251720192
-[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 1617.1953125
-[DEBUG] Wrapping non-dict experiment 'accuracies' data: [11.604]
-[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 11.604
-[DEBUG] Wrapping non-dict experiment 'losses' data: [3.6011329424285887]
-[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
-[DEBUG] Wrapping non-dict experiment 'param_count' data: 32571812
-[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.013824582386016845
-[DEBUG] Wrapping non-dict experiment 'flops' data: 123234942976
-[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 1521.1953125
-[DEBUG] Wrapping non-dict experiment 'accuracies' data: [28.25]
-[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 28.25
-[DEBUG] Wrapping non-dict experiment 'losses' data: [2.7561245625305175]
-[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
-[DEBUG] Wrapping non-dict experiment 'param_count' data: 29556900
-[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.042543745613098136
-[DEBUG] Wrapping non-dict experiment 'flops' data: 161384235008
-[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 1701.1953125
-[DEBUG] Wrapping non-dict experiment 'accuracies' data: [43.472]
-[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 43.472
-[DEBUG] Wrapping non-dict experiment 'losses' data: [2.123017846984863]
-[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
-[DEBUG] Wrapping non-dict experiment 'param_count' data: 29556900
-[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.04472665624618531
-[DEBUG] Wrapping non-dict experiment 'flops' data: 161384235008
-[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 1701.1953125
-[DEBUG] Wrapping non-dict experiment 'accuracies' data: [19.642]
-[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 19.642
-[DEBUG] Wrapping non-dict experiment 'losses' data: [3.374654697113037]
-[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
-[DEBUG] Wrapping non-dict experiment 'param_count' data: 25911204
-[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.01027281596660614
-[DEBUG] Wrapping non-dict experiment 'flops' data: 64676167680
-[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 1348.1953125
-[DEBUG] Wrapping non-dict experiment 'accuracies' data: [15.308]
-[DEBUG] Wrapping non-dict experiment 'final_accuracy' data: 15.308
-[DEBUG] Wrapping non-dict experiment 'losses' data: [3.9792584856414797]
-[DEBUG] Wrapping non-dict experiment 'total_epochs_trained' data: 1
-[DEBUG] Wrapping non-dict experiment 'param_count' data: 50822308
-[DEBUG] Wrapping non-dict experiment 'inference_time' data: 0.010056022453308104
-[DEBUG] Wrapping non-dict experiment 'flops' data: 50675580928
-[DEBUG] Wrapping non-dict experiment 'total_size_mb' data: 1296.1953125
-[DEBUG] Data for plotting:
-              Experiment      Params  ...  Inference Time       Memory
-0             accuracies         0.0  ...        0.000000     0.000000
-1         final_accuracy         0.0  ...        0.000000     0.000000
-2                 losses         0.0  ...        0.000000     0.000000
-3   total_epochs_trained         0.0  ...        0.000000     0.000000
-4            param_count  28244644.0  ...        0.000000     0.000000
-5         inference_time         0.0  ...        0.014304     0.000000
-6                  flops         0.0  ...        0.000000     0.000000
-7          total_size_mb         0.0  ...        0.000000  1617.195312
-8            diagnostics         0.0  ...        0.000000     0.000000
-9             accuracies         0.0  ...        0.000000     0.000000
-10        final_accuracy         0.0  ...        0.000000     0.000000
-11                losses         0.0  ...        0.000000     0.000000
-12  total_epochs_trained         0.0  ...        0.000000     0.000000
-13           param_count  32571812.0  ...        0.000000     0.000000
-14        inference_time         0.0  ...        0.013825     0.000000
-15                 flops         0.0  ...        0.000000     0.000000
-16         total_size_mb         0.0  ...        0.000000  1521.195312
-17           diagnostics         0.0  ...        0.000000     0.000000
-18            accuracies         0.0  ...        0.000000     0.000000
-19        final_accuracy         0.0  ...        0.000000     0.000000
-20                losses         0.0  ...        0.000000     0.000000
-21  total_epochs_trained         0.0  ...        0.000000     0.000000
-22           param_count  29556900.0  ...        0.000000     0.000000
-23        inference_time         0.0  ...        0.042544     0.000000
-24                 flops         0.0  ...        0.000000     0.000000
-25         total_size_mb         0.0  ...        0.000000  1701.195312
-26           diagnostics         0.0  ...        0.000000     0.000000
-27            accuracies         0.0  ...        0.000000     0.000000
-28        final_accuracy         0.0  ...        0.000000     0.000000
-29                losses         0.0  ...        0.000000     0.000000
-30  total_epochs_trained         0.0  ...        0.000000     0.000000
-31           param_count  29556900.0  ...        0.000000     0.000000
-32        inference_time         0.0  ...        0.044727     0.000000
-33                 flops         0.0  ...        0.000000     0.000000
-34         total_size_mb         0.0  ...        0.000000  1701.195312
-35           diagnostics         0.0  ...        0.000000     0.000000
-36            accuracies         0.0  ...        0.000000     0.000000
-37        final_accuracy         0.0  ...        0.000000     0.000000
-38                losses         0.0  ...        0.000000     0.000000
-39  total_epochs_trained         0.0  ...        0.000000     0.000000
-40           param_count  25911204.0  ...        0.000000     0.000000
-41        inference_time         0.0  ...        0.010273     0.000000
-42                 flops         0.0  ...        0.000000     0.000000
-43         total_size_mb         0.0  ...        0.000000  1348.195312
-44           diagnostics         0.0  ...        0.000000     0.000000
-45            accuracies         0.0  ...        0.000000     0.000000
-46        final_accuracy         0.0  ...        0.000000     0.000000
-47                losses         0.0  ...        0.000000     0.000000
-48  total_epochs_trained         0.0  ...        0.000000     0.000000
-49           param_count  50822308.0  ...        0.000000     0.000000
-50        inference_time         0.0  ...        0.010056     0.000000
-51                 flops         0.0  ...        0.000000     0.000000
-52         total_size_mb         0.0  ...        0.000000  1296.195312
-53           diagnostics         0.0  ...        0.000000     0.000000
-
-[54 rows x 6 columns]
-[✓] Saved unified metrics plots for workflow 'Kevin'
+[DEBUG] FLOPs: [123234942976.0, 108743622656.0, 64676167680.0]
+[DEBUG] Times: [0.026716150283813474, 0.023247478246688845, 0.019896484708786005]
+[DEBUG] Delta Accuracy vs Params Data: [{'name': 'Stage 3_JF', 'ΔAcc': 0.0, 'ΔParams(%)': 0.0}, {'name': 'Stage 4-5_JF', 'ΔAcc': 31.351999999999997, 'ΔParams(%)': -35.029257813473805}, {'name': 'Stage 3-5_Kevin', 'ΔAcc': 8.308000000000002, 'ΔParams(%)': -20.448994363592668}]
+[DEBUG] FLOPs: [123234942976.0, 108743622656.0, 64676167680.0]
+[DEBUG] Memory: [1521.1953125, 1557.1953125, 1348.1953125]
+[DEBUG] Accuracy: [10.984, 42.336, 19.292]
+[DEBUG] Memory: [1521.1953125, 1557.1953125, 1348.1953125]
+[DEBUG] Heatmap Rows: [{'Model': 'Stage 3_JF', 'Accuracy': 10.984, 'Params': 32571812, 'FLOPs': 123234942976, 'Inference Time': 0.026716150283813474, 'Memory (MB)': 1521.1953125}, {'Model': 'Stage 4-5_JF', 'Accuracy': 42.336, 'Params': 21162148, 'FLOPs': 108743622656, 'Inference Time': 0.023247478246688845, 'Memory (MB)': 1557.1953125}, {'Model': 'Stage 3-5_Kevin', 'Accuracy': 19.292, 'Params': 25911204, 'FLOPs': 64676167680, 'Inference Time': 0.019896484708786005, 'Memory (MB)': 1348.1953125}]
+[DEBUG] Collapse Curve Rows: [{'Model': 'Stage 3_JF', 'Params': 32571812, 'Time': 0.026716150283813474, 'Accuracy': 10.984}, {'Model': 'Stage 4-5_JF', 'Params': 21162148, 'Time': 0.023247478246688845, 'Accuracy': 42.336}, {'Model': 'Stage 3-5_Kevin', 'Params': 25911204, 'Time': 0.019896484708786005, 'Accuracy': 19.292}]
 [✓] Experiment 'Stage 3-5' completed. Checkpoints and metrics saved.

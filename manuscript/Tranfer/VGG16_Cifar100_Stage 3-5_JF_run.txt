@@ -1,4 +1,4 @@
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA driver initialization failed, you might not have a CUDA gpu. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
   return torch._C._cuda_getDeviceCount() > 0
 VGG16 - Cifar10: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
 VGG16 - Cifar100: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
@@ -177,7 +177,7 @@ Collapsing layers from 'features.conv_5' to 'features.conv_13'...
 [DEBUG] Collapsed block layers: ['Conv2d', 'MaxPool2d']
 [DEBUG] Parameters BEFORE collapse: 34,015,396
 [DEBUG] Replacing layers 14 to 40 with collapsed block...
-[DEBUG] Inserting new block as 'collapsed_conv_5_to_conv_13_345e434d'
+[DEBUG] Inserting new block as 'collapsed_conv_5_to_conv_13_81b9cc1a'
 [DEBUG] Removing layer 'relu_5' at index 15
 [DEBUG] Removing layer 'bn_5' at index 16
 [DEBUG] Removing layer 'conv_6' at index 17
@@ -231,7 +231,7 @@ features.conv_4.weight: 90054/147456 zeros (61.07%)
 features.conv_4.bias: 0/128 zeros (0.00%)
 features.bn_4.weight: 0/128 zeros (0.00%)
 features.bn_4.bias: 0/128 zeros (0.00%)
-features.collapsed_conv_5_to_conv_13_345e434d.layer_0.weight: 0/65536 zeros (0.00%)
+features.collapsed_conv_5_to_conv_13_81b9cc1a.layer_0.weight: 0/65536 zeros (0.00%)
 features.bn_13.weight: 0/512 zeros (0.00%)
 features.bn_13.bias: 0/512 zeros (0.00%)
 classifier.fc_1.weight: 1254846/2097152 zeros (59.84%)
@@ -264,9 +264,9 @@ None
 [DEBUG] Hook registered for module: features.relu_4
 [DEBUG] Hook registered for module: features.bn_4
 [DEBUG] Hook registered for module: features.pool_2
-[DEBUG] Hook registered for module: features.collapsed_conv_5_to_conv_13_345e434d
-[DEBUG] Hook registered for module: features.collapsed_conv_5_to_conv_13_345e434d.layer_0
-[DEBUG] Hook registered for module: features.collapsed_conv_5_to_conv_13_345e434d.layer_1
+[DEBUG] Hook registered for module: features.collapsed_conv_5_to_conv_13_81b9cc1a
+[DEBUG] Hook registered for module: features.collapsed_conv_5_to_conv_13_81b9cc1a.layer_0
+[DEBUG] Hook registered for module: features.collapsed_conv_5_to_conv_13_81b9cc1a.layer_1
 [DEBUG] Hook registered for module: features.relu_13
 [DEBUG] Hook registered for module: features.bn_13
 [DEBUG] Hook registered for module: features.pool_5
@@ -288,9 +288,9 @@ None
 [DEBUG] Hook triggered for layer: features.relu_4
 [DEBUG] Hook triggered for layer: features.bn_4
 [DEBUG] Hook triggered for layer: features.pool_2
-[DEBUG] Hook triggered for layer: features.collapsed_conv_5_to_conv_13_345e434d.layer_0
-[DEBUG] Hook triggered for layer: features.collapsed_conv_5_to_conv_13_345e434d.layer_1
-[DEBUG] Hook triggered for layer: features.collapsed_conv_5_to_conv_13_345e434d
+[DEBUG] Hook triggered for layer: features.collapsed_conv_5_to_conv_13_81b9cc1a.layer_0
+[DEBUG] Hook triggered for layer: features.collapsed_conv_5_to_conv_13_81b9cc1a.layer_1
+[DEBUG] Hook triggered for layer: features.collapsed_conv_5_to_conv_13_81b9cc1a
 [DEBUG] Hook triggered for layer: features.relu_13
 [DEBUG] Hook triggered for layer: features.bn_13
 [DEBUG] Hook triggered for layer: features.pool_5
@@ -312,9 +312,9 @@ None
 [DEBUG] Found activation from layer: features.relu_4 with shape torch.Size([512, 128, 16, 16])
 [DEBUG] Found activation from layer: features.bn_4 with shape torch.Size([512, 128, 16, 16])
 [DEBUG] Found activation from layer: features.pool_2 with shape torch.Size([512, 128, 8, 8])
-[DEBUG] Found activation from layer: features.collapsed_conv_5_to_conv_13_345e434d.layer_0 with shape torch.Size([512, 512, 8, 8])
-[DEBUG] Found activation from layer: features.collapsed_conv_5_to_conv_13_345e434d.layer_1 with shape torch.Size([512, 512, 4, 4])
-[DEBUG] Found activation from layer: features.collapsed_conv_5_to_conv_13_345e434d with shape torch.Size([512, 512, 4, 4])
+[DEBUG] Found activation from layer: features.collapsed_conv_5_to_conv_13_81b9cc1a.layer_0 with shape torch.Size([512, 512, 8, 8])
+[DEBUG] Found activation from layer: features.collapsed_conv_5_to_conv_13_81b9cc1a.layer_1 with shape torch.Size([512, 512, 4, 4])
+[DEBUG] Found activation from layer: features.collapsed_conv_5_to_conv_13_81b9cc1a with shape torch.Size([512, 512, 4, 4])
 [DEBUG] Found activation from layer: features.relu_13 with shape torch.Size([512, 512, 4, 4])
 [DEBUG] Found activation from layer: features.bn_13 with shape torch.Size([512, 512, 4, 4])
 [DEBUG] Found activation from layer: features.pool_5 with shape torch.Size([512, 512, 2, 2])
