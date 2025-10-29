@@ -518,10 +518,6 @@ def plot_heatmap(metrics_dict, save_dir, exp_name):
     df_norm.to_csv(os.path.join(save_dir, f"{exp_name}_metrics_heatmap.csv"))
     plt.close()
 
-import matplotlib.pyplot as plt
-import pandas as pd
-import os
-
 def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
     metrics = normalize_metrics(metrics_dict)
     if not metrics:
@@ -543,47 +539,18 @@ def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
     df.to_csv(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.csv"), index=False)
 
     ensure_dir(save_dir)
-    
-    # Create subplots: 3 rows, 1 column
-    fig, axs = plt.subplots(3, 1, figsize=(9, 18))
-    
-    # Plot Parameters
-    axs[0].plot(df["Model"], df["Params"], label="Parameters", marker="o", color='tab:blue')
-    axs[0].set_title("Parameters")
-    axs[0].set_xlabel("Model")
-    axs[0].set_ylabel("Number of Parameters")
-    axs[0].tick_params(axis='x', rotation=45)
-    axs[0].legend()
-    
-    # Plot Inference Time
-    axs[1].plot(df["Model"], df["Time"], label="Inference Time", marker="s", color='tab:orange')
-    axs[1].set_title("Inference Time")
-    axs[1].set_xlabel("Model")
-    axs[1].set_ylabel("Inference Time (s)")
-    axs[1].tick_params(axis='x', rotation=45)
-    axs[1].legend()
-
-    # Plot Accuracy
-    axs[2].plot(df["Model"], df["Accuracy"], label="Accuracy", marker="^", color='tab:green')
-    axs[2].set_title("Accuracy")
-    axs[2].set_xlabel("Model")
-    axs[2].set_ylabel("Accuracy")
-    axs[2].tick_params(axis='x', rotation=45)
-    axs[2].legend()
-
-    # Adjust layout for better spacing
+    plt.figure(figsize=(9, 6))
+    plt.plot(df["Model"], df["Params"], label="Parameters", marker="o")
+    plt.plot(df["Model"], df["Time"], label="Inference Time", marker="s")
+    plt.plot(df["Model"], df["Accuracy"], label="Accuracy", marker="^")
+    plt.xticks(rotation=45)
+    plt.legend()
+    plt.title(f"Stage Collapse Cost Curve — {exp_name}")
     plt.tight_layout()
-
-    # Save the figure
     plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.svg"))
-    
-    # Close the plot
-    plt.close()
-    
-    # Save the data (this part is already in place)
+    # save data
     df.to_csv(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.csv"), index=False)
-
-
+    plt.close()
 def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name, dtype_bytes=4):
     import json
     from collections import defaultdict

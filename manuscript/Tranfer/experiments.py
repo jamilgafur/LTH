@@ -35,18 +35,28 @@ from plots import plot_accuracy_loss_curve, plot_results
 # -------------------------
 def safe_update_metrics_json(model_root, exp_name, new_data, base_dir="./runs/metrics"):
     ensure_dir(base_dir)
-    # Use a unique filename by incorporating the experiment name and timestamp
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    json_path = os.path.join(base_dir, f"{model_root}_{exp_name}_{timestamp}_metrics.json")
-    
+    json_path = os.path.join(base_dir, f"{model_root}_metrics.json")
     try:
-        # Save the new data to a unique file
-        with open(json_path, "w") as f:
-            json.dump(new_data, f, indent=4)
+        if os.path.exists(json_path):
+            with open(json_path, "r") as f:
+                existing = json.load(f)
+        else:
+            existing = {}
+
+        if not isinstance(existing, dict):
+            print(f"[!] Warning: Existing JSON at {json_path} is not a dict. Replacing it.")
+            existing = {}
+
+        existing[exp_name] = new_data
+
+        tmp_path = json_path + ".tmp"
+        with open(tmp_path, "w") as f:
+            json.dump(existing, f, indent=4)
+        os.replace(tmp_path, json_path)
         print(f"[✓] Saved metrics for '{exp_name}' → {json_path}")
         return json_path
     except Exception as e:
-        print(f"[!] Failed to update metrics JSON file {json_path}: {e}")
+        print(f"[!] Failed to update metrics JSON: {e}")
         return None
 
 # -------------------------
@@ -55,6 +65,7 @@ def safe_update_metrics_json(model_root, exp_name, new_data, base_dir="./runs/me
 def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None, device='cuda',
                    epochs=10, workflow='default', exp_name='experiment', collapse_range=None,
                    data_shape=(1, 3, 32, 32), save_path="./runs", post_compress_epochs=False):
+
     print(f"[•] Starting experiment '{exp_name}' in workflow '{workflow}'")
     ckpt_dir = os.path.join(save_path, "checkpoints")
     metrics_dir = os.path.join(save_path, "metrics")
@@ -62,16 +73,18 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     ensure_dir(ckpt_dir)
     ensure_dir(metrics_dir)
     ensure_dir(plots_dir)
-    data = None
+
     ckpt_path = os.path.join(
         ckpt_dir, get_checkpoint_filename(workflow, exp_name, model.__class__.__name__, epochs)
     )
     model.to(device)
 
     # Load existing metrics (if valid)
+    data = None
     model_root = f"{model.__class__.__name__}_{train_loader.dataset.__class__.__name__}"
     json_path = os.path.join(metrics_dir, f"{model_root}_metrics.json")
     
+
     all_metrics = {}
     if os.path.exists(json_path):
         with open(json_path, "r") as f:
@@ -121,6 +134,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
             print("[!] Warning: CUDA not available.")
             quit()
 
+            
         data = train_and_evaluate(
             model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs
         )
@@ -145,26 +159,36 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
         )
         data["diagnostics"] = diagnostics
 
-        # Save metrics JSON to a unique file
+        # Save metrics JSON
         safe_update_metrics_json(model_root, f"{exp_name}_{workflow}", data, base_dir=metrics_dir)
 
-    # Load all the metrics from individual JSON files
-    all_metrics = {}
-    for metrics_file in glob.glob(os.path.join(metrics_dir, f"{model_root}_*metrics.json")):
-        with open(metrics_file, "r") as f:
-            try:
-                file_data = json.load(f)
-                all_metrics.update(file_data)
-            except Exception:
-                print(f"[!] Failed to load data from {metrics_file}, skipping.")
+    with open(json_path, "r") as f:
+        all_metrics = json.load(f)
 
-    # Now save the merged metrics back to the main JSON file
-    final_json_path = os.path.join(metrics_dir, f"{model_root}_metrics.json")
-    with open(final_json_path, "w") as f:
-        json.dump(all_metrics, f, indent=4)
-    print(f"[✓] Merged all metrics into main JSON file at {final_json_path}")
+        params = []
+        accs = []
+        names = []
+        infer_times = []
+        mem_usages = []
+        flops = []
+        total_sizes = []  # List to store total size for plotting
 
-    # Continue with plotting and diagnostics
+        # Iterate through each model's metrics to prepare data for plotting
+        for name, metrics in all_metrics.items():
+            names.append(name)
+            params.append(metrics.get("param_count", 0))
+            accs.append(metrics.get("final_accuracy", 0))
+            infer_times.append(metrics.get("inference_time", 0))
+            mem_usages.append(metrics.get("total_size_mb", 0))
+            flops.append(metrics.get("flops", 0))  # Collect FLOPs
+
+        # Save comparison plot
+        save_path = json_path.replace("metrics", "plots").replace("json", "svg")
+        
+        plot_results(params, accs, names, f"{workflow} Experiments", save_path,
+                    dataset=workflow, infer_times=infer_times, mem_usages=mem_usages, flops=flops, total_sizes=total_sizes)
+        print(f"Saved comparison plot to {save_path}")
+
     norm_metrics = normalize_metrics(all_metrics)
 
     # Plots (each function is robust to input)
@@ -233,46 +257,26 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
     print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
 
     if collapse_range:
-        # Generating a unique filename based on the current time
         formatted_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         tmp_path = os.path.join(save_path, f"temp_model_kevin_{formatted_time}.pth")
-        
-        # Ensure the save_path directory exists
         os.makedirs(save_path, exist_ok=True)
-        
-        try:
-            # Save the model to a temporary file
-            torch.save({'model': base_model.state_dict()}, tmp_path)
-            print(f"[INFO] Temporary model saved at {tmp_path}")
-            
-            # Perform the collapse operation
-            base_model = collapse_only(
-                model_weights_1=tmp_path,
-                compression_set=[collapse_range],
-                model_class=model_class,
-                model_kwargs=model_kwargs,
-                input_shape=model_kwargs['one_batch'].shape,
-                device=device
-            )
-        
-        except Exception as e:
-            print(f"[ERROR] Failed to save or collapse model: {e}")
-        
-        finally:
-            # Ensure the temporary model file is removed after usage, if it exists
-            if os.path.exists(tmp_path):
-                try:
-                    os.remove(tmp_path)
-                    print(f"[INFO] Temporary model file removed: {tmp_path}")
-                except Exception as e:
-                    print(f"[ERROR] Failed to remove temporary model: {e}")
-    
-    # Proceed with running the experiment
+        torch.save({'model': base_model.state_dict()}, tmp_path)
+        base_model = collapse_only(
+            model_weights_1=tmp_path,
+            compression_set=[collapse_range],
+            model_class=model_class,
+            model_kwargs=model_kwargs,
+            input_shape=model_kwargs['one_batch'].shape,
+            device=device
+        )
+        os.remove(tmp_path)
+
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
     data = run_experiment(base_model, model_kwargs, train_loader, test_loader, device, epochs,
                           workflow="Kevin", exp_name=exp_name, data_shape=data_shape,
                           save_path=save_path, post_compress_epochs=post_compress_epochs)
-    
     return base_model
+
 # -------------------------
-
-
