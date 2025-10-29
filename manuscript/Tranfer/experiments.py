@@ -233,28 +233,46 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
     print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
 
     if collapse_range:
+        # Generating a unique filename based on the current time
         formatted_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         tmp_path = os.path.join(save_path, f"temp_model_kevin_{formatted_time}.pth")
+        
+        # Ensure the save_path directory exists
         os.makedirs(save_path, exist_ok=True)
-        torch.save({'model': base_model.state_dict()}, tmp_path)
-        base_model = collapse_only(
-            model_weights_1=tmp_path,
-            compression_set=[collapse_range],
-            model_class=model_class,
-            model_kwargs=model_kwargs,
-            input_shape=model_kwargs['one_batch'].shape,
-            device=device
-        )
-        os.remove(tmp_path)
-
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
-
+        
+        try:
+            # Save the model to a temporary file
+            torch.save({'model': base_model.state_dict()}, tmp_path)
+            print(f"[INFO] Temporary model saved at {tmp_path}")
+            
+            # Perform the collapse operation
+            base_model = collapse_only(
+                model_weights_1=tmp_path,
+                compression_set=[collapse_range],
+                model_class=model_class,
+                model_kwargs=model_kwargs,
+                input_shape=model_kwargs['one_batch'].shape,
+                device=device
+            )
+        
+        except Exception as e:
+            print(f"[ERROR] Failed to save or collapse model: {e}")
+        
+        finally:
+            # Ensure the temporary model file is removed after usage, if it exists
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                    print(f"[INFO] Temporary model file removed: {tmp_path}")
+                except Exception as e:
+                    print(f"[ERROR] Failed to remove temporary model: {e}")
+    
+    # Proceed with running the experiment
     data = run_experiment(base_model, model_kwargs, train_loader, test_loader, device, epochs,
                           workflow="Kevin", exp_name=exp_name, data_shape=data_shape,
                           save_path=save_path, post_compress_epochs=post_compress_epochs)
+    
     return base_model
-
 # -------------------------
 
 
