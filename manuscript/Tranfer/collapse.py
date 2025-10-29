@@ -574,18 +574,27 @@ def _replace_layers(named_layers, start_idx, end_idx, new_block):
     print(f"[DEBUG] New container will have {len(new_layers)} children.")
     return nn.Sequential(OrderedDict(new_layers))
 
+
 def adjust_classifier_input_features(model, input_shape, num_classes=200, device='cpu', preserve_original_fc=True):
     """
-    Adjust the classifier only if necessary.
-    If preserve_original_fc=True, we skip modifying the fully connected layers.
+    Adjust the classifier input features if required.
+
+    If preserve_original_fc=True:
+        -> Do nothing (skip classifier modification entirely).
+    If False:
+        -> Attempt to recompute input feature size and patch first linear layer safely.
     """
+
     import torch
+    import torch.nn as nn
+    from collections import OrderedDict
+    import math
 
     if preserve_original_fc:
-        print("[INFO] preserve_original_fc=True → Skipping classifier rewrite. Using original FC weights.")
-        return  # ✅ Do nothing — keep FC intact
+        print("[INFO] preserve_original_fc=True → Skipping classifier rewrite. Keeping original FC intact.")
+        return  # ✅ Early exit — nothing modified
 
-    print("[INFO] preserve_original_fc=False → Adjusting classifier input features as needed.")
+    print("[INFO] preserve_original_fc=False → Checking classifier input feature consistency...")
 
     model.eval()
     model.to(device)
@@ -598,6 +607,7 @@ def adjust_classifier_input_features(model, input_shape, num_classes=200, device
             activations[name] = {'input_shape': inp[0].shape, 'output_shape': out.shape}
         return hook
 
+    # Hook into modules to capture feature shapes
     for name, module in model.named_modules():
         if isinstance(module, (nn.Conv2d, nn.AdaptiveAvgPool2d, nn.Linear, nn.BatchNorm2d, nn.ReLU, nn.MaxPool2d, nn.Sequential)):
             hooks.append(module.register_forward_hook(make_hook(name)))
@@ -610,26 +620,49 @@ def adjust_classifier_input_features(model, input_shape, num_classes=200, device
         for h in hooks:
             h.remove()
 
+    # Find the first Linear layer
     linear_names = [name for name, mod in model.named_modules() if isinstance(mod, nn.Linear)]
     if not linear_names:
         print("[WARN] No linear layers found. Nothing to adjust.")
         return
 
     first_linear_name = linear_names[0]
-    print(f"[INFO] First Linear layer: {first_linear_name}")
-
     hooked = activations.get(first_linear_name)
+
     if hooked:
         inp_shape = hooked['input_shape']
         flattened_size = int(torch.tensor(inp_shape[1:]).prod().item())
         print(f"[DEBUG] Flattened input size measured: {flattened_size}")
     else:
-        flattened_size = _measure_flattened_size_by_forward(model, input_shape, device)
-        print(f"[WARN] Fallback measured flattened size: {flattened_size}")
+        # fallback to manual shape inference
+        with torch.no_grad():
+            dummy = torch.randn(input_shape).to(device)
+            x = model.features(dummy)
+            flattened_size = x.numel() // x.size(0)
+        print(f"[WARN] Could not hook input shape. Using fallback flattened size={flattened_size}")
 
-    # At this point, if preserve_original_fc=False, the code below can resize the linear layer
-    # (not relevant if preserve_original_fc=True)
-    # You may keep your old logic here if desired.
+    # Retrieve the first linear layer reference
+    first_linear_layer = dict(model.named_modules())[first_linear_name]
+
+    if flattened_size == first_linear_layer.in_features:
+        print("[INFO] Flattened input matches Linear.in_features. No adjustment required.")
+        return
+
+    print(f"[INFO] Adjusting first Linear layer: in_features {first_linear_layer.in_features} → {flattened_size}")
+
+    # Replace linear layer safely
+    parent_parts = first_linear_name.split(".")
+    parent_container = model
+    for part in parent_parts[:-1]:
+        parent_container = getattr(parent_container, part)
+    last_part = parent_parts[-1]
+
+    new_linear = nn.Linear(flattened_size, first_linear_layer.out_features)
+    setattr(parent_container, last_part, new_linear)
+
+    model.to(device)
+    model.train()
+    print(f"[✓] Updated Linear layer '{first_linear_name}' to match new flattened feature size.")
 
 def _get_container_and_subname(layer_name):
     """
