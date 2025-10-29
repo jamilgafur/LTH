@@ -34,7 +34,7 @@ def plot_accuracy_loss_curve(acc_list, loss_list, workflow, experiment, save_dir
 
 import os
 import matplotlib.pyplot as plt
-def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None, flops=None):
+def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None, flops=None, total_sizes=None):
     import seaborn as sns
     sns.set(style="whitegrid", palette="Set2", font_scale=1.1)
     
