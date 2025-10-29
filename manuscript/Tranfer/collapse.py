@@ -531,7 +531,7 @@ def _replace_layers(named_layers, start_idx, end_idx, new_block):
     unique_suffix = uuid4().hex[:8]
     for i, (name, layer) in enumerate(named_layers):
         if i == start_idx:
-            new_name = f"collapsed_{named_layers[start_idx][0]}_to_{named_layers[end_idx][0]}_{unique_suffix}"
+            new_name = f"collapsed_{unique_suffix}"
             print(f"[DEBUG] Inserting new block as '{new_name}'")
             new_layers.append((new_name, new_block))
         elif start_idx < i <= end_idx:
