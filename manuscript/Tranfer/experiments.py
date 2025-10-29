@@ -35,28 +35,18 @@ from plots import plot_accuracy_loss_curve, plot_results
 # -------------------------
 def safe_update_metrics_json(model_root, exp_name, new_data, base_dir="./runs/metrics"):
     ensure_dir(base_dir)
-    json_path = os.path.join(base_dir, f"{model_root}_metrics.json")
+    # Use a unique filename by incorporating the experiment name and timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    json_path = os.path.join(base_dir, f"{model_root}_{exp_name}_{timestamp}_metrics.json")
+    
     try:
-        if os.path.exists(json_path):
-            with open(json_path, "r") as f:
-                existing = json.load(f)
-        else:
-            existing = {}
-
-        if not isinstance(existing, dict):
-            print(f"[!] Warning: Existing JSON at {json_path} is not a dict. Replacing it.")
-            existing = {}
-
-        existing[exp_name] = new_data
-
-        tmp_path = json_path + ".tmp"
-        with open(tmp_path, "w") as f:
-            json.dump(existing, f, indent=4)
-        os.replace(tmp_path, json_path)
+        # Save the new data to a unique file
+        with open(json_path, "w") as f:
+            json.dump(new_data, f, indent=4)
         print(f"[✓] Saved metrics for '{exp_name}' → {json_path}")
         return json_path
     except Exception as e:
-        print(f"[!] Failed to update metrics JSON: {e}")
+        print(f"[!] Failed to update metrics JSON file {json_path}: {e}")
         return None
 
 # -------------------------
@@ -65,7 +55,6 @@ def safe_update_metrics_json(model_root, exp_name, new_data, base_dir="./runs/me
 def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None, device='cuda',
                    epochs=10, workflow='default', exp_name='experiment', collapse_range=None,
                    data_shape=(1, 3, 32, 32), save_path="./runs", post_compress_epochs=False):
-
     print(f"[•] Starting experiment '{exp_name}' in workflow '{workflow}'")
     ckpt_dir = os.path.join(save_path, "checkpoints")
     metrics_dir = os.path.join(save_path, "metrics")
@@ -80,11 +69,9 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     model.to(device)
 
     # Load existing metrics (if valid)
-    data = None
     model_root = f"{model.__class__.__name__}_{train_loader.dataset.__class__.__name__}"
     json_path = os.path.join(metrics_dir, f"{model_root}_metrics.json")
     
-
     all_metrics = {}
     if os.path.exists(json_path):
         with open(json_path, "r") as f:
@@ -134,7 +121,6 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
             print("[!] Warning: CUDA not available.")
             quit()
 
-            
         data = train_and_evaluate(
             model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs
         )
@@ -159,36 +145,26 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
         )
         data["diagnostics"] = diagnostics
 
-        # Save metrics JSON
+        # Save metrics JSON to a unique file
         safe_update_metrics_json(model_root, f"{exp_name}_{workflow}", data, base_dir=metrics_dir)
 
-    with open(json_path, "r") as f:
-        all_metrics = json.load(f)
+    # Load all the metrics from individual JSON files
+    all_metrics = {}
+    for metrics_file in glob.glob(os.path.join(metrics_dir, f"{model_root}_*metrics.json")):
+        with open(metrics_file, "r") as f:
+            try:
+                file_data = json.load(f)
+                all_metrics.update(file_data)
+            except Exception:
+                print(f"[!] Failed to load data from {metrics_file}, skipping.")
 
-        params = []
-        accs = []
-        names = []
-        infer_times = []
-        mem_usages = []
-        flops = []
-        total_sizes = []  # List to store total size for plotting
+    # Now save the merged metrics back to the main JSON file
+    final_json_path = os.path.join(metrics_dir, f"{model_root}_metrics.json")
+    with open(final_json_path, "w") as f:
+        json.dump(all_metrics, f, indent=4)
+    print(f"[✓] Merged all metrics into main JSON file at {final_json_path}")
 
-        # Iterate through each model's metrics to prepare data for plotting
-        for name, metrics in all_metrics.items():
-            names.append(name)
-            params.append(metrics.get("param_count", 0))
-            accs.append(metrics.get("final_accuracy", 0))
-            infer_times.append(metrics.get("inference_time", 0))
-            mem_usages.append(metrics.get("total_size_mb", 0))
-            flops.append(metrics.get("flops", 0))  # Collect FLOPs
-
-        # Save comparison plot
-        save_path = json_path.replace("metrics", "plots").replace("json", "svg")
-        
-        plot_results(params, accs, names, f"{workflow} Experiments", save_path,
-                    dataset=workflow, infer_times=infer_times, mem_usages=mem_usages, flops=flops, total_sizes=total_sizes)
-        print(f"Saved comparison plot to {save_path}")
-
+    # Continue with plotting and diagnostics
     norm_metrics = normalize_metrics(all_metrics)
 
     # Plots (each function is robust to input)
@@ -280,4 +256,5 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
     return base_model
 
 # -------------------------
+
 
