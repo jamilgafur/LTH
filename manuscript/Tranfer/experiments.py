@@ -62,7 +62,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     ensure_dir(ckpt_dir)
     ensure_dir(metrics_dir)
     ensure_dir(plots_dir)
-
+    data = None
     ckpt_path = os.path.join(
         ckpt_dir, get_checkpoint_filename(workflow, exp_name, model.__class__.__name__, epochs)
     )
