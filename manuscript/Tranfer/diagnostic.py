@@ -73,70 +73,52 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
 # Per-layer analysis & activation analysis (robust + save)
 # -------------------------
 def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
-    """
-    Analyzes and saves per-layer parameter counts and FLOPs.
-    Ensures FLOPs are recomputed on the current (possibly collapsed) model.
-    """
-    import os
-    import torch
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    from fvcore.nn import FlopCountAnalysis
-    from utils import ensure_dir
-
     model.eval()
     if len(input_tensor.shape) == 3:
         input_tensor = input_tensor.unsqueeze(0)
-
-    # Ensure device is consistent
-    device = next(model.parameters()).device
-    input_tensor = input_tensor.to(device)
-
-    with torch.no_grad():
-        try:
-            flops = FlopCountAnalysis(model, input_tensor)
-            per_module_flops = flops.by_module()
-            total_flops_val = flops.total()
-        except Exception as e:
-            print(f"[!] FlopCountAnalysis failed: {e}")
-            per_module_flops = {}
-            total_flops_val = None
+    
+    from fvcore.nn import FlopCountAnalysis
+    try:
+        flops = FlopCountAnalysis(model, input_tensor)
+        per_module_flops = flops.by_module()
+    except Exception:
+        per_module_flops = {}
 
     layer_data = []
     for name, module in model.named_modules():
         if len(list(module.children())) == 0:
             params = sum(p.numel() for p in module.parameters())
-            flops_for_layer = per_module_flops.get(name, 0)
-            layer_data.append({"layer": name, "params": params, "flops": flops_for_layer / 1e9})  # Convert to GFLOPs
-
-    if not layer_data:
-        print(f"[!] No per-layer data collected for {exp_name}")
-        return pd.DataFrame(columns=["layer", "params", "flops"])
+            flops_layer = per_module_flops.get(name, 0)
+            layer_data.append({
+                "layer": name,
+                "params": params,
+                "flops": flops_layer / 1e9  # GFLOPs
+            })
 
     df = pd.DataFrame(layer_data)
-    ensure_dir(save_dir)
-    csv_path = os.path.join(save_dir, f"{exp_name}_layer_params_flops.csv")
-    df.to_csv(csv_path, index=False)
+    os.makedirs(save_dir, exist_ok=True)
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_layer_params_flops.csv"), index=False)
 
-    # Plot results
-    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
-    df.plot(x="layer", y="params", kind="bar", ax=axes[0], color="skyblue", legend=False)
+    # Plot
+    fig, axes = plt.subplots(2, 1, figsize=(max(12, len(df)*0.5), 10))
+    sns.barplot(x="layer", y="params", data=df, ax=axes[0], color="skyblue")
     axes[0].set_title("Parameters per Layer")
     axes[0].set_ylabel("Params (#)")
     axes[0].tick_params(axis='x', rotation=90)
+    for i, v in enumerate(df["params"]):
+        axes[0].text(i, v, f"{int(v):,}", ha='center', va='bottom', fontsize=8)
 
-    df.plot(x="layer", y="flops", kind="bar", ax=axes[1], color="salmon", legend=False)
+    sns.barplot(x="layer", y="flops", data=df, ax=axes[1], color="salmon")
     axes[1].set_title("FLOPs per Layer (GFLOPs)")
     axes[1].set_ylabel("GFLOPs")
     axes[1].tick_params(axis='x', rotation=90)
+    for i, v in enumerate(df["flops"]):
+        axes[1].text(i, v, f"{v:.2f}", ha='center', va='bottom', fontsize=8)
 
     plt.tight_layout()
     svg_path = os.path.join(save_dir, f"{exp_name}_params_flops_layers.svg")
     plt.savefig(svg_path)
     plt.close(fig)
-    print(f"[✓] Saved per-layer params/FLOPs CSV: {csv_path} and plot: {svg_path}")
-
     return df
 
 def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
@@ -145,21 +127,17 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
     def hook(name):
         def fn(_, __, output):
             try:
-                if isinstance(output, torch.Tensor):
-                    activations[name] = int(output.numel())
-                else:
-                    activations[name] = 0
+                activations[name] = int(output.numel()) if isinstance(output, torch.Tensor) else 0
             except Exception:
                 activations[name] = 0
         return fn
 
-    # Ensure batch dimension
     if len(input_tensor.shape) == 3:
         input_tensor = input_tensor.unsqueeze(0)
 
     hooks = []
     for n, m in model.named_modules():
-        if isinstance(m, (nn.Conv2d, nn.Linear)):
+        if isinstance(m, (torch.nn.Conv2d, torch.nn.Linear)):
             try:
                 hooks.append(m.register_forward_hook(hook(n)))
             except Exception:
@@ -169,8 +147,8 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
     with torch.no_grad():
         try:
             _ = model(input_tensor)
-        except Exception as e:
-            print(f"[!] Forward pass for activation sizes failed: {e}")
+        except Exception:
+            pass
 
     for h in hooks:
         try:
@@ -178,103 +156,62 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
         except Exception:
             pass
 
-    if not activations:
-        print(f"[!] No activations collected for {exp_name}")
-        return pd.DataFrame(columns=["layer", "activation_elements"])
-
     df = pd.DataFrame(list(activations.items()), columns=["layer", "activation_elements"])
-    ensure_dir(save_dir)
-    csv_path = os.path.join(save_dir, f"{exp_name}_activation_sizes.csv")
-    df.to_csv(csv_path, index=False)
+    os.makedirs(save_dir, exist_ok=True)
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_activation_sizes.csv"), index=False)
 
-    # If many layers, show heatmap pivot
-    fig = plt.figure(figsize=(12, 6))
-    unique_layers = df["layer"].nunique()
-    if unique_layers > 30:
+    fig = plt.figure(figsize=(max(12, len(df)*0.4), 6))
+    if len(df) > 30:
         pivot = df.set_index("layer").T
-        sns.heatmap(pivot, annot=False)
-        plt.title("Activation Elements per Layer (heatmap)")
+        sns.heatmap(pivot, cmap="viridis", annot=False, cbar_kws={"label": "Activation Elements"})
+        plt.title("Activation Elements per Layer (Heatmap)")
     else:
-        sns.barplot(data=df.sort_values("activation_elements", ascending=False), x="layer", y="activation_elements", color="lightgreen")
+        sns.barplot(x="layer", y="activation_elements",
+                    data=df.sort_values("activation_elements", ascending=False),
+                    color="lightgreen")
         plt.xticks(rotation=90)
         plt.title("Activation Size per Layer (# elements)")
+        for i, v in enumerate(df["activation_elements"]):
+            plt.text(i, v, f"{int(v):,}", ha='center', va='bottom', fontsize=8)
+
     plt.tight_layout()
     svg_path = os.path.join(save_dir, f"{exp_name}_activation_sizes.svg")
     plt.savefig(svg_path)
     plt.close()
-    print(f"[✓] Saved activation sizes CSV: {csv_path} and plot: {svg_path}")
-
     return df
 
 def memory_decomposition(model, input_tensor, save_dir, exp_name):
-    """
-    Measure and plot GPU memory usage breakdown.
-    Reports parameter memory, activation/temporary memory, and total peak GPU memory in MB.
-    """
-    import torch
-    import matplotlib.pyplot as plt
-    import os
-    from utils import ensure_dir
-
-    # Ensure batch dimension
     if len(input_tensor.shape) == 3:
         input_tensor = input_tensor.unsqueeze(0)
 
-    # Parameter memory in MB (assuming float32)
-    param_mem = sum(p.numel() for p in model.parameters()) * 4 / 1e6
+    param_mem = sum(p.numel() for p in model.parameters()) * 4 / 1e6  # MB
 
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
-        torch.cuda.reset_peak_memory_stats()
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
-
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
-    model.eval()
     input_tensor = input_tensor.to(device)
-
+    model.eval()
     with torch.no_grad():
         try:
-            torch.cuda.synchronize() if torch.cuda.is_available() else None
             _ = model(input_tensor)
-            torch.cuda.synchronize() if torch.cuda.is_available() else None
-        except Exception as e:
-            print(f"[!] Forward pass for memory decomposition failed: {e}")
-
-    peak_mem = None
-    if torch.cuda.is_available():
-        try:
-            peak_mem = torch.cuda.max_memory_allocated() / 1e6  # MB
         except Exception:
-            peak_mem = None
+            pass
 
-    activation_mem = max(peak_mem - param_mem, 0) if peak_mem is not None else None
-    parts = {
-        "Params_MB": float(param_mem),
-        "Activations_MB": float(activation_mem) if activation_mem is not None else 0.0,
-        "Peak_GPU_MB": float(peak_mem) if peak_mem is not None else 0.0
-    }
+    peak_mem = torch.cuda.max_memory_allocated() / 1e6 if torch.cuda.is_available() else None
+    activation_mem = max(peak_mem - param_mem, 0) if peak_mem is not None else 0.0
+    parts = {"Params_MB": float(param_mem), "Activations_MB": float(activation_mem),
+             "Peak_GPU_MB": float(peak_mem) if peak_mem else 0.0}
 
-    ensure_dir(save_dir)
-    print(
-        f"Memory Decomposition — Params: {parts['Params_MB']:.2f} MB, "
-        f"Activations: {parts['Activations_MB']:.2f} MB, Peak: {parts['Peak_GPU_MB']:.2f} MB"
-    )
-
-    # Plot
-    svg_path = os.path.join(save_dir, f"{exp_name}_memory_breakdown.svg")
     plt.figure(figsize=(6, 6))
-    plt.bar(parts.keys(), parts.values(), color=["steelblue", "salmon", "gold"])
-    plt.title(f"GPU Memory Breakdown — {exp_name}")
+    sns.barplot(x=list(parts.keys()), y=list(parts.values()), palette=["steelblue", "salmon", "gold"])
+    for i, v in enumerate(parts.values()):
+        plt.text(i, v, f"{v:.1f}", ha='center', va='bottom', fontsize=10)
     plt.ylabel("Memory (MB)")
+    plt.title(f"GPU Memory Breakdown — {exp_name}")
     plt.tight_layout()
+    svg_path = os.path.join(save_dir, f"{exp_name}_memory_breakdown.svg")
     plt.savefig(svg_path)
     plt.close()
-    print(f"[✓] Saved memory decomposition plot: {svg_path}")
-
     return parts
-
 # -------------------------
 # Collapse analysis (unchanged but robust)
 # -------------------------
@@ -334,46 +271,24 @@ import numpy as np
 # Unified metrics plots (wrap non-dict metrics, average lists)
 # -------------------------
 def plot_unified_metrics(metrics_dir, save_dir, workflow):
+    import glob, json, numpy as np
+    from utils import ensure_dir, is_dict_like, normalize_metrics
     ensure_dir(save_dir)
     json_paths = glob.glob(os.path.join(metrics_dir, "*metrics.json"))
-    if not json_paths:
-        print(f"[!] No JSON metrics files found in {metrics_dir}")
-        return
-
     all_data = []
+
     for path in json_paths:
-        print(f"[DEBUG] Processing file: {path}")
-        try:
-            with open(path, "r") as f:
-                content = json.load(f)
-        except Exception as e:
-            print(f"[!] Failed to read JSON '{path}': {e}")
-            continue
-        if not is_dict_like(content):
-            print(f"[!] JSON root is not a dict in '{path}'")
-            continue
-
+        with open(path, "r") as f:
+            content = json.load(f)
         for exp_group_name, exp_group in content.items():
-            if not is_dict_like(exp_group):
-                print(f"[!] Experiment group '{exp_group_name}' is not a dict, skipping")
-                continue
             for name, m in exp_group.items():
-                # Wrap non-dict metrics into a dict with the metric name as key
                 if not is_dict_like(m):
-                    print(f"[DEBUG] Wrapping non-dict experiment '{name}' data: {m}")
                     m = {name: m}
-
-                # Convert values to float safely
                 def safe_float(x):
                     try:
-                        if isinstance(x, list):
-                            if not x:  # empty list
-                                return 0.0
-                            return float(np.mean(x))
-                        return float(x)
+                        return float(np.mean(x)) if isinstance(x, list) else float(x)
                     except Exception:
                         return 0.0
-
                 all_data.append({
                     "Experiment": name,
                     "Params": safe_float(m.get("param_count", 0)),
@@ -385,55 +300,31 @@ def plot_unified_metrics(metrics_dir, save_dir, workflow):
 
     df = pd.DataFrame(all_data)
     if df.empty:
-        print("[!] No valid metrics data found for unified plots.")
         return
 
-    print("[DEBUG] Data for plotting:")
-    print(df)
-
-    ensure_dir(save_dir)
-
-    # Accuracy vs Params
+    # Accuracy vs Parameters
     plt.figure(figsize=(9, 6))
-    sns.scatterplot(data=df, x="Params", y="Accuracy", hue="Experiment", legend="brief", s=120)
-    plt.xscale("log")
-    plt.xlabel("Parameters (log scale)")
-    plt.ylabel("Accuracy (%)")
+    ax = sns.scatterplot(data=df, x="Params", y="Accuracy", hue="Experiment", s=120)
+    for i, row in df.iterrows():
+        ax.text(row["Params"], row["Accuracy"], row["Experiment"], fontsize=8, ha='right')
+    ax.set_xscale("log")
+    plt.grid(alpha=0.3)
     plt.title(f"Accuracy vs Parameters — {workflow}")
-    plt.grid(True, linestyle="--", alpha=0.6)
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{workflow}_accuracy_vs_params.svg"))
     plt.close()
 
     # FLOPs vs Memory
     plt.figure(figsize=(9, 6))
-    sns.scatterplot(data=df, x="FLOPs", y="Memory", hue="Experiment", legend=False, s=120)
-    plt.xscale("log")
-    plt.yscale("log")
-    plt.xlabel("FLOPs (log)")
-    plt.ylabel("Memory (MB, log)")
+    ax = sns.scatterplot(data=df, x="FLOPs", y="Memory", hue="Experiment", s=120)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    plt.grid(alpha=0.3)
     plt.title(f"FLOPs vs Memory — {workflow}")
-    plt.grid(True, linestyle="--", alpha=0.6)
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"{workflow}_flops_vs_memory.svg"))
     plt.close()
-
-    # Accuracy vs Memory
-    plt.figure(figsize=(9, 6))
-    sns.scatterplot(data=df, x="Memory", y="Accuracy", hue="Experiment", s=120)
-    plt.xlabel("Memory (MB)")
-    plt.ylabel("Accuracy (%)")
-    plt.title(f"Accuracy vs Memory — {workflow}")
-    plt.grid(True, linestyle="--", alpha=0.6)
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{workflow}_accuracy_vs_memory.svg"))
-    plt.close()
-
-    # Save data
     df.to_csv(os.path.join(save_dir, f"{workflow}_unified_metrics.csv"), index=False)
-    
-
-    print(f"[✓] Saved unified metrics plots for workflow '{workflow}'")
 
 # -------------------------
 # Robust plotting helpers
@@ -660,203 +551,56 @@ def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
     # save data
     df.to_csv(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.csv"), index=False)
     plt.close()
-
-
 def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name, dtype_bytes=4):
-    """
-    Plot per-layer activation memory (MB) across experiments.
-
-    metrics_sources can be:
-      - dict: mapping experiment_name -> metrics-dict
-      - str: path to a single JSON file. The file may either:
-          * represent one experiment (contains "diagnostics"), or
-          * contain many experiments as top-level keys (each value a metrics dict)
-      - list of str: list of JSON file paths (each file may be a single experiment or a mapping)
-
-    dtype_bytes: bytes per activation element (default 4 for float32).
-    """
-    import os
     import json
-    import matplotlib.pyplot as plt
-    import pandas as pd
-    import seaborn as sns
     from collections import defaultdict
 
-    # helper to ensure save dir
-    try:
-        ensure_dir(save_dir)
-    except NameError:
-        os.makedirs(save_dir, exist_ok=True)
+    ensure_dir(save_dir)
+    per_layer_mem = defaultdict(dict)
+    experiment_names = []
 
-    # load a JSON file
     def _load_json(path):
         with open(path, 'r') as f:
             return json.load(f)
 
-    # normalize a single metrics-like object into a dict mapping experiment_name -> metrics_dict
-    def _metrics_from_obj(obj, default_name):
-        """
-        If obj is a mapping whose values are per-experiment dicts, return it directly.
-        Else if obj itself appears to be a single experiment dict (has 'diagnostics' or 'final_accuracy' etc.),
-        return {default_name: obj}.
-        """
-        if isinstance(obj, dict):
-            # detect if top-level appears to be multiple experiments:
-            # heuristic: many values are dicts and at least one has diagnostics/accuracies keys
-            multi_like = False
-            candidate_count = 0
-            for v in obj.values():
-                if isinstance(v, dict):
-                    candidate_count += 1
-                    if any(k in v for k in ("diagnostics", "accuracies", "final_accuracy", "param_count")):
-                        multi_like = True
-                        break
-            if multi_like and candidate_count >= 1:
-                return dict(obj)  # treat top-level keys as experiments
-            # else treat as single experiment
-            return {default_name: dict(obj)}
-        # not a dict -> can't handle
-        return {default_name: {"__raw__": obj}}
-
-    # Build unified metrics mapping
-    metrics = {}
-
-    # If caller passed already a dict of metrics
-    if isinstance(metrics_sources, dict):
+    if isinstance(metrics_sources, str):
+        loaded = _load_json(metrics_sources)
+        metrics = {os.path.splitext(os.path.basename(metrics_sources))[0]: loaded}
+    elif isinstance(metrics_sources, dict):
         metrics = metrics_sources.copy()
-    elif isinstance(metrics_sources, str):
-        # single file path
-        try:
-            loaded = _load_json(metrics_sources)
-        except Exception as e:
-            raise RuntimeError(f"Failed to load JSON from {metrics_sources}: {e}")
-        name_hint = os.path.splitext(os.path.basename(metrics_sources))[0]
-        metrics = _metrics_from_obj(loaded, name_hint)
     elif isinstance(metrics_sources, (list, tuple)):
-        # list of paths (or possibly a mixture)
+        metrics = {}
         for path in metrics_sources:
             if isinstance(path, str) and os.path.isfile(path):
-                try:
-                    loaded = _load_json(path)
-                except Exception:
-                    # skip unreadable files
-                    continue
+                loaded = _load_json(path)
                 name_hint = os.path.splitext(os.path.basename(path))[0]
-                obj_map = _metrics_from_obj(loaded, name_hint)
-                # if there are duplicates, prefix with filename when necessary
-                for k, v in obj_map.items():
-                    if k in metrics:
-                        new_k = f"{name_hint}__{k}"
-                        metrics[new_k] = v
-                    else:
-                        metrics[k] = v
-            elif isinstance(path, dict):
-                # if the list contained pre-loaded dicts
-                for k, v in path.items():
-                    if k in metrics:
-                        metrics[f"{k}_dup"] = v
-                    else:
-                        metrics[k] = v
-            else:
-                # ignore invalid entries
-                continue
-    else:
-        raise ValueError("metrics_sources must be a dict, a path (str), or a list of paths/dicts.")
-
-    if not metrics:
-        # nothing to plot
-        return
-
-    # Extract per-layer activation sizes and convert to MB
-    # We'll build: layer_name -> {experiment_name: memory_mb}
-    per_layer_mem = defaultdict(dict)
-    experiment_names = []
+                metrics[name_hint] = loaded
 
     for exp_name_key, metric_obj in metrics.items():
         experiment_names.append(exp_name_key)
-        # metric_obj may not be a dict (coerced earlier), guard
-        if not isinstance(metric_obj, dict):
-            continue
-
-        diagnostics = metric_obj.get("diagnostics") or metric_obj.get("diagnostic") or {}
-
-        # If diagnostics missing, try legacy keys
-        if not diagnostics:
-            # sometimes the JSON has activation_sizes at top level
-            if "activation_sizes" in metric_obj:
-                diagnostics = {"activation_sizes": metric_obj.get("activation_sizes")}
-            else:
-                diagnostics = {}
-
+        diagnostics = metric_obj.get("diagnostics") or {}
         activation_sizes = diagnostics.get("activation_sizes", [])
-        # activation_sizes expected as list of {"layer": name, "activation_elements": N}
-        if activation_sizes and isinstance(activation_sizes, (list, tuple)):
-            for item in activation_sizes:
-                if not isinstance(item, dict):
-                    continue
-                layer = item.get("layer") or item.get("name") or item.get("layer_name")
-                elems = item.get("activation_elements") or item.get("elements") or item.get("activation_size")
-                try:
-                    elems = float(elems)
-                except Exception:
-                    elems = 0.0
-                mem_mb = (elems * float(dtype_bytes)) / 1e6
-                per_layer_mem[layer][exp_name_key] = mem_mb
-        else:
-            # fallback: some diagnostics include activation element counts under different keys
-            # try to extract from 'per_layer_params_flops' sizes (not ideal)
-            alt = diagnostics.get("per_layer_params_flops", [])
-            if alt and isinstance(alt, (list, tuple)):
-                # not activation sizes, but include as a fallback to show something
-                for item in alt:
-                    if not isinstance(item, dict):
-                        continue
-                    layer = item.get("layer")
-                    # use params as proxy (very rough) -> convert params to bytes
-                    params = item.get("params", 0)
-                    try:
-                        params = float(params)
-                    except Exception:
-                        params = 0.0
-                    mem_mb = (params * float(dtype_bytes)) / 1e6
-                    per_layer_mem[layer][exp_name_key] = mem_mb
-            # if nothing, continue (will be NaN)
-            continue
+        for item in activation_sizes:
+            layer = item.get("layer") or item.get("name")
+            elems = item.get("activation_elements") or 0
+            mem_mb = (float(elems) * dtype_bytes) / 1e6
+            per_layer_mem[layer][exp_name_key] = mem_mb
 
     if not per_layer_mem:
-        # nothing extracted
         return
 
-    # Create DataFrame: index = layers, columns = experiments
-    df = pd.DataFrame(per_layer_mem).T.fillna(0.0)  # currently dict keyed by layer -> {exp: mem}
-    # After T, rows are experiments -> we want index = layers, so transpose back:
-    df = df.T  # now index=layers, columns=experiments
-    # Ensure all experiments appear as columns (even if missing)
-    for e in experiment_names:
-        if e not in df.columns:
-            df[e] = 0.0
-
-    # Sort layers by total memory descending for clearer heatmap
+    df = pd.DataFrame(per_layer_mem).T.fillna(0.0).T
     df["total_mb"] = df.sum(axis=1)
     df = df.sort_values("total_mb", ascending=False).drop(columns=["total_mb"])
 
-    if df.empty:
-        return
-
-    # Plot heatmap
-    plt.figure(figsize=(max(8, min(0.4 * len(df.index), 24)), max(6, min(0.5 * len(df.columns), 16))))
-    sns.set_theme()  # let seaborn choose nice defaults
+    plt.figure(figsize=(max(8, len(df)*0.4), max(6, len(df.columns)*0.5)))
     ax = sns.heatmap(df, annot=True, fmt=".2f", cmap="viridis", cbar_kws={"label": "Activation Memory (MB)"})
     ax.set_xlabel("Experiment")
     ax.set_ylabel("Layer")
     plt.title(f"Per-layer Activation Memory (MB) — {exp_name}")
     plt.tight_layout()
-
     outpath = os.path.join(save_dir, f"{exp_name}_per_layer_activation_memory_heatmap.svg")
-    # save data
-    df.to_csv(outpath.replace('.svg', '.csv'))
+    df.to_csv(outpath.replace(".svg", ".csv"))
     plt.savefig(outpath)
     plt.close()
-
-    print(f"[✓] Saved per-layer activation memory heatmap: {outpath}")
     return outpath
