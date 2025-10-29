@@ -183,6 +183,7 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
         print(f"[DEBUG] Compressing: {compression_set1}")
         start, end = compression_set1[0], compression_set1[1]
         print(f"\n--- Starting collapse for block: {start} to {end} ---")
+
         model = _collapse_block(model, start, end, input_shape, device=device)
         model._collapsed_blocks.append((start, end))
 
@@ -469,6 +470,27 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
         seq.append(nn.Linear(in_features, out_features))
         print(f"[DEBUG] Built collapsed Linear: {in_features} -> {out_features}")
 
+def _update_container(model, container_path, new_container):
+    """
+    Replace the module at `container_path` in `model` with `new_container`.
+    container_path is a dot-separated string specifying nested modules.
+    """
+    print(f"[DEBUG] Updating container at path: {container_path}")
+    if container_path == "":
+        raise ValueError("Cannot replace the root model container with a new container.")
+    parts = container_path.split('.')
+    parent = model
+    for part in parts[:-1]:
+        print(f"[DEBUG] Traversing into: {part}")
+        if _is_int_str(part):
+            parent = parent[int(part)]
+        else:
+            parent = getattr(parent, part)
+    last = parts[-1]
+    print(f"[DEBUG] Setting new container at final part: {last}")
+    if _is_int_str(last):
+        idx = int(last)
+        parent[idx] = new_container
     else:
         raise NotImplementedError(f"Unsupported layer type: {layer_type}")
 
