@@ -73,35 +73,42 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
 # Per-layer analysis & activation analysis (robust + save)
 # -------------------------
 def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
-    model.eval()
-    debug_tensor_shape(input_tensor, "Input Tensor")
+    """
+    Analyzes and saves per-layer parameter counts and FLOPs.
+    Ensures FLOPs are recomputed on the current (possibly collapsed) model.
+    """
+    import os
+    import torch
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from fvcore.nn import FlopCountAnalysis
+    from utils import ensure_dir
 
-    # Ensure batch dimension
+    model.eval()
     if len(input_tensor.shape) == 3:
         input_tensor = input_tensor.unsqueeze(0)
-    debug_tensor_shape(input_tensor, "Input Tensor (After Batch Dimension Check)")
+
+    # Ensure device is consistent
+    device = next(model.parameters()).device
+    input_tensor = input_tensor.to(device)
 
     with torch.no_grad():
         try:
             flops = FlopCountAnalysis(model, input_tensor)
             per_module_flops = flops.by_module()
-            # optionally total flops:
-            try:
-                total_flops_val = flops.total()
-            except Exception:
-                total_flops_val = None
+            total_flops_val = flops.total()
         except Exception as e:
-            print(f"[!] FlopCountAnalysis failed: {e} — continuing with empty FLOPs map")
+            print(f"[!] FlopCountAnalysis failed: {e}")
             per_module_flops = {}
             total_flops_val = None
-
 
     layer_data = []
     for name, module in model.named_modules():
         if len(list(module.children())) == 0:
             params = sum(p.numel() for p in module.parameters())
             flops_for_layer = per_module_flops.get(name, 0)
-            layer_data.append({"layer": name, "params": params, "flops": flops_for_layer})
+            layer_data.append({"layer": name, "params": params, "flops": flops_for_layer / 1e9})  # Convert to GFLOPs
 
     if not layer_data:
         print(f"[!] No per-layer data collected for {exp_name}")
@@ -112,30 +119,23 @@ def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
     csv_path = os.path.join(save_dir, f"{exp_name}_layer_params_flops.csv")
     df.to_csv(csv_path, index=False)
 
-    # Plot (if many layers, switch to heatmap/pivot for readability)
+    # Plot results
     fig, axes = plt.subplots(2, 1, figsize=(14, 10))
-    unique_layers = df["layer"].nunique()
-    if unique_layers > 30:
-        # pivot (experiments would usually be aggregated later) - show log10 values for compactness
-        df_plot = df.set_index("layer")[["params", "flops"]].astype(float).where(lambda x: x > 0, other=0.0)
-        # transpose for heatmap
-        sns.heatmap(df_plot.T.fillna(0.0), ax=axes[0])
-
-        axes[0].set_title("Parameters & FLOPs per Layer (Heatmap)")
-    else:
-        df.plot(x="layer", y="params", kind="bar", ax=axes[0], color="skyblue", legend=False)
-        axes[0].set_title("Parameters per Layer")
-        axes[0].tick_params(axis='x', rotation=90)
+    df.plot(x="layer", y="params", kind="bar", ax=axes[0], color="skyblue", legend=False)
+    axes[0].set_title("Parameters per Layer")
+    axes[0].set_ylabel("Params (#)")
+    axes[0].tick_params(axis='x', rotation=90)
 
     df.plot(x="layer", y="flops", kind="bar", ax=axes[1], color="salmon", legend=False)
-    axes[1].set_title("FLOPs per Layer")
+    axes[1].set_title("FLOPs per Layer (GFLOPs)")
+    axes[1].set_ylabel("GFLOPs")
     axes[1].tick_params(axis='x', rotation=90)
 
     plt.tight_layout()
     svg_path = os.path.join(save_dir, f"{exp_name}_params_flops_layers.svg")
     plt.savefig(svg_path)
     plt.close(fig)
-    print(f"[✓] Saved per-layer params/flops CSV: {csv_path} and plot: {svg_path}")
+    print(f"[✓] Saved per-layer params/FLOPs CSV: {csv_path} and plot: {svg_path}")
 
     return df
 
@@ -207,46 +207,66 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
     return df
 
 def memory_decomposition(model, input_tensor, save_dir, exp_name):
+    """
+    Measure and plot GPU memory usage breakdown.
+    Reports parameter memory, activation/temporary memory, and total peak GPU memory in MB.
+    """
+    import torch
+    import matplotlib.pyplot as plt
+    import os
+    from utils import ensure_dir
+
     # Ensure batch dimension
     if len(input_tensor.shape) == 3:
         input_tensor = input_tensor.unsqueeze(0)
 
-    param_mem = sum(p.numel() for p in model.parameters()) * 4 / 1e6  # MB (fp32)
-    peak_mem = None
+    # Parameter memory in MB (assuming float32)
+    param_mem = sum(p.numel() for p in model.parameters()) * 4 / 1e6
+
     if torch.cuda.is_available():
-        try:
-            torch.cuda.reset_peak_memory_stats()
-        except Exception:
-            pass
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats()
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+
+    model.to(device)
+    model.eval()
+    input_tensor = input_tensor.to(device)
 
     with torch.no_grad():
         try:
+            torch.cuda.synchronize() if torch.cuda.is_available() else None
             _ = model(input_tensor)
+            torch.cuda.synchronize() if torch.cuda.is_available() else None
         except Exception as e:
             print(f"[!] Forward pass for memory decomposition failed: {e}")
 
+    peak_mem = None
     if torch.cuda.is_available():
         try:
-            peak_mem = torch.cuda.max_memory_allocated() / 1e6
+            peak_mem = torch.cuda.max_memory_allocated() / 1e6  # MB
         except Exception:
             peak_mem = None
 
     activation_mem = max(peak_mem - param_mem, 0) if peak_mem is not None else None
-    parts = {"Params_MB": float(param_mem),
-             "Activations+Temps_MB": float(activation_mem) if activation_mem is not None else 0.0,
-             "Peak_MB": float(peak_mem) if peak_mem is not None else 0.0}
+    parts = {
+        "Params_MB": float(param_mem),
+        "Activations_MB": float(activation_mem) if activation_mem is not None else 0.0,
+        "Peak_GPU_MB": float(peak_mem) if peak_mem is not None else 0.0
+    }
 
     ensure_dir(save_dir)
-    print(f"Memory Decomposition: Params: {parts['Params_MB']}MB, Activations: {parts['Activations+Temps_MB']}MB, Peak: {parts['Peak_MB']}MB")
+    print(
+        f"Memory Decomposition — Params: {parts['Params_MB']:.2f} MB, "
+        f"Activations: {parts['Activations_MB']:.2f} MB, Peak: {parts['Peak_GPU_MB']:.2f} MB"
+    )
 
-    # Save and plot
+    # Plot
     svg_path = os.path.join(save_dir, f"{exp_name}_memory_breakdown.svg")
     plt.figure(figsize=(6, 6))
-    cats = list(parts.keys())
-    vals = [parts[k] for k in cats]
-    plt.bar(cats, vals, color=["steelblue", "salmon", "gold"])
-
-    plt.title(f"Memory Breakdown — {exp_name}")
+    plt.bar(parts.keys(), parts.values(), color=["steelblue", "salmon", "gold"])
+    plt.title(f"GPU Memory Breakdown — {exp_name}")
     plt.ylabel("Memory (MB)")
     plt.tight_layout()
     plt.savefig(svg_path)
