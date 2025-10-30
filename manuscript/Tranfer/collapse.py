@@ -256,15 +256,13 @@ def _absorb_pools_if_needed(named_layers, traced_shapes, debug):
 
 def _build_collapsed_block_with_checks(layers, traced_shapes, debug):
     """Build a simple collapsed Sequential (identity-preserving)."""
-    in_channels = layers[0][1].in_channels if hasattr(layers[0][1], "in_channels") else None
-    out_channels = layers[-1][1].out_channels if hasattr(layers[-1][1], "out_channels") else None
+    # Only keep non-Identity modules
+    collapsed_layers = [layer for layer in layers if not isinstance(layer, nn.Identity)]
 
-    collapsed_layers = [layer for _, layer in layers if not isinstance(layer, nn.Identity)]
     collapsed_block = nn.Sequential(*collapsed_layers)
 
     if debug:
         print(f"[DEBUG] Built collapsed block: {collapsed_block}")
-        print(f"[DEBUG] Input/Output channels: {in_channels} → {out_channels}")
 
     return collapsed_block
 
