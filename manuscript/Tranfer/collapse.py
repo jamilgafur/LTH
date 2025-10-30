@@ -435,19 +435,28 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
 
     if layer_type == nn.Conv2d:
         in_channels = x.shape[1]
-        # run forward through conv layers to get output shape
+
+        # --- KEY FIX HERE: forward through the *entire* full_block (not just convs)
+        # This ensures out_shape accounts for pooling / other non-conv ops that affect H,W.
         with torch.no_grad():
             y = x.clone()
-            for layer in conv_layers:
+            last_conv = None
+            for _, layer in full_block:
+                # apply each module in the original block to compute the true final shape
                 y = layer(y)
+                if isinstance(layer, nn.Conv2d):
+                    last_conv = layer
         out_shape = tuple(y.shape)
-        out_channels = conv_layers[-1].out_channels
+        # out_channels should be taken from the last conv within full_block
+        if last_conv is not None:
+            out_channels = last_conv.out_channels
+        else:
+            # fallback if somehow there is no conv (shouldn't happen)
+            out_channels = conv_layers[-1].out_channels
 
         # try to detect linear follower (first Linear after this container)
         linear_in_features = None
         # Heuristic: find first linear in model after the last layer's container (conservative)
-        found_container_idx = None
-        # Search next modules in container; if none, search globally for first Linear
         if end_idx + 1 < len(named_layers):
             next_mod = named_layers[end_idx + 1][1]
             if isinstance(next_mod, nn.Linear):
@@ -462,14 +471,13 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
         shortcut_out_channels = None
         for nm, mod in model.named_modules():
             if hasattr(mod, 'shortcut') and isinstance(mod.shortcut, nn.Module):
-            
                 # find first conv inside shortcut
                 first_conv = next((m for m in mod.shortcut.modules() if isinstance(m, nn.Conv2d)), None)
                 if first_conv is not None:
                     shortcut_out_channels = first_conv.out_channels
                     break
-                
-        # detect pooling inside original block
+
+        # detect pooling inside original block (keep to re-append into collapsed block)
         pool_layer = next((m for _, m in reversed(full_block) if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))), None)
 
         collapsed_block = _build_collapsed_block(
