@@ -423,26 +423,49 @@ def _collapse_block(model, start, end, input_shape, device, debug=False):
 
 def _get_block_layers(model, start, end):
     """
-    Extracts the container path (e.g. 'layer1.0.conv1') and the list of named layers
-    between start and end indices, inclusive.
+    Extract the container path and the list of named layers between start and end (inclusive).
 
-    Returns:
-        (container_path, named_layers)
-    where:
-        - container_path (str): dot-path to the container that owns these layers.
-          If the layers are at the model root, returns an empty string "".
-        - named_layers (list[(str, nn.Module)]): ordered list of (name, layer) pairs.
+    Example:
+      start = "features.conv_8"
+      end   = "features.conv_10"
+    returns:
+      ("features", [("conv_8", module), ("relu_8", module), ..., ("conv_10", module)])
     """
-    start_container_name, start_idx, end_idx = _find_layer_indices(model, start, end)
-    container = _get_submodule(model, start_container_name)
-    if isinstance(container, nn.Sequential):
-        named_layers = list(container.named_children())[start_idx:end_idx + 1]
-    elif isinstance(container, nn.ModuleList):
-        named_layers = [(str(i), container[i]) for i in range(start_idx, end_idx + 1)]
-    else:
-        raise TypeError(f"Unsupported container type for collapse: {type(container)}")
+    def split_path(p):
+        parts = p.split('.')
+        return '.'.join(parts[:-1]), parts[-1]
 
-    return start_container_name, named_layers
+    start_container, start_name = split_path(start)
+    end_container, end_name = split_path(end)
+
+    if start_container != end_container:
+        raise ValueError(f"Start and end must be in the same container. got: '{start}' vs '{end}'")
+
+    container = _get_submodule(model, start_container)  # returns model if start_container == ""
+
+    # Gather the children in a consistent (name,module) list
+    if isinstance(container, nn.Sequential):
+        children = list(container.named_children())
+    elif isinstance(container, nn.ModuleList):
+        children = [(str(i), container[i]) for i in range(len(container))]
+    else:
+        # Generic Module: use named_children (keeps attribute names like 'conv1', 'bn1', ...) 
+        children = list(container.named_children())
+
+    # Build index map and locate start/end
+    name_to_idx = {n: i for i, (n, _) in enumerate(children)}
+    if start_name not in name_to_idx:
+        raise ValueError(f"Start layer '{start_name}' not found in container '{start_container}' (available: {[n for n,_ in children]})")
+    if end_name not in name_to_idx:
+        raise ValueError(f"End layer '{end_name}' not found in container '{start_container}' (available: {[n for n,_ in children]})")
+
+    start_idx = name_to_idx[start_name]
+    end_idx = name_to_idx[end_name]
+    if start_idx > end_idx:
+        raise ValueError(f"Start index ({start_idx}) > end index ({end_idx}) for {start} -> {end}")
+
+    named_layers = children[start_idx:end_idx + 1]
+    return start_container, named_layers
 
 def _trace_block_shapes(named_layers, input_shape, device, debug):
     x = torch.zeros(input_shape).to(device)
@@ -522,15 +545,47 @@ def _build_collapsed_block_with_checks(layers, traced_shapes, debug):
 
 def _replace_in_model(model, container_path, start, end, collapsed_block, device):
     """
-    Safely replaces the specified block in the model — works even for root-level modules.
+    Replace the layers between start and end (inclusive) inside the container_path
+    with `collapsed_block`. Works for Sequential, ModuleList and generic container modules.
     """
-    updated_container = _replace_layers(container_path, start, end, collapsed_block)
+    # get subnames
+    start_name = start.split('.')[-1]
+    end_name = end.split('.')[-1]
 
-    if container_path == "":
-        model = updated_container.to(device)
+    # get container module
+    container = _get_submodule(model, container_path)
+
+    # assemble children list (name,module)
+    if isinstance(container, nn.Sequential):
+        children = list(container.named_children())
+    elif isinstance(container, nn.ModuleList):
+        children = [(str(i), container[i]) for i in range(len(container))]
+    else:
+        children = list(container.named_children())
+
+    # build name->index map
+    name_to_idx = {n: i for i, (n, _) in enumerate(children)}
+    if start_name not in name_to_idx or end_name not in name_to_idx:
+        raise ValueError(f"Could not find start/end names in container '{container_path}'. Available: {[n for n,_ in children]}")
+
+    start_idx = name_to_idx[start_name]
+    end_idx = name_to_idx[end_name]
+    if start_idx > end_idx:
+        raise ValueError(f"start_idx ({start_idx}) > end_idx ({end_idx})")
+
+    # Now call the lower-level replacer with the proper args
+    updated_container = _replace_layers(children, start_idx, end_idx, collapsed_block)
+
+    # Patch the model: replace the container at container_path with updated_container
+    if container_path == "" or container_path is None:
+        # replacing the root module — be careful
+        # we don't generally want to replace the root Module, so raise to avoid accidental behavior
+        raise ValueError("Refusing to replace the root module container. Provide a container path.")
     else:
         _update_container(model, container_path, updated_container)
-        model.to(device)
+
+    # ensure device placement
+    model.to(device)
     return model
 
 
