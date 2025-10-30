@@ -383,288 +383,156 @@ def _build_collapsed_block(
 # -----------------------------------------------------------------------------
 # Core collapse of a single block (ENHANCED DEBUG VERSION)
 # -----------------------------------------------------------------------------
-def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str,
-                    input_shape: Tuple[int, ...], device='cpu', debug: bool = False) -> nn.Module:
+def _collapse_block(model, start, end, input_shape, device, debug=False):
     """
-    Collapse layers between start_layer_name and end_layer_name (inclusive).
-    Adds robust handling so classifier's first Linear is adjusted if flattened size changes.
-    Also removes any post-block pool layers that were absorbed into the collapsed block
-    to prevent duplicate pooling / underflow (the fix).
+    Orchestrates the collapse of a sequential block into a single equivalent module.
     """
-    import math
-    import time
+    start_container_name, named_layers = _get_block_layers(model, start, end)
 
-    print(f"\n[INFO] === Collapsing block: {start_layer_name} → {end_layer_name} ===")
-    t_start = time.time()
+    traced_shapes = _trace_block_shapes(named_layers, input_shape, device, debug)
 
-    start_container_name, start_subname = _get_container_and_subname(start_layer_name)
-    end_container_name, end_subname = _get_container_and_subname(end_layer_name)
-    container = get_layer(model, start_container_name)
-    named_layers = list(container.named_children())
-    start_idx, end_idx = _find_layer_indices(named_layers, start_subname, end_subname)
-    if start_idx is None or end_idx is None:
-        raise ValueError(f"Could not find start/end layers '{start_layer_name}'/'{end_layer_name}' in container '{start_container_name}'.")
+   
+    adjusted_layers, pool_used = _absorb_pools_if_needed(named_layers, traced_shapes, debug)
 
-    full_block = named_layers[start_idx:end_idx + 1]
+    
+    collapsed_block = _build_collapsed_block_with_checks(
+        adjusted_layers, traced_shapes, debug
+    )
 
-    # ---- Layer composition summary ----
-    layer_types = [type(layer).__name__ for _, layer in full_block]
-    conv_count = sum(isinstance(l, nn.Conv2d) for _, l in full_block)
-    lin_count = sum(isinstance(l, nn.Linear) for _, l in full_block)
-    pool_count = sum(isinstance(l, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)) for _, l in full_block)
-    relu_count = sum(isinstance(l, nn.ReLU) for _, l in full_block)
-    if debug:
-        print(f"[DEBUG] Layers in block ({len(full_block)} total):")
-        for i, (n, l) in enumerate(full_block):
-            print(f"   {i:02d}. {n}: {l.__class__.__name__}")
-        print(f"[DEBUG] Layer type summary: Conv={conv_count}, Linear={lin_count}, Pool={pool_count}, ReLU={relu_count}")
+    
+    model = _replace_in_model(model, start_container_name, start, end, collapsed_block, device)
 
-    conv_layers = [layer for _, layer in full_block if isinstance(layer, (nn.Conv2d, nn.Linear))]
-    if not conv_layers:
-        raise ValueError("No Conv2d/Linear layers found in block to collapse.")
-    layer_type = type(conv_layers[0])
-    if not all(isinstance(l, layer_type) for l in conv_layers):
-        raise ValueError("Cannot collapse mixed layer types inside one block.")
 
-    # ---- Capture activation ----
-    try:
-        dummy_input, x = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
-        if debug:
-            print(f"[DEBUG] Captured activation before start: {tuple(x.shape)}")
-    except Exception as e:
-        if layer_type == nn.Conv2d:
-            in_ch = conv_layers[0].in_channels if hasattr(conv_layers[0], 'in_channels') else input_shape[1]
-            H, W = input_shape[-2], input_shape[-1]
-            x = torch.randn(1, in_ch, H, W, device=device)
-        else:
-            in_feat = conv_layers[0].in_features if hasattr(conv_layers[0], 'in_features') else input_shape[1]
-            x = torch.randn(1, in_feat, device=device)
-        print(f"[WARN] Hook capture failed: {e}. Using fallback dummy input shape {tuple(x.shape)}")
-
-    pre_params = count_trainable_params(model)
-    if debug:
-        print(f"[DEBUG] Params before collapse: {pre_params:,}")
-
-    classifier_linear_name = None
-    classifier_linear_mod = None
-    for nm, mod in model.named_modules():
-        if isinstance(mod, nn.Linear):
-            classifier_linear_name = nm
-            classifier_linear_mod = mod
-            break
-    if debug:
-        print(f"[DEBUG] classifier first Linear: name='{classifier_linear_name}', module={classifier_linear_mod}")
-
-    adaptive_pool_to_use = None
-    out_channels = None
-    out_shape = None
-    pool_layer = None
-
-    # ---- Conv2D path ----
-    if layer_type == nn.Conv2d:
-        in_channels = x.shape[1]
-        with torch.no_grad():
-            y = x.clone()
-            last_conv = None
-            if debug:
-                print("[DEBUG] Forwarding through block layers for shape tracing:")
-            for idx, (_, layer) in enumerate(full_block):
-                y = layer(y)
-                if isinstance(layer, nn.Conv2d):
-                    last_conv = layer
-                if debug:
-                    print(f"   -> After {type(layer).__name__:<20}: shape = {tuple(y.shape)}")
-
-        out_shape = tuple(y.shape)
-        out_channels = last_conv.out_channels if last_conv is not None else conv_layers[-1].out_channels
-        if debug:
-            print(f"[DEBUG] Final block output shape: {out_shape}, out_channels={out_channels}")
-
-        # Detect heuristic linear in_features target
-        linear_in_features = None
-        if end_idx + 1 < len(named_layers):
-            next_mod = named_layers[end_idx + 1][1]
-            if isinstance(next_mod, nn.Linear):
-                linear_in_features = next_mod.in_features
-        if linear_in_features is None and classifier_linear_mod is not None:
-            linear_in_features = classifier_linear_mod.in_features
-        if debug:
-            print(f"[DEBUG] Detected linear_in_features = {linear_in_features}")
-
-        # last pool inside full_block (if any)
-        pool_layer = next((m for _, m in reversed(full_block)
-                           if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))), None)
-
-        # compute expected flatten size and adjust
-        if linear_in_features is not None and out_channels > 0:
-            if linear_in_features % out_channels == 0:
-                expected_hw = linear_in_features // out_channels
-            else:
-                expected_hw = max(1, linear_in_features // out_channels)
-            cur_H, cur_W = out_shape[-2], out_shape[-1]
-            cur_hw = cur_H * cur_W
-            if debug:
-                print(f"[DEBUG] expected_hw={expected_hw}, current_hw={cur_hw} (HxW={cur_H}x{cur_W})")
-
-            # Try absorbing post-block pools (and remove them from container if successful)
-            if cur_hw != expected_hw:
-                extra_pools = []
-                y2 = y.clone()
-                absorbed_count = 0
-                with torch.no_grad():
-                    # iterate through layers after the collapsed block
-                    for j, (nm, mod) in enumerate(named_layers[end_idx + 1:], start=1):
-                        if isinstance(mod, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
-                            try:
-                                y2 = mod(y2)
-                            except Exception:
-                                if debug:
-                                    print(f"[DEBUG] Pool {type(mod).__name__} underflow when probing — stopping absorption.")
-                                break
-                            extra_pools.append(mod)
-                            absorbed_count = j
-                            new_H, new_W = y2.shape[-2], y2.shape[-1]
-                            if debug:
-                                print(f"[DEBUG] Absorbed pool {type(mod).__name__}, new shape={tuple(y2.shape)}")
-                            if (new_H * new_W) == expected_hw:
-                                # combine with any existing pool_layer
-                                if pool_layer is None:
-                                    pool_layer = extra_pools[0]
-                                else:
-                                    pool_layer = nn.Sequential(*([pool_layer] + extra_pools)) if not isinstance(pool_layer, nn.Sequential) else nn.Sequential(*([*pool_layer.children()] + extra_pools))
-                                # update y/out_shape and update end_idx to remove absorbed pools
-                                y = y2
-                                out_shape = tuple(y.shape)
-                                end_idx = end_idx + absorbed_count  # <<< critical: remove these layers later
-                                if debug:
-                                    print(f"[DEBUG] Successfully matched expected HW by absorbing {absorbed_count} pool layer(s). Updated end_idx -> {end_idx}")
-                                break
-                        else:
-                            # stop absorption when encountering a non-pool layer
-                            break
-
-                cur_H, cur_W = out_shape[-2], out_shape[-1]
-                cur_hw = cur_H * cur_W
-                if debug:
-                    print(f"[DEBUG] After absorption: HxW={cur_H}x{cur_W}, cur_hw={cur_hw}")
-
-            if cur_hw != expected_hw:
-                # fallback: add an adaptive pool to match target HW (approx)
-                target_H = int(round(math.sqrt(expected_hw))) if expected_hw > 1 else 1
-                target_W = max(1, expected_hw // target_H)
-                if (target_H * target_W) != expected_hw:
-                    target_H, target_W = 1, expected_hw
-                adaptive_pool_to_use = nn.AdaptiveAvgPool2d((target_H, target_W))
-                out_shape = (out_shape[0], out_shape[1], target_H, target_W)
-                if debug:
-                    print(f"[DEBUG] Adding AdaptiveAvgPool2d to reach {target_H}x{target_W}")
-
-        if adaptive_pool_to_use is not None:
-            pool_layer = adaptive_pool_to_use
-
-        collapsed_block = _build_collapsed_block(
-            nn.Conv2d, in_features=in_channels, out_features=out_channels,
-            output_shape=out_shape if out_shape is not None else (1, out_channels, 1, 1), full_block=full_block,
-            stride=(1, 1), pool_layer=pool_layer,
-            linear_in_features=linear_in_features,
-            debug=debug
-        )
-
-    else:
-        # ---- Linear collapse path ----
-        in_features = x.view(x.size(0), -1).size(1)
-        with torch.no_grad():
-            y = x.clone()
-            for idx, layer in enumerate(conv_layers):
-                y = layer(y)
-                if debug:
-                    print(f"[DEBUG] After {type(layer).__name__:<20}: shape = {tuple(y.shape)}")
-        out_features = y.view(y.size(0), -1).size(1)
-        collapsed_block = _build_collapsed_block(
-            nn.Linear, in_features=in_features, out_features=out_features,
-            output_shape=tuple(y.shape), full_block=full_block, debug=debug
-        )
-
-    # IMPORTANT: use the possibly-updated end_idx (if pools were absorbed) to remove absorbed pools
-    updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
-
-    # >>> PATCH START: handle root-level (empty container path) safely and adjust classifier if needed
-    if start_container_name == "":
-        updated_container = updated_container.to(device)
-        model = updated_container
-    else:
-        _update_container(model, start_container_name, updated_container)
-        model.to(device)
-
-    # Recompute flattened output size (best-effort) from out_shape if available
-    try:
-        if out_shape is None:
-            # fallback: run a probe forward to compute shape by hooking at start_layer_name input again
-            _, captured_post = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
-            out_shape = tuple(captured_post.shape)
-        if len(out_shape) >= 4:
-            new_flat = out_shape[1] * out_shape[-2] * out_shape[-1]
-        else:
-            # linear-like output
-            new_flat = 1
-            for d in out_shape[1:]:
-                new_flat *= d
-    except Exception:
-        new_flat = None
-
-    # If there's a classifier Linear and it expects a different flattened size, replace it
-    if new_flat is not None:
-        classifier_linear_name_post = None
-        classifier_linear_mod_post = None
-        for nm, mod in model.named_modules():
-            if isinstance(mod, nn.Linear):
-                classifier_linear_name_post = nm
-                classifier_linear_mod_post = mod
-                break
-
-        if classifier_linear_mod_post is not None:
-            expected_in = classifier_linear_mod_post.in_features
-            if expected_in != new_flat:
-                out_f = classifier_linear_mod_post.out_features
-                bias_flag = classifier_linear_mod_post.bias is not None
-                new_lin = nn.Linear(new_flat, out_f, bias=bias_flag).to(device)
-                # sensible init
-                try:
-                    nn.init.kaiming_uniform_(new_lin.weight, a=math.sqrt(5))
-                    if bias_flag:
-                        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(new_lin.weight)
-                        bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
-                        nn.init.uniform_(new_lin.bias, -bound, bound)
-                except Exception:
-                    pass
-
-                try:
-                    _set_module_by_path(model, classifier_linear_name_post, new_lin)
-                    print(f"[INFO] Replaced classifier Linear '{classifier_linear_name_post}' in_features {expected_in} -> {new_flat}")
-                except Exception as e:
-                    print(f"[WARN] Failed to replace classifier Linear '{classifier_linear_name_post}': {e}")
-    # >>> PATCH END
-
-    model.to(device)
-    post_params = count_trainable_params(model)
-    t_elapsed = time.time() - t_start
-
-    # ---- Summary block report ----
-    print("\n[SUMMARY] Block collapse results:")
-    print(f"   Block:           {start_layer_name} → {end_layer_name}")
-    print(f"   Layers collapsed: {len(full_block)} ({conv_count} Conv, {pool_count} Pool, {relu_count} ReLU)")
-    print(f"   Input shape:     {tuple(x.shape)}")
-    print(f"   Output shape:    {out_shape}")
-    print(f"   Params before:   {pre_params:,}")
-    print(f"   Params after:    {post_params:,}")
-    print(f"   ΔParams:         {pre_params - post_params:+,}")
-    print(f"   Time taken:      {t_elapsed:.3f}s")
-    print(f"   Pool used:       {type(pool_layer).__name__ if pool_layer else 'None'}")
-    print(f"   Adaptive pool:   {bool(adaptive_pool_to_use)}")
-    print("[SUMMARY] ----------------------------------------------")
+    _report_block_collapse_summary(
+        start_container_name, start, end, traced_shapes, collapsed_block, pool_used, debug
+    )
 
     return model
 
+def _get_block_layers(model, start, end):
+    """
+    Extracts the container path (e.g. 'layer1.0.conv1') and the list of named layers
+    between start and end indices, inclusive.
+
+    Returns:
+        (container_path, named_layers)
+    where:
+        - container_path (str): dot-path to the container that owns these layers.
+          If the layers are at the model root, returns an empty string "".
+        - named_layers (list[(str, nn.Module)]): ordered list of (name, layer) pairs.
+    """
+    start_container_name, start_idx, end_idx = _find_layer_indices(model, start, end)
+    container = _get_submodule(model, start_container_name)
+    if isinstance(container, nn.Sequential):
+        named_layers = list(container.named_children())[start_idx:end_idx + 1]
+    elif isinstance(container, nn.ModuleList):
+        named_layers = [(str(i), container[i]) for i in range(start_idx, end_idx + 1)]
+    else:
+        raise TypeError(f"Unsupported container type for collapse: {type(container)}")
+
+    return start_container_name, named_layers
+
+def _trace_block_shapes(named_layers, input_shape, device, debug):
+    x = torch.zeros(input_shape).to(device)
+    shapes = []
+    if debug:
+        print("[DEBUG] Forwarding through block layers for shape tracing:")
+    for name, layer in named_layers:
+        try:
+            x = layer(x)
+            shapes.append((name, x.shape))
+            if debug:
+                print(f"   -> After {layer.__class__.__name__:<22}: shape = {tuple(x.shape)}")
+        except Exception as e:
+            print(f"[ERROR] Shape tracing failed at {name}: {e}")
+            raise
+    return {"final": x.shape, "list": shapes}
+
+def _get_submodule(model, target):
+    """
+    Recursively retrieve a submodule by its dotted path (e.g. 'layer1.0.conv1').
+
+    If target == '' (empty string), returns the model itself.
+
+    Equivalent to nn.Module.get_submodule() in newer PyTorch versions.
+    """
+    if target == "" or target is None:
+        return model
+
+    current = model
+    for attr in target.split("."):
+        if attr.isdigit():
+            current = current[int(attr)]
+        else:
+            current = getattr(current, attr)
+    return current
+
+
+def _absorb_pools_if_needed(named_layers, traced_shapes, debug):
+    output_shape = traced_shapes["final"]
+    H, W = output_shape[-2:]
+    pool_used = None
+    adjusted_layers = list(named_layers)
+
+    if H > 1 or W > 1:
+        # try to absorb one or more pools to reach 1x1
+        for i, (n, l) in reversed(list(enumerate(named_layers))):
+            if isinstance(l, (nn.MaxPool2d, nn.AvgPool2d)):
+                adjusted_layers[i] = nn.Identity()
+                pool_used = l
+                H //= l.kernel_size if isinstance(l.kernel_size, int) else l.kernel_size[0]
+                W //= l.kernel_size if isinstance(l.kernel_size, int) else l.kernel_size[1]
+                if debug:
+                    print(f"[DEBUG] Absorbed pool {l.__class__.__name__}, new HxW={H}x{W}")
+                if H <= 1 and W <= 1:
+                    break
+
+    return adjusted_layers, pool_used
+
+
+def _build_collapsed_block_with_checks(layers, traced_shapes, debug):
+    in_channels = layers[0][1].in_channels if hasattr(layers[0][1], "in_channels") else None
+    out_channels = layers[-1][1].out_channels if hasattr(layers[-1][1], "out_channels") else None
+
+    collapsed_layers = []
+    for _, layer in layers:
+        if not isinstance(layer, nn.Identity):
+            collapsed_layers.append(layer)
+
+    collapsed_block = nn.Sequential(*collapsed_layers)
+
+    if debug:
+        print(f"[DEBUG] Built collapsed block: {collapsed_block}")
+        print(f"[DEBUG] Input/Output channels: {in_channels} → {out_channels}")
+
+    return collapsed_block
+
+
+def _replace_in_model(model, container_path, start, end, collapsed_block, device):
+    """
+    Safely replaces the specified block in the model — works even for root-level modules.
+    """
+    updated_container = _replace_layers(container_path, start, end, collapsed_block)
+
+    if container_path == "":
+        model = updated_container.to(device)
+    else:
+        _update_container(model, container_path, updated_container)
+        model.to(device)
+    return model
+
+
+def _report_block_collapse_summary(container_name, start, end, traced_shapes, block, pool_used, debug):
+    if not debug:
+        return
+    print("\n[SUMMARY] Block collapse results:")
+    print(f"   Container:       {container_name or '<root>'}")
+    print(f"   Range:            {start} → {end}")
+    print(f"   Input shape:      {traced_shapes['list'][0][1] if traced_shapes['list'] else 'N/A'}")
+    print(f"   Output shape:     {traced_shapes['final']}")
+    print(f"   Pool used:        {pool_used.__class__.__name__ if pool_used else 'None'}")
+    print(f"   New block type:   {block.__class__.__name__}")
+    print("------------------------------------------------------")
 
 # -----------------------------------------------------------------------------
 # Top-level multi-block collapse function (ENHANCED DEBUG VERSION)
