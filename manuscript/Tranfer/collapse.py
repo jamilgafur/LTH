@@ -244,55 +244,78 @@ def _absorb_pools_if_needed(named_layers, traced_shapes, debug):
                     break
     return adjusted_layers, pool_used
 
-def _perform_collapse(named_layers, traced_shapes, device="cpu", debug=False):
+
+import torch
+import torch.nn as nn
+from collections import OrderedDict
+
+def _perform_collapse(named_layers, traced_shapes=None, runtime_input=None, device="cpu", debug=False):
     """
-    Perform collapse on a block. Accepts named_layers (list of (name, module)).
-    Returns (collapsed_block: nn.Sequential, pool_used: Optional[nn.Module]).
+    Perform collapse on a block.
+    
+    Parameters:
+        named_layers: list of (name, module) or nn.Module
+        traced_shapes: optional dict with traced shapes for shape inference
+        runtime_input: optional tensor to get actual input channels dynamically
+        device: device for collapsed block
+        debug: enable detailed debug prints
+
+    Returns:
+        collapsed_block: nn.Sequential
+        pool_used: Optional[nn.Module] (absorbed pool if any)
     """
     if debug:
-        print("[DEBUG] _perform_collapse: Starting collapse")
-        print("[DEBUG] _perform_collapse: Received named_layers:")
+        print("[DEBUG] _perform_collapse: received named_layers:")
         for i, item in enumerate(named_layers):
             if isinstance(item, tuple) and len(item) == 2:
                 n, m = item
-                print(f"  [{i}] name={n} type={type(m).__name__} repr={m}")
+                print(f"  [{i}] name={n}, type={type(m).__name__}, repr={m}")
             else:
-                print(f"  [{i}] (raw) type={type(item).__name__} repr={item}")
+                print(f"  [{i}] (raw) type={type(item).__name__}, repr={item}")
 
-    # First, try to absorb pools (function expects named (name,module) list)
+    # Absorb pools if needed
     adjusted_layers, pool_used = _absorb_pools_if_needed(named_layers, traced_shapes, debug)
 
-    if debug:
-        print(f"[DEBUG] _perform_collapse: adjusted_layers count = {len(adjusted_layers)}")
-        if pool_used is not None:
-            print(f"[DEBUG] _perform_collapse: detected pool layer = {pool_used}")
+    # Determine actual input channels from runtime_input
+    runtime_in_ch = None
+    if runtime_input is not None:
+        if runtime_input.dim() >= 2:
+            runtime_in_ch = runtime_input.size(1)
+            if debug:
+                print(f"[DEBUG] runtime_input detected with {runtime_in_ch} channels")
 
-    # Build the collapsed block from adjusted layers (may be tuples or modules)
-    collapsed_block = _build_collapsed_block_with_checks(adjusted_layers, traced_shapes, debug)
+    # Build collapsed block
+    collapsed_block = _build_collapsed_block_with_checks(
+        adjusted_layers,
+        traced_shapes,
+        runtime_in_ch=runtime_in_ch,
+        debug=debug
+    )
 
-    # ensure device placement
     collapsed_block.to(device)
 
     if debug:
-        print(f"[DEBUG] _perform_collapse: produced collapsed_block with {len(list(collapsed_block.children()))} children")
-        print("[DEBUG] _perform_collapse: collapsed_block summary:")
-        for i, m in enumerate(collapsed_block):
-            print(f"  [{i}] {type(m).__name__}: {m}")
+        print(f"[DEBUG] _perform_collapse: collapsed_block children = {len(list(collapsed_block.children()))}")
+        if pool_used is not None:
+            print(f"[DEBUG] _perform_collapse: absorbed pool layer: {pool_used}")
 
     return collapsed_block, pool_used
 
 
-def _build_collapsed_block_with_checks(layers, traced_shapes, debug=False):
+def _build_collapsed_block_with_checks(layers, traced_shapes=None, runtime_in_ch=None, debug=False):
     """
     Build nn.Sequential from layers while preserving channel consistency.
+    
+    Parameters:
+        layers: list of modules or (name, module) tuples
+        traced_shapes: optional shape info for inferring channels
+        runtime_in_ch: optional integer, actual input channels at runtime
+        debug: enable detailed debug prints
 
-    `layers` may be:
-      - a list of (name, module) tuples, or
-      - a list of nn.Module objects.
-
-    `traced_shapes` is expected to be a dict: {"final": torch.Size, "list": [(name, shape), ...]}
+    Returns:
+        nn.Sequential collapsed block
     """
-    # --- Normalize `layers` into a list of nn.Module objects (preserve names if available) ---
+    # Normalize layers into list of modules
     normalized = []
     for i, item in enumerate(layers):
         if isinstance(item, tuple) and len(item) == 2 and isinstance(item[1], nn.Module):
@@ -301,47 +324,42 @@ def _build_collapsed_block_with_checks(layers, traced_shapes, debug=False):
             normalized.append(item)
         else:
             if debug:
-                print(f"[WARN] skipping unexpected layer item at idx {i}: {item}")
+                print(f"[WARN] skipping unexpected layer at idx {i}: {item}")
     if debug:
-        print(f"[DEBUG] _build_collapsed_block_with_checks: normalized {len(normalized)} module(s)")
+        print(f"[DEBUG] normalized layers count = {len(normalized)}")
 
-    # --- Extract input channels from traced_shapes robustly ---
+    # Determine input channels
     input_channels = None
     try:
-        if isinstance(traced_shapes, dict) and "list" in traced_shapes and len(traced_shapes["list"]) > 0:
+        if runtime_in_ch is not None:
+            input_channels = runtime_in_ch
+            if debug:
+                print(f"[DEBUG] using runtime input channels: {input_channels}")
+        elif isinstance(traced_shapes, dict) and "list" in traced_shapes and len(traced_shapes["list"]) > 0:
             first_entry = traced_shapes["list"][0]
-            if isinstance(first_entry, tuple) and len(first_entry) == 2:
-                first_shape = first_entry[1]
-            else:
-                first_shape = first_entry
-            if len(first_shape) >= 2:
-                input_channels = int(first_shape[1])
+            first_shape = first_entry[1] if isinstance(first_entry, tuple) else first_entry
+            input_channels = int(first_shape[1])
         elif isinstance(traced_shapes, dict) and "final" in traced_shapes:
             fs = traced_shapes["final"]
-            if len(fs) >= 2:
-                input_channels = int(fs[1])
+            input_channels = int(fs[1])
     except Exception as e:
         if debug:
-            print(f"[WARN] Could not extract input_channels from traced_shapes: {e}")
+            print(f"[WARN] Could not infer input_channels from traced_shapes: {e}")
         input_channels = None
 
     if debug:
         print(f"[DEBUG] inferred input_channels = {input_channels}")
-        print("[DEBUG] initial normalized layers:")
-        for i, m in enumerate(normalized):
-            params = sum(p.numel() for p in m.parameters()) if hasattr(m, 'parameters') else 'N/A'
-            print(f"  [{i}] {type(m).__name__} params={params} repr={m}")
 
-    # --- Build the collapsed modules list while ensuring channel consistency ---
+    # Build collapsed module list
     collapsed_modules = []
-    current_in_ch = input_channels  # expected channels entering next module
+    current_in_ch = input_channels
 
     for i, module in enumerate(normalized):
         if isinstance(module, nn.Conv2d):
             if i == 0 and current_in_ch is not None and module.in_channels != current_in_ch:
                 if debug:
-                    print(f"[DEBUG] Adjusting Conv2d at idx {i}: in_channels {module.in_channels} -> {current_in_ch}")
-                new_conv = nn.Conv2d(
+                    print(f"[DEBUG] Adjusting first Conv2d in_channels from {module.in_channels} -> {current_in_ch}")
+                module = nn.Conv2d(
                     in_channels=current_in_ch,
                     out_channels=module.out_channels,
                     kernel_size=module.kernel_size,
@@ -350,45 +368,51 @@ def _build_collapsed_block_with_checks(layers, traced_shapes, debug=False):
                     dilation=module.dilation,
                     groups=module.groups,
                     bias=(module.bias is not None),
-                    padding_mode=getattr(module, "padding_mode", "zeros"),
+                    padding_mode=getattr(module, "padding_mode", "zeros")
                 )
-                module = new_conv
             current_in_ch = module.out_channels
-            if debug:
-                print(f"[DEBUG] Conv2d idx={i}: in={module.in_channels}, out={module.out_channels}, kernel={module.kernel_size}")
 
         elif isinstance(module, nn.BatchNorm2d):
-            try:
-                if current_in_ch is not None and module.num_features != current_in_ch and debug:
-                    print(f"[DEBUG] BN idx={i} mismatch: BN.num_features={module.num_features} != expected {current_in_ch}")
-            except Exception:
-                pass
+            if current_in_ch is not None and module.num_features != current_in_ch:
+                if debug:
+                    print(f"[DEBUG] BN mismatch at idx {i}: BN.num_features={module.num_features} != expected {current_in_ch}")
 
-        elif isinstance(module, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)) and debug:
-            print(f"[DEBUG] Keeping pool layer idx={i}: {module}")
+        elif isinstance(module, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
+            if debug:
+                print(f"[DEBUG] keeping pool layer at idx {i}: {module}")
 
         collapsed_modules.append(module)
-        if debug:
-            print(f"[DEBUG] Appended module idx={i} type={type(module).__name__}")
 
+        if debug:
+            info = ""
+            if isinstance(module, nn.Conv2d):
+                info = f"Conv(in={module.in_channels}, out={module.out_channels}, k={module.kernel_size})"
+            elif isinstance(module, nn.BatchNorm2d):
+                info = f"BN(num_features={module.num_features})"
+            elif isinstance(module, nn.ReLU):
+                info = f"ReLU(inplace={getattr(module, 'inplace', False)})"
+            elif isinstance(module, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
+                info = f"{type(module).__name__}(kernel={getattr(module, 'kernel_size', None)})"
+            print(f"[DEBUG] Collapsed module [{i}] -> {type(module).__name__} {info}")
+
+    # Filter out Identity layers
     final_modules = [m for m in collapsed_modules if not isinstance(m, nn.Identity)]
     if debug:
-        print(f"[DEBUG] filtered final_modules count = {len(final_modules)}")
+        print(f"[DEBUG] final_modules count = {len(final_modules)}")
 
-    # --- Construct nn.Sequential ---
+    # Build nn.Sequential
     try:
         collapsed_seq = nn.Sequential(OrderedDict([(f"layer_{i}", m) for i, m in enumerate(final_modules)]))
     except Exception as e:
-        if debug:
-            print(f"[ERROR] Failed to build nn.Sequential: {e}")
-            for i, m in enumerate(final_modules):
-                print(f"  [{i}] type={type(m).__name__} repr={m}")
+        print(f"[ERROR] Failed to build nn.Sequential: {e}")
+        for i, m in enumerate(final_modules):
+            print(f"  [{i}] type={type(m).__name__} content={m}")
         raise
 
     if debug:
         print("[DEBUG] Built collapsed block summary:")
         for i, m in enumerate(collapsed_seq):
-            print(f"  [{i}] {type(m).__name__} repr={m}")
+            print(f"  [{i}] {type(m).__name__}: {m}")
 
     return collapsed_seq
 
