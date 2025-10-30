@@ -303,6 +303,9 @@ from collections import OrderedDict
 # -----------------------------------------------------------------------------
 
 def _perform_collapse(block_layers, runtime_input, traced_shapes=None, device="cpu", debug=True):
+    """
+    Collapse layers while safely adjusting Conv2d in_channels and BatchNorm2d features.
+    """
     collapsed_layers = []
     x = runtime_input.clone().to(device)
     in_channels = x.shape[1]
@@ -345,16 +348,18 @@ def _perform_collapse(block_layers, runtime_input, traced_shapes=None, device="c
             layer = new_conv
             in_channels = layer.out_channels
 
-        # Adjust BatchNorm2d features if needed
+        # Adjust BatchNorm2d num_features if needed
         elif isinstance(layer, nn.BatchNorm2d) and layer.num_features != in_channels:
             if debug:
                 print(f"[WARN] Adjusting BatchNorm2d '{name}' num_features {layer.num_features} -> {in_channels}")
             new_bn = nn.BatchNorm2d(in_channels).to(device)
+            # Copy min(num_features, in_channels) elements for weight/bias/running stats
             min_feat = min(layer.num_features, in_channels)
             new_bn.weight.data[:min_feat] = layer.weight.data[:min_feat].clone()
             new_bn.bias.data[:min_feat] = layer.bias.data[:min_feat].clone()
-            new_bn.running_mean.zero_()
-            new_bn.running_var.fill_(1.0)
+            # Properly copy running_mean/var
+            new_bn.running_mean[:min_feat] = layer.running_mean[:min_feat].clone()
+            new_bn.running_var[:min_feat] = layer.running_var[:min_feat].clone()
             layer = new_bn
 
         # Forward dummy input to track shape
@@ -405,6 +410,18 @@ def _build_collapsed_block_with_checks(named_layers, input_activation, device="c
                     print(f"[DEBUG] Skipping pool '{name}' to avoid zero-size output (H={H}, W={W})")
                 continue
 
+        # Adjust BatchNorm if needed
+        if isinstance(layer, nn.BatchNorm2d) and layer.num_features != x.shape[1]:
+            if debug:
+                print(f"[WARN] Adjusting BatchNorm2d '{name}' num_features {layer.num_features} -> {x.shape[1]}")
+            new_bn = nn.BatchNorm2d(x.shape[1]).to(device)
+            min_feat = min(layer.num_features, x.shape[1])
+            new_bn.weight.data[:min_feat] = layer.weight.data[:min_feat].clone()
+            new_bn.bias.data[:min_feat] = layer.bias.data[:min_feat].clone()
+            new_bn.running_mean[:min_feat] = layer.running_mean[:min_feat].clone()
+            new_bn.running_var[:min_feat] = layer.running_var[:min_feat].clone()
+            layer = new_bn
+
         layers.append((name, layer))
         with torch.no_grad():
             x = layer(x)
@@ -412,7 +429,6 @@ def _build_collapsed_block_with_checks(named_layers, input_activation, device="c
             print(f"[DEBUG] After '{name}' ({type(layer).__name__}): shape = {tuple(x.shape)}")
 
     return nn.Sequential(OrderedDict(layers))
-
 
 def _replace_block_in_container(container, named_layers, collapsed_block):
     """
