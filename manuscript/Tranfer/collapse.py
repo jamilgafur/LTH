@@ -298,38 +298,31 @@ import torch.nn as nn
 from collections import OrderedDict
 
 
+# ----------------------------------------------------------------------------- 
+# Updated methods with fixes and more debugging
+# -----------------------------------------------------------------------------
+
 def _perform_collapse(block_layers, runtime_input, traced_shapes=None, device="cpu", debug=True):
     """
     Collapse a block of layers while preserving input/output channels.
-    
-    Args:
-        block_layers   : list of (name, layer) tuples to collapse
-        runtime_input  : torch.Tensor input to the first layer
-        traced_shapes  : optional dict with traced shapes (from _trace_block_shapes)
-        device         : device to place collapsed layers
-        debug          : bool, enable debug prints
-    
-    Returns:
-        collapsed_block : nn.Sequential with collapsed layers
-        out_channels    : int, output channels of collapsed block
     """
     collapsed_layers = []
-    input_tensor = runtime_input.clone().to(device)
-    in_channels = input_tensor.shape[1]
+    x = runtime_input.clone().to(device)
+    in_channels = x.shape[1]
 
     if debug:
-        print(f"[DEBUG][_perform_collapse] Starting collapse for block with {len(block_layers)} layers")
-        print(f"[DEBUG][_perform_collapse] Initial input shape: {tuple(input_tensor.shape)}")
+        print(f"[DEBUG][_perform_collapse] Starting collapse: {len(block_layers)} layers")
+        print(f"[DEBUG][_perform_collapse] Input shape: {tuple(x.shape)}")
 
     for i, (name, layer) in enumerate(block_layers):
         if debug:
-            print(f"[DEBUG][_perform_collapse] Layer {i}: {name} ({type(layer).__name__}) input channels: {in_channels}")
+            print(f"[DEBUG][_perform_collapse] Layer {i}: {name} ({type(layer).__name__}) input_ch={in_channels}")
 
-        # Adjust Conv2d in_channels if needed
+        # Fix Conv2d in_channels if needed
         if isinstance(layer, nn.Conv2d):
             if layer.in_channels != in_channels:
                 if debug:
-                    print(f"[WARN][_perform_collapse] Adjusting Conv2d {name} in_channels {layer.in_channels} → {in_channels}")
+                    print(f"[WARN] Adjusting Conv2d '{name}' in_channels {layer.in_channels} -> {in_channels}")
                 new_conv = nn.Conv2d(
                     in_channels=in_channels,
                     out_channels=layer.out_channels,
@@ -340,8 +333,8 @@ def _perform_collapse(block_layers, runtime_input, traced_shapes=None, device="c
                     groups=layer.groups,
                     bias=(layer.bias is not None),
                     padding_mode=layer.padding_mode
-                )
-                # Copy matching weights
+                ).to(device)
+                # Copy overlapping weights
                 min_ic = min(layer.weight.shape[1], in_channels)
                 new_conv.weight.data[:, :min_ic, :, :] = layer.weight.data[:, :min_ic, :, :]
                 if layer.bias is not None:
@@ -349,12 +342,12 @@ def _perform_collapse(block_layers, runtime_input, traced_shapes=None, device="c
                 layer = new_conv
             in_channels = layer.out_channels
 
-        # Adjust BatchNorm2d num_features if needed
+        # Fix BatchNorm2d num_features if needed
         elif isinstance(layer, nn.BatchNorm2d):
             if layer.num_features != in_channels:
                 if debug:
-                    print(f"[WARN][_perform_collapse] Adjusting BatchNorm2d {name} num_features {layer.num_features} → {in_channels}")
-                new_bn = nn.BatchNorm2d(in_channels)
+                    print(f"[WARN] Adjusting BatchNorm2d '{name}' num_features {layer.num_features} -> {in_channels}")
+                new_bn = nn.BatchNorm2d(in_channels).to(device)
                 min_feat = min(layer.num_features, in_channels)
                 new_bn.weight.data[:min_feat] = layer.weight.data[:min_feat]
                 new_bn.bias.data[:min_feat] = layer.bias.data[:min_feat]
@@ -362,78 +355,68 @@ def _perform_collapse(block_layers, runtime_input, traced_shapes=None, device="c
                 new_bn.running_var[:min_feat] = layer.running_var[:min_feat]
                 layer = new_bn
 
-        # Pools do not change channels
-        # Forward dummy input to track shape
+        # Forward dummy tensor to track shape
         with torch.no_grad():
-            input_tensor = layer(input_tensor)
+            x = layer(x)
 
         collapsed_layers.append(layer)
         if debug:
-            print(f"[DEBUG][_perform_collapse] After {name}: shape = {tuple(input_tensor.shape)}")
+            print(f"[DEBUG][_perform_collapse] After '{name}': shape = {tuple(x.shape)}")
 
     collapsed_block = nn.Sequential(*collapsed_layers)
     if debug:
-        print(f"[INFO][_perform_collapse] Collapse complete. Output channels: {in_channels}, Output shape: {tuple(input_tensor.shape)}")
+        print(f"[INFO][_perform_collapse] Collapse complete. Out channels={in_channels}, Out shape={tuple(x.shape)}")
 
     return collapsed_block, in_channels
 
 
-def _build_collapsed_block_with_checks(
-    named_layers: Sequence[Tuple[str, nn.Module]],
-    input_activation: torch.Tensor,
-    device="cpu",
-    debug=True
-) -> nn.Sequential:
+def _build_collapsed_block_with_checks(named_layers, input_activation, device="cpu", debug=True):
     """
-    Build a collapsed block while ensuring:
-    - The first Conv2d matches the input channels.
-    - Pool layers don't reduce spatial size below 1x1.
+    Build collapsed block safely with first Conv2d and pooling checks.
     """
     layers = []
     x = input_activation.clone().to(device)
 
     for i, (name, layer) in enumerate(named_layers):
-        if isinstance(layer, nn.Conv2d):
-            # Adjust input channels for first Conv in block
-            if len(layers) == 0 and layer.in_channels != x.shape[1]:
-                if debug:
-                    print(f"[DEBUG] Adjusting first Conv2d in_channels from {layer.in_channels} -> {x.shape[1]}")
-                new_layer = nn.Conv2d(
-                    in_channels=x.shape[1],
-                    out_channels=layer.out_channels,
-                    kernel_size=layer.kernel_size,
-                    stride=layer.stride,
-                    padding=layer.padding,
-                    dilation=layer.dilation,
-                    groups=layer.groups,
-                    bias=(layer.bias is not None)
-                ).to(device)
-            else:
-                new_layer = copy.deepcopy(layer).to(device)
-            layers.append((name, new_layer))
-        elif isinstance(layer, nn.MaxPool2d):
-            # Prevent pool layers from producing zero-sized outputs
+        # Adjust first Conv2d in_channels
+        if isinstance(layer, nn.Conv2d) and len(layers) == 0 and layer.in_channels != x.shape[1]:
+            if debug:
+                print(f"[DEBUG] Adjusting first Conv2d '{name}' in_channels {layer.in_channels} -> {x.shape[1]}")
+            layer = nn.Conv2d(
+                in_channels=x.shape[1],
+                out_channels=layer.out_channels,
+                kernel_size=layer.kernel_size,
+                stride=layer.stride,
+                padding=layer.padding,
+                dilation=layer.dilation,
+                groups=layer.groups,
+                bias=(layer.bias is not None)
+            ).to(device)
+        else:
+            layer = copy.deepcopy(layer).to(device)
+
+        # Prevent pooling from reducing spatial size to zero
+        if isinstance(layer, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
             H, W = x.shape[2], x.shape[3]
             if H <= 1 or W <= 1:
                 if debug:
-                    print(f"[DEBUG] Skipping MaxPool2d {name} to avoid zero-sized output (H={H}, W={W})")
+                    print(f"[DEBUG] Skipping pool '{name}' to avoid zero-size output (H={H}, W={W})")
                 continue
-            layers.append((name, copy.deepcopy(layer).to(device)))
-        else:
-            layers.append((name, copy.deepcopy(layer).to(device)))
 
-        # Forward dummy tensor to track shapes
-        x = layers[-1][1](x)
+        layers.append((name, layer))
+        with torch.no_grad():
+            x = layer(x)
         if debug:
-            print(f"   -> After {type(layers[-1][1]).__name__:10} : shape = {tuple(x.shape)}")
+            print(f"[DEBUG] After '{name}' ({type(layer).__name__}): shape = {tuple(x.shape)}")
 
     return nn.Sequential(OrderedDict(layers))
 
 
 def _replace_block_in_container(container, named_layers, collapsed_block):
-    """Replace original block layers inside container with collapsed block."""
-    start_name = named_layers[0][0]
-    end_name = named_layers[-1][0]
+    """
+    Replace layers in container with collapsed block.
+    """
+    start_name, end_name = named_layers[0][0], named_layers[-1][0]
 
     if isinstance(container, nn.Sequential):
         children = list(container.named_children())
@@ -447,8 +430,13 @@ def _replace_block_in_container(container, named_layers, collapsed_block):
     end_idx = name_to_idx[end_name]
 
     updated_container = _replace_layers(children, start_idx, end_idx, collapsed_block)
-    for name, module in updated_container.named_children():
-        setattr(container, name, module)
+    # Assign back safely
+    for i, (name, module) in enumerate(updated_container.named_children()):
+        if isinstance(container, nn.Sequential) or isinstance(container, nn.ModuleList):
+            container[i] = module
+        else:
+            setattr(container, name, module)
+
 
 
 # -----------------------------------------------------------------------------
@@ -493,15 +481,15 @@ def _collapse_block(model, start, end, input_shape, device="cpu", debug=True):
         debug       : bool, enable debug prints
 
     Returns:
-        model with collapsed block
+        model with collapsed block replaced
     """
     # Extract container and block layers
     start_container_name, named_layers = _get_block_layers(model, start, end)
     if debug:
-        print(f"[DEBUG] Collapsing block {start} → {end}")
+        print(f"[DEBUG] Collapsing block '{start}' → '{end}'")
         print(f"[DEBUG] Layers in block: {[name for name, _ in named_layers]}")
 
-    # Capture input activation to start layer using dummy input
+    # Capture input activation using dummy input
     try:
         hook_input_shape = (1,) + tuple(input_shape[1:]) if isinstance(input_shape, (tuple, list)) else input_shape
         _, captured_activation = _simulate_input_hook(model, start, hook_input_shape, device)
@@ -514,8 +502,13 @@ def _collapse_block(model, start, end, input_shape, device="cpu", debug=True):
         captured_activation = torch.zeros((1,) + tuple(input_shape[1:])).to(device)
         traced_shapes = _trace_block_shapes(named_layers, captured_activation, device, debug)
 
-    # Build collapsed block with proper in_channels adjustments
-    collapsed_seq, _ = _perform_collapse(
+    # Count parameters before collapse
+    pre_params = sum(p.numel() for p in model.parameters())
+    if debug:
+        print(f"[DEBUG] Parameters before collapse: {pre_params:,}")
+
+    # Build collapsed block
+    collapsed_seq, out_channels = _perform_collapse(
         named_layers,
         runtime_input=captured_activation,
         traced_shapes=traced_shapes,
@@ -523,23 +516,33 @@ def _collapse_block(model, start, end, input_shape, device="cpu", debug=True):
         debug=debug
     )
 
+    # Count parameters of collapsed block
+    collapsed_params = sum(p.numel() for p in collapsed_seq.parameters())
+    if debug:
+        print(f"[DEBUG] Collapsed block parameters: {collapsed_params:,}")
+
     # Replace block in container
     container = _get_submodule(model, start_container_name)
     _replace_block_in_container(container, named_layers, collapsed_seq)
 
+    # Forward test through collapsed block
     if debug:
-        total_params = sum(p.numel() for p in model.parameters())
-        print(f"[INFO] Collapsed block '{start} → {end}' inserted. Total params now: {total_params}")
-        # Forward test
         try:
-            model.eval()
+            collapsed_seq.eval()
             with torch.no_grad():
                 test_out = collapsed_seq(captured_activation)
-            print(f"[DEBUG] Forward test through collapsed block output shape: {tuple(test_out.shape)}")
+            print(f"[DEBUG] Forward test output shape: {tuple(test_out.shape)}")
+            print(f"[INFO] Collapse completed. Output channels: {out_channels}, Output shape: {tuple(test_out.shape)}")
         except Exception as e:
             print(f"[WARN] Forward test failed: {e}")
 
+    # Count parameters after replacement
+    post_params = sum(p.numel() for p in model.parameters())
+    if debug:
+        print(f"[DEBUG] Parameters after collapse: {post_params:,} (Δ = {post_params - pre_params:+,})")
+
     return model
+
 
 # -----------------------------------------------------------------------------
 # Top-level collapse function
