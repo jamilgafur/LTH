@@ -266,7 +266,6 @@ def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device
             full_block=full_block,
             stride=(1, 1),
             pool_layer=pool_layer,
-            linear_in_features=linear_in_features,
             shortcut_out_channels=shortcut_out_channels
         )
 
@@ -313,16 +312,11 @@ def collapse_only(model, layer_pairs, input_shape, device='cpu', dry_run=False):
         print(f"\n[INFO] --- Collapsing {name} ---")
         print(f"         From: {start}")
         print(f"         To:   {end}")
-        try:
-            if not dry_run:
-                model = _collapse_block(model, start, end, input_shape, device)
-            else:
-                print("[INFO] Dry run: skipping collapse.")
-        except Exception as e:
-            print(f"[ERROR] Collapse failed: {e}")
-            import traceback
-            traceback.print_exc()
-
+        if not dry_run:
+            model = _collapse_block(model, start, end, input_shape, device)
+        else:
+            print("[INFO] Dry run: skipping collapse.")
+    
     total_params_after = count_trainable_params(model)
     print("\n==============================")
     print(f"[INFO] Parameters before: {total_params_before:,}")
