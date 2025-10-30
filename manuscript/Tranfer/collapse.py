@@ -223,6 +223,23 @@ def _get_submodule(model: nn.Module, target: str):
 # Collapsed block builders
 # -----------------------------------------------------------------------------
 
+def fix_conv_in_channels(layers):
+    """
+    Adjusts Conv2d layers so that in_channels match the actual input channels.
+    """
+    prev_out_ch = None
+    for i, layer in enumerate(layers):
+        if isinstance(layer, nn.Conv2d):
+            if prev_out_ch is not None and layer.in_channels != prev_out_ch:
+                print(f"[DEBUG] Adjusting Conv2d layer {i}: {layer.in_channels} → {prev_out_ch}")
+                layer.in_channels = prev_out_ch
+                # Recreate weight to match new in_channels
+                layer.weight = nn.Parameter(torch.randn(layer.out_channels, layer.in_channels, *layer.kernel_size))
+            prev_out_ch = layer.out_channels
+        elif isinstance(layer, nn.BatchNorm2d):
+            prev_out_ch = layer.num_features
+    return layers
+
 
 def _absorb_pools_if_needed(named_layers, traced_shapes=None, debug=False):
     """
@@ -327,6 +344,7 @@ def _perform_collapse(named_layers, traced_shapes=None, runtime_input=None, devi
             print(f"[DEBUG] _perform_collapse: absorbed pool layer: {pool_used}")
 
     return collapsed_block, pool_used
+
 
 
 def _build_collapsed_block_with_checks(layers, traced_shapes=None, runtime_in_ch=None, debug=False):
@@ -520,6 +538,7 @@ def _collapse_block(model, start, end, input_shape, device="cpu", debug=False):
         traced_shapes = _trace_block_shapes(named_layers, input_shape, device, debug)
 
     collapsed_layer, _ = _perform_collapse(named_layers, traced_shapes, device=device, debug=debug)
+    collapsed_layers = fix_conv_in_channels(collapsed_layers)
     container = _get_submodule(model, start_container_name)
     _replace_block_in_container(container, named_layers, collapsed_layer)
 
