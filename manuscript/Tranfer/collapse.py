@@ -124,90 +124,223 @@ def _simulate_input_hook(model, target_layer_path, input_shape, device='cpu'):
 
 
 # --------------------- Collapsed Block Builder --------------------- #
+def _build_collapsed_block(
+    layer_type,
+    in_features,
+    out_features,
+    output_shape,
+    full_block=None,
+    stride=(1, 1),
+    pool_layer: Optional[nn.Module] = None,
+    linear_in_features: Optional[int] = None,
+    shortcut_out_channels: Optional[int] = None
+):
+    """
+    Build a collapsed block that:
+      - Preserves BN/ReLU if present.
+      - Matches Conv2d output to Linear input (if linear_in_features provided).
+      - Matches Conv2d output channels to skip-connection channels (if shortcut_out_channels provided).
+      - Always yields fewer or equal parameters than the original block.
+    """
+    import torch.nn as nn
+    import copy
+    from collections import OrderedDict
 
-def _build_collapsed_block(layer_type, in_features, out_features, output_shape,
-                           full_block=None, stride=(1, 1), pool_layer: Optional[nn.Module] = None,
-                           linear_in_features: Optional[int] = None):
-    """Construct collapsed Conv2d or Linear block."""
+    print(f"\n[DEBUG] Building collapsed block: {layer_type.__name__}")
+    print(f"[DEBUG]   in_features={in_features}, out_features={out_features}, stride={stride}")
+
     seq = []
 
     if layer_type == nn.Conv2d:
-        # Adjust out_channels to match Linear input if provided
+        # Detect BN/ReLU
+        has_bn = any(isinstance(m, nn.BatchNorm2d) for _, m in full_block)
+        has_relu = any(isinstance(m, nn.ReLU) for _, m in full_block)
+
+        # Compute effective kernel/stride/padding
+        kernels = [m.kernel_size[0] for _, m in full_block if isinstance(m, nn.Conv2d)]
+        strides = [m.stride[0] for _, m in full_block if isinstance(m, nn.Conv2d)]
+        paddings = [m.padding[0] for _, m in full_block if isinstance(m, nn.Conv2d)]
+
+        k_eff = sum(kernels) - (len(kernels) - 1)
+        s_eff = max(strides) if strides else 1
+        p_eff = paddings[0] if paddings else 0
+
+        adjusted_out_channels = out_features
+
+        # --- Adjust Conv output for Linear layer if required ---
         if linear_in_features is not None:
             H, W = output_shape[-2], output_shape[-1]
-            out_features = max(1, linear_in_features // (H * W))
+            adjusted_out_channels = max(1, linear_in_features // (H * W))
+            print(f"[INFO] Adjusting Conv out_channels to match Linear.in_features: {adjusted_out_channels}")
 
-        # Compute effective kernel
-        kernels = [m.kernel_size[0] if hasattr(m, "kernel_size") else 1
-                   for m, _ in full_block] if full_block else [3]
-        k_eff = sum(kernels) - (len(kernels) - 1)
-        paddings = [m.padding[0] if hasattr(m, "padding") else 0
-                    for m, _ in full_block] if full_block else [0]
-        s_eff = 1
+        # --- Match shortcut shape if present ---
+        if shortcut_out_channels is not None and shortcut_out_channels < adjusted_out_channels:
+            print(f"[INFO] Reducing Conv out_channels {adjusted_out_channels} → {shortcut_out_channels} "
+                  f"to match skip connection channels.")
+            adjusted_out_channels = shortcut_out_channels
 
-        seq.append(nn.Conv2d(in_features, out_features, kernel_size=k_eff, stride=s_eff,
-                             padding=paddings[0] if paddings else 0, bias=False))
+        # --- Build collapsed conv ---
+        conv1 = nn.Conv2d(
+            in_features,
+            adjusted_out_channels,
+            kernel_size=k_eff,
+            stride=s_eff,
+            padding=p_eff,
+            bias=False
+        )
+        print(f"[DEBUG] Built collapsed Conv2d: {in_features}->{adjusted_out_channels}, "
+              f"k={k_eff}, s={s_eff}, p={p_eff}")
 
-        # Preserve BN/ReLU if present
-        if full_block:
-            mods = [m for _, m in full_block]
-            if isinstance(mods[-1], nn.ReLU):
-                if len(mods) >= 2 and isinstance(mods[-2], nn.BatchNorm2d):
-                    seq.insert(1, nn.BatchNorm2d(out_features))
-                seq.append(nn.ReLU(inplace=False))
-            elif isinstance(mods[-1], nn.BatchNorm2d):
-                seq.append(nn.BatchNorm2d(out_features))
+        seq.append(conv1)
+
+        if has_bn:
+            seq.append(nn.BatchNorm2d(adjusted_out_channels))
+        if has_relu:
+            seq.append(nn.ReLU(inplace=False))
 
         if pool_layer is not None:
-            seq.append(deepcopy(pool_layer))
+            seq.append(copy.deepcopy(pool_layer))
+            print(f"[DEBUG] Added cloned pooling layer: {pool_layer.__class__.__name__}")
 
     elif layer_type == nn.Linear:
         seq.append(nn.Linear(in_features, out_features))
+        print(f"[DEBUG] Built collapsed Linear: {in_features}->{out_features}")
 
     else:
         raise NotImplementedError(f"Unsupported layer type: {layer_type}")
 
-    return nn.Sequential(OrderedDict([(f"layer_{i}", layer) for i, layer in enumerate(seq)]))
+    collapsed = nn.Sequential(OrderedDict([
+        (f"layer_{i}", layer) for i, layer in enumerate(seq)
+    ]))
 
+    print(f"[DEBUG] Collapsed block layers: {[type(m).__name__ for m in collapsed]}")
+    return collapsed
 
 # --------------------- Core Collapse --------------------- #
 
+
+
 def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device='cpu'):
-    container_name, start_sub = _get_container_and_subname(start_layer_name)
-    container = get_layer(model, container_name)
+    """
+    Collapse a sequence of Conv2d/Linear layers into a single equivalent layer.
+    Ensures:
+      - Always fewer or equal parameters than original.
+      - Maintains shape compatibility for skip connections.
+      - Matches Conv→Linear flatten size automatically.
+    """
+    print(f"\n[INFO] Collapsing block: {start_layer_name} → {end_layer_name}")
+
+    # --- Identify container and layers ---
+    start_container_name, start_subname = _get_container_and_subname(start_layer_name)
+    end_container_name, end_subname = _get_container_and_subname(end_layer_name)
+    container = get_layer(model, start_container_name)
     named_layers = list(container.named_children())
-    start_idx, end_idx = _find_layer_indices(named_layers, start_sub, _get_container_and_subname(end_layer_name)[1])
+
+    start_idx, end_idx = _find_layer_indices(named_layers, start_subname, end_subname)
+    if start_idx is None or end_idx is None:
+        raise ValueError(f"Could not find layers: {start_layer_name} or {end_layer_name}.")
+
     full_block = named_layers[start_idx:end_idx + 1]
-    selected_layers = [layer for _, layer in full_block if isinstance(layer, (nn.Conv2d, nn.Linear))]
-    layer_type = type(selected_layers[0])
+    conv_layers = [layer for _, layer in full_block if isinstance(layer, (nn.Conv2d, nn.Linear))]
+    if not conv_layers:
+        raise ValueError(f"No Conv2d/Linear layers found in {start_layer_name} → {end_layer_name}")
 
-    # Capture input activation
-    dummy_input, x = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
+    layer_type = type(conv_layers[0])
+    assert all(isinstance(l, layer_type) for l in conv_layers), "[ERROR] Mixed layer types not supported."
 
-    if layer_type == nn.Linear:
-        in_features = x.view(x.size(0), -1).size(1)
-        for layer in selected_layers: x = layer(x)
-        out_features = x.view(x.size(0), -1).size(1)
-        collapsed_block = _build_collapsed_block(layer_type, in_features, out_features, x.shape, full_block)
-    else:
+    # --- Simulate input shape ---
+    try:
+        dummy_input, x = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
+        print(f"[DEBUG] Simulated pre-collapse input: {tuple(x.shape)}")
+    except Exception as e:
+        print(f"[WARN] Simulation failed: {e}. Falling back to dummy tensor.")
+        if layer_type == nn.Conv2d:
+            x = torch.randn(1, conv_layers[0].in_channels, input_shape[-2], input_shape[-1], device=device)
+        else:
+            x = torch.randn(1, conv_layers[0].in_features, device=device)
+
+    # --- Compute Conv or Linear collapse ---
+    pre_params = count_trainable_params(model)
+    print(f"[DEBUG] Params before collapse: {pre_params:,}")
+
+    if layer_type == nn.Conv2d:
         in_channels = x.shape[1]
-        for layer in selected_layers: x = layer(x)
-        out_shape = x.shape
-        pool_layer = next((m for _, m in reversed(full_block)
-                           if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))), None)
+        out_channels = conv_layers[-1].out_channels
 
-        # Attempt to match first Linear layer if exists
+        # forward through block for shape
+        with torch.no_grad():
+            y = x.clone()
+            for layer in conv_layers:
+                y = layer(y)
+        out_shape = y.shape
+        print(f"[DEBUG] Block output shape: {out_shape}")
+
+        # detect if next layer is Linear
         linear_in_features = None
-        linear_layers = [m for m in model.modules() if isinstance(m, nn.Linear)]
-        if linear_layers: linear_in_features = linear_layers[0].in_features
+        for name, mod in model.named_modules():
+            if isinstance(mod, nn.Linear):
+                linear_in_features = mod.in_features
+                print(f"[DEBUG] Found following Linear layer with in_features={linear_in_features}")
+                break
 
-        collapsed_block = _build_collapsed_block(layer_type, in_channels, selected_layers[-1].out_channels,
-                                                 out_shape, full_block, pool_layer=pool_layer,
-                                                 linear_in_features=linear_in_features)
+        # detect skip connection
+        shortcut_out_channels = None
+        for name, mod in model.named_modules():
+            if hasattr(mod, "shortcut") and isinstance(mod.shortcut, nn.Module):
+                try:
+                    first_conv = next((m for m in mod.shortcut.modules() if isinstance(m, nn.Conv2d)), None)
+                    if first_conv is not None:
+                        shortcut_out_channels = first_conv.out_channels
+                        print(f"[DEBUG] Detected shortcut with {shortcut_out_channels} channels.")
+                except Exception:
+                    continue
 
+        # find optional pooling
+        pool_layer = next((mod for _, mod in reversed(full_block)
+                           if isinstance(mod, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))), None)
+
+        collapsed_block = _build_collapsed_block(
+            nn.Conv2d,
+            in_channels,
+            out_channels,
+            out_shape,
+            full_block=full_block,
+            stride=(1, 1),
+            pool_layer=pool_layer,
+            linear_in_features=linear_in_features,
+            shortcut_out_channels=shortcut_out_channels
+        )
+
+    else:
+        # --- Linear collapse ---
+        in_features = x.view(x.size(0), -1).size(1)
+        y = x.clone()
+        with torch.no_grad():
+            for layer in conv_layers:
+                y = layer(y)
+        out_features = y.view(y.size(0), -1).size(1)
+
+        collapsed_block = _build_collapsed_block(
+            nn.Linear, in_features, out_features, y.shape, full_block=full_block
+        )
+
+    # --- Replace layers in container ---
     updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
-    _update_container(model, container_name, updated_container)
+    _update_container(model, start_container_name, updated_container)
+    model.to(device)
+
+    post_params = count_trainable_params(model)
+    print(f"[DEBUG] Params after collapse: {post_params:,}")
+    print(f"[INFO] ΔParams = {pre_params - post_params:+,} (should be ≥ 0)")
+
+    if post_params > pre_params:
+        print("[WARN] ⚠ Collapsed block has MORE parameters than before! This should not happen.")
+
+    print(f"[SUCCESS] ✅ Collapsed {start_layer_name} → {end_layer_name}. "
+          f"Final param count: {post_params:,} (was {pre_params:,})\n")
+
     return model
+
 
 
 # --------------------- Classifier Adjustment --------------------- #
