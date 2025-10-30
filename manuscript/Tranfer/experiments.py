@@ -235,10 +235,10 @@ def run_jf_experiment(
 ):
     """
     JF workflow: loads pretrained model, optionally collapses it, then trains/evaluates.
-    Compatible with the updated collapse_only() that supports:
-        - skip connection awareness
-        - param safety check
-        - debug logging
+    Compatible with the updated collapse_only() that ensures:
+        - fewer parameters than original
+        - skip connection consistency
+        - full debug logging
     """
     model_kwargs = model_kwargs or {}
     print("\n=== Running JF experiment ===")
@@ -254,15 +254,11 @@ def run_jf_experiment(
     if collapse_range:
         print(f"[•] Collapsing range {collapse_range} for {exp_name}")
         base_model = collapse_only(
-            model_weights_1=model_path_097,
-            compression_set=[collapse_range],
-            model_class=model_class,
-            model_kwargs=model_kwargs,
+            model=base_model,
+            layer_pairs={"collapse_block": collapse_range},
             input_shape=model_kwargs['one_batch'].shape,
             device=device,
-            safe_param_reduction=True,   # ✅ always ensure param count <= original
-            handle_skips=True,           # ✅ preserve skip connection consistency
-            debug=True                   # ✅ enable collapse debug printouts
+            dry_run=False
         )
 
     # 3️⃣ Run training & diagnostics
@@ -296,8 +292,8 @@ def run_kevin_experiment(
     post_compress_epochs=False
 ):
     """
-    Kevin workflow: temporary checkpoint → collapse → train → evaluate.
-    Updated for new collapse_only() interface.
+    Kevin workflow: loads checkpoint → collapses → trains → evaluates.
+    Uses new collapse_only() interface with automatic param safety.
     """
     model_kwargs = model_kwargs or {}
     print("\n=== Running Kevin experiment ===")
@@ -310,26 +306,13 @@ def run_kevin_experiment(
 
     if collapse_range:
         print(f"[•] Collapsing range {collapse_range} for {exp_name}")
-        formatted_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        tmp_path = os.path.join(save_path, f"temp_model_kevin_{formatted_time}.pth")
-        os.makedirs(save_path, exist_ok=True)
-        torch.save({'model': base_model.state_dict()}, tmp_path)
-
         base_model = collapse_only(
-            model_weights_1=tmp_path,
-            compression_set=[collapse_range],
-            model_class=model_class,
-            model_kwargs=model_kwargs,
+            model=base_model,
+            layer_pairs={"collapse_block": collapse_range},
             input_shape=model_kwargs['one_batch'].shape,
             device=device,
-            safe_param_reduction=True,   # ✅ never increase param count
-            handle_skips=True,           # ✅ aware of skip/residual paths
-            debug=True                   # ✅ full collapse printouts
+            dry_run=False
         )
-
-        # cleanup
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
 
     data = run_experiment(
         model=base_model,
