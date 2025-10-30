@@ -195,7 +195,6 @@ def _count_params_for_block(full_block: Sequence[Tuple[str, nn.Module]]) -> int:
                 total += p.numel()
     return total
 
-
 def _build_collapsed_block(
     layer_type: type,
     in_features: int,
@@ -206,46 +205,80 @@ def _build_collapsed_block(
     pool_layer: Optional[nn.Module] = None,
     linear_in_features: Optional[int] = None,
     shortcut_out_channels: Optional[int] = None,
-    debug: bool = False
+    debug: bool = False,
+    preserve_out_channels: bool = True,
+    inherit_conv_attrs: bool = True
 ) -> nn.Sequential:
     """
     Build a collapsed block from many convs/linears into a small module that:
       - preserves BN/ReLU ordering if present,
       - chooses output channels such that the collapsed block has <= params than original,
+      - optionally restores the original out_channels via a 1x1 projection,
       - returns nn.Sequential.
+
     Parameters:
       - layer_type: nn.Conv2d or nn.Linear
       - in_features, out_features: original block's in/out channels/features
       - output_shape: tensor shape after the block (used to compute H*W)
       - full_block: the original list of (name, module) for the block (for BN/ReLU detection & param counting)
+      - stride: fallback stride to use for collapsed conv (overridden by inherit_conv_attrs if True)
+      - pool_layer: optional pooling module to append (cloned)
       - linear_in_features: if the collapsed conv feeds a Linear, suggested flattened in_features (optional)
       - shortcut_out_channels: if there is a skip that expects fewer channels (optional)
+      - preserve_out_channels: if True, append a 1x1 projection when collapsed channels != out_features
+      - inherit_conv_attrs: if True, attempt to inherit kernel/stride/padding/groups/dilation/bias
     """
     if debug:
-        print(f"[DEBUG] _build_collapsed_block called: layer_type={layer_type.__name__}, in={in_features}, out={out_features}, linear_in_features={linear_in_features}, shortcut_out_channels={shortcut_out_channels}")
+        print(f"[DEBUG] _build_collapsed_block called: layer_type={getattr(layer_type,'__name__',str(layer_type))}, in={in_features}, out={out_features}, linear_in_features={linear_in_features}, shortcut_out_channels={shortcut_out_channels}, preserve_out_channels={preserve_out_channels}, inherit_conv_attrs={inherit_conv_attrs}")
 
     seq = []
     original_param_budget = _count_params_for_block(full_block) if full_block else None
 
+    # ----------------------------
+    # Conv2d branch
+    # ----------------------------
     if layer_type == nn.Conv2d:
         # detect BN/ReLU presence
         has_bn = any(isinstance(m, nn.BatchNorm2d) for _, m in full_block) if full_block else False
         has_relu = any(isinstance(m, nn.ReLU) for _, m in full_block) if full_block else False
 
-        # Choose kernel size 1x1 for collapsed conv to avoid spatial issues (safe, small)
+        # Try to inherit attributes from the first Conv2d in the full_block
+        first_conv = None
+        if inherit_conv_attrs and full_block:
+            for _, m in full_block:
+                if isinstance(m, nn.Conv2d):
+                    first_conv = m
+                    break
+
+        if first_conv is not None:
+            orig_kernel = first_conv.kernel_size if hasattr(first_conv, 'kernel_size') else (1, 1)
+            orig_stride = first_conv.stride if hasattr(first_conv, 'stride') else stride
+            orig_padding = first_conv.padding if hasattr(first_conv, 'padding') else (0, 0)
+            orig_groups = first_conv.groups if hasattr(first_conv, 'groups') else 1
+            orig_dilation = first_conv.dilation if hasattr(first_conv, 'dilation') else (1, 1)
+            orig_bias = first_conv.bias is not None
+        else:
+            # safe fallbacks
+            orig_kernel = (1, 1)
+            orig_stride = stride
+            orig_padding = (0, 0)
+            orig_groups = 1
+            orig_dilation = (1, 1)
+            orig_bias = False
+
+        # Use a 1x1 collapsed conv for channel compression (keeps spatial layout safe)
         k = 1
         p = 0
-        s = stride[0] if isinstance(stride, tuple) else stride
+        s = orig_stride if inherit_conv_attrs else stride
 
-        # Start with a conservative bottleneck ratio, then reduce further until params <= original
-        bottleneck_ratio = 0.5
         # compute H*W for linear matching if provided
         H = output_shape[-2] if len(output_shape) >= 3 else 1
         W = output_shape[-1] if len(output_shape) >= 3 else 1
 
+        # suggested_out if a Linear follows this block (try to match flattened dims)
         suggested_out = out_features
-        if linear_in_features is not None:
-            # aim for collapsed_out such that collapsed_out * H * W ~= linear_in_features
+        if linear_in_features is not None and H * W > 0:
+            # integer division safe guard
             suggested_out = max(1, linear_in_features // (H * W))
             if debug:
                 print(f"[DEBUG] Linear follower present: target channels ≈ {suggested_out} (H*W={H*W})")
@@ -253,71 +286,103 @@ def _build_collapsed_block(
         # If skip expects fewer channels, honor it by capping suggested_out
         if shortcut_out_channels is not None:
             suggested_out = min(suggested_out, shortcut_out_channels)
+            if debug:
+                print(f"[DEBUG] Honoring shortcut output channels cap: {shortcut_out_channels}")
 
-        # Start collapse_out candidate
+        # Initial bottleneck candidate
+        bottleneck_ratio = 0.5
         collapse_out = max(1, int(out_features * bottleneck_ratio))
-        # If a suggested_out is meaningful, bias towards it but keep <= out_features
+        # bias toward suggested_out if it's smaller
         if suggested_out and suggested_out < collapse_out:
             collapse_out = suggested_out
 
-        # Now ensure collapsed params <= original block params (if known)
+        # Parameter-budget-aware reduction (approximate; accounts for groups)
         if original_param_budget is not None:
-            # compute params for candidate collapsed conv (weights only; bias False)
-            def conv_params(cin, cout, kx):
-                return cin * cout * (kx * kx)
+            def conv_params(cin, cout, kx, groups):
+                # approximate parameter count for conv weights (ignores bias)
+                # for grouped convs, effective cin per filter is cin/groups
+                return (cin // max(1, groups)) * cout * (kx * kx)
             cand = collapse_out
-            cand_params = conv_params(in_features, cand, k)
+            cand_params = conv_params(in_features, cand, k, orig_groups)
             # Account for BN params (gamma/beta) if present
             if has_bn:
                 cand_params += 2 * cand
-            # Loop down until within budget
+            if debug:
+                print(f"[DEBUG] Param budget check - target budget: {original_param_budget}, initial cand_params: {cand_params}")
+            # reduce until fit or minimal
             while cand > 1 and cand_params > original_param_budget:
-                cand = max(1, cand - max(1, int(cand * 0.1)))  # reduce by ~10% or at least 1
-                cand_params = conv_params(in_features, cand, k)
+                cand = max(1, cand - max(1, int(cand * 0.1)))
+                cand_params = conv_params(in_features, cand, k, orig_groups)
                 if has_bn:
                     cand_params += 2 * cand
                 if debug:
                     print(f"[DEBUG] Trying cand_out={cand}, cand_params={cand_params}, budget={original_param_budget}")
             collapse_out = cand
 
-        # Final safety clamp
+        # safety clamp
         collapse_out = max(1, min(collapse_out, out_features))
 
-        conv = nn.Conv2d(in_features, collapse_out, kernel_size=k, stride=s, padding=p, bias=False)
-        seq.append(conv)
+        # build collapsed conv with inherited attributes where appropriate
+        conv_kwargs = dict(stride=s, padding=p, dilation=orig_dilation, groups=orig_groups, bias=orig_bias)
+        collapsed_conv = nn.Conv2d(in_features, collapse_out, kernel_size=k, **conv_kwargs)
+        seq.append(collapsed_conv)
         if debug:
-            print(f"[DEBUG] Built collapsed Conv2d: in={in_features} out={collapse_out} k={k} s={s}")
+            print(f"[DEBUG] Built collapsed Conv2d: in={in_features} out={collapse_out} k={k} stride={s} groups={orig_groups} bias={orig_bias}")
 
+        # preserve BN/ReLU ordering local to collapsed conv
         if has_bn:
             seq.append(nn.BatchNorm2d(collapse_out))
         if has_relu:
             seq.append(nn.ReLU(inplace=False))
 
+        # attach pool layer if present (deepcopy to avoid shared references)
         if pool_layer is not None:
             seq.append(copy.deepcopy(pool_layer))
             if debug:
                 print(f"[DEBUG] Appending cloned pooling layer: {type(pool_layer).__name__}")
 
+        # If we reduced channels, optionally append a 1x1 projection to restore original channels.
+        # This is the safe default to avoid changing downstream layers.
+        if collapse_out != out_features and preserve_out_channels:
+            if debug:
+                print(f"[DEBUG] Adding 1x1 projection to restore channels: {collapse_out} -> {out_features}")
+            proj = nn.Conv2d(collapse_out, out_features, kernel_size=1, stride=1, padding=0, bias=False)
+            seq.append(proj)
+            # NOTE: We intentionally do NOT add BN/ReLU after projection by default to keep projection minimal.
+            # If you want BN/ReLU after projection to mirror original block semantics, add them explicitly.
+
+    # ----------------------------
+    # Linear branch
+    # ----------------------------
     elif layer_type == nn.Linear:
-        # Collapse to fewer outputs but keep in_features same.
-        # Guarantee param reduction vs original block if we know original_param_budget.
+        # linear collapse: reduce outputs but keep in_features same
         reduced_out = max(1, int(out_features * 0.75))
         if original_param_budget is not None:
-            # try to reduce further until fit
+            # decrease until within budget (approximate: in_features * out + out for bias)
             while reduced_out > 1 and (in_features * reduced_out + reduced_out) > original_param_budget:
                 reduced_out = max(1, reduced_out - max(1, int(reduced_out * 0.1)))
-        seq.append(nn.Linear(in_features, reduced_out))
+                if debug:
+                    print(f"[DEBUG] Trying reduced_out={reduced_out} vs budget={original_param_budget}")
+        collapsed_linear = nn.Linear(in_features, reduced_out)
+        seq.append(collapsed_linear)
         if debug:
             print(f"[DEBUG] Built collapsed Linear: in={in_features}, out={reduced_out}")
+
+        # If user asked to preserve out_features, add a linear projection back up to out_features
+        if reduced_out != out_features and preserve_out_channels:
+            if debug:
+                print(f"[DEBUG] Adding Linear projection to restore features: {reduced_out} -> {out_features}")
+            proj_lin = nn.Linear(reduced_out, out_features, bias=False)
+            seq.append(proj_lin)
 
     else:
         raise NotImplementedError(f"Unsupported layer_type: {layer_type}")
 
+    # Finalize into an Ordered sequential with stable names
     collapsed = nn.Sequential(OrderedDict([(f"layer_{i}", layer) for i, layer in enumerate(seq)]))
     if debug:
-        print(f"[DEBUG] Collapsed block final: {[type(m).__name__ for m in collapsed]}")
+        print(f"[DEBUG] Collapsed block final modules: {[type(m).__name__ for m in collapsed]}")
     return collapsed
-
 
 # -----------------------------------------------------------------------------
 # Core collapse of a single block
