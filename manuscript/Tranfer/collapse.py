@@ -129,13 +129,6 @@ def patch_skip_connections(model):
             module.forward = make_patched_forward(original_forward, name).__get__(module)
             print(f"[PATCH] Patched residual block forward: {name}")
 
-def compression_set(layers):
-    """
-    Example of compressing layers. Replace this with actual compression logic.
-    """
-    for layer in layers:
-        print(f"[DEBUG] Compressing layer: {layer}")
-        # Add compression logic here (e.g., pruning, quantization)
 
 def _is_within_collapsed_block(model, block_path):
     """
@@ -177,7 +170,13 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
         model._collapsed_blocks.append((start, end))
 
     print("\n--- Adjusting classifier / head AFTER collapsing all blocks ---")
-    adjust_classifier_input_features(model, input_shape, num_classes=num_classes, device=device)
+    adjust_classifier_input_features(
+        model,
+        input_shape,
+        num_classes=num_classes,
+        device=device,
+        preserve_original_fc=True   
+    )
 
     disable_inplace_relu(model)
     model.to(device)
@@ -542,31 +541,41 @@ def _replace_layers(named_layers, start_idx, end_idx, new_block):
     print(f"[DEBUG] New container will have {len(new_layers)} children.")
     return nn.Sequential(OrderedDict(new_layers))
 
-def adjust_classifier_input_features(model, input_shape, num_classes=200, device='cpu'):
+def adjust_classifier_input_features(
+    model, input_shape, num_classes=200, device='cpu', preserve_original_fc=True
+):
     """
-    Update head so the first Linear receives the feature size it expects,
-    but instead of changing the Linear's in_features, insert an AdaptiveAvgPool2d
-    (and a Flatten) before it to match the expected flattened size.
+    Adjust the classifier input features if required.
 
-    Minimal, safe changes: replace the Linear module with a nn.Sequential containing
-    (AdaptiveAvgPool2d -> Flatten -> Linear) when needed.
+    If preserve_original_fc=True:
+        -> Do nothing (skip classifier modification entirely).
+    If False:
+        -> Attempt to recompute input feature size and patch first linear layer safely.
     """
+
+    import torch
+    import torch.nn as nn
     import math
+    from collections import OrderedDict
+
+    if preserve_original_fc:
+        print("[INFO] preserve_original_fc=True → Skipping classifier rewrite. Keeping original FC intact.")
+        return  # ✅ Early exit — nothing modified
+
+    print("[INFO] preserve_original_fc=False → Checking classifier input feature consistency...")
 
     model.eval()
     model.to(device)
 
-    # register hooks to capture module inputs
     activations = {}
     hooks = []
 
     def make_hook(name):
         def hook(module, inp, out):
-            # store the input tensor to the module
             activations[name] = {'input_shape': inp[0].shape, 'output_shape': out.shape}
         return hook
 
-    # attach hooks to linear and pooling modules to capture shapes
+    # Hook into modules to capture feature shapes
     for name, module in model.named_modules():
         if isinstance(module, (nn.Conv2d, nn.AdaptiveAvgPool2d, nn.Linear, nn.BatchNorm2d, nn.ReLU, nn.MaxPool2d, nn.Sequential)):
             hooks.append(module.register_forward_hook(make_hook(name)))
@@ -574,184 +583,66 @@ def adjust_classifier_input_features(model, input_shape, num_classes=200, device
     try:
         with torch.no_grad():
             dummy = torch.randn(input_shape).to(device)
-            try:
-                model(dummy)
-            except Exception:
-                # swallow exceptions -- hooks may still have useful data
-                pass
+            model(dummy)
     finally:
         for h in hooks:
             h.remove()
 
-    # find first Linear's name
+    # Find the first Linear layer
     linear_names = [name for name, mod in model.named_modules() if isinstance(mod, nn.Linear)]
-    if linear_names:
-        first_linear_name = linear_names[0]
-        print(f"[INFO] First linear found at: {first_linear_name}")
+    if not linear_names:
+        print("[WARN] No linear layers found. Nothing to adjust.")
+        return
 
-        parent_container_name, linear_subname = _get_container_and_subname(first_linear_name)
+    first_linear_name = linear_names[0]
+    hooked = activations.get(first_linear_name)
 
-        # "hooked" is the activation _input_ to the Linear (if captured)
-        hooked = activations.get(first_linear_name)
-        flattened_size = None
-        if hooked is not None:
-            inp_shape = hooked['input_shape']
-            if len(inp_shape) > 2:
-                # C, H, W -> flattened size is C*H*W
-                flattened_size = int(torch.tensor(inp_shape[1:]).prod().item())
-            else:
-                flattened_size = inp_shape[1]
-
-            print(f"[DEBUG] Measured flattened features size for head (from hooks): {flattened_size}")
-        else:
-            # fallback measurement function (keeps old behavior)
-            flattened_size = _measure_flattened_size_by_forward(model, input_shape, device)
-            print(f"[DEBUG] Fallback flattened size measured as: {flattened_size}")
-
-        # Now, instead of changing Linear.in_features, insert adaptive pool to match Linear's expected in_features
-        # Find the original Linear module
-        if parent_container_name == "":
-            # top-level attribute like model.fc
-            orig = getattr(model, first_linear_name)
-            if isinstance(orig, nn.Linear):
-                # If the input we measured equals orig.in_features, nothing to do
-                if flattened_size == orig.in_features:
-                    print("[INFO] Head flattened size matches Linear.in_features. No changes needed.")
-                    model.to(device)
-                    model.train()
-                    return
-                # Try to compute pooling target using captured activation if available
-                if hooked is not None and len(hooked['input_shape']) > 2:
-                    C = hooked['input_shape'][1]
-                    if orig.in_features % C == 0:
-                        expected_hw = orig.in_features // C
-                        # prefer perfect-square target (HxW)
-                        s = int(math.isqrt(expected_hw))
-                        if s * s == expected_hw:
-                            pool_target = (s, s)
-                        else:
-                            pool_target = (1, 1)  # fallback to global pool
-                        # replace top-level linear with Sequential(pool, flatten, linear)
-                        new_head = nn.Sequential(OrderedDict([
-                            ("pre_pool", nn.AdaptiveAvgPool2d(pool_target)),
-                            ("flatten", nn.Flatten()),
-                            ("linear", nn.Linear(orig.in_features, orig.out_features))
-                        ]))
-                        setattr(model, first_linear_name, new_head)
-                        print(f"[INFO] Inserted AdaptiveAvgPool2d({pool_target}) before top-level linear '{first_linear_name}'")
-                        model.to(device)
-                        model.train()
-                        return
-                # fallback: change linear as before (rare top-level case without spatial info)
-                setattr(model, first_linear_name, nn.Linear(flattened_size, orig.out_features))
-                print(f"[WARN] Top-level linear replacement fallback: set in_features={flattened_size}")
-                model.to(device)
-                model.train()
-                return
-
-        else:
-            parent_container = get_layer(model, parent_container_name)
-            if isinstance(parent_container, nn.Sequential):
-                new_children = []
-                replaced = False
-                for name, child in parent_container.named_children():
-                    if (not replaced) and isinstance(child, nn.Linear):
-                        orig = child
-                        # if no mismatch, keep as-is
-                        if flattened_size == orig.in_features:
-                            new_children.append((name, child))
-                            replaced = True
-                            continue
-
-                        # if we have spatial activation info, try to compute a pooling target
-                        if hooked is not None and len(hooked['input_shape']) > 2:
-                            C = hooked['input_shape'][1]
-                            if orig.in_features % C == 0:
-                                expected_hw = orig.in_features // C
-                                s = int(math.isqrt(expected_hw))
-                                if s * s == expected_hw:
-                                    pool_target = (s, s)
-                                else:
-                                    pool_target = (1, 1)  # safe global pool fallback
-                                # wrap: pool -> flatten -> linear(orig.in_features -> out_features)
-                                new_block = nn.Sequential(OrderedDict([
-                                    (f"{name}_pre_pool", nn.AdaptiveAvgPool2d(pool_target)),
-                                    (f"{name}_flatten", nn.Flatten()),
-                                    (f"{name}_linear", nn.Linear(orig.in_features, orig.out_features))
-                                ]))
-                                new_children.append((name, new_block))
-                                replaced = True
-                                print(f"[INFO] Replaced sequential head child '{name}' with AdaptiveAvgPool2d({pool_target}) + Linear")
-                                continue
-                        # otherwise fallback to reconstructing the Linear to match measured flattened_size
-                        new_children.append((name, nn.Linear(flattened_size, orig.out_features)))
-                        replaced = True
-                    else:
-                        new_children.append((name, child))
-
-                # rebuild sequential
-                new_seq = nn.Sequential(OrderedDict(new_children))
-                _update_container(model, parent_container_name, new_seq)
-                model.to(device)
-                print(f"[INFO] Rebuilt sequential head '{parent_container_name}' with adjusted first Linear/pool")
-                model.train()
-                return
-            else:
-                # parent container is not sequential: attempt attribute replacement
-                parts = first_linear_name.split('.')
-                par = '.'.join(parts[:-1])
-                last = parts[-1]
-                par_container = get_layer(model, par)
-                orig = getattr(par_container, last)
-                if isinstance(orig, nn.Linear):
-                    # if we have spatial input info, insert a small Sequential in-place
-                    if hooked is not None and len(hooked['input_shape']) > 2:
-                        C = hooked['input_shape'][1]
-                        if orig.in_features % C == 0:
-                            expected_hw = orig.in_features // C
-                            s = int(math.isqrt(expected_hw))
-                            if s * s == expected_hw:
-                                pool_target = (s, s)
-                            else:
-                                pool_target = (1, 1)
-                            new_attr = nn.Sequential(OrderedDict([
-                                ("pre_pool", nn.AdaptiveAvgPool2d(pool_target)),
-                                ("flatten", nn.Flatten()),
-                                ("linear", nn.Linear(orig.in_features, orig.out_features))
-                            ]))
-                            setattr(par_container, last, new_attr)
-                            _update_container(model, par, par_container)
-                            model.to(device)
-                            print(f"[INFO] Inserted AdaptiveAvgPool2d({pool_target}) before linear '{first_linear_name}' in non-seq parent")
-                            model.train()
-                            return
-                    # fallback (no spatial info): replace linear in_features
-                    setattr(par_container, last, nn.Linear(flattened_size, orig.out_features))
-                    _update_container(model, par, par_container)
-                    model.to(device)
-                    print(f"[WARN] Replaced linear '{first_linear_name}' in non-seq parent to have in_features={flattened_size}")
-                    model.train()
-                    return
-
-    # fallback: previous fallback behavior (create a new fc/classifier)
-    print("[WARN] Could not detect head structure cleanly. Falling back to a simple Linear head.")
-    flattened_size = _measure_flattened_size_by_forward(model, input_shape, device)
-    if hasattr(model, 'fc') and isinstance(getattr(model, 'fc', None), nn.Linear):
-        model.fc = nn.Linear(flattened_size, num_classes)
-        print("[INFO] Replaced model.fc with new head.")
-    elif hasattr(model, 'classifier') and isinstance(getattr(model, 'classifier', None), nn.Sequential):
-        model.classifier = nn.Sequential(
-            nn.Linear(flattened_size, 4096),
-            nn.ReLU(inplace=False),
-            nn.Dropout(),
-            nn.Linear(4096, num_classes)
-        )
-        print("[INFO] Replaced model.classifier with simple head.")
+    if hooked:
+        inp_shape = hooked['input_shape']
+        flattened_size = int(torch.tensor(inp_shape[1:]).prod().item())
+        print(f"[DEBUG] Flattened input size measured: {flattened_size}")
     else:
-        model.fc = nn.Linear(flattened_size, num_classes)
-        print("[INFO] Set model.fc (new) as fallback head.")
+        # --- Generic fallback ---
+        print("[WARN] Could not hook input shape. Running model to estimate flatten size generically.")
+        with torch.no_grad():
+            dummy = torch.randn(input_shape).to(device)
+            try:
+                output = model(dummy)
+            except Exception as e:
+                print(f"[ERROR] Model forward failed during flatten size estimation: {e}")
+                raise
+            if isinstance(output, torch.Tensor):
+                flattened_size = output.numel() // output.size(0)
+            else:
+                # If model returns tuple/dict, take first tensor
+                first_tensor = next((t for t in output if isinstance(t, torch.Tensor)), None)
+                if first_tensor is None:
+                    raise RuntimeError("Cannot determine flattened feature size: model returned non-tensor output.")
+                flattened_size = first_tensor.numel() // first_tensor.size(0)
+        print(f"[DEBUG] Fallback flattened size estimated as: {flattened_size}")
+
+    # Retrieve the first linear layer reference
+    first_linear_layer = dict(model.named_modules())[first_linear_name]
+
+    if flattened_size == first_linear_layer.in_features:
+        print("[INFO] Flattened input matches Linear.in_features. No adjustment required.")
+        return
+
+    print(f"[INFO] Adjusting first Linear layer: in_features {first_linear_layer.in_features} → {flattened_size}")
+
+    # Replace linear layer safely
+    parent_parts = first_linear_name.split(".")
+    parent_container = model
+    for part in parent_parts[:-1]:
+        parent_container = getattr(parent_container, part)
+    last_part = parent_parts[-1]
+
+    new_linear = nn.Linear(flattened_size, first_linear_layer.out_features)
+    setattr(parent_container, last_part, new_linear)
+
     model.to(device)
     model.train()
+    print(f"[✓] Updated Linear layer '{first_linear_name}' to match new flattened feature size.")
 
 def _get_container_and_subname(layer_name):
     """
