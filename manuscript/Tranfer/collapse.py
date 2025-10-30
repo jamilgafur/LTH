@@ -9,7 +9,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from utils import count_trainable_params, layer_stats
-
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from collections import OrderedDict
 
 # -----------------------------------------------------------------------------
 # Utilities
@@ -290,13 +293,71 @@ def _build_collapsed_block_with_checks(layers, traced_shapes, debug=True):
     return collapsed_block
 
 
-def _perform_collapse(named_layers, traced_shapes, device="cpu", debug=False):
-    """Perform actual collapse: absorb pools and build collapsed Sequential."""
-    layers, pool_used = _absorb_pools_if_needed(named_layers, traced_shapes, debug)
-    collapsed_block = _build_collapsed_block_with_checks(layers, traced_shapes, debug)
-    collapsed_block.to(device)
-    return collapsed_block, pool_used
+def _perform_collapse(named_layers, traced_shapes, device='cpu', debug=False):
+    """
+    Perform collapse on a block of layers, preserving in/out channels.
+    Returns: collapsed_block, updated_shapes
+    """
+    layers_to_collapse = [layer for name, layer in named_layers if not isinstance(layer, nn.Identity)]
 
+    if debug:
+        print("[DEBUG] Layers to collapse:")
+        for i, layer in enumerate(layers_to_collapse):
+            print(f"  [{i}] {type(layer)} -> {layer}")
+
+    collapsed_block = _build_collapsed_block_with_checks(layers_to_collapse, traced_shapes, debug)
+
+    # updated_shapes: just forward the input shape to output shape (for chaining)
+    output_shape = traced_shapes[-1]
+    return collapsed_block, output_shape
+
+
+def _build_collapsed_block_with_checks(layers, traced_shapes, debug=False):
+    """
+    Build nn.Sequential for collapsed layers while keeping channel dimensions consistent.
+    traced_shapes: list of (N,C,H,W) for each layer in original block
+    """
+    collapsed_layers = []
+    input_channels = traced_shapes[0][1]  # input channels of the block
+
+    if debug:
+        print(f"[DEBUG] Starting to build collapsed block, input_channels={input_channels}")
+
+    for i, layer in enumerate(layers):
+        # Fix in_channels for the first conv
+        if isinstance(layer, nn.Conv2d):
+            orig_in, orig_out = layer.in_channels, layer.out_channels
+            if i == 0 and layer.in_channels != input_channels:
+                if debug:
+                    print(f"[DEBUG] Adjusting first Conv2d in_channels: {layer.in_channels} -> {input_channels}")
+                layer = nn.Conv2d(
+                    in_channels=input_channels,
+                    out_channels=layer.out_channels,
+                    kernel_size=layer.kernel_size,
+                    stride=layer.stride,
+                    padding=layer.padding,
+                    dilation=layer.dilation,
+                    groups=layer.groups,
+                    bias=(layer.bias is not None),
+                    padding_mode=layer.padding_mode
+                )
+
+            input_channels = layer.out_channels  # update for next layer
+
+        collapsed_layers.append(layer)
+
+        if debug:
+            layer_type = type(layer).__name__
+            ch_info = f"{getattr(layer, 'in_channels', '')}->{getattr(layer, 'out_channels', '')}" \
+                      if isinstance(layer, nn.Conv2d) else ""
+            print(f"[DEBUG] Added layer {i}: {layer_type} {ch_info}")
+
+    collapsed_seq = nn.Sequential(*collapsed_layers)
+    if debug:
+        print("[DEBUG] Final collapsed block structure:")
+        print(collapsed_seq)
+
+    return collapsed_seq
 
 def _replace_block_in_container(container, named_layers, collapsed_block):
     """Replace original block layers inside container with collapsed block."""
