@@ -185,25 +185,29 @@ def _simulate_input_hook( model: nn.Module, target_layer_path: str, input_shape:
 
 
 def _trace_block_shapes(named_layers, input_tensor_or_shape, device, debug):
-    """Trace shapes through layers."""
+    """Trace shapes through layers (include initial input shape)."""
     if isinstance(input_tensor_or_shape, torch.Tensor):
         x = input_tensor_or_shape.to(device)
     else:
         x = torch.zeros(input_tensor_or_shape).to(device)
 
     shapes = []
+    # record initial input shape BEFORE applying any layers
+    shapes.append(("input", tuple(x.shape)))
     if debug:
         print("[DEBUG] Forwarding through block layers for shape tracing:")
+        print(f"   -> Initial input shape = {tuple(x.shape)}")
+
     for name, layer in named_layers:
         try:
             x = layer(x)
-            shapes.append((name, x.shape))
+            shapes.append((name, tuple(x.shape)))
             if debug:
                 print(f"   -> After {layer.__class__.__name__:<22}: shape = {tuple(x.shape)}")
         except Exception as e:
             print(f"[ERROR] Shape tracing failed at {name}: {e}")
             raise
-    return {"final": x.shape, "list": shapes}
+    return {"final": tuple(x.shape), "list": shapes}
 
 
 def _get_submodule(model: nn.Module, target: str):
@@ -538,7 +542,8 @@ def _collapse_block(model, start, end, input_shape, device="cpu", debug=False):
         traced_shapes = _trace_block_shapes(named_layers, input_shape, device, debug)
 
     # Collapse the block first
-    collapsed_seq, _ = _perform_collapse(named_layers, traced_shapes, device=device, debug=debug)
+    collapsed_seq, _ = _perform_collapse(named_layers, traced_shapes, runtime_input=captured_activation, device=device, debug=debug)
+
 
     # Fix in_channels here
     collapsed_seq = fix_conv_in_channels(list(collapsed_seq))  # convert Sequential to list
