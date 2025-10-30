@@ -388,11 +388,6 @@ def _build_collapsed_block(
 def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str, input_shape: Tuple[int, ...], device='cpu', debug: bool = False) -> nn.Module:
     """
     Collapse layers between start_layer_name and end_layer_name (inclusive).
-    The function:
-      - captures input activation before start
-      - forwards through the selected layers to compute output shape
-      - builds a collapsed block (with strictly <= params)
-      - replaces the slice in the container Sequential
     """
     print(f"\n[INFO] Collapsing block: {start_layer_name} → {end_layer_name}")
     start_container_name, start_subname = _get_container_and_subname(start_layer_name)
@@ -436,49 +431,97 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
     if layer_type == nn.Conv2d:
         in_channels = x.shape[1]
 
-        # --- KEY FIX HERE: forward through the *entire* full_block (not just convs)
-        # This ensures out_shape accounts for pooling / other non-conv ops that affect H,W.
+        # forward through the entire full_block (conv + bn + relu + pool inside the block)
         with torch.no_grad():
             y = x.clone()
             last_conv = None
             for _, layer in full_block:
-                # apply each module in the original block to compute the true final shape
                 y = layer(y)
                 if isinstance(layer, nn.Conv2d):
                     last_conv = layer
         out_shape = tuple(y.shape)
-        # out_channels should be taken from the last conv within full_block
         if last_conv is not None:
             out_channels = last_conv.out_channels
         else:
-            # fallback if somehow there is no conv (shouldn't happen)
             out_channels = conv_layers[-1].out_channels
 
-        # try to detect linear follower (first Linear after this container)
+        # detect linear follower (best-effort)
         linear_in_features = None
-        # Heuristic: find first linear in model after the last layer's container (conservative)
         if end_idx + 1 < len(named_layers):
             next_mod = named_layers[end_idx + 1][1]
             if isinstance(next_mod, nn.Linear):
                 linear_in_features = next_mod.in_features
         if linear_in_features is None:
+            # global search fallback
             for nm, mod in model.named_modules():
                 if isinstance(mod, nn.Linear):
                     linear_in_features = mod.in_features
                     break
 
+        # If linear follower exists, compute expected H*W and try to include any
+        # contiguous pooling modules after the end_idx that would produce that H*W.
+        pool_layer = next((m for _, m in reversed(full_block) if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))), None)
+
+        if linear_in_features is not None and out_channels > 0:
+            expected_hw = None
+            if linear_in_features % out_channels == 0:
+                expected_hw = linear_in_features // out_channels
+            if expected_hw is not None:
+                cur_H = y.shape[-2] if y.dim() >= 3 else 1
+                cur_W = y.shape[-1] if y.dim() >= 3 else 1
+                cur_hw = cur_H * cur_W
+                if debug:
+                    print(f"[DEBUG] linear_in_features={linear_in_features}, out_channels={out_channels}, cur_hw={cur_hw}, expected_hw={expected_hw}")
+
+                # if mismatch, try to apply contiguous pool layers after end_idx in the same container
+                if cur_hw != expected_hw:
+                    extra_pools = []
+                    with torch.no_grad():
+                        y2 = y.clone()
+                        for _, mod in named_layers[end_idx + 1:]:
+                            # allow only pooling modules to be absorbed (conservative)
+                            if isinstance(mod, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
+                                y2 = mod(y2)
+                                extra_pools.append(mod)
+                                new_H = y2.shape[-2] if y2.dim() >= 3 else 1
+                                new_W = y2.shape[-1] if y2.dim() >= 3 else 1
+                                if debug:
+                                    print(f"[DEBUG] Applied following pool {type(mod).__name__}, new HxW={new_H}x{new_W}")
+                                if (new_H * new_W) == expected_hw:
+                                    # success: include these pools in the collapsed block
+                                    if pool_layer is None:
+                                        # if we didn't already have a pool inside full_block, use the extra sequence
+                                        if len(extra_pools) == 1:
+                                            pool_layer = extra_pools[0]
+                                        else:
+                                            # multiple pools -> wrap into nn.Sequential
+                                            pool_seq = OrderedDict([(f"pool_{i}", p) for i, p in enumerate(extra_pools)])
+                                            pool_layer = nn.Sequential(pool_seq)
+                                    else:
+                                        # there was already a pool inside the block; we want the combined effect:
+                                        # create a new sequential with the original pool first (copied) then extra pools
+                                        seq_list = []
+                                        seq_list.append(copy.deepcopy(pool_layer))
+                                        for p in extra_pools:
+                                            seq_list.append(copy.deepcopy(p))
+                                        pool_layer = nn.Sequential(OrderedDict([(f"pool_{i}", m) for i, m in enumerate(seq_list)]))
+                                    y = y2  # update main out_shape to the new one
+                                    out_shape = tuple(y.shape)
+                                    if debug:
+                                        print(f"[DEBUG] Found matching post-block pools; updated out_shape to {out_shape}")
+                                    break
+                            else:
+                                # stop if we encounter non-pool (conservative)
+                                break
+
         # detect skip/residual shortcut channels if any
         shortcut_out_channels = None
         for nm, mod in model.named_modules():
             if hasattr(mod, 'shortcut') and isinstance(mod.shortcut, nn.Module):
-                # find first conv inside shortcut
                 first_conv = next((m for m in mod.shortcut.modules() if isinstance(m, nn.Conv2d)), None)
                 if first_conv is not None:
                     shortcut_out_channels = first_conv.out_channels
                     break
-
-        # detect pooling inside original block (keep to re-append into collapsed block)
-        pool_layer = next((m for _, m in reversed(full_block) if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))), None)
 
         collapsed_block = _build_collapsed_block(
             nn.Conv2d,
