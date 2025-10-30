@@ -8,17 +8,16 @@ datasets=("Cifar10" "Cifar100" )
 for model in "${models[@]}"; do
   # Define the experiment names inside the model loop
   if [[ "$model" == "VGG16" ]]; then
-    experiment_names=( "Last 2" "Stage 4" "Stage 2-5" "Original Model" )
-    # "Stage 3" "Stage 4-5" "Stage 3-5" 
+    experiment_names=( "Last 2" "Stage 4" "Stage 2-5" "Original Model"  "Stage 3" "Stage 4-5" "Stage 3-5" )
   else
     # If model is RegNetX_400MF, define valid experiments only
     experiment_names=(
       "Stage 4" "Stage 3"
       "Stage 2" 
       "Original Model" "Last 2"
-      # "Stage 4-5" "Stage 3-5" "Stage 2-5" 
-      # "Stage 4 last 2 conv" "Stage 3 last 2 conv" "Stage 2 last 2 conv" 
-      # "Stage 4 first 2 conv" "Stage 3 first 2 conv" "Stage 2 first 2 conv"
+      "Stage 4-5" "Stage 3-5" "Stage 2-5" 
+      "Stage 4 last 2 conv" "Stage 3 last 2 conv" "Stage 2 last 2 conv" 
+      "Stage 4 first 2 conv" "Stage 3 first 2 conv" "Stage 2 first 2 conv"
     )
   fi
 
@@ -29,7 +28,7 @@ for model in "${models[@]}"; do
       # Loop through flags
       for flag in "JF" "Kevin"; do
         # Properly quote the variables with spaces and commas
-        command="qsub -q UI-GPU -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"$experiment\",FLAG=\"$flag\" submit_job.pbs"
+        command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"$experiment\",FLAG=\"$flag\" submit_job.pbs"
         
         # Echo the command for debugging
         echo "Executing: $command"
