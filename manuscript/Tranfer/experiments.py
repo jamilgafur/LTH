@@ -233,35 +233,30 @@ def run_jf_experiment(
     save_path="./runs",
     post_compress_epochs=False
 ):
-    """
-    JF workflow: loads pretrained model, optionally collapses it, then trains/evaluates.
-    Compatible with the updated collapse_only() that ensures:
-        - fewer parameters than original
-        - skip connection consistency
-        - full debug logging
-    """
     model_kwargs = model_kwargs or {}
     print("\n=== Running JF experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
 
-    # 1️⃣ Load pretrained model
+    # load pretrained model
     base_model = model_class(**model_kwargs)
     ckpt = torch.load(model_path_097, map_location='cpu')
     base_model.load_state_dict(ckpt['model'])
     print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
 
-    # 2️⃣ Collapse (if requested)
+    # collapse if requested
     if collapse_range:
         print(f"[•] Collapsing range {collapse_range} for {exp_name}")
         base_model = collapse_only(
             model=base_model,
-            layer_pairs={"collapse_block": collapse_range},
+            compression_set=[collapse_range],                   # <- changed
             input_shape=model_kwargs['one_batch'].shape,
             device=device,
-            dry_run=False
+            dry_run=False,
+            debug=True,
+            handle_skips=True
         )
 
-    # 3️⃣ Run training & diagnostics
+    # run training & diagnostics
     data = run_experiment(
         model=base_model,
         model_kwargs=model_kwargs,
@@ -291,10 +286,6 @@ def run_kevin_experiment(
     save_path="./runs",
     post_compress_epochs=False
 ):
-    """
-    Kevin workflow: loads checkpoint → collapses → trains → evaluates.
-    Uses new collapse_only() interface with automatic param safety.
-    """
     model_kwargs = model_kwargs or {}
     print("\n=== Running Kevin experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
@@ -308,10 +299,12 @@ def run_kevin_experiment(
         print(f"[•] Collapsing range {collapse_range} for {exp_name}")
         base_model = collapse_only(
             model=base_model,
-            layer_pairs={"collapse_block": collapse_range},
+            compression_set=[collapse_range],                   # <- changed
             input_shape=model_kwargs['one_batch'].shape,
             device=device,
-            dry_run=False
+            dry_run=False,
+            debug=True,
+            handle_skips=True
         )
 
     data = run_experiment(
@@ -328,5 +321,6 @@ def run_kevin_experiment(
         post_compress_epochs=post_compress_epochs
     )
     return base_model
+
 
 # -------------------------
