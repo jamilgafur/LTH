@@ -537,7 +537,7 @@ def collapse_only(
     device: str = 'cpu',
     safe_param_reduction: bool = True,   # currently enforced by builder
     handle_skips: bool = True,
-    debug: bool = False,
+    debug: bool = True,
     dry_run: bool = False
 ) -> nn.Module:
     """
