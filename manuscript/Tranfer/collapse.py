@@ -303,10 +303,6 @@ from collections import OrderedDict
 # -----------------------------------------------------------------------------
 
 def _perform_collapse(block_layers, runtime_input, traced_shapes=None, device="cpu", debug=True):
-    """
-    Collapse a block of layers while preserving input/output channels and spatial size.
-    Skips pooling layers that would reduce H/W below 1.
-    """
     collapsed_layers = []
     x = runtime_input.clone().to(device)
     in_channels = x.shape[1]
@@ -342,9 +338,8 @@ def _perform_collapse(block_layers, runtime_input, traced_shapes=None, device="c
                 bias=(layer.bias is not None),
                 padding_mode=layer.padding_mode
             ).to(device)
-            # Copy overlapping weights
             min_ic = min(layer.weight.shape[1], in_channels)
-            new_conv.weight.data[:, :min_ic, :, :] = layer.weight.data[:, :min_ic, :, :]
+            new_conv.weight.data[:, :min_ic, :, :] = layer.weight.data[:, :min_ic, :, :].clone()
             if layer.bias is not None:
                 new_conv.bias.data = layer.bias.data.clone()
             layer = new_conv
@@ -356,10 +351,10 @@ def _perform_collapse(block_layers, runtime_input, traced_shapes=None, device="c
                 print(f"[WARN] Adjusting BatchNorm2d '{name}' num_features {layer.num_features} -> {in_channels}")
             new_bn = nn.BatchNorm2d(in_channels).to(device)
             min_feat = min(layer.num_features, in_channels)
-            new_bn.weight.data[:min_feat] = layer.weight.data[:min_feat]
-            new_bn.bias.data[:min_feat] = layer.bias.data[:min_feat]
-            new_bn.running_mean[:min_feat] = layer.running_mean[:min_feat]
-            new_bn.running_var[:min_feat] = layer.running_var[:min_feat]
+            new_bn.weight.data[:min_feat] = layer.weight.data[:min_feat].clone()
+            new_bn.bias.data[:min_feat] = layer.bias.data[:min_feat].clone()
+            new_bn.running_mean.zero_()
+            new_bn.running_var.fill_(1.0)
             layer = new_bn
 
         # Forward dummy input to track shape
