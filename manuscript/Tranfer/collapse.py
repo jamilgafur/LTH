@@ -254,10 +254,33 @@ def _absorb_pools_if_needed(named_layers, traced_shapes, debug):
     return adjusted_layers, pool_used
 
 
-def _build_collapsed_block_with_checks(layers, traced_shapes, debug):
-    """Build a simple collapsed Sequential (identity-preserving)."""
-    # Only keep non-Identity modules
-    collapsed_layers = [layer for layer in layers if not isinstance(layer, nn.Identity)]
+def _build_collapsed_block_with_checks(layers, traced_shapes, debug=True):
+    """
+    Build a simple collapsed Sequential (identity-preserving) from a list of layers.
+    Ensures only nn.Module objects are added and adds debug info.
+    """
+    # Debug: print original layers
+    if debug:
+        print("[DEBUG] Original layers to collapse:")
+        for i, l in enumerate(layers):
+            print(f"  [{i}] type={type(l)} content={l}")
+
+    # If layers are (name, module) tuples, extract the module
+    modules_only = []
+    for l in layers:
+        if isinstance(l, tuple) and len(l) == 2 and isinstance(l[1], nn.Module):
+            modules_only.append(l[1])
+        elif isinstance(l, nn.Module):
+            modules_only.append(l)
+        else:
+            if debug:
+                print(f"[WARN] Skipping non-module layer: {l} (type={type(l)})")
+
+    # Filter out nn.Identity
+    collapsed_layers = [m for m in modules_only if not isinstance(m, nn.Identity)]
+
+    if debug:
+        print(f"[DEBUG] Layers after filtering Identity: {[type(m) for m in collapsed_layers]}")
 
     collapsed_block = nn.Sequential(*collapsed_layers)
 
