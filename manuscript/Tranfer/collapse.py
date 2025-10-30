@@ -335,10 +335,22 @@ def _build_collapsed_block(
 
         # attach pool layer if present (deepcopy to avoid shared references)
         if pool_layer is not None:
-            seq.append(copy.deepcopy(pool_layer))
-            if debug:
-                print(f"[DEBUG] Appending cloned pooling layer: {type(pool_layer).__name__}")
+            # detect whether the original `full_block` included any pooling layer we absorbed
+            has_original_pool = False
+            if full_block:
+                for _, m in full_block:
+                    if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
+                        has_original_pool = True
+                        break
 
+            if has_original_pool:
+                seq.append(copy.deepcopy(pool_layer))
+                if debug:
+                    print(f"[DEBUG] Appending cloned pooling layer: {type(pool_layer).__name__}")
+            else:
+                if debug:
+                    print(f"[DEBUG] Skipping appending {type(pool_layer).__name__} because original block had no pool")
+            
         # If we reduced channels, optionally append a 1x1 projection to restore original channels.
         # This is the safe default to avoid changing downstream layers.
         if collapse_out != out_features and preserve_out_channels:
