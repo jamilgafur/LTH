@@ -351,119 +351,56 @@ def _perform_collapse(named_layers, traced_shapes=None, runtime_input=None, devi
 
 
 
-def _build_collapsed_block_with_checks(layers, traced_shapes=None, runtime_in_ch=None, debug=False):
+def _build_collapsed_block_with_checks(
+    named_layers: Sequence[Tuple[str, nn.Module]],
+    input_activation: torch.Tensor,
+    device="cpu",
+    debug=True
+) -> nn.Sequential:
     """
-    Build nn.Sequential from layers while preserving channel consistency.
-    
-    Parameters:
-        layers: list of modules or (name, module) tuples
-        traced_shapes: optional shape info for inferring channels
-        runtime_in_ch: optional integer, actual input channels at runtime
-        debug: enable detailed debug prints
+    Build a collapsed block while ensuring:
+    - The first Conv2d matches the input channels.
+    - Pool layers don't reduce spatial size below 1x1.
+    """
+    layers = []
+    x = input_activation.clone().to(device)
 
-    Returns:
-        nn.Sequential collapsed block
-    """
-    # Normalize layers into list of modules
-    normalized = []
-    for i, item in enumerate(layers):
-        if isinstance(item, tuple) and len(item) == 2 and isinstance(item[1], nn.Module):
-            normalized.append(item[1])
-        elif isinstance(item, nn.Module):
-            normalized.append(item)
+    for i, (name, layer) in enumerate(named_layers):
+        if isinstance(layer, nn.Conv2d):
+            # Adjust input channels for first Conv in block
+            if len(layers) == 0 and layer.in_channels != x.shape[1]:
+                if debug:
+                    print(f"[DEBUG] Adjusting first Conv2d in_channels from {layer.in_channels} -> {x.shape[1]}")
+                new_layer = nn.Conv2d(
+                    in_channels=x.shape[1],
+                    out_channels=layer.out_channels,
+                    kernel_size=layer.kernel_size,
+                    stride=layer.stride,
+                    padding=layer.padding,
+                    dilation=layer.dilation,
+                    groups=layer.groups,
+                    bias=(layer.bias is not None)
+                ).to(device)
+            else:
+                new_layer = copy.deepcopy(layer).to(device)
+            layers.append((name, new_layer))
+        elif isinstance(layer, nn.MaxPool2d):
+            # Prevent pool layers from producing zero-sized outputs
+            H, W = x.shape[2], x.shape[3]
+            if H <= 1 or W <= 1:
+                if debug:
+                    print(f"[DEBUG] Skipping MaxPool2d {name} to avoid zero-sized output (H={H}, W={W})")
+                continue
+            layers.append((name, copy.deepcopy(layer).to(device)))
         else:
-            if debug:
-                print(f"[WARN] skipping unexpected layer at idx {i}: {item}")
-    if debug:
-        print(f"[DEBUG] normalized layers count = {len(normalized)}")
+            layers.append((name, copy.deepcopy(layer).to(device)))
 
-    # Determine input channels
-    input_channels = None
-    try:
-        if runtime_in_ch is not None:
-            input_channels = runtime_in_ch
-            if debug:
-                print(f"[DEBUG] using runtime input channels: {input_channels}")
-        elif isinstance(traced_shapes, dict) and "list" in traced_shapes and len(traced_shapes["list"]) > 0:
-            first_entry = traced_shapes["list"][0]
-            first_shape = first_entry[1] if isinstance(first_entry, tuple) else first_entry
-            input_channels = int(first_shape[1])
-        elif isinstance(traced_shapes, dict) and "final" in traced_shapes:
-            fs = traced_shapes["final"]
-            input_channels = int(fs[1])
-    except Exception as e:
+        # Forward dummy tensor to track shapes
+        x = layers[-1][1](x)
         if debug:
-            print(f"[WARN] Could not infer input_channels from traced_shapes: {e}")
-        input_channels = None
+            print(f"   -> After {type(layers[-1][1]).__name__:10} : shape = {tuple(x.shape)}")
 
-    if debug:
-        print(f"[DEBUG] inferred input_channels = {input_channels}")
-
-    # Build collapsed module list
-    collapsed_modules = []
-    current_in_ch = input_channels
-
-    for i, module in enumerate(normalized):
-        if isinstance(module, nn.Conv2d):
-            if i == 0 and current_in_ch is not None and module.in_channels != current_in_ch:
-                if debug:
-                    print(f"[DEBUG] Adjusting first Conv2d in_channels from {module.in_channels} -> {current_in_ch}")
-                module = nn.Conv2d(
-                    in_channels=current_in_ch,
-                    out_channels=module.out_channels,
-                    kernel_size=module.kernel_size,
-                    stride=module.stride,
-                    padding=module.padding,
-                    dilation=module.dilation,
-                    groups=module.groups,
-                    bias=(module.bias is not None),
-                    padding_mode=getattr(module, "padding_mode", "zeros")
-                )
-            current_in_ch = module.out_channels
-
-        elif isinstance(module, nn.BatchNorm2d):
-            if current_in_ch is not None and module.num_features != current_in_ch:
-                if debug:
-                    print(f"[DEBUG] BN mismatch at idx {i}: BN.num_features={module.num_features} != expected {current_in_ch}")
-
-        elif isinstance(module, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
-            if debug:
-                print(f"[DEBUG] keeping pool layer at idx {i}: {module}")
-
-        collapsed_modules.append(module)
-
-        if debug:
-            info = ""
-            if isinstance(module, nn.Conv2d):
-                info = f"Conv(in={module.in_channels}, out={module.out_channels}, k={module.kernel_size})"
-            elif isinstance(module, nn.BatchNorm2d):
-                info = f"BN(num_features={module.num_features})"
-            elif isinstance(module, nn.ReLU):
-                info = f"ReLU(inplace={getattr(module, 'inplace', False)})"
-            elif isinstance(module, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
-                info = f"{type(module).__name__}(kernel={getattr(module, 'kernel_size', None)})"
-            print(f"[DEBUG] Collapsed module [{i}] -> {type(module).__name__} {info}")
-
-    # Filter out Identity layers
-    final_modules = [m for m in collapsed_modules if not isinstance(m, nn.Identity)]
-    if debug:
-        print(f"[DEBUG] final_modules count = {len(final_modules)}")
-
-    # Build nn.Sequential
-    try:
-        collapsed_seq = nn.Sequential(OrderedDict([(f"layer_{i}", m) for i, m in enumerate(final_modules)]))
-    except Exception as e:
-        print(f"[ERROR] Failed to build nn.Sequential: {e}")
-        for i, m in enumerate(final_modules):
-            print(f"  [{i}] type={type(m).__name__} content={m}")
-        raise
-
-    if debug:
-        print("[DEBUG] Built collapsed block summary:")
-        for i, m in enumerate(collapsed_seq):
-            print(f"  [{i}] {type(m).__name__}: {m}")
-
-    return collapsed_seq
+    return nn.Sequential(OrderedDict(layers))
 
 
 def _replace_block_in_container(container, named_layers, collapsed_block):
