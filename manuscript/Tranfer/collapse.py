@@ -470,45 +470,76 @@ def _get_block_layers(model, start, end):
     return start_container, named_layers
 
 
-def _collapse_block(model, start, end, input_shape, device="cpu", debug=False):
-    """Collapse a single block of layers in a model."""
-    start_container_name, named_layers = _get_block_layers(model, start, end)
+def _collapse_block(model, start, end, input_shape, device="cpu", debug=True):
+    """
+    Collapse a block of layers from `start` to `end` in `model` with enhanced debugging.
 
+    Parameters:
+        model      : nn.Module, model containing the block
+        start      : str, start layer name
+        end        : str, end layer name
+        input_shape: tuple, input shape to block (e.g., (1, 3, 32, 32))
+        device     : str, device for collapsed block
+        debug      : bool, enable detailed debug prints
+
+    Returns:
+        model with collapsed block
+    """
+    # Extract container and block layers
+    start_container_name, named_layers = _get_block_layers(model, start, end)
     if debug:
         print(f"[DEBUG] Collapsing block {start} → {end}")
         print(f"[DEBUG] Layers in block: {[name for name, _ in named_layers]}")
 
+    # Capture input activation to start layer using dummy input
     try:
-        if isinstance(input_shape, (tuple, list)) and len(input_shape) >= 1:
-            hook_input_shape = (1,) + tuple(input_shape[1:])
-        else:
-            hook_input_shape = input_shape
-
+        hook_input_shape = (1,) + tuple(input_shape[1:]) if isinstance(input_shape, (tuple, list)) else input_shape
         _, captured_activation = _simulate_input_hook(model, start, hook_input_shape, device)
         if debug:
-            print(f"[DEBUG] Captured activation before start '{start}': {tuple(captured_activation.shape)}")
-
+            print(f"[DEBUG] Captured activation before '{start}': {tuple(captured_activation.shape)}")
         traced_shapes = _trace_block_shapes(named_layers, captured_activation, device, debug)
-
     except Exception as e:
         if debug:
-            print(f"[WARN] Failed to capture activation for start '{start}': {e}. Using global input_shape.")
-        traced_shapes = _trace_block_shapes(named_layers, input_shape, device, debug)
+            print(f"[WARN] Failed to capture activation for '{start}': {e}. Using global input_shape.")
+        captured_activation = torch.zeros((1,) + tuple(input_shape[1:])).to(device)
+        traced_shapes = _trace_block_shapes(named_layers, captured_activation, device, debug)
 
-    # Collapse the block first
-    collapsed_seq, _ = _perform_collapse(named_layers, traced_shapes, runtime_input=captured_activation, device=device, debug=debug)
+    # Perform collapse with runtime input for correct in_channels
+    collapsed_seq, _ = _perform_collapse(
+        named_layers,
+        traced_shapes=traced_shapes,
+        runtime_input=captured_activation,
+        device=device,
+        debug=debug
+    )
 
+    # Fix in_channels in collapsed block
+    collapsed_seq = fix_conv_in_channels(list(collapsed_seq))  # Sequential → list
+    collapsed_seq = nn.Sequential(*collapsed_seq)             # List → Sequential
+    if debug:
+        print(f"[DEBUG] Collapsed block layers after fix_conv_in_channels:")
+        for i, layer in enumerate(collapsed_seq):
+            if isinstance(layer, nn.Conv2d):
+                print(f"   [{i}] Conv2d: in_channels={layer.in_channels}, out_channels={layer.out_channels}, kernel_size={layer.kernel_size}")
+            else:
+                print(f"   [{i}] {type(layer).__name__}")
 
-    # Fix in_channels here
-    collapsed_seq = fix_conv_in_channels(list(collapsed_seq))  # convert Sequential to list
-    collapsed_seq = nn.Sequential(*collapsed_seq)             # convert back to Sequential
-
-    # Replace the block in the model
+    # Replace block in model
     container = _get_submodule(model, start_container_name)
     _replace_block_in_container(container, named_layers, collapsed_seq)
     if debug:
-        print(f"[INFO] Collapsed block {start} → {end}")
-        print(f"[INFO] Params after collapse: {sum(p.numel() for p in model.parameters())}")
+        total_params = sum(p.numel() for p in model.parameters())
+        print(f"[INFO] Collapsed block '{start} → {end}' inserted. Total params now: {total_params}")
+
+    # Optional: test forward through collapsed block
+    if debug:
+        try:
+            model.eval()
+            with torch.no_grad():
+                test_out = collapsed_seq(captured_activation)
+            print(f"[DEBUG] Forward test through collapsed block output shape: {tuple(test_out.shape)}")
+        except Exception as e:
+            print(f"[WARN] Forward test failed: {e}")
 
     return model
 
