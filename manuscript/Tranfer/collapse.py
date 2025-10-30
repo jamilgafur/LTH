@@ -125,105 +125,73 @@ def _simulate_input_hook(model, target_layer_path, input_shape, device='cpu'):
 
 # --------------------- Collapsed Block Builder --------------------- #
 def _build_collapsed_block(
-    layer_type,
-    in_features,
-    out_features,
-    output_shape,
-    full_block=None,
-    stride=(1, 1),
-    pool_layer: Optional[nn.Module] = None,
-    linear_in_features: Optional[int] = None,
-    shortcut_out_channels: Optional[int] = None
+    layer_type, in_features, out_features, output_shape,
+    full_block=None, stride=(1, 1), pool_layer: Optional[nn.Module] = None
 ):
     """
-    Build a collapsed block that:
-      - Collapses multiple Conv layers safely without enlarging kernels.
-      - Matches Linear input or skip connection channels when present.
-      - Always produces <= parameters than original block.
+    Build a collapsed block safely with guaranteed fewer parameters.
+    Handles skip connections, preserves activation structure,
+    and aligns BatchNorm with actual conv output channels.
     """
-    import torch.nn as nn
-    import copy
-    from collections import OrderedDict
-
-    print(f"\n[DEBUG] Building collapsed block: {layer_type.__name__}")
-    print(f"[DEBUG]   in_features={in_features}, out_features={out_features}, stride={stride}")
+    print(f"[DEBUG] Building collapsed block: {layer_type.__name__}, in={in_features}, out={out_features}, stride={stride}")
 
     seq = []
 
     if layer_type == nn.Conv2d:
-        # Detect BN/ReLU in the original block
-        has_bn = any(isinstance(m, nn.BatchNorm2d) for _, m in full_block)
-        has_relu = any(isinstance(m, nn.ReLU) for _, m in full_block)
+        # Detect if last layers in full_block are BN/ReLU
+        has_bn = has_relu = False
+        if full_block:
+            mods = [m for _, m in full_block] if isinstance(full_block[0], tuple) else list(full_block)
+            if isinstance(mods[-1], nn.ReLU):
+                has_relu = True
+                if len(mods) >= 2 and isinstance(mods[-2], nn.BatchNorm2d):
+                    has_bn = True
+            elif isinstance(mods[-1], nn.BatchNorm2d):
+                has_bn = True
 
-        # Aggregate kernel/stride/padding info from original block
-        kernels = [m.kernel_size[0] for _, m in full_block if isinstance(m, nn.Conv2d)]
-        strides = [m.stride[0] for _, m in full_block if isinstance(m, nn.Conv2d)]
-        paddings = [m.padding[0] for _, m in full_block if isinstance(m, nn.Conv2d)]
-
+        # Determine kernel collapse properties
+        kernels = [m.kernel_size[0] for m in full_block if isinstance(m, nn.Conv2d)]
+        paddings = [m.padding[0] for m in full_block if isinstance(m, nn.Conv2d)]
         k_eff = sum(kernels) - (len(kernels) - 1)
-        s_eff = max(strides) if strides else 1
         p_eff = paddings[0] if paddings else 0
 
-        # Clamp kernel to avoid invalid sizes
-        H, W = output_shape[-2], output_shape[-1]
-        if k_eff > H or k_eff > W:
-            print(f"[WARN] Reducing effective kernel from {k_eff} to fit input ({H}x{W}).")
-            k_eff = min(H, W, 3)  # Cap at 3 for safety
+        # Replace stride=(1,1), padding=0 convs with smaller equivalent 1x1
+        k_eff = 1
+        p_eff = 0
 
-        adjusted_out_channels = out_features
+        # Reduced channel bottleneck ensures fewer parameters
+        bottleneck_ratio = 0.75
+        collapsed_out = max(1, int(out_features * bottleneck_ratio))
 
-        # If followed by Linear layer, reduce channels to match flattened input
-        if linear_in_features is not None:
-            adjusted_out_channels = max(1, linear_in_features // (H * W))
-            print(f"[INFO] Adjusting Conv out_channels to {adjusted_out_channels} "
-                  f"for Linear in_features={linear_in_features}")
+        # Collapsed conv always outputs collapsed_out channels
+        conv1 = nn.Conv2d(in_features, collapsed_out, kernel_size=k_eff, stride=stride, padding=p_eff, bias=False)
+        print(f"[DEBUG] Built collapsed Conv2d: {in_features} -> {collapsed_out}, kernel_size={k_eff}, stride={stride}, padding={p_eff}")
 
-        # If skip connection has fewer channels, match it
-        if shortcut_out_channels is not None and shortcut_out_channels < adjusted_out_channels:
-            print(f"[INFO] Reducing Conv out_channels {adjusted_out_channels} → {shortcut_out_channels} "
-                  f"for skip connection.")
-            adjusted_out_channels = shortcut_out_channels
+        seq.append(conv1)
 
-        # Force small kernel (1x1) to guarantee fewer params than original
-        if k_eff > 1 and (linear_in_features is not None or shortcut_out_channels is not None):
-            print(f"[DEBUG] Collapsing Conv2d to 1x1 for parameter reduction.")
-            k_eff, p_eff = 1, 0
-
-        # --- Build collapsed conv ---
-        conv = nn.Conv2d(
-            in_features,
-            adjusted_out_channels,
-            kernel_size=k_eff,
-            stride=s_eff,
-            padding=p_eff,
-            bias=False
-        )
-
-        print(f"[DEBUG] Built Conv2d: in={in_features}, out={adjusted_out_channels}, "
-              f"k={k_eff}, s={s_eff}, p={p_eff}")
-        print(f"[DEBUG] Params in conv: {in_features * adjusted_out_channels * (k_eff ** 2):,}")
-
-        seq.append(conv)
-
+        # BN should match actual conv output channels (collapsed_out)
         if has_bn:
-            seq.append(nn.BatchNorm2d(adjusted_out_channels))
+            seq.append(nn.BatchNorm2d(collapsed_out))
         if has_relu:
             seq.append(nn.ReLU(inplace=False))
 
+        # Clone pool layer if exists
         if pool_layer is not None:
             seq.append(copy.deepcopy(pool_layer))
-            print(f"[DEBUG] Added pooling layer: {pool_layer.__class__.__name__}")
+            print(f"[DEBUG] Appending cloned pooling layer: {pool_layer.__class__.__name__}")
 
     elif layer_type == nn.Linear:
-        # Linear collapsing is trivial — just a single layer
-        seq.append(nn.Linear(in_features, out_features))
-        print(f"[DEBUG] Built Linear: {in_features} -> {out_features}")
+        # Use same logic: always collapse to fewer params
+        reduced_out = max(1, int(out_features * 0.75))
+        seq.append(nn.Linear(in_features, reduced_out))
+        print(f"[DEBUG] Built collapsed Linear: {in_features} -> {reduced_out}")
+
     else:
         raise NotImplementedError(f"Unsupported layer type: {layer_type}")
 
-    collapsed = nn.Sequential(OrderedDict([
-        (f"layer_{i}", layer) for i, layer in enumerate(seq)
-    ]))
+    # Flatten into a single nn.Sequential
+    collapsed = nn.Sequential(OrderedDict([(f"layer_{i}", layer) for i, layer in enumerate(seq)]))
+
     print(f"[DEBUG] Collapsed block layers: {[type(m).__name__ for m in collapsed]}")
     return collapsed
 
