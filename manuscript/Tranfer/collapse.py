@@ -297,9 +297,10 @@ import torch
 import torch.nn as nn
 from collections import OrderedDict
 
+
 def _perform_collapse(named_layers, traced_shapes=None, runtime_input=None, device="cpu", debug=False):
     """
-    Perform collapse on a block.
+    Perform collapse on a block with enhanced debugging.
     
     Parameters:
         named_layers: list of (name, module) or nn.Module
@@ -324,19 +325,28 @@ def _perform_collapse(named_layers, traced_shapes=None, runtime_input=None, devi
     # Absorb pools if needed
     adjusted_layers, pool_used = _absorb_pools_if_needed(named_layers, traced_shapes, debug)
 
-    # Determine actual input channels from runtime_input
-    runtime_in_ch = None
+    # Determine actual input tensor
     if runtime_input is not None:
-        if runtime_input.dim() >= 2:
-            runtime_in_ch = runtime_input.size(1)
+        x = runtime_input.clone().to(device)
+        runtime_in_ch = x.size(1)
+        if debug:
+            print(f"[DEBUG] Using runtime_input: shape={tuple(x.shape)}, channels={runtime_in_ch}")
+    else:
+        # fallback: use input shape from traced_shapes if available
+        if traced_shapes is not None and "list" in traced_shapes:
+            input_shape = traced_shapes["list"][0][1]  # first layer input
+            x = torch.zeros(input_shape).to(device)
+            runtime_in_ch = x.size(1)
             if debug:
-                print(f"[DEBUG] runtime_input detected with {runtime_in_ch} channels")
+                print(f"[DEBUG] No runtime_input; using traced_shapes: shape={input_shape}, channels={runtime_in_ch}")
+        else:
+            raise ValueError("Cannot determine input channels: provide runtime_input or traced_shapes")
 
     # Build collapsed block
     collapsed_block = _build_collapsed_block_with_checks(
         adjusted_layers,
-        traced_shapes,
-        runtime_in_ch=runtime_in_ch,
+        input_activation=x,
+        device=device,
         debug=debug
     )
 
@@ -347,8 +357,15 @@ def _perform_collapse(named_layers, traced_shapes=None, runtime_input=None, devi
         if pool_used is not None:
             print(f"[DEBUG] _perform_collapse: absorbed pool layer: {pool_used}")
 
-    return collapsed_block, pool_used
+        # Print final output shape
+        with torch.no_grad():
+            try:
+                out = collapsed_block(x)
+                print(f"[DEBUG] Collapsed block output shape: {tuple(out.shape)}")
+            except Exception as e:
+                print(f"[WARN] Failed to forward dummy input through collapsed block: {e}")
 
+    return collapsed_block, pool_used
 
 
 def _build_collapsed_block_with_checks(
