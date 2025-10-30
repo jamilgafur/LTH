@@ -72,6 +72,7 @@ def _replace_layers(named_layers: Sequence[Tuple[str, nn.Module]], start_idx: in
         if i == start_idx:
             new_layers.append((f"collapsed_{unique_suffix}", new_block))
         elif start_idx < i <= end_idx:
+            # skip the original layers that were collapsed/absorbed
             continue
         else:
             new_layers.append((name, layer))
@@ -121,7 +122,7 @@ def disable_inplace_relu(model: nn.Module):
 def patch_skip_connections(model: nn.Module):
     """
     Patch module forwards for blocks that include `shortcut` so that if shapes
-    mismatch the shortcut is safely ignored instead of raising on addition.
+    mismatch the shortcut the shortcut is safely ignored instead of raising on addition.
     """
     for name, module in model.named_modules():
         # treat modules that look like residual blocks with .block and .shortcut
@@ -212,6 +213,18 @@ def _build_collapsed_block(
       - chooses output channels such that the collapsed block has <= params than original,
       - optionally restores the original out_channels via a 1x1 projection,
       - returns nn.Sequential.
+
+    Parameters:
+      - layer_type: nn.Conv2d or nn.Linear
+      - in_features, out_features: original block's in/out channels/features
+      - output_shape: tensor shape after the block (used to compute H*W)
+      - full_block: the original list of (name, module) for the block (for BN/ReLU detection & param counting)
+      - stride: fallback stride to use for collapsed conv (overridden by inherit_conv_attrs if True)
+      - pool_layer: optional pooling module to append (cloned)
+      - linear_in_features: if the collapsed conv feeds a Linear, suggested flattened in_features (optional)
+      - shortcut_out_channels: if there is a skip that expects fewer channels (optional)
+      - preserve_out_channels: if True, append a 1x1 projection when collapsed channels != out_features
+      - inherit_conv_attrs: if True, attempt to inherit kernel/stride/padding/groups/dilation/bias
     """
     if debug:
         print(f"[DEBUG] _build_collapsed_block called: layer_type={getattr(layer_type,'__name__',str(layer_type))}, in={in_features}, out={out_features}, linear_in_features={linear_in_features}, shortcut_out_channels={shortcut_out_channels}, preserve_out_channels={preserve_out_channels}, inherit_conv_attrs={inherit_conv_attrs}")
@@ -375,6 +388,8 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
     """
     Collapse layers between start_layer_name and end_layer_name (inclusive).
     Adds robust handling so classifier's first Linear is adjusted if flattened size changes.
+    Also removes any post-block pool layers that were absorbed into the collapsed block
+    to prevent duplicate pooling / underflow (the fix).
     """
     import math
     import time
@@ -443,6 +458,7 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
     adaptive_pool_to_use = None
     out_channels = None
     out_shape = None
+    pool_layer = None
 
     # ---- Conv2D path ----
     if layer_type == nn.Conv2d:
@@ -475,12 +491,12 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
         if debug:
             print(f"[DEBUG] Detected linear_in_features = {linear_in_features}")
 
+        # last pool inside full_block (if any)
         pool_layer = next((m for _, m in reversed(full_block)
                            if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))), None)
 
-        # compute expected flatten size and adjust (best-effort)
+        # compute expected flatten size and adjust
         if linear_in_features is not None and out_channels > 0:
-            # Determine expected HW per-channel target from linear_in_features
             if linear_in_features % out_channels == 0:
                 expected_hw = linear_in_features // out_channels
             else:
@@ -490,31 +506,42 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
             if debug:
                 print(f"[DEBUG] expected_hw={expected_hw}, current_hw={cur_hw} (HxW={cur_H}x{cur_W})")
 
-            # Try absorbing post-block pools to match expected_hw (best-effort)
+            # Try absorbing post-block pools (and remove them from container if successful)
             if cur_hw != expected_hw:
                 extra_pools = []
+                y2 = y.clone()
+                absorbed_count = 0
                 with torch.no_grad():
-                    y2 = y.clone()
-                    for _, mod in named_layers[end_idx + 1:]:
+                    # iterate through layers after the collapsed block
+                    for j, (nm, mod) in enumerate(named_layers[end_idx + 1:], start=1):
                         if isinstance(mod, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
                             try:
                                 y2 = mod(y2)
                             except Exception:
                                 if debug:
-                                    print(f"[DEBUG] Pool {type(mod).__name__} underflow — stopping.")
+                                    print(f"[DEBUG] Pool {type(mod).__name__} underflow when probing — stopping absorption.")
                                 break
                             extra_pools.append(mod)
+                            absorbed_count = j
                             new_H, new_W = y2.shape[-2], y2.shape[-1]
                             if debug:
                                 print(f"[DEBUG] Absorbed pool {type(mod).__name__}, new shape={tuple(y2.shape)}")
                             if (new_H * new_W) == expected_hw:
+                                # combine with any existing pool_layer
                                 if pool_layer is None:
                                     pool_layer = extra_pools[0]
                                 else:
-                                    pool_layer = nn.Sequential(*([pool_layer] + extra_pools))
+                                    pool_layer = nn.Sequential(*([pool_layer] + extra_pools)) if not isinstance(pool_layer, nn.Sequential) else nn.Sequential(*([*pool_layer.children()] + extra_pools))
+                                # update y/out_shape and update end_idx to remove absorbed pools
                                 y = y2
                                 out_shape = tuple(y.shape)
+                                end_idx = end_idx + absorbed_count  # <<< critical: remove these layers later
+                                if debug:
+                                    print(f"[DEBUG] Successfully matched expected HW by absorbing {absorbed_count} pool layer(s). Updated end_idx -> {end_idx}")
                                 break
+                        else:
+                            # stop absorption when encountering a non-pool layer
+                            break
 
                 cur_H, cur_W = out_shape[-2], out_shape[-1]
                 cur_hw = cur_H * cur_W
@@ -558,6 +585,7 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
             output_shape=tuple(y.shape), full_block=full_block, debug=debug
         )
 
+    # IMPORTANT: use the possibly-updated end_idx (if pools were absorbed) to remove absorbed pools
     updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
 
     # >>> PATCH START: handle root-level (empty container path) safely and adjust classifier if needed
@@ -568,45 +596,24 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
         _update_container(model, start_container_name, updated_container)
         model.to(device)
 
-    # Recompute the flattened output size produced by the collapsed location.
-    # We try to infer flattened size from the last forward trace if available (out_shape).
-    # Otherwise, forward a dummy input from the original capture to get the actual shape.
+    # Recompute flattened output size (best-effort) from out_shape if available
     try:
         if out_shape is None:
-            # fallback run to compute out_shape
-            dummy_input_for_shape = torch.randn(input_shape).to(device)
-            model.to(device)
-            with torch.no_grad():
-                # run forward up to the collapsed area: get the layer we replaced and forward through it
-                up_to_layer = get_layer(model, start_container_name) if start_container_name != "" else model
-                # if container is a Sequential, run through its children until collapsed block name
-                # simplest approach: run full model and get the model output at that point by replaying hook:
-                _, captured_post = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
-                # attempt to run the collapsed block itself on captured_post
-                collapsed_mod = None
-                if start_container_name == "":
-                    # collapsed block is in top-level sequential, find it by name
-                    collapsed_mod = None
-                # best-effort: recompute flatten size using captured_post shape
-                out_shape = tuple(captured_post.shape)
-        # compute new_flat = C*H*W for conv outputs; for linear branch use product
+            # fallback: run a probe forward to compute shape by hooking at start_layer_name input again
+            _, captured_post = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
+            out_shape = tuple(captured_post.shape)
         if len(out_shape) >= 4:
-            new_C = out_shape[1]
-            new_H = out_shape[-2]
-            new_W = out_shape[-1]
-            new_flat = new_C * new_H * new_W
+            new_flat = out_shape[1] * out_shape[-2] * out_shape[-1]
         else:
             # linear-like output
             new_flat = 1
             for d in out_shape[1:]:
                 new_flat *= d
     except Exception:
-        # safe fallback
         new_flat = None
 
     # If there's a classifier Linear and it expects a different flattened size, replace it
     if new_flat is not None:
-        # find the first Linear again from the (possibly updated) model
         classifier_linear_name_post = None
         classifier_linear_mod_post = None
         for nm, mod in model.named_modules():
@@ -618,11 +625,10 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
         if classifier_linear_mod_post is not None:
             expected_in = classifier_linear_mod_post.in_features
             if expected_in != new_flat:
-                # Replace the classifier's first Linear with a new Linear matching new_flat -> same out_features
                 out_f = classifier_linear_mod_post.out_features
                 bias_flag = classifier_linear_mod_post.bias is not None
                 new_lin = nn.Linear(new_flat, out_f, bias=bias_flag).to(device)
-                # Optionally initialize weights sensibly
+                # sensible init
                 try:
                     nn.init.kaiming_uniform_(new_lin.weight, a=math.sqrt(5))
                     if bias_flag:
@@ -630,10 +636,8 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
                         bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
                         nn.init.uniform_(new_lin.bias, -bound, bound)
                 except Exception:
-                    # fallback: ignore init issues
                     pass
 
-                # replace in model using path setter
                 try:
                     _set_module_by_path(model, classifier_linear_name_post, new_lin)
                     print(f"[INFO] Replaced classifier Linear '{classifier_linear_name_post}' in_features {expected_in} -> {new_flat}")
@@ -740,5 +744,8 @@ def collapse_only(
 
     if post_total > pre_total:
         print("[WARN] ⚠ Model has MORE parameters after collapse — investigate collapse policy.")
+
+    # if debug:
+    #     print(f"[DEBUG] Model summary after collapse:\n{layer_stats(model)}")
 
     return model
