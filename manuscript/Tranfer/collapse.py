@@ -537,11 +537,16 @@ def _collapse_block(model, start, end, input_shape, device="cpu", debug=False):
             print(f"[WARN] Failed to capture activation for start '{start}': {e}. Using global input_shape.")
         traced_shapes = _trace_block_shapes(named_layers, input_shape, device, debug)
 
-    collapsed_layer, _ = _perform_collapse(named_layers, traced_shapes, device=device, debug=debug)
-    collapsed_layers = fix_conv_in_channels(collapsed_layers)
-    container = _get_submodule(model, start_container_name)
-    _replace_block_in_container(container, named_layers, collapsed_layer)
+    # Collapse the block first
+    collapsed_seq, _ = _perform_collapse(named_layers, traced_shapes, device=device, debug=debug)
 
+    # Fix in_channels here
+    collapsed_seq = fix_conv_in_channels(list(collapsed_seq))  # convert Sequential to list
+    collapsed_seq = nn.Sequential(*collapsed_seq)             # convert back to Sequential
+
+    # Replace the block in the model
+    container = _get_submodule(model, start_container_name)
+    _replace_block_in_container(container, named_layers, collapsed_seq)
     if debug:
         print(f"[INFO] Collapsed block {start} → {end}")
         print(f"[INFO] Params after collapse: {sum(p.numel() for p in model.parameters())}")
