@@ -102,8 +102,11 @@ import torch.nn.functional as F
 def patch_skip_connections(model):
     """
     Patch residual blocks to skip shortcuts safely.
-    Avoid circular references by storing only block names, not full model.
+    Avoids circular references and skips invalid additions
+    when spatial or channel dimensions no longer match after collapsing.
     """
+    import torch.nn.functional as F
+
     collapsed_paths = getattr(model, "_collapsed_blocks", [])
 
     for name, module in model.named_modules():
@@ -114,21 +117,30 @@ def patch_skip_connections(model):
             def make_patched_forward(orig_forward, block_name):
                 def new_forward(self, x):
                     out = self.block(x)
-                    # check if this block is within collapsed ranges
+
                     skip_shortcut = any(
                         block_name.startswith(start) or block_name.startswith(end)
                         for start, end in collapsed_paths
                     )
-                    if skip_shortcut:
-                        return F.relu(out)
+
+                    if not skip_shortcut:
+                        try:
+                            shortcut_out = self.shortcut(x)
+                            if out.shape != shortcut_out.shape:
+                                print(f"[WARN] Shape mismatch in block '{block_name}': "
+                                      f"main {tuple(out.shape)} vs shortcut {tuple(shortcut_out.shape)} "
+                                      f"→ skipping shortcut.")
+                                return F.relu(out)
+                            return F.relu(out + shortcut_out)
+                        except Exception as e:
+                            print(f"[WARN] Shortcut computation failed in '{block_name}' ({e}); skipping shortcut.")
+                            return F.relu(out)
                     else:
-                        return F.relu(out + self.shortcut(x))
+                        return F.relu(out)
                 return new_forward
 
-            # patch forward safely
             module.forward = make_patched_forward(original_forward, name).__get__(module)
-            print(f"[PATCH] Patched residual block forward: {name}")
-
+            print(f"[PATCH] Patched residual block forward safely: {name}")
 
 def _is_within_collapsed_block(model, block_path):
     """
@@ -568,20 +580,22 @@ def adjust_classifier_input_features(
     If False:
         -> Attempt to recompute input feature size and patch first linear layer safely.
     """
-
     import torch
     import torch.nn as nn
-    import math
-    from collections import OrderedDict
 
     if preserve_original_fc:
         print("[INFO] preserve_original_fc=True → Skipping classifier rewrite. Keeping original FC intact.")
-        return  # ✅ Early exit — nothing modified
+        return
 
     print("[INFO] preserve_original_fc=False → Checking classifier input feature consistency...")
 
     model.eval()
     model.to(device)
+
+    # --- NEW PATCH: ensure deterministic spatial size before flatten ---
+    if hasattr(model, 'avgpool'):
+        print("[INFO] Enforcing AdaptiveAvgPool2d((4,4)) before flatten to stabilize feature shape.")
+        model.avgpool = nn.AdaptiveAvgPool2d((4, 4))
 
     activations = {}
     hooks = []
@@ -591,7 +605,7 @@ def adjust_classifier_input_features(
             activations[name] = {'input_shape': inp[0].shape, 'output_shape': out.shape}
         return hook
 
-    # Hook into modules to capture feature shapes
+    # Hook all candidate layers
     for name, module in model.named_modules():
         if isinstance(module, (nn.Conv2d, nn.AdaptiveAvgPool2d, nn.Linear, nn.BatchNorm2d, nn.ReLU, nn.MaxPool2d, nn.Sequential)):
             hooks.append(module.register_forward_hook(make_hook(name)))
@@ -613,38 +627,32 @@ def adjust_classifier_input_features(
     first_linear_name = linear_names[0]
     hooked = activations.get(first_linear_name)
 
+    # --- compute flattened input feature size ---
     if hooked:
         inp_shape = hooked['input_shape']
         flattened_size = int(torch.tensor(inp_shape[1:]).prod().item())
-        print(f"[DEBUG] Flattened input size measured: {flattened_size}")
+        print(f"[DEBUG] Flattened input size measured via hook: {flattened_size}")
     else:
-        # --- Generic fallback ---
-        print("[WARN] Could not hook input shape. Running model to estimate flatten size generically.")
+        print("[WARN] Could not hook input shape; estimating via forward pass.")
         with torch.no_grad():
             dummy = torch.randn(input_shape).to(device)
-            try:
-                output = model(dummy)
-            except Exception as e:
-                print(f"[ERROR] Model forward failed during flatten size estimation: {e}")
-                raise
-            if isinstance(output, torch.Tensor):
-                flattened_size = output.numel() // output.size(0)
+            out = model(dummy)
+            if isinstance(out, torch.Tensor):
+                flattened_size = out.numel() // out.size(0)
             else:
-                # If model returns tuple/dict, take first tensor
-                first_tensor = next((t for t in output if isinstance(t, torch.Tensor)), None)
-                if first_tensor is None:
-                    raise RuntimeError("Cannot determine flattened feature size: model returned non-tensor output.")
+                first_tensor = next((t for t in out if isinstance(t, torch.Tensor)), None)
                 flattened_size = first_tensor.numel() // first_tensor.size(0)
-        print(f"[DEBUG] Fallback flattened size estimated as: {flattened_size}")
+        print(f"[DEBUG] Fallback flattened size estimated: {flattened_size}")
 
-    # Retrieve the first linear layer reference
+    # Retrieve the first linear layer
     first_linear_layer = dict(model.named_modules())[first_linear_name]
 
     if flattened_size == first_linear_layer.in_features:
         print("[INFO] Flattened input matches Linear.in_features. No adjustment required.")
         return
 
-    print(f"[INFO] Adjusting first Linear layer: in_features {first_linear_layer.in_features} → {flattened_size}")
+    print(f"[INFO] Adjusting first Linear layer '{first_linear_name}': "
+          f"in_features {first_linear_layer.in_features} → {flattened_size}")
 
     # Replace linear layer safely
     parent_parts = first_linear_name.split(".")

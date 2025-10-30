@@ -259,6 +259,7 @@ def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader,
     if collapse_range:
         formatted_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         tmp_path = os.path.join(save_path, f"temp_model_kevin_{formatted_time}.pth")
+        # tmp path = VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/temp_model_kevin_2025-10-29_20-27-50.pth'
         os.makedirs(save_path, exist_ok=True)
         torch.save({'model': base_model.state_dict()}, tmp_path)
         base_model = collapse_only(
