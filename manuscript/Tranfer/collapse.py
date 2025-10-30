@@ -504,7 +504,7 @@ def _collapse_block(model, start, end, input_shape, device="cpu", debug=True):
         captured_activation = torch.zeros((1,) + tuple(input_shape[1:])).to(device)
         traced_shapes = _trace_block_shapes(named_layers, captured_activation, device, debug)
 
-    # Perform collapse with runtime input for correct in_channels
+    # Build collapsed block with proper in_channels adjustments
     collapsed_seq, _ = _perform_collapse(
         named_layers,
         traced_shapes=traced_shapes,
@@ -513,26 +513,14 @@ def _collapse_block(model, start, end, input_shape, device="cpu", debug=True):
         debug=debug
     )
 
-    # Fix in_channels in collapsed block
-    collapsed_seq = fix_conv_in_channels(list(collapsed_seq))  # Sequential → list
-    collapsed_seq = nn.Sequential(*collapsed_seq)             # List → Sequential
-    if debug:
-        print(f"[DEBUG] Collapsed block layers after fix_conv_in_channels:")
-        for i, layer in enumerate(collapsed_seq):
-            if isinstance(layer, nn.Conv2d):
-                print(f"   [{i}] Conv2d: in_channels={layer.in_channels}, out_channels={layer.out_channels}, kernel_size={layer.kernel_size}")
-            else:
-                print(f"   [{i}] {type(layer).__name__}")
-
-    # Replace block in model
+    # Replace block in model (no additional fix_conv_in_channels needed)
     container = _get_submodule(model, start_container_name)
     _replace_block_in_container(container, named_layers, collapsed_seq)
     if debug:
         total_params = sum(p.numel() for p in model.parameters())
         print(f"[INFO] Collapsed block '{start} → {end}' inserted. Total params now: {total_params}")
 
-    # Optional: test forward through collapsed block
-    if debug:
+        # Optional: test forward through collapsed block
         try:
             model.eval()
             with torch.no_grad():
@@ -542,7 +530,6 @@ def _collapse_block(model, start, end, input_shape, device="cpu", debug=True):
             print(f"[WARN] Forward test failed: {e}")
 
     return model
-
 
 # -----------------------------------------------------------------------------
 # Top-level collapse function
