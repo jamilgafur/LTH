@@ -219,63 +219,131 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
 # =====================================================
 # === Experiment Entry Points (JF & Kevin) ===
 # =====================================================
-def run_jf_experiment(experiments, model_path_097, train_loader, test_loader, device, epochs, pretrain,
-                      model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",
-                      post_compress_epochs=False):
-
+def run_jf_experiment(
+    experiments,
+    model_path_097,
+    train_loader,
+    test_loader,
+    device,
+    epochs,
+    pretrain,
+    model_class=VGG16,
+    model_kwargs=None,
+    data_shape=None,
+    save_path="./runs",
+    post_compress_epochs=False
+):
+    """
+    JF workflow: loads pretrained model, optionally collapses it, then trains/evaluates.
+    Compatible with the updated collapse_only() that supports:
+        - skip connection awareness
+        - param safety check
+        - debug logging
+    """
     model_kwargs = model_kwargs or {}
     print("\n=== Running JF experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
+
+    # 1️⃣ Load pretrained model
     base_model = model_class(**model_kwargs)
-    base_model.load_state_dict(torch.load(model_path_097, map_location='cpu')['model'])
+    ckpt = torch.load(model_path_097, map_location='cpu')
+    base_model.load_state_dict(ckpt['model'])
     print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
 
+    # 2️⃣ Collapse (if requested)
     if collapse_range:
+        print(f"[•] Collapsing range {collapse_range} for {exp_name}")
         base_model = collapse_only(
             model_weights_1=model_path_097,
             compression_set=[collapse_range],
             model_class=model_class,
             model_kwargs=model_kwargs,
             input_shape=model_kwargs['one_batch'].shape,
-            device=device
+            device=device,
+            safe_param_reduction=True,   # ✅ always ensure param count <= original
+            handle_skips=True,           # ✅ preserve skip connection consistency
+            debug=True                   # ✅ enable collapse debug printouts
         )
 
-    data = run_experiment(base_model, model_kwargs, train_loader, test_loader, device, epochs,
-                          workflow="JF", exp_name=exp_name, data_shape=data_shape,
-                          save_path=save_path, post_compress_epochs=post_compress_epochs)
+    # 3️⃣ Run training & diagnostics
+    data = run_experiment(
+        model=base_model,
+        model_kwargs=model_kwargs,
+        train_loader=train_loader,
+        test_loader=test_loader,
+        device=device,
+        epochs=epochs,
+        workflow="JF",
+        exp_name=exp_name,
+        data_shape=data_shape,
+        save_path=save_path,
+        post_compress_epochs=post_compress_epochs
+    )
     return base_model
 
-def run_kevin_experiment(experiments, model_path_000, train_loader, test_loader, device, epochs,
-                         model_class=VGG16, model_kwargs=None, data_shape=None, save_path="./runs",
-                         post_compress_epochs=False):
-    
+
+def run_kevin_experiment(
+    experiments,
+    model_path_000,
+    train_loader,
+    test_loader,
+    device,
+    epochs,
+    model_class=VGG16,
+    model_kwargs=None,
+    data_shape=None,
+    save_path="./runs",
+    post_compress_epochs=False
+):
+    """
+    Kevin workflow: temporary checkpoint → collapse → train → evaluate.
+    Updated for new collapse_only() interface.
+    """
     model_kwargs = model_kwargs or {}
     print("\n=== Running Kevin experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
+
     base_model = model_class(**model_kwargs)
-    base_model.load_state_dict(torch.load(model_path_000, map_location='cpu')['model'])
+    ckpt = torch.load(model_path_000, map_location='cpu')
+    base_model.load_state_dict(ckpt['model'])
     print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
 
     if collapse_range:
+        print(f"[•] Collapsing range {collapse_range} for {exp_name}")
         formatted_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         tmp_path = os.path.join(save_path, f"temp_model_kevin_{formatted_time}.pth")
-        # tmp path = VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/temp_model_kevin_2025-10-29_20-27-50.pth'
         os.makedirs(save_path, exist_ok=True)
         torch.save({'model': base_model.state_dict()}, tmp_path)
+
         base_model = collapse_only(
             model_weights_1=tmp_path,
             compression_set=[collapse_range],
             model_class=model_class,
             model_kwargs=model_kwargs,
             input_shape=model_kwargs['one_batch'].shape,
-            device=device
+            device=device,
+            safe_param_reduction=True,   # ✅ never increase param count
+            handle_skips=True,           # ✅ aware of skip/residual paths
+            debug=True                   # ✅ full collapse printouts
         )
+
+        # cleanup
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
 
-    data = run_experiment(base_model, model_kwargs, train_loader, test_loader, device, epochs,
-                          workflow="Kevin", exp_name=exp_name, data_shape=data_shape,
-                          save_path=save_path, post_compress_epochs=post_compress_epochs)
+    data = run_experiment(
+        model=base_model,
+        model_kwargs=model_kwargs,
+        train_loader=train_loader,
+        test_loader=test_loader,
+        device=device,
+        epochs=epochs,
+        workflow="Kevin",
+        exp_name=exp_name,
+        data_shape=data_shape,
+        save_path=save_path,
+        post_compress_epochs=post_compress_epochs
+    )
     return base_model
 
 # -------------------------
