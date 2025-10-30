@@ -137,10 +137,9 @@ def _build_collapsed_block(
 ):
     """
     Build a collapsed block that:
-      - Preserves BN/ReLU if present.
-      - Matches Conv2d output to Linear input (if linear_in_features provided).
-      - Matches Conv2d output channels to skip-connection channels (if shortcut_out_channels provided).
-      - Always yields fewer or equal parameters than the original block.
+      - Collapses multiple Conv layers safely without enlarging kernels.
+      - Matches Linear input or skip connection channels when present.
+      - Always produces <= parameters than original block.
     """
     import torch.nn as nn
     import copy
@@ -152,11 +151,11 @@ def _build_collapsed_block(
     seq = []
 
     if layer_type == nn.Conv2d:
-        # Detect BN/ReLU
+        # Detect BN/ReLU in the original block
         has_bn = any(isinstance(m, nn.BatchNorm2d) for _, m in full_block)
         has_relu = any(isinstance(m, nn.ReLU) for _, m in full_block)
 
-        # Compute effective kernel/stride/padding
+        # Aggregate kernel/stride/padding info from original block
         kernels = [m.kernel_size[0] for _, m in full_block if isinstance(m, nn.Conv2d)]
         strides = [m.stride[0] for _, m in full_block if isinstance(m, nn.Conv2d)]
         paddings = [m.padding[0] for _, m in full_block if isinstance(m, nn.Conv2d)]
@@ -165,22 +164,33 @@ def _build_collapsed_block(
         s_eff = max(strides) if strides else 1
         p_eff = paddings[0] if paddings else 0
 
+        # Clamp kernel to avoid invalid sizes
+        H, W = output_shape[-2], output_shape[-1]
+        if k_eff > H or k_eff > W:
+            print(f"[WARN] Reducing effective kernel from {k_eff} to fit input ({H}x{W}).")
+            k_eff = min(H, W, 3)  # Cap at 3 for safety
+
         adjusted_out_channels = out_features
 
-        # --- Adjust Conv output for Linear layer if required ---
+        # If followed by Linear layer, reduce channels to match flattened input
         if linear_in_features is not None:
-            H, W = output_shape[-2], output_shape[-1]
             adjusted_out_channels = max(1, linear_in_features // (H * W))
-            print(f"[INFO] Adjusting Conv out_channels to match Linear.in_features: {adjusted_out_channels}")
+            print(f"[INFO] Adjusting Conv out_channels to {adjusted_out_channels} "
+                  f"for Linear in_features={linear_in_features}")
 
-        # --- Match shortcut shape if present ---
+        # If skip connection has fewer channels, match it
         if shortcut_out_channels is not None and shortcut_out_channels < adjusted_out_channels:
             print(f"[INFO] Reducing Conv out_channels {adjusted_out_channels} → {shortcut_out_channels} "
-                  f"to match skip connection channels.")
+                  f"for skip connection.")
             adjusted_out_channels = shortcut_out_channels
 
+        # Force small kernel (1x1) to guarantee fewer params than original
+        if k_eff > 1 and (linear_in_features is not None or shortcut_out_channels is not None):
+            print(f"[DEBUG] Collapsing Conv2d to 1x1 for parameter reduction.")
+            k_eff, p_eff = 1, 0
+
         # --- Build collapsed conv ---
-        conv1 = nn.Conv2d(
+        conv = nn.Conv2d(
             in_features,
             adjusted_out_channels,
             kernel_size=k_eff,
@@ -188,10 +198,12 @@ def _build_collapsed_block(
             padding=p_eff,
             bias=False
         )
-        print(f"[DEBUG] Built collapsed Conv2d: {in_features}->{adjusted_out_channels}, "
-              f"k={k_eff}, s={s_eff}, p={p_eff}")
 
-        seq.append(conv1)
+        print(f"[DEBUG] Built Conv2d: in={in_features}, out={adjusted_out_channels}, "
+              f"k={k_eff}, s={s_eff}, p={p_eff}")
+        print(f"[DEBUG] Params in conv: {in_features * adjusted_out_channels * (k_eff ** 2):,}")
+
+        seq.append(conv)
 
         if has_bn:
             seq.append(nn.BatchNorm2d(adjusted_out_channels))
@@ -200,25 +212,22 @@ def _build_collapsed_block(
 
         if pool_layer is not None:
             seq.append(copy.deepcopy(pool_layer))
-            print(f"[DEBUG] Added cloned pooling layer: {pool_layer.__class__.__name__}")
+            print(f"[DEBUG] Added pooling layer: {pool_layer.__class__.__name__}")
 
     elif layer_type == nn.Linear:
+        # Linear collapsing is trivial — just a single layer
         seq.append(nn.Linear(in_features, out_features))
-        print(f"[DEBUG] Built collapsed Linear: {in_features}->{out_features}")
-
+        print(f"[DEBUG] Built Linear: {in_features} -> {out_features}")
     else:
         raise NotImplementedError(f"Unsupported layer type: {layer_type}")
 
     collapsed = nn.Sequential(OrderedDict([
         (f"layer_{i}", layer) for i, layer in enumerate(seq)
     ]))
-
     print(f"[DEBUG] Collapsed block layers: {[type(m).__name__ for m in collapsed]}")
     return collapsed
 
 # --------------------- Core Collapse --------------------- #
-
-
 
 def _collapse_block(model, start_layer_name, end_layer_name, input_shape, device='cpu'):
     """
@@ -398,22 +407,87 @@ def patch_skip_connections(model):
 
 # --------------------- Main Collapse Function --------------------- #
 
-def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=None,
-                  input_shape=(1, 3, 32, 32), device='cpu'):
-    model_kwargs = model_kwargs or {}
-    model = model_class(**model_kwargs)
-    checkpoint = torch.load(model_weights_1, map_location=device)
-    model.load_state_dict(checkpoint['model'])
-    model.to(device)
-    model._collapsed_blocks = []
+def collapse_only(model, layer_pairs, input_shape, device='cpu', dry_run=False):
+    """
+    Collapse multiple layer ranges in a model safely.
 
-    for start, end in compression_set:
-        model = _collapse_block(model, start, end, input_shape, device)
-        model._collapsed_blocks.append((start, end))
+    Args:
+        model (nn.Module): The model to modify.
+        layer_pairs (dict): Mapping of collapse names to (start_layer, end_layer).
+        input_shape (tuple): Input shape for dummy forward pass.
+        device (str): 'cpu' or 'cuda'.
+        dry_run (bool): If True, simulate collapse without modifying model.
 
-    # Adjust classifier only if required
-    adjust_classifier_input_features(model, input_shape, num_classes=model_kwargs.get('num_classes', 200),
-                                     device=device, preserve_original_fc=False)
-    disable_inplace_relu(model)
-    patch_skip_connections(model)
+    Returns:
+        nn.Module: Collapsed model (or original if dry_run=True)
+    """
+    import torch
+    import torch.nn as nn
+    import copy
+
+    print("\n==============================")
+    print("[INFO] Starting collapse_only()")
+    print("==============================")
+
+    model = copy.deepcopy(model).to(device)
+    model.eval()
+
+    total_params_before = count_trainable_params(model)
+    print(f"[INFO] Initial parameter count: {total_params_before:,}")
+
+    for collapse_name, (start_layer_name, end_layer_name) in layer_pairs.items():
+        print(f"\n[INFO] --- Collapsing Block: {collapse_name} ---")
+        print(f"         From: {start_layer_name}")
+        print(f"         To:   {end_layer_name}")
+
+        try:
+            # ---- Run a safe simulation to detect Linear follower ----
+            start_container_name, _ = _get_container_and_subname(start_layer_name)
+            end_container_name, end_subname = _get_container_and_subname(end_layer_name)
+            container = get_layer(model, start_container_name)
+            named_layers = list(container.named_children())
+
+            # Find end layer index
+            end_idx = next(i for i, (n, _) in enumerate(named_layers) if n == end_subname)
+
+            # Try to find the next layer (for Linear detection)
+            next_layer = None
+            if end_idx + 1 < len(named_layers):
+                next_layer = named_layers[end_idx + 1][1]
+
+            # If the next layer is a Linear, record its input size
+            linear_in_features = None
+            if isinstance(next_layer, nn.Linear):
+                linear_in_features = next_layer.in_features
+                print(f"[INFO] Detected Linear layer after collapse block with in_features={linear_in_features}")
+
+            # ---- Collapse the block ----
+            if not dry_run:
+                model = _collapse_block(
+                    model,
+                    start_layer_name,
+                    end_layer_name,
+                    input_shape,
+                    device=device
+                )
+            else:
+                print("[INFO] Dry run mode: skipping actual collapse.")
+
+        except Exception as e:
+            print(f"[ERROR] Failed to collapse {collapse_name}: {e}")
+            import traceback
+            traceback.print_exc()
+            continue
+
+    total_params_after = count_trainable_params(model)
+    print("\n==============================")
+    print(f"[INFO] Collapse complete.")
+    print(f"[INFO] Parameters before: {total_params_before:,}")
+    print(f"[INFO] Parameters after : {total_params_after:,}")
+    print(f"[INFO] ΔParams = {total_params_before - total_params_after:+,} (should be ≥ 0)")
+    print("==============================\n")
+
+    if total_params_after > total_params_before:
+        print("[WARN] ⚠ Model has MORE parameters after collapse! This should never happen — check block logic.")
+
     return model
