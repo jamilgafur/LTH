@@ -224,24 +224,51 @@ def _get_submodule(model: nn.Module, target: str):
 # -----------------------------------------------------------------------------
 
 
-def _absorb_pools_if_needed(named_layers, traced_shapes, debug):
-    """Replace pooling layers with Identity if spatial size >1, return last pool used."""
-    output_shape = traced_shapes["final"]
-    H, W = output_shape[-2:]
+def _absorb_pools_if_needed(named_layers, traced_shapes=None, debug=False):
+    """
+    Checks for pool layers that can be absorbed or moved.
+    Returns:
+        adjusted_layers: list of modules (or (name,module)) after absorption
+        pool_used: the pool layer absorbed (if any)
+    """
+    adjusted_layers = []
     pool_used = None
-    adjusted_layers = list(named_layers)
+    current_out_ch = None  # Track output channels for Conv/BN
+    
+    for i, item in enumerate(named_layers):
+        if isinstance(item, tuple) and len(item) == 2:
+            name, module = item
+        else:
+            name, module = None, item
 
-    if H > 1 or W > 1:
-        for i, (n, l) in reversed(list(enumerate(named_layers))):
-            if isinstance(l, (nn.MaxPool2d, nn.AvgPool2d)):
-                adjusted_layers[i] = nn.Identity()
-                pool_used = l
-                H //= l.kernel_size if isinstance(l.kernel_size, int) else l.kernel_size[0]
-                W //= l.kernel_size if isinstance(l.kernel_size, int) else l.kernel_size[1]
+        # Track Conv output channels
+        if isinstance(module, nn.Conv2d):
+            current_out_ch = module.out_channels
+            if debug:
+                print(f"[DEBUG][_absorb_pools] Conv2d {name or i} out_channels={current_out_ch}")
+
+        # Track BN and ensure it matches current channels
+        elif isinstance(module, nn.BatchNorm2d):
+            if current_out_ch is not None and module.num_features != current_out_ch:
                 if debug:
-                    print(f"[DEBUG] Absorbed pool {l.__class__.__name__}, new HxW={H}x{W}")
-                if H <= 1 and W <= 1:
-                    break
+                    print(f"[WARN][_absorb_pools] BN {name or i} num_features={module.num_features} != expected {current_out_ch}")
+            current_out_ch = module.num_features
+
+        # Handle pooling layers
+        elif isinstance(module, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
+            pool_used = module
+            if debug:
+                print(f"[DEBUG][_absorb_pools] Found pool layer {name or i}: {module}")
+            # Optionally, modify or absorb pool logic here
+            # For now, just track it and add to adjusted_layers
+
+        adjusted_layers.append(module if name is None else (name, module))
+
+    if debug:
+        print(f"[DEBUG][_absorb_pools] final adjusted_layers count = {len(adjusted_layers)}")
+        if pool_used is not None:
+            print(f"[DEBUG][_absorb_pools] pool_used = {pool_used}")
+
     return adjusted_layers, pool_used
 
 
