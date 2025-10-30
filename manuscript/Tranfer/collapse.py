@@ -175,7 +175,7 @@ def collapse_only(model_weights_1, compression_set, model_class, model_kwargs=No
         input_shape,
         num_classes=num_classes,
         device=device,
-        preserve_original_fc=True   
+        preserve_original_fc=False   
     )
 
     disable_inplace_relu(model)
@@ -383,7 +383,15 @@ def forward_until(model, stop_path, x):
         x = current(x)
     return x
 
-def _build_collapsed_block(layer_type, in_features, out_features, output_shape, full_block=None, stride=(1, 1), pool_layer: Optional[nn.Module]=None):
+def _build_collapsed_block(
+    layer_type,
+    in_features,
+    out_features,
+    output_shape,
+    full_block=None,
+    stride=(1, 1),
+    pool_layer: Optional[nn.Module] = None
+):
     """
     Build a collapsed block safely.
     Clones any original modules (like pooling) to avoid circular references.
@@ -405,29 +413,36 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
             elif isinstance(mods[-1], nn.BatchNorm2d):
                 has_bn = True
 
-        # Bottleneck collapse
-        bottleneck_ratio = 0.75
-        bottleneck_channels = max(1, int(in_features * bottleneck_ratio))
-
-        # Replace stride=(1,1), padding=0 convs with:
+        # --- Compute effective parameters correctly ---
         kernels = [m.kernel_size[0] if hasattr(m, "kernel_size") else 1 for m in full_block if isinstance(m, nn.Conv2d)]
+        strides = [m.stride[0] if hasattr(m, "stride") else 1 for m in full_block if isinstance(m, nn.Conv2d)]
         paddings = [m.padding[0] if hasattr(m, "padding") else 0 for m in full_block if isinstance(m, nn.Conv2d)]
-        k_eff = sum(kernels) - (len(kernels) - 1)
-        p_eff = paddings[0] if paddings else 0
-        # 1x1 conv to bottleneck
-        k_eff =  1
-        p_eff = 0
-        conv1 = nn.Conv2d(in_features, out_features, kernel_size=k_eff, stride=stride, padding=p_eff, bias=False)
-        print(f"[DEBUG] Built collapsed Conv2d: {in_features} -> {out_features}, kernel_size={k_eff}, stride={stride}, padding={p_eff}")
-        
-        seq.extend([conv1])
 
+        # Compute effective kernel, stride, and padding to preserve output shape
+        k_eff = sum(kernels) - (len(kernels) - 1)
+        s_eff = 1 if not strides else max(strides)
+        p_eff = paddings[0] if paddings else 0
+
+        # --- Build collapsed conv preserving spatial dimensions ---
+        conv1 = nn.Conv2d(
+            in_features,
+            out_features,
+            kernel_size=k_eff,
+            stride=s_eff,
+            padding=p_eff,
+            bias=False
+        )
+        print(f"[DEBUG] Built collapsed Conv2d: {in_features} -> {out_features}, kernel_size={k_eff}, stride={s_eff}, padding={p_eff}")
+
+        seq.append(conv1)
+
+        # Keep BN/ReLU if they were at the end of the block
         if has_bn:
             seq.append(nn.BatchNorm2d(out_features))
         if has_relu:
             seq.append(nn.ReLU(inplace=False))
 
-        # clone pool layer if exists
+        # Clone pool layer if exists
         if pool_layer is not None:
             seq.append(copy.deepcopy(pool_layer))
             print(f"[DEBUG] Appending cloned pooling layer: {pool_layer.__class__.__name__}")
@@ -443,6 +458,7 @@ def _build_collapsed_block(layer_type, in_features, out_features, output_shape, 
     collapsed = nn.Sequential(OrderedDict([(f"layer_{i}", layer) for i, layer in enumerate(seq)]))
     print(f"[DEBUG] Collapsed block layers: {[type(m).__name__ for m in collapsed]}")
     return collapsed
+
 
 def _measure_flattened_size_by_forward(model, input_shape, device):
     """
