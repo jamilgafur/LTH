@@ -302,79 +302,61 @@ from collections import OrderedDict
 # Updated methods with fixes and more debugging
 # -----------------------------------------------------------------------------
 
-def _perform_collapse(block_layers, runtime_input, traced_shapes=None, device="cpu", debug=True):
+def _perform_collapse(layers, input_shape, device=None, debug=False):
     """
-    Collapse layers while safely adjusting Conv2d in_channels and BatchNorm2d features.
+    Collapse a sequence of layers into a single sequential block.
+    Handles Conv2d, ReLU, BatchNorm2d, MaxPool2d properly.
+    
+    Args:
+        layers (list): List of nn.Modules (layers to collapse)
+        input_shape (tuple): Shape of input tensor (B, C, H, W)
+        device (torch.device): device to put layers on
+        debug (bool): print debug info
+    Returns:
+        collapsed_seq (nn.Sequential): collapsed layers
+        out_channels (int): number of output channels after collapse
     """
+    x = torch.randn(input_shape).to(device)
     collapsed_layers = []
-    x = runtime_input.clone().to(device)
-    in_channels = x.shape[1]
 
-    if debug:
-        print(f"[DEBUG][_perform_collapse] Starting collapse: {len(block_layers)} layers")
-        print(f"[DEBUG][_perform_collapse] Input shape: {tuple(x.shape)}")
-
-    for i, (name, layer) in enumerate(block_layers):
+    for idx, layer in enumerate(layers):
+        name = layer._get_name() + f"_{idx}"
         if debug:
-            print(f"[DEBUG][_perform_collapse] Layer {i}: {name} ({type(layer).__name__}) input_ch={in_channels}")
+            print(f"[DEBUG][_perform_collapse] Layer {idx}: {name} ({type(layer).__name__}) input_ch={x.shape[1]}")
 
-        # Skip pooling if it would reduce spatial size to zero
-        if isinstance(layer, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
-            H, W = x.shape[2], x.shape[3]
-            if H <= 1 or W <= 1:
+        if isinstance(layer, nn.BatchNorm2d):
+            # BatchNorm should match the number of channels of previous layer's output
+            expected_features = x.shape[1]  # output channels of prev layer
+            if layer.num_features != expected_features:
                 if debug:
-                    print(f"[DEBUG] Skipping pool '{name}' to avoid zero-size output (H={H}, W={W})")
-                continue
+                    print(f"[WARN] Adjusting BatchNorm2d '{name}' num_features {layer.num_features} -> {expected_features}")
+                new_bn = nn.BatchNorm2d(expected_features).to(device)
+                # Copy over weights/bias/running stats for overlapping channels
+                min_feat = min(layer.num_features, expected_features)
+                new_bn.weight.data[:min_feat] = layer.weight.data[:min_feat].clone()
+                new_bn.bias.data[:min_feat] = layer.bias.data[:min_feat].clone()
+                new_bn.running_mean[:min_feat] = layer.running_mean[:min_feat].clone()
+                new_bn.running_var[:min_feat] = layer.running_var[:min_feat].clone()
+                layer = new_bn
 
-        # Adjust Conv2d in_channels if needed
-        if isinstance(layer, nn.Conv2d) and layer.in_channels != in_channels:
-            if debug:
-                print(f"[WARN] Adjusting Conv2d '{name}' in_channels {layer.in_channels} -> {in_channels}")
-            new_conv = nn.Conv2d(
-                in_channels=in_channels,
-                out_channels=layer.out_channels,
-                kernel_size=layer.kernel_size,
-                stride=layer.stride,
-                padding=layer.padding,
-                dilation=layer.dilation,
-                groups=layer.groups,
-                bias=(layer.bias is not None),
-                padding_mode=layer.padding_mode
-            ).to(device)
-            min_ic = min(layer.weight.shape[1], in_channels)
-            new_conv.weight.data[:, :min_ic, :, :] = layer.weight.data[:, :min_ic, :, :].clone()
-            if layer.bias is not None:
-                new_conv.bias.data = layer.bias.data.clone()
-            layer = new_conv
-            in_channels = layer.out_channels
+        # Move layer to device
+        if device is not None:
+            layer = layer.to(device)
 
-        # Adjust BatchNorm2d num_features if needed
-        elif isinstance(layer, nn.BatchNorm2d) and layer.num_features != in_channels:
-            if debug:
-                print(f"[WARN] Adjusting BatchNorm2d '{name}' num_features {layer.num_features} -> {in_channels}")
-            new_bn = nn.BatchNorm2d(in_channels).to(device)
-            # Copy min(num_features, in_channels) elements for weight/bias/running stats
-            min_feat = min(layer.num_features, in_channels)
-            new_bn.weight.data[:min_feat] = layer.weight.data[:min_feat].clone()
-            new_bn.bias.data[:min_feat] = layer.bias.data[:min_feat].clone()
-            # Properly copy running_mean/var
-            new_bn.running_mean[:min_feat] = layer.running_mean[:min_feat].clone()
-            new_bn.running_var[:min_feat] = layer.running_var[:min_feat].clone()
-            layer = new_bn
-
-        # Forward dummy input to track shape
-        with torch.no_grad():
-            x = layer(x)
-
-        collapsed_layers.append(layer)
+        # Forward pass to update x shape
+        x = layer(x)
         if debug:
             print(f"[DEBUG][_perform_collapse] After '{name}': shape = {tuple(x.shape)}")
 
-    collapsed_block = nn.Sequential(*collapsed_layers)
-    if debug:
-        print(f"[INFO][_perform_collapse] Collapse complete. Out channels={in_channels}, Out shape={tuple(x.shape)}")
+        collapsed_layers.append(layer)
 
-    return collapsed_block, in_channels
+    out_channels = x.shape[1]
+    collapsed_seq = nn.Sequential(*collapsed_layers)
+    if debug:
+        print(f"[DEBUG][_perform_collapse] Collapsed block output channels = {out_channels}")
+
+    return collapsed_seq, out_channels
+
 
 
 def _build_collapsed_block_with_checks(named_layers, input_activation, device="cpu", debug=True):
