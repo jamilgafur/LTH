@@ -672,7 +672,7 @@ def collapse_only(
     if post_total > pre_total:
         print("[WARN] ⚠ Model has MORE parameters after collapse — investigate collapse policy.")
 
-    if debug:
-        print(f"[DEBUG] Model summary after collapse:\n{layer_stats(model)}")
+    # if debug:
+    #     print(f"[DEBUG] Model summary after collapse:\n{layer_stats(model)}")
 
     return model
