@@ -304,7 +304,8 @@ from collections import OrderedDict
 
 def _perform_collapse(block_layers, runtime_input, traced_shapes=None, device="cpu", debug=True):
     """
-    Collapse a block of layers while preserving input/output channels.
+    Collapse a block of layers while preserving input/output channels and spatial size.
+    Skips pooling layers that would reduce H/W below 1.
     """
     collapsed_layers = []
     x = runtime_input.clone().to(device)
@@ -318,44 +319,50 @@ def _perform_collapse(block_layers, runtime_input, traced_shapes=None, device="c
         if debug:
             print(f"[DEBUG][_perform_collapse] Layer {i}: {name} ({type(layer).__name__}) input_ch={in_channels}")
 
-        # Fix Conv2d in_channels if needed
-        if isinstance(layer, nn.Conv2d):
-            if layer.in_channels != in_channels:
+        # Skip pooling if it would reduce spatial size to zero
+        if isinstance(layer, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
+            H, W = x.shape[2], x.shape[3]
+            if H <= 1 or W <= 1:
                 if debug:
-                    print(f"[WARN] Adjusting Conv2d '{name}' in_channels {layer.in_channels} -> {in_channels}")
-                new_conv = nn.Conv2d(
-                    in_channels=in_channels,
-                    out_channels=layer.out_channels,
-                    kernel_size=layer.kernel_size,
-                    stride=layer.stride,
-                    padding=layer.padding,
-                    dilation=layer.dilation,
-                    groups=layer.groups,
-                    bias=(layer.bias is not None),
-                    padding_mode=layer.padding_mode
-                ).to(device)
-                # Copy overlapping weights
-                min_ic = min(layer.weight.shape[1], in_channels)
-                new_conv.weight.data[:, :min_ic, :, :] = layer.weight.data[:, :min_ic, :, :]
-                if layer.bias is not None:
-                    new_conv.bias.data = layer.bias.data.clone()
-                layer = new_conv
+                    print(f"[DEBUG] Skipping pool '{name}' to avoid zero-size output (H={H}, W={W})")
+                continue
+
+        # Adjust Conv2d in_channels if needed
+        if isinstance(layer, nn.Conv2d) and layer.in_channels != in_channels:
+            if debug:
+                print(f"[WARN] Adjusting Conv2d '{name}' in_channels {layer.in_channels} -> {in_channels}")
+            new_conv = nn.Conv2d(
+                in_channels=in_channels,
+                out_channels=layer.out_channels,
+                kernel_size=layer.kernel_size,
+                stride=layer.stride,
+                padding=layer.padding,
+                dilation=layer.dilation,
+                groups=layer.groups,
+                bias=(layer.bias is not None),
+                padding_mode=layer.padding_mode
+            ).to(device)
+            # Copy overlapping weights
+            min_ic = min(layer.weight.shape[1], in_channels)
+            new_conv.weight.data[:, :min_ic, :, :] = layer.weight.data[:, :min_ic, :, :]
+            if layer.bias is not None:
+                new_conv.bias.data = layer.bias.data.clone()
+            layer = new_conv
             in_channels = layer.out_channels
 
-        # Fix BatchNorm2d num_features if needed
-        elif isinstance(layer, nn.BatchNorm2d):
-            if layer.num_features != in_channels:
-                if debug:
-                    print(f"[WARN] Adjusting BatchNorm2d '{name}' num_features {layer.num_features} -> {in_channels}")
-                new_bn = nn.BatchNorm2d(in_channels).to(device)
-                min_feat = min(layer.num_features, in_channels)
-                new_bn.weight.data[:min_feat] = layer.weight.data[:min_feat]
-                new_bn.bias.data[:min_feat] = layer.bias.data[:min_feat]
-                new_bn.running_mean[:min_feat] = layer.running_mean[:min_feat]
-                new_bn.running_var[:min_feat] = layer.running_var[:min_feat]
-                layer = new_bn
+        # Adjust BatchNorm2d features if needed
+        elif isinstance(layer, nn.BatchNorm2d) and layer.num_features != in_channels:
+            if debug:
+                print(f"[WARN] Adjusting BatchNorm2d '{name}' num_features {layer.num_features} -> {in_channels}")
+            new_bn = nn.BatchNorm2d(in_channels).to(device)
+            min_feat = min(layer.num_features, in_channels)
+            new_bn.weight.data[:min_feat] = layer.weight.data[:min_feat]
+            new_bn.bias.data[:min_feat] = layer.bias.data[:min_feat]
+            new_bn.running_mean[:min_feat] = layer.running_mean[:min_feat]
+            new_bn.running_var[:min_feat] = layer.running_var[:min_feat]
+            layer = new_bn
 
-        # Forward dummy tensor to track shape
+        # Forward dummy input to track shape
         with torch.no_grad():
             x = layer(x)
 
