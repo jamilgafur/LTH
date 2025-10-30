@@ -388,12 +388,11 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
     """
     Collapse layers between start_layer_name and end_layer_name (inclusive).
 
-    Improvements:
-      - If an adaptive pool is inserted into the collapsed block to meet
-        classifier flattened-size expectations, any downstream pooling modules
-        that would produce a zero/invalid output are replaced with nn.Identity()
-        (logged), preventing "Output size is too small" runtime errors.
-      - Extra debug prints so you can trace shapes and replacements.
+    Fixes:
+      - Recomputes cur_hw after absorbing post-block pools before deciding to insert AdaptiveAvgPool2d.
+      - Validates downstream modules by starting from the collapsed block's output (not by forwarding the pre-block input through earlier convs).
+      - Replaces downstream pools that would underflow with nn.Identity(), logged.
+      - Lots of debug prints to trace exact shape decisions.
     """
     import math
 
@@ -416,7 +415,7 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
     if not all(isinstance(l, layer_type) for l in conv_layers):
         raise ValueError("Cannot collapse mixed layer types inside one block.")
 
-    # capture dummy input to the start layer
+    # capture the activation that is the input to the start layer (pre-block activation)
     try:
         dummy_input, x = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
         if debug:
@@ -436,7 +435,7 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
     if debug:
         print(f"[DEBUG] Params before collapse: {pre_params:,}")
 
-    # find the first classifier Linear (heuristic) so we can validate flattened size
+    # locate first linear in model as the classifier heuristic (for flattened in_features)
     classifier_linear_name = None
     classifier_linear_mod = None
     for nm, mod in model.named_modules():
@@ -453,7 +452,7 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
     if layer_type == nn.Conv2d:
         in_channels = x.shape[1]
 
-        # forward through the whole original full_block to compute true out_shape
+        # forward through the entire original full_block (so pooling inside the block is accounted for)
         with torch.no_grad():
             y = x.clone()
             last_conv = None
@@ -470,7 +469,7 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
         if debug:
             print(f"[DEBUG] True block output shape (after full_block): {out_shape}, out_channels={out_channels}")
 
-        # detect linear follower (heuristic)
+        # attempt to detect the linear follower's in_features (heuristic)
         linear_in_features = None
         if end_idx + 1 < len(named_layers):
             next_mod = named_layers[end_idx + 1][1]
@@ -482,32 +481,36 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
         if debug:
             print(f"[DEBUG] Detected linear_in_features (heuristic) = {linear_in_features}")
 
-        # detect pool inside this block (to reappend)
+        # detect pool inside this block (to re-append later)
         pool_layer = next((m for _, m in reversed(full_block) if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))), None)
 
-        # compute expected H*W if we have a linear target
+        # If we have a linear target, compute expected H*W and try to match it
         if linear_in_features is not None and out_channels > 0:
             if linear_in_features % out_channels == 0:
                 expected_hw = linear_in_features // out_channels
             else:
                 expected_hw = max(1, linear_in_features // out_channels)
+
+            # current H/W from out_shape
             cur_H = out_shape[-2] if len(out_shape) >= 3 else 1
             cur_W = out_shape[-1] if len(out_shape) >= 3 else 1
             cur_hw = cur_H * cur_W
             if debug:
                 print(f"[DEBUG] expected_hw={expected_hw}, current_hw={cur_hw} (HxW={cur_H}x{cur_W})")
 
-            # attempt to absorb contiguous post-block pools if they can get us to expected_hw
+            # First: attempt to absorb contiguous post-block pools if they bring us to expected_hw
             if cur_hw != expected_hw:
                 extra_pools = []
                 with torch.no_grad():
                     y2 = y.clone()
                     for _, mod in named_layers[end_idx + 1:]:
                         if isinstance(mod, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
+                            # attempt to apply the pool; if it fails (underflow), stop
                             try:
                                 y2 = mod(y2)
                             except Exception:
-                                # pool would underflow here; break and we'll handle later
+                                if debug:
+                                    print(f"[DEBUG] Post-block pool {type(mod).__name__} would underflow during simulation; stopping absorption.")
                                 break
                             extra_pools.append(mod)
                             new_H = y2.shape[-2] if y2.dim() >= 3 else 1
@@ -515,7 +518,7 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
                             if debug:
                                 print(f"[DEBUG] Applied following pool {type(mod).__name__}, new HxW={new_H}x{new_W}")
                             if (new_H * new_W) == expected_hw:
-                                # success: combine pools
+                                # success: integrate extra_pools into pool_layer
                                 if pool_layer is None:
                                     pool_layer = extra_pools[0] if len(extra_pools) == 1 else nn.Sequential(OrderedDict([(f"pool_{i}", p) for i, p in enumerate(extra_pools)]))
                                 else:
@@ -527,13 +530,21 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
                                     print(f"[DEBUG] Absorbed post-block pools => updated out_shape {out_shape}")
                                 break
 
-            # if still mismatch, plan an adaptive pool inside collapsed block
+                # recompute cur_hw after attempting absorption
+                cur_H = out_shape[-2] if len(out_shape) >= 3 else 1
+                cur_W = out_shape[-1] if len(out_shape) >= 3 else 1
+                cur_hw = cur_H * cur_W
+                if debug:
+                    print(f"[DEBUG] After absorption attempt: current_hw={cur_hw} (HxW={cur_H}x{cur_W})")
+
+            # If still mismatch, plan an adaptive pool inside collapsed block
             if cur_hw != expected_hw:
-                # choose target HxW
+                # choose target HxW: aim for square if possible
                 target_H = int(round(math.sqrt(expected_hw))) if expected_hw > 1 else 1
                 if target_H < 1:
                     target_H = 1
                 target_W = max(1, expected_hw // target_H)
+                # correct if product mismatch
                 if (target_H * target_W) != expected_hw:
                     target_H, target_W = 1, expected_hw
                 adaptive_pool_to_use = nn.AdaptiveAvgPool2d((target_H, target_W))
@@ -550,11 +561,11 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
                     shortcut_out_channels = first_conv.out_channels
                     break
 
-        # prefer adaptive pool if chosen
+        # if adaptive pool chosen, prefer it as pool_layer
         if adaptive_pool_to_use is not None:
             pool_layer = adaptive_pool_to_use
 
-        # construct collapsed block
+        # build collapsed block
         collapsed_block = _build_collapsed_block(
             nn.Conv2d,
             in_features=in_channels,
@@ -569,13 +580,14 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
         )
 
     else:
-        # Linear collapse path unchanged
+        # Linear collapse path (unchanged)
         in_features = x.view(x.size(0), -1).size(1)
         with torch.no_grad():
             y = x.clone()
             for layer in conv_layers:
                 y = layer(y)
         out_features = y.view(y.size(0), -1).size(1)
+
         collapsed_block = _build_collapsed_block(
             nn.Linear,
             in_features=in_features,
@@ -595,60 +607,82 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
     print(f"[INFO] ΔParams = {pre_params - post_params:+,} (should be >= 0)")
 
     # -------------------------
-    # NEW: scan downstream modules in the same container and neutralize any
-    # pooling op that would underflow (produce 0-sized spatial dims).
+    # NEW: validate downstream modules by starting from the collapsed-block output
     # -------------------------
     try:
         if debug:
             print(f"[DEBUG] Scanning downstream modules in container '{start_container_name}' for unsafe pools...")
+
+        # refresh the container and its children (after replacement)
         container_after = get_layer(model, start_container_name)
-        # start dummy at the output of the collapsed block
+        children = list(container_after.named_children())
+
+        # find the collapsed module name/index in the new container
+        collapsed_idx = None
+        collapsed_name = None
+        for i, (nm, m) in enumerate(children):
+            if nm.startswith("collapsed_"):
+                collapsed_idx = i
+                collapsed_name = nm
+                break
+        if collapsed_idx is None:
+            # fallback: assume start_idx is still correct
+            collapsed_idx = start_idx
+            collapsed_name = children[start_idx][0] if start_idx < len(children) else None
+
+        if debug:
+            print(f"[DEBUG] Found collapsed module at index={collapsed_idx} name='{collapsed_name}'")
+
+        # start by running the collapsed module on the captured pre-block activation
+        collapsed_mod = children[collapsed_idx][1]
         test_tensor = x.clone().to(device)
-        # forward up to start_idx (exclusive) to get to the same position
         with torch.no_grad():
-            for i, (n, m) in enumerate(list(container_after.named_children())):
-                if i < start_idx:
-                    test_tensor = m(test_tensor)
-                else:
-                    break
-        # now process from start_idx onward; if a pool raises, replace it with Identity
-        for i, (n, m) in enumerate(list(container_after.named_children())):
-            if i < start_idx:
+            test_tensor = collapsed_mod(test_tensor)
+
+        # now forward through downstream modules only (i > collapsed_idx)
+        for i, (nm, mod) in enumerate(children):
+            if i <= collapsed_idx:
                 continue
             try:
                 with torch.no_grad():
-                    test_tensor = m(test_tensor)
+                    test_tensor = mod(test_tensor)
             except RuntimeError as e:
                 s = str(e)
-                # conservative check for pool underflow / output-size-too-small message
                 if "Output size is too small" in s or "Calculated output size" in s or "output size is too small" in s or "Kernel size can't be greater than actual input size" in s:
-                    # replace this module with Identity
+                    # replace this module with Identity in the actual container
                     if debug:
-                        print(f"[WARN] Downstream module '{start_container_name}.{n}' caused underflow; replacing with nn.Identity()")
-                    # perform replacement in the actual container (supports Sequential indices or attributes)
-                    if _is_int_str(n):
-                        idx = int(n)
-                        container_children = list(container_after.children())
-                        # create new Sequential with replacement
-                        new_children = []
-                        for j, child in enumerate(container_children):
-                            if j == idx:
-                                new_children.append((f"{n}", nn.Identity()))
+                        print(f"[WARN] Downstream module '{start_container_name}.{nm}' would underflow; replacing with nn.Identity()")
+                    # If container is Sequential, reconstruct OrderedDict preserving names, replacing target nm
+                    if isinstance(container_after, nn.Sequential):
+                        new_od = OrderedDict()
+                        for j, (n2, m2) in enumerate(children):
+                            if n2 == nm:
+                                new_od[n2] = nn.Identity()
                             else:
-                                new_children.append((f"layer_{j}", child))
-                        # set as Sequential
-                        _update_container(model, start_container_name, nn.Sequential(OrderedDict(new_children)))
+                                new_od[n2] = m2
+                        # apply update
+                        _update_container(model, start_container_name, nn.Sequential(new_od))
+                        # refresh container_after and children and collapsed_mod/test_tensor:
+                        container_after = get_layer(model, start_container_name)
+                        children = list(container_after.named_children())
+                        collapsed_mod = children[collapsed_idx][1]
+                        # test_tensor stays the same (Identity doesn't change)
+                        if debug:
+                            print(f"[DEBUG] Replaced {start_container_name}.{nm} with Identity.")
+                        continue
                     else:
-                        # named attribute
-                        # try to set attribute on parent container
+                        # try attribute replacement
                         parent = get_layer(model, start_container_name)
-                        setattr(parent, n, nn.Identity())
-                    # refresh container_after and test_tensor (keep test_tensor unchanged)
-                    container_after = get_layer(model, start_container_name)
-                    if debug:
-                        print(f"[DEBUG] Replaced {start_container_name}.{n} with Identity successfully.")
-                    # continue scanning; do not change test_tensor (Identity leaves it unchanged)
-                    continue
+                        try:
+                            setattr(parent, nm, nn.Identity())
+                            container_after = get_layer(model, start_container_name)
+                            children = list(container_after.named_children())
+                            collapsed_mod = children[collapsed_idx][1]
+                            if debug:
+                                print(f"[DEBUG] Replaced {start_container_name}.{nm} with Identity via setattr.")
+                            continue
+                        except Exception as ee:
+                            raise RuntimeError(f"Failed to replace downstream pool '{start_container_name}.{nm}' with Identity: {ee}")
                 else:
                     # unknown runtime error -> re-raise for visibility
                     raise
@@ -669,32 +703,30 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
                 if debug:
                     print(f"[DEBUG] Post-collapse: flattened feeding '{classifier_linear_name}' = {flat_after}, classifier expects = {expected}")
                 if flat_after != expected:
-                    # If mismatch, try a last-resort insertion: a single AdaptiveAvgPool2d right before classifier
+                    # last-resort insertion just before classifier (conservative)
                     print(f"[WARN] Shape mismatch after collapse: flattened={flat_after} expected={expected}. Attempting last-resort corrective insertion.")
-                    # insert AdaptiveAvgPool2d before classifier (conservative)
                     parts = classifier_linear_name.split('.')
                     parent_path = '.'.join(parts[:-1])
                     parent_container = get_layer(model, parent_path) if parent_path != "" else model
                     # compute target HW
-                    target_hw = max(1, expected // out_channels) if (out_channels and expected % out_channels == 0) else 1
+                    if out_channels and expected % out_channels == 0:
+                        target_hw = expected // out_channels
+                    else:
+                        target_hw = 1
                     target_H = int(round(math.sqrt(target_hw))) if target_hw > 1 else 1
                     target_W = max(1, target_hw // target_H) if target_hw > 1 else 1
                     forced_pool = nn.AdaptiveAvgPool2d((target_H, target_W))
-                    # prefer inserting into a 'features' module if exists (typical VGG)
                     inserted = False
                     if hasattr(model, 'features') and isinstance(model.features, nn.Sequential):
                         feat_seq = list(model.features.children())
-                        # append forced pool at the end of features
                         feat_seq.append(forced_pool)
                         model.features = nn.Sequential(OrderedDict([(f"layer_{i}", m) for i, m in enumerate(feat_seq)]))
                         inserted = True
                         if debug:
                             print(f"[DEBUG] Inserted forced AdaptiveAvgPool2d({target_H},{target_W}) at end of model.features")
                     else:
-                        # try inserting into parent_container (if Sequential)
                         if isinstance(parent_container, nn.Sequential):
                             new_children = []
-                            # put forced_pool before the first Linear call
                             inserted_flag = False
                             for j, (nm2, mod2) in enumerate(list(parent_container.named_children())):
                                 if not inserted_flag:
@@ -721,7 +753,6 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
         print("[WARN] ⚠ Collapsed block has MORE parameters than before! This should NOT happen. Investigate the collapse policy.")
 
     return model
-
 
 # -----------------------------------------------------------------------------
 # Top-level multi-block collapse function (flexible API)
