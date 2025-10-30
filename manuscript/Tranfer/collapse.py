@@ -163,10 +163,7 @@ def _simulate_input_hook(model: nn.Module, target_layer_path: str, input_shape: 
     model.to(device)
     dummy_input = torch.randn(input_shape).to(device)
 
-    try:
-        target_module = get_layer(model, target_layer_path)
-    except Exception as e:
-        raise RuntimeError(f"Could not resolve target module '{target_layer_path}': {e}")
+    target_module = get_layer(model, target_layer_path)
 
     captured = {}
     def hook(module, inp, out):
@@ -465,15 +462,13 @@ def _collapse_block(model: nn.Module, start_layer_name: str, end_layer_name: str
         shortcut_out_channels = None
         for nm, mod in model.named_modules():
             if hasattr(mod, 'shortcut') and isinstance(mod.shortcut, nn.Module):
-                try:
-                    # find first conv inside shortcut
-                    first_conv = next((m for m in mod.shortcut.modules() if isinstance(m, nn.Conv2d)), None)
-                    if first_conv is not None:
-                        shortcut_out_channels = first_conv.out_channels
-                        break
-                except Exception:
-                    continue
-
+            
+                # find first conv inside shortcut
+                first_conv = next((m for m in mod.shortcut.modules() if isinstance(m, nn.Conv2d)), None)
+                if first_conv is not None:
+                    shortcut_out_channels = first_conv.out_channels
+                    break
+                
         # detect pooling inside original block
         pool_layer = next((m for _, m in reversed(full_block) if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))), None)
 
@@ -593,15 +588,8 @@ def collapse_only(
         if dry_run:
             print("[INFO] dry_run enabled; skipping actual modification.")
             continue
-        try:
-            model = _collapse_block(model, start, end, input_shape, device=device, debug=debug)
-        except Exception as e:
-            print(f"[ERROR] Failed to collapse {name}: {e}")
-            import traceback
-            if debug:
-                traceback.print_exc()
-            continue
-
+        model = _collapse_block(model, start, end, input_shape, device=device, debug=debug)
+    
         # after each collapse optionally patch skip connections to avoid invalid adds
         if handle_skips:
             patch_skip_connections(model)
