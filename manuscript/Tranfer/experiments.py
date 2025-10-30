@@ -34,9 +34,12 @@ import os
 import json
 import glob
 from datetime import datetime
-from pyPrune.utils import ensure_dir
 
 
+def ensure_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory, exist_ok=True)
+    
 # -------------------------
 # Safe JSON Write (Per-job unique, no lock, no SLURM ID)
 # -------------------------
