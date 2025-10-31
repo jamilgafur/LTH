@@ -1,0 +1,337 @@
+VGG16 - Cifar10: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+VGG16 - Cifar100: ../structured_study/pruning_checkpoints/Vgg16_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar10: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar10_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+RegNetX_400MF - Cifar100: ../structured_study/pruning_checkpoints/RegNetX_datasetcifar100_pretrain10_finetune30_steps21_batch512_devicecuda_strategy_magnitude/
+Namespace(model='RegNetX_400MF', dataset='Cifar10', epochs=1, pretrain=1, experiment='Stage 3', post_compress_epochs=0, imp=True, JF=True, Kevin=False)
+has GPU: True
+Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
+Loading CIFAR-10 data for RegNetX_400MF...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+
+--- Running experiment: Stage 3 ---
+
+=== Running JF experiment ===
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+RegNetX_400MF                            [512, 10]                 --
+├─Sequential: 1-1                        [512, 32, 16, 16]         --
+│    └─Conv2d: 2-1                       [512, 32, 16, 16]         864
+│    └─BatchNorm2d: 2-2                  [512, 32, 16, 16]         64
+│    └─ReLU: 2-3                         [512, 32, 16, 16]         --
+├─Sequential: 1-2                        [512, 24, 16, 16]         --
+│    └─XBlock: 2-4                       [512, 24, 16, 16]         --
+│    │    └─Sequential: 3-1              [512, 24, 16, 16]         6,672
+│    │    └─Sequential: 3-2              [512, 24, 16, 16]         816
+│    │    └─ReLU: 3-3                    [512, 24, 16, 16]         --
+├─Sequential: 1-3                        [512, 56, 8, 8]           --
+│    └─XBlock: 2-5                       [512, 56, 8, 8]           --
+│    │    └─Sequential: 3-4              [512, 56, 8, 8]           33,040
+│    │    └─Sequential: 3-5              [512, 56, 8, 8]           1,456
+│    │    └─ReLU: 3-6                    [512, 56, 8, 8]           --
+├─Sequential: 1-4                        [512, 152, 4, 4]          --
+│    └─XBlock: 2-6                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-7              [512, 152, 4, 4]          240,464
+│    │    └─Sequential: 3-8              [512, 152, 4, 4]          8,816
+│    │    └─ReLU: 3-9                    [512, 152, 4, 4]          --
+│    └─XBlock: 2-7                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-10             [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-11             [512, 152, 4, 4]          --
+│    │    └─ReLU: 3-12                   [512, 152, 4, 4]          --
+│    └─XBlock: 2-8                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-13             [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-14             [512, 152, 4, 4]          --
+│    │    └─ReLU: 3-15                   [512, 152, 4, 4]          --
+│    └─XBlock: 2-9                       [512, 152, 4, 4]          --
+│    │    └─Sequential: 3-16             [512, 152, 4, 4]          255,056
+│    │    └─Sequential: 3-17             [512, 152, 4, 4]          --
+│    │    └─ReLU: 3-18                   [512, 152, 4, 4]          --
+├─Sequential: 1-5                        [512, 368, 2, 2]          --
+│    └─XBlock: 2-10                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-19             [512, 368, 2, 2]          1,412,384
+│    │    └─Sequential: 3-20             [512, 368, 2, 2]          56,672
+│    │    └─ReLU: 3-21                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-11                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-22             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-23             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-24                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-12                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-25             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-26             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-27                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-13                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-28             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-29             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-30                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-14                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-31             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-32             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-33                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-15                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-34             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-35             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-36                   [512, 368, 2, 2]          --
+│    └─XBlock: 2-16                      [512, 368, 2, 2]          --
+│    │    └─Sequential: 3-37             [512, 368, 2, 2]          1,491,872
+│    │    └─Sequential: 3-38             [512, 368, 2, 2]          --
+│    │    └─ReLU: 3-39                   [512, 368, 2, 2]          --
+├─AdaptiveAvgPool2d: 1-6                 [512, 368, 1, 1]          --
+├─Linear: 1-7                            [512, 10]                 3,690
+==========================================================================================
+Total params: 11,481,338
+Trainable params: 11,481,338
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 32.47
+==========================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 1094.23
+Params size (MB): 45.93
+Estimated Total Size (MB): 1146.45
+==========================================================================================
+============================================================
+[INFO] Initialized Model: None
+[•] Collapsing range ('stage3.stage3_block1.block.conv1', 'stage3.stage3_block1.block.conv3') for Stage 3
+[INFO] Starting collapse_only; params before = 11,481,338
+
+[INFO] Processing collapse 'collapse_0': stage3.stage3_block1.block.conv1 -> stage3.stage3_block1.block.conv3
+
+[INFO] Collapsing block: stage3.stage3_block1.block.conv1 → stage3.stage3_block1.block.conv3
+[DEBUG] Captured activation before start: (512, 152, 4, 4)
+[DEBUG] Params before collapse: 11,481,338
+[DEBUG] Next Linear detected: name='fc', module=Linear(in_features=368, out_features=10, bias=True)
+[DEBUG] Full block output shape (after original block): (512, 152, 4, 4), out_channels=152
+[DEBUG] Heuristic linear_in_features = 368
+[DEBUG] expected_hw=2, current_hw=16 (HxW=4x4)
+[DEBUG] Plan to insert AdaptiveAvgPool2d to force HxW=1x2 (expected_hw=2)
+[DEBUG] Detected shortcut_out_channels = 24
+[DEBUG] _build_collapsed_block called: layer_type=Conv2d, in=152, out=152, linear_in_features=368, force_hw=None
+[DEBUG] Linear follower present: target channels ≈ 184 (H*W=2)
+[DEBUG] Honoring shortcut output channels cap: 24
+[DEBUG] Added 1x1 projection: 24 -> 152
+[DEBUG] Collapsed block modules: ['Conv2d', 'BatchNorm2d', 'ReLU', 'AdaptiveAvgPool2d', 'Conv2d']
+[DEBUG] Params after collapse: 11,233,930
+[INFO] ΔParams = +247,408 (should be >= 0)
+[DEBUG] Scanning downstream modules for unsafe pools...
+[DEBUG] After collapse: flattened feeding 'fc' = 304, next Linear expects = 368
+[WARN] Flattened mismatch for next Linear 'fc': actual=304 expected=368. Inserting AdaptiveAvgPool2d to fix.
+[DEBUG] expected not divisible by channels (368%152 != 0). Using best-effort target_hw=2
+[WARN] Classifier alignment validation failed for 'fc': Cannot safely insert corrective pool; model has no 'features' and next Linear is top-level.
+[PATCH] Patched residual block forward: stage1.stage1_block0
+[PATCH] Patched residual block forward: stage2.stage2_block0
+[PATCH] Patched residual block forward: stage3.stage3_block0
+[PATCH] Patched residual block forward: stage3.stage3_block1
+[PATCH] Patched residual block forward: stage3.stage3_block2
+[PATCH] Patched residual block forward: stage3.stage3_block3
+[PATCH] Patched residual block forward: stage4.stage4_block0
+[PATCH] Patched residual block forward: stage4.stage4_block1
+[PATCH] Patched residual block forward: stage4.stage4_block2
+[PATCH] Patched residual block forward: stage4.stage4_block3
+[PATCH] Patched residual block forward: stage4.stage4_block4
+[PATCH] Patched residual block forward: stage4.stage4_block5
+[PATCH] Patched residual block forward: stage4.stage4_block6
+[INFO] Replaced 38 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Collapse finished.
+[INFO] Parameters before: 11,481,338
+[INFO] Parameters after : 11,233,930
+[INFO] ΔParams = +247,408 (should be >= 0)
+
+Layer-wise zero parameter stats:
+
+stem.stem_conv.weight: 0/864 zeros (0.00%)
+stem.stem_bn.weight: 0/32 zeros (0.00%)
+stem.stem_bn.bias: 0/32 zeros (0.00%)
+stage1.stage1_block0.block.conv1.weight: 0/768 zeros (0.00%)
+stage1.stage1_block0.block.bn1.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn1.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.conv2.weight: 0/5184 zeros (0.00%)
+stage1.stage1_block0.block.bn2.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn2.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.conv3.weight: 0/576 zeros (0.00%)
+stage1.stage1_block0.block.bn3.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.block.bn3.bias: 0/24 zeros (0.00%)
+stage1.stage1_block0.shortcut.shortcut_conv.weight: 0/768 zeros (0.00%)
+stage1.stage1_block0.shortcut.shortcut_bn.weight: 0/24 zeros (0.00%)
+stage1.stage1_block0.shortcut.shortcut_bn.bias: 0/24 zeros (0.00%)
+stage2.stage2_block0.block.conv1.weight: 0/1344 zeros (0.00%)
+stage2.stage2_block0.block.bn1.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.bn1.bias: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.conv2.weight: 0/28224 zeros (0.00%)
+stage2.stage2_block0.block.bn2.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.bn2.bias: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.conv3.weight: 0/3136 zeros (0.00%)
+stage2.stage2_block0.block.bn3.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.block.bn3.bias: 0/56 zeros (0.00%)
+stage2.stage2_block0.shortcut.shortcut_conv.weight: 0/1344 zeros (0.00%)
+stage2.stage2_block0.shortcut.shortcut_bn.weight: 0/56 zeros (0.00%)
+stage2.stage2_block0.shortcut.shortcut_bn.bias: 0/56 zeros (0.00%)
+stage3.stage3_block0.block.conv1.weight: 0/8512 zeros (0.00%)
+stage3.stage3_block0.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.conv2.weight: 0/207936 zeros (0.00%)
+stage3.stage3_block0.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.conv3.weight: 0/23104 zeros (0.00%)
+stage3.stage3_block0.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block0.shortcut.shortcut_conv.weight: 0/8512 zeros (0.00%)
+stage3.stage3_block0.shortcut.shortcut_bn.weight: 0/152 zeros (0.00%)
+stage3.stage3_block0.shortcut.shortcut_bn.bias: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.collapsed_bbd703e7.layer_0.weight: 0/3648 zeros (0.00%)
+stage3.stage3_block1.block.collapsed_bbd703e7.layer_1.weight: 0/24 zeros (0.00%)
+stage3.stage3_block1.block.collapsed_bbd703e7.layer_1.bias: 24/24 zeros (100.00%)
+stage3.stage3_block1.block.collapsed_bbd703e7.layer_4.weight: 0/3648 zeros (0.00%)
+stage3.stage3_block1.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block1.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv1.weight: 0/23104 zeros (0.00%)
+stage3.stage3_block2.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv2.weight: 0/207936 zeros (0.00%)
+stage3.stage3_block2.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.conv3.weight: 0/23104 zeros (0.00%)
+stage3.stage3_block2.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block2.block.bn3.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv1.weight: 0/23104 zeros (0.00%)
+stage3.stage3_block3.block.bn1.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn1.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv2.weight: 0/207936 zeros (0.00%)
+stage3.stage3_block3.block.bn2.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn2.bias: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.conv3.weight: 0/23104 zeros (0.00%)
+stage3.stage3_block3.block.bn3.weight: 0/152 zeros (0.00%)
+stage3.stage3_block3.block.bn3.bias: 0/152 zeros (0.00%)
+stage4.stage4_block0.block.conv1.weight: 0/55936 zeros (0.00%)
+stage4.stage4_block0.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.conv2.weight: 0/1218816 zeros (0.00%)
+stage4.stage4_block0.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block0.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block0.shortcut.shortcut_conv.weight: 0/55936 zeros (0.00%)
+stage4.stage4_block0.shortcut.shortcut_bn.weight: 0/368 zeros (0.00%)
+stage4.stage4_block0.shortcut.shortcut_bn.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv1.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block1.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv2.weight: 0/1218816 zeros (0.00%)
+stage4.stage4_block1.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block1.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block1.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv1.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block2.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv2.weight: 1/1218816 zeros (0.00%)
+stage4.stage4_block2.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block2.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block2.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv1.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block3.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv2.weight: 0/1218816 zeros (0.00%)
+stage4.stage4_block3.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block3.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block3.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv1.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block4.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv2.weight: 0/1218816 zeros (0.00%)
+stage4.stage4_block4.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block4.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block4.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv1.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block5.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv2.weight: 0/1218816 zeros (0.00%)
+stage4.stage4_block5.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block5.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block5.block.bn3.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv1.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block6.block.bn1.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn1.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv2.weight: 0/1218816 zeros (0.00%)
+stage4.stage4_block6.block.bn2.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn2.bias: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.conv3.weight: 0/135424 zeros (0.00%)
+stage4.stage4_block6.block.bn3.weight: 0/368 zeros (0.00%)
+stage4.stage4_block6.block.bn3.bias: 0/368 zeros (0.00%)
+fc.weight: 0/3680 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model structure after collapse:
+None
+[•] Starting experiment 'Stage 3' in workflow 'JF'
+[Start training] device:cuda
+[INFO] Training started...
+model on device: cuda:0
+[INFO] Starting Epoch 1 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:05<09:02,  5.59s/it]  3%|▎         | 3/98 [00:05<02:27,  1.55s/it]  4%|▍         | 4/98 [00:06<01:42,  1.09s/it]  5%|▌         | 5/98 [00:06<01:17,  1.20it/s]  6%|▌         | 6/98 [00:06<00:57,  1.59it/s]  7%|▋         | 7/98 [00:06<00:50,  1.81it/s]  8%|▊         | 8/98 [00:07<00:42,  2.11it/s]  9%|▉         | 9/98 [00:07<00:37,  2.38it/s] 10%|█         | 10/98 [00:07<00:33,  2.60it/s] 11%|█         | 11/98 [00:08<00:28,  3.01it/s] 12%|█▏        | 12/98 [00:08<00:29,  2.87it/s] 13%|█▎        | 13/98 [00:08<00:28,  3.00it/s] 14%|█▍        | 14/98 [00:09<00:50,  1.68it/s] 15%|█▌        | 15/98 [00:10<00:41,  1.98it/s] 16%|█▋        | 16/98 [00:10<00:38,  2.10it/s] 17%|█▋        | 17/98 [00:10<00:34,  2.38it/s] 18%|█▊        | 18/98 [00:12<00:50,  1.59it/s] 19%|█▉        | 19/98 [00:12<00:41,  1.90it/s] 20%|██        | 20/98 [00:13<00:54,  1.43it/s] 21%|██▏       | 21/98 [00:13<00:46,  1.64it/s] 22%|██▏       | 22/98 [00:14<00:39,  1.93it/s] 23%|██▎       | 23/98 [00:14<00:34,  2.20it/s] 24%|██▍       | 24/98 [00:15<00:41,  1.80it/s] 26%|██▌       | 25/98 [00:15<00:34,  2.09it/s] 27%|██▋       | 26/98 [00:15<00:32,  2.20it/s] 28%|██▊       | 27/98 [00:16<00:28,  2.45it/s] 29%|██▊       | 28/98 [00:17<00:47,  1.48it/s] 30%|██▉       | 29/98 [00:17<00:38,  1.78it/s] 31%|███       | 30/98 [00:18<00:31,  2.18it/s] 32%|███▏      | 31/98 [00:18<00:31,  2.15it/s] 33%|███▎      | 32/98 [00:19<00:43,  1.52it/s] 34%|███▎      | 33/98 [00:20<00:37,  1.73it/s] 35%|███▍      | 34/98 [00:20<00:31,  2.02it/s] 36%|███▌      | 35/98 [00:20<00:27,  2.29it/s] 37%|███▋      | 36/98 [00:21<00:31,  1.94it/s] 38%|███▊      | 37/98 [00:21<00:27,  2.21it/s] 39%|███▉      | 38/98 [00:21<00:22,  2.67it/s] 40%|███▉      | 39/98 [00:22<00:22,  2.61it/s] 41%|████      | 40/98 [00:23<00:29,  1.97it/s] 42%|████▏     | 41/98 [00:23<00:25,  2.25it/s] 43%|████▎     | 42/98 [00:23<00:21,  2.65it/s] 44%|████▍     | 43/98 [00:24<00:25,  2.13it/s] 45%|████▍     | 44/98 [00:24<00:24,  2.21it/s] 46%|████▌     | 45/98 [00:25<00:24,  2.16it/s] 47%|████▋     | 46/98 [00:25<00:23,  2.26it/s] 48%|████▊     | 47/98 [00:25<00:20,  2.46it/s] 49%|████▉     | 48/98 [00:26<00:27,  1.81it/s] 50%|█████     | 49/98 [00:27<00:24,  1.98it/s] 51%|█████     | 50/98 [00:27<00:21,  2.26it/s] 52%|█████▏    | 51/98 [00:27<00:18,  2.51it/s] 53%|█████▎    | 52/98 [00:28<00:25,  1.81it/s] 54%|█████▍    | 53/98 [00:29<00:22,  1.99it/s] 55%|█████▌    | 54/98 [00:29<00:18,  2.40it/s] 56%|█████▌    | 55/98 [00:29<00:16,  2.64it/s] 57%|█████▋    | 56/98 [00:30<00:24,  1.68it/s] 58%|█████▊    | 57/98 [00:30<00:20,  1.97it/s] 59%|█████▉    | 58/98 [00:31<00:17,  2.26it/s] 60%|██████    | 59/98 [00:31<00:14,  2.70it/s] 61%|██████    | 60/98 [00:32<00:21,  1.79it/s] 62%|██████▏   | 61/98 [00:32<00:17,  2.08it/s] 63%|██████▎   | 62/98 [00:33<00:15,  2.34it/s] 64%|██████▍   | 63/98 [00:33<00:12,  2.75it/s] 65%|██████▌   | 64/98 [00:34<00:22,  1.48it/s] 66%|██████▋   | 65/98 [00:34<00:18,  1.78it/s] 67%|██████▋   | 66/98 [00:35<00:15,  2.09it/s] 68%|██████▊   | 67/98 [00:35<00:12,  2.53it/s] 69%|██████▉   | 68/98 [00:36<00:20,  1.50it/s] 70%|███████   | 69/98 [00:37<00:16,  1.80it/s] 71%|███████▏  | 70/98 [00:37<00:13,  2.09it/s] 72%|███████▏  | 71/98 [00:37<00:11,  2.35it/s] 73%|███████▎  | 72/98 [00:38<00:15,  1.66it/s] 74%|███████▍  | 73/98 [00:39<00:12,  1.95it/s] 76%|███████▌  | 74/98 [00:39<00:11,  2.11it/s] 77%|███████▋  | 75/98 [00:39<00:09,  2.38it/s] 78%|███████▊  | 76/98 [00:40<00:13,  1.68it/s] 79%|███████▊  | 77/98 [00:40<00:10,  1.97it/s] 80%|███████▉  | 78/98 [00:41<00:08,  2.25it/s] 81%|████████  | 79/98 [00:41<00:07,  2.49it/s] 82%|████████▏ | 80/98 [00:42<00:10,  1.64it/s] 83%|████████▎ | 81/98 [00:42<00:08,  2.05it/s] 84%|████████▎ | 82/98 [00:43<00:06,  2.32it/s] 85%|████████▍ | 83/98 [00:43<00:05,  2.77it/s] 86%|████████▌ | 84/98 [00:44<00:07,  1.81it/s] 87%|████████▋ | 85/98 [00:44<00:06,  2.08it/s] 88%|████████▊ | 86/98 [00:45<00:05,  2.21it/s] 89%|████████▉ | 87/98 [00:45<00:04,  2.65it/s] 90%|████████▉ | 88/98 [00:46<00:06,  1.60it/s] 91%|█████████ | 89/98 [00:46<00:04,  2.01it/s] 92%|█████████▏| 90/98 [00:46<00:03,  2.26it/s] 93%|█████████▎| 91/98 [00:47<00:02,  2.36it/s] 94%|█████████▍| 92/98 [00:48<00:03,  1.76it/s] 95%|█████████▍| 93/98 [00:48<00:02,  2.19it/s] 96%|█████████▌| 94/98 [00:48<00:01,  2.63it/s] 97%|█████████▋| 95/98 [00:48<00:00,  3.07it/s] 98%|█████████▊| 96/98 [00:49<00:00,  2.59it/s]100%|██████████| 98/98 [00:49<00:00,  4.10it/s]100%|██████████| 98/98 [00:49<00:00,  1.98it/s]
+Epoch 1: Loss=1.3948, Acc=49.62%
+[INFO] New best accuracy: 49.62% (previous best was 0.00%)
+[INFO] Training complete after 1 epochs.
+[INFO] Evaluating model on the test set...
+2025-10-31 09:34:59,999 - WARNING - Unsupported operator aten::add encountered 12 time(s)
+2025-10-31 09:34:59,999 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage1.stage1_block0.relu, stage2.stage2_block0.relu, stage3.stage3_block0.relu, stage3.stage3_block1.relu, stage3.stage3_block1.shortcut, stage3.stage3_block2.relu, stage3.stage3_block2.shortcut, stage3.stage3_block3.relu, stage3.stage3_block3.shortcut, stage4.stage4_block0.relu, stage4.stage4_block1.relu, stage4.stage4_block1.shortcut, stage4.stage4_block2.relu, stage4.stage4_block2.shortcut, stage4.stage4_block3.relu, stage4.stage4_block3.shortcut, stage4.stage4_block4.relu, stage4.stage4_block4.shortcut, stage4.stage4_block5.relu, stage4.stage4_block5.shortcut, stage4.stage4_block6.relu, stage4.stage4_block6.shortcut
+2025-10-31 09:35:04,056 - WARNING - Unsupported operator aten::add encountered 12 time(s)
+2025-10-31 09:35:04,057 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage1.stage1_block0.relu, stage2.stage2_block0.relu, stage3.stage3_block0.relu, stage3.stage3_block1.relu, stage3.stage3_block1.shortcut, stage3.stage3_block2.relu, stage3.stage3_block2.shortcut, stage3.stage3_block3.relu, stage3.stage3_block3.shortcut, stage4.stage4_block0.relu, stage4.stage4_block1.relu, stage4.stage4_block1.shortcut, stage4.stage4_block2.relu, stage4.stage4_block2.shortcut, stage4.stage4_block3.relu, stage4.stage4_block3.shortcut, stage4.stage4_block4.relu, stage4.stage4_block4.shortcut, stage4.stage4_block5.relu, stage4.stage4_block5.shortcut, stage4.stage4_block6.relu, stage4.stage4_block6.shortcut
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:205: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(parts.keys()), y=list(parts.values()), palette=["steelblue", "salmon", "gold"])
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:48: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=list(accs), ax=axs[0], palette="Blues_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:66: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=list(infer_times), ax=axs[1], palette="Oranges_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:74: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=mem_mb, ax=axs[2], palette="Greens_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:313: UserWarning: Tight layout not applied. The left and right margins cannot be made large enough to accommodate all Axes decorations.
+  plt.tight_layout()
+Final Test Accuracy: 58.33%
+[•] Running diagnostics for Stage 3...
+[✓] Diagnostics complete for Stage 3
+[✓] Saved metrics for 'Stage 3_JF' → RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/RegNetX_400MF_CIFAR10_metrics_20251031_093509_892173_59333.json
+[✓] Merged 4 metrics files → RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
+[✓] Metrics merged successfully → RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
+[✓] Saved plot: RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/plots/merged_plots.svg
+[DEBUG] FLOPs: [32595197952.0, 10558513152.0, 22687866880.0, 32595197952.0]
+[DEBUG] Times: [0.021254297542572024, 0.014924958324432375, 0.021555660820007323, 0.02097496647834778]
+[DEBUG] Delta Accuracy vs Params Data: [{'name': 'Original Model_Kevin', 'ΔAcc': 0.0, 'ΔParams(%)': 0.0}, {'name': 'Stage 3_JF', 'ΔAcc': -18.028, 'ΔParams(%)': -2.154870799901545}, {'name': 'Stage 4_JF', 'ΔAcc': -1.8559999999999945, 'ΔParams(%)': -12.833208115639483}, {'name': 'Original Model_JF', 'ΔAcc': 1.3859999999999957, 'ΔParams(%)': 0.0}]
+[DEBUG] FLOPs: [32595197952.0, 10558513152.0, 22687866880.0, 32595197952.0]
+[DEBUG] Memory: [756.73828125, 448.86328125, 625.91015625, 756.73828125]
+[DEBUG] Accuracy: [67.646, 49.618, 65.79, 69.032]
+[DEBUG] Memory: [756.73828125, 448.86328125, 625.91015625, 756.73828125]
+[DEBUG] Heatmap Rows: [{'Model': 'Original Model_Kevin', 'Accuracy': 67.646, 'Params': 11481338, 'FLOPs': 32595197952, 'Inference Time': 0.021254297542572024, 'Memory (MB)': 756.73828125}, {'Model': 'Stage 3_JF', 'Accuracy': 49.618, 'Params': 11233930, 'FLOPs': 10558513152, 'Inference Time': 0.014924958324432375, 'Memory (MB)': 448.86328125}, {'Model': 'Stage 4_JF', 'Accuracy': 65.79, 'Params': 10007914, 'FLOPs': 22687866880, 'Inference Time': 0.021555660820007323, 'Memory (MB)': 625.91015625}, {'Model': 'Original Model_JF', 'Accuracy': 69.032, 'Params': 11481338, 'FLOPs': 32595197952, 'Inference Time': 0.02097496647834778, 'Memory (MB)': 756.73828125}]
+[DEBUG] Collapse Curve Rows: [{'Model': 'Original Model_Kevin', 'Params': 11481338, 'Time': 0.021254297542572024, 'Accuracy': 67.646}, {'Model': 'Stage 3_JF', 'Params': 11233930, 'Time': 0.014924958324432375, 'Accuracy': 49.618}, {'Model': 'Stage 4_JF', 'Params': 10007914, 'Time': 0.021555660820007323, 'Accuracy': 65.79}, {'Model': 'Original Model_JF', 'Params': 11481338, 'Time': 0.02097496647834778, 'Accuracy': 69.032}]
+[✓] Experiment 'Stage 3' completed. Checkpoints and metrics saved.
