@@ -1,0 +1,139 @@
+Namespace(model='VGG16', dataset='Cifar10', epochs=1, pretrain=1, experiment='Original Model', post_compress_epochs=0, imp=True, JF=False, Kevin=True)
+has GPU: True
+Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
+Loading CIFAR-10 data...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+
+--- Running experiment: Original Model ---
+
+=== Running Kevin experiment ===
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+VGG16                                    [512, 10]                 --
+├─Sequential: 1-1                        [512, 512, 1, 1]          --
+│    └─Conv2d: 2-1                       [512, 64, 32, 32]         1,792
+│    └─ReLU: 2-2                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-3                  [512, 64, 32, 32]         128
+│    └─Conv2d: 2-4                       [512, 64, 32, 32]         36,928
+│    └─ReLU: 2-5                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-6                  [512, 64, 32, 32]         128
+│    └─MaxPool2d: 2-7                    [512, 64, 16, 16]         --
+│    └─Conv2d: 2-8                       [512, 128, 16, 16]        73,856
+│    └─ReLU: 2-9                         [512, 128, 16, 16]        --
+│    └─BatchNorm2d: 2-10                 [512, 128, 16, 16]        256
+│    └─Conv2d: 2-11                      [512, 128, 16, 16]        147,584
+│    └─ReLU: 2-12                        [512, 128, 16, 16]        --
+│    └─BatchNorm2d: 2-13                 [512, 128, 16, 16]        256
+│    └─MaxPool2d: 2-14                   [512, 128, 8, 8]          --
+│    └─Conv2d: 2-15                      [512, 256, 8, 8]          295,168
+│    └─ReLU: 2-16                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-17                 [512, 256, 8, 8]          512
+│    └─Conv2d: 2-18                      [512, 256, 8, 8]          590,080
+│    └─ReLU: 2-19                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-20                 [512, 256, 8, 8]          512
+│    └─Conv2d: 2-21                      [512, 256, 8, 8]          590,080
+│    └─ReLU: 2-22                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-23                 [512, 256, 8, 8]          512
+│    └─MaxPool2d: 2-24                   [512, 256, 4, 4]          --
+│    └─Conv2d: 2-25                      [512, 512, 4, 4]          1,180,160
+│    └─ReLU: 2-26                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-27                 [512, 512, 4, 4]          1,024
+│    └─Conv2d: 2-28                      [512, 512, 4, 4]          2,359,808
+│    └─ReLU: 2-29                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-30                 [512, 512, 4, 4]          1,024
+│    └─Conv2d: 2-31                      [512, 512, 4, 4]          2,359,808
+│    └─ReLU: 2-32                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-33                 [512, 512, 4, 4]          1,024
+│    └─MaxPool2d: 2-34                   [512, 512, 2, 2]          --
+│    └─Conv2d: 2-35                      [512, 512, 2, 2]          2,359,808
+│    └─ReLU: 2-36                        [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-37                 [512, 512, 2, 2]          1,024
+│    └─Conv2d: 2-38                      [512, 512, 2, 2]          2,359,808
+│    └─ReLU: 2-39                        [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-40                 [512, 512, 2, 2]          1,024
+│    └─Conv2d: 2-41                      [512, 512, 2, 2]          2,359,808
+│    └─ReLU: 2-42                        [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-43                 [512, 512, 2, 2]          1,024
+│    └─MaxPool2d: 2-44                   [512, 512, 1, 1]          --
+├─Sequential: 1-2                        [512, 10]                 --
+│    └─Linear: 2-45                      [512, 4096]               2,101,248
+│    └─ReLU: 2-46                        [512, 4096]               --
+│    └─Dropout: 2-47                     [512, 4096]               --
+│    └─Linear: 2-48                      [512, 4096]               16,781,312
+│    └─ReLU: 2-49                        [512, 4096]               --
+│    └─Dropout: 2-50                     [512, 4096]               --
+│    └─Linear: 2-51                      [512, 10]                 40,970
+==========================================================================================
+Total params: 33,646,666
+Trainable params: 33,646,666
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 170.19
+==========================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 2298.52
+Params size (MB): 134.59
+Estimated Total Size (MB): 2439.40
+==========================================================================================
+============================================================
+[INFO] Initialized Model: None
+[•] Starting experiment 'Original Model' in workflow 'Kevin'
+[Start training] device:cuda
+[INFO] Training started...
+model on device: cuda:0
+[INFO] Starting Epoch 1 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [01:05<1:46:05, 65.63s/it]  2%|▏         | 2/98 [01:05<43:27, 27.16s/it]    3%|▎         | 3/98 [01:06<23:30, 14.85s/it]  4%|▍         | 4/98 [01:06<14:08,  9.03s/it]  5%|▌         | 5/98 [01:06<09:00,  5.81s/it]  7%|▋         | 7/98 [01:06<04:24,  2.91s/it]  9%|▉         | 9/98 [01:06<02:33,  1.73s/it] 11%|█         | 11/98 [01:06<01:37,  1.12s/it] 12%|█▏        | 12/98 [01:07<01:19,  1.08it/s] 13%|█▎        | 13/98 [01:07<01:06,  1.28it/s] 15%|█▌        | 15/98 [01:07<00:45,  1.82it/s] 16%|█▋        | 16/98 [01:08<00:40,  2.03it/s] 17%|█▋        | 17/98 [01:08<00:34,  2.36it/s] 18%|█▊        | 18/98 [01:08<00:27,  2.94it/s] 19%|█▉        | 19/98 [01:08<00:28,  2.81it/s] 20%|██        | 20/98 [01:08<00:24,  3.19it/s] 21%|██▏       | 21/98 [01:09<00:23,  3.23it/s] 23%|██▎       | 23/98 [01:09<00:19,  3.84it/s] 24%|██▍       | 24/98 [01:09<00:19,  3.70it/s] 26%|██▌       | 25/98 [01:10<00:18,  3.97it/s] 27%|██▋       | 26/98 [01:10<00:15,  4.73it/s] 28%|██▊       | 27/98 [01:10<00:18,  3.79it/s] 29%|██▊       | 28/98 [01:10<00:17,  4.07it/s] 30%|██▉       | 29/98 [01:11<00:16,  4.30it/s] 31%|███       | 30/98 [01:11<00:13,  5.16it/s] 32%|███▏      | 31/98 [01:11<00:17,  3.93it/s] 33%|███▎      | 32/98 [01:11<00:17,  3.73it/s] 35%|███▍      | 34/98 [01:12<00:13,  4.68it/s] 36%|███▌      | 35/98 [01:12<00:14,  4.25it/s] 37%|███▋      | 36/98 [01:12<00:15,  3.97it/s] 39%|███▉      | 38/98 [01:13<00:15,  3.98it/s] 40%|███▉      | 39/98 [01:13<00:14,  4.18it/s] 41%|████      | 40/98 [01:13<00:14,  3.93it/s] 43%|████▎     | 42/98 [01:14<00:15,  3.66it/s] 44%|████▍     | 43/98 [01:14<00:12,  4.28it/s] 45%|████▍     | 44/98 [01:14<00:12,  4.44it/s] 47%|████▋     | 46/98 [01:15<00:15,  3.36it/s] 48%|████▊     | 47/98 [01:15<00:12,  3.96it/s] 49%|████▉     | 48/98 [01:15<00:10,  4.65it/s] 51%|█████     | 50/98 [01:16<00:12,  3.69it/s] 52%|█████▏    | 51/98 [01:16<00:10,  4.30it/s] 53%|█████▎    | 52/98 [01:16<00:10,  4.47it/s] 55%|█████▌    | 54/98 [01:17<00:12,  3.63it/s] 57%|█████▋    | 56/98 [01:17<00:08,  4.73it/s] 59%|█████▉    | 58/98 [01:18<00:10,  3.86it/s] 61%|██████    | 60/98 [01:18<00:07,  4.84it/s] 62%|██████▏   | 61/98 [01:18<00:06,  5.37it/s] 63%|██████▎   | 62/98 [01:19<00:09,  3.63it/s] 64%|██████▍   | 63/98 [01:19<00:08,  4.27it/s] 65%|██████▌   | 64/98 [01:19<00:07,  4.45it/s] 67%|██████▋   | 66/98 [01:20<00:08,  3.61it/s] 68%|██████▊   | 67/98 [01:20<00:07,  4.23it/s] 70%|███████   | 69/98 [01:20<00:05,  5.49it/s] 71%|███████▏  | 70/98 [01:21<00:07,  3.64it/s] 73%|███████▎  | 72/98 [01:21<00:05,  4.83it/s] 76%|███████▌  | 74/98 [01:21<00:06,  3.88it/s] 78%|███████▊  | 76/98 [01:22<00:04,  4.89it/s] 79%|███████▊  | 77/98 [01:22<00:03,  5.42it/s] 80%|███████▉  | 78/98 [01:22<00:05,  3.38it/s] 81%|████████  | 79/98 [01:23<00:04,  4.00it/s] 83%|████████▎ | 81/98 [01:23<00:03,  5.28it/s] 84%|████████▎ | 82/98 [01:24<00:05,  2.70it/s] 85%|████████▍ | 83/98 [01:24<00:04,  3.28it/s] 86%|████████▌ | 84/98 [01:24<00:03,  3.96it/s] 88%|████████▊ | 86/98 [01:25<00:04,  2.64it/s] 90%|████████▉ | 88/98 [01:25<00:02,  3.66it/s] 92%|█████████▏| 90/98 [01:26<00:02,  2.96it/s] 94%|█████████▍| 92/98 [01:26<00:01,  3.91it/s] 96%|█████████▌| 94/98 [01:27<00:00,  4.50it/s] 98%|█████████▊| 96/98 [01:27<00:00,  5.45it/s]100%|██████████| 98/98 [01:27<00:00,  6.63it/s]100%|██████████| 98/98 [01:27<00:00,  1.12it/s]
+Epoch 1: Loss=1.2412, Acc=59.50%
+[INFO] New best accuracy: 59.50% (previous best was 0.00%)
+[INFO] Training complete after 1 epochs.
+[INFO] Evaluating model on the test set...
+2025-10-31 15:38:23,037 - WARNING - Unsupported operator aten::max_pool2d encountered 5 time(s)
+2025-10-31 15:38:29,267 - WARNING - Unsupported operator aten::max_pool2d encountered 5 time(s)
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:205: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(parts.keys()), y=list(parts.values()), palette=["steelblue", "salmon", "gold"])
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:48: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=list(accs), ax=axs[0], palette="Blues_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:66: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=list(infer_times), ax=axs[1], palette="Oranges_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:74: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=mem_mb, ax=axs[2], palette="Greens_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:313: UserWarning: Tight layout not applied. The left and right margins cannot be made large enough to accommodate all Axes decorations.
+  plt.tight_layout()
+Final Test Accuracy: 71.66%
+[•] Running diagnostics for Original Model...
+[✓] Diagnostics complete for Original Model
+[✓] Saved metrics for 'Original Model_Kevin' → VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/VGG16_CIFAR10_metrics_20251031_153837_293833_467770.json
+[✓] Merged 4 metrics files → VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
+[✓] Metrics merged successfully → VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
+[✓] Saved plot: VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/plots/merged_plots.svg
+[DEBUG] FLOPs: [170324393984.0, 36599496704.0, 170324393984.0, 156159705088.0]
+[DEBUG] Times: [0.032121107673645025, 0.013203294420242314, 0.03213531198501586, 0.04042244358062744]
+[DEBUG] Delta Accuracy vs Params Data: [{'name': 'Original Model_JF', 'ΔAcc': 0.0, 'ΔParams(%)': 0.0}, {'name': 'Stage 2-5_Kevin', 'ΔAcc': -14.630000000000003, 'ΔParams(%)': -43.198669371877735}, {'name': 'Original Model_Kevin', 'ΔAcc': -0.5240000000000009, 'ΔParams(%)': 0.0}, {'name': 'Stage 5_JF', 'ΔAcc': 13.047999999999995, 'ΔParams(%)': -20.265187641473897}]
+[DEBUG] FLOPs: [170324393984.0, 36599496704.0, 170324393984.0, 156159705088.0]
+[DEBUG] Memory: [1713.01953125, 1457.01953125, 1713.01953125, 1685.51953125]
+[DEBUG] Accuracy: [60.02, 45.39, 59.496, 73.068]
+[DEBUG] Memory: [1713.01953125, 1457.01953125, 1713.01953125, 1685.51953125]
+[DEBUG] Heatmap Rows: [{'Model': 'Original Model_JF', 'Accuracy': 60.02, 'Params': 33646666, 'FLOPs': 170324393984, 'Inference Time': 0.032121107673645025, 'Memory (MB)': 1713.01953125}, {'Model': 'Stage 2-5_Kevin', 'Accuracy': 45.39, 'Params': 19111754, 'FLOPs': 36599496704, 'Inference Time': 0.013203294420242314, 'Memory (MB)': 1457.01953125}, {'Model': 'Original Model_Kevin', 'Accuracy': 59.496, 'Params': 33646666, 'FLOPs': 170324393984, 'Inference Time': 0.03213531198501586, 'Memory (MB)': 1713.01953125}, {'Model': 'Stage 5_JF', 'Accuracy': 73.068, 'Params': 26828106, 'FLOPs': 156159705088, 'Inference Time': 0.04042244358062744, 'Memory (MB)': 1685.51953125}]
+[DEBUG] Collapse Curve Rows: [{'Model': 'Original Model_JF', 'Params': 33646666, 'Time': 0.032121107673645025, 'Accuracy': 60.02}, {'Model': 'Stage 2-5_Kevin', 'Params': 19111754, 'Time': 0.013203294420242314, 'Accuracy': 45.39}, {'Model': 'Original Model_Kevin', 'Params': 33646666, 'Time': 0.03213531198501586, 'Accuracy': 59.496}, {'Model': 'Stage 5_JF', 'Params': 26828106, 'Time': 0.04042244358062744, 'Accuracy': 73.068}]
+[✓] Experiment 'Original Model' completed. Checkpoints and metrics saved.
