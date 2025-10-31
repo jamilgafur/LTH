@@ -155,27 +155,31 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     # --- Save final checkpoint ---
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
-    # def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None, flops=None, total_sizes=None):
-    # load the merged metrics to plot final results
     with open(merged_path, "r") as f:
-        merged_data = json.load(f)
-    print(f"[✓] Loaded merged metrics from {merged_path} for plotting final results for workflow '{workflow}' merged_data keys: {list(merged_data.keys())} with values: {merged_data}")
-    plot_results(
-        params=[d.get("param_count", 0) for d in merged_data.values()],
-        accs=[d.get("final_accuracy", 0) for d in merged_data.values()],
-        names=[k for k in merged_data.keys()],
-        title=f"Final Accuracy vs. Parameter Count for '{workflow}'",
-        filename=os.path.join(plots_dir, f"final_results_{workflow}.png"),
-        dataset=train_loader.dataset.__class__.__name__,
-        infer_times=[d.get("inference_time", 0) for d in merged_data.values()],
-        mem_usages=[d.get("total_size_mb", 0) for d in merged_data.values()],
-        flops=[d.get("flops", 0) for d in merged_data.values()],
-        total_sizes=[d.get("total_size_mb", 0) for d in merged_data.values()]
-    )
-    print(f"[✓] Saved final checkpoint: {final_path}")
-    print(f"[✓] Saved final metrics and diagnostics for '{exp_name}' in workflow '{workflow}'")
-    print(f"[✓] Checkpoints and metrics saved for '{exp_name}'.")
+        all_metrics = json.load(f)
 
+        params = []
+        accs = []
+        names = []
+        infer_times = []
+        mem_usages = []
+        flops = []
+        total_sizes = []  # List to store total size for plotting
+
+        # Iterate through each model's metrics to prepare data for plotting
+        for name, metrics in all_metrics.items():
+            names.append(name)
+            params.append(metrics.get("param_count", 0))
+            accs.append(metrics.get("final_accuracy", 0))
+            infer_times.append(metrics.get("inference_time", 0))
+            mem_usages.append(metrics.get("total_size_mb", 0))
+            flops.append(metrics.get("flops", 0))  # Collect FLOPs
+
+        # Save comparison plot
+        save_path = merged_path.replace("metrics", "plots").replace("json", "svg")
+        
+        plot_results(params, accs, names, f"{workflow} Experiments", save_path,
+                    dataset=workflow, infer_times=infer_times, mem_usages=mem_usages, flops=flops, total_sizes=total_sizes)
     print(f"[✓] Experiment '{exp_name}' completed. Checkpoints and metrics saved.")
     return data
 
