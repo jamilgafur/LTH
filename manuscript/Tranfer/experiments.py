@@ -149,28 +149,28 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     # --- Save per-job metrics ---
     safe_update_metrics_json(model_root, f"{exp_name}_{workflow}", data, base_dir=metrics_dir)
 
-    try:
-        merged_path = merge_all_metrics(base_dir=metrics_dir)
-        print(f"[✓] Metrics merged successfully → {merged_path}")
-    except Exception as e:
-        print(f"[!] Could not merge metrics yet: {e}")
+    merged_path = merge_all_metrics(base_dir=metrics_dir)
+    print(f"[✓] Metrics merged successfully → {merged_path}")
 
     # --- Save final checkpoint ---
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
     # def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None, flops=None, total_sizes=None):
-
+    # load the merged metrics to plot final results
+    with open(merged_path, "r") as f:
+        merged_data = json.load(f)
+    print(f"[✓] Loaded merged metrics from {merged_path} for plotting final results for workflow '{workflow}' merged_data keys: {list(merged_data.keys())} with values: {merged_data}")
     plot_results(
-        params=[data["param_count"]],
-        accs=[data["final_accuracy"]],
-        names=[f"{exp_name} ({workflow})"],
-        title=f"{exp_name} - {workflow} Final Results",
-        filename=os.path.join(plots_dir, f"{exp_name}_{workflow}_final_results.svg"),
+        params=[d.get("param_count", 0) for d in merged_data.values()],
+        accs=[d.get("final_accuracy", 0) for d in merged_data.values()],
+        names=[k for k in merged_data.keys()],
+        title=f"Final Accuracy vs. Parameter Count for '{workflow}'",
+        filename=os.path.join(plots_dir, f"final_results_{workflow}.png"),
         dataset=train_loader.dataset.__class__.__name__,
-        infer_times=[data["inference_time"]],
-        mem_usages=[data["diagnostics"].get("peak_memory_usage_mb", 0)],
-        flops=[data["flops"]],
-        total_sizes=[data["total_size_mb"]]
+        infer_times=[d.get("inference_time", 0) for d in merged_data.values()],
+        mem_usages=[d.get("total_size_mb", 0) for d in merged_data.values()],
+        flops=[d.get("flops", 0) for d in merged_data.values()],
+        total_sizes=[d.get("total_size_mb", 0) for d in merged_data.values()]
     )
     print(f"[✓] Saved final checkpoint: {final_path}")
     print(f"[✓] Saved final metrics and diagnostics for '{exp_name}' in workflow '{workflow}'")
