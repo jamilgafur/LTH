@@ -158,7 +158,13 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     # --- Save final checkpoint ---
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
-
+    plot_results(
+        data, plots_dir, exp_name, workflow, collapse_range=collapse_range, device=device
+    )
+    print(f"[✓] Saved final checkpoint: {final_path}")
+    print(f"[✓] Saved final metrics and diagnostics for '{exp_name}' in workflow '{workflow}'")
+    print(f"[✓] Checkpoints and metrics saved for '{exp_name}'.")
+    
     print(f"[✓] Experiment '{exp_name}' completed. Checkpoints and metrics saved.")
     return data
 
