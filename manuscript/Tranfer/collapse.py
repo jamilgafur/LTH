@@ -651,3 +651,4 @@ def _apply_collapsed_block(model, start_idx, end_idx, sub_layers):
     """
     model.features[start_idx:end_idx + 1] = [sub_layers]
     print(f"[INFO] Block '{start_idx} → {end_idx}' collapsed and replaced in model.")
+
