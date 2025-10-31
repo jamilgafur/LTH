@@ -1,7 +1,5 @@
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA driver initialization failed, you might not have a CUDA gpu. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
-  return torch._C._cuda_getDeviceCount() > 0
 Namespace(model='VGG16', dataset='Cifar10', epochs=1, pretrain=1, experiment='Stage 2-5', post_compress_epochs=0, imp=True, JF=True, Kevin=False)
-has GPU: False
+has GPU: True
 Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
 Loading CIFAR-10 data...
 CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
@@ -146,5 +144,96 @@ classifier.fc_3.weight: 0/40960 zeros (0.00%)
 classifier.fc_3.bias: 0/10 zeros (0.00%)
 [DEBUG] Model structure after collapse:
 None
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+VGG16                                    [512, 10]                 --
+├─Sequential: 1-1                        [512, 512, 1, 1]          --
+│    └─Conv2d: 2-1                       [512, 64, 32, 32]         1,792
+│    └─ReLU: 2-2                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-3                  [512, 64, 32, 32]         128
+│    └─Conv2d: 2-4                       [512, 64, 32, 32]         36,928
+│    └─ReLU: 2-5                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-6                  [512, 64, 32, 32]         128
+│    └─MaxPool2d: 2-7                    [512, 64, 16, 16]         --
+│    └─Sequential: 2-8                   [512, 512, 8, 8]          --
+│    │    └─Conv2d: 3-1                  [512, 256, 16, 16]        16,640
+│    │    └─BatchNorm2d: 3-2             [512, 256, 16, 16]        512
+│    │    └─ReLU: 3-3                    [512, 256, 16, 16]        --
+│    │    └─MaxPool2d: 3-4               [512, 256, 8, 8]          --
+│    │    └─Conv2d: 3-5                  [512, 512, 8, 8]          131,072
+│    └─ReLU: 2-9                         [512, 512, 8, 8]          --
+│    └─BatchNorm2d: 2-10                 [512, 512, 8, 8]          1,024
+│    └─MaxPool2d: 2-11                   [512, 512, 4, 4]          --
+│    └─AdaptiveAvgPool2d: 2-12           [512, 512, 1, 1]          --
+├─Sequential: 1-2                        [512, 10]                 --
+│    └─Linear: 2-13                      [512, 4096]               2,101,248
+│    └─ReLU: 2-14                        [512, 4096]               --
+│    └─Dropout: 2-15                     [512, 4096]               --
+│    └─Linear: 2-16                      [512, 4096]               16,781,312
+│    └─ReLU: 2-17                        [512, 4096]               --
+│    └─Dropout: 2-18                     [512, 4096]               --
+│    └─Linear: 2-19                      [512, 10]                 40,970
+==========================================================================================
+Total params: 19,111,754
+Trainable params: 19,111,754
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 36.47
+==========================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 1912.64
+Params size (MB): 76.45
+Estimated Total Size (MB): 1995.38
+==========================================================================================
+============================================================
+[INFO] Collabsed Model: None
 [•] Starting experiment 'Stage 2-5' in workflow 'JF'
-[!] Warning: CUDA not available.
+[Start training] device:cuda
+[INFO] Training started...
+model on device: cuda:0
+[INFO] Starting Epoch 1 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:09<15:05,  9.34s/it]  3%|▎         | 3/98 [00:09<03:56,  2.49s/it]  5%|▌         | 5/98 [00:09<01:59,  1.29s/it]  6%|▌         | 6/98 [00:10<01:31,  1.00it/s]  7%|▋         | 7/98 [00:10<01:10,  1.29it/s]  8%|▊         | 8/98 [00:10<00:52,  1.71it/s]  9%|▉         | 9/98 [00:10<00:42,  2.12it/s] 10%|█         | 10/98 [00:11<01:03,  1.39it/s] 11%|█         | 11/98 [00:12<00:48,  1.78it/s] 12%|█▏        | 12/98 [00:12<00:39,  2.20it/s] 13%|█▎        | 13/98 [00:12<00:29,  2.86it/s] 14%|█▍        | 14/98 [00:13<00:53,  1.58it/s] 15%|█▌        | 15/98 [00:14<00:51,  1.61it/s] 16%|█▋        | 16/98 [00:14<00:40,  2.01it/s] 17%|█▋        | 17/98 [00:14<00:32,  2.46it/s] 18%|█▊        | 18/98 [00:16<01:06,  1.21it/s] 19%|█▉        | 19/98 [00:16<00:50,  1.57it/s] 20%|██        | 20/98 [00:16<00:39,  1.98it/s] 21%|██▏       | 21/98 [00:16<00:29,  2.60it/s] 22%|██▏       | 22/98 [00:18<00:50,  1.52it/s] 23%|██▎       | 23/98 [00:18<00:37,  2.01it/s] 24%|██▍       | 24/98 [00:19<00:43,  1.72it/s] 26%|██▌       | 25/98 [00:19<00:31,  2.29it/s] 27%|██▋       | 26/98 [00:20<00:52,  1.37it/s] 28%|██▊       | 27/98 [00:20<00:40,  1.76it/s] 29%|██▊       | 28/98 [00:21<00:38,  1.81it/s] 30%|██▉       | 29/98 [00:21<00:30,  2.25it/s] 31%|███       | 30/98 [00:22<00:49,  1.37it/s] 32%|███▏      | 31/98 [00:23<00:36,  1.84it/s] 33%|███▎      | 32/98 [00:23<00:28,  2.29it/s] 34%|███▎      | 33/98 [00:23<00:23,  2.74it/s] 35%|███▍      | 34/98 [00:25<00:54,  1.17it/s] 36%|███▌      | 35/98 [00:25<00:41,  1.52it/s] 37%|███▋      | 36/98 [00:25<00:30,  2.03it/s] 38%|███▊      | 37/98 [00:25<00:24,  2.48it/s] 39%|███▉      | 38/98 [00:27<00:43,  1.36it/s] 40%|███▉      | 39/98 [00:27<00:32,  1.84it/s] 41%|████      | 40/98 [00:27<00:25,  2.27it/s] 42%|████▏     | 41/98 [00:27<00:21,  2.70it/s] 43%|████▎     | 42/98 [00:29<00:39,  1.42it/s] 44%|████▍     | 43/98 [00:29<00:28,  1.90it/s] 45%|████▍     | 44/98 [00:30<00:29,  1.83it/s] 46%|████▌     | 45/98 [00:30<00:22,  2.38it/s] 47%|████▋     | 46/98 [00:30<00:24,  2.14it/s] 48%|████▊     | 47/98 [00:30<00:18,  2.80it/s] 49%|████▉     | 48/98 [00:32<00:29,  1.72it/s] 50%|█████     | 49/98 [00:32<00:21,  2.29it/s] 51%|█████     | 50/98 [00:33<00:29,  1.65it/s] 52%|█████▏    | 51/98 [00:33<00:22,  2.07it/s] 53%|█████▎    | 52/98 [00:33<00:21,  2.19it/s] 54%|█████▍    | 53/98 [00:33<00:16,  2.76it/s] 55%|█████▌    | 54/98 [00:35<00:30,  1.45it/s] 56%|█████▌    | 55/98 [00:35<00:23,  1.84it/s] 57%|█████▋    | 56/98 [00:35<00:19,  2.12it/s] 58%|█████▊    | 57/98 [00:36<00:15,  2.57it/s] 59%|█████▉    | 58/98 [00:37<00:30,  1.32it/s] 60%|██████    | 59/98 [00:37<00:22,  1.71it/s] 61%|██████    | 60/98 [00:38<00:17,  2.13it/s] 62%|██████▏   | 61/98 [00:38<00:13,  2.73it/s] 63%|██████▎   | 62/98 [00:40<00:29,  1.22it/s] 64%|██████▍   | 63/98 [00:40<00:21,  1.63it/s] 65%|██████▌   | 64/98 [00:40<00:16,  2.05it/s] 66%|██████▋   | 65/98 [00:40<00:13,  2.47it/s] 67%|██████▋   | 66/98 [00:42<00:27,  1.15it/s] 68%|██████▊   | 67/98 [00:42<00:20,  1.49it/s] 69%|██████▉   | 68/98 [00:42<00:15,  1.89it/s] 70%|███████   | 69/98 [00:43<00:11,  2.42it/s] 71%|███████▏  | 70/98 [00:44<00:21,  1.27it/s] 72%|███████▏  | 71/98 [00:44<00:15,  1.70it/s] 73%|███████▎  | 72/98 [00:45<00:12,  2.16it/s] 74%|███████▍  | 73/98 [00:45<00:09,  2.71it/s] 76%|███████▌  | 74/98 [00:47<00:19,  1.23it/s] 77%|███████▋  | 75/98 [00:47<00:14,  1.63it/s] 78%|███████▊  | 76/98 [00:47<00:10,  2.10it/s] 79%|███████▊  | 77/98 [00:47<00:08,  2.55it/s] 80%|███████▉  | 78/98 [00:49<00:14,  1.38it/s] 81%|████████  | 79/98 [00:49<00:10,  1.76it/s] 82%|████████▏ | 80/98 [00:49<00:07,  2.29it/s] 83%|████████▎ | 81/98 [00:49<00:06,  2.79it/s] 84%|████████▎ | 82/98 [00:51<00:11,  1.37it/s] 85%|████████▍ | 83/98 [00:51<00:08,  1.81it/s] 86%|████████▌ | 84/98 [00:51<00:06,  2.15it/s] 87%|████████▋ | 85/98 [00:51<00:04,  2.80it/s] 88%|████████▊ | 86/98 [00:52<00:07,  1.65it/s] 89%|████████▉ | 87/98 [00:52<00:05,  2.19it/s] 90%|████████▉ | 88/98 [00:53<00:05,  1.98it/s] 91%|█████████ | 89/98 [00:53<00:03,  2.46it/s] 92%|█████████▏| 90/98 [00:55<00:05,  1.42it/s] 93%|█████████▎| 91/98 [00:55<00:03,  1.91it/s] 94%|█████████▍| 92/98 [00:55<00:03,  1.83it/s] 95%|█████████▍| 93/98 [00:55<00:02,  2.42it/s] 96%|█████████▌| 94/98 [00:57<00:02,  1.62it/s] 97%|█████████▋| 95/98 [00:57<00:01,  2.16it/s] 98%|█████████▊| 96/98 [00:57<00:00,  2.69it/s] 99%|█████████▉| 97/98 [00:57<00:00,  3.31it/s]100%|██████████| 98/98 [00:57<00:00,  3.97it/s]100%|██████████| 98/98 [00:57<00:00,  1.70it/s]
+Epoch 1: Loss=1.5429, Acc=45.10%
+[INFO] New best accuracy: 45.10% (previous best was 0.00%)
+[INFO] Training complete after 1 epochs.
+[INFO] Evaluating model on the test set...
+2025-10-31 16:24:13,839 - WARNING - Unsupported operator aten::max_pool2d encountered 3 time(s)
+2025-10-31 16:24:17,374 - WARNING - Unsupported operator aten::max_pool2d encountered 3 time(s)
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:205: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(parts.keys()), y=list(parts.values()), palette=["steelblue", "salmon", "gold"])
+Final Test Accuracy: 52.25%
+[•] Running diagnostics for Stage 2-5...
+[✓] Diagnostics complete for Stage 2-5
+[✓] Saved metrics for 'Stage 2-5_JF' → VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/VGG16_CIFAR10_metrics_20251031_162419_877050_108577.json
+[✓] Merged 8 metrics files → VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
+[✓] Metrics merged successfully → VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 513, in <module>
+    run_experiments_for_dataset(
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 400, in run_experiments_for_dataset
+    model = run_jf_experiment(
+            ^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 252, in run_jf_experiment
+    data = run_experiment(
+           ^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 159, in run_experiment
+    all_metrics = json.load(f)
+                  ^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+           ^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
