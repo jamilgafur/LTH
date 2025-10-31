@@ -180,6 +180,28 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
         
         plot_results(params, accs, names, f"{workflow} Experiments", save_path,
                     dataset=workflow, infer_times=infer_times, mem_usages=mem_usages, flops=flops, total_sizes=total_sizes)
+    norm_metrics = normalize_metrics(all_metrics)
+    # Plots (each function is robust to input)
+    for func in [plot_flops_vs_latency, analyze_collapse_effects, plot_delta_accuracy_vs_params,
+                 plot_flops_vs_memory, plot_accuracy_vs_memory, plot_heatmap, plot_stage_collapse_cost_curve]:
+        try:
+            if func.__name__ == "analyze_collapse_effects":
+                try:
+                    func(model, collapse_range, plots_dir, exp_name)
+                except TypeError:
+                    func(norm_metrics, plots_dir, exp_name)
+            else:
+                func(norm_metrics, plots_dir, exp_name)
+        except Exception as e:
+            print(f"[!] {func.__name__} error: {e}")
+
+    # Cross-experiment plots
+    plot_memory_per_layer_across_experiments(glob.glob(os.path.join(metrics_dir, "*.json")), plots_dir, workflow)
+    plot_unified_metrics(metrics_dir, plots_dir, workflow)
+
+    # Final checkpoint
+    final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
+    torch.save({'model': model.state_dict()}, final_path)
     print(f"[✓] Experiment '{exp_name}' completed. Checkpoints and metrics saved.")
     return data
 
