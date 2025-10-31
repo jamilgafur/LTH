@@ -8,6 +8,7 @@ from typing import Optional, Sequence, Tuple, Dict, Any
 from copy import deepcopy
 import copy
 from utils import count_trainable_params, layer_stats
+import math
 
 # -----------------------------------------------------------------------------
 # Utilities
@@ -309,11 +310,6 @@ def _build_collapsed_block(
 # Core collapse of a single block
 # -----------------------------------------------------------------------------
 
-import torch
-import torch.nn as nn
-import math
-from collections import OrderedDict
-
 
 def _collapse_block(
     model: nn.Module,
@@ -371,27 +367,30 @@ def _collapse_block(
     return model
 
 
-# ======================================================
-# 1️⃣ Locate and prepare
-# ======================================================
 def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
+    print(f"[DEBUG] Locating and preparing block: start_layer_name='{start_layer_name}', end_layer_name='{end_layer_name}'")
     start_container_name, start_subname = _get_container_and_subname(start_layer_name)
     end_container_name, end_subname = _get_container_and_subname(end_layer_name)
+    print(f"[DEBUG] Start container: {start_container_name}, end container: {end_container_name}")
     container = get_layer(model, start_container_name)
     named_layers = list(container.named_children())
     start_idx, end_idx = _find_layer_indices(named_layers, start_subname, end_subname)
 
     if start_idx is None or end_idx is None:
         raise ValueError(f"Could not find start/end layers '{start_layer_name}'/'{end_layer_name}'.")
-
+    
+    print(f"[DEBUG] Found indices: start_idx={start_idx}, end_idx={end_idx}")
     full_block = named_layers[start_idx:end_idx + 1]
+    print(f"[DEBUG] Full block: {full_block}")
     conv_layers = [layer for _, layer in full_block if isinstance(layer, (nn.Conv2d, nn.Linear))]
     if not conv_layers:
         raise ValueError("No Conv2d/Linear layers found in block to collapse.")
+    
+    print(f"[DEBUG] Conv layers in block: {conv_layers}")
     layer_type = type(conv_layers[0])
     if not all(isinstance(l, layer_type) for l in conv_layers):
         raise ValueError("Cannot collapse mixed layer types inside one block.")
-
+    
     return {
         "container": container,
         "named_layers": named_layers,
@@ -403,9 +402,6 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
     }
 
 
-# ======================================================
-# 2️⃣ Capture input activation (pre-block)
-# ======================================================
 def _capture_preblock_activation(model, start_layer_name, input_shape, conv_layers, layer_type, device, debug):
     try:
         dummy_input, x = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
@@ -428,9 +424,6 @@ def _capture_preblock_activation(model, start_layer_name, input_shape, conv_laye
     return x, pre_params
 
 
-# ======================================================
-# 3️⃣ Find the next Linear layer (robust search)
-# ======================================================
 def _find_next_linear(model, end_layer_name, debug):
     modules_list = list(model.named_modules())
     idx_end_global = None
@@ -466,10 +459,6 @@ def _find_next_linear(model, end_layer_name, debug):
 
     return next_linear_name, next_linear_mod
 
-
-# ======================================================
-# 4️⃣ Analyze block output and pooling strategy
-# ======================================================
 def _analyze_block_output(model, full_block, conv_layers, named_layers, end_idx, layer_type, x, next_linear_mod, debug):
     with torch.no_grad():
         y = x.clone()
@@ -560,14 +549,11 @@ def _analyze_block_output(model, full_block, conv_layers, named_layers, end_idx,
         "linear_in_features_heuristic": linear_in_features_heuristic,
     }
 
-
-# ======================================================
-# 5️⃣ Build, replace, and validate collapsed block
-# ======================================================
 def _build_and_replace_block(
     model, start_layer_name, input_shape, info, x, pre_params,
     next_linear_name, next_linear_mod, block_analysis, device, debug
 ):
+    print(f"[DEBUG] Building and replacing block starting at '{start_layer_name}'")
     layer_type = info["layer_type"]
     full_block = info["full_block"]
     conv_layers = info["conv_layers"]
@@ -618,10 +604,6 @@ def _build_and_replace_block(
 
     return model
 
-
-# ======================================================
-# 🔍 Downstream validation & corrective pooling
-# ======================================================
 def _validate_downstream(model, start_container_name, x, start_idx, input_shape, next_linear_name, next_linear_mod, device, debug):
     try:
         if debug:
@@ -714,13 +696,12 @@ def _insert_corrective_pool(model, next_linear_name, next_linear_mod, out_after,
             _update_container(model, parent_path, nn.Sequential(new_od))
             if debug:
                 print(f"[DEBUG] Inserted forced pool into '{parent_path}'")
-        else:
-            raise RuntimeError(f"Cannot insert corrective pool into non-Sequential parent '{parent_path}'")
 
     _, captured_after_fix = _simulate_input_hook(model, next_linear_name, input_shape, device='cpu')
     flat_after2 = captured_after_fix.view(captured_after_fix.size(0), -1).size(1)
     if flat_after2 != expected:
         raise RuntimeError(f"Auto-correction failed: flattened {flat_after2} != expected {expected}")
+
 
 # -----------------------------------------------------------------------------
 # Top-level multi-block collapse function (flexible API)
