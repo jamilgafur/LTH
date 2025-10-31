@@ -246,6 +246,8 @@ def run_jf_experiment(
             handle_skips=True
         )
 
+    print(f"[INFO] Collabsed Model: {describe_model(base_model, train_loader)}")
+
     # Run training & diagnostics
     data = run_experiment(
         model=base_model,
@@ -297,6 +299,7 @@ def run_kevin_experiment(
             debug=True,
             handle_skips=True
         )
+    print(f"[INFO] Collabsed Model: {describe_model(base_model, train_loader)}")
 
     # Run training & diagnostics
     data = run_experiment(
