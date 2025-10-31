@@ -208,6 +208,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
 # =====================================================
 # === Experiment Entry Points (JF & Kevin) ===
 # =====================================================
+
 def run_jf_experiment(
     experiments,
     model_path_097,
@@ -226,13 +227,13 @@ def run_jf_experiment(
     print("\n=== Running JF experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
 
-    # load pretrained model
+    # Load pretrained model
     base_model = model_class(**model_kwargs)
     ckpt = torch.load(model_path_097, map_location='cpu')
     base_model.load_state_dict(ckpt['model'])
     print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
 
-    # collapse if requested
+    # Collapse if requested
     if collapse_range:
         print(f"[•] Collapsing range {collapse_range} for {exp_name}")
         base_model = collapse_only(
@@ -245,7 +246,7 @@ def run_jf_experiment(
             handle_skips=True
         )
 
-    # run training & diagnostics
+    # Run training & diagnostics
     data = run_experiment(
         model=base_model,
         model_kwargs=model_kwargs,
@@ -260,7 +261,6 @@ def run_jf_experiment(
         post_compress_epochs=post_compress_epochs
     )
     return base_model
-
 
 def run_kevin_experiment(
     experiments,
@@ -279,11 +279,13 @@ def run_kevin_experiment(
     print("\n=== Running Kevin experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
 
+    # Initialize and load pretrained model
     base_model = model_class(**model_kwargs)
     ckpt = torch.load(model_path_000, map_location='cpu')
     base_model.load_state_dict(ckpt['model'])
     print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
 
+    # Collapse if requested
     if collapse_range:
         print(f"[•] Collapsing range {collapse_range} for {exp_name}")
         base_model = collapse_only(
@@ -296,6 +298,7 @@ def run_kevin_experiment(
             handle_skips=True
         )
 
+    # Run training & diagnostics
     data = run_experiment(
         model=base_model,
         model_kwargs=model_kwargs,
@@ -310,6 +313,5 @@ def run_kevin_experiment(
         post_compress_epochs=post_compress_epochs
     )
     return base_model
-
 
 # -------------------------
