@@ -711,7 +711,7 @@ def collapse_only(
     model_kwargs: Optional[Dict[str, Any]] = None,
     input_shape: Tuple[int, ...] = (1, 3, 32, 32),
     device: str = 'cpu',
-    safe_param_reduction: bool = True,  # currently enforced by builder
+    safe_param_reduction: bool = True,
     handle_skips: bool = True,
     debug: bool = True,
     dry_run: bool = False
@@ -739,24 +739,35 @@ def collapse_only(
         # Expect checkpoint with key 'model' or whole state_dict
         state = chk.get('model', chk) if isinstance(chk, dict) else chk
         model.load_state_dict(state)
-    else:
-        # We got a model instance; we will deep-copy it so original is preserved
-        pass
-
+    
+    # Deep-copy to preserve original
     model = deepcopy(model).to(device)
     model.eval()
 
-    # Normalize compression_set into OrderedDict-like mapping name -> (start,end)
+    # Normalize compression_set into dict of name -> (start_str, end_str)
     if compression_set is None:
         print("[WARN] compression_set is empty; nothing to do.")
         return model
 
-    # Accept list of tuples or mapping
+    collapse_map = {}
     if isinstance(compression_set, dict):
-        collapse_map = compression_set
+        # Ensure all entries are strings, not nested tuples
+        for k, v in compression_set.items():
+            start, end = v
+            if isinstance(start, tuple):
+                start = start[0]
+            if isinstance(end, tuple):
+                end = end[0]
+            collapse_map[k] = (start, end)
     else:
-        # List/sequence -> convert to dict with generated names
-        collapse_map = {f"collapse_{i}": tuple(pair) for i, pair in enumerate(compression_set)}
+        # List/sequence of tuples
+        for i, pair in enumerate(compression_set):
+            start, end = pair
+            if isinstance(start, tuple):
+                start = start[0]
+            if isinstance(end, tuple):
+                end = end[0]
+            collapse_map[f"collapse_{i}"] = (start, end)
 
     # Store collapsed ranges for downstream patching
     model._collapsed_blocks = list(collapse_map.values())
@@ -792,7 +803,6 @@ def collapse_only(
         print(f"[DEBUG] Model structure after collapse:\n{layer_stats(model)}")
 
     return model
-
 # def collapse_only(
 #     model: Optional[nn.Module] = None,
 #     model_weights_1: Optional[str] = None,
