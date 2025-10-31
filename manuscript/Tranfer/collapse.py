@@ -509,12 +509,12 @@ def _collapse_block(model, start, end, input_shape, device="cpu", debug=True):
 
     # Build collapsed block
     collapsed_seq, out_channels = _perform_collapse(
-        named_layers,
-        runtime_input=captured_activation,
-        traced_shapes=traced_shapes,
-        device=device,
-        debug=debug
-    )
+    layers=[layer for _, layer in named_layers],
+    input_shape=captured_activation.shape,
+    device=device,
+    debug=debug
+)
+
 
     # Count parameters of collapsed block
     collapsed_params = sum(p.numel() for p in collapsed_seq.parameters())
