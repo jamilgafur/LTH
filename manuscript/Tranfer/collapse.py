@@ -623,6 +623,85 @@ def _scan_downstream_for_underflow(model, start_layer_name, x, debug):
     except Exception as e:
         print(f"[WARN] Error scanning downstream modules: {e}")
 
+def _validate_next_linear_alignment(model, x, next_linear_name, next_linear_mod, input_shape, device, debug):
+    import math
+    if next_linear_mod is None:
+        if debug:
+            print("[DEBUG] No downstream Linear found to validate against; skipping classifier alignment step.")
+        return
+
+    try:
+        # locate container and collapsed module
+        start_container_name = next_linear_name.split('.')[0]
+        collapsed_mod_after = get_layer(model, start_container_name)
+        cont_children = list(collapsed_mod_after.named_children())
+        collapsed_seq = next((m for nm, m in cont_children if nm.startswith("collapsed_")), collapsed_mod_after)
+
+        # run collapsed module on captured pre-block activation
+        test_in = x.clone().to(device)
+        with torch.no_grad():
+            out_after = collapsed_seq(test_in)
+
+        flat_actual = out_after.view(out_after.size(0), -1).size(1)
+        expected = next_linear_mod.in_features
+        if debug:
+            print(f"[DEBUG] After collapse: flattened feeding '{next_linear_name}' = {flat_actual}, next Linear expects = {expected}")
+
+        if flat_actual != expected:
+            print(f"[WARN] Flattened mismatch for next Linear '{next_linear_name}': actual={flat_actual} expected={expected}. Inserting AdaptiveAvgPool2d to fix.")
+            C = out_after.size(1)
+            if C > 0 and expected % C == 0:
+                target_hw = expected // C
+            else:
+                target_hw = max(1, expected // max(1, C))
+                if debug:
+                    print(f"[DEBUG] expected not divisible by channels ({expected}%{C} != 0). Using best-effort target_hw={target_hw}")
+
+            target_H = int(round(math.sqrt(target_hw))) if target_hw > 1 else 1
+            target_W = max(1, target_hw // target_H) if target_hw > 1 else 1
+            forced_pool = nn.AdaptiveAvgPool2d((target_H, target_W))
+
+            # Prefer to add the forced pool at model.features if exists
+            if hasattr(model, 'features') and isinstance(model.features, nn.Sequential):
+                if debug:
+                    print(f"[DEBUG] Appending forced AdaptiveAvgPool2d({target_H},{target_W}) to model.features")
+                feat_seq = list(model.features.children())
+                feat_seq.append(forced_pool)
+                from collections import OrderedDict
+                model.features = nn.Sequential(OrderedDict([(f"layer_{i}", m) for i, m in enumerate(feat_seq)]))
+            else:
+                # insert into parent container of next_linear module if Sequential
+                parent_path = '.'.join(next_linear_name.split('.')[:-1])
+                if parent_path == "":
+                    raise RuntimeError("Cannot safely insert corrective pool; model has no 'features' and next Linear is top-level.")
+                parent_container = get_layer(model, parent_path)
+                if isinstance(parent_container, nn.Sequential):
+                    from collections import OrderedDict
+                    pc = list(parent_container.named_children())
+                    new_od = OrderedDict()
+                    inserted = False
+                    for nm_child, mod_child in pc:
+                        if not inserted and nm_child == next_linear_name.split('.')[-1]:
+                            new_od[f"forced_pool"] = forced_pool
+                            inserted = True
+                        new_od[nm_child] = mod_child
+                    _update_container(model, parent_path, nn.Sequential(new_od))
+                    if debug:
+                        print(f"[DEBUG] Inserted forced AdaptiveAvgPool2d({target_H},{target_W}) into parent '{parent_path}'")
+                else:
+                    raise RuntimeError(f"Cannot insert corrective pool into parent '{parent_path}'; not a Sequential container.")
+
+            # re-validate with hook into the next Linear
+            _, captured_after_fix = _simulate_input_hook(model, next_linear_name, input_shape, device=device)
+            flat_after2 = captured_after_fix.view(captured_after_fix.size(0), -1).size(1)
+            if debug:
+                print(f"[DEBUG] After corrective pool: flattened feeding '{next_linear_name}' = {flat_after2} (expected {expected})")
+            if flat_after2 != expected:
+                raise RuntimeError(f"Auto-correction failed: flattened {flat_after2} != expected {expected}")
+
+    except Exception as e:
+        print(f"[WARN] Classifier alignment validation failed for '{next_linear_name}': {e}")
+
 
 
 # -----------------------------------------------------------------------------
