@@ -547,108 +547,77 @@ def _collapse_block(model, start, end, input_shape, device="cpu", debug=True):
 # Top-level collapse function
 # -----------------------------------------------------------------------------
 
-import torch
-import torch.nn as nn
 
-def collapse_only(model, collapse_pairs, input_shape=(1, 3, 32, 32), device='cuda'):
-    """
-    Collapse contiguous convolutional and batchnorm layers inside the model.
-    Handles shape and channel mismatches safely.
-    """
+def collapse_only(
+    model: Optional[nn.Module] = None,
+    model_weights_1: Optional[str] = None,
+    compression_set: Optional[Sequence[Tuple[str, str]]] = None,
+    model_class: Optional[type] = None,
+    model_kwargs: Optional[Dict[str, Any]] = None,
+    input_shape: Tuple[int, ...] = (1, 3, 32, 32),
+    device: str = "cpu",
+    safe_param_reduction: bool = True,
+    handle_skips: bool = True,
+    debug: bool = True,
+    dry_run: bool = False,
+) -> nn.Module:
+    """Collapse multiple layer blocks in a model with debug info."""
+    import time
+
+    t_global = time.time()
+
+    if model is None:
+        if not (model_weights_1 and model_class):
+            raise ValueError("Provide either `model` or (`model_weights_1`, `model_class`).")
+        model_kwargs = model_kwargs or {}
+        print(f"[INFO] Loading model {model_class.__name__} from {model_weights_1}")
+        model = model_class(**model_kwargs)
+        chk = torch.load(model_weights_1, map_location=device)
+        state = chk.get("model", chk) if isinstance(chk, dict) else chk
+        model.load_state_dict(state)
+
+    model = copy.deepcopy(model).to(device)
     model.eval()
-    model = model.to(device)
-    dummy_input = torch.randn(*input_shape).to(device)
 
-    print(f"[INFO] Starting collapse_only; params before = {sum(p.numel() for p in model.parameters()):,}")
-    print(f"[INFO] Blocks to collapse: {len(collapse_pairs)}")
+    if compression_set is None:
+        print("[WARN] No compression set provided — skipping collapse.")
+        return model
 
-    for idx, (start_name, end_name) in enumerate(collapse_pairs, 1):
-        print(f"\n[INFO] ---- ({idx}/{len(collapse_pairs)}) Processing collapse '{start_name}' → '{end_name}' ----")
+    if isinstance(compression_set, dict):
+        collapse_map = compression_set
+    else:
+        collapse_map = {f"collapse_{i}": tuple(pair) for i, pair in enumerate(compression_set)}
 
-        layers = list(model.features.named_children())
-        names = [n for n, _ in layers]
+    model._collapsed_blocks = list(collapse_map.values())
+    pre_total = count_trainable_params(model)
+    print(f"[INFO] Starting collapse_only; params before = {pre_total:,}")
+    print(f"[INFO] Blocks to collapse: {len(collapse_map)}")
 
-        start_idx = names.index(start_name)
-        end_idx = names.index(end_name)
-
-        sub_layers = nn.Sequential(*[m for _, m in layers[start_idx:end_idx + 1]]).to(device)
-        print(f"[DEBUG] Layers in block: {[n for n, _ in layers[start_idx:end_idx + 1]]}")
-
-        # Trace input shape to the block
-        shape_before = _trace_input_shape(layers, start_idx, dummy_input, device)
-
-        # Run through the block
-        shape_after = _process_block(sub_layers, shape_before)
-
-        # Sanity check: spatial dims should not collapse to zero
-        if shape_after[-1] == 0 or shape_after[-2] == 0:
-            print(f"[WARN] Block output too small ({shape_after}). Skipping collapse for {start_name} → {end_name}.")
+    for idx, (name, (start, end)) in enumerate(collapse_map.items(), 1):
+        print(f"\n[INFO] ---- ({idx}/{len(collapse_map)}) Processing collapse '{name}': {start} → {end} ----")
+        t0 = time.time()
+        if dry_run:
+            print("[INFO] Dry-run: skipping actual collapse.")
             continue
 
-        # Check next layer shape compatibility
-        _check_next_layer_compatibility(layers, end_idx, shape_after, model, device)
+        model = _collapse_block(model, start, end, input_shape, device=device, debug=debug)
 
-        # Replace the block with the collapsed version
-        _apply_collapsed_block(model, start_idx, end_idx, sub_layers)
+        if handle_skips:
+            patch_skip_connections(model)
+        disable_inplace_relu(model)
 
-    print(f"\n[INFO] === Collapse Summary ===")
-    print(f"   Parameters after : {sum(p.numel() for p in model.parameters()):,}")
+        print(f"[INFO] Collapse '{name}' completed in {time.time() - t0:.3f}s")
+
+    post_total = count_trainable_params(model)
+    t_elapsed = time.time() - t_global
+    print("\n[INFO] === Collapse Summary ===")
+    print(f"   Parameters before: {pre_total:,}")
+    print(f"   Parameters after : {post_total:,}")
+    print(f"   ΔParams          : {pre_total - post_total:+,}")
+    print(f"   Time total       : {t_elapsed:.2f}s")
+    print("===============================")
+
+    if post_total > pre_total:
+        print("[WARN] ⚠ Model has MORE parameters after collapse — check collapse policy.")
+
     return model
-
-def _trace_input_shape(layers, start_idx, dummy_input, device):
-    """
-    Trace the input shape through the layers before the collapse block.
-    """
-    with torch.no_grad():
-        activation = dummy_input.clone()
-        for n, m in layers[:start_idx]:
-            activation = m(activation)
-
-        shape_before = tuple(activation.shape)
-        print(f"[DEBUG] Captured activation before block: {shape_before}")
-    return shape_before
-
-def _process_block(sub_layers, shape_before):
-    """
-    Process the collapse block and print debug information for layer outputs.
-    """
-    with torch.no_grad():
-        out = shape_before.clone()
-        for name, layer in sub_layers.named_children():
-            out = layer(out)
-            print(f"   -> After {layer.__class__.__name__:<20}: shape = {tuple(out.shape)}")
-    
-    shape_after = tuple(out.shape)
-    print(f"[DEBUG] Block output shape: {shape_after}")
-    return shape_after
-
-def _check_next_layer_compatibility(layers, end_idx, shape_after, model, device):
-    """
-    Check the next layer compatibility (BatchNorm2d or MaxPool2d).
-    """
-    next_layer = layers[end_idx + 1][1] if end_idx + 1 < len(layers) else None
-    
-    if isinstance(next_layer, nn.BatchNorm2d):
-        expected_ch = next_layer.num_features
-        if expected_ch != shape_after[1]:
-            print(f"[WARN] BatchNorm2d channel mismatch: expected {expected_ch}, got {shape_after[1]}.")
-            next_layer.num_features = shape_after[1]
-            next_layer.running_mean = torch.zeros(shape_after[1], device=device)
-            next_layer.running_var = torch.ones(shape_after[1], device=device)
-            next_layer.weight = nn.Parameter(torch.ones(shape_after[1], device=device))
-            next_layer.bias = nn.Parameter(torch.zeros(shape_after[1], device=device))
-            print(f"[INFO] Fixed BatchNorm2d to {shape_after[1]} channels.")
-
-    elif isinstance(next_layer, nn.MaxPool2d):
-        k, s = next_layer.kernel_size, next_layer.stride
-        if shape_after[-1] < k or shape_after[-2] < k:
-            print(f"[WARN] MaxPool2d after block would collapse spatial dims. Removing this pool layer.")
-            model.features[end_idx + 1] = nn.Identity()
-
-def _apply_collapsed_block(model, start_idx, end_idx, sub_layers):
-    """
-    Replace the original block with the collapsed version in the model.
-    """
-    model.features[start_idx:end_idx + 1] = [sub_layers]
-    print(f"[INFO] Block '{start_idx} → {end_idx}' collapsed and replaced in model.")
-

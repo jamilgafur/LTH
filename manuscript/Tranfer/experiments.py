@@ -183,23 +183,26 @@ def run_jf_experiment(
     print("\n=== Running JF experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
 
-    # Load pretrained model
+    # load pretrained model
     base_model = model_class(**model_kwargs)
     ckpt = torch.load(model_path_097, map_location='cpu')
     base_model.load_state_dict(ckpt['model'])
     print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
 
-    # Perform layer collapse (if specified)
+    # collapse if requested
     if collapse_range:
-        print(f"[•] Collapsing layers {collapse_range} for experiment '{exp_name}'")
+        print(f"[•] Collapsing range {collapse_range} for {exp_name}")
         base_model = collapse_only(
             model=base_model,
-            collapse_pairs=[collapse_range],  # new API
-            input_shape=model_kwargs.get('one_batch', torch.randn(1, 3, 32, 32)).shape,
-            device=device
+            compression_set=[collapse_range],                   # <- changed
+            input_shape=model_kwargs['one_batch'].shape,
+            device=device,
+            dry_run=False,
+            debug=True,
+            handle_skips=True
         )
 
-    # Run training & diagnostics
+    # run training & diagnostics
     data = run_experiment(
         model=base_model,
         model_kwargs=model_kwargs,
@@ -214,6 +217,7 @@ def run_jf_experiment(
         post_compress_epochs=post_compress_epochs
     )
     return base_model
+
 
 def run_kevin_experiment(
     experiments,
@@ -232,23 +236,23 @@ def run_kevin_experiment(
     print("\n=== Running Kevin experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
 
-    # Load pretrained model
     base_model = model_class(**model_kwargs)
     ckpt = torch.load(model_path_000, map_location='cpu')
     base_model.load_state_dict(ckpt['model'])
     print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
 
-    # Perform collapse
     if collapse_range:
-        print(f"[•] Collapsing layers {collapse_range} for experiment '{exp_name}'")
+        print(f"[•] Collapsing range {collapse_range} for {exp_name}")
         base_model = collapse_only(
             model=base_model,
-            collapse_pairs=[collapse_range],  # new param name
-            input_shape=model_kwargs.get('one_batch', torch.randn(1, 3, 32, 32)).shape,
-            device=device
+            compression_set=[collapse_range],                   # <- changed
+            input_shape=model_kwargs['one_batch'].shape,
+            device=device,
+            dry_run=False,
+            debug=True,
+            handle_skips=True
         )
 
-    # Run training & diagnostics
     data = run_experiment(
         model=base_model,
         model_kwargs=model_kwargs,
