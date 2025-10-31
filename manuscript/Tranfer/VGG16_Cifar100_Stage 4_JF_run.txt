@@ -1,5 +1,3 @@
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA driver initialization failed, you might not have a CUDA gpu. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
-  return torch._C._cuda_getDeviceCount() > 0
 Namespace(model='VGG16', dataset='Cifar100', epochs=1, pretrain=1, experiment='Stage 4', post_compress_epochs=0, imp=True, JF=True, Kevin=False)
 has GPU: False
 Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
@@ -151,11 +149,11 @@ features.conv_7.weight: 504494/589824 zeros (85.53%)
 features.conv_7.bias: 0/256 zeros (0.00%)
 features.bn_7.weight: 0/256 zeros (0.00%)
 features.bn_7.bias: 0/256 zeros (0.00%)
-features.collapsed_bd079db8.layer_0.weight: 0/65536 zeros (0.00%)
-features.collapsed_bd079db8.layer_0.bias: 0/256 zeros (0.00%)
-features.collapsed_bd079db8.layer_1.weight: 0/256 zeros (0.00%)
-features.collapsed_bd079db8.layer_1.bias: 256/256 zeros (100.00%)
-features.collapsed_bd079db8.layer_4.weight: 0/131072 zeros (0.00%)
+features.collapsed_1a28995b.layer_0.weight: 0/65536 zeros (0.00%)
+features.collapsed_1a28995b.layer_0.bias: 0/256 zeros (0.00%)
+features.collapsed_1a28995b.layer_1.weight: 0/256 zeros (0.00%)
+features.collapsed_1a28995b.layer_1.bias: 256/256 zeros (100.00%)
+features.collapsed_1a28995b.layer_4.weight: 0/131072 zeros (0.00%)
 features.bn_10.weight: 0/512 zeros (0.00%)
 features.bn_10.bias: 0/512 zeros (0.00%)
 features.conv_11.weight: 2352911/2359296 zeros (99.73%)
@@ -178,5 +176,73 @@ classifier.fc_3.weight: 0/409600 zeros (0.00%)
 classifier.fc_3.bias: 0/100 zeros (0.00%)
 [DEBUG] Model structure after collapse:
 None
-[•] Starting experiment 'Stage 4' in workflow 'JF'
-[!] Warning: CUDA not available.
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+Traceback (most recent call last):
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchinfo/torchinfo.py", line 295, in forward_pass
+    _ = model(*x, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1845, in _call_impl
+    return inner()
+           ^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1793, in inner
+    result = forward_call(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/pyPrune/models/Vgg16.py", line 103, in forward
+    x = self.features(x)
+        ^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1845, in _call_impl
+    return inner()
+           ^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1793, in inner
+    result = forward_call(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1845, in _call_impl
+    return inner()
+           ^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1793, in inner
+    result = forward_call(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/pooling.py", line 213, in forward
+    return F.max_pool2d(
+           ^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/_jit_internal.py", line 624, in fn
+    return if_false(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/functional.py", line 830, in _max_pool2d
+    return torch.max_pool2d(input, kernel_size, stride, padding, dilation, ceil_mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Given input size: (512x1x1). Calculated output size: (512x0x0). Output size is too small
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 513, in <module>
+    run_experiments_for_dataset(
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 400, in run_experiments_for_dataset
+    model = run_jf_experiment(
+            ^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 249, in run_jf_experiment
+    print(f"[INFO] Collabsed Model: {describe_model(base_model, train_loader)}")
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/utils.py", line 313, in describe_model
+    summary(model, input_size=next(iter(loader))[0].shape, device=device)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchinfo/torchinfo.py", line 223, in summary
+    summary_list = forward_pass(
+                   ^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchinfo/torchinfo.py", line 304, in forward_pass
+    raise RuntimeError(
+RuntimeError: Failed to run torchinfo. See above stack traces for more details. Executed layers up to: [Conv2d: 2, ReLU: 2, BatchNorm2d: 2, Conv2d: 2, ReLU: 2, BatchNorm2d: 2, MaxPool2d: 2, Conv2d: 2, ReLU: 2, BatchNorm2d: 2, Conv2d: 2, ReLU: 2, BatchNorm2d: 2, MaxPool2d: 2, Conv2d: 2, ReLU: 2, BatchNorm2d: 2, Conv2d: 2, ReLU: 2, BatchNorm2d: 2, Conv2d: 2, ReLU: 2, BatchNorm2d: 2, MaxPool2d: 2, Sequential: 2, Conv2d: 3, BatchNorm2d: 3, ReLU: 3, Sequential: 3, MaxPool2d: 4, MaxPool2d: 4, Conv2d: 3, ReLU: 2, BatchNorm2d: 2]

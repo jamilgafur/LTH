@@ -161,10 +161,10 @@ stage1.stage1_block0.block.bn3.bias: 0/24 zeros (0.00%)
 stage1.stage1_block0.shortcut.shortcut_conv.weight: 111/768 zeros (14.45%)
 stage1.stage1_block0.shortcut.shortcut_bn.weight: 0/24 zeros (0.00%)
 stage1.stage1_block0.shortcut.shortcut_bn.bias: 0/24 zeros (0.00%)
-stage2.stage2_block0.block.collapsed_2e88ea4f.layer_0.weight: 0/576 zeros (0.00%)
-stage2.stage2_block0.block.collapsed_2e88ea4f.layer_1.weight: 0/24 zeros (0.00%)
-stage2.stage2_block0.block.collapsed_2e88ea4f.layer_1.bias: 24/24 zeros (100.00%)
-stage2.stage2_block0.block.collapsed_2e88ea4f.layer_4.weight: 0/1344 zeros (0.00%)
+stage2.stage2_block0.block.collapsed_a14dc6d4.layer_0.weight: 0/576 zeros (0.00%)
+stage2.stage2_block0.block.collapsed_a14dc6d4.layer_1.weight: 0/24 zeros (0.00%)
+stage2.stage2_block0.block.collapsed_a14dc6d4.layer_1.bias: 24/24 zeros (100.00%)
+stage2.stage2_block0.block.collapsed_a14dc6d4.layer_4.weight: 0/1344 zeros (0.00%)
 stage2.stage2_block0.block.bn3.weight: 0/56 zeros (0.00%)
 stage2.stage2_block0.block.bn3.bias: 0/56 zeros (0.00%)
 stage2.stage2_block0.shortcut.shortcut_conv.weight: 191/1344 zeros (14.21%)
@@ -279,5 +279,74 @@ fc.weight: 0/36800 zeros (0.00%)
 fc.bias: 0/100 zeros (0.00%)
 [DEBUG] Model structure after collapse:
 None
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+====================================================================================================
+Layer (type:depth-idx)                             Output Shape              Param #
+====================================================================================================
+RegNetX_400MF                                      [512, 100]                --
+├─Sequential: 1-1                                  [512, 32, 16, 16]         --
+│    └─Conv2d: 2-1                                 [512, 32, 16, 16]         864
+│    └─BatchNorm2d: 2-2                            [512, 32, 16, 16]         64
+│    └─ReLU: 2-3                                   [512, 32, 16, 16]         --
+├─Sequential: 1-2                                  [512, 24, 16, 16]         --
+│    └─XBlock: 2-4                                 [512, 24, 16, 16]         --
+│    │    └─Sequential: 3-1                        [512, 24, 16, 16]         6,672
+│    │    └─Sequential: 3-2                        [512, 24, 16, 16]         816
+├─Sequential: 1-3                                  [512, 56, 2, 3]           --
+│    └─XBlock: 2-5                                 [512, 56, 2, 3]           --
+│    │    └─Sequential: 3-3                        [512, 56, 2, 3]           2,080
+│    │    └─Sequential: 3-4                        [512, 56, 8, 8]           1,456
+├─Sequential: 1-4                                  [512, 152, 1, 2]          --
+│    └─XBlock: 2-6                                 [512, 152, 1, 2]          --
+│    │    └─Sequential: 3-5                        [512, 152, 1, 2]          240,464
+│    │    └─Sequential: 3-6                        [512, 152, 1, 2]          8,816
+│    └─XBlock: 2-7                                 [512, 152, 1, 2]          --
+│    │    └─Sequential: 3-7                        [512, 152, 1, 2]          255,056
+│    │    └─Sequential: 3-8                        [512, 152, 1, 2]          --
+│    └─XBlock: 2-8                                 [512, 152, 1, 2]          --
+│    │    └─Sequential: 3-9                        [512, 152, 1, 2]          255,056
+│    │    └─Sequential: 3-10                       [512, 152, 1, 2]          --
+│    └─XBlock: 2-9                                 [512, 152, 1, 2]          --
+│    │    └─Sequential: 3-11                       [512, 152, 1, 2]          255,056
+│    │    └─Sequential: 3-12                       [512, 152, 1, 2]          --
+├─Sequential: 1-5                                  [512, 368, 1, 1]          --
+│    └─XBlock: 2-10                                [512, 368, 1, 1]          --
+│    │    └─Sequential: 3-13                       [512, 368, 1, 1]          1,412,384
+│    │    └─Sequential: 3-14                       [512, 368, 1, 1]          56,672
+│    └─XBlock: 2-11                                [512, 368, 1, 1]          --
+│    │    └─Sequential: 3-15                       [512, 368, 1, 1]          1,491,872
+│    │    └─Sequential: 3-16                       [512, 368, 1, 1]          --
+│    └─XBlock: 2-12                                [512, 368, 1, 1]          --
+│    │    └─Sequential: 3-17                       [512, 368, 1, 1]          1,491,872
+│    │    └─Sequential: 3-18                       [512, 368, 1, 1]          --
+│    └─XBlock: 2-13                                [512, 368, 1, 1]          --
+│    │    └─Sequential: 3-19                       [512, 368, 1, 1]          1,491,872
+│    │    └─Sequential: 3-20                       [512, 368, 1, 1]          --
+│    └─XBlock: 2-14                                [512, 368, 1, 1]          --
+│    │    └─Sequential: 3-21                       [512, 368, 1, 1]          1,491,872
+│    │    └─Sequential: 3-22                       [512, 368, 1, 1]          --
+│    └─XBlock: 2-15                                [512, 368, 1, 1]          --
+│    │    └─Sequential: 3-23                       [512, 368, 1, 1]          1,491,872
+│    │    └─Sequential: 3-24                       [512, 368, 1, 1]          --
+│    └─XBlock: 2-16                                [512, 368, 1, 1]          --
+│    │    └─Sequential: 3-25                       [512, 368, 1, 1]          1,491,872
+│    │    └─Sequential: 3-26                       [512, 368, 1, 1]          --
+├─AdaptiveAvgPool2d: 1-6                           [512, 368, 1, 1]          --
+├─Linear: 1-7                                      [512, 100]                36,900
+====================================================================================================
+Total params: 11,483,588
+Trainable params: 11,483,588
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 7.63
+====================================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 457.98
+Params size (MB): 45.93
+Estimated Total Size (MB): 510.21
+====================================================================================================
+============================================================
+[INFO] Collabsed Model: None
 [•] Starting experiment 'Stage 2' in workflow 'JF'
 [!] Warning: CUDA not available.

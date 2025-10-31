@@ -139,11 +139,11 @@ features.conv_4.weight: 0/147456 zeros (0.00%)
 features.conv_4.bias: 0/128 zeros (0.00%)
 features.bn_4.weight: 0/128 zeros (0.00%)
 features.bn_4.bias: 0/128 zeros (0.00%)
-features.collapsed_1f705290.layer_0.weight: 0/16384 zeros (0.00%)
-features.collapsed_1f705290.layer_0.bias: 0/128 zeros (0.00%)
-features.collapsed_1f705290.layer_1.weight: 0/128 zeros (0.00%)
-features.collapsed_1f705290.layer_1.bias: 128/128 zeros (100.00%)
-features.collapsed_1f705290.layer_4.weight: 0/32768 zeros (0.00%)
+features.collapsed_4b4666a3.layer_0.weight: 0/16384 zeros (0.00%)
+features.collapsed_4b4666a3.layer_0.bias: 0/128 zeros (0.00%)
+features.collapsed_4b4666a3.layer_1.weight: 0/128 zeros (0.00%)
+features.collapsed_4b4666a3.layer_1.bias: 128/128 zeros (100.00%)
+features.collapsed_4b4666a3.layer_4.weight: 0/32768 zeros (0.00%)
 features.bn_7.weight: 0/256 zeros (0.00%)
 features.bn_7.bias: 0/256 zeros (0.00%)
 features.conv_8.weight: 0/1179648 zeros (0.00%)
@@ -178,51 +178,46 @@ classifier.fc_3.weight: 0/40960 zeros (0.00%)
 classifier.fc_3.bias: 0/10 zeros (0.00%)
 [DEBUG] Model structure after collapse:
 None
-[•] Starting experiment 'Stage 3' in workflow 'JF'
-[Start training] device:cuda
-[INFO] Training started...
-model on device: cuda:0
-[INFO] Starting Epoch 1 of training...
-  0%|          | 0/98 [00:00<?, ?it/s]  0%|          | 0/98 [00:29<?, ?it/s]
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
 Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 513, in <module>
-    run_experiments_for_dataset(
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 400, in run_experiments_for_dataset
-    model = run_jf_experiment(
-            ^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 250, in run_jf_experiment
-    data = run_experiment(
-           ^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 126, in run_experiment
-    data = train_and_evaluate(
-           ^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/trainer.py", line 49, in train_and_evaluate
-    preds = model(xb)
-            ^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchinfo/torchinfo.py", line 295, in forward_pass
+    _ = model(*x, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^
   File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
     return self._call_impl(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1845, in _call_impl
+    return inner()
+           ^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1793, in inner
+    result = forward_call(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/old_Users/jgafur/LTH/pyPrune/models/Vgg16.py", line 103, in forward
     x = self.features(x)
         ^^^^^^^^^^^^^^^^
   File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
     return self._call_impl(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1845, in _call_impl
+    return inner()
+           ^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1793, in inner
+    result = forward_call(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/container.py", line 250, in forward
     input = module(input)
             ^^^^^^^^^^^^^
   File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
     return self._call_impl(*args, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1845, in _call_impl
+    return inner()
+           ^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1793, in inner
+    result = forward_call(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/pooling.py", line 213, in forward
     return F.max_pool2d(
            ^^^^^^^^^^^^^
@@ -233,3 +228,23 @@ Traceback (most recent call last):
     return torch.max_pool2d(input, kernel_size, stride, padding, dilation, ceil_mode)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 RuntimeError: Given input size: (256x1x2). Calculated output size: (256x0x1). Output size is too small
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 513, in <module>
+    run_experiments_for_dataset(
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 400, in run_experiments_for_dataset
+    model = run_jf_experiment(
+            ^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 249, in run_jf_experiment
+    print(f"[INFO] Collabsed Model: {describe_model(base_model, train_loader)}")
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/utils.py", line 313, in describe_model
+    summary(model, input_size=next(iter(loader))[0].shape, device=device)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchinfo/torchinfo.py", line 223, in summary
+    summary_list = forward_pass(
+                   ^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchinfo/torchinfo.py", line 304, in forward_pass
+    raise RuntimeError(
+RuntimeError: Failed to run torchinfo. See above stack traces for more details. Executed layers up to: [Conv2d: 2, ReLU: 2, BatchNorm2d: 2, Conv2d: 2, ReLU: 2, BatchNorm2d: 2, MaxPool2d: 2, Conv2d: 2, ReLU: 2, BatchNorm2d: 2, Conv2d: 2, ReLU: 2, BatchNorm2d: 2, MaxPool2d: 2, Sequential: 2, Conv2d: 3, BatchNorm2d: 3, ReLU: 3, AdaptiveAvgPool2d: 3, Conv2d: 3, ReLU: 2, BatchNorm2d: 2]
