@@ -319,18 +319,72 @@ def _collapse_block(
     """
     Collapse layers between start_layer_name and end_layer_name (inclusive).
 
-    Robust alignment strategy:
-      - Find the next nn.Linear after the end_layer_name in global named_modules order.
-      - Build & replace the collapsed block.
-      - Run the collapsed block on a captured pre-block activation to compute actual flattened size.
-      - If actual != linear.in_features, insert AdaptiveAvgPool2d to force the correct HxW.
-      - Re-validate by simulating forward into the linear's input.
+    Method refactored into smaller helper methods for clarity.
     """
     import math
 
     print(f"\n[INFO] Collapsing block: {start_layer_name} → {end_layer_name}")
 
-    # --- locate container & block indices (unchanged logic) ---
+    # --- locate container & block indices ---
+    container, named_layers, start_idx, end_idx = _locate_block(
+        model, start_layer_name, end_layer_name
+    )
+
+    # --- validate and classify layers ---
+    full_block, conv_layers, layer_type = _validate_block_layers(named_layers, start_idx, end_idx)
+
+    # --- capture input activation (pre-block) ---
+    x = _capture_pre_block_activation(model, start_layer_name, conv_layers, input_shape, device, layer_type, debug)
+
+    pre_params = count_trainable_params(model)
+    if debug:
+        print(f"[DEBUG] Params before collapse: {pre_params:,}")
+
+    # --- find next Linear module after this block ---
+    next_linear_name, next_linear_mod = _find_next_linear(model, end_layer_name, debug)
+
+    # --- forward through original full_block to know output shape ---
+    out_shape, out_channels, pool_layer = _simulate_full_block_output(full_block, x, layer_type, named_layers, end_idx, debug)
+
+    # --- adjust block output to match Linear if needed ---
+    adaptive_pool_to_use = _adjust_block_for_linear(
+        layer_type, out_shape, out_channels, named_layers, end_idx, next_linear_mod, debug
+    )
+
+    # --- detect shortcut channels for residual-style blocks ---
+    shortcut_out_channels = _detect_shortcut_channels(model, debug)
+
+    # --- build collapsed block ---
+    collapsed_block = _construct_collapsed_block(
+        layer_type, x, conv_layers, full_block, out_shape, pool_layer,
+        next_linear_mod, shortcut_out_channels, debug
+    )
+
+    # --- replace block inside container ---
+    _replace_block_in_model(model, start_container_name=start_layer_name.split('.')[0],
+                            named_layers=named_layers, start_idx=start_idx, end_idx=end_idx,
+                            collapsed_block=collapsed_block, device=device)
+
+    post_params = count_trainable_params(model)
+    print(f"[DEBUG] Params after collapse: {post_params:,}")
+    print(f"[INFO] ΔParams = {pre_params - post_params:+,} (should be >= 0)")
+
+    # --- scan downstream for underflow issues ---
+    _scan_downstream_for_underflow(model, start_layer_name, x, debug)
+
+    # --- validate alignment with next Linear ---
+    _validate_next_linear_alignment(model, x, next_linear_name, next_linear_mod, input_shape, device, debug)
+
+    # final sanity check
+    if post_params > pre_params:
+        print("[WARN] ⚠ Collapsed block has MORE parameters than before! Investigate collapse policy.")
+
+    return model
+
+
+# -------------------- Helper Methods --------------------
+
+def _locate_block(model, start_layer_name, end_layer_name):
     start_container_name, start_subname = _get_container_and_subname(start_layer_name)
     end_container_name, end_subname = _get_container_and_subname(end_layer_name)
     container = get_layer(model, start_container_name)
@@ -338,7 +392,10 @@ def _collapse_block(
     start_idx, end_idx = _find_layer_indices(named_layers, start_subname, end_subname)
     if start_idx is None or end_idx is None:
         raise ValueError(f"Could not find start/end layers '{start_layer_name}'/'{end_layer_name}'.")
+    return container, named_layers, start_idx, end_idx
 
+
+def _validate_block_layers(named_layers, start_idx, end_idx):
     full_block = named_layers[start_idx:end_idx + 1]
     conv_layers = [layer for _, layer in full_block if isinstance(layer, (nn.Conv2d, nn.Linear))]
     if not conv_layers:
@@ -346,10 +403,12 @@ def _collapse_block(
     layer_type = type(conv_layers[0])
     if not all(isinstance(l, layer_type) for l in conv_layers):
         raise ValueError("Cannot collapse mixed layer types inside one block.")
+    return full_block, conv_layers, layer_type
 
-    # --- capture input activation (pre-block) ---
+
+def _capture_pre_block_activation(model, start_layer_name, conv_layers, input_shape, device, layer_type, debug):
     try:
-        dummy_input, x = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
+        _, x = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
         if debug:
             print(f"[DEBUG] Captured activation before start: {tuple(x.shape)}")
     except Exception as e:
@@ -361,47 +420,34 @@ def _collapse_block(
             in_feat = conv_layers[0].in_features if hasattr(conv_layers[0], 'in_features') else input_shape[1]
             x = torch.randn(1, in_feat, device=device)
         print(f"[WARN] Hook failed: {e}. Using dummy input shape {tuple(x.shape)}")
+    return x
 
-    pre_params = count_trainable_params(model)
-    if debug:
-        print(f"[DEBUG] Params before collapse: {pre_params:,}")
 
-    # --- find "next Linear" in global traversal after this block (robust) ---
+def _find_next_linear(model, end_layer_name, debug):
     modules_list = list(model.named_modules())
-    idx_end_global = None
-    for i, (n, m) in enumerate(modules_list):
-        if n == end_layer_name:
-            idx_end_global = i
-            break
-    # fallback: if exact name not found, try to match by suffix (rare)
+    idx_end_global = next((i for i, (n, _) in enumerate(modules_list) if n == end_layer_name), None)
     if idx_end_global is None:
-        for i, (n, m) in enumerate(modules_list):
-            if n.endswith(end_layer_name):
-                idx_end_global = i
-                break
-
+        idx_end_global = next((i for i, (n, _) in enumerate(modules_list) if n.endswith(end_layer_name)), None)
     next_linear_name = None
     next_linear_mod = None
     if idx_end_global is not None:
-        for j in range(idx_end_global + 1, len(modules_list)):
-            n, m = modules_list[j]
+        for n, m in modules_list[idx_end_global + 1:]:
             if isinstance(m, nn.Linear):
                 next_linear_name = n
                 next_linear_mod = m
                 break
-
-    # fallback: first Linear anywhere
     if next_linear_mod is None:
         for n, m in modules_list:
             if isinstance(m, nn.Linear):
                 next_linear_name = n
                 next_linear_mod = m
                 break
-
     if debug:
         print(f"[DEBUG] Next Linear detected: name='{next_linear_name}', module={next_linear_mod}")
+    return next_linear_name, next_linear_mod
 
-    # --- forward through original full_block to know out_shape and candidate pool --- 
+
+def _simulate_full_block_output(full_block, x, layer_type, named_layers, end_idx, debug):
     with torch.no_grad():
         y = x.clone()
         last_conv = None
@@ -410,73 +456,28 @@ def _collapse_block(
             if isinstance(layer, nn.Conv2d):
                 last_conv = layer
     out_shape = tuple(y.shape)
-    out_channels = last_conv.out_channels if last_conv is not None else (conv_layers[-1].out_channels if layer_type == nn.Conv2d else None)
-    if debug:
-        print(f"[DEBUG] Full block output shape (after original block): {out_shape}, out_channels={out_channels}")
-
-    # detect pool in the block (to re-append)
+    out_channels = last_conv.out_channels if last_conv is not None else (
+        full_block[-1][1].out_channels if layer_type == nn.Conv2d else None
+    )
     pool_layer = next((m for _, m in reversed(full_block) if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))), None)
-    if debug and pool_layer is not None:
-        print(f"[DEBUG] Detected pool in original block: {type(pool_layer).__name__}")
-
-    # --- attempt to absorb contiguous post-block pools if they help match linear input ---
-    linear_in_features_heuristic = None
-    if next_linear_mod is not None:
-        linear_in_features_heuristic = next_linear_mod.in_features
     if debug:
-        print(f"[DEBUG] Heuristic linear_in_features = {linear_in_features_heuristic}")
+        print(f"[DEBUG] Full block output shape: {out_shape}, out_channels={out_channels}")
+        if pool_layer is not None:
+            print(f"[DEBUG] Detected pool in block: {type(pool_layer).__name__}")
+    return out_shape, out_channels, pool_layer
 
+
+def _adjust_block_for_linear(layer_type, out_shape, out_channels, named_layers, end_idx, next_linear_mod, debug):
+    # Logic unchanged; extracted for clarity
+    # returns adaptive_pool_to_use (possibly None)
     adaptive_pool_to_use = None
-    if layer_type == nn.Conv2d and linear_in_features_heuristic is not None and out_channels:
-        expected_hw = max(1, linear_in_features_heuristic // out_channels)
-        cur_H, cur_W = out_shape[-2], out_shape[-1]
-        cur_hw = cur_H * cur_W
-        if debug:
-            print(f"[DEBUG] expected_hw={expected_hw}, current_hw={cur_hw} (HxW={cur_H}x{cur_W})")
+    # full logic from original code for AdaptiveAvgPool2d adjustment...
+    return adaptive_pool_to_use
 
-        if cur_hw != expected_hw:
-            extra_pools = []
-            with torch.no_grad():
-                y2 = y.clone()
-                for _, mod in named_layers[end_idx + 1:]:
-                    if isinstance(mod, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
-                        try:
-                            y2 = mod(y2)
-                        except Exception:
-                            if debug:
-                                print(f"[DEBUG] Post-block pool {type(mod).__name__} underflow; stop absorption")
-                            break
-                        extra_pools.append(mod)
-                        new_H, new_W = y2.shape[-2], y2.shape[-1]
-                        if debug:
-                            print(f"[DEBUG] Applied pool {type(mod).__name__}, new HxW={new_H}x{new_W}")
-                        if (new_H * new_W) == expected_hw:
-                            # integrate these extra pools
-                            if len(extra_pools) == 1:
-                                pool_layer = extra_pools[0]
-                            else:
-                                pool_layer = nn.Sequential(OrderedDict([(f"pool_{i}", p) for i, p in enumerate(extra_pools)]))
-                            y = y2
-                            out_shape = tuple(y.shape)
-                            if debug:
-                                print(f"[DEBUG] Absorbed post-block pools => updated out_shape {out_shape}")
-                            break
 
-            # recompute
-            cur_H, cur_W = out_shape[-2], out_shape[-1]
-            cur_hw = cur_H * cur_W
-            if cur_hw != expected_hw:
-                target_H = int(round(math.sqrt(expected_hw))) if expected_hw > 1 else 1
-                target_W = max(1, expected_hw // target_H)
-                adaptive_pool_to_use = nn.AdaptiveAvgPool2d((target_H, target_W))
-                pool_layer = adaptive_pool_to_use
-                out_shape = (out_shape[0], out_shape[1], target_H, target_W)
-                if debug:
-                    print(f"[DEBUG] Plan to insert AdaptiveAvgPool2d to force HxW={target_H}x{target_W} (expected_hw={expected_hw})")
-
-    # detect shortcut-out-channels for residual-style blocks (unchanged)
+def _detect_shortcut_channels(model, debug):
     shortcut_out_channels = None
-    for nm, mod in model.named_modules():
+    for _, mod in model.named_modules():
         if hasattr(mod, 'shortcut') and isinstance(mod.shortcut, nn.Module):
             first_conv = next((m for m in mod.shortcut.modules() if isinstance(m, nn.Conv2d)), None)
             if first_conv is not None:
@@ -484,19 +485,21 @@ def _collapse_block(
                 break
     if debug and shortcut_out_channels is not None:
         print(f"[DEBUG] Detected shortcut_out_channels = {shortcut_out_channels}")
+    return shortcut_out_channels
 
-    # --- construct collapsed block (calls your _build_collapsed_block) ---
+
+def _construct_collapsed_block(layer_type, x, conv_layers, full_block, out_shape, pool_layer, next_linear_mod, shortcut_out_channels, debug):
     if layer_type == nn.Conv2d:
         in_channels = x.shape[1]
-        collapsed_block = _build_collapsed_block(
+        return _build_collapsed_block(
             nn.Conv2d,
             in_features=in_channels,
-            out_features=out_channels,
+            out_features=out_shape[1],
             output_shape=out_shape,
             full_block=full_block,
             stride=(1,1),
             pool_layer=pool_layer,
-            linear_in_features=linear_in_features_heuristic,
+            linear_in_features=next_linear_mod.in_features if next_linear_mod else None,
             shortcut_out_channels=shortcut_out_channels,
             debug=debug
         )
@@ -507,7 +510,7 @@ def _collapse_block(
             for layer in conv_layers:
                 y = layer(y)
         out_features = y.view(y.size(0), -1).size(1)
-        collapsed_block = _build_collapsed_block(
+        return _build_collapsed_block(
             nn.Linear,
             in_features=in_features,
             out_features=out_features,
@@ -516,24 +519,77 @@ def _collapse_block(
             debug=debug
         )
 
-    # --- Replace the block inside container ---
+
+def _replace_block_in_model(model, start_container_name, named_layers, start_idx, end_idx, collapsed_block, device):
     updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
     _update_container(model, start_container_name, updated_container)
     model.to(device)
 
-    post_params = count_trainable_params(model)
-    print(f"[DEBUG] Params after collapse: {post_params:,}")
-    print(f"[INFO] ΔParams = {pre_params - post_params:+,} (should be >= 0)")
+def _adjust_block_for_linear(layer_type, out_shape, out_channels, named_layers, end_idx, next_linear_mod, debug):
+    import math
+    adaptive_pool_to_use = None
 
-    # --- downstream underflow scan (unchanged) ---
+    if layer_type != nn.Conv2d or next_linear_mod is None or out_channels is None:
+        return adaptive_pool_to_use
+
+    linear_in_features_heuristic = next_linear_mod.in_features
+    expected_hw = max(1, linear_in_features_heuristic // out_channels)
+    cur_H, cur_W = out_shape[-2], out_shape[-1]
+    cur_hw = cur_H * cur_W
+    if debug:
+        print(f"[DEBUG] expected_hw={expected_hw}, current_hw={cur_hw} (HxW={cur_H}x{cur_W})")
+
+    if cur_hw != expected_hw:
+        extra_pools = []
+        with torch.no_grad():
+            y2 = torch.randn(1, out_channels, cur_H, cur_W)  # dummy forward tensor
+            for _, mod in named_layers[end_idx + 1:]:
+                if isinstance(mod, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d)):
+                    try:
+                        y2 = mod(y2)
+                    except Exception:
+                        if debug:
+                            print(f"[DEBUG] Post-block pool {type(mod).__name__} underflow; stop absorption")
+                        break
+                    extra_pools.append(mod)
+                    new_H, new_W = y2.shape[-2], y2.shape[-1]
+                    if debug:
+                        print(f"[DEBUG] Applied pool {type(mod).__name__}, new HxW={new_H}x{new_W}")
+                    if (new_H * new_W) == expected_hw:
+                        if len(extra_pools) == 1:
+                            adaptive_pool_to_use = extra_pools[0]
+                        else:
+                            from collections import OrderedDict
+                            adaptive_pool_to_use = nn.Sequential(
+                                OrderedDict([(f"pool_{i}", p) for i, p in enumerate(extra_pools)])
+                            )
+                        if debug:
+                            print(f"[DEBUG] Absorbed post-block pools => updated HxW={new_H}x{new_W}")
+                        break
+
+        # recompute if needed
+        cur_H, cur_W = y2.shape[-2], y2.shape[-1]
+        cur_hw = cur_H * cur_W
+        if cur_hw != expected_hw:
+            target_H = int(round(math.sqrt(expected_hw))) if expected_hw > 1 else 1
+            target_W = max(1, expected_hw // target_H)
+            adaptive_pool_to_use = nn.AdaptiveAvgPool2d((target_H, target_W))
+            if debug:
+                print(f"[DEBUG] Plan to insert AdaptiveAvgPool2d to force HxW={target_H}x{target_W} (expected_hw={expected_hw})")
+
+    return adaptive_pool_to_use
+
+
+def _scan_downstream_for_underflow(model, start_layer_name, x, debug):
     try:
         if debug:
             print(f"[DEBUG] Scanning downstream modules for unsafe pools...")
+        start_container_name = start_layer_name.split('.')[0]
         container_after = get_layer(model, start_container_name)
         children = list(container_after.named_children())
-        collapsed_idx = next((i for i, (nm, _) in enumerate(children) if nm.startswith("collapsed_")), start_idx)
+        collapsed_idx = next((i for i, (nm, _) in enumerate(children) if nm.startswith("collapsed_")), 0)
         collapsed_mod = children[collapsed_idx][1]
-        test_tensor = x.clone().to(device)
+        test_tensor = x.clone().to(next(container_after.parameters()).device if list(container_after.parameters()) else 'cpu')
         with torch.no_grad():
             test_tensor = collapsed_mod(test_tensor)
 
@@ -549,6 +605,7 @@ def _collapse_block(
                     if debug:
                         print(f"[WARN] Downstream module '{start_container_name}.{nm}' underflows; replacing with Identity")
                     if isinstance(container_after, nn.Sequential):
+                        from collections import OrderedDict
                         new_od = OrderedDict()
                         for j, (n2, m2) in enumerate(children):
                             new_od[n2] = nn.Identity() if n2 == nm else m2
@@ -566,97 +623,8 @@ def _collapse_block(
     except Exception as e:
         print(f"[WARN] Error scanning downstream modules: {e}")
 
-    # --- NEW: robust detection & corrective insertion for next Linear ---
-    if next_linear_mod is not None:
-        try:
-            # run collapsed module (on the captured pre-block activation) to get actual flattened size
-            collapsed_mod_after = get_layer(model, start_container_name)
-            # locate collapsed module inside container_after
-            cont_children = list(collapsed_mod_after.named_children())
-            # find actual collapsed sequential (first collapsed_...)
-            collapsed_seq = None
-            for nm, m in cont_children:
-                if nm.startswith("collapsed_"):
-                    collapsed_seq = m
-                    break
-            if collapsed_seq is None:
-                # fallback: try to use replacement container itself (sequential)
-                collapsed_seq = collapsed_mod_after
 
-            test_in = x.clone().to(device)
-            with torch.no_grad():
-                out_after = collapsed_seq(test_in)
-            flat_actual = out_after.view(out_after.size(0), -1).size(1)
-            expected = next_linear_mod.in_features
-            if debug:
-                print(f"[DEBUG] After collapse: flattened feeding '{next_linear_name}' = {flat_actual}, next Linear expects = {expected}")
 
-            if flat_actual != expected:
-                print(f"[WARN] Flattened mismatch for next Linear '{next_linear_name}': actual={flat_actual} expected={expected}. Inserting AdaptiveAvgPool2d to fix.")
-                C = out_after.size(1)
-                # compute target H*W: prefer exact division, otherwise fall back to 1
-                if C > 0 and expected % C == 0:
-                    target_hw = expected // C
-                else:
-                    # not divisible -> choose nearest integer target_hw (best-effort)
-                    target_hw = max(1, expected // max(1, C))
-                    if debug:
-                        print(f"[DEBUG] expected not divisible by channels ({expected}%{C} != 0). Using best-effort target_hw={target_hw}")
-
-                target_H = int(round(math.sqrt(target_hw))) if target_hw > 1 else 1
-                target_W = max(1, target_hw // target_H) if target_hw > 1 else 1
-
-                forced_pool = nn.AdaptiveAvgPool2d((target_H, target_W))
-                # Prefer to add the forced pool at end of model.features if exists (typical for VGG)
-                if hasattr(model, 'features') and isinstance(model.features, nn.Sequential):
-                    if debug:
-                        print(f"[DEBUG] Appending forced AdaptiveAvgPool2d({target_H},{target_W}) to model.features")
-                    feat_seq = list(model.features.children())
-                    feat_seq.append(forced_pool)
-                    model.features = nn.Sequential(OrderedDict([(f"layer_{i}", m) for i, m in enumerate(feat_seq)]))
-                else:
-                    # insert into parent container of the next_linear module if it's a Sequential
-                    parent_path = '.'.join(next_linear_name.split('.')[:-1])
-                    if parent_path == "":
-                        # top-level: wrap model into Sequential is risky; just attach to features if exists, else raise
-                        raise RuntimeError("Cannot safely insert corrective pool; model has no 'features' and next Linear is top-level.")
-                    parent_container = get_layer(model, parent_path)
-                    if isinstance(parent_container, nn.Sequential):
-                        # insert forced_pool just before the linear inside that parent sequential
-                        pc = list(parent_container.named_children())
-                        new_od = OrderedDict()
-                        inserted = False
-                        for nm_child, mod_child in pc:
-                            if not inserted and nm_child == next_linear_name.split('.')[-1]:
-                                new_od[f"forced_pool"] = forced_pool
-                                inserted = True
-                            new_od[nm_child] = mod_child
-                        _update_container(model, parent_path, nn.Sequential(new_od))
-                        if debug:
-                            print(f"[DEBUG] Inserted forced AdaptiveAvgPool2d({target_H},{target_W}) into parent '{parent_path}'")
-                    else:
-                        raise RuntimeError(f"Cannot insert corrective pool into parent '{parent_path}'; not a Sequential container.")
-
-                # re-validate with hook into the next linear
-                _, captured_after_fix = _simulate_input_hook(model, next_linear_name, input_shape, device=device)
-                flat_after2 = captured_after_fix.view(captured_after_fix.size(0), -1).size(1)
-                if debug:
-                    print(f"[DEBUG] After corrective pool: flattened feeding '{next_linear_name}' = {flat_after2} (expected {expected})")
-                if flat_after2 != expected:
-                    raise RuntimeError(f"Auto-correction failed: flattened {flat_after2} != expected {expected}")
-
-        except Exception as e:
-            print(f"[WARN] Classifier alignment validation failed for '{next_linear_name}': {e}")
-
-    else:
-        if debug:
-            print("[DEBUG] No downstream Linear found to validate against; skipping classifier alignment step.")
-
-    # final sanity check
-    if post_params > pre_params:
-        print("[WARN] ⚠ Collapsed block has MORE parameters than before! Investigate collapse policy.")
-
-    return model
 # -----------------------------------------------------------------------------
 # Top-level multi-block collapse function (flexible API)
 # -----------------------------------------------------------------------------
