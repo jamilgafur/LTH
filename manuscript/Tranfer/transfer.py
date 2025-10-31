@@ -98,60 +98,90 @@ EXPERIMENTS = {
         },
     },
     "RegNetX_400MF": {
-        "Cifar10": {
-            "Original Model": None,
+         "Cifar10": {
+        "Original Model": None,
 
-            # Last block of stage4
-            "Last 2": ("stage4.stage4_block6.block.conv1", "stage4.stage4_block6.block.conv3"),
+        # Last block of stage4
+        "Last 2": ("stage4.stage4_block6.block.conv1", "stage4.stage4_block6.block.conv3"),
 
-            # Middle of network
-            "Stage 5": ("stage4.stage4_block5.block.conv1", "stage4.stage4_block5.block.conv3"),
-            "Stage 4": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block3.block.conv3"),
-            "Stage 3": ("stage3.stage3_block1.block.conv1", "stage3.stage3_block1.block.conv3"),
-            "Stage 2": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),
+        # Middle of network
+        "Stage 5": ("stage4.stage4_block5.block.conv1", "stage4.stage4_block5.block.conv3"),
+        "Stage 4": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block3.block.conv3"),
+        "Stage 3": ("stage3.stage3_block1.block.conv1", "stage3.stage3_block1.block.conv3"),
+        "Stage 2": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),
 
-            # Ranges of stages
-            "Stage 4-5": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block6.block.conv3"),
-            "Stage 3-5": ("stage3.stage3_block1.block.conv1", "stage4.stage4_block6.block.conv3"),
-            "Stage 2-5": ("stage2.stage2_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
-            "Stage 1-5": ("stage1.stage1_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
+        # Ranges of stages as lists of tuples
+        "Stage 4-5": [
+            ("stage4.stage4_block3.block.conv1", "stage4.stage4_block4.block.conv3"),  # Stage 4
+            ("stage4.stage4_block5.block.conv1", "stage4.stage4_block6.block.conv3")   # Stage 5
+        ],
+        "Stage 3-5": [
+            ("stage3.stage3_block1.block.conv1", "stage4.stage4_block4.block.conv3"),  # Stage 3
+            ("stage4.stage4_block5.block.conv1", "stage4.stage4_block6.block.conv3")   # Stage 5
+        ],
+        "Stage 2-5": [
+            ("stage2.stage2_block0.block.conv1", "stage4.stage4_block4.block.conv3"),  # Stage 2
+            ("stage4.stage4_block5.block.conv1", "stage4.stage4_block6.block.conv3")   # Stage 5
+        ],
+        "Stage 1-5": [
+            ("stage1.stage1_block0.block.conv1", "stage4.stage4_block4.block.conv3"),  # Stage 1
+            ("stage4.stage4_block5.block.conv1", "stage4.stage4_block6.block.conv3")   # Stage 5
+        ],
 
-            # First 2 conv layers in each stage
-            "Stage 1 first 2 conv": ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv2"),
-            "Stage 2 first 2 conv": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv2"),
-            "Stage 3 first 2 conv": ("stage3.stage3_block0.block.conv1", "stage3.stage3_block1.block.conv1"),
-            "Stage 4 first 2 conv": ("stage4.stage4_block0.block.conv1", "stage4.stage4_block1.block.conv1"),
+        # First 2 conv layers in each stage
+        "Stage 1 first 2 conv": ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv2"),
+        "Stage 2 first 2 conv": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv2"),
+        "Stage 3 first 2 conv": ("stage3.stage3_block0.block.conv1", "stage3.stage3_block1.block.conv1"),
+        "Stage 4 first 2 conv": ("stage4.stage4_block0.block.conv1", "stage4.stage4_block1.block.conv1"),
 
-            # Last 2 conv layers in each stage
-            "Stage 1 last 2 conv": ("stage1.stage1_block0.block.conv2", "stage1.stage1_block0.block.conv3"),
-            "Stage 2 last 2 conv": ("stage2.stage2_block0.block.conv2", "stage2.stage2_block0.block.conv3"),
-            "Stage 3 last 2 conv": ("stage3.stage3_block2.block.conv3", "stage3.stage3_block3.block.conv3"),
-            "Stage 4 last 2 conv": ("stage4.stage4_block4.block.conv3", "stage4.stage4_block5.block.conv3"),
-        },
-        "Cifar100": {
-            "Original Model": None,
+        # Last 2 conv layers in each stage
+        "Stage 1 last 2 conv": ("stage1.stage1_block0.block.conv2", "stage1.stage1_block0.block.conv3"),
+        "Stage 2 last 2 conv": ("stage2.stage2_block0.block.conv2", "stage2.stage2_block0.block.conv3"),
+        "Stage 3 last 2 conv": ("stage3.stage3_block2.block.conv3", "stage3.stage3_block3.block.conv3"),
+        "Stage 4 last 2 conv": ("stage4.stage4_block4.block.conv3", "stage4.stage4_block5.block.conv3"),
+    },
+     "Cifar100": {
+        "Original Model": None,
 
-            "Last 2": ("stage4.stage4_block6.block.conv1", "stage4.stage4_block6.block.conv3"),
-            "Stage 5": ("stage4.stage4_block5.block.conv1", "stage4.stage4_block5.block.conv3"),
-            "Stage 4": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block3.block.conv3"),
-            "Stage 3": ("stage3.stage3_block1.block.conv1", "stage3.stage3_block1.block.conv3"),
-            "Stage 2": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),
+        # Last block of stage4
+        "Last 2": ("stage4.stage4_block6.block.conv1", "stage4.stage4_block6.block.conv3"),
 
-            "Stage 4-5": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block6.block.conv3"),
-            "Stage 3-5": ("stage3.stage3_block1.block.conv1", "stage4.stage4_block6.block.conv3"),
-            "Stage 2-5": ("stage2.stage2_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
-            "Stage 1-5": ("stage1.stage1_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
+        # Middle of network
+        "Stage 5": ("stage4.stage4_block5.block.conv1", "stage4.stage4_block5.block.conv3"),
+        "Stage 4": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block3.block.conv3"),
+        "Stage 3": ("stage3.stage3_block1.block.conv1", "stage3.stage3_block1.block.conv3"),
+        "Stage 2": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),
 
-            "Stage 1 first 2 conv": ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv2"),
-            "Stage 2 first 2 conv": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv2"),
-            "Stage 3 first 2 conv": ("stage3.stage3_block0.block.conv1", "stage3.stage3_block1.block.conv1"),
-            "Stage 4 first 2 conv": ("stage4.stage4_block0.block.conv1", "stage4.stage4_block1.block.conv1"),
+        # Ranges of stages as lists of tuples
+        "Stage 4-5": [
+            ("stage4.stage4_block3.block.conv1", "stage4.stage4_block4.block.conv3"),  # Stage 4
+            ("stage4.stage4_block5.block.conv1", "stage4.stage4_block6.block.conv3")   # Stage 5
+        ],
+        "Stage 3-5": [
+            ("stage3.stage3_block1.block.conv1", "stage4.stage4_block4.block.conv3"),  # Stage 3
+            ("stage4.stage4_block5.block.conv1", "stage4.stage4_block6.block.conv3")   # Stage 5
+        ],
+        "Stage 2-5": [
+            ("stage2.stage2_block0.block.conv1", "stage4.stage4_block4.block.conv3"),  # Stage 2
+            ("stage4.stage4_block5.block.conv1", "stage4.stage4_block6.block.conv3")   # Stage 5
+        ],
+        "Stage 1-5": [
+            ("stage1.stage1_block0.block.conv1", "stage4.stage4_block4.block.conv3"),  # Stage 1
+            ("stage4.stage4_block5.block.conv1", "stage4.stage4_block6.block.conv3")   # Stage 5
+        ],
 
-            "Stage 1 last 2 conv": ("stage1.stage1_block0.block.conv2", "stage1.stage1_block0.block.conv3"),
-            "Stage 2 last 2 conv": ("stage2.stage2_block0.block.conv2", "stage2.stage2_block0.block.conv3"),
-            "Stage 3 last 2 conv": ("stage3.stage3_block2.block.conv3", "stage3.stage3_block3.block.conv3"),
-            "Stage 4 last 2 conv": ("stage4.stage4_block4.block.conv3", "stage4.stage4_block5.block.conv3"),
-        },
+        # First 2 conv layers in each stage
+        "Stage 1 first 2 conv": ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv2"),
+        "Stage 2 first 2 conv": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv2"),
+        "Stage 3 first 2 conv": ("stage3.stage3_block0.block.conv1", "stage3.stage3_block1.block.conv1"),
+        "Stage 4 first 2 conv": ("stage4.stage4_block0.block.conv1", "stage4.stage4_block1.block.conv1"),
+
+        # Last 2 conv layers in each stage
+        "Stage 1 last 2 conv": ("stage1.stage1_block0.block.conv2", "stage1.stage1_block0.block.conv3"),
+        "Stage 2 last 2 conv": ("stage2.stage2_block0.block.conv2", "stage2.stage2_block0.block.conv3"),
+        "Stage 3 last 2 conv": ("stage3.stage3_block2.block.conv3", "stage3.stage3_block3.block.conv3"),
+        "Stage 4 last 2 conv": ("stage4.stage4_block4.block.conv3", "stage4.stage4_block5.block.conv3"),
+    },
         "TinyImageNet": {
             "Original Model": None,
 
