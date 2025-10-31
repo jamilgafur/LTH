@@ -769,6 +769,7 @@ def collapse_only(
         if dry_run:
             print("[INFO] dry_run enabled; skipping actual modification.")
             continue
+        print(f"[INFO] Collapsing block: name: '{name}', start: '{start}', end: '{end}'")
         model = _collapse_block(model, start, end, input_shape, device=device, debug=debug)
     
         # After each collapse optionally patch skip connections to avoid invalid adds
