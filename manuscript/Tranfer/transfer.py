@@ -38,10 +38,10 @@ CHECKPOINT_BASES = {
             "../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"
         )[0]
         + "/",
-        # "Cifar100": glob.glob(
-        #     "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
-        # )[0]
-        # + "/",
+        "Cifar100": glob.glob(
+            "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
+        )[0]
+        + "/",
     },
 }
 
