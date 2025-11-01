@@ -34,7 +34,11 @@ import os
 import json
 import glob
 from datetime import datetime
-
+import json
+import glob
+import os
+import tempfile
+from datetime import datetime
 
 def ensure_dir(directory):
     if not os.path.exists(directory):
@@ -70,8 +74,8 @@ def safe_update_metrics_json(model_root, exp_name, new_data, base_dir="./runs/me
 # -------------------------
 def merge_all_metrics(base_dir="./runs/metrics", merged_name="merged_metrics.json"):
     """
-    Merge all per-job metrics JSONs into one consolidated JSON file.
-    Skips malformed or unreadable files.
+    Safely merges all metrics JSON files into one consolidated file.
+    Uses temp files and avoids concurrent write collisions.
     """
     ensure_dir(base_dir)
     json_files = glob.glob(os.path.join(base_dir, "*_metrics_*.json"))
@@ -79,6 +83,9 @@ def merge_all_metrics(base_dir="./runs/metrics", merged_name="merged_metrics.jso
 
     for jf in json_files:
         try:
+            if os.path.getsize(jf) == 0:
+                print(f"[!] Skipping empty file: {jf}")
+                continue
             with open(jf, "r") as f:
                 data = json.load(f)
                 if isinstance(data, dict):
@@ -86,13 +93,18 @@ def merge_all_metrics(base_dir="./runs/metrics", merged_name="merged_metrics.jso
         except Exception as e:
             print(f"[!] Skipping {jf}: {e}")
 
+    # Write to a temp file first
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=base_dir, prefix="tmp_merge_", suffix=".json")
+    with os.fdopen(tmp_fd, "w") as tmp_file:
+        json.dump(merged_data, tmp_file, indent=4)
+
     merged_path = os.path.join(base_dir, merged_name)
-    with open(merged_path, "w") as f:
-        json.dump(merged_data, f, indent=4)
+
+    # Atomic replace
+    os.replace(tmp_path, merged_path)
 
     print(f"[✓] Merged {len(json_files)} metrics files → {merged_path}")
     return merged_path
-
 
 # -------------------------
 # Modified run_experiment (calls merge_all_metrics at the end)
@@ -156,7 +168,14 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
     with open(merged_path, "r") as f:
-        all_metrics = json.load(f)
+        for attempt in range(100):
+            try:
+                with open(merged_path, "r") as f:
+                    all_metrics = json.load(f)
+                break
+            except json.JSONDecodeError:
+                print(f"[!] JSON not ready yet, retrying ({attempt+1}/3)...")
+                time.sleep(1)
 
         params = []
         accs = []
