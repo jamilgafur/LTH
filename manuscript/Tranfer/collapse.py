@@ -667,9 +667,9 @@ def _insert_corrective_pool(model: nn.Module,
                             input_shape: Tuple[int, ...],
                             debug: bool = False) -> nn.Module:
     """
-    Minimal corrective action: capture activation entering next_linear_name.
+    Capture activation entering next_linear_name.
     If flattened size != next_linear.in_features, replace that Linear with a new
-    Linear(flat_actual, out_features). This keeps the model runnable with minimal change.
+    Linear(flat_actual, out_features). Handles top-level modules safely.
     """
     if next_linear_name is None:
         if debug:
@@ -703,22 +703,23 @@ def _insert_corrective_pool(model: nn.Module,
 
     # Replace Linear with one that accepts flat_actual
     parent_path, child_name = next_linear_name.rsplit('.', 1) if '.' in next_linear_name else ("", next_linear_name)
-    if parent_path == "":
-        raise RuntimeError("Cannot safely replace a top-level Linear without a parent container.")
-
     new_linear = nn.Linear(flat_actual, next_linear_mod.out_features, bias=(next_linear_mod.bias is not None))
 
-    parent_mod = get_layer(model, parent_path)
-    if isinstance(parent_mod, nn.Sequential):
-        new_od = OrderedDict()
-        for n, m in parent_mod.named_children():
-            if n == child_name:
-                new_od[n] = new_linear
-            else:
-                new_od[n] = m
-        _update_container(model, parent_path, nn.Sequential(new_od))
+    if parent_path == "":
+        # Top-level module: replace directly in model
+        setattr(model, child_name, new_linear)
     else:
-        setattr(parent_mod, child_name, new_linear)
+        parent_mod = get_layer(model, parent_path)
+        if isinstance(parent_mod, nn.Sequential):
+            new_od = OrderedDict()
+            for n, m in parent_mod.named_children():
+                if n == child_name:
+                    new_od[n] = new_linear
+                else:
+                    new_od[n] = m
+            _update_container(model, parent_path, nn.Sequential(new_od))
+        else:
+            setattr(parent_mod, child_name, new_linear)
 
     if debug:
         print(f"[WARN] Replaced Linear '{next_linear_name}' in_features {expected} -> {flat_actual} to maintain forward pass.")
@@ -868,61 +869,37 @@ def collapse_only(
 # -----------------------------------------------------------------------------
 
 class _SafePool(nn.Module):
-    """
-    Wrapper that attempts to apply the wrapped pooling module; if the input
-    spatial dimensions are too small or the pool raises, we fall back safely:
-      - For non-adaptive pools: if kernel > input dim, uses AdaptiveAvgPool2d to
-        produce a minimal valid output (>=1).
-      - If anything else fails, returns the input (identity).
-    This avoids 'Output size is too small' runtime errors.
-    """
     def __init__(self, pool_module: nn.Module):
         super().__init__()
         self.pool = pool_module
 
     def forward(self, x):
-        # guard shape sanity
         try:
             H, W = x.shape[-2], x.shape[-1]
         except Exception:
-            # not a 4D tensor (some unexpected case) -> try to apply pool and catch exceptions
             try:
                 return self.pool(x)
             except Exception:
                 return x
 
         try:
-            # For standard pools, check kernel size
             if isinstance(self.pool, (nn.MaxPool2d, nn.AvgPool2d)):
                 k = self.pool.kernel_size
                 if isinstance(k, tuple):
                     kh, kw = k
                 else:
                     kh = kw = k
-                # if kernel/stride would underflow, use adaptive avg pool to safe size
                 if kh > H or kw > W or H <= 0 or W <= 0:
-                    # choose a safe target HxW (at least 1)
                     target_H = max(1, min(H, kh) if H > 0 else 1)
                     target_W = max(1, min(W, kw) if W > 0 else 1)
                     return F.adaptive_avg_pool2d(x, (target_H, target_W))
-
-            # Try to apply original pool
             out = self.pool(x)
-
-            # post-check: if shape became invalid, return identity
             if out.shape[-2] < 1 or out.shape[-1] < 1:
                 return x
             return out
         except Exception:
-            # Any failure -> safe fallback
             return x
-
-
 def _wrap_pools_safe(module: nn.Module):
-    """
-    Recursively replace pooling modules in `module` with _SafePool wrappers.
-    This mutates the module in-place.
-    """
     for name, child in list(module.named_children()):
         if isinstance(child, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d, getattr(nn, "AdaptiveMaxPool2d", nn.AdaptiveAvgPool2d))):
             safe = _SafePool(child)
@@ -937,4 +914,3 @@ def _wrap_pools_safe(module: nn.Module):
                     setattr(parent, name, safe)
         else:
             _wrap_pools_safe(child)
-
