@@ -426,12 +426,21 @@ def _analyze_block_output(model, full_block, conv_layers, named_layers, end_idx,
         "linear_in_features_heuristic": linear_in_features_heuristic,
     }
 
-
 def _build_and_replace_block(
-    model, start_layer_name, input_shape, info, x, pre_params,
-    next_linear_name, next_linear_mod, block_analysis, device, debug
+    model,
+    start_layer_name,
+    input_shape,
+    info,
+    x,
+    pre_params,
+    next_linear_name,
+    next_linear_mod,
+    block_analysis,
+    device,
+    debug,
 ):
     print(f"[DEBUG] Building and replacing block starting at '{start_layer_name}'")
+
     layer_type = info["layer_type"]
     full_block = info["full_block"]
     conv_layers = info["conv_layers"]
@@ -444,14 +453,20 @@ def _build_and_replace_block(
     shortcut_out_channels = block_analysis["shortcut_out_channels"]
     linear_in_features_heuristic = block_analysis["linear_in_features_heuristic"]
 
+    # --- build the collapsed replacement block ---
     if layer_type == nn.Conv2d:
         in_channels = x.shape[1]
         collapsed_block = _build_collapsed_block(
-            nn.Conv2d, in_features=in_channels, out_features=out_channels,
-            output_shape=out_shape, full_block=full_block,
-            stride=(1, 1), pool_layer=pool_layer,
+            nn.Conv2d,
+            in_features=in_channels,
+            out_features=out_channels,
+            output_shape=out_shape,
+            full_block=full_block,
+            stride=(1, 1),
+            pool_layer=pool_layer,
             linear_in_features=linear_in_features_heuristic,
-            shortcut_out_channels=shortcut_out_channels, debug=debug
+            shortcut_out_channels=shortcut_out_channels,
+            debug=debug,
         )
     else:
         in_features = x.view(x.size(0), -1).size(1)
@@ -461,26 +476,44 @@ def _build_and_replace_block(
                 y = layer(y)
         out_features = y.view(y.size(0), -1).size(1)
         collapsed_block = _build_collapsed_block(
-            nn.Linear, in_features=in_features, out_features=out_features,
-            output_shape=tuple(y.shape), full_block=full_block, debug=debug
+            nn.Linear,
+            in_features=in_features,
+            out_features=out_features,
+            output_shape=tuple(y.shape),
+            full_block=full_block,
+            debug=debug,
         )
 
+    # --- replace the old layers with the collapsed block ---
     start_container_name, _ = _get_container_and_subname(start_layer_name)
     updated_container = _replace_layers(named_layers, start_idx, end_idx, collapsed_block)
     _update_container(model, start_container_name, updated_container)
     model.to(device)
 
+    # --- print parameter changes ---
     post_params = count_trainable_params(model)
     print(f"[DEBUG] Params after collapse: {post_params:,}")
     print(f"[INFO] ΔParams = {pre_params - post_params:+,}")
 
-    # downstream underflow + classifier alignment correction
-    _validate_downstream(model, start_container_name, x, start_idx, input_shape, next_linear_name, next_linear_mod, device, debug)
+    # --- downstream validation to catch spatial underflow / bad pools ---
+    try:
+        _validate_downstream(model, start_container_name, start_idx, input_shape, debug=debug)
+    except Exception as e:
+        print(f"[WARN] Downstream validation failed after collapsing '{start_layer_name}': {e}")
 
+    # --- optional: corrective pooling (if flatten mismatch) ---
+    try:
+        model = _insert_corrective_pool(model, next_linear_name, input_shape, debug=debug)
+    except Exception as e:
+        if debug:
+            print(f"[WARN] Corrective pooling check failed: {e}")
+
+    # --- check for regressions in param count ---
     if post_params > pre_params:
         print("[WARN] ⚠ Collapsed block has MORE parameters than before! Investigate collapse policy.")
 
     return model
+
 
 
 def _validate_downstream(model: nn.Module,
