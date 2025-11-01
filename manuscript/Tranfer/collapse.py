@@ -651,45 +651,60 @@ def _validate_downstream(
     if debug:
         print(f"[DEBUG] Downstream validation for container '{start_container_name}' completed successfully.")
 
-def _auto_patch_downstream_channels(model: nn.Module, start_container_name: str, inserted_out_ch: int, debug: bool = False):
+def _auto_patch_downstream_channels(
+    model: nn.Module,
+    start_container_name: str,
+    inserted_out_ch: int,
+    debug: bool = False
+):
     """
-    Scan modules *after* the collapsed block and patch any conv/bn expecting mismatched in_channels.
-    This fixes RegNet-like mismatches where collapse changes output channels.
+    Fix downstream channel mismatches caused by block replacement.
+    Only applies to layers *after* the collapsed block.
     """
     patched = 0
-    seen_collapse = False  # <-- flag to know when we've passed the collapsed block
+    seen_collapse = False  # flag to start patching after collapsed block
 
     for name, module in model.named_modules():
-        # Only start patching *after* we reach the collapsed block
+        # Start patching only once we've *passed* the collapse block
         if start_container_name in name:
             seen_collapse = True
             continue
 
         if not seen_collapse:
-            continue  # skip earlier layers (e.g., input convs)
+            continue  # skip all earlier layers (e.g., input convs)
 
         # --- Only patch downstream layers ---
         if isinstance(module, nn.Conv2d):
             if module.in_channels != inserted_out_ch:
                 if debug:
-                    print(f"[PATCH] Adjusting downstream Conv2d '{name}' in_channels {module.in_channels} → {inserted_out_ch}")
-                new_conv = nn.Conv2d(inserted_out_ch, module.out_channels,
-                                     kernel_size=module.kernel_size,
-                                     stride=module.stride,
-                                     padding=module.padding,
-                                     bias=module.bias is not None)
+                    print(
+                        f"[PATCH] Adjusting downstream Conv2d '{name}' "
+                        f"in_channels {module.in_channels} → {inserted_out_ch}"
+                    )
+                new_conv = nn.Conv2d(
+                    inserted_out_ch,
+                    module.out_channels,
+                    kernel_size=module.kernel_size,
+                    stride=module.stride,
+                    padding=module.padding,
+                    bias=module.bias is not None,
+                )
                 _set_module_by_path(model, name, new_conv)
                 patched += 1
+
         elif isinstance(module, nn.BatchNorm2d):
             if module.num_features != inserted_out_ch:
                 if debug:
-                    print(f"[PATCH] Adjusting downstream BatchNorm2d '{name}' num_features {module.num_features} → {inserted_out_ch}")
+                    print(
+                        f"[PATCH] Adjusting downstream BatchNorm2d '{name}' "
+                        f"num_features {module.num_features} → {inserted_out_ch}"
+                    )
                 new_bn = nn.BatchNorm2d(inserted_out_ch)
                 _set_module_by_path(model, name, new_bn)
                 patched += 1
 
     if debug and patched:
-        print(f"[DEBUG] Auto-patched {patched} downstream conv/bn layers for channel compatibility.")
+        print(f"[DEBUG] Auto-patched {patched} downstream conv/bn layers.")
 
 def _insert_corrective_pool(model: nn.Module,
                             next_linear_name: str,
