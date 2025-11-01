@@ -187,7 +187,7 @@ def patch_skip_connections(model: nn.Module):
 # Core collapse of a single block (simple replacement)
 # -----------------------------------------------------------------------------
 
-def _collapse_block(
+def _collapse_block_simple(
     model: nn.Module,
     start_layer_name: str,
     end_layer_name: str,
