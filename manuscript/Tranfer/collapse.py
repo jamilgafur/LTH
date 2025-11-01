@@ -495,7 +495,19 @@ def _build_and_replace_block(
     updated_container = _replace_layers(named_layers, start_idx, end_idx, replacement)
     _update_container(model, start_container_name, updated_container)
     model.to(device)
+    # (1) Auto-fix channel mismatches (for RegNet-type residuals)
+    try:
+        _auto_patch_downstream_channels(model, start_container_name, candidate_out, debug=debug)
+    except Exception as e:
+        if debug:
+            print(f"[WARN] Channel auto-patch failed: {e}")
 
+    # (2) Auto-fix next Linear in_features (for VGG-like classifiers)
+    try:
+        model = _insert_corrective_pool(model, next_linear_name, input_shape, debug=debug)
+    except Exception as e:
+        if debug:
+            print(f"[WARN] Corrective pool/linear fix failed: {e}")
     post_params = count_trainable_params(model)
     if debug:
         print(f"[DEBUG] Params after replacement: {post_params:,}")
@@ -639,6 +651,33 @@ def _validate_downstream(
     if debug:
         print(f"[DEBUG] Downstream validation for container '{start_container_name}' completed successfully.")
 
+def _auto_patch_downstream_channels(model: nn.Module, start_container_name: str, inserted_out_ch: int, debug: bool = False):
+    """
+    Scan modules after the collapsed block and patch any conv/bn expecting mismatched in_channels.
+    This fixes RegNet-like mismatches where collapse changes output channels.
+    """
+    patched = 0
+    for name, module in model.named_modules():
+        if isinstance(module, nn.Conv2d):
+            if module.in_channels != inserted_out_ch:
+                if debug:
+                    print(f"[PATCH] Adjusting Conv2d '{name}' in_channels {module.in_channels} → {inserted_out_ch}")
+                new_conv = nn.Conv2d(inserted_out_ch, module.out_channels,
+                                     kernel_size=module.kernel_size,
+                                     stride=module.stride,
+                                     padding=module.padding,
+                                     bias=module.bias is not None)
+                _set_module_by_path(model, name, new_conv)
+                patched += 1
+        elif isinstance(module, nn.BatchNorm2d):
+            if module.num_features != inserted_out_ch:
+                if debug:
+                    print(f"[PATCH] Adjusting BatchNorm2d '{name}' num_features {module.num_features} → {inserted_out_ch}")
+                new_bn = nn.BatchNorm2d(inserted_out_ch)
+                _set_module_by_path(model, name, new_bn)
+                patched += 1
+    if debug and patched:
+        print(f"[DEBUG] Auto-patched {patched} downstream conv/bn layers for channel compatibility.")
 
 def _insert_corrective_pool(model: nn.Module,
                             next_linear_name: str,
