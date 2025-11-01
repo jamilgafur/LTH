@@ -397,6 +397,7 @@ def _analyze_block_output(model, full_block, conv_layers, named_layers, end_idx,
         "linear_in_features_heuristic": linear_in_features_heuristic,
     }
 
+
 def _build_and_replace_block(
     model,
     start_layer_name,
@@ -411,128 +412,75 @@ def _build_and_replace_block(
     debug,
 ):
     """
-    Replacement block that dynamically reduces channels and matches spatial size.
-    It picks a reduced out_channels that results in fewer params than the original block.
+    Simple replacement: remove layers start..end and insert:
+        Conv2d(in_ch = channels of x, out_ch = out_channels of last removed, kernel_size=1)
+        AdaptiveAvgPool2d(target_H, target_W)  # matches last layer's output HxW
+    Minimal other mutation.
     """
     if debug:
-        print(f"[DEBUG] Building and replacing block starting at '{start_layer_name}' (dynamic replacement)")
+        print(f"[DEBUG] Building and replacing block starting at '{start_layer_name}' (simple replacement)")
 
+    # bookkeeping from info
     named_layers = info["named_layers"]
     start_idx, end_idx = info["start_idx"], info["end_idx"]
 
-    # obtain out_shape and original out_channels
+    # obtain desired in/out channels and target H/W from block_analysis
     out_shape = block_analysis.get("out_shape", None)
-    orig_out_channels = block_analysis.get("out_channels", None)
+    out_channels = block_analysis.get("out_channels", None)
 
-    if out_shape is None or orig_out_channels is None:
-        raise RuntimeError("block_analysis missing out_shape/out_channels required for replacement")
+    if out_shape is None or out_channels is None:
+        raise RuntimeError("block_analysis missing out_shape/out_channels required for simple replacement")
 
-    # compute a target pooling layer: prefer analyzer's adaptive suggestion
-    adaptive_pool_suggestion = block_analysis.get("adaptive_pool_to_use", None)
-
-    # If analyzer gave an AdaptiveAvgPool2d, use that directly
-    if adaptive_pool_suggestion is not None:
-        pool_layer = adaptive_pool_suggestion
-        # derive target_H/W from it (if possible)
-        try:
-            target_H, target_W = adaptive_pool_suggestion.output_size
-        except Exception:
-            # may not expose output_size; fallback to heuristic below
-            pool_layer = None
-            target_H, target_W = int(out_shape[-2]), int(out_shape[-1])
-    else:
-        # derive target spatial size using next_linear heuristic or the block's out_shape
+    # compute target spatial dims (H_last, W_last)
+    # out_shape expected like (B, C, H, W) for conv blocks
+    if len(out_shape) >= 4:
         target_H, target_W = int(out_shape[-2]), int(out_shape[-1])
-        linear_hint = block_analysis.get("linear_in_features_heuristic", None)
-        if linear_hint is not None and orig_out_channels:
-            expected_hw = max(1, linear_hint // orig_out_channels)
-            if expected_hw != (target_H * target_W):
-                # pick a reasonable target close to expected
-                tH = int(round(math.sqrt(expected_hw))) if expected_hw > 1 else 1
-                tW = max(1, expected_hw // tH)
-                target_H, target_W = tH, tW
+    else:
+        # fallback to (1,1)
+        target_H, target_W = 1, 1
 
-    # captured activation x gives us in_channels
-    if x is None or x.ndim < 2:
-        raise RuntimeError("Captured activation `x` is required for replacement")
+    # input channels = channels of captured activation x
+    if x is None:
+        raise RuntimeError("Captured activation `x` is required for this simple replacement")
+    if x.ndim < 2:
+        raise RuntimeError("Captured activation `x` has unexpected shape")
+
     in_channels = int(x.shape[1])
 
-    # check for shortcut constraints (do not undercut active shortcut outputs)
-    shortcut_min = None
-    sc_out = block_analysis.get("shortcut_out_channels", None)
-    if sc_out is not None:
-        shortcut_min = sc_out
-
-    # determine bias presence -- for 1x1 bias we choose True to be safe
-    bias_flag = True
-
-    # Choose a candidate reduced out_channels (dynamically)
-    candidate_out = _choose_candidate_out_channels(
-        info=info,
-        in_channels=in_channels,
-        original_out_channels=orig_out_channels,
-        pre_params=pre_params,
-        bias=bias_flag,
-        safety_margin=0.88,
-        min_out_channels=1,
-        shortcut_min=shortcut_min,
-        debug=debug
-    )
-
     if debug:
-        print(f"[DEBUG] Candidate out channels chosen: {candidate_out} (orig {orig_out_channels})")
+        print(f"[DEBUG] Replacement conv: in_channels={in_channels}, out_channels={out_channels}, pool_target=({target_H},{target_W})")
 
-    # Build the replacement: 1x1 conv -> AdaptiveAvgPool2d(target_H,target_W)
-    conv = nn.Conv2d(in_channels, candidate_out, kernel_size=1, stride=1, padding=0, bias=bias_flag)
-    pool = pool_layer if (adaptive_pool_suggestion is not None) else nn.AdaptiveAvgPool2d((target_H, target_W))
+    # Build the minimal replacement block: 1x1 conv -> adaptive pool
+    conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=True)
+    pool = nn.AdaptiveAvgPool2d((target_H, target_W))
     replacement = nn.Sequential(OrderedDict([
         ("conv_1x1", conv),
         ("adaptive_pool", pool),
     ]))
 
-    # Replace start..end with our replacement in the container
+    # Replace start..end with our replacement
     start_container_name, _ = _get_container_and_subname(start_layer_name)
     updated_container = _replace_layers(named_layers, start_idx, end_idx, replacement)
     _update_container(model, start_container_name, updated_container)
     model.to(device)
-    # (1) Try to auto-fix next Linear in_features first (safer)
-    try:
-        model = _insert_corrective_pool(model, next_linear_name, input_shape, debug=debug)
-    except Exception as e:
-        if debug:
-            print(f"[WARN] Corrective pool/linear fix (pre-patch) failed: {e}")
-
-    # (2) Auto-patch channel mismatches (for RegNet-type residuals) using orig_out_channels
-    try:
-        _auto_patch_downstream_channels(model, start_container_name, candidate_out, orig_out_channels=orig_out_channels, debug=debug)
-    except Exception as e:
-        if debug:
-            print(f"[WARN] Channel auto-patch failed: {e}")
-
-    # (3) Re-run corrective pool/linear fix as a final check
-    try:
-        model = _insert_corrective_pool(model, next_linear_name, input_shape, debug=debug)
-    except Exception as e:
-        if debug:
-            print(f"[WARN] Corrective pooling/check failed (post-patch): {e}")
-
 
     post_params = count_trainable_params(model)
     if debug:
-        print(f"[DEBUG] Params after replacement: {post_params:,}")
+        print(f"[DEBUG] Params after simple replacement: {post_params:,}")
         print(f"[INFO] ΔParams = {pre_params - post_params:+,}")
 
-    # Quick forward validation of the inserted replacement using captured activation x
+    # Quick validation: run the replacement using the captured activation `x`
     try:
         dev = next((p.device for p in model.parameters()), torch.device('cpu'))
         rep_module = get_layer(model, start_container_name)
-        # locate our collapsed child
+        # get the inserted collapsed child (best-effort)
         child = None
         for nm, m in rep_module.named_children():
             if nm.startswith("collapsed_") or (isinstance(m, nn.Sequential) and any(k in dict(m.named_children()) for k in ("conv_1x1", "adaptive_pool"))):
                 child = m
                 break
         if child is None:
+            # fallback: take the element at start_idx if sequential
             if isinstance(updated_container, nn.Sequential) and 0 <= start_idx < len(updated_container):
                 child = updated_container[start_idx]
         if child is not None:
@@ -542,22 +490,26 @@ def _build_and_replace_block(
                 if debug:
                     print(f"[DEBUG] Replacement forward ok — output shape {tuple(out.shape)}")
     except Exception as e:
+        # revert not attempted here; just warn
         print(f"[WARN] Validation of replacement forward failed: {e}")
 
-    # Downstream validation and classifier correction (same as before)
+    # downstream validation using captured activation
     try:
         _validate_downstream(model, start_container_name, start_idx, x, input_shape, next_linear_name, next_linear_mod, device, debug=debug)
     except Exception as e:
         print(f"[WARN] Downstream validation failed after collapsing '{start_layer_name}': {e}")
 
+    # optional classifier corrective action
     try:
         model = _insert_corrective_pool(model, next_linear_name, input_shape, debug=debug)
     except Exception as e:
         if debug:
             print(f"[WARN] Corrective pooling/check failed: {e}")
 
+    # warn if params increased (shouldn't with this simple policy)
     if post_params > pre_params:
         print("[WARN] ⚠ Collapsed block has MORE parameters than before! Investigate collapse policy.")
+
     return model
 
 
@@ -660,119 +612,15 @@ def _validate_downstream(
     if debug:
         print(f"[DEBUG] Downstream validation for container '{start_container_name}' completed successfully.")
 
-def _auto_patch_downstream_channels(
-    model: nn.Module,
-    start_container_name: str,
-    inserted_out_ch: int,
-    orig_out_channels: Optional[int] = None,
-    debug: bool = False
-):
-    """
-    Fix downstream channel mismatches caused by block replacement.
-    Strategy:
-      - Locate exact named_modules() index of `start_container_name`.
-      - For modules after that index:
-          * If Conv2d.in_channels == orig_out_channels -> replace in_channels -> inserted_out_ch
-          * If BatchNorm2d.num_features == orig_out_channels -> replace num_features -> inserted_out_ch
-      - Attempt to copy/slice existing weights/stats where possible to preserve pretrained values.
-    """
-    if orig_out_channels is None and debug:
-        print("[WARN] orig_out_channels not provided to _auto_patch_downstream_channels; using conservative fallback.")
-
-    modules_list = list(model.named_modules())
-
-    # find index of the start container (exact match). If not found, try substring fallback.
-    idx_start = None
-    for i, (n, m) in enumerate(modules_list):
-        if n == start_container_name:
-            idx_start = i
-            break
-    if idx_start is None:
-        for i, (n, m) in enumerate(modules_list):
-            if start_container_name in n:
-                idx_start = i
-                break
-
-    if idx_start is None:
-        if debug:
-            print(f"[WARN] Could not locate start_container '{start_container_name}' in named_modules; skipping auto-patch.")
-        return
-
-    patched = 0
-    # iterate only over modules after the collapsed container
-    for name, module in modules_list[idx_start + 1:]:
-        # Conv2d: patch only if it was expecting the original out-ch (most likely consumer)
-        if isinstance(module, nn.Conv2d):
-            if orig_out_channels is not None:
-                expected_match = (module.in_channels == orig_out_channels)
-            else:
-                expected_match = (module.in_channels != inserted_out_ch)
-
-            if expected_match and module.in_channels != inserted_out_ch:
-                if debug:
-                    print(f"[PATCH] Adjusting downstream Conv2d '{name}': in_channels {module.in_channels} → {inserted_out_ch}")
-                new_conv = nn.Conv2d(
-                    inserted_out_ch,
-                    module.out_channels,
-                    kernel_size=module.kernel_size,
-                    stride=module.stride,
-                    padding=module.padding,
-                    dilation=getattr(module, "dilation", (1,1)),
-                    groups=getattr(module, "groups", 1),
-                    bias=(module.bias is not None),
-                )
-                # try to copy/slice weights where possible
-                try:
-                    with torch.no_grad():
-                        old_w = module.weight.data
-                        copy_in = min(old_w.shape[1], new_conv.weight.data.shape[1])
-                        new_conv.weight.data[:, :copy_in, ...] = old_w[:, :copy_in, ...]
-                        if module.bias is not None and new_conv.bias is not None:
-                            new_conv.bias.data.copy_(module.bias.data)
-                except Exception:
-                    if debug:
-                        print(f"[WARN] Could not copy weights for Conv2d '{name}'; leaving new conv randomly initialized.")
-                _set_module_by_path(model, name, new_conv)
-                patched += 1
-
-        elif isinstance(module, nn.BatchNorm2d):
-            if orig_out_channels is not None:
-                expected_match = (module.num_features == orig_out_channels)
-            else:
-                expected_match = (module.num_features != inserted_out_ch)
-
-            if expected_match and module.num_features != inserted_out_ch:
-                if debug:
-                    print(f"[PATCH] Adjusting downstream BatchNorm2d '{name}': num_features {module.num_features} → {inserted_out_ch}")
-                new_bn = nn.BatchNorm2d(inserted_out_ch)
-                try:
-                    with torch.no_grad():
-                        old_bn = module
-                        copy_n = min(old_bn.num_features, new_bn.num_features)
-                        new_bn.weight.data[:copy_n].copy_(old_bn.weight.data[:copy_n])
-                        new_bn.bias.data[:copy_n].copy_(old_bn.bias.data[:copy_n])
-                        if hasattr(old_bn, "running_mean") and old_bn.running_mean is not None:
-                            new_bn.running_mean[:copy_n].copy_(old_bn.running_mean[:copy_n])
-                        if hasattr(old_bn, "running_var") and old_bn.running_var is not None:
-                            new_bn.running_var[:copy_n].copy_(old_bn.running_var[:copy_n])
-                except Exception:
-                    if debug:
-                        print(f"[WARN] Could not copy BN stats for '{name}'.")
-                _set_module_by_path(model, name, new_bn)
-                patched += 1
-
-    if debug and patched:
-        print(f"[DEBUG] Auto-patched {patched} downstream conv/bn layers (matching orig_out_channels={orig_out_channels}).")
 
 def _insert_corrective_pool(model: nn.Module,
                             next_linear_name: str,
                             input_shape: Tuple[int, ...],
                             debug: bool = False) -> nn.Module:
     """
-    More robust corrective action:
-      - If model has 'features' -> 'classifier' split, run model.features(dummy) to capture pre-classifier activation.
-      - Otherwise, attempt to capture activation via a hook on the parent container of the Linear.
-      - Replace Linear(in_features) if flattened size != next_linear.in_features.
+    Minimal corrective action: capture activation entering next_linear_name.
+    If flattened size != next_linear.in_features, replace that Linear with a new
+    Linear(flat_actual, out_features). This keeps the model runnable with minimal change.
     """
     if next_linear_name is None:
         if debug:
@@ -787,39 +635,9 @@ def _insert_corrective_pool(model: nn.Module,
     expected = next_linear_mod.in_features
     dev = next((p.device for p in model.parameters()), torch.device('cpu'))
 
-    cap = None
+    # capture the activation that is fed to that linear
     try:
-        # Special-case common pattern: model.features -> model.classifier (e.g. VGG variants)
-        if hasattr(model, "features") and hasattr(model, "classifier"):
-            dummy = torch.randn(input_shape).to(dev)
-            with torch.no_grad():
-                cap = model.features(dummy)
-            if debug:
-                print("[DEBUG] Captured activation from model.features()")
-        else:
-            # Generic: try to register a forward hook on the parent container
-            parent_path, child_name = next_linear_name.rsplit('.', 1) if '.' in next_linear_name else ("", next_linear_name)
-            if parent_path == "":
-                # Top-level linear — fallback to hooking the linear directly
-                _, cap = _simulate_input_hook(model, next_linear_name, input_shape, device=str(dev))
-            else:
-                parent_mod = get_layer(model, parent_path)
-                captured = {}
-                def hook(mod, inp, out):
-                    # If parent_mod is a Sequential that directly contains the Linear,
-                    # its output is likely the input to the Linear, so capture `out`.
-                    captured['out'] = out.detach()
-                handle = parent_mod.register_forward_hook(hook)
-                try:
-                    dummy = torch.randn(input_shape).to(dev)
-                    with torch.no_grad():
-                        model(dummy)
-                finally:
-                    handle.remove()
-                cap = captured.get('out', None)
-                if cap is None:
-                    # fallback to original hook-on-linear approach
-                    _, cap = _simulate_input_hook(model, next_linear_name, input_shape, device=str(dev))
+        _, cap = _simulate_input_hook(model, next_linear_name, input_shape, device=str(dev))
     except Exception as e:
         if debug:
             print(f"[WARN] Failed to capture activation for '{next_linear_name}': {e}")
@@ -996,71 +814,6 @@ def collapse_only(
 
 
 # -----------------------------------------------------------------------------
-# --- Insert helper above _build_and_replace_block (e.g. after _analyze_block_output) ---
-def _choose_candidate_out_channels(
-    info: Dict[str, Any],
-    in_channels: int,
-    original_out_channels: int,
-    pre_params: int,
-    bias: bool = True,
-    safety_margin: float = 0.90,
-    min_out_channels: int = 1,
-    shortcut_min: Optional[int] = None,
-    debug: bool = False
-) -> int:
-    """
-    Choose a candidate reduced out_channels for the replacement 1x1 conv.
-    Strategy:
-      - Compute original_block_params (trainable params inside the block).
-      - Compute per-output-channel cost for a 1x1 conv: in_channels (+ bias).
-      - Pick candidate_out = floor(original_block_params * safety_margin / per_out_cost)
-      - Clamp to sensible bounds and ensure candidate_out < original_block_params contribution
-      - If candidate_out >= original_out_channels, try reducing by geometric steps until it yields a net param decrease.
-    """
-    # Count params inside the block (conv/bn/linear etc)
-    try:
-        orig_block_params = _count_params_for_block(info.get("full_block", []))
-    except Exception:
-        orig_block_params = max(1, int(pre_params * 0.01))  # fallback heuristic
-
-    per_out = in_channels + (1 if bias else 0)
-    if per_out <= 0:
-        per_out = max(1, in_channels)
-
-    # initial candidate based on costing the entire block into a single 1x1 approx
-    candidate = max(min_out_channels, int((orig_block_params * safety_margin) // per_out))
-
-    # Respect shortcut.minimum if provided (do not go below)
-    if shortcut_min is not None and candidate < shortcut_min:
-        candidate = shortcut_min
-
-    # Bound candidate by original_out_channels (do not blow up)
-    candidate = min(candidate, max(min_out_channels, original_out_channels))
-
-    # Ensure candidate yields fewer params than original_block_params; if not reduce further
-    # new_conv_params = candidate * per_out
-    max_iter = 10
-    iter_i = 0
-    while iter_i < max_iter:
-        new_conv_params = candidate * per_out
-        # if new conv is smaller than original block — accept
-        if new_conv_params < orig_block_params:
-            break
-        # otherwise shrink candidate (geometric)
-        new_cand = max(min_out_channels, int(candidate * 0.7))
-        if new_cand == candidate:
-            # cannot shrink more
-            break
-        candidate = new_cand
-        iter_i += 1
-
-    # final safety: do not exceed original_out_channels and ensure >=1
-    candidate = max(min_out_channels, min(candidate, original_out_channels))
-    if debug:
-        print(f"[DEBUG] _choose_candidate_out_channels: orig_block_params={orig_block_params}, "
-              f"in_channels={in_channels}, per_out={per_out}, candidate={candidate}")
-    return candidate
-
 # -----------------------------------------------------------------------------
 # Safe pooling wrapper (prevents underflow crashes)
 # -----------------------------------------------------------------------------
