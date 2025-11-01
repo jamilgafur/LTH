@@ -1,286 +1,0 @@
-Namespace(model='VGG16', dataset='Cifar100', epochs=1, pretrain=1, experiment='Stage 4-5', post_compress_epochs=0, imp=True, JF=True, Kevin=False)
-has GPU: True
-Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
-Loading CIFAR-100 data...
-CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
-
---- Running experiment: Stage 4-5 ---
-
-=== Running JF experiment ===
-============================================================
-🔍 Model Summary (via torchinfo)
-============================================================
-==========================================================================================
-Layer (type:depth-idx)                   Output Shape              Param #
-==========================================================================================
-VGG16                                    [512, 100]                --
-├─Sequential: 1-1                        [512, 512, 1, 1]          --
-│    └─Conv2d: 2-1                       [512, 64, 32, 32]         1,792
-│    └─ReLU: 2-2                         [512, 64, 32, 32]         --
-│    └─BatchNorm2d: 2-3                  [512, 64, 32, 32]         128
-│    └─Conv2d: 2-4                       [512, 64, 32, 32]         36,928
-│    └─ReLU: 2-5                         [512, 64, 32, 32]         --
-│    └─BatchNorm2d: 2-6                  [512, 64, 32, 32]         128
-│    └─MaxPool2d: 2-7                    [512, 64, 16, 16]         --
-│    └─Conv2d: 2-8                       [512, 128, 16, 16]        73,856
-│    └─ReLU: 2-9                         [512, 128, 16, 16]        --
-│    └─BatchNorm2d: 2-10                 [512, 128, 16, 16]        256
-│    └─Conv2d: 2-11                      [512, 128, 16, 16]        147,584
-│    └─ReLU: 2-12                        [512, 128, 16, 16]        --
-│    └─BatchNorm2d: 2-13                 [512, 128, 16, 16]        256
-│    └─MaxPool2d: 2-14                   [512, 128, 8, 8]          --
-│    └─Conv2d: 2-15                      [512, 256, 8, 8]          295,168
-│    └─ReLU: 2-16                        [512, 256, 8, 8]          --
-│    └─BatchNorm2d: 2-17                 [512, 256, 8, 8]          512
-│    └─Conv2d: 2-18                      [512, 256, 8, 8]          590,080
-│    └─ReLU: 2-19                        [512, 256, 8, 8]          --
-│    └─BatchNorm2d: 2-20                 [512, 256, 8, 8]          512
-│    └─Conv2d: 2-21                      [512, 256, 8, 8]          590,080
-│    └─ReLU: 2-22                        [512, 256, 8, 8]          --
-│    └─BatchNorm2d: 2-23                 [512, 256, 8, 8]          512
-│    └─MaxPool2d: 2-24                   [512, 256, 4, 4]          --
-│    └─Conv2d: 2-25                      [512, 512, 4, 4]          1,180,160
-│    └─ReLU: 2-26                        [512, 512, 4, 4]          --
-│    └─BatchNorm2d: 2-27                 [512, 512, 4, 4]          1,024
-│    └─Conv2d: 2-28                      [512, 512, 4, 4]          2,359,808
-│    └─ReLU: 2-29                        [512, 512, 4, 4]          --
-│    └─BatchNorm2d: 2-30                 [512, 512, 4, 4]          1,024
-│    └─Conv2d: 2-31                      [512, 512, 4, 4]          2,359,808
-│    └─ReLU: 2-32                        [512, 512, 4, 4]          --
-│    └─BatchNorm2d: 2-33                 [512, 512, 4, 4]          1,024
-│    └─MaxPool2d: 2-34                   [512, 512, 2, 2]          --
-│    └─Conv2d: 2-35                      [512, 512, 2, 2]          2,359,808
-│    └─ReLU: 2-36                        [512, 512, 2, 2]          --
-│    └─BatchNorm2d: 2-37                 [512, 512, 2, 2]          1,024
-│    └─Conv2d: 2-38                      [512, 512, 2, 2]          2,359,808
-│    └─ReLU: 2-39                        [512, 512, 2, 2]          --
-│    └─BatchNorm2d: 2-40                 [512, 512, 2, 2]          1,024
-│    └─Conv2d: 2-41                      [512, 512, 2, 2]          2,359,808
-│    └─ReLU: 2-42                        [512, 512, 2, 2]          --
-│    └─BatchNorm2d: 2-43                 [512, 512, 2, 2]          1,024
-│    └─MaxPool2d: 2-44                   [512, 512, 1, 1]          --
-├─Sequential: 1-2                        [512, 100]                --
-│    └─Linear: 2-45                      [512, 4096]               2,101,248
-│    └─ReLU: 2-46                        [512, 4096]               --
-│    └─Dropout: 2-47                     [512, 4096]               --
-│    └─Linear: 2-48                      [512, 4096]               16,781,312
-│    └─ReLU: 2-49                        [512, 4096]               --
-│    └─Dropout: 2-50                     [512, 4096]               --
-│    └─Linear: 2-51                      [512, 100]                409,700
-==========================================================================================
-Total params: 34,015,396
-Trainable params: 34,015,396
-Non-trainable params: 0
-Total mult-adds (Units.GIGABYTES): 170.38
-==========================================================================================
-Input size (MB): 6.29
-Forward/backward pass size (MB): 2298.89
-Params size (MB): 136.06
-Estimated Total Size (MB): 2441.24
-==========================================================================================
-============================================================
-[INFO] Initialized Model: None
-[•] Collapsing range ('features.conv_8', 'features.conv_13') for Stage 4-5
-[INFO] Starting collapse_only; params before = 34,015,396
-
-[INFO] Processing collapse 'collapse_0': features.conv_8 -> features.conv_13
-[INFO] Collapsing block: name: 'collapse_0', start: 'features.conv_8', end: 'features.conv_13'
-
-[INFO] Collapsing block: features.conv_8 → features.conv_13
-[DEBUG] Locating and preparing block: start_layer_name='features.conv_8', end_layer_name='features.conv_13'
-[DEBUG] Start container: features, end container: features
-[DEBUG] Found indices: start_idx=24, end_idx=40
-[DEBUG] Full block: [('conv_8', Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))), ('relu_8', ReLU(inplace=True)), ('bn_8', BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)), ('conv_9', Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))), ('relu_9', ReLU(inplace=True)), ('bn_9', BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)), ('conv_10', Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))), ('relu_10', ReLU(inplace=True)), ('bn_10', BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)), ('pool_4', MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)), ('conv_11', Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))), ('relu_11', ReLU(inplace=True)), ('bn_11', BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)), ('conv_12', Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))), ('relu_12', ReLU(inplace=True)), ('bn_12', BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)), ('conv_13', Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)))]
-[DEBUG] Conv layers in block: [Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))]
-[DEBUG] Captured activation before start: (512, 256, 4, 4)
-[DEBUG] Params before collapse: 34,015,396
-[DEBUG] Next Linear detected: name='classifier.fc_1', module=Linear(in_features=512, out_features=4096, bias=True)
-[DEBUG] Full block output shape: (512, 512, 2, 2), out_channels=512
-[DEBUG] Detected pool in original block: MaxPool2d
-[DEBUG] Heuristic linear_in_features = 512
-[DEBUG] expected_hw=1, current_hw=4 (HxW=2x2)
-[DEBUG] Applied pool MaxPool2d, new HxW=1x1
-[DEBUG] Absorbed post-block pools => updated out_shape (512, 512, 1, 1)
-[DEBUG] Building and replacing block starting at 'features.conv_8'
-[DEBUG] _build_collapsed_block called: layer_type=Conv2d, in=256, out=512, linear_in_features=512, force_hw=None
-[DEBUG] Linear follower present: target channels ≈ 512 (H*W=1)
-[DEBUG] Added 1x1 projection: 256 -> 512
-[DEBUG] Collapsed block modules: ['Conv2d', 'BatchNorm2d', 'ReLU', 'MaxPool2d', 'Conv2d']
-[DEBUG] Params after collapse: 21,228,452
-[INFO] ΔParams = +12,786,944
-[DEBUG] Scanning downstream modules for unsafe pools...
-[DEBUG] After collapse: flattened=2048, expected=512
-[WARN] Flattened mismatch for next Linear 'classifier.fc_1': auto-correcting.
-[DEBUG] Appended AdaptiveAvgPool2d(1,1) to model.features
-[INFO] Replaced 10 in-place ReLU(s) with out-of-place variants.
-
-[INFO] Collapse finished.
-[INFO] Parameters before: 34,015,396
-[INFO] Parameters after : 21,228,452
-[INFO] ΔParams = +12,786,944 (should be >= 0)
-
-Layer-wise zero parameter stats:
-
-features.layer_0.weight: 173/1728 zeros (10.01%)
-features.layer_0.bias: 0/64 zeros (0.00%)
-features.layer_2.weight: 0/64 zeros (0.00%)
-features.layer_2.bias: 0/64 zeros (0.00%)
-features.layer_3.weight: 16662/36864 zeros (45.20%)
-features.layer_3.bias: 0/64 zeros (0.00%)
-features.layer_5.weight: 0/64 zeros (0.00%)
-features.layer_5.bias: 0/64 zeros (0.00%)
-features.layer_7.weight: 35229/73728 zeros (47.78%)
-features.layer_7.bias: 0/128 zeros (0.00%)
-features.layer_9.weight: 0/128 zeros (0.00%)
-features.layer_9.bias: 0/128 zeros (0.00%)
-features.layer_10.weight: 90054/147456 zeros (61.07%)
-features.layer_10.bias: 0/128 zeros (0.00%)
-features.layer_12.weight: 0/128 zeros (0.00%)
-features.layer_12.bias: 0/128 zeros (0.00%)
-features.layer_14.weight: 198426/294912 zeros (67.28%)
-features.layer_14.bias: 0/256 zeros (0.00%)
-features.layer_16.weight: 0/256 zeros (0.00%)
-features.layer_16.bias: 0/256 zeros (0.00%)
-features.layer_17.weight: 501131/589824 zeros (84.96%)
-features.layer_17.bias: 0/256 zeros (0.00%)
-features.layer_19.weight: 0/256 zeros (0.00%)
-features.layer_19.bias: 0/256 zeros (0.00%)
-features.layer_20.weight: 504494/589824 zeros (85.53%)
-features.layer_20.bias: 0/256 zeros (0.00%)
-features.layer_22.weight: 0/256 zeros (0.00%)
-features.layer_22.bias: 0/256 zeros (0.00%)
-features.layer_24.layer_0.weight: 0/65536 zeros (0.00%)
-features.layer_24.layer_0.bias: 0/256 zeros (0.00%)
-features.layer_24.layer_1.weight: 0/256 zeros (0.00%)
-features.layer_24.layer_1.bias: 256/256 zeros (100.00%)
-features.layer_24.layer_4.weight: 0/131072 zeros (0.00%)
-features.layer_26.weight: 0/512 zeros (0.00%)
-features.layer_26.bias: 0/512 zeros (0.00%)
-classifier.fc_1.weight: 1254846/2097152 zeros (59.84%)
-classifier.fc_1.bias: 0/4096 zeros (0.00%)
-classifier.fc_2.weight: 16682666/16777216 zeros (99.44%)
-classifier.fc_2.bias: 0/4096 zeros (0.00%)
-classifier.fc_3.weight: 0/409600 zeros (0.00%)
-classifier.fc_3.bias: 0/100 zeros (0.00%)
-[DEBUG] Model structure after collapse:
-None
-============================================================
-🔍 Model Summary (via torchinfo)
-============================================================
-==========================================================================================
-Layer (type:depth-idx)                   Output Shape              Param #
-==========================================================================================
-VGG16                                    [512, 100]                --
-├─Sequential: 1-1                        [512, 512, 1, 1]          --
-│    └─Conv2d: 2-1                       [512, 64, 32, 32]         1,792
-│    └─ReLU: 2-2                         [512, 64, 32, 32]         --
-│    └─BatchNorm2d: 2-3                  [512, 64, 32, 32]         128
-│    └─Conv2d: 2-4                       [512, 64, 32, 32]         36,928
-│    └─ReLU: 2-5                         [512, 64, 32, 32]         --
-│    └─BatchNorm2d: 2-6                  [512, 64, 32, 32]         128
-│    └─MaxPool2d: 2-7                    [512, 64, 16, 16]         --
-│    └─Conv2d: 2-8                       [512, 128, 16, 16]        73,856
-│    └─ReLU: 2-9                         [512, 128, 16, 16]        --
-│    └─BatchNorm2d: 2-10                 [512, 128, 16, 16]        256
-│    └─Conv2d: 2-11                      [512, 128, 16, 16]        147,584
-│    └─ReLU: 2-12                        [512, 128, 16, 16]        --
-│    └─BatchNorm2d: 2-13                 [512, 128, 16, 16]        256
-│    └─MaxPool2d: 2-14                   [512, 128, 8, 8]          --
-│    └─Conv2d: 2-15                      [512, 256, 8, 8]          295,168
-│    └─ReLU: 2-16                        [512, 256, 8, 8]          --
-│    └─BatchNorm2d: 2-17                 [512, 256, 8, 8]          512
-│    └─Conv2d: 2-18                      [512, 256, 8, 8]          590,080
-│    └─ReLU: 2-19                        [512, 256, 8, 8]          --
-│    └─BatchNorm2d: 2-20                 [512, 256, 8, 8]          512
-│    └─Conv2d: 2-21                      [512, 256, 8, 8]          590,080
-│    └─ReLU: 2-22                        [512, 256, 8, 8]          --
-│    └─BatchNorm2d: 2-23                 [512, 256, 8, 8]          512
-│    └─MaxPool2d: 2-24                   [512, 256, 4, 4]          --
-│    └─Sequential: 2-25                  [512, 512, 2, 2]          --
-│    │    └─Conv2d: 3-1                  [512, 256, 4, 4]          65,792
-│    │    └─BatchNorm2d: 3-2             [512, 256, 4, 4]          512
-│    │    └─ReLU: 3-3                    [512, 256, 4, 4]          --
-│    │    └─MaxPool2d: 3-4               [512, 256, 2, 2]          --
-│    │    └─Conv2d: 3-5                  [512, 512, 2, 2]          131,072
-│    └─ReLU: 2-26                        [512, 512, 2, 2]          --
-│    └─BatchNorm2d: 2-27                 [512, 512, 2, 2]          1,024
-│    └─MaxPool2d: 2-28                   [512, 512, 1, 1]          --
-│    └─AdaptiveAvgPool2d: 2-29           [512, 512, 1, 1]          --
-├─Sequential: 1-2                        [512, 100]                --
-│    └─Linear: 2-30                      [512, 4096]               2,101,248
-│    └─ReLU: 2-31                        [512, 4096]               --
-│    └─Dropout: 2-32                     [512, 4096]               --
-│    └─Linear: 2-33                      [512, 4096]               16,781,312
-│    └─ReLU: 2-34                        [512, 4096]               --
-│    └─Dropout: 2-35                     [512, 4096]               --
-│    └─Linear: 2-36                      [512, 100]                409,700
-==========================================================================================
-Total params: 21,228,452
-Trainable params: 21,228,452
-Non-trainable params: 0
-Total mult-adds (Units.GIGABYTES): 108.36
-==========================================================================================
-Input size (MB): 6.29
-Forward/backward pass size (MB): 2097.56
-Params size (MB): 84.91
-Estimated Total Size (MB): 2188.77
-==========================================================================================
-============================================================
-[INFO] Collabsed Model: None
-[•] Starting experiment 'Stage 4-5' in workflow 'JF'
-[Start training] device:cuda
-[INFO] Training started...
-model on device: cuda:0
-[INFO] Starting Epoch 1 of training...
-  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:05<08:07,  5.02s/it]  3%|▎         | 3/98 [00:05<02:09,  1.36s/it]  5%|▌         | 5/98 [00:05<01:06,  1.41it/s]  7%|▋         | 7/98 [00:05<00:41,  2.21it/s]  9%|▉         | 9/98 [00:05<00:28,  3.13it/s] 10%|█         | 10/98 [00:06<00:27,  3.17it/s] 11%|█         | 11/98 [00:06<00:27,  3.21it/s] 13%|█▎        | 13/98 [00:06<00:19,  4.40it/s] 14%|█▍        | 14/98 [00:07<00:26,  3.23it/s] 15%|█▌        | 15/98 [00:07<00:23,  3.53it/s] 16%|█▋        | 16/98 [00:07<00:21,  3.81it/s] 18%|█▊        | 18/98 [00:08<00:23,  3.34it/s] 19%|█▉        | 19/98 [00:08<00:21,  3.62it/s] 20%|██        | 20/98 [00:08<00:20,  3.89it/s] 21%|██▏       | 21/98 [00:08<00:16,  4.63it/s] 22%|██▏       | 22/98 [00:09<00:24,  3.12it/s] 24%|██▍       | 24/98 [00:09<00:19,  3.73it/s] 26%|██▌       | 25/98 [00:09<00:16,  4.39it/s] 27%|██▋       | 26/98 [00:10<00:23,  3.10it/s] 29%|██▊       | 28/98 [00:10<00:18,  3.69it/s] 30%|██▉       | 29/98 [00:10<00:15,  4.32it/s] 31%|███       | 30/98 [00:11<00:21,  3.10it/s] 32%|███▏      | 31/98 [00:11<00:17,  3.78it/s] 33%|███▎      | 32/98 [00:11<00:16,  4.05it/s] 34%|███▎      | 33/98 [00:12<00:15,  4.28it/s] 35%|███▍      | 34/98 [00:12<00:19,  3.23it/s] 36%|███▌      | 35/98 [00:12<00:15,  4.01it/s] 37%|███▋      | 36/98 [00:12<00:14,  4.25it/s] 38%|███▊      | 37/98 [00:13<00:15,  3.94it/s] 39%|███▉      | 38/98 [00:13<00:19,  3.06it/s] 41%|████      | 40/98 [00:13<00:14,  4.07it/s] 42%|████▏     | 41/98 [00:14<00:14,  3.86it/s] 43%|████▎     | 42/98 [00:14<00:16,  3.38it/s] 44%|████▍     | 43/98 [00:14<00:14,  3.71it/s] 45%|████▍     | 44/98 [00:14<00:12,  4.50it/s] 46%|████▌     | 45/98 [00:15<00:14,  3.66it/s] 47%|████▋     | 46/98 [00:15<00:16,  3.23it/s] 48%|████▊     | 47/98 [00:15<00:14,  3.60it/s] 49%|████▉     | 48/98 [00:16<00:11,  4.44it/s] 50%|█████     | 49/98 [00:16<00:13,  3.61it/s] 51%|█████     | 50/98 [00:16<00:15,  3.19it/s] 53%|█████▎    | 52/98 [00:17<00:10,  4.19it/s] 54%|█████▍    | 53/98 [00:17<00:12,  3.59it/s] 55%|█████▌    | 54/98 [00:17<00:12,  3.52it/s] 56%|█████▌    | 55/98 [00:18<00:11,  3.83it/s] 57%|█████▋    | 56/98 [00:18<00:09,  4.63it/s] 58%|█████▊    | 57/98 [00:18<00:12,  3.37it/s] 59%|█████▉    | 58/98 [00:18<00:11,  3.36it/s] 60%|██████    | 59/98 [00:19<00:10,  3.71it/s] 62%|██████▏   | 61/98 [00:19<00:10,  3.53it/s] 63%|██████▎   | 62/98 [00:19<00:09,  3.80it/s] 64%|██████▍   | 63/98 [00:20<00:09,  3.67it/s] 66%|██████▋   | 65/98 [00:20<00:08,  3.80it/s] 67%|██████▋   | 66/98 [00:21<00:08,  3.68it/s] 68%|██████▊   | 67/98 [00:21<00:07,  3.94it/s] 69%|██████▉   | 68/98 [00:21<00:06,  4.69it/s] 70%|███████   | 69/98 [00:21<00:08,  3.43it/s] 71%|███████▏  | 70/98 [00:22<00:07,  3.76it/s] 72%|███████▏  | 71/98 [00:22<00:06,  4.05it/s] 74%|███████▍  | 73/98 [00:22<00:06,  3.69it/s] 76%|███████▌  | 74/98 [00:23<00:06,  3.94it/s] 77%|███████▋  | 75/98 [00:23<00:06,  3.77it/s] 79%|███████▊  | 77/98 [00:23<00:05,  3.86it/s] 80%|███████▉  | 78/98 [00:24<00:05,  3.72it/s] 81%|████████  | 79/98 [00:24<00:04,  3.98it/s] 83%|████████▎ | 81/98 [00:24<00:04,  3.68it/s] 84%|████████▎ | 82/98 [00:25<00:04,  3.92it/s] 85%|████████▍ | 83/98 [00:25<00:03,  3.76it/s] 87%|████████▋ | 85/98 [00:26<00:03,  3.57it/s] 88%|████████▊ | 86/98 [00:26<00:03,  3.82it/s] 89%|████████▉ | 87/98 [00:26<00:02,  4.05it/s] 91%|█████████ | 89/98 [00:27<00:02,  3.46it/s] 93%|█████████▎| 91/98 [00:27<00:01,  3.90it/s] 95%|█████████▍| 93/98 [00:28<00:01,  3.69it/s] 96%|█████████▌| 94/98 [00:28<00:00,  4.21it/s] 97%|█████████▋| 95/98 [00:28<00:00,  4.36it/s] 98%|█████████▊| 96/98 [00:28<00:00,  5.05it/s] 99%|█████████▉| 97/98 [00:28<00:00,  5.16it/s]100%|██████████| 98/98 [00:28<00:00,  3.39it/s]
-Epoch 1: Loss=2.2969, Acc=38.81%
-[INFO] New best accuracy: 38.81% (previous best was 0.00%)
-[INFO] Training complete after 1 epochs.
-[INFO] Evaluating model on the test set...
-2025-10-31 16:23:35,415 - WARNING - Unsupported operator aten::max_pool2d encountered 5 time(s)
-2025-10-31 16:23:38,068 - WARNING - Unsupported operator aten::max_pool2d encountered 5 time(s)
-/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:205: FutureWarning: 
-
-Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
-
-  sns.barplot(x=list(parts.keys()), y=list(parts.values()), palette=["steelblue", "salmon", "gold"])
-/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:48: FutureWarning: 
-
-Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
-
-  sns.barplot(x=list(names), y=list(accs), ax=axs[0], palette="Blues_d")
-/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:66: FutureWarning: 
-
-Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
-
-  sns.barplot(x=list(names), y=list(infer_times), ax=axs[1], palette="Oranges_d")
-/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:74: FutureWarning: 
-
-Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
-
-  sns.barplot(x=list(names), y=mem_mb, ax=axs[2], palette="Greens_d")
-/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
-  ax.set_xticklabels(names, rotation=30, ha='right')
-/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
-  ax.set_xticklabels(names, rotation=30, ha='right')
-/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
-  ax.set_xticklabels(names, rotation=30, ha='right')
-/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:313: UserWarning: Tight layout not applied. The left and right margins cannot be made large enough to accommodate all Axes decorations.
-  plt.tight_layout()
-Final Test Accuracy: 47.03%
-[•] Running diagnostics for Stage 4-5...
-[✓] Diagnostics complete for Stage 4-5
-[✓] Saved metrics for 'Stage 4-5_JF' → VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/metrics/VGG16_CIFAR100_metrics_20251031_162339_867131_140711.json
-[✓] Merged 6 metrics files → VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
-[✓] Metrics merged successfully → VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
-[✓] Saved plot: VGG16_Cifar100_checkpoint_Finetuned_0.964816.pth_epochs1_pretrain1_postcompress0/plots/merged_plots.svg
-[DEBUG] FLOPs: [170513137664.0, 108479643648.0, 161182384128.0, 170513137664.0, 108479643648.0, 161182384128.0]
-[DEBUG] Times: [0.016744553661346435, 0.018300495815277103, 0.016283038520812986, 0.016803347110748292, 0.019154619121551517, 0.016310016107559205]
-[DEBUG] Delta Accuracy vs Params Data: [{'name': 'Original Model_JF', 'ΔAcc': 0.0, 'ΔParams(%)': 0.0}, {'name': 'Stage 4-5_JF', 'ΔAcc': 24.514, 'ΔParams(%)': -37.591636446037555}, {'name': 'Last 2_Kevin', 'ΔAcc': 28.038, 'ΔParams(%)': -13.10503043974558}, {'name': 'Original Model_Kevin', 'ΔAcc': 27.459999999999997, 'ΔParams(%)': 0.0}, {'name': 'Stage 4-5_Kevin', 'ΔAcc': 24.342000000000002, 'ΔParams(%)': -37.591636446037555}, {'name': 'Last 2_JF', 'ΔAcc': 10.878, 'ΔParams(%)': -13.10503043974558}]
-[DEBUG] FLOPs: [170513137664.0, 108479643648.0, 161182384128.0, 170513137664.0, 108479643648.0, 161182384128.0]
-[DEBUG] Memory: [1713.1953125, 1568.1953125, 1697.6953125, 1713.1953125, 1568.1953125, 1697.6953125]
-[DEBUG] Accuracy: [14.3, 38.814, 42.338, 41.76, 38.642, 25.178]
-[DEBUG] Memory: [1713.1953125, 1568.1953125, 1697.6953125, 1713.1953125, 1568.1953125, 1697.6953125]
-[DEBUG] Heatmap Rows: [{'Model': 'Original Model_JF', 'Accuracy': 14.3, 'Params': 34015396, 'FLOPs': 170513137664, 'Inference Time': 0.016744553661346435, 'Memory (MB)': 1713.1953125}, {'Model': 'Stage 4-5_JF', 'Accuracy': 38.814, 'Params': 21228452, 'FLOPs': 108479643648, 'Inference Time': 0.018300495815277103, 'Memory (MB)': 1568.1953125}, {'Model': 'Last 2_Kevin', 'Accuracy': 42.338, 'Params': 29557668, 'FLOPs': 161182384128, 'Inference Time': 0.016283038520812986, 'Memory (MB)': 1697.6953125}, {'Model': 'Original Model_Kevin', 'Accuracy': 41.76, 'Params': 34015396, 'FLOPs': 170513137664, 'Inference Time': 0.016803347110748292, 'Memory (MB)': 1713.1953125}, {'Model': 'Stage 4-5_Kevin', 'Accuracy': 38.642, 'Params': 21228452, 'FLOPs': 108479643648, 'Inference Time': 0.019154619121551517, 'Memory (MB)': 1568.1953125}, {'Model': 'Last 2_JF', 'Accuracy': 25.178, 'Params': 29557668, 'FLOPs': 161182384128, 'Inference Time': 0.016310016107559205, 'Memory (MB)': 1697.6953125}]
-[DEBUG] Collapse Curve Rows: [{'Model': 'Original Model_JF', 'Params': 34015396, 'Time': 0.016744553661346435, 'Accuracy': 14.3}, {'Model': 'Stage 4-5_JF', 'Params': 21228452, 'Time': 0.018300495815277103, 'Accuracy': 38.814}, {'Model': 'Last 2_Kevin', 'Params': 29557668, 'Time': 0.016283038520812986, 'Accuracy': 42.338}, {'Model': 'Original Model_Kevin', 'Params': 34015396, 'Time': 0.016803347110748292, 'Accuracy': 41.76}, {'Model': 'Stage 4-5_Kevin', 'Params': 21228452, 'Time': 0.019154619121551517, 'Accuracy': 38.642}, {'Model': 'Last 2_JF', 'Params': 29557668, 'Time': 0.016310016107559205, 'Accuracy': 25.178}]
-[✓] Experiment 'Stage 4-5' completed. Checkpoints and metrics saved.
