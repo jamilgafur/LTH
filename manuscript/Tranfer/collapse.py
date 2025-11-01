@@ -397,7 +397,6 @@ def _analyze_block_output(model, full_block, conv_layers, named_layers, end_idx,
         "linear_in_features_heuristic": linear_in_features_heuristic,
     }
 
-
 def _build_and_replace_block(
     model,
     start_layer_name,
@@ -412,53 +411,86 @@ def _build_and_replace_block(
     debug,
 ):
     """
-    Simple replacement: remove layers start..end and insert:
-        Conv2d(in_ch = channels of x, out_ch = out_channels of last removed, kernel_size=1)
-        AdaptiveAvgPool2d(target_H, target_W)  # matches last layer's output HxW
-    Minimal other mutation.
+    Replacement block that dynamically reduces channels and matches spatial size.
+    It picks a reduced out_channels that results in fewer params than the original block.
     """
     if debug:
-        print(f"[DEBUG] Building and replacing block starting at '{start_layer_name}' (simple replacement)")
+        print(f"[DEBUG] Building and replacing block starting at '{start_layer_name}' (dynamic replacement)")
 
-    # bookkeeping from info
     named_layers = info["named_layers"]
     start_idx, end_idx = info["start_idx"], info["end_idx"]
 
-    # obtain desired in/out channels and target H/W from block_analysis
+    # obtain out_shape and original out_channels
     out_shape = block_analysis.get("out_shape", None)
-    out_channels = block_analysis.get("out_channels", None)
+    orig_out_channels = block_analysis.get("out_channels", None)
 
-    if out_shape is None or out_channels is None:
-        raise RuntimeError("block_analysis missing out_shape/out_channels required for simple replacement")
+    if out_shape is None or orig_out_channels is None:
+        raise RuntimeError("block_analysis missing out_shape/out_channels required for replacement")
 
-    # compute target spatial dims (H_last, W_last)
-    # out_shape expected like (B, C, H, W) for conv blocks
-    if len(out_shape) >= 4:
-        target_H, target_W = int(out_shape[-2]), int(out_shape[-1])
+    # compute a target pooling layer: prefer analyzer's adaptive suggestion
+    adaptive_pool_suggestion = block_analysis.get("adaptive_pool_to_use", None)
+
+    # If analyzer gave an AdaptiveAvgPool2d, use that directly
+    if adaptive_pool_suggestion is not None:
+        pool_layer = adaptive_pool_suggestion
+        # derive target_H/W from it (if possible)
+        try:
+            target_H, target_W = adaptive_pool_suggestion.output_size
+        except Exception:
+            # may not expose output_size; fallback to heuristic below
+            pool_layer = None
+            target_H, target_W = int(out_shape[-2]), int(out_shape[-1])
     else:
-        # fallback to (1,1)
-        target_H, target_W = 1, 1
+        # derive target spatial size using next_linear heuristic or the block's out_shape
+        target_H, target_W = int(out_shape[-2]), int(out_shape[-1])
+        linear_hint = block_analysis.get("linear_in_features_heuristic", None)
+        if linear_hint is not None and orig_out_channels:
+            expected_hw = max(1, linear_hint // orig_out_channels)
+            if expected_hw != (target_H * target_W):
+                # pick a reasonable target close to expected
+                tH = int(round(math.sqrt(expected_hw))) if expected_hw > 1 else 1
+                tW = max(1, expected_hw // tH)
+                target_H, target_W = tH, tW
 
-    # input channels = channels of captured activation x
-    if x is None:
-        raise RuntimeError("Captured activation `x` is required for this simple replacement")
-    if x.ndim < 2:
-        raise RuntimeError("Captured activation `x` has unexpected shape")
-
+    # captured activation x gives us in_channels
+    if x is None or x.ndim < 2:
+        raise RuntimeError("Captured activation `x` is required for replacement")
     in_channels = int(x.shape[1])
 
-    if debug:
-        print(f"[DEBUG] Replacement conv: in_channels={in_channels}, out_channels={out_channels}, pool_target=({target_H},{target_W})")
+    # check for shortcut constraints (do not undercut active shortcut outputs)
+    shortcut_min = None
+    sc_out = block_analysis.get("shortcut_out_channels", None)
+    if sc_out is not None:
+        shortcut_min = sc_out
 
-    # Build the minimal replacement block: 1x1 conv -> adaptive pool
-    conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=True)
-    pool = nn.AdaptiveAvgPool2d((target_H, target_W))
+    # determine bias presence -- for 1x1 bias we choose True to be safe
+    bias_flag = True
+
+    # Choose a candidate reduced out_channels (dynamically)
+    candidate_out = _choose_candidate_out_channels(
+        info=info,
+        in_channels=in_channels,
+        original_out_channels=orig_out_channels,
+        pre_params=pre_params,
+        bias=bias_flag,
+        safety_margin=0.88,
+        min_out_channels=1,
+        shortcut_min=shortcut_min,
+        debug=debug
+    )
+
+    if debug:
+        print(f"[DEBUG] Candidate out channels chosen: {candidate_out} (orig {orig_out_channels})")
+
+    # Build the replacement: 1x1 conv -> AdaptiveAvgPool2d(target_H,target_W)
+    conv = nn.Conv2d(in_channels, candidate_out, kernel_size=1, stride=1, padding=0, bias=bias_flag)
+    pool = pool_layer if (adaptive_pool_suggestion is not None) else nn.AdaptiveAvgPool2d((target_H, target_W))
     replacement = nn.Sequential(OrderedDict([
         ("conv_1x1", conv),
         ("adaptive_pool", pool),
     ]))
 
-    # Replace start..end with our replacement
+    # Replace start..end with our replacement in the container
     start_container_name, _ = _get_container_and_subname(start_layer_name)
     updated_container = _replace_layers(named_layers, start_idx, end_idx, replacement)
     _update_container(model, start_container_name, updated_container)
@@ -466,21 +498,20 @@ def _build_and_replace_block(
 
     post_params = count_trainable_params(model)
     if debug:
-        print(f"[DEBUG] Params after simple replacement: {post_params:,}")
+        print(f"[DEBUG] Params after replacement: {post_params:,}")
         print(f"[INFO] ΔParams = {pre_params - post_params:+,}")
 
-    # Quick validation: run the replacement using the captured activation `x`
+    # Quick forward validation of the inserted replacement using captured activation x
     try:
         dev = next((p.device for p in model.parameters()), torch.device('cpu'))
         rep_module = get_layer(model, start_container_name)
-        # get the inserted collapsed child (best-effort)
+        # locate our collapsed child
         child = None
         for nm, m in rep_module.named_children():
             if nm.startswith("collapsed_") or (isinstance(m, nn.Sequential) and any(k in dict(m.named_children()) for k in ("conv_1x1", "adaptive_pool"))):
                 child = m
                 break
         if child is None:
-            # fallback: take the element at start_idx if sequential
             if isinstance(updated_container, nn.Sequential) and 0 <= start_idx < len(updated_container):
                 child = updated_container[start_idx]
         if child is not None:
@@ -490,26 +521,22 @@ def _build_and_replace_block(
                 if debug:
                     print(f"[DEBUG] Replacement forward ok — output shape {tuple(out.shape)}")
     except Exception as e:
-        # revert not attempted here; just warn
         print(f"[WARN] Validation of replacement forward failed: {e}")
 
-    # downstream validation using captured activation
+    # Downstream validation and classifier correction (same as before)
     try:
         _validate_downstream(model, start_container_name, start_idx, x, input_shape, next_linear_name, next_linear_mod, device, debug=debug)
     except Exception as e:
         print(f"[WARN] Downstream validation failed after collapsing '{start_layer_name}': {e}")
 
-    # optional classifier corrective action
     try:
         model = _insert_corrective_pool(model, next_linear_name, input_shape, debug=debug)
     except Exception as e:
         if debug:
             print(f"[WARN] Corrective pooling/check failed: {e}")
 
-    # warn if params increased (shouldn't with this simple policy)
     if post_params > pre_params:
         print("[WARN] ⚠ Collapsed block has MORE parameters than before! Investigate collapse policy.")
-
     return model
 
 
@@ -814,6 +841,71 @@ def collapse_only(
 
 
 # -----------------------------------------------------------------------------
+# --- Insert helper above _build_and_replace_block (e.g. after _analyze_block_output) ---
+def _choose_candidate_out_channels(
+    info: Dict[str, Any],
+    in_channels: int,
+    original_out_channels: int,
+    pre_params: int,
+    bias: bool = True,
+    safety_margin: float = 0.90,
+    min_out_channels: int = 1,
+    shortcut_min: Optional[int] = None,
+    debug: bool = False
+) -> int:
+    """
+    Choose a candidate reduced out_channels for the replacement 1x1 conv.
+    Strategy:
+      - Compute original_block_params (trainable params inside the block).
+      - Compute per-output-channel cost for a 1x1 conv: in_channels (+ bias).
+      - Pick candidate_out = floor(original_block_params * safety_margin / per_out_cost)
+      - Clamp to sensible bounds and ensure candidate_out < original_block_params contribution
+      - If candidate_out >= original_out_channels, try reducing by geometric steps until it yields a net param decrease.
+    """
+    # Count params inside the block (conv/bn/linear etc)
+    try:
+        orig_block_params = _count_params_for_block(info.get("full_block", []))
+    except Exception:
+        orig_block_params = max(1, int(pre_params * 0.01))  # fallback heuristic
+
+    per_out = in_channels + (1 if bias else 0)
+    if per_out <= 0:
+        per_out = max(1, in_channels)
+
+    # initial candidate based on costing the entire block into a single 1x1 approx
+    candidate = max(min_out_channels, int((orig_block_params * safety_margin) // per_out))
+
+    # Respect shortcut.minimum if provided (do not go below)
+    if shortcut_min is not None and candidate < shortcut_min:
+        candidate = shortcut_min
+
+    # Bound candidate by original_out_channels (do not blow up)
+    candidate = min(candidate, max(min_out_channels, original_out_channels))
+
+    # Ensure candidate yields fewer params than original_block_params; if not reduce further
+    # new_conv_params = candidate * per_out
+    max_iter = 10
+    iter_i = 0
+    while iter_i < max_iter:
+        new_conv_params = candidate * per_out
+        # if new conv is smaller than original block — accept
+        if new_conv_params < orig_block_params:
+            break
+        # otherwise shrink candidate (geometric)
+        new_cand = max(min_out_channels, int(candidate * 0.7))
+        if new_cand == candidate:
+            # cannot shrink more
+            break
+        candidate = new_cand
+        iter_i += 1
+
+    # final safety: do not exceed original_out_channels and ensure >=1
+    candidate = max(min_out_channels, min(candidate, original_out_channels))
+    if debug:
+        print(f"[DEBUG] _choose_candidate_out_channels: orig_block_params={orig_block_params}, "
+              f"in_channels={in_channels}, per_out={per_out}, candidate={candidate}")
+    return candidate
+
 # -----------------------------------------------------------------------------
 # Safe pooling wrapper (prevents underflow crashes)
 # -----------------------------------------------------------------------------
