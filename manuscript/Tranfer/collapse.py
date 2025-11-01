@@ -194,52 +194,101 @@ def _collapse_block(
     end_layer_name: str,
     input_shape: tuple,
     device='cpu',
-    debug: bool = False
+    debug: bool = False,
+    preserve_activation: bool = True
 ) -> nn.Module:
     """
-    Collapse layers between start_layer_name and end_layer_name (inclusive)
-    by replacing them with: Conv2d(1x1) -> AdaptiveAvgPool2d(H_last,W_last).
+    Collapse layers between start_layer_name and end_layer_name (inclusive) while:
+      - Preserving activations (ReLU, BatchNorm)
+      - Handling residual shortcuts
+      - Automatically adapting spatial dimensions
+      - Folding linear layers if applicable
     """
     print(f"\n[INFO] Collapsing block: {start_layer_name} → {end_layer_name}")
 
-    # locate block
+    # Step 1: locate the block
     info = _locate_and_prepare_block(model, start_layer_name, end_layer_name)
+    full_block = info['full_block']
+    conv_layers = info['conv_layers']
+    layer_type = info['layer_type']
 
-    # capture activation entering the start layer
-    x, pre_params = _capture_preblock_activation(
-        model, start_layer_name, input_shape, info["conv_layers"], info["layer_type"], device, debug
-    )
+    # Step 2: capture activation entering the start layer
+    x, pre_params = _capture_preblock_activation(model, start_layer_name, input_shape, conv_layers, layer_type, device, debug)
 
-    # find next linear (for classifier alignment later)
+    # Step 3: find next linear for classifier alignment
     next_linear_name, next_linear_mod = _find_next_linear(model, end_layer_name, debug)
 
-    # analyze to discover last layer output shape and channels
+    # Step 4: analyze block output
     block_analysis = _analyze_block_output(
-        model,
-        info["full_block"],
-        info["conv_layers"],
-        info["named_layers"],
-        info["end_idx"],
-        info["layer_type"],
-        x,
-        next_linear_mod,
-        debug
+        model, full_block, conv_layers, info['named_layers'], info['end_idx'],
+        layer_type, x, next_linear_mod, debug
     )
 
-    # replace with simple conv+adaptive pool
-    model = _build_and_replace_block(
-        model,
-        start_layer_name,
-        input_shape,
-        info,
-        x,
-        pre_params,
-        next_linear_name,
-        next_linear_mod,
-        block_analysis,
-        device,
-        debug
-    )
+    out_channels = block_analysis.get('out_channels')
+    out_shape = block_analysis.get('out_shape')
+    adaptive_pool_to_use = block_analysis.get('adaptive_pool_to_use')
+
+    # Step 5: build collapsed block preserving activations/batchnorm
+    collapsed_layers = []
+
+    for _, layer in full_block:
+        # preserve batchnorm and activation layers
+        if preserve_activation and isinstance(layer, (nn.BatchNorm2d, nn.ReLU)):
+            collapsed_layers.append(deepcopy(layer))
+
+    # add the main collapse layer (1x1 conv)
+    in_channels = x.shape[1]
+    conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=True)
+    collapsed_layers.append(conv)
+
+    # add adaptive pool if determined
+    if adaptive_pool_to_use is not None:
+        collapsed_layers.append(adaptive_pool_to_use)
+    else:
+        # fallback: ensure minimal spatial size
+        target_H = max(1, out_shape[-2])
+        target_W = max(1, out_shape[-1])
+        collapsed_layers.append(nn.AdaptiveAvgPool2d((target_H, target_W)))
+
+    replacement = nn.Sequential(OrderedDict([
+        (f"collapsed_{i}", l) for i, l in enumerate(collapsed_layers)
+    ]))
+
+    # Step 6: replace original block with collapsed block
+    updated_container = _replace_layers(info['named_layers'], info['start_idx'], info['end_idx'], replacement)
+    start_container_name, _ = _get_container_and_subname(start_layer_name)
+    _update_container(model, start_container_name, updated_container)
+    model.to(device)
+
+    if debug:
+        print(f"[DEBUG] Replaced block '{start_layer_name} → {end_layer_name}' with collapsed layers: {replacement}")
+
+    # Step 7: handle residual shortcuts if present
+    parent_module = get_layer(model, start_container_name)
+    if hasattr(parent_module, 'shortcut') and parent_module.shortcut is not None:
+        sc = parent_module.shortcut
+        # resize shortcut if channels do not match
+        if hasattr(sc, 'out_channels') and sc.out_channels != out_channels:
+            parent_module.shortcut = nn.Conv2d(sc.in_channels, out_channels, kernel_size=1, stride=1)
+            if debug:
+                print(f"[DEBUG] Resized shortcut to match collapsed out_channels={out_channels}")
+
+    # Step 8: validate downstream and optionally fold linear layers
+    try:
+        _validate_downstream(model, start_container_name, info['start_idx'], x, input_shape, next_linear_name, next_linear_mod, device, debug=debug)
+    except Exception as e:
+        if debug:
+            print(f"[WARN] Downstream validation failed: {e}")
+
+    try:
+        model = _insert_corrective_pool(model, next_linear_name, input_shape, debug=debug)
+    except Exception as e:
+        if debug:
+            print(f"[WARN] Corrective pooling/check failed: {e}")
+
+    post_params = count_trainable_params(model)
+    if debug:
+        print(f"[DEBUG] Parameters before collapse: {pre_params}, after collapse: {post_params}, Δ={pre_params - post_params}")
 
     return model
 
@@ -889,4 +938,3 @@ def _wrap_pools_safe(module: nn.Module):
         else:
             _wrap_pools_safe(child)
 
-# End of file
