@@ -495,19 +495,28 @@ def _build_and_replace_block(
     updated_container = _replace_layers(named_layers, start_idx, end_idx, replacement)
     _update_container(model, start_container_name, updated_container)
     model.to(device)
-    # (1) Auto-fix channel mismatches (for RegNet-type residuals)
-    try:
-        _auto_patch_downstream_channels(model, start_container_name, candidate_out, debug=debug)
-    except Exception as e:
-        if debug:
-            print(f"[WARN] Channel auto-patch failed: {e}")
-
-    # (2) Auto-fix next Linear in_features (for VGG-like classifiers)
+    # (1) Try to auto-fix next Linear in_features first (safer)
     try:
         model = _insert_corrective_pool(model, next_linear_name, input_shape, debug=debug)
     except Exception as e:
         if debug:
-            print(f"[WARN] Corrective pool/linear fix failed: {e}")
+            print(f"[WARN] Corrective pool/linear fix (pre-patch) failed: {e}")
+
+    # (2) Auto-patch channel mismatches (for RegNet-type residuals) using orig_out_channels
+    try:
+        _auto_patch_downstream_channels(model, start_container_name, candidate_out, orig_out_channels=orig_out_channels, debug=debug)
+    except Exception as e:
+        if debug:
+            print(f"[WARN] Channel auto-patch failed: {e}")
+
+    # (3) Re-run corrective pool/linear fix as a final check
+    try:
+        model = _insert_corrective_pool(model, next_linear_name, input_shape, debug=debug)
+    except Exception as e:
+        if debug:
+            print(f"[WARN] Corrective pooling/check failed (post-patch): {e}")
+
+
     post_params = count_trainable_params(model)
     if debug:
         print(f"[DEBUG] Params after replacement: {post_params:,}")
@@ -655,65 +664,115 @@ def _auto_patch_downstream_channels(
     model: nn.Module,
     start_container_name: str,
     inserted_out_ch: int,
+    orig_out_channels: Optional[int] = None,
     debug: bool = False
 ):
     """
     Fix downstream channel mismatches caused by block replacement.
-    Only applies to layers *after* the collapsed block.
+    Strategy:
+      - Locate exact named_modules() index of `start_container_name`.
+      - For modules after that index:
+          * If Conv2d.in_channels == orig_out_channels -> replace in_channels -> inserted_out_ch
+          * If BatchNorm2d.num_features == orig_out_channels -> replace num_features -> inserted_out_ch
+      - Attempt to copy/slice existing weights/stats where possible to preserve pretrained values.
     """
+    if orig_out_channels is None and debug:
+        print("[WARN] orig_out_channels not provided to _auto_patch_downstream_channels; using conservative fallback.")
+
+    modules_list = list(model.named_modules())
+
+    # find index of the start container (exact match). If not found, try substring fallback.
+    idx_start = None
+    for i, (n, m) in enumerate(modules_list):
+        if n == start_container_name:
+            idx_start = i
+            break
+    if idx_start is None:
+        for i, (n, m) in enumerate(modules_list):
+            if start_container_name in n:
+                idx_start = i
+                break
+
+    if idx_start is None:
+        if debug:
+            print(f"[WARN] Could not locate start_container '{start_container_name}' in named_modules; skipping auto-patch.")
+        return
+
     patched = 0
-    seen_collapse = False  # flag to start patching after collapsed block
-
-    for name, module in model.named_modules():
-        # Start patching only once we've *passed* the collapse block
-        if start_container_name in name:
-            seen_collapse = True
-            continue
-
-        if not seen_collapse:
-            continue  # skip all earlier layers (e.g., input convs)
-
-        # --- Only patch downstream layers ---
+    # iterate only over modules after the collapsed container
+    for name, module in modules_list[idx_start + 1:]:
+        # Conv2d: patch only if it was expecting the original out-ch (most likely consumer)
         if isinstance(module, nn.Conv2d):
-            if module.in_channels != inserted_out_ch:
+            if orig_out_channels is not None:
+                expected_match = (module.in_channels == orig_out_channels)
+            else:
+                expected_match = (module.in_channels != inserted_out_ch)
+
+            if expected_match and module.in_channels != inserted_out_ch:
                 if debug:
-                    print(
-                        f"[PATCH] Adjusting downstream Conv2d '{name}' "
-                        f"in_channels {module.in_channels} → {inserted_out_ch}"
-                    )
+                    print(f"[PATCH] Adjusting downstream Conv2d '{name}': in_channels {module.in_channels} → {inserted_out_ch}")
                 new_conv = nn.Conv2d(
                     inserted_out_ch,
                     module.out_channels,
                     kernel_size=module.kernel_size,
                     stride=module.stride,
                     padding=module.padding,
-                    bias=module.bias is not None,
+                    dilation=getattr(module, "dilation", (1,1)),
+                    groups=getattr(module, "groups", 1),
+                    bias=(module.bias is not None),
                 )
+                # try to copy/slice weights where possible
+                try:
+                    with torch.no_grad():
+                        old_w = module.weight.data
+                        copy_in = min(old_w.shape[1], new_conv.weight.data.shape[1])
+                        new_conv.weight.data[:, :copy_in, ...] = old_w[:, :copy_in, ...]
+                        if module.bias is not None and new_conv.bias is not None:
+                            new_conv.bias.data.copy_(module.bias.data)
+                except Exception:
+                    if debug:
+                        print(f"[WARN] Could not copy weights for Conv2d '{name}'; leaving new conv randomly initialized.")
                 _set_module_by_path(model, name, new_conv)
                 patched += 1
 
         elif isinstance(module, nn.BatchNorm2d):
-            if module.num_features != inserted_out_ch:
+            if orig_out_channels is not None:
+                expected_match = (module.num_features == orig_out_channels)
+            else:
+                expected_match = (module.num_features != inserted_out_ch)
+
+            if expected_match and module.num_features != inserted_out_ch:
                 if debug:
-                    print(
-                        f"[PATCH] Adjusting downstream BatchNorm2d '{name}' "
-                        f"num_features {module.num_features} → {inserted_out_ch}"
-                    )
+                    print(f"[PATCH] Adjusting downstream BatchNorm2d '{name}': num_features {module.num_features} → {inserted_out_ch}")
                 new_bn = nn.BatchNorm2d(inserted_out_ch)
+                try:
+                    with torch.no_grad():
+                        old_bn = module
+                        copy_n = min(old_bn.num_features, new_bn.num_features)
+                        new_bn.weight.data[:copy_n].copy_(old_bn.weight.data[:copy_n])
+                        new_bn.bias.data[:copy_n].copy_(old_bn.bias.data[:copy_n])
+                        if hasattr(old_bn, "running_mean") and old_bn.running_mean is not None:
+                            new_bn.running_mean[:copy_n].copy_(old_bn.running_mean[:copy_n])
+                        if hasattr(old_bn, "running_var") and old_bn.running_var is not None:
+                            new_bn.running_var[:copy_n].copy_(old_bn.running_var[:copy_n])
+                except Exception:
+                    if debug:
+                        print(f"[WARN] Could not copy BN stats for '{name}'.")
                 _set_module_by_path(model, name, new_bn)
                 patched += 1
 
     if debug and patched:
-        print(f"[DEBUG] Auto-patched {patched} downstream conv/bn layers.")
+        print(f"[DEBUG] Auto-patched {patched} downstream conv/bn layers (matching orig_out_channels={orig_out_channels}).")
 
 def _insert_corrective_pool(model: nn.Module,
                             next_linear_name: str,
                             input_shape: Tuple[int, ...],
                             debug: bool = False) -> nn.Module:
     """
-    Minimal corrective action: capture activation entering next_linear_name.
-    If flattened size != next_linear.in_features, replace that Linear with a new
-    Linear(flat_actual, out_features). This keeps the model runnable with minimal change.
+    More robust corrective action:
+      - If model has 'features' -> 'classifier' split, run model.features(dummy) to capture pre-classifier activation.
+      - Otherwise, attempt to capture activation via a hook on the parent container of the Linear.
+      - Replace Linear(in_features) if flattened size != next_linear.in_features.
     """
     if next_linear_name is None:
         if debug:
@@ -728,9 +787,39 @@ def _insert_corrective_pool(model: nn.Module,
     expected = next_linear_mod.in_features
     dev = next((p.device for p in model.parameters()), torch.device('cpu'))
 
-    # capture the activation that is fed to that linear
+    cap = None
     try:
-        _, cap = _simulate_input_hook(model, next_linear_name, input_shape, device=str(dev))
+        # Special-case common pattern: model.features -> model.classifier (e.g. VGG variants)
+        if hasattr(model, "features") and hasattr(model, "classifier"):
+            dummy = torch.randn(input_shape).to(dev)
+            with torch.no_grad():
+                cap = model.features(dummy)
+            if debug:
+                print("[DEBUG] Captured activation from model.features()")
+        else:
+            # Generic: try to register a forward hook on the parent container
+            parent_path, child_name = next_linear_name.rsplit('.', 1) if '.' in next_linear_name else ("", next_linear_name)
+            if parent_path == "":
+                # Top-level linear — fallback to hooking the linear directly
+                _, cap = _simulate_input_hook(model, next_linear_name, input_shape, device=str(dev))
+            else:
+                parent_mod = get_layer(model, parent_path)
+                captured = {}
+                def hook(mod, inp, out):
+                    # If parent_mod is a Sequential that directly contains the Linear,
+                    # its output is likely the input to the Linear, so capture `out`.
+                    captured['out'] = out.detach()
+                handle = parent_mod.register_forward_hook(hook)
+                try:
+                    dummy = torch.randn(input_shape).to(dev)
+                    with torch.no_grad():
+                        model(dummy)
+                finally:
+                    handle.remove()
+                cap = captured.get('out', None)
+                if cap is None:
+                    # fallback to original hook-on-linear approach
+                    _, cap = _simulate_input_hook(model, next_linear_name, input_shape, device=str(dev))
     except Exception as e:
         if debug:
             print(f"[WARN] Failed to capture activation for '{next_linear_name}': {e}")
