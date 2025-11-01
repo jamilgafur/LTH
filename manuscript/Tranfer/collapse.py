@@ -187,7 +187,11 @@ def patch_skip_connections(model: nn.Module):
 # Core collapse of a single block (simple replacement)
 # -----------------------------------------------------------------------------
 
-def _collapse_block_simple(
+# -----------------------------------------------------------------------------
+# Core collapse of a single block (RegNetX-aware)
+# -----------------------------------------------------------------------------
+
+def _collapse_block(
     model: nn.Module,
     start_layer_name: str,
     end_layer_name: str,
@@ -196,9 +200,9 @@ def _collapse_block_simple(
     debug: bool = False
 ) -> nn.Module:
     """
-    RegNetX-aware collapse: if the target block is a RegNet bottleneck (XBlock),
-    collapse conv1→conv2→conv3 into one equivalent Conv2d. Otherwise, fallback
-    to simple 1x1+pool replacement.
+    Unified collapse entry point.
+    - If RegNet bottleneck detected → collapse conv1→conv3 chain.
+    - Otherwise → call _collapse_block_simple (1×1 + pool).
     """
     print(f"\n[INFO] Collapsing block: {start_layer_name} → {end_layer_name}")
 
@@ -209,27 +213,27 @@ def _collapse_block_simple(
 
     # Detect RegNet-style bottleneck
     is_regnet_bottleneck = all(
-        hasattr(block, attr) for attr in ['conv1', 'bn1', 'conv2', 'bn2', 'conv3', 'bn3']
+        hasattr(block, attr) for attr in ["conv1", "bn1", "conv2", "bn2", "conv3", "bn3"]
     )
 
     if not is_regnet_bottleneck:
+        # Non-RegNet → fallback
         print("[INFO] Non-RegNet block detected — using simple collapse.")
-        return _collapse_block_simple(model, start_layer_name, end_layer_name, input_shape, device=device, debug=debug)
+        return _collapse_block_simple(model, start_layer_name, end_layer_name, input_shape,
+                                      device=device, debug=debug)
 
-    # --- RegNetX block collapse ---
     print("[INFO] Detected RegNet bottleneck block — collapsing conv1→conv3 chain.")
 
     conv1, bn1 = block.conv1, block.bn1
     conv2, bn2 = block.conv2, block.bn2
     conv3, bn3 = block.conv3, block.bn3
 
-    # 1️⃣ Fuse each conv+bn pair
+    # --- fuse each conv+bn pair ---
     def fuse_conv_bn(conv, bn):
         w = conv.weight
         b = conv.bias if conv.bias is not None else torch.zeros(conv.out_channels, device=w.device)
         gamma, beta = bn.weight, bn.bias
-        mean, var = bn.running_mean, bn.running_var
-        eps = bn.eps
+        mean, var, eps = bn.running_mean, bn.running_var, bn.eps
         w_fused = w * (gamma / torch.sqrt(var + eps)).reshape(-1, 1, 1, 1)
         b_fused = beta + (b - mean) * gamma / torch.sqrt(var + eps)
         return w_fused, b_fused
@@ -238,36 +242,31 @@ def _collapse_block_simple(
     w2, b2 = fuse_conv_bn(conv2, bn2)
     w3, b3 = fuse_conv_bn(conv3, bn3)
 
-    # 2️⃣ Compute merged convolution (simplified chain)
-    # Note: exact convolution fusion is very heavy; approximate with learned projection
+    # --- approximate merged conv ---
     in_ch = conv1.in_channels
     out_ch = conv3.out_channels
     collapsed_conv = nn.Conv2d(in_ch, out_ch, kernel_size=1, stride=1, padding=0, bias=True)
 
-    # We can approximate by chaining via mean channel projection
     with torch.no_grad():
         collapsed_conv.weight.zero_()
         collapsed_conv.bias.zero_()
-        # Use heuristic: average over intermediate conv2 filters
-        mid_channels = conv2.out_channels
-        collapsed_conv.weight += w3.mean(dim=1, keepdim=True).mean(dim=2, keepdim=True).mean(dim=3, keepdim=True)
+        collapsed_conv.weight += w3.mean(dim=(1,2,3), keepdim=True)
         collapsed_conv.bias += b3.mean()
 
-    # Replace the block with a small sequential collapsed version
     collapsed_seq = nn.Sequential(OrderedDict([
         ("collapsed_conv", collapsed_conv),
         ("relu", nn.ReLU(inplace=False)),
-        ("pool", nn.AdaptiveAvgPool2d((1, 1)))
+        ("pool", nn.AdaptiveAvgPool2d((1, 1))),
     ]))
 
-    # Perform replacement in parent container
     setattr(container, start_subname, collapsed_seq)
 
     if debug:
-        print(f"[DEBUG] Replaced RegNetX block '{start_layer_name}' with collapsed sequence.")
-        print(f"[DEBUG] in_ch={in_ch}, out_ch={out_ch}, params_reduced ~{sum(p.numel() for p in block.parameters()) - sum(p.numel() for p in collapsed_seq.parameters())}")
+        before = sum(p.numel() for p in block.parameters())
+        after = sum(p.numel() for p in collapsed_seq.parameters())
+        print(f"[DEBUG] RegNet collapse reduced params {before:,} → {after:,} "
+              f"(Δ={before-after:+,})")
 
-    # sanity check
     try:
         x = torch.randn(input_shape).to(device)
         model.to(device)
@@ -281,6 +280,40 @@ def _collapse_block_simple(
     return model
 
 
+# -----------------------------------------------------------------------------
+# Fallback simple collapse (1×1 conv + pool)
+# -----------------------------------------------------------------------------
+
+def _collapse_block_simple(
+    model: nn.Module,
+    start_layer_name: str,
+    end_layer_name: str,
+    input_shape: tuple,
+    device='cpu',
+    debug: bool = False
+) -> nn.Module:
+    """Simple 1×1 + AdaptiveAvgPool collapse used for non-RegNet blocks."""
+    start_container, start_subname = _get_container_and_subname(start_layer_name)
+    container = get_layer(model, start_container)
+    block = getattr(container, start_subname)
+
+    # Infer in/out channels
+    try:
+        first_conv = next(m for m in block.modules() if isinstance(m, nn.Conv2d))
+        last_conv = list(m for m in block.modules() if isinstance(m, nn.Conv2d))[-1]
+        in_ch, out_ch = first_conv.in_channels, last_conv.out_channels
+    except Exception:
+        in_ch = out_ch = getattr(block, "out_channels", 64)
+    collapsed_conv = nn.Conv2d(in_ch, out_ch, kernel_size=1, stride=1, padding=0, bias=True)
+    collapsed_seq = nn.Sequential(OrderedDict([
+        ("conv_1x1", collapsed_conv),
+        ("relu", nn.ReLU(inplace=False)),
+        ("adaptive_pool", nn.AdaptiveAvgPool2d((1, 1))),
+    ]))
+    setattr(container, start_subname, collapsed_seq)
+    if debug:
+        print(f"[DEBUG] Simple collapse done for {start_layer_name}: {in_ch}->{out_ch}")
+    return model
 
 def _find_next_linear(model, end_layer_name, debug):
     modules_list = list(model.named_modules())
