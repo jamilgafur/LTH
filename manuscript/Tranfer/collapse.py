@@ -888,5 +888,3 @@ def _wrap_pools_safe(module: nn.Module):
                     setattr(parent, name, safe)
         else:
             _wrap_pools_safe(child)
-
-# End of file

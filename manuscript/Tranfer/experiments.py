@@ -1,12 +1,14 @@
-# experiment.py
+# experiments.py (updated)
 
 # Standard libraries
 import os
 import glob
 import json
+import time
 from datetime import datetime
 from copy import deepcopy
 from collections import OrderedDict
+import tempfile
 
 # Third-party libraries
 import torch
@@ -30,20 +32,11 @@ from trainer import train_and_evaluate
 from plots import plot_accuracy_loss_curve, plot_results
 
 
-import os
-import json
-import glob
-from datetime import datetime
-import json
-import glob
-import os
-import tempfile
-from datetime import datetime
-
 def ensure_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory, exist_ok=True)
-    
+
+
 # -------------------------
 # Safe JSON Write (Per-job unique, no lock, no SLURM ID)
 # -------------------------
@@ -105,6 +98,41 @@ def merge_all_metrics(base_dir="./runs/metrics", merged_name="merged_metrics.jso
 
     print(f"[✓] Merged {len(json_files)} metrics files → {merged_path}")
     return merged_path
+
+
+# -------------------------
+# Helper: normalize collapse_range -> list of 2-tuples
+# -------------------------
+def _make_compression_set(collapse_range):
+    """
+    Normalize collapse_range into a flat list of (start_name, end_name) tuples.
+    Acceptable inputs:
+      - None
+      - ("a","b")
+      - ["a","b"]  (2-element list)
+      - [("a","b"), ("c","d")]
+    Returns None when collapse_range is falsy.
+    """
+    if not collapse_range:
+        return None
+
+    # Single pair (tuple or 2-element list of strings)
+    if isinstance(collapse_range, (tuple, list)) and len(collapse_range) == 2 and all(isinstance(x, str) for x in collapse_range):
+        return [(collapse_range[0], collapse_range[1])]
+
+    # Already a list of pairs
+    if isinstance(collapse_range, list):
+        compression_set = []
+        for idx, item in enumerate(collapse_range):
+            if not (isinstance(item, (tuple, list)) and len(item) == 2):
+                raise ValueError(f"collapse_range list element #{idx} must be a 2-tuple/list of strings, got: {item!r}")
+            if not all(isinstance(x, str) for x in item):
+                raise ValueError(f"collapse_range list element #{idx} must contain strings, got: {item!r}")
+            compression_set.append((item[0], item[1]))
+        return compression_set
+
+    raise ValueError("collapse_range must be None, a 2-tuple, or a list of 2-tuples")
+
 
 # -------------------------
 # Modified run_experiment (calls merge_all_metrics at the end)
@@ -224,9 +252,11 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     print(f"[✓] Experiment '{exp_name}' completed. Checkpoints and metrics saved.")
     return data
 
+
 # =====================================================
 # === Experiment Entry Points (JF & Kevin) ===
 # =====================================================
+
 
 def run_jf_experiment(
     experiments,
@@ -253,11 +283,12 @@ def run_jf_experiment(
     print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
 
     # Collapse if requested
-    if collapse_range:
-        print(f"[•] Collapsing range {collapse_range} for {exp_name}")
+    compression_set = _make_compression_set(collapse_range)
+    if compression_set:
+        print(f"[•] Collapsing ranges {compression_set} for {exp_name}")
         base_model = collapse_only(
             model=base_model,
-            compression_set=[collapse_range],                   # <- changed
+            compression_set=compression_set,
             input_shape=model_kwargs['one_batch'].shape,
             device=device,
             dry_run=False,
@@ -283,6 +314,7 @@ def run_jf_experiment(
     )
     return base_model
 
+
 def run_kevin_experiment(
     experiments,
     model_path_000,
@@ -307,11 +339,12 @@ def run_kevin_experiment(
     print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
 
     # Collapse if requested
-    if collapse_range:
-        print(f"[•] Collapsing range {collapse_range} for {exp_name}")
+    compression_set = _make_compression_set(collapse_range)
+    if compression_set:
+        print(f"[•] Collapsing ranges {compression_set} for {exp_name}")
         base_model = collapse_only(
             model=base_model,
-            compression_set=[collapse_range],                   # <- changed
+            compression_set=compression_set,
             input_shape=model_kwargs['one_batch'].shape,
             device=device,
             dry_run=False,
