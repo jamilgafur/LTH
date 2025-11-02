@@ -133,7 +133,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     model.to(device)
     if not torch.cuda.is_available():
         print("[!] Warning: CUDA not available.")
-        
+        quit()
 
     data = train_and_evaluate(
         model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs
