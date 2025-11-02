@@ -6,8 +6,9 @@ from collections import OrderedDict
 from uuid import uuid4
 from typing import Optional, Sequence, Tuple, Dict, Any
 from copy import deepcopy
-import math
+import copy
 from utils import count_trainable_params, layer_stats
+import math
 
 # -----------------------------------------------------------------------------
 # Utilities
@@ -135,11 +136,7 @@ def _simulate_input_hook(model: nn.Module, target_layer_path: str, input_shape: 
     captured = {}
     def hook(module, inp, out):
         # store a detached copy of the input to the target module
-        # input can be tuple: use first element
-        if isinstance(inp, tuple):
-            captured['in'] = inp[0].detach().cpu()
-        else:
-            captured['in'] = inp.detach().cpu()
+        captured['in'] = inp[0].detach()
     handle = target_module.register_forward_hook(hook)
     try:
         with torch.no_grad():
@@ -148,8 +145,7 @@ def _simulate_input_hook(model: nn.Module, target_layer_path: str, input_shape: 
         handle.remove()
     if 'in' not in captured:
         raise RuntimeError(f"Failed to capture activation at {target_layer_path}.")
-    # return tensors on the requested device (caller often expects device matching model)
-    return dummy_input, captured['in'].to(device)
+    return dummy_input, captured['in']
 
 
 # -----------------------------------------------------------------------------
@@ -188,35 +184,7 @@ def patch_skip_connections(model: nn.Module):
 
 
 # -----------------------------------------------------------------------------
-# Helpers: build a safe BN for `num_features`, copying overlap from src_bn when possible
-# -----------------------------------------------------------------------------
-def _make_bn_with_safe_copy(src_bn: Optional[nn.BatchNorm2d], num_features: int) -> nn.BatchNorm2d:
-    """
-    Create a new BatchNorm2d with `num_features`. If `src_bn` is provided,
-    copy overlapping parameters / running_stats for indices that fit.
-    """
-    new_bn = nn.BatchNorm2d(num_features)
-    if src_bn is None:
-        return new_bn
-    # copy weights/bias and running stats for the overlapping prefix
-    copy_n = min(num_features, getattr(src_bn, 'num_features', 0))
-    if copy_n > 0:
-        with torch.no_grad():
-            # weight and bias
-            if hasattr(src_bn, 'weight') and src_bn.weight is not None:
-                new_bn.weight[:copy_n].data.copy_(src_bn.weight[:copy_n].data[:copy_n])
-            if hasattr(src_bn, 'bias') and src_bn.bias is not None:
-                new_bn.bias[:copy_n].data.copy_(src_bn.bias[:copy_n].data[:copy_n])
-            # running_mean / running_var
-            if hasattr(src_bn, 'running_mean'):
-                new_bn.running_mean[:copy_n].data.copy_(src_bn.running_mean[:copy_n].data[:copy_n])
-            if hasattr(src_bn, 'running_var'):
-                new_bn.running_var[:copy_n].data.copy_(src_bn.running_var[:copy_n].data[:copy_n])
-    return new_bn
-
-
-# -----------------------------------------------------------------------------
-# Core collapse of a single block (safe replacement)
+# Core collapse of a single block (simple replacement)
 # -----------------------------------------------------------------------------
 
 
@@ -226,182 +194,76 @@ def _collapse_block(
     end_layer_name: str,
     input_shape: tuple,
     device='cpu',
-    debug: bool = False,
-    preserve_activation: bool = True
+    debug: bool = False
 ) -> nn.Module:
     """
-    Collapse layers between start_layer_name and end_layer_name (inclusive) while:
-      - Preserving useful semantics but avoid copying BNs with mismatched channels
-      - Prevent parameter inflation (fallback to lighter replacement)
-      - Use actual block output shape (trace) to determine pooling
+    Collapse layers between start_layer_name and end_layer_name (inclusive)
+    by replacing them with: Conv2d(1x1) -> AdaptiveAvgPool2d(H_last,W_last).
     """
-    if debug:
-        print(f"\n[INFO] Collapsing block: {start_layer_name} → {end_layer_name}")
+    print(f"\n[INFO] Collapsing block: {start_layer_name} → {end_layer_name}")
 
+    # locate block
     info = _locate_and_prepare_block(model, start_layer_name, end_layer_name)
-    full_block = info['full_block']
-    conv_layers = info['conv_layers']
-    layer_type = info['layer_type']
 
-    # Step: capture activation entering the start layer (on device)
-    x, pre_params = _capture_preblock_activation(model, start_layer_name, input_shape, conv_layers, layer_type, device, debug)
+    # capture activation entering the start layer
+    x, pre_params = _capture_preblock_activation(
+        model, start_layer_name, input_shape, info["conv_layers"], info["layer_type"], device, debug
+    )
 
-    # Step: next linear (for classifier alignment)
+    # find next linear (for classifier alignment later)
     next_linear_name, next_linear_mod = _find_next_linear(model, end_layer_name, debug)
 
-    # Step: analyze block output by actually running the captured activation through the original block
-    block_analysis = _analyze_block_output(model, full_block, conv_layers, info['named_layers'], info['end_idx'],
-                                          layer_type, x, next_linear_mod, debug)
+    # analyze to discover last layer output shape and channels
+    block_analysis = _analyze_block_output(
+        model,
+        info["full_block"],
+        info["conv_layers"],
+        info["named_layers"],
+        info["end_idx"],
+        info["layer_type"],
+        x,
+        next_linear_mod,
+        debug
+    )
 
-    out_channels = block_analysis.get('out_channels')
-    out_shape = block_analysis.get('out_shape')
-    adaptive_pool_to_use = block_analysis.get('adaptive_pool_to_use')
-    pool_layer = block_analysis.get('pool_layer', None)
-    last_bn = block_analysis.get('last_bn', None)
-
-    # Build replacement in a safe way:
-    # - prefer: Conv1x1(in_channels -> out_channels) -> BN(out_channels) -> ReLU (if existed) -> AdaptivePool(H,W)
-    # - but only commit conv if replacement params <= params_of_original_block
-    in_channels = int(x.shape[1])
-    if out_channels is None:
-        # fallback: use last conv's out_channels if available in conv_layers
-        if conv_layers and hasattr(conv_layers[-1], 'out_channels'):
-            out_channels = conv_layers[-1].out_channels
-        else:
-            raise RuntimeError("Could not determine out_channels for collapsed block.")
-
-    # Decide pooling target (prefer computed heuristic but use actual out_shape if present)
-    if adaptive_pool_to_use is not None:
-        chosen_pool = adaptive_pool_to_use
-    else:
-        # if out_shape available, set target to its HxW
-        if out_shape is not None and len(out_shape) >= 4:
-            target_H, target_W = int(out_shape[-2]), int(out_shape[-1])
-            # If next linear exists, prefer matching that linear's flat size
-            if next_linear_mod is not None:
-                linear_expected = next_linear_mod.in_features
-                # compute ideal hw = linear_expected // out_channels
-                if out_channels > 0:
-                    ideal_hw = max(1, linear_expected // out_channels)
-                    # pick integer factorization closest to sqrt
-                    if ideal_hw > 1:
-                        tH = int(round(math.sqrt(ideal_hw)))
-                        tW = max(1, ideal_hw // max(1, tH))
-                        target_H, target_W = max(1, min(target_H, tH)), max(1, min(target_W, tW))
-            chosen_pool = nn.AdaptiveAvgPool2d((target_H, target_W))
-        else:
-            # fallback to (1,1)
-            chosen_pool = nn.AdaptiveAvgPool2d((1, 1))
-
-    # check whether original block had any ReLU (useful to add after BN)
-    had_relu = any(isinstance(m, nn.ReLU) for _, m in full_block)
-
-    # create BN for out_channels: attempt to copy last BN in block if exists and sizes compatible
-    last_bn_module = None
-    for _, m in reversed(full_block):
-        if isinstance(m, nn.BatchNorm2d):
-            last_bn_module = m
-            break
-    bn_for_replacement = _make_bn_with_safe_copy(last_bn_module, out_channels) if last_bn_module is not None else None
-
-    # Build candidate replacement
-    conv_candidate = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=True)
-    replacement_layers = OrderedDict()
-    replacement_layers['conv_1x1'] = conv_candidate
-    if bn_for_replacement is not None:
-        replacement_layers['bn'] = bn_for_replacement
-    if had_relu:
-        replacement_layers['relu'] = nn.ReLU(inplace=False)
-    replacement_layers['adaptive_pool'] = chosen_pool
-    replacement_seq = nn.Sequential(replacement_layers)
-
-    # compute params: original block vs replacement
-    orig_block_params = _count_params_for_block(full_block)
-    # quick param counting for replacement
-    repl_params = sum(p.numel() for p in replacement_seq.parameters() if p.requires_grad)
-
-    if debug:
-        print(f"[DEBUG] orig_block_params={orig_block_params:,}, replacement_params={repl_params:,} (conv {in_channels}->{out_channels})")
-        print(f"[DEBUG] chosen_pool={chosen_pool}, had_relu={had_relu}")
-
-    # If replacement would increase params, fallback to a lighter replacement: pooling-only
-    if repl_params > orig_block_params:
-        if debug:
-            print(f"[WARN] Replacement would increase params ({repl_params:,} > {orig_block_params:,}). Falling back to pool-only replacement.")
-        # pool-only replacement (no conv), that will preserve forward shape (but might require corrective linear)
-        pool_only = nn.Sequential(OrderedDict([
-            ("adaptive_pool", chosen_pool)
-        ]))
-        final_replacement = pool_only
-    else:
-        final_replacement = replacement_seq
-
-    # perform replacement in container
-    updated_container = _replace_layers(info['named_layers'], info['start_idx'], info['end_idx'], final_replacement)
-    start_container_name, _ = _get_container_and_subname(start_layer_name)
-    _update_container(model, start_container_name, updated_container)
-    model.to(device)
-
-    if debug:
-        print(f"[DEBUG] Replaced block '{start_layer_name} → {end_layer_name}' with: {final_replacement}")
-        print(f"[DEBUG] Params before collapse: {pre_params:,}, after tentative collapse: {count_trainable_params(model):,}")
-
-    # After replacement, make sure skip connections are safe and ReLUs not in-place
-    try:
-        patch_skip_connections(model)
-    except Exception:
-        pass
-    disable_inplace_relu(model)
-
-    # downstream validation: run forward from captured activation through replacement and immediate next modules
-    try:
-        _validate_downstream(model, start_container_name, info['start_idx'], x, input_shape, next_linear_name, next_linear_mod, device, debug=debug)
-    except Exception as e:
-        if debug:
-            print(f"[WARN] Downstream validation failed: {e}")
-
-    # Correct classifier linear if necessary
-    try:
-        model = _insert_corrective_pool(model, next_linear_name, input_shape, debug=debug)
-    except Exception as e:
-        if debug:
-            print(f"[WARN] Corrective pooling/check failed: {e}")
-
-    post_params = count_trainable_params(model)
-    if debug:
-        print(f"[DEBUG] Parameters before collapse: {pre_params:,}, after collapse: {post_params:,}, Δ={pre_params - post_params}")
+    # replace with simple conv+adaptive pool
+    model = _build_and_replace_block(
+        model,
+        start_layer_name,
+        input_shape,
+        info,
+        x,
+        pre_params,
+        next_linear_name,
+        next_linear_mod,
+        block_analysis,
+        device,
+        debug
+    )
 
     return model
 
 
 def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
-    if start_layer_name is None or end_layer_name is None:
-        raise ValueError("start/end layer names required")
-
-    if start_layer_name == "" or end_layer_name == "":
-        raise ValueError("start/end layer names must be non-empty strings")
-
-    if '.' not in start_layer_name and '.' not in end_layer_name:
-        # still OK, they may refer to children of root
-        pass
-
+    print(f"[DEBUG] Locating and preparing block: start_layer_name='{start_layer_name}', end_layer_name='{end_layer_name}'")
     start_container_name, start_subname = _get_container_and_subname(start_layer_name)
     end_container_name, end_subname = _get_container_and_subname(end_layer_name)
-    if start_container_name == "":
-        container = model
-    else:
-        container = get_layer(model, start_container_name)
+    print(f"[DEBUG] Start container: {start_container_name}, end container: {end_container_name}")
+    container = get_layer(model, start_container_name)
     named_layers = list(container.named_children())
     start_idx, end_idx = _find_layer_indices(named_layers, start_subname, end_subname)
 
     if start_idx is None or end_idx is None:
         raise ValueError(f"Could not find start/end layers '{start_layer_name}'/'{end_layer_name}'.")
 
+    print(f"[DEBUG] Found indices: start_idx={start_idx}, end_idx={end_idx}")
     full_block = named_layers[start_idx:end_idx + 1]
+    print(f"[DEBUG] Full block: {full_block}")
     conv_layers = [layer for _, layer in full_block if isinstance(layer, (nn.Conv2d, nn.Linear))]
     if not conv_layers:
         raise ValueError("No Conv2d/Linear layers found in block to collapse.")
 
+    print(f"[DEBUG] Conv layers in block: {conv_layers}")
     layer_type = type(conv_layers[0])
     if not all(isinstance(l, layer_type) for l in conv_layers):
         raise ValueError("Cannot collapse mixed layer types inside one block.")
@@ -449,7 +311,6 @@ def _find_next_linear(model, end_layer_name, debug):
             break
 
     if idx_end_global is None:
-        # try endswith fallback
         for i, (n, m) in enumerate(modules_list):
             if n.endswith(end_layer_name):
                 idx_end_global = i
@@ -477,86 +338,179 @@ def _find_next_linear(model, end_layer_name, debug):
 
 
 def _analyze_block_output(model, full_block, conv_layers, named_layers, end_idx, layer_type, x, next_linear_mod, debug):
-    """
-    Run the captured activation `x` through the original block to determine the
-    block's actual output shape and detect the last BN (if any). Returns a dict
-    including out_shape, out_channels, adaptive_pool_to_use (if heuristic needed),
-    and last_bn (module) to allow safer copying.
-    """
-    last_conv = None
-    last_bn = None
     with torch.no_grad():
         y = x.clone()
-        for nm, layer in full_block:
-            try:
-                y = layer(y)
-            except Exception:
-                # in case module expects different shape, try to skip (defensive)
-                try:
-                    # attempt to call layer on a fresh zero input of appropriate rank
-                    if isinstance(layer, nn.Conv2d):
-                        dummy = torch.zeros_like(y)
-                        y = layer(dummy)
-                    else:
-                        y = layer(y)
-                except Exception:
-                    # give up - use current y
-                    break
+        last_conv = None
+        for _, layer in full_block:
+            y = layer(y)
             if isinstance(layer, nn.Conv2d):
                 last_conv = layer
-            if isinstance(layer, nn.BatchNorm2d):
-                last_bn = layer
-
     out_shape = tuple(y.shape)
-    out_channels = None
-    if last_conv is not None:
-        out_channels = last_conv.out_channels
-    elif layer_type == nn.Conv2d and conv_layers:
-        out_channels = conv_layers[-1].out_channels
-
+    out_channels = (
+        last_conv.out_channels if last_conv is not None
+        else (conv_layers[-1].out_channels if layer_type == nn.Conv2d else None)
+    )
     if debug:
         print(f"[DEBUG] Full block output shape: {out_shape}, out_channels={out_channels}")
 
-    # find pooling in original block (if any)
     pool_layer = next((m for _, m in reversed(full_block)
                        if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))), None)
     if debug and pool_layer is not None:
         print(f"[DEBUG] Detected pool in original block: {type(pool_layer).__name__}")
 
-    linear_in_features_heuristic = None
-    if next_linear_mod is not None:
-        linear_in_features_heuristic = next_linear_mod.in_features
-        if debug:
-            print(f"[DEBUG] Heuristic linear_in_features = {linear_in_features_heuristic}")
+    linear_in_features_heuristic = next_linear_mod.in_features if next_linear_mod else None
+    if debug:
+        print(f"[DEBUG] Heuristic linear_in_features = {linear_in_features_heuristic}")
 
-    # heuristically propose an adaptive pool to match classifier linear if mismatch
     adaptive_pool_to_use = None
     if layer_type == nn.Conv2d and linear_in_features_heuristic is not None and out_channels:
         expected_hw = max(1, linear_in_features_heuristic // out_channels)
-        if out_shape is not None and len(out_shape) >= 4:
-            cur_H, cur_W = out_shape[-2], out_shape[-1]
-            cur_hw = cur_H * cur_W
+        cur_H, cur_W = out_shape[-2], out_shape[-1]
+        cur_hw = cur_H * cur_W
+        if debug:
+            print(f"[DEBUG] expected_hw={expected_hw}, current_hw={cur_hw} (HxW={cur_H}x{cur_W})")
+
+        # We keep the simple logic: compute appropriate adaptive pool shape if mismatch.
+        if cur_hw != expected_hw:
+            target_H = int(round(math.sqrt(expected_hw))) if expected_hw > 1 else 1
+            target_W = max(1, expected_hw // target_H)
+            adaptive_pool_to_use = nn.AdaptiveAvgPool2d((target_H, target_W))
             if debug:
-                print(f"[DEBUG] expected_hw={expected_hw}, current_hw={cur_hw} (HxW={cur_H}x{cur_W})")
-            if cur_hw != expected_hw:
-                # pick reasonable H/W factors
-                if expected_hw > 1:
-                    tH = int(round(math.sqrt(expected_hw)))
-                    tW = max(1, expected_hw // max(1, tH))
-                else:
-                    tH, tW = 1, 1
-                adaptive_pool_to_use = nn.AdaptiveAvgPool2d((tH, tW))
-                if debug:
-                    print(f"[DEBUG] Plan to suggest AdaptiveAvgPool2d({tH},{tW}) (heuristic)")
+                print(f"[DEBUG] Plan to suggest AdaptiveAvgPool2d({target_H},{target_W}) (heuristic)")
+
+    shortcut_out_channels = None
+    for nm, mod in model.named_modules():
+        if hasattr(mod, 'shortcut') and isinstance(mod.shortcut, nn.Module):
+            first_conv = next((m for m in mod.shortcut.modules() if isinstance(m, nn.Conv2d)), None)
+            if first_conv is not None:
+                shortcut_out_channels = first_conv.out_channels
+                break
+    if debug and shortcut_out_channels is not None:
+        print(f"[DEBUG] Detected shortcut_out_channels = {shortcut_out_channels}")
 
     return {
         "out_shape": out_shape,
         "out_channels": out_channels,
         "pool_layer": pool_layer,
         "adaptive_pool_to_use": adaptive_pool_to_use,
-        "last_bn": last_bn,
+        "shortcut_out_channels": shortcut_out_channels,
         "linear_in_features_heuristic": linear_in_features_heuristic,
     }
+
+
+def _build_and_replace_block(
+    model,
+    start_layer_name,
+    input_shape,
+    info,
+    x,
+    pre_params,
+    next_linear_name,
+    next_linear_mod,
+    block_analysis,
+    device,
+    debug,
+):
+    """
+    Simple replacement: remove layers start..end and insert:
+        Conv2d(in_ch = channels of x, out_ch = out_channels of last removed, kernel_size=1)
+        AdaptiveAvgPool2d(target_H, target_W)  # matches last layer's output HxW
+    Minimal other mutation.
+    """
+    if debug:
+        print(f"[DEBUG] Building and replacing block starting at '{start_layer_name}' (simple replacement)")
+
+    # bookkeeping from info
+    named_layers = info["named_layers"]
+    start_idx, end_idx = info["start_idx"], info["end_idx"]
+
+    # obtain desired in/out channels and target H/W from block_analysis
+    out_shape = block_analysis.get("out_shape", None)
+    out_channels = block_analysis.get("out_channels", None)
+
+    if out_shape is None or out_channels is None:
+        raise RuntimeError("block_analysis missing out_shape/out_channels required for simple replacement")
+
+    # compute target spatial dims (H_last, W_last)
+    # out_shape expected like (B, C, H, W) for conv blocks
+    if len(out_shape) >= 4:
+        target_H, target_W = int(out_shape[-2]), int(out_shape[-1])
+    else:
+        # fallback to (1,1)
+        target_H, target_W = 1, 1
+
+    # input channels = channels of captured activation x
+    if x is None:
+        raise RuntimeError("Captured activation `x` is required for this simple replacement")
+    if x.ndim < 2:
+        raise RuntimeError("Captured activation `x` has unexpected shape")
+
+    in_channels = int(x.shape[1])
+
+    if debug:
+        print(f"[DEBUG] Replacement conv: in_channels={in_channels}, out_channels={out_channels}, pool_target=({target_H},{target_W})")
+
+    # Build the minimal replacement block: 1x1 conv -> adaptive pool
+    conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=True)
+    pool = nn.AdaptiveAvgPool2d((target_H, target_W))
+    replacement = nn.Sequential(OrderedDict([
+        ("conv_1x1", conv),
+        ("adaptive_pool", pool),
+    ]))
+
+    # Replace start..end with our replacement
+    start_container_name, _ = _get_container_and_subname(start_layer_name)
+    updated_container = _replace_layers(named_layers, start_idx, end_idx, replacement)
+    _update_container(model, start_container_name, updated_container)
+    model.to(device)
+
+    post_params = count_trainable_params(model)
+    if debug:
+        print(f"[DEBUG] Params after simple replacement: {post_params:,}")
+        print(f"[INFO] ΔParams = {pre_params - post_params:+,}")
+
+    # Quick validation: run the replacement using the captured activation `x`
+    try:
+        dev = next((p.device for p in model.parameters()), torch.device('cpu'))
+        rep_module = get_layer(model, start_container_name)
+        # get the inserted collapsed child (best-effort)
+        child = None
+        for nm, m in rep_module.named_children():
+            if nm.startswith("collapsed_") or (isinstance(m, nn.Sequential) and any(k in dict(m.named_children()) for k in ("conv_1x1", "adaptive_pool"))):
+                child = m
+                break
+        if child is None:
+            # fallback: take the element at start_idx if sequential
+            if isinstance(updated_container, nn.Sequential) and 0 <= start_idx < len(updated_container):
+                child = updated_container[start_idx]
+        if child is not None:
+            with torch.no_grad():
+                test_x = x.clone().to(dev)
+                out = child(test_x)
+                if debug:
+                    print(f"[DEBUG] Replacement forward ok — output shape {tuple(out.shape)}")
+    except Exception as e:
+        # revert not attempted here; just warn
+        print(f"[WARN] Validation of replacement forward failed: {e}")
+
+    # downstream validation using captured activation
+    try:
+        _validate_downstream(model, start_container_name, start_idx, x, input_shape, next_linear_name, next_linear_mod, device, debug=debug)
+    except Exception as e:
+        print(f"[WARN] Downstream validation failed after collapsing '{start_layer_name}': {e}")
+
+    # optional classifier corrective action
+    try:
+        model = _insert_corrective_pool(model, next_linear_name, input_shape, debug=debug)
+    except Exception as e:
+        if debug:
+            print(f"[WARN] Corrective pooling/check failed: {e}")
+
+    # warn if params increased (shouldn't with this simple policy)
+    if post_params > pre_params:
+        print("[WARN] ⚠ Collapsed block has MORE parameters than before! Investigate collapse policy.")
+
+    return model
 
 
 def _validate_downstream(
@@ -664,9 +618,9 @@ def _insert_corrective_pool(model: nn.Module,
                             input_shape: Tuple[int, ...],
                             debug: bool = False) -> nn.Module:
     """
-    Capture activation entering next_linear_name.
+    Minimal corrective action: capture activation entering next_linear_name.
     If flattened size != next_linear.in_features, replace that Linear with a new
-    Linear(flat_actual, out_features). Handles top-level modules safely.
+    Linear(flat_actual, out_features). This keeps the model runnable with minimal change.
     """
     if next_linear_name is None:
         if debug:
@@ -683,8 +637,7 @@ def _insert_corrective_pool(model: nn.Module,
 
     # capture the activation that is fed to that linear
     try:
-        # pass the same device object to the hook routine
-        _, cap = _simulate_input_hook(model, next_linear_name, input_shape, device=dev)
+        _, cap = _simulate_input_hook(model, next_linear_name, input_shape, device=str(dev))
     except Exception as e:
         if debug:
             print(f"[WARN] Failed to capture activation for '{next_linear_name}': {e}")
@@ -701,23 +654,22 @@ def _insert_corrective_pool(model: nn.Module,
 
     # Replace Linear with one that accepts flat_actual
     parent_path, child_name = next_linear_name.rsplit('.', 1) if '.' in next_linear_name else ("", next_linear_name)
+    if parent_path == "":
+        raise RuntimeError("Cannot safely replace a top-level Linear without a parent container.")
+
     new_linear = nn.Linear(flat_actual, next_linear_mod.out_features, bias=(next_linear_mod.bias is not None))
 
-    if parent_path == "":
-        # Top-level module: replace directly in model
-        setattr(model, child_name, new_linear)
+    parent_mod = get_layer(model, parent_path)
+    if isinstance(parent_mod, nn.Sequential):
+        new_od = OrderedDict()
+        for n, m in parent_mod.named_children():
+            if n == child_name:
+                new_od[n] = new_linear
+            else:
+                new_od[n] = m
+        _update_container(model, parent_path, nn.Sequential(new_od))
     else:
-        parent_mod = get_layer(model, parent_path)
-        if isinstance(parent_mod, nn.Sequential):
-            new_od = OrderedDict()
-            for n, m in parent_mod.named_children():
-                if n == child_name:
-                    new_od[n] = new_linear
-                else:
-                    new_od[n] = m
-            _update_container(model, parent_path, nn.Sequential(new_od))
-        else:
-            setattr(parent_mod, child_name, new_linear)
+        setattr(parent_mod, child_name, new_linear)
 
     if debug:
         print(f"[WARN] Replaced Linear '{next_linear_name}' in_features {expected} -> {flat_actual} to maintain forward pass.")
@@ -870,40 +822,58 @@ class _SafePool(nn.Module):
     """
     Wrapper that attempts to apply the wrapped pooling module; if the input
     spatial dimensions are too small or the pool raises, we fall back safely:
+      - For non-adaptive pools: if kernel > input dim, uses AdaptiveAvgPool2d to
+        produce a minimal valid output (>=1).
+      - If anything else fails, returns the input (identity).
+    This avoids 'Output size is too small' runtime errors.
     """
     def __init__(self, pool_module: nn.Module):
         super().__init__()
         self.pool = pool_module
 
     def forward(self, x):
+        # guard shape sanity
         try:
             H, W = x.shape[-2], x.shape[-1]
         except Exception:
+            # not a 4D tensor (some unexpected case) -> try to apply pool and catch exceptions
             try:
                 return self.pool(x)
             except Exception:
                 return x
 
         try:
+            # For standard pools, check kernel size
             if isinstance(self.pool, (nn.MaxPool2d, nn.AvgPool2d)):
                 k = self.pool.kernel_size
                 if isinstance(k, tuple):
                     kh, kw = k
                 else:
                     kh = kw = k
+                # if kernel/stride would underflow, use adaptive avg pool to safe size
                 if kh > H or kw > W or H <= 0 or W <= 0:
+                    # choose a safe target HxW (at least 1)
                     target_H = max(1, min(H, kh) if H > 0 else 1)
                     target_W = max(1, min(W, kw) if W > 0 else 1)
                     return F.adaptive_avg_pool2d(x, (target_H, target_W))
+
+            # Try to apply original pool
             out = self.pool(x)
+
+            # post-check: if shape became invalid, return identity
             if out.shape[-2] < 1 or out.shape[-1] < 1:
                 return x
             return out
         except Exception:
+            # Any failure -> safe fallback
             return x
 
 
 def _wrap_pools_safe(module: nn.Module):
+    """
+    Recursively replace pooling modules in `module` with _SafePool wrappers.
+    This mutates the module in-place.
+    """
     for name, child in list(module.named_children()):
         if isinstance(child, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d, getattr(nn, "AdaptiveMaxPool2d", nn.AdaptiveAvgPool2d))):
             safe = _SafePool(child)
@@ -918,3 +888,5 @@ def _wrap_pools_safe(module: nn.Module):
                     setattr(parent, name, safe)
         else:
             _wrap_pools_safe(child)
+
+# End of file
