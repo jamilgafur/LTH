@@ -1,5 +1,5 @@
-Namespace(model='VGG16', dataset='Cifar10', epochs=30, pretrain=10, experiment='Stage 4', post_compress_epochs=1, imp=True, JF=False, Kevin=True)
-has GPU: False
+Namespace(model='VGG16', dataset='Cifar10', epochs=1, pretrain=1, experiment='Stage 4', post_compress_epochs=0, imp=True, JF=False, Kevin=True)
+has GPU: True
 Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
 Loading CIFAR-10 data...
 CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
@@ -81,39 +81,10 @@ Estimated Total Size (MB): 2439.40
 ============================================================
 [INFO] Initialized Model: None
 [•] Collapsing ranges [('features.conv_8', 'features.conv_10')] for Stage 4
-[INFO] Starting collapse_only; params before = 33,646,666
 
-[INFO] Processing collapse 'collapse_0': features.conv_8 -> features.conv_10
-[INFO] Collapsing block: name: 'collapse_0', start: 'features.conv_8', end: 'features.conv_10'
-
-[INFO] Collapsing block: features.conv_8 → features.conv_10
-[DEBUG] Locating and preparing block: start_layer_name='features.conv_8', end_layer_name='features.conv_10'
-[DEBUG] Start container: features, end container: features
-[DEBUG] Found indices: start_idx=24, end_idx=30
-[DEBUG] Full block: [('conv_8', Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))), ('relu_8', ReLU(inplace=True)), ('bn_8', BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)), ('conv_9', Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))), ('relu_9', ReLU(inplace=True)), ('bn_9', BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)), ('conv_10', Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)))]
-[DEBUG] Conv layers in block: [Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))]
-[DEBUG] Captured activation before start: (512, 256, 4, 4)
-[DEBUG] Params before collapse: 33,646,666
-[DEBUG] Next Linear detected: name='classifier.fc_1', module=Linear(in_features=512, out_features=4096, bias=True)
-[DEBUG] Full block output shape: (512, 512, 4, 4), out_channels=512
-[DEBUG] Heuristic linear_in_features = 512
-[DEBUG] expected_hw=1, current_hw=16 (HxW=4x4)
-[DEBUG] Plan to suggest AdaptiveAvgPool2d(1,1) (heuristic)
-[DEBUG] Building and replacing block starting at 'features.conv_8' (simple replacement)
-[DEBUG] Replacement conv: in_channels=256, out_channels=512, pool_target=(4,4)
-[DEBUG] Params after simple replacement: 27,876,426
-[INFO] ΔParams = +5,770,240
-[DEBUG] Replacement forward ok — output shape (512, 512, 4, 4)
-[DEBUG] Downstream validation for container 'features' completed successfully.
-[DEBUG] next_linear 'classifier.fc_1': expected in_features=512, actual_flat=512
-[DEBUG] Classifier matches expected flattened size — no change.
-[INFO] Replaced 13 in-place ReLU(s) with out-of-place variants.
-[DEBUG] Wrapped pooling layers with _SafePool to avoid underflow crashes.
-
-[INFO] Collapse finished.
-[INFO] Parameters before: 33,646,666
-[INFO] Parameters after : 27,876,426
-[INFO] ΔParams = +5,770,240 (should be >= 0)
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
 
 Layer-wise zero parameter stats:
 
@@ -145,8 +116,16 @@ features.conv_7.weight: 0/589824 zeros (0.00%)
 features.conv_7.bias: 0/256 zeros (0.00%)
 features.bn_7.weight: 0/256 zeros (0.00%)
 features.bn_7.bias: 0/256 zeros (0.00%)
-features.collapsed_d3dcbf89.conv_1x1.weight: 0/131072 zeros (0.00%)
-features.collapsed_d3dcbf89.conv_1x1.bias: 0/512 zeros (0.00%)
+features.conv_8.weight: 0/1179648 zeros (0.00%)
+features.conv_8.bias: 0/512 zeros (0.00%)
+features.bn_8.weight: 0/512 zeros (0.00%)
+features.bn_8.bias: 0/512 zeros (0.00%)
+features.conv_9.weight: 1/2359296 zeros (0.00%)
+features.conv_9.bias: 0/512 zeros (0.00%)
+features.bn_9.weight: 0/512 zeros (0.00%)
+features.bn_9.bias: 0/512 zeros (0.00%)
+features.conv_10.weight: 0/2359296 zeros (0.00%)
+features.conv_10.bias: 0/512 zeros (0.00%)
 features.bn_10.weight: 0/512 zeros (0.00%)
 features.bn_10.bias: 0/512 zeros (0.00%)
 features.conv_11.weight: 0/2359296 zeros (0.00%)
@@ -167,8 +146,155 @@ classifier.fc_2.weight: 2/16777216 zeros (0.00%)
 classifier.fc_2.bias: 0/4096 zeros (0.00%)
 classifier.fc_3.weight: 0/40960 zeros (0.00%)
 classifier.fc_3.bias: 0/10 zeros (0.00%)
-[DEBUG] Model structure after collapse:
+[DEBUG] Model layer statistics before collapse:
 None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 1 pairs.
+    [DEBUG] Added mapping: collapse_0 = (features.conv_8 → features.conv_10)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_8 → features.conv_10
+[INFO] Model parameter count before collapsing: 33,646,666
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': features.conv_8 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_8', 'features.conv_10')
+
+[INFO] ===== Collapsing block: features.conv_8 → features.conv_10 =====
+[STEP 1] Locating block boundaries...
+[DEBUG] Locating and preparing block: start='features.conv_8', end:'features.conv_10'
+[DEBUG] Containers resolved → chosen LCA container: 'features'
+[DEBUG] Found 44 children in container 'features'
+[DEBUG] Child indices in container 'features': start=24, end=30
+[DEBUG] Block slice length (children count): 7
+[DEBUG] Found 3 Conv2d/Linear layers inside selected child range
+[DEBUG] Uniform layer type across block: Conv2d
+[DEBUG] Located block with 7 layers
+    [LAYER] conv_8: Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    [LAYER] relu_8: ReLU(inplace=True)
+    [LAYER] bn_8: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] conv_9: Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    [LAYER] relu_9: ReLU(inplace=True)
+    [LAYER] bn_9: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] conv_10: Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+[STEP 2] Capturing activation before start layer 'features.conv_8'...
+[DEBUG] Attempting to capture activation before 'features.conv_8' using simulation hook...
+[DEBUG] Successfully captured activation → shape: (512, 256, 4, 4)
+[DEBUG] Total trainable parameters before collapse: 33,646,666
+[DEBUG] Activation capture complete.
+[DEBUG] Input activation shape entering block: (512, 256, 4, 4)
+[STEP 3] Searching for next linear layer after 'features.conv_10'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_10'...
+[DEBUG] Exact layer match found at index 32: features.conv_10 (Conv2d)
+[DEBUG] Scanning forward from index 33 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[RESULT] Next Linear detected → name='classifier.fc_1', module=Linear(in_features=512, out_features=4096, bias=True)
+[DEBUG] Next linear layer: classifier.fc_1 -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[STEP] Analyzing output of collapsed block (7 layers)...
+[DEBUG] Input tensor shape before block: (512, 256, 4, 4)
+[DEBUG] Running forward pass through block layers:
+    [DEBUG] Layer 1/7: conv_8 (Conv2d) input=(512, 256, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 2/7: relu_8 (ReLU) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 3/7: bn_8 (BatchNorm2d) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 4/7: conv_9 (Conv2d) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 5/7: relu_9 (ReLU) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 6/7: bn_9 (BatchNorm2d) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 7/7: conv_10 (Conv2d) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+[DEBUG] Final block output shape: (512, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 512
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=16 (HxW=4x4)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(512, 512, 4, 4)
+         out_channels=512
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] Block output analysis result:
+    out_shape: (512, 512, 4, 4)
+    out_channels: 512
+    pool_layer: None
+    adaptive_pool_to_use: AdaptiveAvgPool2d(output_size=(1, 1))
+    shortcut_out_channels: None
+    linear_in_features_heuristic: 512
+[STEP 5] Rebuilding and replacing collapsed block...
+
+[STEP] Building replacement for collapsed block 'features.conv_8'
+[DEBUG] Analyzing info dict keys: ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'conv_layers', 'layer_type']
+[DEBUG] Target device: cpu
+[DEBUG] Replacement target spatial size (HxW): 4x4
+[DEBUG] Replacement conv in_channels=256, out_channels=512
+[DEBUG] Built replacement Sequential:
+Sequential(
+  (conv_1x1): Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1))
+  (adaptive_pool): AdaptiveAvgPool2d(output_size=(4, 4))
+)
+[DEBUG] Replacing children indices 24..30 in container 'features'
+[DEBUG] Params before collapse: 33,646,666
+[DEBUG] Params after  collapse: 27,876,426
+[INFO] ΔParams = +5,770,240
+[DEBUG] Replacement validation OK — output shape (512, 512, 4, 4)
+[STEP] Validating downstream after replacement...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=24, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 24: 'collapsed_873c867d'
+[STEP] Validating inserted module 'Sequential' at index 24...
+[DEBUG] Inserted module forward successful, output shape: (512, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'features.relu_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_4' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (512, 512, 1, 1)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[STEP] Performing corrective pooling (if needed)...
+
+[STEP] ===== Starting _insert_corrective_pool =====
+[DEBUG] next_linear_name='classifier.fc_1', input_shape=torch.Size([512, 3, 32, 32])
+[INFO] Located next linear layer: 'classifier.fc_1' (Linear)
+[STEP] Capturing activation entering 'classifier.fc_1' to compute true flattened size...
+[DEBUG] Activation capture succeeded. Activation shape: (512, 512)
+[INFO] Linear layer expected in_features=512, actual flattened=512
+[DEBUG] Linear input size matches expected. No corrective action needed.
+[RESULT] Block replacement complete for 'features.conv_8'.
+[INFO] ✅ Collapse complete for block 'features.conv_8' → 'features.conv_10'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_8 → features.conv_10)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 13 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,646,666
+[INFO] Parameters after : 27,876,426
+[INFO] ΔParams = +5,770,240 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
 ============================================================
 🔍 Model Summary (via torchinfo)
 ============================================================
@@ -244,4 +370,59 @@ Estimated Total Size (MB): 2282.10
 ============================================================
 [INFO] Collabsed Model: None
 [•] Starting experiment 'Stage 4' in workflow 'Kevin'
-[!] Warning: CUDA not available.
+[Start training] device:cuda
+[INFO] Training started...
+model on device: cuda:0
+[INFO] Starting Epoch 1 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:06<10:01,  6.20s/it]  3%|▎         | 3/98 [00:06<02:39,  1.68s/it]  4%|▍         | 4/98 [00:06<01:46,  1.13s/it]  6%|▌         | 6/98 [00:06<00:56,  1.62it/s]  8%|▊         | 8/98 [00:06<00:36,  2.48it/s] 10%|█         | 10/98 [00:07<00:27,  3.24it/s] 11%|█         | 11/98 [00:07<00:26,  3.26it/s] 13%|█▎        | 13/98 [00:07<00:21,  4.03it/s] 14%|█▍        | 14/98 [00:08<00:23,  3.57it/s] 15%|█▌        | 15/98 [00:08<00:23,  3.51it/s] 16%|█▋        | 16/98 [00:08<00:21,  3.79it/s] 18%|█▊        | 18/98 [00:09<00:25,  3.12it/s] 19%|█▉        | 19/98 [00:09<00:21,  3.70it/s] 21%|██▏       | 21/98 [00:09<00:15,  4.93it/s] 22%|██▏       | 22/98 [00:11<00:33,  2.25it/s] 24%|██▍       | 24/98 [00:11<00:23,  3.21it/s] 27%|██▋       | 26/98 [00:12<00:29,  2.40it/s] 29%|██▊       | 28/98 [00:12<00:21,  3.25it/s] 30%|██▉       | 29/98 [00:12<00:18,  3.74it/s] 31%|███       | 30/98 [00:13<00:27,  2.47it/s] 33%|███▎      | 32/98 [00:13<00:19,  3.47it/s] 34%|███▎      | 33/98 [00:13<00:16,  4.04it/s] 35%|███▍      | 34/98 [00:14<00:19,  3.26it/s] 37%|███▋      | 36/98 [00:14<00:13,  4.47it/s] 38%|███▊      | 37/98 [00:14<00:11,  5.10it/s] 39%|███▉      | 38/98 [00:15<00:19,  3.15it/s] 41%|████      | 40/98 [00:15<00:13,  4.37it/s] 42%|████▏     | 41/98 [00:15<00:11,  5.00it/s] 43%|████▎     | 42/98 [00:16<00:18,  3.11it/s] 45%|████▍     | 44/98 [00:16<00:12,  4.33it/s] 46%|████▌     | 45/98 [00:16<00:10,  4.97it/s] 47%|████▋     | 46/98 [00:17<00:16,  3.09it/s] 49%|████▉     | 48/98 [00:17<00:11,  4.32it/s] 50%|█████     | 49/98 [00:17<00:09,  4.96it/s] 51%|█████     | 50/98 [00:18<00:15,  3.09it/s] 52%|█████▏    | 51/98 [00:18<00:12,  3.76it/s] 54%|█████▍    | 53/98 [00:18<00:08,  5.12it/s] 55%|█████▌    | 54/98 [00:19<00:13,  3.20it/s] 57%|█████▋    | 56/98 [00:19<00:09,  4.39it/s] 58%|█████▊    | 57/98 [00:19<00:08,  5.02it/s] 59%|█████▉    | 58/98 [00:20<00:12,  3.13it/s] 61%|██████    | 60/98 [00:20<00:08,  4.34it/s] 63%|██████▎   | 62/98 [00:21<00:11,  3.21it/s] 65%|██████▌   | 64/98 [00:21<00:08,  4.19it/s] 66%|██████▋   | 65/98 [00:21<00:06,  4.74it/s] 67%|██████▋   | 66/98 [00:22<00:10,  3.14it/s] 68%|██████▊   | 67/98 [00:22<00:08,  3.75it/s] 70%|███████   | 69/98 [00:22<00:05,  5.03it/s] 71%|███████▏  | 70/98 [00:23<00:08,  3.21it/s] 73%|███████▎  | 72/98 [00:23<00:05,  4.37it/s] 76%|███████▌  | 74/98 [00:24<00:07,  3.25it/s] 78%|███████▊  | 76/98 [00:24<00:05,  3.93it/s] 80%|███████▉  | 78/98 [00:25<00:05,  3.50it/s] 82%|████████▏ | 80/98 [00:26<00:04,  3.86it/s] 84%|████████▎ | 82/98 [00:26<00:04,  3.91it/s] 85%|████████▍ | 83/98 [00:26<00:03,  4.40it/s] 86%|████████▌ | 84/98 [00:27<00:04,  2.89it/s] 88%|████████▊ | 86/98 [00:27<00:03,  3.93it/s] 89%|████████▉ | 87/98 [00:27<00:02,  4.50it/s] 90%|████████▉ | 88/98 [00:28<00:04,  2.49it/s] 92%|█████████▏| 90/98 [00:28<00:02,  3.55it/s] 93%|█████████▎| 91/98 [00:29<00:01,  4.14it/s] 94%|█████████▍| 92/98 [00:29<00:02,  2.81it/s] 96%|█████████▌| 94/98 [00:29<00:00,  4.02it/s] 98%|█████████▊| 96/98 [00:30<00:00,  4.36it/s]100%|██████████| 98/98 [00:30<00:00,  5.63it/s]100%|██████████| 98/98 [00:31<00:00,  3.14it/s]
+Epoch 1: Loss=0.9699, Acc=66.47%
+[INFO] New best accuracy: 66.47% (previous best was 0.00%)
+[INFO] Training complete after 1 epochs.
+[INFO] Evaluating model on the test set...
+2025-11-03 07:22:18,253 - WARNING - Unsupported operator aten::max_pool2d encountered 5 time(s)
+2025-11-03 07:22:21,041 - WARNING - Unsupported operator aten::max_pool2d encountered 5 time(s)
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:205: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(parts.keys()), y=list(parts.values()), palette=["steelblue", "salmon", "gold"])
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:48: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=list(accs), ax=axs[0], palette="Blues_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:66: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=list(infer_times), ax=axs[1], palette="Oranges_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:74: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=mem_mb, ax=axs[2], palette="Greens_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:313: UserWarning: Tight layout not applied. The left and right margins cannot be made large enough to accommodate all Axes decorations.
+  plt.tight_layout()
+Final Test Accuracy: 75.93%
+[•] Running diagnostics for Stage 4...
+[✓] Diagnostics complete for Stage 4
+[✓] Saved metrics for 'Stage 4_Kevin' → VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/VGG16_CIFAR10_metrics_20251103_072223_944911_105180.json
+[✓] Merged 4 metrics files → VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
+[✓] Metrics merged successfully → VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
+[✓] Saved plot: VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/plots/merged_plots.svg
+[DEBUG] FLOPs: [108559073280.0, 123067170816.0, 156362604544.0, 61276684288.0]
+[DEBUG] Times: [0.024470651340484616, 0.023601001596450805, 0.029652593564987183, 0.010716441679000857]
+[DEBUG] Delta Accuracy vs Params Data: [{'name': 'Stage 4-5_Kevin', 'ΔAcc': 0.0, 'ΔParams(%)': 0.0}, {'name': 'Stage 4_Kevin', 'ΔAcc': 1.7639999999999958, 'ΔParams(%)': 34.06040128056601}, {'name': 'Stage 5_Kevin', 'ΔAcc': 5.024000000000001, 'ΔParams(%)': 29.017698915019913}, {'name': 'Stage 3-5_Kevin', 'ΔAcc': -9.46, 'ΔParams(%)': -7.417549255960754}]
+[DEBUG] FLOPs: [108559073280.0, 123067170816.0, 156362604544.0, 61276684288.0]
+[DEBUG] Memory: [1557.01953125, 1633.01953125, 1693.01953125, 1309.01953125]
+[DEBUG] Accuracy: [64.708, 66.472, 69.732, 55.248]
+[DEBUG] Memory: [1557.01953125, 1633.01953125, 1693.01953125, 1309.01953125]
+[DEBUG] Heatmap Rows: [{'Model': 'Stage 4-5_Kevin', 'Accuracy': 64.708, 'Params': 20793930, 'FLOPs': 108559073280, 'Inference Time': 0.024470651340484616, 'Memory (MB)': 1557.01953125}, {'Model': 'Stage 4_Kevin', 'Accuracy': 66.472, 'Params': 27876426, 'FLOPs': 123067170816, 'Inference Time': 0.023601001596450805, 'Memory (MB)': 1633.01953125}, {'Model': 'Stage 5_Kevin', 'Accuracy': 69.732, 'Params': 26827850, 'FLOPs': 156362604544, 'Inference Time': 0.029652593564987183, 'Memory (MB)': 1693.01953125}, {'Model': 'Stage 3-5_Kevin', 'Accuracy': 55.248, 'Params': 19251530, 'FLOPs': 61276684288, 'Inference Time': 0.010716441679000857, 'Memory (MB)': 1309.01953125}]
+[DEBUG] Collapse Curve Rows: [{'Model': 'Stage 4-5_Kevin', 'Params': 20793930, 'Time': 0.024470651340484616, 'Accuracy': 64.708}, {'Model': 'Stage 4_Kevin', 'Params': 27876426, 'Time': 0.023601001596450805, 'Accuracy': 66.472}, {'Model': 'Stage 5_Kevin', 'Params': 26827850, 'Time': 0.029652593564987183, 'Accuracy': 69.732}, {'Model': 'Stage 3-5_Kevin', 'Params': 19251530, 'Time': 0.010716441679000857, 'Accuracy': 55.248}]
+[✓] Experiment 'Stage 4' completed. Checkpoints and metrics saved.
