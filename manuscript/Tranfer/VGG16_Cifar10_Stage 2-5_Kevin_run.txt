@@ -1,0 +1,469 @@
+Namespace(model='VGG16', dataset='Cifar10', epochs=1, pretrain=1, experiment='Stage 2-5', post_compress_epochs=0, imp=True, JF=False, Kevin=True)
+has GPU: True
+Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
+Loading CIFAR-10 data...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+
+--- Running experiment: Stage 2-5 ---
+
+=== Running Kevin experiment ===
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+==========================================================================================
+Layer (type:depth-idx)                   Output Shape              Param #
+==========================================================================================
+VGG16                                    [512, 10]                 --
+├─Sequential: 1-1                        [512, 512, 1, 1]          --
+│    └─Conv2d: 2-1                       [512, 64, 32, 32]         1,792
+│    └─ReLU: 2-2                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-3                  [512, 64, 32, 32]         128
+│    └─Conv2d: 2-4                       [512, 64, 32, 32]         36,928
+│    └─ReLU: 2-5                         [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-6                  [512, 64, 32, 32]         128
+│    └─MaxPool2d: 2-7                    [512, 64, 16, 16]         --
+│    └─Conv2d: 2-8                       [512, 128, 16, 16]        73,856
+│    └─ReLU: 2-9                         [512, 128, 16, 16]        --
+│    └─BatchNorm2d: 2-10                 [512, 128, 16, 16]        256
+│    └─Conv2d: 2-11                      [512, 128, 16, 16]        147,584
+│    └─ReLU: 2-12                        [512, 128, 16, 16]        --
+│    └─BatchNorm2d: 2-13                 [512, 128, 16, 16]        256
+│    └─MaxPool2d: 2-14                   [512, 128, 8, 8]          --
+│    └─Conv2d: 2-15                      [512, 256, 8, 8]          295,168
+│    └─ReLU: 2-16                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-17                 [512, 256, 8, 8]          512
+│    └─Conv2d: 2-18                      [512, 256, 8, 8]          590,080
+│    └─ReLU: 2-19                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-20                 [512, 256, 8, 8]          512
+│    └─Conv2d: 2-21                      [512, 256, 8, 8]          590,080
+│    └─ReLU: 2-22                        [512, 256, 8, 8]          --
+│    └─BatchNorm2d: 2-23                 [512, 256, 8, 8]          512
+│    └─MaxPool2d: 2-24                   [512, 256, 4, 4]          --
+│    └─Conv2d: 2-25                      [512, 512, 4, 4]          1,180,160
+│    └─ReLU: 2-26                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-27                 [512, 512, 4, 4]          1,024
+│    └─Conv2d: 2-28                      [512, 512, 4, 4]          2,359,808
+│    └─ReLU: 2-29                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-30                 [512, 512, 4, 4]          1,024
+│    └─Conv2d: 2-31                      [512, 512, 4, 4]          2,359,808
+│    └─ReLU: 2-32                        [512, 512, 4, 4]          --
+│    └─BatchNorm2d: 2-33                 [512, 512, 4, 4]          1,024
+│    └─MaxPool2d: 2-34                   [512, 512, 2, 2]          --
+│    └─Conv2d: 2-35                      [512, 512, 2, 2]          2,359,808
+│    └─ReLU: 2-36                        [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-37                 [512, 512, 2, 2]          1,024
+│    └─Conv2d: 2-38                      [512, 512, 2, 2]          2,359,808
+│    └─ReLU: 2-39                        [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-40                 [512, 512, 2, 2]          1,024
+│    └─Conv2d: 2-41                      [512, 512, 2, 2]          2,359,808
+│    └─ReLU: 2-42                        [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-43                 [512, 512, 2, 2]          1,024
+│    └─MaxPool2d: 2-44                   [512, 512, 1, 1]          --
+├─Sequential: 1-2                        [512, 10]                 --
+│    └─Linear: 2-45                      [512, 4096]               2,101,248
+│    └─ReLU: 2-46                        [512, 4096]               --
+│    └─Dropout: 2-47                     [512, 4096]               --
+│    └─Linear: 2-48                      [512, 4096]               16,781,312
+│    └─ReLU: 2-49                        [512, 4096]               --
+│    └─Dropout: 2-50                     [512, 4096]               --
+│    └─Linear: 2-51                      [512, 10]                 40,970
+==========================================================================================
+Total params: 33,646,666
+Trainable params: 33,646,666
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 170.19
+==========================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 2298.52
+Params size (MB): 134.59
+Estimated Total Size (MB): 2439.40
+==========================================================================================
+============================================================
+[INFO] Initialized Model: None
+[•] Collapsing ranges [('features.conv_3', 'features.conv_13')] for Stage 2-5
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 0/64 zeros (0.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 0/64 zeros (0.00%)
+features.conv_3.weight: 0/73728 zeros (0.00%)
+features.conv_3.bias: 0/128 zeros (0.00%)
+features.bn_3.weight: 0/128 zeros (0.00%)
+features.bn_3.bias: 0/128 zeros (0.00%)
+features.conv_4.weight: 0/147456 zeros (0.00%)
+features.conv_4.bias: 0/128 zeros (0.00%)
+features.bn_4.weight: 0/128 zeros (0.00%)
+features.bn_4.bias: 0/128 zeros (0.00%)
+features.conv_5.weight: 0/294912 zeros (0.00%)
+features.conv_5.bias: 0/256 zeros (0.00%)
+features.bn_5.weight: 0/256 zeros (0.00%)
+features.bn_5.bias: 0/256 zeros (0.00%)
+features.conv_6.weight: 0/589824 zeros (0.00%)
+features.conv_6.bias: 0/256 zeros (0.00%)
+features.bn_6.weight: 0/256 zeros (0.00%)
+features.bn_6.bias: 0/256 zeros (0.00%)
+features.conv_7.weight: 0/589824 zeros (0.00%)
+features.conv_7.bias: 0/256 zeros (0.00%)
+features.bn_7.weight: 0/256 zeros (0.00%)
+features.bn_7.bias: 0/256 zeros (0.00%)
+features.conv_8.weight: 0/1179648 zeros (0.00%)
+features.conv_8.bias: 0/512 zeros (0.00%)
+features.bn_8.weight: 0/512 zeros (0.00%)
+features.bn_8.bias: 0/512 zeros (0.00%)
+features.conv_9.weight: 1/2359296 zeros (0.00%)
+features.conv_9.bias: 0/512 zeros (0.00%)
+features.bn_9.weight: 0/512 zeros (0.00%)
+features.bn_9.bias: 0/512 zeros (0.00%)
+features.conv_10.weight: 0/2359296 zeros (0.00%)
+features.conv_10.bias: 0/512 zeros (0.00%)
+features.bn_10.weight: 0/512 zeros (0.00%)
+features.bn_10.bias: 0/512 zeros (0.00%)
+features.conv_11.weight: 0/2359296 zeros (0.00%)
+features.conv_11.bias: 0/512 zeros (0.00%)
+features.bn_11.weight: 0/512 zeros (0.00%)
+features.bn_11.bias: 0/512 zeros (0.00%)
+features.conv_12.weight: 0/2359296 zeros (0.00%)
+features.conv_12.bias: 0/512 zeros (0.00%)
+features.bn_12.weight: 0/512 zeros (0.00%)
+features.bn_12.bias: 0/512 zeros (0.00%)
+features.conv_13.weight: 0/2359296 zeros (0.00%)
+features.conv_13.bias: 0/512 zeros (0.00%)
+features.bn_13.weight: 0/512 zeros (0.00%)
+features.bn_13.bias: 0/512 zeros (0.00%)
+classifier.fc_1.weight: 0/2097152 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.fc_2.weight: 2/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.fc_3.weight: 0/40960 zeros (0.00%)
+classifier.fc_3.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 1 pairs.
+    [DEBUG] Added mapping: collapse_0 = (features.conv_3 → features.conv_13)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_3 → features.conv_13
+[INFO] Model parameter count before collapsing: 33,646,666
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': features.conv_3 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_3', 'features.conv_13')
+
+[INFO] ===== Collapsing block: features.conv_3 → features.conv_13 =====
+[STEP 1] Locating block boundaries...
+[DEBUG] Locating and preparing block: start='features.conv_3', end:'features.conv_13'
+[DEBUG] Containers resolved → chosen LCA container: 'features'
+[DEBUG] Found 44 children in container 'features'
+[DEBUG] Child indices in container 'features': start=7, end=40
+[DEBUG] Block slice length (children count): 34
+[DEBUG] Found 11 Conv2d/Linear layers inside selected child range
+[DEBUG] Uniform layer type across block: Conv2d
+[DEBUG] Located block with 34 layers
+    [LAYER] conv_3: Conv2d(64, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    [LAYER] relu_3: ReLU(inplace=True)
+    [LAYER] bn_3: BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] conv_4: Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    [LAYER] relu_4: ReLU(inplace=True)
+    [LAYER] bn_4: BatchNorm2d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] pool_2: MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    [LAYER] conv_5: Conv2d(128, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    [LAYER] relu_5: ReLU(inplace=True)
+    [LAYER] bn_5: BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] conv_6: Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    [LAYER] relu_6: ReLU(inplace=True)
+    [LAYER] bn_6: BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] conv_7: Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    [LAYER] relu_7: ReLU(inplace=True)
+    [LAYER] bn_7: BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] pool_3: MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    [LAYER] conv_8: Conv2d(256, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    [LAYER] relu_8: ReLU(inplace=True)
+    [LAYER] bn_8: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] conv_9: Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    [LAYER] relu_9: ReLU(inplace=True)
+    [LAYER] bn_9: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] conv_10: Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    [LAYER] relu_10: ReLU(inplace=True)
+    [LAYER] bn_10: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] pool_4: MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    [LAYER] conv_11: Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    [LAYER] relu_11: ReLU(inplace=True)
+    [LAYER] bn_11: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] conv_12: Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    [LAYER] relu_12: ReLU(inplace=True)
+    [LAYER] bn_12: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] conv_13: Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+[STEP 2] Capturing activation before start layer 'features.conv_3'...
+[DEBUG] Attempting to capture activation before 'features.conv_3' using simulation hook...
+[DEBUG] Successfully captured activation → shape: (512, 64, 16, 16)
+[DEBUG] Total trainable parameters before collapse: 33,646,666
+[DEBUG] Activation capture complete.
+[DEBUG] Input activation shape entering block: (512, 64, 16, 16)
+[STEP 3] Searching for next linear layer after 'features.conv_13'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_13'...
+[DEBUG] Exact layer match found at index 42: features.conv_13 (Conv2d)
+[DEBUG] Scanning forward from index 43 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[RESULT] Next Linear detected → name='classifier.fc_1', module=Linear(in_features=512, out_features=4096, bias=True)
+[DEBUG] Next linear layer: classifier.fc_1 -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[STEP] Analyzing output of collapsed block (34 layers)...
+[DEBUG] Input tensor shape before block: (512, 64, 16, 16)
+[DEBUG] Running forward pass through block layers:
+    [DEBUG] Layer 1/34: conv_3 (Conv2d) input=(512, 64, 16, 16)
+        └── output shape: (512, 128, 16, 16)
+    [DEBUG] Layer 2/34: relu_3 (ReLU) input=(512, 128, 16, 16)
+        └── output shape: (512, 128, 16, 16)
+    [DEBUG] Layer 3/34: bn_3 (BatchNorm2d) input=(512, 128, 16, 16)
+        └── output shape: (512, 128, 16, 16)
+    [DEBUG] Layer 4/34: conv_4 (Conv2d) input=(512, 128, 16, 16)
+        └── output shape: (512, 128, 16, 16)
+    [DEBUG] Layer 5/34: relu_4 (ReLU) input=(512, 128, 16, 16)
+        └── output shape: (512, 128, 16, 16)
+    [DEBUG] Layer 6/34: bn_4 (BatchNorm2d) input=(512, 128, 16, 16)
+        └── output shape: (512, 128, 16, 16)
+    [DEBUG] Layer 7/34: pool_2 (MaxPool2d) input=(512, 128, 16, 16)
+        └── output shape: (512, 128, 8, 8)
+    [DEBUG] Layer 8/34: conv_5 (Conv2d) input=(512, 128, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Layer 9/34: relu_5 (ReLU) input=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Layer 10/34: bn_5 (BatchNorm2d) input=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Layer 11/34: conv_6 (Conv2d) input=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Layer 12/34: relu_6 (ReLU) input=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Layer 13/34: bn_6 (BatchNorm2d) input=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Layer 14/34: conv_7 (Conv2d) input=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Layer 15/34: relu_7 (ReLU) input=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Layer 16/34: bn_7 (BatchNorm2d) input=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Layer 17/34: pool_3 (MaxPool2d) input=(512, 256, 8, 8)
+        └── output shape: (512, 256, 4, 4)
+    [DEBUG] Layer 18/34: conv_8 (Conv2d) input=(512, 256, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 19/34: relu_8 (ReLU) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 20/34: bn_8 (BatchNorm2d) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 21/34: conv_9 (Conv2d) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 22/34: relu_9 (ReLU) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 23/34: bn_9 (BatchNorm2d) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 24/34: conv_10 (Conv2d) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 25/34: relu_10 (ReLU) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 26/34: bn_10 (BatchNorm2d) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Layer 27/34: pool_4 (MaxPool2d) input=(512, 512, 4, 4)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Layer 28/34: conv_11 (Conv2d) input=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Layer 29/34: relu_11 (ReLU) input=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Layer 30/34: bn_11 (BatchNorm2d) input=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Layer 31/34: conv_12 (Conv2d) input=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Layer 32/34: relu_12 (ReLU) input=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Layer 33/34: bn_12 (BatchNorm2d) input=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Layer 34/34: conv_13 (Conv2d) input=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+[DEBUG] Final block output shape: (512, 512, 2, 2)
+[DEBUG] Determined out_channels=512
+[DEBUG] Detected pool in original block: MaxPool2d
+[DEBUG] Heuristic next linear in_features = 512
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(512, 512, 2, 2)
+         out_channels=512
+         has_pool=True
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] Block output analysis result:
+    out_shape: (512, 512, 2, 2)
+    out_channels: 512
+    pool_layer: MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    adaptive_pool_to_use: AdaptiveAvgPool2d(output_size=(1, 1))
+    shortcut_out_channels: None
+    linear_in_features_heuristic: 512
+[STEP 5] Rebuilding and replacing collapsed block...
+
+[STEP] Building replacement for collapsed block 'features.conv_3'
+[DEBUG] Analyzing info dict keys: ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'conv_layers', 'layer_type']
+[DEBUG] Target device: cpu
+[DEBUG] Replacement target spatial size (HxW): 2x2
+[DEBUG] Replacement conv in_channels=64, out_channels=512
+[DEBUG] Built replacement Sequential:
+Sequential(
+  (conv_1x1): Conv2d(64, 512, kernel_size=(1, 1), stride=(1, 1))
+  (adaptive_pool): AdaptiveAvgPool2d(output_size=(2, 2))
+)
+[DEBUG] Replacing children indices 7..40 in container 'features'
+[DEBUG] Params before collapse: 33,646,666
+[DEBUG] Params after  collapse: 18,996,810
+[INFO] ΔParams = +14,649,856
+[DEBUG] Replacement validation OK — output shape (512, 512, 2, 2)
+[STEP] Validating downstream after replacement...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=7, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 7: 'collapsed_fa034913'
+[STEP] Validating inserted module 'Sequential' at index 7...
+[DEBUG] Inserted module forward successful, output shape: (512, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (512, 512, 1, 1)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[STEP] Performing corrective pooling (if needed)...
+
+[STEP] ===== Starting _insert_corrective_pool =====
+[DEBUG] next_linear_name='classifier.fc_1', input_shape=torch.Size([512, 3, 32, 32])
+[INFO] Located next linear layer: 'classifier.fc_1' (Linear)
+[STEP] Capturing activation entering 'classifier.fc_1' to compute true flattened size...
+[DEBUG] Activation capture succeeded. Activation shape: (512, 512)
+[INFO] Linear layer expected in_features=512, actual flattened=512
+[DEBUG] Linear input size matches expected. No corrective action needed.
+[RESULT] Block replacement complete for 'features.conv_3'.
+[INFO] ✅ Collapse complete for block 'features.conv_3' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_3 → features.conv_13)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 5 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,646,666
+[INFO] Parameters after : 18,996,810
+[INFO] ΔParams = +14,649,856 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+============================================================
+🔍 Model Summary (via torchinfo)
+============================================================
+===============================================================================================
+Layer (type:depth-idx)                        Output Shape              Param #
+===============================================================================================
+VGG16                                         [512, 10]                 --
+├─Sequential: 1-1                             [512, 512, 1, 1]          --
+│    └─Conv2d: 2-1                            [512, 64, 32, 32]         1,792
+│    └─ReLU: 2-2                              [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-3                       [512, 64, 32, 32]         128
+│    └─Conv2d: 2-4                            [512, 64, 32, 32]         36,928
+│    └─ReLU: 2-5                              [512, 64, 32, 32]         --
+│    └─BatchNorm2d: 2-6                       [512, 64, 32, 32]         128
+│    └─_SafePool: 2-7                         [512, 64, 16, 16]         --
+│    │    └─MaxPool2d: 3-1                    [512, 64, 16, 16]         --
+│    └─Sequential: 2-8                        [512, 512, 2, 2]          --
+│    │    └─Conv2d: 3-2                       [512, 512, 16, 16]        33,280
+│    │    └─_SafePool: 3-3                    [512, 512, 2, 2]          --
+│    └─ReLU: 2-9                              [512, 512, 2, 2]          --
+│    └─BatchNorm2d: 2-10                      [512, 512, 2, 2]          1,024
+│    └─_SafePool: 2-11                        [512, 512, 1, 1]          --
+│    │    └─MaxPool2d: 3-4                    [512, 512, 1, 1]          --
+├─Sequential: 1-2                             [512, 10]                 --
+│    └─Linear: 2-12                           [512, 4096]               2,101,248
+│    └─ReLU: 2-13                             [512, 4096]               --
+│    └─Dropout: 2-14                          [512, 4096]               --
+│    └─Linear: 2-15                           [512, 4096]               16,781,312
+│    └─ReLU: 2-16                             [512, 4096]               --
+│    └─Dropout: 2-17                          [512, 4096]               --
+│    └─Linear: 2-18                           [512, 10]                 40,970
+===============================================================================================
+Total params: 18,996,810
+Trainable params: 18,996,810
+Non-trainable params: 0
+Total mult-adds (Units.GIGABYTES): 34.35
+===============================================================================================
+Input size (MB): 6.29
+Forward/backward pass size (MB): 1652.60
+Params size (MB): 75.99
+Estimated Total Size (MB): 1734.88
+===============================================================================================
+============================================================
+[INFO] Collabsed Model: None
+[•] Starting experiment 'Stage 2-5' in workflow 'Kevin'
+[Start training] device:cuda
+[INFO] Training started...
+model on device: cuda:0
+[INFO] Starting Epoch 1 of training...
+  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:02<04:35,  2.84s/it]  3%|▎         | 3/98 [00:03<01:16,  1.24it/s]  5%|▌         | 5/98 [00:03<00:41,  2.26it/s]  7%|▋         | 7/98 [00:03<00:27,  3.36it/s]  9%|▉         | 9/98 [00:03<00:19,  4.48it/s] 10%|█         | 10/98 [00:03<00:19,  4.58it/s] 11%|█         | 11/98 [00:04<00:24,  3.52it/s] 13%|█▎        | 13/98 [00:04<00:21,  4.00it/s] 15%|█▌        | 15/98 [00:05<00:20,  4.00it/s] 16%|█▋        | 16/98 [00:05<00:19,  4.17it/s] 17%|█▋        | 17/98 [00:05<00:20,  3.94it/s] 18%|█▊        | 18/98 [00:05<00:17,  4.63it/s] 19%|█▉        | 19/98 [00:06<00:20,  3.79it/s] 20%|██        | 20/98 [00:06<00:19,  4.06it/s] 21%|██▏       | 21/98 [00:06<00:20,  3.83it/s] 22%|██▏       | 22/98 [00:06<00:16,  4.64it/s] 23%|██▎       | 23/98 [00:07<00:20,  3.72it/s] 24%|██▍       | 24/98 [00:07<00:18,  4.02it/s] 26%|██▌       | 25/98 [00:07<00:21,  3.41it/s] 28%|██▊       | 27/98 [00:08<00:17,  3.99it/s] 29%|██▊       | 28/98 [00:08<00:16,  4.16it/s] 30%|██▉       | 29/98 [00:08<00:19,  3.58it/s] 32%|███▏      | 31/98 [00:09<00:16,  4.07it/s] 33%|███▎      | 32/98 [00:09<00:17,  3.87it/s] 34%|███▎      | 33/98 [00:09<00:17,  3.72it/s] 36%|███▌      | 35/98 [00:10<00:13,  4.52it/s] 37%|███▋      | 36/98 [00:10<00:16,  3.85it/s] 38%|███▊      | 37/98 [00:10<00:16,  3.70it/s] 40%|███▉      | 39/98 [00:11<00:12,  4.54it/s] 41%|████      | 40/98 [00:11<00:15,  3.83it/s] 42%|████▏     | 41/98 [00:11<00:15,  3.69it/s] 44%|████▍     | 43/98 [00:12<00:13,  4.14it/s] 45%|████▍     | 44/98 [00:12<00:13,  3.92it/s] 46%|████▌     | 45/98 [00:12<00:14,  3.73it/s] 47%|████▋     | 46/98 [00:13<00:12,  4.03it/s] 48%|████▊     | 47/98 [00:13<00:11,  4.25it/s] 49%|████▉     | 48/98 [00:13<00:12,  3.95it/s] 50%|█████     | 49/98 [00:13<00:14,  3.39it/s] 51%|█████     | 50/98 [00:14<00:12,  3.74it/s] 53%|█████▎    | 52/98 [00:14<00:10,  4.22it/s] 54%|█████▍    | 53/98 [00:14<00:12,  3.61it/s] 55%|█████▌    | 54/98 [00:15<00:11,  3.89it/s] 57%|█████▋    | 56/98 [00:15<00:10,  3.94it/s] 58%|█████▊    | 57/98 [00:15<00:10,  3.78it/s] 59%|█████▉    | 58/98 [00:16<00:09,  4.02it/s] 60%|██████    | 59/98 [00:16<00:08,  4.77it/s] 61%|██████    | 60/98 [00:16<00:10,  3.46it/s] 62%|██████▏   | 61/98 [00:17<00:10,  3.43it/s] 63%|██████▎   | 62/98 [00:17<00:09,  3.76it/s] 65%|██████▌   | 64/98 [00:17<00:08,  3.87it/s] 66%|██████▋   | 65/98 [00:18<00:08,  3.72it/s] 67%|██████▋   | 66/98 [00:18<00:08,  3.61it/s] 69%|██████▉   | 68/98 [00:18<00:07,  4.10it/s] 70%|███████   | 69/98 [00:19<00:07,  3.89it/s] 71%|███████▏  | 70/98 [00:19<00:08,  3.42it/s] 73%|███████▎  | 72/98 [00:19<00:06,  4.28it/s] 74%|███████▍  | 73/98 [00:20<00:06,  4.02it/s] 76%|███████▌  | 74/98 [00:20<00:07,  3.22it/s] 78%|███████▊  | 76/98 [00:20<00:04,  4.47it/s] 79%|███████▊  | 77/98 [00:21<00:05,  4.15it/s] 80%|███████▉  | 78/98 [00:21<00:06,  3.28it/s] 81%|████████  | 79/98 [00:21<00:05,  3.60it/s] 83%|████████▎ | 81/98 [00:22<00:04,  4.09it/s] 84%|████████▎ | 82/98 [00:22<00:05,  2.85it/s] 85%|████████▍ | 83/98 [00:22<00:04,  3.47it/s] 87%|████████▋ | 85/98 [00:23<00:02,  4.77it/s] 88%|████████▊ | 86/98 [00:24<00:04,  2.42it/s] 90%|████████▉ | 88/98 [00:24<00:02,  3.45it/s] 91%|█████████ | 89/98 [00:24<00:02,  4.04it/s] 92%|█████████▏| 90/98 [00:25<00:03,  2.34it/s] 94%|█████████▍| 92/98 [00:25<00:01,  3.39it/s] 96%|█████████▌| 94/98 [00:26<00:00,  4.11it/s] 98%|█████████▊| 96/98 [00:26<00:00,  5.20it/s]100%|██████████| 98/98 [00:26<00:00,  6.50it/s]100%|██████████| 98/98 [00:26<00:00,  3.71it/s]
+Epoch 1: Loss=1.6068, Acc=43.41%
+[INFO] New best accuracy: 43.41% (previous best was 0.00%)
+[INFO] Training complete after 1 epochs.
+[INFO] Evaluating model on the test set...
+2025-11-04 11:51:14,545 - WARNING - Unsupported operator aten::max_pool2d encountered 2 time(s)
+2025-11-04 11:51:17,306 - WARNING - Unsupported operator aten::max_pool2d encountered 2 time(s)
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:205: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(parts.keys()), y=list(parts.values()), palette=["steelblue", "salmon", "gold"])
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:48: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=list(accs), ax=axs[0], palette="Blues_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:66: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=list(infer_times), ax=axs[1], palette="Oranges_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:74: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=list(names), y=mem_mb, ax=axs[2], palette="Greens_d")
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
+  ax.set_xticklabels(names, rotation=30, ha='right')
+/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:313: UserWarning: Tight layout not applied. The left and right margins cannot be made large enough to accommodate all Axes decorations.
+  plt.tight_layout()
+Final Test Accuracy: 46.91%
+[•] Running diagnostics for Stage 2-5...
+[✓] Diagnostics complete for Stage 2-5
+[✓] Saved metrics for 'Stage 2-5_Kevin' → VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/VGG16_CIFAR10_metrics_20251104_115118_730657_41060.json
+[✓] Merged 2 metrics files → VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
+[✓] Metrics merged successfully → VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
+[✓] Saved plot: VGG16_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/plots/merged_plots.svg
+[DEBUG] FLOPs: [170324393984.0, 34416361472.0]
+[DEBUG] Times: [0.046599567699432375, 0.02551865606307983]
+[DEBUG] Delta Accuracy vs Params Data: [{'name': 'Original Model_Kevin', 'ΔAcc': 0.0, 'ΔParams(%)': 0.0}, {'name': 'Stage 2-5_Kevin', 'ΔAcc': -19.003999999999998, 'ΔParams(%)': -43.540290143457305}]
+[DEBUG] FLOPs: [170324393984.0, 34416361472.0]
+[DEBUG] Memory: [1713.01953125, 1101.01953125]
+[DEBUG] Accuracy: [62.412, 43.408]
+[DEBUG] Memory: [1713.01953125, 1101.01953125]
+[DEBUG] Heatmap Rows: [{'Model': 'Original Model_Kevin', 'Accuracy': 62.412, 'Params': 33646666, 'FLOPs': 170324393984, 'Inference Time': 0.046599567699432375, 'Memory (MB)': 1713.01953125}, {'Model': 'Stage 2-5_Kevin', 'Accuracy': 43.408, 'Params': 18996810, 'FLOPs': 34416361472, 'Inference Time': 0.02551865606307983, 'Memory (MB)': 1101.01953125}]
+[DEBUG] Collapse Curve Rows: [{'Model': 'Original Model_Kevin', 'Params': 33646666, 'Time': 0.046599567699432375, 'Accuracy': 62.412}, {'Model': 'Stage 2-5_Kevin', 'Params': 18996810, 'Time': 0.02551865606307983, 'Accuracy': 43.408}]
+[✓] Experiment 'Stage 2-5' completed. Checkpoints and metrics saved.
