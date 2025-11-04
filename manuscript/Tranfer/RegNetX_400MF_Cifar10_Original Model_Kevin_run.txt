@@ -1,234 +1,0 @@
-Namespace(model='RegNetX_400MF', dataset='Cifar10', epochs=1, pretrain=1, experiment='Original Model', post_compress_epochs=0, imp=True, JF=False, Kevin=True)
-has GPU: True
-Pruning steps: [0, 0.19999999999999996, 0.3599999999999999, 0.4879999999999999, 0.5903999999999998, 0.6723199999999998, 0.7378559999999998, 0.7902847999999999, 0.8322278399999999, 0.8657822719999999, 0.8926258175999999, 0.91410065408, 0.931280523264, 0.9450244186112, 0.95601953488896, 0.9648156279111679, 0.9718525023289344, 0.9774820018631475, 0.981985601490518, 0.9855884811924144, 0.9884707849539315, 0.9907766279631453]
-Loading CIFAR-10 data for RegNetX_400MF...
-CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
-
---- Running experiment: Original Model ---
-
-=== Running Kevin experiment ===
-============================================================
-🔍 Model Summary (via torchinfo)
-============================================================
-==========================================================================================
-Layer (type:depth-idx)                   Output Shape              Param #
-==========================================================================================
-RegNetX_400MF                            [512, 10]                 --
-├─Sequential: 1-1                        [512, 32, 16, 16]         --
-│    └─Conv2d: 2-1                       [512, 32, 16, 16]         864
-│    └─BatchNorm2d: 2-2                  [512, 32, 16, 16]         64
-│    └─ReLU: 2-3                         [512, 32, 16, 16]         --
-├─Sequential: 1-2                        [512, 24, 16, 16]         --
-│    └─XBlock: 2-4                       [512, 24, 16, 16]         --
-│    │    └─Sequential: 3-1              [512, 24, 16, 16]         6,672
-│    │    └─Sequential: 3-2              [512, 24, 16, 16]         816
-│    │    └─ReLU: 3-3                    [512, 24, 16, 16]         --
-├─Sequential: 1-3                        [512, 56, 8, 8]           --
-│    └─XBlock: 2-5                       [512, 56, 8, 8]           --
-│    │    └─Sequential: 3-4              [512, 56, 8, 8]           33,040
-│    │    └─Sequential: 3-5              [512, 56, 8, 8]           1,456
-│    │    └─ReLU: 3-6                    [512, 56, 8, 8]           --
-├─Sequential: 1-4                        [512, 152, 4, 4]          --
-│    └─XBlock: 2-6                       [512, 152, 4, 4]          --
-│    │    └─Sequential: 3-7              [512, 152, 4, 4]          240,464
-│    │    └─Sequential: 3-8              [512, 152, 4, 4]          8,816
-│    │    └─ReLU: 3-9                    [512, 152, 4, 4]          --
-│    └─XBlock: 2-7                       [512, 152, 4, 4]          --
-│    │    └─Sequential: 3-10             [512, 152, 4, 4]          255,056
-│    │    └─Sequential: 3-11             [512, 152, 4, 4]          --
-│    │    └─ReLU: 3-12                   [512, 152, 4, 4]          --
-│    └─XBlock: 2-8                       [512, 152, 4, 4]          --
-│    │    └─Sequential: 3-13             [512, 152, 4, 4]          255,056
-│    │    └─Sequential: 3-14             [512, 152, 4, 4]          --
-│    │    └─ReLU: 3-15                   [512, 152, 4, 4]          --
-│    └─XBlock: 2-9                       [512, 152, 4, 4]          --
-│    │    └─Sequential: 3-16             [512, 152, 4, 4]          255,056
-│    │    └─Sequential: 3-17             [512, 152, 4, 4]          --
-│    │    └─ReLU: 3-18                   [512, 152, 4, 4]          --
-├─Sequential: 1-5                        [512, 368, 2, 2]          --
-│    └─XBlock: 2-10                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-19             [512, 368, 2, 2]          1,412,384
-│    │    └─Sequential: 3-20             [512, 368, 2, 2]          56,672
-│    │    └─ReLU: 3-21                   [512, 368, 2, 2]          --
-│    └─XBlock: 2-11                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-22             [512, 368, 2, 2]          1,491,872
-│    │    └─Sequential: 3-23             [512, 368, 2, 2]          --
-│    │    └─ReLU: 3-24                   [512, 368, 2, 2]          --
-│    └─XBlock: 2-12                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-25             [512, 368, 2, 2]          1,491,872
-│    │    └─Sequential: 3-26             [512, 368, 2, 2]          --
-│    │    └─ReLU: 3-27                   [512, 368, 2, 2]          --
-│    └─XBlock: 2-13                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-28             [512, 368, 2, 2]          1,491,872
-│    │    └─Sequential: 3-29             [512, 368, 2, 2]          --
-│    │    └─ReLU: 3-30                   [512, 368, 2, 2]          --
-│    └─XBlock: 2-14                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-31             [512, 368, 2, 2]          1,491,872
-│    │    └─Sequential: 3-32             [512, 368, 2, 2]          --
-│    │    └─ReLU: 3-33                   [512, 368, 2, 2]          --
-│    └─XBlock: 2-15                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-34             [512, 368, 2, 2]          1,491,872
-│    │    └─Sequential: 3-35             [512, 368, 2, 2]          --
-│    │    └─ReLU: 3-36                   [512, 368, 2, 2]          --
-│    └─XBlock: 2-16                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-37             [512, 368, 2, 2]          1,491,872
-│    │    └─Sequential: 3-38             [512, 368, 2, 2]          --
-│    │    └─ReLU: 3-39                   [512, 368, 2, 2]          --
-├─AdaptiveAvgPool2d: 1-6                 [512, 368, 1, 1]          --
-├─Linear: 1-7                            [512, 10]                 3,690
-==========================================================================================
-Total params: 11,481,338
-Trainable params: 11,481,338
-Non-trainable params: 0
-Total mult-adds (Units.GIGABYTES): 32.47
-==========================================================================================
-Input size (MB): 6.29
-Forward/backward pass size (MB): 1094.23
-Params size (MB): 45.93
-Estimated Total Size (MB): 1146.45
-==========================================================================================
-============================================================
-[INFO] Initialized Model: None
-============================================================
-🔍 Model Summary (via torchinfo)
-============================================================
-==========================================================================================
-Layer (type:depth-idx)                   Output Shape              Param #
-==========================================================================================
-RegNetX_400MF                            [512, 10]                 --
-├─Sequential: 1-1                        [512, 32, 16, 16]         --
-│    └─Conv2d: 2-1                       [512, 32, 16, 16]         864
-│    └─BatchNorm2d: 2-2                  [512, 32, 16, 16]         64
-│    └─ReLU: 2-3                         [512, 32, 16, 16]         --
-├─Sequential: 1-2                        [512, 24, 16, 16]         --
-│    └─XBlock: 2-4                       [512, 24, 16, 16]         --
-│    │    └─Sequential: 3-1              [512, 24, 16, 16]         6,672
-│    │    └─Sequential: 3-2              [512, 24, 16, 16]         816
-│    │    └─ReLU: 3-3                    [512, 24, 16, 16]         --
-├─Sequential: 1-3                        [512, 56, 8, 8]           --
-│    └─XBlock: 2-5                       [512, 56, 8, 8]           --
-│    │    └─Sequential: 3-4              [512, 56, 8, 8]           33,040
-│    │    └─Sequential: 3-5              [512, 56, 8, 8]           1,456
-│    │    └─ReLU: 3-6                    [512, 56, 8, 8]           --
-├─Sequential: 1-4                        [512, 152, 4, 4]          --
-│    └─XBlock: 2-6                       [512, 152, 4, 4]          --
-│    │    └─Sequential: 3-7              [512, 152, 4, 4]          240,464
-│    │    └─Sequential: 3-8              [512, 152, 4, 4]          8,816
-│    │    └─ReLU: 3-9                    [512, 152, 4, 4]          --
-│    └─XBlock: 2-7                       [512, 152, 4, 4]          --
-│    │    └─Sequential: 3-10             [512, 152, 4, 4]          255,056
-│    │    └─Sequential: 3-11             [512, 152, 4, 4]          --
-│    │    └─ReLU: 3-12                   [512, 152, 4, 4]          --
-│    └─XBlock: 2-8                       [512, 152, 4, 4]          --
-│    │    └─Sequential: 3-13             [512, 152, 4, 4]          255,056
-│    │    └─Sequential: 3-14             [512, 152, 4, 4]          --
-│    │    └─ReLU: 3-15                   [512, 152, 4, 4]          --
-│    └─XBlock: 2-9                       [512, 152, 4, 4]          --
-│    │    └─Sequential: 3-16             [512, 152, 4, 4]          255,056
-│    │    └─Sequential: 3-17             [512, 152, 4, 4]          --
-│    │    └─ReLU: 3-18                   [512, 152, 4, 4]          --
-├─Sequential: 1-5                        [512, 368, 2, 2]          --
-│    └─XBlock: 2-10                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-19             [512, 368, 2, 2]          1,412,384
-│    │    └─Sequential: 3-20             [512, 368, 2, 2]          56,672
-│    │    └─ReLU: 3-21                   [512, 368, 2, 2]          --
-│    └─XBlock: 2-11                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-22             [512, 368, 2, 2]          1,491,872
-│    │    └─Sequential: 3-23             [512, 368, 2, 2]          --
-│    │    └─ReLU: 3-24                   [512, 368, 2, 2]          --
-│    └─XBlock: 2-12                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-25             [512, 368, 2, 2]          1,491,872
-│    │    └─Sequential: 3-26             [512, 368, 2, 2]          --
-│    │    └─ReLU: 3-27                   [512, 368, 2, 2]          --
-│    └─XBlock: 2-13                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-28             [512, 368, 2, 2]          1,491,872
-│    │    └─Sequential: 3-29             [512, 368, 2, 2]          --
-│    │    └─ReLU: 3-30                   [512, 368, 2, 2]          --
-│    └─XBlock: 2-14                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-31             [512, 368, 2, 2]          1,491,872
-│    │    └─Sequential: 3-32             [512, 368, 2, 2]          --
-│    │    └─ReLU: 3-33                   [512, 368, 2, 2]          --
-│    └─XBlock: 2-15                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-34             [512, 368, 2, 2]          1,491,872
-│    │    └─Sequential: 3-35             [512, 368, 2, 2]          --
-│    │    └─ReLU: 3-36                   [512, 368, 2, 2]          --
-│    └─XBlock: 2-16                      [512, 368, 2, 2]          --
-│    │    └─Sequential: 3-37             [512, 368, 2, 2]          1,491,872
-│    │    └─Sequential: 3-38             [512, 368, 2, 2]          --
-│    │    └─ReLU: 3-39                   [512, 368, 2, 2]          --
-├─AdaptiveAvgPool2d: 1-6                 [512, 368, 1, 1]          --
-├─Linear: 1-7                            [512, 10]                 3,690
-==========================================================================================
-Total params: 11,481,338
-Trainable params: 11,481,338
-Non-trainable params: 0
-Total mult-adds (Units.GIGABYTES): 32.47
-==========================================================================================
-Input size (MB): 6.29
-Forward/backward pass size (MB): 1094.23
-Params size (MB): 45.93
-Estimated Total Size (MB): 1146.45
-==========================================================================================
-============================================================
-[INFO] Collabsed Model: None
-[•] Starting experiment 'Original Model' in workflow 'Kevin'
-[Start training] device:cuda
-[INFO] Training started...
-model on device: cuda:0
-[INFO] Starting Epoch 1 of training...
-  0%|          | 0/98 [00:00<?, ?it/s]  1%|          | 1/98 [00:22<36:33, 22.61s/it]  2%|▏         | 2/98 [00:22<15:00,  9.38s/it]  3%|▎         | 3/98 [00:22<08:11,  5.17s/it]  4%|▍         | 4/98 [00:23<05:01,  3.21s/it]  5%|▌         | 5/98 [00:23<03:17,  2.12s/it]  6%|▌         | 6/98 [00:23<02:15,  1.47s/it]  7%|▋         | 7/98 [00:23<01:35,  1.05s/it]  8%|▊         | 8/98 [00:23<01:10,  1.28it/s]  9%|▉         | 9/98 [00:24<00:53,  1.67it/s] 10%|█         | 10/98 [00:24<00:41,  2.10it/s] 11%|█         | 11/98 [00:24<00:34,  2.55it/s] 12%|█▏        | 12/98 [00:24<00:28,  3.00it/s] 13%|█▎        | 13/98 [00:24<00:24,  3.41it/s] 14%|█▍        | 14/98 [00:25<00:29,  2.81it/s] 15%|█▌        | 15/98 [00:25<00:25,  3.24it/s] 16%|█▋        | 16/98 [00:25<00:22,  3.62it/s] 17%|█▋        | 17/98 [00:25<00:20,  3.95it/s] 18%|█▊        | 18/98 [00:27<00:45,  1.76it/s] 20%|██        | 20/98 [00:27<00:27,  2.83it/s] 21%|██▏       | 21/98 [00:27<00:24,  3.19it/s] 22%|██▏       | 22/98 [00:28<00:35,  2.14it/s] 24%|██▍       | 24/98 [00:28<00:23,  3.21it/s] 26%|██▌       | 25/98 [00:28<00:20,  3.53it/s] 27%|██▋       | 26/98 [00:29<00:24,  2.96it/s] 28%|██▊       | 27/98 [00:29<00:21,  3.32it/s] 29%|██▊       | 28/98 [00:29<00:19,  3.65it/s] 30%|██▉       | 29/98 [00:30<00:17,  3.95it/s] 31%|███       | 30/98 [00:30<00:22,  3.08it/s] 32%|███▏      | 31/98 [00:30<00:19,  3.48it/s] 33%|███▎      | 32/98 [00:30<00:17,  3.81it/s] 34%|███▎      | 33/98 [00:31<00:15,  4.11it/s] 35%|███▍      | 34/98 [00:31<00:20,  3.13it/s] 36%|███▌      | 35/98 [00:31<00:17,  3.52it/s] 37%|███▋      | 36/98 [00:32<00:16,  3.86it/s] 38%|███▊      | 37/98 [00:32<00:14,  4.10it/s] 39%|███▉      | 38/98 [00:32<00:19,  3.15it/s] 40%|███▉      | 39/98 [00:32<00:16,  3.54it/s] 41%|████      | 40/98 [00:33<00:14,  3.88it/s] 42%|████▏     | 41/98 [00:33<00:13,  4.16it/s] 43%|████▎     | 42/98 [00:33<00:17,  3.14it/s] 44%|████▍     | 43/98 [00:34<00:15,  3.54it/s] 45%|████▍     | 44/98 [00:34<00:12,  4.30it/s] 46%|████▌     | 45/98 [00:34<00:13,  4.03it/s] 47%|████▋     | 46/98 [00:35<00:19,  2.60it/s] 48%|████▊     | 47/98 [00:35<00:15,  3.26it/s] 49%|████▉     | 48/98 [00:35<00:13,  3.71it/s] 50%|█████     | 49/98 [00:35<00:12,  4.03it/s] 51%|█████     | 50/98 [00:36<00:15,  3.11it/s] 52%|█████▏    | 51/98 [00:36<00:13,  3.51it/s] 53%|█████▎    | 52/98 [00:36<00:11,  3.85it/s] 54%|█████▍    | 53/98 [00:36<00:10,  4.14it/s] 55%|█████▌    | 54/98 [00:37<00:14,  3.13it/s] 56%|█████▌    | 55/98 [00:37<00:12,  3.53it/s] 57%|█████▋    | 56/98 [00:37<00:10,  3.87it/s] 58%|█████▊    | 57/98 [00:37<00:09,  4.14it/s] 59%|█████▉    | 58/98 [00:38<00:12,  3.14it/s] 60%|██████    | 59/98 [00:38<00:11,  3.53it/s] 61%|██████    | 60/98 [00:38<00:09,  3.88it/s] 62%|██████▏   | 61/98 [00:38<00:08,  4.16it/s] 63%|██████▎   | 62/98 [00:39<00:11,  3.14it/s] 64%|██████▍   | 63/98 [00:39<00:09,  3.53it/s] 65%|██████▌   | 64/98 [00:39<00:08,  3.88it/s] 66%|██████▋   | 65/98 [00:40<00:07,  4.16it/s] 67%|██████▋   | 66/98 [00:40<00:10,  3.14it/s] 68%|██████▊   | 67/98 [00:40<00:08,  3.53it/s] 69%|██████▉   | 68/98 [00:40<00:07,  3.88it/s] 70%|███████   | 69/98 [00:41<00:06,  4.16it/s] 71%|███████▏  | 70/98 [00:41<00:09,  3.10it/s] 72%|███████▏  | 71/98 [00:41<00:07,  3.53it/s] 73%|███████▎  | 72/98 [00:42<00:06,  3.90it/s] 74%|███████▍  | 73/98 [00:42<00:05,  4.17it/s] 76%|███████▌  | 74/98 [00:42<00:07,  3.12it/s] 77%|███████▋  | 75/98 [00:42<00:06,  3.54it/s] 78%|███████▊  | 76/98 [00:43<00:05,  3.90it/s] 79%|███████▊  | 77/98 [00:43<00:05,  4.17it/s] 80%|███████▉  | 78/98 [00:43<00:06,  3.15it/s] 81%|████████  | 79/98 [00:44<00:05,  3.54it/s] 82%|████████▏ | 80/98 [00:44<00:04,  3.88it/s] 83%|████████▎ | 81/98 [00:44<00:04,  4.16it/s] 84%|████████▎ | 82/98 [00:44<00:04,  3.45it/s] 85%|████████▍ | 83/98 [00:45<00:04,  3.41it/s] 86%|████████▌ | 84/98 [00:45<00:03,  3.80it/s] 87%|████████▋ | 85/98 [00:45<00:03,  4.09it/s] 88%|████████▊ | 86/98 [00:45<00:03,  3.42it/s] 89%|████████▉ | 87/98 [00:46<00:03,  3.08it/s] 90%|████████▉ | 88/98 [00:46<00:02,  3.49it/s] 91%|█████████ | 89/98 [00:46<00:02,  3.78it/s] 92%|█████████▏| 90/98 [00:47<00:02,  3.69it/s] 93%|█████████▎| 91/98 [00:47<00:02,  3.20it/s] 94%|█████████▍| 92/98 [00:47<00:01,  3.63it/s] 95%|█████████▍| 93/98 [00:47<00:01,  4.47it/s] 96%|█████████▌| 94/98 [00:47<00:00,  4.63it/s] 97%|█████████▋| 95/98 [00:48<00:00,  4.62it/s] 99%|█████████▉| 97/98 [00:48<00:00,  6.17it/s]100%|██████████| 98/98 [00:48<00:00,  5.33it/s]100%|██████████| 98/98 [00:48<00:00,  2.01it/s]
-Epoch 1: Loss=0.9318, Acc=67.28%
-[INFO] New best accuracy: 67.28% (previous best was 0.00%)
-[INFO] Training complete after 1 epochs.
-[INFO] Evaluating model on the test set...
-2025-11-04 11:51:08,690 - WARNING - Unsupported operator aten::add encountered 13 time(s)
-2025-11-04 11:51:08,691 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
-stage3.stage3_block1.shortcut, stage3.stage3_block2.shortcut, stage3.stage3_block3.shortcut, stage4.stage4_block1.shortcut, stage4.stage4_block2.shortcut, stage4.stage4_block3.shortcut, stage4.stage4_block4.shortcut, stage4.stage4_block5.shortcut, stage4.stage4_block6.shortcut
-2025-11-04 11:51:12,072 - WARNING - Unsupported operator aten::add encountered 13 time(s)
-2025-11-04 11:51:12,073 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
-stage3.stage3_block1.shortcut, stage3.stage3_block2.shortcut, stage3.stage3_block3.shortcut, stage4.stage4_block1.shortcut, stage4.stage4_block2.shortcut, stage4.stage4_block3.shortcut, stage4.stage4_block4.shortcut, stage4.stage4_block5.shortcut, stage4.stage4_block6.shortcut
-/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:205: FutureWarning: 
-
-Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
-
-  sns.barplot(x=list(parts.keys()), y=list(parts.values()), palette=["steelblue", "salmon", "gold"])
-/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:48: FutureWarning: 
-
-Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
-
-  sns.barplot(x=list(names), y=list(accs), ax=axs[0], palette="Blues_d")
-/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:66: FutureWarning: 
-
-Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
-
-  sns.barplot(x=list(names), y=list(infer_times), ax=axs[1], palette="Oranges_d")
-/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:74: FutureWarning: 
-
-Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
-
-  sns.barplot(x=list(names), y=mem_mb, ax=axs[2], palette="Greens_d")
-/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
-  ax.set_xticklabels(names, rotation=30, ha='right')
-/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
-  ax.set_xticklabels(names, rotation=30, ha='right')
-/old_Users/jgafur/LTH/manuscript/Tranfer/plots.py:87: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
-  ax.set_xticklabels(names, rotation=30, ha='right')
-/old_Users/jgafur/LTH/manuscript/Tranfer/diagnostic.py:313: UserWarning: Tight layout not applied. The left and right margins cannot be made large enough to accommodate all Axes decorations.
-  plt.tight_layout()
-Final Test Accuracy: 70.37%
-[•] Running diagnostics for Original Model...
-[✓] Diagnostics complete for Original Model
-[✓] Saved metrics for 'Original Model_Kevin' → RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/RegNetX_400MF_CIFAR10_metrics_20251104_115117_483960_41058.json
-[✓] Merged 9 metrics files → RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
-[✓] Metrics merged successfully → RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/metrics/merged_metrics.json
-[✓] Saved plot: RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.200000.pth_epochs1_pretrain1_postcompress0/plots/merged_plots.svg
-[DEBUG] FLOPs: [31556583424.0, 26762592256.0, 1321353216.0, 11367497728.0, 32595197952.0, 31830786048.0, 3124379648.0, 24352079872.0, 2085765120.0]
-[DEBUG] Times: [0.022296883249282834, 0.01943492317199707, 0.006038864004611968, 0.00840157437324524, 0.021308380985260007, 0.022123888206481934, 0.003343017590045929, 0.018540174150466916, 0.006201600050926208]
-[DEBUG] Delta Accuracy vs Params Data: [{'name': 'Stage 2_Kevin', 'ΔAcc': 0.0, 'ΔParams(%)': 0.0}, {'name': 'Last 2_Kevin', 'ΔAcc': 7.390000000000008, 'ΔParams(%)': -24.597997696031637}, {'name': 'Stage 1-4_Kevin', 'ΔAcc': -26.58, 'ΔParams(%)': -99.3518669742118}, {'name': 'Stage 4_Kevin', 'ΔAcc': 3.186, 'ΔParams(%)': -90.24128784669789}, {'name': 'Original Model_Kevin', 'ΔAcc': 9.786000000000008, 'ΔParams(%)': 0.27535828105444543}, {'name': 'Stage 1_Kevin', 'ΔAcc': 6.533999999999999, 'ΔParams(%)': 0.22442293802255234}, {'name': 'Stage 3-4_Kevin', 'ΔAcc': -17.146, 'ΔParams(%)': -99.02557335012546}, {'name': 'Stage 3_Kevin', 'ΔAcc': -4.513999999999996, 'ΔParams(%)': -8.508927222373122}, {'name': 'Stage 2-4_Kevin', 'ΔAcc': -23.693999999999996, 'ΔParams(%)': -99.3009316311799}]
-[DEBUG] FLOPs: [31556583424.0, 26762592256.0, 1321353216.0, 11367497728.0, 32595197952.0, 31830786048.0, 3124379648.0, 24352079872.0, 2085765120.0]
-[DEBUG] Memory: [621.61328125, 658.36328125, 202.86328125, 520.36328125, 756.73828125, 638.61328125, 339.86328125, 518.11328125, 262.86328125]
-[DEBUG] Accuracy: [57.492, 64.882, 30.912, 60.678, 67.278, 64.026, 40.346, 52.978, 33.798]
-[DEBUG] Memory: [621.61328125, 658.36328125, 202.86328125, 520.36328125, 756.73828125, 638.61328125, 339.86328125, 518.11328125, 262.86328125]
-[DEBUG] Heatmap Rows: [{'Model': 'Stage 2_Kevin', 'Accuracy': 57.492, 'Params': 11449810, 'FLOPs': 31556583424, 'Inference Time': 0.022296883249282834, 'Memory (MB)': 621.61328125}, {'Model': 'Last 2_Kevin', 'Accuracy': 64.882, 'Params': 8633386, 'FLOPs': 26762592256, 'Inference Time': 0.01943492317199707, 'Memory (MB)': 658.36328125}, {'Model': 'Stage 1-4_Kevin', 'Accuracy': 30.912, 'Params': 74210, 'FLOPs': 1321353216, 'Inference Time': 0.006038864004611968, 'Memory (MB)': 202.86328125}, {'Model': 'Stage 4_Kevin', 'Accuracy': 60.678, 'Params': 1117354, 'FLOPs': 11367497728, 'Inference Time': 0.00840157437324524, 'Memory (MB)': 520.36328125}, {'Model': 'Original Model_Kevin', 'Accuracy': 67.278, 'Params': 11481338, 'FLOPs': 32595197952, 'Inference Time': 0.021308380985260007, 'Memory (MB)': 756.73828125}, {'Model': 'Stage 1_Kevin', 'Accuracy': 64.026, 'Params': 11475506, 'FLOPs': 31830786048, 'Inference Time': 0.022123888206481934, 'Memory (MB)': 638.61328125}, {'Model': 'Stage 3-4_Kevin', 'Accuracy': 40.346, 'Params': 111570, 'FLOPs': 3124379648, 'Inference Time': 0.003343017590045929, 'Memory (MB)': 339.86328125}, {'Model': 'Stage 3_Kevin', 'Accuracy': 52.978, 'Params': 10475554, 'FLOPs': 24352079872, 'Inference Time': 0.018540174150466916, 'Memory (MB)': 518.11328125}, {'Model': 'Stage 2-4_Kevin', 'Accuracy': 33.798, 'Params': 80042, 'FLOPs': 2085765120, 'Inference Time': 0.006201600050926208, 'Memory (MB)': 262.86328125}]
-[DEBUG] Collapse Curve Rows: [{'Model': 'Stage 2_Kevin', 'Params': 11449810, 'Time': 0.022296883249282834, 'Accuracy': 57.492}, {'Model': 'Last 2_Kevin', 'Params': 8633386, 'Time': 0.01943492317199707, 'Accuracy': 64.882}, {'Model': 'Stage 1-4_Kevin', 'Params': 74210, 'Time': 0.006038864004611968, 'Accuracy': 30.912}, {'Model': 'Stage 4_Kevin', 'Params': 1117354, 'Time': 0.00840157437324524, 'Accuracy': 60.678}, {'Model': 'Original Model_Kevin', 'Params': 11481338, 'Time': 0.021308380985260007, 'Accuracy': 67.278}, {'Model': 'Stage 1_Kevin', 'Params': 11475506, 'Time': 0.022123888206481934, 'Accuracy': 64.026}, {'Model': 'Stage 3-4_Kevin', 'Params': 111570, 'Time': 0.003343017590045929, 'Accuracy': 40.346}, {'Model': 'Stage 3_Kevin', 'Params': 10475554, 'Time': 0.018540174150466916, 'Accuracy': 52.978}, {'Model': 'Stage 2-4_Kevin', 'Params': 80042, 'Time': 0.006201600050926208, 'Accuracy': 33.798}]
-[✓] Experiment 'Original Model' completed. Checkpoints and metrics saved.
