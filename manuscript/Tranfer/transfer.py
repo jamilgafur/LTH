@@ -97,8 +97,8 @@ EXPERIMENTS = {
 
             # Single-stage collapses (single tuples)
             "Last 2": ("stage4.stage4_block5.block.conv1", "stage4.stage4_block6.block.conv3"),
-            "Stage 4": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block3.block.conv3"),
-            "Stage 3": ("stage3.stage3_block1.block.conv1", "stage3.stage3_block1.block.conv3"),
+            "Stage 4": ("stage4.stage4_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
+            "Stage 3": ("stage3.stage3_block0.block.conv1", "stage3.stage3_block3.block.conv3"),
             "Stage 2": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),
             "Stage 1": ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv3"),
 
