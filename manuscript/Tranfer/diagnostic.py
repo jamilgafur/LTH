@@ -14,6 +14,7 @@ import seaborn as sns
 import torch
 import torch.nn as nn
 from fvcore.nn import FlopCountAnalysis
+import psutil
 
 # =====================================
 # Utility Imports (Project-specific)
@@ -196,25 +197,52 @@ def memory_decomposition(model, input_tensor, save_dir, exp_name):
         except Exception:
             pass
 
+    # GPU memory
     peak_mem = torch.cuda.max_memory_allocated() / 1e6 if torch.cuda.is_available() else None
     activation_mem = max(peak_mem - param_mem, 0) if peak_mem is not None else 0.0
-    parts = {"Params_MB": float(param_mem), "Activations_MB": float(activation_mem),
-             "Peak_GPU_MB": float(peak_mem) if peak_mem else 0.0}
 
-    plt.figure(figsize=(6, 6))
-    sns.barplot(x=list(parts.keys()), y=list(parts.values()), palette=["steelblue", "salmon", "gold"])
+    # CPU memory
+    cpu_memory = psutil.virtual_memory().used / 1e6  # MB
+
+    # Memory parts breakdown
+    parts = {
+        "Params_MB": float(param_mem),
+        "Activations_MB": float(activation_mem),
+        "Peak_GPU_MB": float(peak_mem) if peak_mem else 0.0,
+        "CPU_Memory_MB": cpu_memory
+    }
+
+    # Create subplots
+    fig, axes = plt.subplots(2, 1, figsize=(8, 8), sharex=True)
+
+    # Plot GPU and CPU memory breakdown
+    axes[0].bar(parts.keys(), parts.values(), color=["steelblue", "salmon", "gold", "lightgreen"])
     for i, v in enumerate(parts.values()):
-        plt.text(i, v, f"{v:.1f}", ha='center', va='bottom', fontsize=10)
-    plt.ylabel("Memory (MB)")
-    plt.title(f"GPU Memory Breakdown — {exp_name}")
+        axes[0].text(i, v, f"{v:.1f}", ha='center', va='bottom', fontsize=10)
+    axes[0].set_ylabel("Memory (MB)")
+    axes[0].set_title(f"GPU vs CPU Memory Breakdown — {exp_name}")
+
+    # Plot memory usage over time (example of adding CPU memory usage trend)
+    # For simplicity, we'll assume you want to show CPU memory usage over time as a constant value for this plot
+    axes[1].plot([0, 1], [cpu_memory, cpu_memory], label="CPU Memory Usage", color="lightgreen")
+    axes[1].set_ylabel("CPU Memory (MB)")
+    axes[1].set_xlabel("Time (arbitrary)")
+    axes[1].set_title(f"CPU Memory Trend — {exp_name}")
+
+    # Tight layout
     plt.tight_layout()
-    svg_path = os.path.join(save_dir, f"{exp_name}_memory_breakdown.svg")
+
+    # Save the figure
+    svg_path = os.path.join(save_dir, f"{exp_name}_memory_breakdown_with_cpu.svg")
     plt.savefig(svg_path)
     plt.close()
+
     return parts
+
 # -------------------------
 # Collapse analysis (unchanged but robust)
 # -------------------------
+
 def predict_collapse_parameters(in_channels, out_channels, kernel_size, num_layers_collapsed):
     original_params = num_layers_collapsed * (in_channels * out_channels * kernel_size * kernel_size + out_channels)
     collapsed_params = in_channels * out_channels * kernel_size * kernel_size + out_channels
@@ -264,8 +292,6 @@ def debug_tensor_shape(tensor, description="Tensor"):
     else:
         print(f"{description} is None!")
 
-
-import numpy as np
 
 # -------------------------
 # Unified metrics plots (wrap non-dict metrics, average lists)
@@ -551,6 +577,7 @@ def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
     # save data
     df.to_csv(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.csv"), index=False)
     plt.close()
+
 def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name, dtype_bytes=4):
     import json
     from collections import defaultdict
