@@ -118,6 +118,7 @@ def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
 
     plt.tight_layout()
     svg_path = os.path.join(save_dir, f"{exp_name}_params_flops_layers.svg")
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_params_flops_layers.csv"), index=False)
     plt.savefig(svg_path)
     plt.close(fig)
     return df
