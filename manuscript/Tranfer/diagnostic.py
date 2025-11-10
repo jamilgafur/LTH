@@ -290,67 +290,81 @@ def memory_decomposition(model, input_tensor, save_dir, exp_name):
 
     # Convert results for plotting
     devices = [r["device"] for r in results]
-    gpu_memories = [r["Peak_GPU_MB"] for r in results]
-    cpu_memories = [r["CPU_Memory_Used_MB"] for r in results]
-    params_MB_cpu = results[0]["Params_MB_CPU"]
-    params_MB_gpu = results[0]["Params_MB_GPU"]
-    activation_memories = [r["Activation_Memory_MB"] for r in results]
-    
-    # Calculate memory efficiency
+    gpu_memories = [r.get("Peak_GPU_MB", 0) for r in results]            # measured peak GPU
+    cpu_memories = [r.get("CPU_Memory_Used_MB", 0) for r in results]
+    params_MB_cpu = results[0].get("Params_MB_CPU", 0)
+    params_MB_gpu = results[0].get("Params_MB_GPU", 0)
+    activation_memories = [r.get("Activation_Memory_MB", 0) for r in results]
+
+    # Expand scalar params value into a list that matches devices length
+    params_list_gpu = [params_MB_gpu] * len(devices)
+
+    # Calculate memory efficiency (unchanged)
     memory_efficiency = calculate_memory_efficiency(params_MB_gpu, max(gpu_memories) if gpu_memories else 0)
 
     # Set Seaborn style
     sns.set_theme(style="whitegrid", palette="muted")
 
-    # Plot
+    # ---- Plot setup ----
     fig, axes = plt.subplots(2, 1, figsize=(10, 10), sharex=True)
 
-    # --- Top subplot: GPU memory breakdown ---
-    axes[0].bar(devices, params_MB_gpu, color="lightblue", label="Params (GPU)", zorder=3)
-    axes[0].bar(devices, activation_memories, bottom=params_MB_gpu, color="lightgreen", label="Activations (GPU)", zorder=2)
-    
-    # Add memory value annotations on top of bars
-    for i, v in enumerate(gpu_memories):
-        axes[0].text(i, v + 10, f"{v:.1f} MB", ha='center', va='bottom', fontsize=12, color='black')
-    
-    axes[0].axhline(params_MB_gpu, color="gray", linestyle="--", label="Params (GPU) Total", zorder=1)
+    # --- Top subplot: GPU memory breakdown (stacked params + activations) ---
+    axes[0].bar(devices, params_list_gpu, label="Params (GPU)", zorder=3)
+    axes[0].bar(devices, activation_memories, bottom=params_list_gpu, label="Activations (GPU)", zorder=2)
+
+    # If measured peak GPU memory differs from params+activations, show it as a marker/line
+    measured_peaks = gpu_memories
+    for i, peak in enumerate(measured_peaks):
+        # draw a thin horizontal line and marker at the measured peak (if non-zero)
+        if peak and not np.isnan(peak):
+            axes[0].plot([i - 0.4, i + 0.4], [peak, peak], linestyle='--', linewidth=1, zorder=4)
+            axes[0].plot(i, peak, marker='o', zorder=5)
+
+    # Annotate stacked-top values (params + activations) so text sits above the visible bar top
+    stacked_tops = [params_list_gpu[i] + activation_memories[i] for i in range(len(devices))]
+    # Compute a relative offset (2% of the top y) so annotation scales with data
+    gpu_top_candidate = max(max(stacked_tops) if stacked_tops else 0, max(measured_peaks) if measured_peaks else 0)
+    y_offset_gpu = max(10.0, 0.02 * gpu_top_candidate)
+
+    for i, top in enumerate(stacked_tops):
+        axes[0].text(i, top + y_offset_gpu, f"{top:.1f} MB", ha='center', va='bottom', fontsize=12, color='black')
+
+    # Set a safe y-limit that covers both stacked bars and measured peaks
+    axes[0].set_ylim(0, gpu_top_candidate * 1.10 if gpu_top_candidate > 0 else 1.0)
+
     axes[0].set_ylabel("GPU Memory (MB)", fontsize=14)
     axes[0].set_title(f"GPU Memory Usage — {exp_name}", fontsize=16)
     axes[0].legend(loc="upper left", fontsize=12)
     axes[0].grid(True, axis='y', linestyle="--", alpha=0.7)
-    # set y-axis limit for better visibility
-    max_gpu_mem = max(gpu_memories) if gpu_memories else 0
-    axes[0].set_ylim(0, max_gpu_mem * 1.2 if max_gpu_mem > 0 else 100)
-
 
     # --- Bottom subplot: CPU memory ---
-    axes[1].bar(devices, cpu_memories, color="lightgreen", alpha=0.8, label="CPU Memory", zorder=3)
+    axes[1].bar(devices, cpu_memories, alpha=0.8, label="CPU Memory", zorder=3)
 
-    # Add memory value annotations on top of bars
+    # Annotate CPU bars (use relative offset similar to GPU)
+    cpu_top_candidate = max(cpu_memories) if cpu_memories else 0
+    y_offset_cpu = max(10.0, 0.02 * max(cpu_top_candidate, 1.0))
     for i, v in enumerate(cpu_memories):
-        axes[1].text(i, v + 10, f"{v:.1f} MB", ha='center', va='bottom', fontsize=12, color='black')
+        axes[1].text(i, v + y_offset_cpu, f"{v:.1f} MB", ha='center', va='bottom', fontsize=12, color='black')
 
+    axes[1].set_ylim(0, cpu_top_candidate * 1.10 if cpu_top_candidate > 0 else 1.0)
     axes[1].set_ylabel("CPU Memory Used (MB)", fontsize=14)
     axes[1].set_xlabel("Device Used for Inference", fontsize=14)
     axes[1].set_title(f"CPU Memory Usage — {exp_name}", fontsize=16)
     axes[1].grid(True, axis='y', linestyle="--", alpha=0.7)
-    # set y-axis limit for better visibility
-    max_cpu_mem = max(cpu_memories) if cpu_memories else 0
-    axes[1].set_ylim(0, max_cpu_mem * 1.2 if max_cpu_mem > 0 else 100)
-    
+
     plt.tight_layout()
 
     # Save the plot
     os.makedirs(save_dir, exist_ok=True)
     svg_path = os.path.join(save_dir, f"{exp_name}_memory_comparison.svg")
-    plt.savefig(svg_path, dpi=300)  # High DPI for better quality
+    plt.savefig(svg_path, dpi=300)
     plt.close()
 
     print(f"✅ Saved memory breakdown to: {svg_path}")
-    
+
     # Return all results
     return results, memory_efficiency
-    
+        
 # -------------------------
 # Collapse analysis (unchanged but robust)
 # -------------------------
