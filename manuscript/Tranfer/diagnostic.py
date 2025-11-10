@@ -199,6 +199,8 @@ def run_and_measure(model, input_tensor, device_label):
 
     # Measure initial CPU and GPU memory
     cpu_before = get_process_cpu_memory_MB()
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
 
     model.eval()
     with torch.no_grad():
@@ -222,7 +224,6 @@ def run_and_measure(model, input_tensor, device_label):
         "Peak_GPU_MB": gpu_mem_used,
         "CPU_Memory_Used_MB": cpu_mem_used
     }
-
 
 def memory_decomposition(model, input_tensor, save_dir, exp_name):
     if len(input_tensor.shape) == 3:
