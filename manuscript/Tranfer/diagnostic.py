@@ -299,39 +299,51 @@ def memory_decomposition(model, input_tensor, save_dir, exp_name):
     # Calculate memory efficiency
     memory_efficiency = calculate_memory_efficiency(params_MB_gpu, max(gpu_memories) if gpu_memories else 0)
 
+    # Set Seaborn style
+    sns.set_theme(style="whitegrid", palette="muted")
+
     # Plot
-    fig, axes = plt.subplots(2, 1, figsize=(8, 8), sharex=True)
+    fig, axes = plt.subplots(2, 1, figsize=(10, 10), sharex=True)
 
     # --- Top subplot: GPU memory breakdown ---
-    axes[0].bar(devices, params_MB_gpu, color="lightblue", label="Params (GPU)")
-    axes[0].bar(devices, activation_memories, bottom=params_MB_gpu, color="lightgreen", label="Activations (GPU)")
+    axes[0].bar(devices, params_MB_gpu, color="lightblue", label="Params (GPU)", zorder=3)
+    axes[0].bar(devices, activation_memories, bottom=params_MB_gpu, color="lightgreen", label="Activations (GPU)", zorder=2)
+    
+    # Add memory value annotations on top of bars
     for i, v in enumerate(gpu_memories):
-        axes[0].text(i, v, f"{v:.1f} MB", ha='center', va='bottom', fontsize=10)
-    axes[0].axhline(params_MB_gpu, color="gray", linestyle="--", label="Params (GPU) Total")
-    axes[0].set_ylabel("GPU Memory (MB)")
-    axes[0].set_title(f"GPU Memory Usage — {exp_name}")
-    axes[0].legend()
+        axes[0].text(i, v + 10, f"{v:.1f} MB", ha='center', va='bottom', fontsize=12, color='black')
+    
+    axes[0].axhline(params_MB_gpu, color="gray", linestyle="--", label="Params (GPU) Total", zorder=1)
+    axes[0].set_ylabel("GPU Memory (MB)", fontsize=14)
+    axes[0].set_title(f"GPU Memory Usage — {exp_name}", fontsize=16)
+    axes[0].legend(loc="upper left", fontsize=12)
+    axes[0].grid(True, axis='y', linestyle="--", alpha=0.7)
 
     # --- Bottom subplot: CPU memory ---
-    axes[1].bar(devices, cpu_memories, color="lightgreen", alpha=0.8, label="CPU Memory")
+    axes[1].bar(devices, cpu_memories, color="lightgreen", alpha=0.8, label="CPU Memory", zorder=3)
+
+    # Add memory value annotations on top of bars
     for i, v in enumerate(cpu_memories):
-        axes[1].text(i, v, f"{v:.1f} MB", ha='center', va='bottom', fontsize=10)
-    axes[1].set_ylabel("CPU Memory Used (MB)")
-    axes[1].set_xlabel("Device Used for Inference")
-    axes[1].set_title(f"CPU Memory Usage — {exp_name}")
+        axes[1].text(i, v + 10, f"{v:.1f} MB", ha='center', va='bottom', fontsize=12, color='black')
+
+    axes[1].set_ylabel("CPU Memory Used (MB)", fontsize=14)
+    axes[1].set_xlabel("Device Used for Inference", fontsize=14)
+    axes[1].set_title(f"CPU Memory Usage — {exp_name}", fontsize=16)
+    axes[1].grid(True, axis='y', linestyle="--", alpha=0.7)
 
     plt.tight_layout()
 
     # Save the plot
     os.makedirs(save_dir, exist_ok=True)
     svg_path = os.path.join(save_dir, f"{exp_name}_memory_comparison.svg")
-    plt.savefig(svg_path)
+    plt.savefig(svg_path, dpi=300)  # High DPI for better quality
     plt.close()
 
     print(f"✅ Saved memory breakdown to: {svg_path}")
     
     # Return all results
     return results, memory_efficiency
+    
 # -------------------------
 # Collapse analysis (unchanged but robust)
 # -------------------------
