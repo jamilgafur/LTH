@@ -181,10 +181,45 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
     plt.close()
     return df
 
+
 def get_process_cpu_memory_MB():
     """Return current process memory usage (MB)."""
     process = psutil.Process(os.getpid())
     return process.memory_info().rss / 1e6  # MB
+
+def get_model_params_memory_MB(model):
+    """Calculate memory for model parameters (separate CPU/GPU memory)."""
+    # Calculate memory required for model parameters (on CPU)
+    params_MB_cpu = sum(p.numel() for p in model.parameters()) * 4 / 1e6  # 4 bytes per float32
+    
+    # Calculate memory required for model parameters (on GPU)
+    params_MB_gpu = params_MB_cpu if torch.cuda.is_available() else 0.0
+
+    return params_MB_cpu, params_MB_gpu
+
+def track_activation_memory(model, input_tensor, device_label):
+    """Track memory used for activations."""
+    device = torch.device(device_label)
+    model = model.to(device)
+    input_tensor = input_tensor.to(device)
+
+    # Measure memory usage before forward pass
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    gpu_mem_before = torch.cuda.memory_allocated() if torch.cuda.is_available() else 0.0
+
+    # Run inference
+    model.eval()
+    with torch.no_grad():
+        _ = model(input_tensor)
+
+    # Measure memory usage after forward pass
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    gpu_mem_after = torch.cuda.memory_allocated() if torch.cuda.is_available() else 0.0
+
+    activation_memory_MB = (gpu_mem_after - gpu_mem_before) / 1e6  # MB
+    return activation_memory_MB
 
 def run_and_measure(model, input_tensor, device_label):
     """Run model on given device and measure GPU + CPU memory."""
@@ -195,10 +230,13 @@ def run_and_measure(model, input_tensor, device_label):
     # Reset CUDA stats before measurement
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
+        torch.cuda.empty_cache()  # Clear CUDA cache to avoid any residual memory
         torch.cuda.synchronize()
 
     # Measure initial CPU and GPU memory
     cpu_before = get_process_cpu_memory_MB()
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
 
     model.eval()
     with torch.no_grad():
@@ -213,20 +251,31 @@ def run_and_measure(model, input_tensor, device_label):
         torch.cuda.max_memory_allocated() / 1e6 if torch.cuda.is_available() else 0.0
     )
 
-    # Parameter memory (same for CPU/GPU)
-    params_MB = sum(p.numel() for p in model.parameters()) * 4 / 1e6
+    # Get parameter memory (same for CPU/GPU)
+    params_MB_cpu, params_MB_gpu = get_model_params_memory_MB(model)
+
+    # Track activation memory usage
+    activation_memory_MB = track_activation_memory(model, input_tensor, device_label)
 
     return {
         "device": device_label,
-        "Params_MB": params_MB,
+        "Params_MB_CPU": params_MB_cpu,
+        "Params_MB_GPU": params_MB_gpu,
         "Peak_GPU_MB": gpu_mem_used,
-        "CPU_Memory_Used_MB": cpu_mem_used
+        "CPU_Memory_Used_MB": cpu_mem_used,
+        "Activation_Memory_MB": activation_memory_MB
     }
 
+def calculate_memory_efficiency(params_MB_gpu, gpu_mem_used):
+    """Calculate the efficiency of memory usage (e.g., ratio of param memory to total memory)."""
+    if gpu_mem_used > 0:
+        return params_MB_gpu / gpu_mem_used
+    return 0.0
 
 def memory_decomposition(model, input_tensor, save_dir, exp_name):
+    """Measure and visualize memory usage for both CPU and GPU during model inference."""
     if len(input_tensor.shape) == 3:
-        input_tensor = input_tensor.unsqueeze(0)
+        input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension if missing
 
     results = []
 
@@ -243,22 +292,28 @@ def memory_decomposition(model, input_tensor, save_dir, exp_name):
     devices = [r["device"] for r in results]
     gpu_memories = [r["Peak_GPU_MB"] for r in results]
     cpu_memories = [r["CPU_Memory_Used_MB"] for r in results]
-    params_MB = results[0]["Params_MB"]
+    params_MB_cpu = results[0]["Params_MB_CPU"]
+    params_MB_gpu = results[0]["Params_MB_GPU"]
+    activation_memories = [r["Activation_Memory_MB"] for r in results]
+    
+    # Calculate memory efficiency
+    memory_efficiency = calculate_memory_efficiency(params_MB_gpu, max(gpu_memories) if gpu_memories else 0)
 
     # Plot
     fig, axes = plt.subplots(2, 1, figsize=(8, 8), sharex=True)
 
-    # --- Top subplot: GPU memory ---
-    axes[0].bar(devices, gpu_memories, color="steelblue", alpha=0.8)
+    # --- Top subplot: GPU memory breakdown ---
+    axes[0].bar(devices, params_MB_gpu, color="lightblue", label="Params (GPU)")
+    axes[0].bar(devices, activation_memories, bottom=params_MB_gpu, color="lightgreen", label="Activations (GPU)")
     for i, v in enumerate(gpu_memories):
         axes[0].text(i, v, f"{v:.1f} MB", ha='center', va='bottom', fontsize=10)
-    axes[0].axhline(params_MB, color="gray", linestyle="--", label="Params (MB)")
+    axes[0].axhline(params_MB_gpu, color="gray", linestyle="--", label="Params (GPU) Total")
     axes[0].set_ylabel("GPU Memory (MB)")
     axes[0].set_title(f"GPU Memory Usage — {exp_name}")
     axes[0].legend()
 
     # --- Bottom subplot: CPU memory ---
-    axes[1].bar(devices, cpu_memories, color="lightgreen", alpha=0.8)
+    axes[1].bar(devices, cpu_memories, color="lightgreen", alpha=0.8, label="CPU Memory")
     for i, v in enumerate(cpu_memories):
         axes[1].text(i, v, f"{v:.1f} MB", ha='center', va='bottom', fontsize=10)
     axes[1].set_ylabel("CPU Memory Used (MB)")
@@ -267,13 +322,16 @@ def memory_decomposition(model, input_tensor, save_dir, exp_name):
 
     plt.tight_layout()
 
+    # Save the plot
     os.makedirs(save_dir, exist_ok=True)
     svg_path = os.path.join(save_dir, f"{exp_name}_memory_comparison.svg")
     plt.savefig(svg_path)
     plt.close()
 
     print(f"✅ Saved memory breakdown to: {svg_path}")
-    return results
+    
+    # Return all results
+    return results, memory_efficiency
 # -------------------------
 # Collapse analysis (unchanged but robust)
 # -------------------------
