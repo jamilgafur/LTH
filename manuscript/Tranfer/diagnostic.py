@@ -313,7 +313,6 @@ def memory_decomposition(model, input_tensor, save_dir, exp_name):
     for i, v in enumerate(gpu_memories):
         axes[0].text(i, v + 10, f"{v:.1f} MB", ha='center', va='bottom', fontsize=12, color='black')
     
-    axes[0].axhline(params_MB_gpu, color="gray", linestyle="--", label="Params (GPU) Total", zorder=1)
     axes[0].set_ylabel("GPU Memory (MB)", fontsize=14)
     axes[0].set_title(f"GPU Memory Usage — {exp_name}", fontsize=16)
     axes[0].legend(loc="upper left", fontsize=12)
@@ -343,7 +342,7 @@ def memory_decomposition(model, input_tensor, save_dir, exp_name):
     
     # Return all results
     return results, memory_efficiency
-    
+
 # -------------------------
 # Collapse analysis (unchanged but robust)
 # -------------------------
