@@ -313,10 +313,15 @@ def memory_decomposition(model, input_tensor, save_dir, exp_name):
     for i, v in enumerate(gpu_memories):
         axes[0].text(i, v + 10, f"{v:.1f} MB", ha='center', va='bottom', fontsize=12, color='black')
     
+    axes[0].axhline(params_MB_gpu, color="gray", linestyle="--", label="Params (GPU) Total", zorder=1)
     axes[0].set_ylabel("GPU Memory (MB)", fontsize=14)
     axes[0].set_title(f"GPU Memory Usage — {exp_name}", fontsize=16)
     axes[0].legend(loc="upper left", fontsize=12)
     axes[0].grid(True, axis='y', linestyle="--", alpha=0.7)
+    # set y-axis limit for better visibility
+    max_gpu_mem = max(gpu_memories) if gpu_memories else 0
+    axes[0].set_ylim(0, max_gpu_mem * 1.2 if max_gpu_mem > 0 else 100)
+
 
     # --- Bottom subplot: CPU memory ---
     axes[1].bar(devices, cpu_memories, color="lightgreen", alpha=0.8, label="CPU Memory", zorder=3)
@@ -329,7 +334,10 @@ def memory_decomposition(model, input_tensor, save_dir, exp_name):
     axes[1].set_xlabel("Device Used for Inference", fontsize=14)
     axes[1].set_title(f"CPU Memory Usage — {exp_name}", fontsize=16)
     axes[1].grid(True, axis='y', linestyle="--", alpha=0.7)
-
+    # set y-axis limit for better visibility
+    max_cpu_mem = max(cpu_memories) if cpu_memories else 0
+    axes[1].set_ylim(0, max_cpu_mem * 1.2 if max_cpu_mem > 0 else 100)
+    
     plt.tight_layout()
 
     # Save the plot
@@ -342,7 +350,7 @@ def memory_decomposition(model, input_tensor, save_dir, exp_name):
     
     # Return all results
     return results, memory_efficiency
-
+    
 # -------------------------
 # Collapse analysis (unchanged but robust)
 # -------------------------
