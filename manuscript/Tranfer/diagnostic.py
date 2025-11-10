@@ -340,36 +340,46 @@ def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
     metrics = normalize_metrics(metrics_dict)
     if not metrics:
         return
-    try:
-        base = list(metrics.values())[0]
-        if not is_dict_like(base):
-            return
-        base_acc = base.get("final_accuracy", 0)
-        base_params = base.get("param_count", 1)
-    except Exception:
+
+    # --- Find the original model ---
+    base_key = next((k for k in metrics if k.startswith("Original_Model_")), None)
+    if base_key is None:
+        print("[WARN] No base model found matching 'Original_model_*'. Using first entry as fallback.")
+        base_key = next(iter(metrics))
+
+    base = metrics[base_key]
+    if not is_dict_like(base):
         return
 
+    base_acc = base.get("final_accuracy", 0)
+    base_params = base.get("param_count", 1)
+
+    # --- Compute deltas ---
     deltas = []
     for name, data in metrics.items():
         if not is_dict_like(data):
             continue
         d_acc = float(data.get("final_accuracy", 0) - base_acc)
         try:
-            d_params = (float(data.get("param_count", 0)) - float(base_params)) / float(base_params) * 100 if float(base_params) != 0 else 0.0
+            if float(base_params) != 0:
+                d_params = (float(data.get("param_count", 0)) - float(base_params)) / float(base_params) * 100
+            else:
+                d_params = 0.0
         except Exception:
             d_params = 0.0
         deltas.append({"name": name, "ΔAcc": d_acc, "ΔParams(%)": d_params})
 
+    print(f"[DEBUG] Base model: {base_key}")
     print(f"[DEBUG] Delta Accuracy vs Params Data: {deltas}")
 
     if not deltas:
         return
-    df = pd.DataFrame(deltas)
 
-    # Save the data to CSV
+    df = pd.DataFrame(deltas)
+    ensure_dir(save_dir)
     df.to_csv(os.path.join(save_dir, f"{exp_name}_delta_acc_vs_params.csv"), index=False)
 
-    ensure_dir(save_dir)
+    # --- Plot ---
     plt.figure(figsize=(8, 6))
     sns.scatterplot(data=df, x="ΔParams(%)", y="ΔAcc")
     for _, r in df.iterrows():
@@ -381,7 +391,6 @@ def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
     plt.title(f"Compression Efficiency — {exp_name}")
     plt.tight_layout()
     plt.savefig(os.path.join(save_dir, f"delta_acc_vs_params.svg"))
-    df.to_csv(os.path.join(save_dir, f"delta_acc_vs_params.csv"), index=False)
     plt.close()
 
 def plot_flops_vs_memory(metrics_dict, save_dir, exp_name):
