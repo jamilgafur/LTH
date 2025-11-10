@@ -181,21 +181,27 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
     plt.close()
     return df
 
+import os
+import psutil
+import torch
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# ---- Memory helpers ----
 
 def get_process_cpu_memory_MB():
     """Return current process memory usage (MB)."""
     process = psutil.Process(os.getpid())
     return process.memory_info().rss / 1e6  # MB
 
-def get_model_params_memory_MB(model):
-    """Calculate memory for model parameters (separate CPU/GPU memory)."""
-    # Calculate memory required for model parameters (on CPU)
-    params_MB_cpu = sum(p.numel() for p in model.parameters()) * 4 / 1e6  # 4 bytes per float32
-    
-    # Calculate memory required for model parameters (on GPU)
-    params_MB_gpu = params_MB_cpu if torch.cuda.is_available() else 0.0
 
+def get_model_params_memory_MB(model, device_label):
+    """Calculate memory for model parameters (separate CPU/GPU memory)."""
+    params_MB_cpu = sum(p.numel() for p in model.parameters()) * 4 / 1e6  # 4 bytes per float32
+    params_MB_gpu = params_MB_cpu if device_label == "cuda" else 0.0
     return params_MB_cpu, params_MB_gpu
+
 
 def track_activation_memory(model, input_tensor, device_label):
     """Track memory used for activations."""
@@ -203,23 +209,25 @@ def track_activation_memory(model, input_tensor, device_label):
     model = model.to(device)
     input_tensor = input_tensor.to(device)
 
-    # Measure memory usage before forward pass
     if torch.cuda.is_available():
         torch.cuda.synchronize()
-    gpu_mem_before = torch.cuda.memory_allocated() if torch.cuda.is_available() else 0.0
+        gpu_mem_before = torch.cuda.memory_allocated()
+    else:
+        gpu_mem_before = 0.0
 
-    # Run inference
     model.eval()
     with torch.no_grad():
         _ = model(input_tensor)
 
-    # Measure memory usage after forward pass
     if torch.cuda.is_available():
         torch.cuda.synchronize()
-    gpu_mem_after = torch.cuda.memory_allocated() if torch.cuda.is_available() else 0.0
+        gpu_mem_after = torch.cuda.memory_allocated()
+    else:
+        gpu_mem_after = 0.0
 
-    activation_memory_MB = (gpu_mem_after - gpu_mem_before) / 1e6  # MB
+    activation_memory_MB = (gpu_mem_after - gpu_mem_before) / 1e6
     return activation_memory_MB
+
 
 def run_and_measure(model, input_tensor, device_label):
     """Run model on given device and measure GPU + CPU memory."""
@@ -230,7 +238,7 @@ def run_and_measure(model, input_tensor, device_label):
     # Reset CUDA stats before measurement
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
-        torch.cuda.empty_cache()  # Clear CUDA cache to avoid any residual memory
+        torch.cuda.empty_cache()
         torch.cuda.synchronize()
 
     # Measure initial CPU and GPU memory
@@ -251,10 +259,7 @@ def run_and_measure(model, input_tensor, device_label):
         torch.cuda.max_memory_allocated() / 1e6 if torch.cuda.is_available() else 0.0
     )
 
-    # Get parameter memory (same for CPU/GPU)
-    params_MB_cpu, params_MB_gpu = get_model_params_memory_MB(model)
-
-    # Track activation memory usage
+    params_MB_cpu, params_MB_gpu = get_model_params_memory_MB(model, device_label)
     activation_memory_MB = track_activation_memory(model, input_tensor, device_label)
 
     return {
@@ -266,104 +271,83 @@ def run_and_measure(model, input_tensor, device_label):
         "Activation_Memory_MB": activation_memory_MB
     }
 
+
 def calculate_memory_efficiency(params_MB_gpu, gpu_mem_used):
-    """Calculate the efficiency of memory usage (e.g., ratio of param memory to total memory)."""
-    if gpu_mem_used > 0:
-        return params_MB_gpu / gpu_mem_used
-    return 0.0
+    """Calculate memory efficiency ratio (param memory / total)."""
+    return params_MB_gpu / gpu_mem_used if gpu_mem_used > 0 else 0.0
+
+
+# ---- Plot + main wrapper ----
 
 def memory_decomposition(model, input_tensor, save_dir, exp_name):
     """Measure and visualize memory usage for both CPU and GPU during model inference."""
     if len(input_tensor.shape) == 3:
-        input_tensor = input_tensor.unsqueeze(0)  # Add batch dimension if missing
+        input_tensor = input_tensor.unsqueeze(0)
 
     results = []
-
-    # Run on CPU (measure both GPU + CPU memory)
     results.append(run_and_measure(model, input_tensor, "cpu"))
 
-    # Run on GPU (if available)
     if torch.cuda.is_available():
         results.append(run_and_measure(model, input_tensor, "cuda"))
     else:
         print("⚠️ CUDA not available; skipping GPU run.")
 
-    # Convert results for plotting
     devices = [r["device"] for r in results]
-    gpu_memories = [r.get("Peak_GPU_MB", 0) for r in results]            # measured peak GPU
+    gpu_memories = [r.get("Peak_GPU_MB", 0) for r in results]
     cpu_memories = [r.get("CPU_Memory_Used_MB", 0) for r in results]
     params_MB_cpu = results[0].get("Params_MB_CPU", 0)
     params_MB_gpu = results[0].get("Params_MB_GPU", 0)
     activation_memories = [r.get("Activation_Memory_MB", 0) for r in results]
+    params_list_gpu = [r.get("Params_MB_GPU", 0) for r in results]
 
-    # Expand scalar params value into a list that matches devices length
-    params_list_gpu = [params_MB_gpu] * len(devices)
-
-    # Calculate memory efficiency (unchanged)
     memory_efficiency = calculate_memory_efficiency(params_MB_gpu, max(gpu_memories) if gpu_memories else 0)
+    sns.set_theme(style="whitegrid")
 
-    # Set Seaborn style
-    sns.set_theme(style="whitegrid", palette="muted")
-
-    # ---- Plot setup ----
     fig, axes = plt.subplots(2, 1, figsize=(10, 10), sharex=True)
 
-    # --- Top subplot: GPU memory breakdown (stacked params + activations) ---
-    axes[0].bar(devices, params_list_gpu, label="Params (GPU)", zorder=3)
-    axes[0].bar(devices, activation_memories, bottom=params_list_gpu, label="Activations (GPU)", zorder=2)
+    # ---------------- GPU plot ----------------
+    bars_params = axes[0].bar(devices, params_list_gpu, color="#5DADE2", label="Parameters (GPU)", zorder=3)
+    bars_activ = axes[0].bar(devices, activation_memories, bottom=params_list_gpu,
+                             color="#58D68D", label="Activations (GPU)", zorder=2)
 
-    # If measured peak GPU memory differs from params+activations, show it as a marker/line
-    measured_peaks = gpu_memories
-    for i, peak in enumerate(measured_peaks):
-        # draw a thin horizontal line and marker at the measured peak (if non-zero)
-        if peak and not np.isnan(peak):
-            axes[0].plot([i - 0.4, i + 0.4], [peak, peak], linestyle='--', linewidth=1, zorder=4)
-            axes[0].plot(i, peak, marker='o', zorder=5)
-
-    # Annotate stacked-top values (params + activations) so text sits above the visible bar top
     stacked_tops = [params_list_gpu[i] + activation_memories[i] for i in range(len(devices))]
-    # Compute a relative offset (2% of the top y) so annotation scales with data
-    gpu_top_candidate = max(max(stacked_tops) if stacked_tops else 0, max(measured_peaks) if measured_peaks else 0)
-    y_offset_gpu = max(10.0, 0.02 * gpu_top_candidate)
+    gpu_top = max(max(stacked_tops) if stacked_tops else 0, max(gpu_memories) if gpu_memories else 0)
+    y_offset_gpu = max(2.0, 0.02 * gpu_top)
 
     for i, top in enumerate(stacked_tops):
-        axes[0].text(i, top + y_offset_gpu, f"{top:.1f} MB", ha='center', va='bottom', fontsize=12, color='black')
+        axes[0].text(i, top + y_offset_gpu, f"{top:.1f} MB", ha='center', va='bottom', fontsize=11)
 
-    # Set a safe y-limit that covers both stacked bars and measured peaks
-    axes[0].set_ylim(0, gpu_top_candidate * 1.10 if gpu_top_candidate > 0 else 1.0)
-
-    axes[0].set_ylabel("GPU Memory (MB)", fontsize=14)
-    axes[0].set_title(f"GPU Memory Usage — {exp_name}", fontsize=16)
-    axes[0].legend(loc="upper left", fontsize=12)
+    axes[0].set_ylim(0, gpu_top * 1.15 if gpu_top > 0 else 1)
+    axes[0].set_ylabel("GPU Memory (MB)", fontsize=13)
+    axes[0].set_title(f"GPU Memory Usage — {exp_name}", fontsize=15)
+    axes[0].legend(loc="upper left", fontsize=11, frameon=True)
     axes[0].grid(True, axis='y', linestyle="--", alpha=0.7)
 
-    # --- Bottom subplot: CPU memory ---
-    axes[1].bar(devices, cpu_memories, alpha=0.8, label="CPU Memory", zorder=3)
+    # ---------------- CPU plot ----------------
+    bars_cpu = axes[1].bar(devices, cpu_memories, color="#F5B041", alpha=0.9, label="CPU Memory Used", zorder=3)
 
-    # Annotate CPU bars (use relative offset similar to GPU)
-    cpu_top_candidate = max(cpu_memories) if cpu_memories else 0
-    y_offset_cpu = max(10.0, 0.02 * max(cpu_top_candidate, 1.0))
+    cpu_top = max(cpu_memories) if cpu_memories else 0
+    y_offset_cpu = 0.05 * (cpu_top if cpu_top > 0 else 1.0)
+
     for i, v in enumerate(cpu_memories):
-        axes[1].text(i, v + y_offset_cpu, f"{v:.1f} MB", ha='center', va='bottom', fontsize=12, color='black')
+        axes[1].text(i, v + y_offset_cpu, f"{v:.3f} MB", ha='center', va='bottom', fontsize=11)
 
-    axes[1].set_ylim(0, cpu_top_candidate * 1.10 if cpu_top_candidate > 0 else 1.0)
-    axes[1].set_ylabel("CPU Memory Used (MB)", fontsize=14)
-    axes[1].set_xlabel("Device Used for Inference", fontsize=14)
-    axes[1].set_title(f"CPU Memory Usage — {exp_name}", fontsize=16)
+    axes[1].set_ylim(0, cpu_top * 1.25 if cpu_top > 0 else 1)
+    axes[1].set_ylabel("CPU Memory (MB)", fontsize=13)
+    axes[1].set_xlabel("Device Used for Inference", fontsize=13)
+    axes[1].set_title(f"CPU Memory Usage — {exp_name}", fontsize=15)
+    axes[1].legend(loc="upper left", fontsize=11, frameon=True)
     axes[1].grid(True, axis='y', linestyle="--", alpha=0.7)
 
     plt.tight_layout()
-
-    # Save the plot
     os.makedirs(save_dir, exist_ok=True)
     svg_path = os.path.join(save_dir, f"{exp_name}_memory_comparison.svg")
     plt.savefig(svg_path, dpi=300)
     plt.close()
-
     print(f"✅ Saved memory breakdown to: {svg_path}")
 
-    # Return all results
     return results, memory_efficiency
+
         
 # -------------------------
 # Collapse analysis (unchanged but robust)
