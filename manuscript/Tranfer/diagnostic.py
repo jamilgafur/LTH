@@ -294,65 +294,6 @@ def debug_tensor_shape(tensor, description="Tensor"):
 
 
 # -------------------------
-# Unified metrics plots (wrap non-dict metrics, average lists)
-# -------------------------
-def plot_unified_metrics(metrics_dir, save_dir, workflow):
-    import glob, json, numpy as np
-    from utils import ensure_dir, is_dict_like, normalize_metrics
-    ensure_dir(save_dir)
-    json_paths = glob.glob(os.path.join(metrics_dir, "*metrics.json"))
-    all_data = []
-
-    for path in json_paths:
-        with open(path, "r") as f:
-            content = json.load(f)
-        for exp_group_name, exp_group in content.items():
-            for name, m in exp_group.items():
-                if not is_dict_like(m):
-                    m = {name: m}
-                def safe_float(x):
-                    try:
-                        return float(np.mean(x)) if isinstance(x, list) else float(x)
-                    except Exception:
-                        return 0.0
-                all_data.append({
-                    "Experiment": name,
-                    "Params": safe_float(m.get("param_count", 0)),
-                    "Accuracy": safe_float(m.get("final_accuracy", m.get("accuracies", 0))),
-                    "FLOPs": safe_float(m.get("flops", 0)),
-                    "Inference Time": safe_float(m.get("inference_time", 0)),
-                    "Memory": safe_float(m.get("total_size_mb", 0))
-                })
-
-    df = pd.DataFrame(all_data)
-    if df.empty:
-        return
-
-    # Accuracy vs Parameters
-    plt.figure(figsize=(9, 6))
-    ax = sns.scatterplot(data=df, x="Params", y="Accuracy", hue="Experiment", s=120)
-    for i, row in df.iterrows():
-        ax.text(row["Params"], row["Accuracy"], row["Experiment"], fontsize=8, ha='right')
-    ax.set_xscale("log")
-    plt.grid(alpha=0.3)
-    plt.title(f"Accuracy vs Parameters — {workflow}")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{workflow}_accuracy_vs_params.svg"))
-    plt.close()
-
-    # FLOPs vs Memory
-    plt.figure(figsize=(9, 6))
-    ax = sns.scatterplot(data=df, x="FLOPs", y="Memory", hue="Experiment", s=120)
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    plt.grid(alpha=0.3)
-    plt.title(f"FLOPs vs Memory — {workflow}")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"flops_vs_memory.svg"))
-    plt.close()
-    df.to_csv(os.path.join(save_dir, f"{workflow}_unified_metrics.csv"), index=False)
-
-# -------------------------
 # Robust plotting helpers
 # -------------------------
 
@@ -472,7 +413,7 @@ def plot_flops_vs_memory(metrics_dict, save_dir, exp_name):
     plt.ylabel("Total Memory (MB, log)")
     plt.title(f"FLOPs vs Memory — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_flops_vs_memory.svg"))
+    plt.savefig(os.path.join(save_dir, f"flops_vs_memory.svg"))
     df_flops_memory.to_csv(os.path.join(save_dir, f"{exp_name}_flops_vs_memory.csv"), index=False)
     plt.close()
 
