@@ -165,13 +165,13 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
     if len(df) > 30:
         pivot = df.set_index("layer").T
         sns.heatmap(pivot, cmap="viridis", annot=False, cbar_kws={"label": "Activation Elements"})
-        plt.title("Activation Elements per Layer (Heatmap)")
+        plt.title(f"Activation Elements per Layer (Heatmap) for {exp_name}")
     else:
         sns.barplot(x="layer", y="activation_elements",
                     data=df.sort_values("activation_elements", ascending=False),
                     color="lightgreen")
         plt.xticks(rotation=90)
-        plt.title("Activation Size per Layer (# elements)")
+        plt.title(f"Activation Elements per Layer for {exp_name}")
         for i, v in enumerate(df["activation_elements"]):
             plt.text(i, v, f"{int(v):,}", ha='center', va='bottom', fontsize=8)
 
@@ -348,7 +348,7 @@ def plot_unified_metrics(metrics_dir, save_dir, workflow):
     plt.grid(alpha=0.3)
     plt.title(f"FLOPs vs Memory — {workflow}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{workflow}_flops_vs_memory.svg"))
+    plt.savefig(os.path.join(save_dir, f"flops_vs_memory.svg"))
     plt.close()
     df.to_csv(os.path.join(save_dir, f"{workflow}_unified_metrics.csv"), index=False)
 
@@ -389,7 +389,7 @@ def plot_flops_vs_latency(metrics_dict, save_dir, exp_name):
     plt.ylabel("Inference Time (s)")
     plt.title(f"FLOPs vs Inference Time — {exp_name}")
     plt.grid(True, linestyle="--", alpha=0.6)
-    file_svg = os.path.join(save_dir, f"{exp_name}_flops_vs_latency.svg")
+    file_svg = os.path.join(save_dir, f"flops_vs_latency.svg")
     plt.tight_layout()
     plt.savefig(file_svg)
     df_flops_latency.to_csv(os.path.join(save_dir, f"{exp_name}_flops_vs_latency.csv"), index=False)
@@ -439,8 +439,8 @@ def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
     plt.ylabel("Δ Accuracy")
     plt.title(f"Compression Efficiency — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_delta_acc_vs_params.svg"))
-    df.to_csv(os.path.join(save_dir, f"{exp_name}_delta_acc_vs_params.csv"), index=False)
+    plt.savefig(os.path.join(save_dir, f"delta_acc_vs_params.svg"))
+    df.to_csv(os.path.join(save_dir, f"delta_acc_vs_params.csv"), index=False)
     plt.close()
 
 def plot_flops_vs_memory(metrics_dict, save_dir, exp_name):
@@ -503,7 +503,7 @@ def plot_accuracy_vs_memory(metrics_dict, save_dir, exp_name):
     plt.ylabel("Accuracy (%)")
     plt.title(f"Accuracy vs Memory — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_acc_vs_memory.svg"))
+    plt.savefig(os.path.join(save_dir, f"acc_vs_memory.svg"))
     df_acc_memory.to_csv(os.path.join(save_dir, f"{exp_name}_acc_vs_memory.csv"), index=False)
     plt.close()
 
@@ -540,43 +540,10 @@ def plot_heatmap(metrics_dict, save_dir, exp_name):
     sns.heatmap(df_norm, annot=True, cmap="coolwarm")
     plt.title(f"Normalized Metrics Heatmap — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_metrics_heatmap.svg"))
+    plt.savefig(os.path.join(save_dir, f"metrics_heatmap.svg"))
     df_norm.to_csv(os.path.join(save_dir, f"{exp_name}_metrics_heatmap.csv"))
     plt.close()
 
-def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
-    metrics = normalize_metrics(metrics_dict)
-    if not metrics:
-        return
-    rows = []
-    for name, v in metrics.items():
-        if not is_dict_like(v):
-            continue
-        rows.append({"Model": name, "Params": v.get("param_count", 0),
-                     "Time": v.get("inference_time", 0), "Accuracy": v.get("final_accuracy", 0)})
-    
-    print(f"[DEBUG] Collapse Curve Rows: {rows}")
-
-    if not rows:
-        return
-    df = pd.DataFrame(rows).sort_values("Model")
-
-    # Save the data to CSV
-    df.to_csv(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.csv"), index=False)
-
-    ensure_dir(save_dir)
-    plt.figure(figsize=(9, 6))
-    plt.plot(df["Model"], df["Params"], label="Parameters", marker="o")
-    plt.plot(df["Model"], df["Time"], label="Inference Time", marker="s")
-    plt.plot(df["Model"], df["Accuracy"], label="Accuracy", marker="^")
-    plt.xticks(rotation=45)
-    plt.legend()
-    plt.title(f"Stage Collapse Cost Curve — {exp_name}")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.svg"))
-    # save data
-    df.to_csv(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.csv"), index=False)
-    plt.close()
 
 def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name, dtype_bytes=4):
     import json
@@ -631,3 +598,95 @@ def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name
     plt.savefig(outpath)
     plt.close()
     return outpath
+
+def plot_accuracy_loss_curve(acc_list, loss_list, workflow, experiment, save_dir="plots"):
+    sns.set(style="whitegrid", palette="muted", font_scale=1.2)
+
+    os.makedirs(save_dir, exist_ok=True)
+    
+    # Create subplots: 2 rows, 1 column
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+
+    # Plot accuracy
+    ax1.plot(acc_list, label='Accuracy', marker='o', linewidth=2, markersize=6, color='tab:blue')
+    ax1.set_title(f'{workflow} - {experiment} Accuracy', fontsize=16)
+    ax1.set_ylabel('Accuracy', fontsize=14)
+    ax1.grid(alpha=0.3)
+    ax1.legend(fontsize=12)
+
+    # Plot loss
+    ax2.plot(loss_list, label='Loss', marker='x', linewidth=2, markersize=6, color='tab:red')
+    ax2.set_title(f'{workflow} - {experiment} Loss', fontsize=16)
+    ax2.set_xlabel('Epoch', fontsize=14)
+    ax2.set_ylabel('Loss', fontsize=14)
+    ax2.grid(alpha=0.3)
+    ax2.legend(fontsize=12)
+    
+    # Set common x-axis labels
+    ax2.set_xticks(range(len(acc_list)))
+    
+    # Adjust layout and save the plot
+    plt.tight_layout()
+    filename = os.path.join(save_dir, f"{workflow}_{experiment.replace(' ', '_')}_metrics.svg")
+    plt.savefig(filename, format='svg')
+    plt.close()
+
+    print(f"[✓] Saved plot: {filename}")
+    
+def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None, flops=None, total_sizes=None):
+    import seaborn as sns
+    sns.set(style="whitegrid", palette="Set2", font_scale=1.1)
+    
+    fig, axs = plt.subplots(3, 1, figsize=(18, 18))
+    
+    # Sort by parameter size
+    sorted_data = sorted(zip(params, accs, names, infer_times or [], mem_usages or [], flops or []), key=lambda x: x[0])
+    params, accs, names, infer_times, mem_usages, flops = zip(*sorted_data)
+    
+    # --- Accuracy vs Parameters ---
+    sns.barplot(x=list(names), y=list(accs), ax=axs[0], palette="Blues_d")
+    axs[0].set_title(f"{dataset or ''} - {title} - Final Accuracy (%)", fontsize=16)
+    axs[0].set_ylabel("Accuracy (%)", fontsize=14)
+    axs[0].grid(alpha=0.3)
+    
+    # Annotate bars
+    for i, v in enumerate(accs):
+        axs[0].text(i, v + 0.5, f"{v:.1f}%", ha='center', fontsize=10)
+    
+    # Secondary axis for parameters
+    ax0_twin = axs[0].twinx()
+    ax0_twin.plot(range(len(params)), params, 'ro--', linewidth=2, markersize=6, label='Parameters')
+    ax0_twin.set_ylabel('Trainable Parameters (log scale)', color='red', fontsize=14)
+    ax0_twin.set_yscale('log')
+    ax0_twin.tick_params(axis='y', colors='red')
+    
+    # --- Inference Time ---
+    if infer_times:
+        sns.barplot(x=list(names), y=list(infer_times), ax=axs[1], palette="Oranges_d")
+        axs[1].set_title("Average Inference Time per Batch (s)", fontsize=16)
+        axs[1].set_ylabel("Time (s)", fontsize=14)
+        axs[1].grid(alpha=0.3)
+    
+    # --- Memory or FLOPs ---
+    if mem_usages:
+        mem_mb = [m / 1e6 for m in mem_usages]
+        sns.barplot(x=list(names), y=mem_mb, ax=axs[2], palette="Greens_d")
+        axs[2].set_title("Peak GPU Memory (MB)", fontsize=16)
+        axs[2].set_ylabel("Memory (MB)", fontsize=14)
+    elif flops:
+        flops_g = [f / 1e9 for f in flops]
+        sns.barplot(x=list(names), y=flops_g, ax=axs[2], palette="Greens_d")
+        axs[2].set_title("FLOPs (GFLOPs)", fontsize=16)
+        axs[2].set_ylabel("GFLOPs", fontsize=14)
+    else:
+        axs[2].axis('off')
+    
+    # Rotate x-ticks
+    for ax in axs:
+        ax.set_xticklabels(names, rotation=30, ha='right')
+    
+    plt.tight_layout()
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    plt.savefig(filename, format='svg')
+    plt.show()
+    print(f"[✓] Saved plot: {filename}")
