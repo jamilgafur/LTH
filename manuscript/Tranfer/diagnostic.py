@@ -181,64 +181,99 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
     plt.close()
     return df
 
+def get_process_cpu_memory_MB():
+    """Return current process memory usage (MB)."""
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss / 1e6  # MB
+
+def run_and_measure(model, input_tensor, device_label):
+    """Run model on given device and measure GPU + CPU memory."""
+    device = torch.device(device_label)
+    model = model.to(device)
+    input_tensor = input_tensor.to(device)
+
+    # Reset CUDA stats before measurement
+    if torch.cuda.is_available():
+        torch.cuda.reset_peak_memory_stats()
+        torch.cuda.synchronize()
+
+    # Measure initial CPU and GPU memory
+    cpu_before = get_process_cpu_memory_MB()
+
+    model.eval()
+    with torch.no_grad():
+        _ = model(input_tensor)
+
+    torch.cuda.synchronize()
+
+    cpu_after = get_process_cpu_memory_MB()
+    cpu_mem_used = cpu_after - cpu_before
+
+    gpu_mem_used = (
+        torch.cuda.max_memory_allocated() / 1e6 if torch.cuda.is_available() else 0.0
+    )
+
+    # Parameter memory (same for CPU/GPU)
+    params_MB = sum(p.numel() for p in model.parameters()) * 4 / 1e6
+
+    return {
+        "device": device_label,
+        "Params_MB": params_MB,
+        "Peak_GPU_MB": gpu_mem_used,
+        "CPU_Memory_Used_MB": cpu_mem_used
+    }
+
+
 def memory_decomposition(model, input_tensor, save_dir, exp_name):
     if len(input_tensor.shape) == 3:
         input_tensor = input_tensor.unsqueeze(0)
 
-    param_mem = sum(p.numel() for p in model.parameters()) * 4 / 1e6  # MB
+    results = []
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    input_tensor = input_tensor.to(device)
-    model.eval()
-    with torch.no_grad():
-        try:
-            _ = model(input_tensor)
-        except Exception:
-            pass
+    # Run on CPU (measure both GPU + CPU memory)
+    results.append(run_and_measure(model, input_tensor, "cpu"))
 
-    # GPU memory
-    peak_mem = torch.cuda.max_memory_allocated() / 1e6 if torch.cuda.is_available() else None
-    activation_mem = max(peak_mem - param_mem, 0) if peak_mem is not None else 0.0
+    # Run on GPU (if available)
+    if torch.cuda.is_available():
+        results.append(run_and_measure(model, input_tensor, "cuda"))
+    else:
+        print("⚠️ CUDA not available; skipping GPU run.")
 
-    # CPU memory
-    cpu_memory = psutil.virtual_memory().used / 1e6  # MB
+    # Convert results for plotting
+    devices = [r["device"] for r in results]
+    gpu_memories = [r["Peak_GPU_MB"] for r in results]
+    cpu_memories = [r["CPU_Memory_Used_MB"] for r in results]
+    params_MB = results[0]["Params_MB"]
 
-    # Memory parts breakdown
-    parts = {
-        "Params_MB": float(param_mem),
-        "Activations_MB": float(activation_mem),
-        "Peak_GPU_MB": float(peak_mem) if peak_mem else 0.0,
-        "CPU_Memory_MB": cpu_memory
-    }
-
-    # Create subplots
+    # Plot
     fig, axes = plt.subplots(2, 1, figsize=(8, 8), sharex=True)
 
-    # Plot GPU and CPU memory breakdown
-    axes[0].bar(parts.keys(), parts.values(), color=["steelblue", "salmon", "gold", "lightgreen"])
-    for i, v in enumerate(parts.values()):
-        axes[0].text(i, v, f"{v:.1f}", ha='center', va='bottom', fontsize=10)
-    axes[0].set_ylabel("Memory (MB)")
-    axes[0].set_title(f"GPU vs CPU Memory Breakdown — {exp_name}")
+    # --- Top subplot: GPU memory ---
+    axes[0].bar(devices, gpu_memories, color="steelblue", alpha=0.8)
+    for i, v in enumerate(gpu_memories):
+        axes[0].text(i, v, f"{v:.1f} MB", ha='center', va='bottom', fontsize=10)
+    axes[0].axhline(params_MB, color="gray", linestyle="--", label="Params (MB)")
+    axes[0].set_ylabel("GPU Memory (MB)")
+    axes[0].set_title(f"GPU Memory Usage — {exp_name}")
+    axes[0].legend()
 
-    # Plot memory usage over time (example of adding CPU memory usage trend)
-    # For simplicity, we'll assume you want to show CPU memory usage over time as a constant value for this plot
-    axes[1].plot([0, 1], [cpu_memory, cpu_memory], label="CPU Memory Usage", color="lightgreen")
-    axes[1].set_ylabel("CPU Memory (MB)")
-    axes[1].set_xlabel("Time (arbitrary)")
-    axes[1].set_title(f"CPU Memory Trend — {exp_name}")
+    # --- Bottom subplot: CPU memory ---
+    axes[1].bar(devices, cpu_memories, color="lightgreen", alpha=0.8)
+    for i, v in enumerate(cpu_memories):
+        axes[1].text(i, v, f"{v:.1f} MB", ha='center', va='bottom', fontsize=10)
+    axes[1].set_ylabel("CPU Memory Used (MB)")
+    axes[1].set_xlabel("Device Used for Inference")
+    axes[1].set_title(f"CPU Memory Usage — {exp_name}")
 
-    # Tight layout
     plt.tight_layout()
 
-    # Save the figure
-    svg_path = os.path.join(save_dir, f"{exp_name}_memory_breakdown_with_cpu.svg")
+    os.makedirs(save_dir, exist_ok=True)
+    svg_path = os.path.join(save_dir, f"{exp_name}_memory_comparison.svg")
     plt.savefig(svg_path)
     plt.close()
 
-    return parts
-
+    print(f"✅ Saved memory breakdown to: {svg_path}")
+    return results
 # -------------------------
 # Collapse analysis (unchanged but robust)
 # -------------------------
