@@ -29,7 +29,7 @@ from utils import *
 from filemanager import *
 from collapse import collapse_only
 from trainer import train_and_evaluate
-from plots import plot_accuracy_loss_curve, plot_results
+
 
 
 def ensure_dir(directory):
@@ -230,7 +230,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     norm_metrics = normalize_metrics(all_metrics)
     # Plots (each function is robust to input)
     for func in [plot_flops_vs_latency, analyze_collapse_effects, plot_delta_accuracy_vs_params,
-                 plot_flops_vs_memory, plot_accuracy_vs_memory, plot_heatmap, plot_stage_collapse_cost_curve]:
+                 plot_flops_vs_memory, plot_accuracy_vs_memory, plot_heatmap]:
         try:
             if func.__name__ == "analyze_collapse_effects":
                 try:
