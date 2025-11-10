@@ -343,7 +343,6 @@ def memory_decomposition(model, input_tensor, save_dir, exp_name):
     
     # Return all results
     return results, memory_efficiency
-    
 # -------------------------
 # Collapse analysis (unchanged but robust)
 # -------------------------
