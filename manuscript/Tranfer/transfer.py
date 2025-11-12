@@ -32,14 +32,14 @@ CHECKPOINT_BASES = {
             "../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"
         )[0]
         + "/",
-        "imagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"
-        )[0]
-        + "/",
-        "tinyimagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"
-        )[0]
-        + "/",
+        # "imagenet": glob.glob(
+        #     "../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"
+        # )[0]
+        # + "/",
+        # "tinyimagenet": glob.glob(
+        #     "../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"
+        # )[0]
+        # + "/",
     },
     "RegNetX_400MF": {
         "Cifar10": glob.glob(
@@ -50,10 +50,10 @@ CHECKPOINT_BASES = {
              "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
          )[0]
          + "/",
-        "imagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
-        )[0]
-        + "/",
+        # "imagenet": glob.glob(
+        #     "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
+        # )[0]
+        # + "/",
         "tinyimagenet": glob.glob(
             "../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"
         )[0]
@@ -71,6 +71,14 @@ CHECKPOINT_FILES = {
             "checkpoint_Finetuned_0.964816.pth",
             "checkpoint_Original_0.000000.pth",
         ),
+        "imagenet": (
+            "checkpoint_Finetuned_0.000000.pth",
+            "checkpoint_Original_0.000000.pth",
+        ),
+        "tinyimagenet": (
+            "checkpoint_Finetuned_0.000000.pth",
+            "checkpoint_Original_0.000000.pth",
+        ),
     },
     "RegNetX_400MF": {
         "Cifar10": (
@@ -79,6 +87,14 @@ CHECKPOINT_FILES = {
         ),
         "Cifar100": (
             "checkpoint_Finetuned_0.931281.pth",
+            "checkpoint_Original_0.000000.pth",
+        ),
+        "imagenet": (
+            "checkpoint_Finetuned_0.000000.pth",
+            "checkpoint_Original_0.000000.pth",
+        ),
+        "tinyimagenet": (
+            "checkpoint_Finetuned_0.000000.pth",
             "checkpoint_Original_0.000000.pth",
         ),
     },
