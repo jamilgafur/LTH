@@ -74,7 +74,7 @@ def timestamped_filename(base):
 
 def load_dataset(dataset_name, model_name="VGG16"):
     if model_name == "VGG16":
-        if dataset_name == "TinyImageNet":
+        if dataset_name == "TinyImageNet" or dataset_name == "tinyimagenet":
             print("Loading Tiny ImageNet data...")
             train_loader, test_loader = load_tiny_imagenet()
             sample_input = next(iter(train_loader))[0]
@@ -98,7 +98,7 @@ def load_dataset(dataset_name, model_name="VGG16"):
             input_channels = sample_input.shape[1]
             num_classes = 10
 
-        elif dataset_name == "ImageNet":
+        elif dataset_name == "ImageNet" or dataset_name == "imagenet":
             print("Loading ImageNet data...")
             train_loader, test_loader = load_imagenet()
             sample_input = next(iter(train_loader))[0]
@@ -110,7 +110,7 @@ def load_dataset(dataset_name, model_name="VGG16"):
             raise ValueError(f"Unsupported dataset: {dataset_name}")
 
     elif model_name == "RegNetX_400MF":
-        if dataset_name == "TinyImageNet":
+        if dataset_name == "TinyImageNet" or dataset_name == "tinyimagenet":
             print("Loading Tiny ImageNet data for RegNetX_400MF...")
             train_loader, test_loader = load_tiny_imagenet()
             sample_input = next(iter(train_loader))[0]
@@ -134,7 +134,7 @@ def load_dataset(dataset_name, model_name="VGG16"):
             input_channels = sample_input.shape[1]
             num_classes = 10
 
-        elif dataset_name == "ImageNet":
+        elif dataset_name == "ImageNet" or dataset_name == "imagenet":
             print("Loading ImageNet data for RegNetX_400MF...")
             train_loader, test_loader = load_imagenet()
             sample_input = next(iter(train_loader))[0]
