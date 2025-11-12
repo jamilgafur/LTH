@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Define models and datasets
-models=( "RegNetX_400MF" "VGG16")
-datasets=("Cifar100" "Cifar10")
+models=( "RegNetX_400MF" )
+datasets=("tinyimagenet" )
 
 # Define the experiments for each model and dataset directly as arrays
 
@@ -38,17 +38,17 @@ for model in "${models[@]}"; do
       experiment_names=("${VGG16_Cifar10[@]}")
     elif [[ "$experiment_key" == "VGG16_Cifar100" ]]; then
       experiment_names=("${VGG16_Cifar100[@]}")
-    elif [[ "$experiment_key" == "VGG16_Imagenet" ]]; then
+    elif [[ "$experiment_key" == "VGG16_imagenet" ]]; then
       experiment_names=("${VGG16_Imagenet[@]}")
-    elif [[ "$experiment_key" == "VGG16_Tinyimagenet" ]]; then
+    elif [[ "$experiment_key" == "VGG16_tinyimagenet" ]]; then
       experiment_names=("${VGG16_Tinyimagenet[@]}") 
     elif [[ "$experiment_key" == "RegNetX_400MF_Cifar10" ]]; then
       experiment_names=("${RegNetX_400MF_Cifar10[@]}")
     elif [[ "$experiment_key" == "RegNetX_400MF_Cifar100" ]]; then
       experiment_names=("${RegNetX_400MF_Cifar100[@]}")
-    elif [[ "$experiment_key" == "RegNetX_400MF_Imagenet" ]]; then
+    elif [[ "$experiment_key" == "RegNetX_400MF_imagenet" ]]; then
       experiment_names=("${RegNetX_400MF_Imagenet[@]}")
-    elif [[ "$experiment_key" == "RegNetX_400MF_Tinyimagenet" ]]; then
+    elif [[ "$experiment_key" == "RegNetX_400MF_tinyimagenet" ]]; then
       experiment_names=("${RegNetX_400MF_Tinyimagenet[@]}")
     else
       echo "Unknown model-dataset combination: $experiment_key"
