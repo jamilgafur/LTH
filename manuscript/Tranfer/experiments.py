@@ -186,6 +186,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     )
     data["diagnostics"] = diagnostics
 
+    plot_accuracy_loss_curves(data, plots_dir, exp_name, workflow)
     # --- Save per-job metrics ---
     safe_update_metrics_json(model_root, f"{exp_name}_{workflow}", data, base_dir=metrics_dir)
 
@@ -244,7 +245,6 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
 
     # Cross-experiment plots
     plot_memory_per_layer_across_experiments(glob.glob(os.path.join(metrics_dir, "*.json")), plots_dir, workflow)
-    plot_accuracy_loss_curve(glob.glob(os.path.join(metrics_dir, "*.json")), plots_dir, workflow)
     # Final checkpoint
     final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
     torch.save({'model': model.state_dict()}, final_path)
