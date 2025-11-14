@@ -19,10 +19,11 @@ import psutil
 # =====================================
 # Utility Imports (Project-specific)
 # =====================================
-# These should exist elsewhere in your repo
-# If not, replace with local equivalents or implement them
 from utils import   ensure_dir, is_dict_like, normalize_metrics,    count_trainable_params
-
+import torch, psutil, os, gc
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
 # -------------------------
 # Diagnostics (robust)
@@ -69,7 +70,6 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
 
     print(f"[✓] Diagnostics complete for {exp_name}")
     return diagnostics
-
 # -------------------------
 # Per-layer analysis & activation analysis (robust + save)
 # -------------------------
@@ -181,66 +181,44 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
     plt.savefig(svg_path)
     plt.close()
     return df
-import os
-import psutil
-import torch
-import gc
 
+# --------------------------
+# Memory Measurement Functions
+# --------------------------
 def get_process_cpu_memory_MB():
-    """Return current process memory usage (MB)."""
     process = psutil.Process(os.getpid())
     return process.memory_info().rss / 1e6  # MB
-
-
-
-def get_process_cpu_memory_MB():
-    """Return current process memory usage (MB)."""
-    process = psutil.Process(os.getpid())
-    return process.memory_info().rss / 1e6  # MB
-
 
 def get_model_params_memory_MB(model):
-    """Calculate memory used by model parameters (in MB)."""
-    params_MB = sum(p.numel() for p in model.parameters()) * 4 / 1e6  # 4 bytes per float32
-    return params_MB
+    return sum(p.numel() for p in model.parameters()) * 4 / 1e6  # float32
 
-
-def track_activation_memory(model, input_tensor, device_label):
-    """Track activation memory on GPU (MB)."""
+def track_activation_memory(model, input_tensor, device_label="cuda"):
     device = torch.device(device_label)
     model = model.to(device)
     input_tensor = input_tensor.to(device)
 
-    if torch.cuda.is_available() and device_label == "cuda":
+    if device_label.startswith("cuda") and torch.cuda.is_available():
         torch.cuda.synchronize()
-        gpu_mem_before = torch.cuda.memory_allocated()
+        before = torch.cuda.memory_allocated()
     else:
-        gpu_mem_before = 0.0
+        before = 0.0
 
     model.eval()
     with torch.no_grad():
         _ = model(input_tensor)
 
-    if torch.cuda.is_available() and device_label == "cuda":
+    if device_label.startswith("cuda") and torch.cuda.is_available():
         torch.cuda.synchronize()
-        gpu_mem_after = torch.cuda.memory_allocated()
+        after = torch.cuda.memory_allocated()
     else:
-        gpu_mem_after = 0.0
+        after = 0.0
 
-    activation_memory_MB = (gpu_mem_after - gpu_mem_before) / 1e6
-    return activation_memory_MB
+    return (after - before) / 1e6
 
-
-def run_and_measure(model, input_tensor, device_label):
-    """
-    Run model on given device and measure:
-    - GPU peak memory
-    - CPU process memory
-    - CPU total (process + parameter) memory
-    - Activation memory
-    """
-
-    # Force garbage collection before each run to stabilize readings
+# --------------------------
+# Core Measurement Routine
+# --------------------------
+def run_and_measure(model, input_tensor, device_label="cpu"):
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
@@ -248,151 +226,138 @@ def run_and_measure(model, input_tensor, device_label):
         torch.cuda.synchronize()
 
     device = torch.device(device_label)
-
-    # --- Move model and data ---
     model = model.to(device)
     input_tensor = input_tensor.to(device)
 
-    # --- Record CPU memory before ---
+    # CPU memory before
     cpu_before = get_process_cpu_memory_MB()
 
-    # --- Run forward pass ---
+    # Params memory
+    params_MB = get_model_params_memory_MB(model)
+    params_CPU = params_MB if device_label == "cpu" else 0.0
+    params_GPU = params_MB if device_label.startswith("cuda") else 0.0
+
+    # Forward pass
     model.eval()
     with torch.no_grad():
         _ = model(input_tensor)
-
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and device_label.startswith("cuda"):
         torch.cuda.synchronize()
 
-    # --- Record after ---
+    # CPU memory after
     cpu_after = get_process_cpu_memory_MB()
-    cpu_mem_used = cpu_after - cpu_before
+    cpu_used = cpu_after - cpu_before
+    cpu_total = cpu_after + params_CPU
 
-    # --- GPU memory used ---
-    gpu_mem_used = (
-        torch.cuda.max_memory_allocated() / 1e6 if torch.cuda.is_available() else 0.0
-    )
-
-    # --- Parameter memory accounting ---
-    params_MB = get_model_params_memory_MB(model)
-    if device_label == "cuda":
-        params_MB_cpu = 0.0
-        params_MB_gpu = params_MB
-    else:
-        params_MB_cpu = params_MB
-        params_MB_gpu = 0.0
-
-    # --- Activation memory tracking ---
-    activation_memory_MB = track_activation_memory(model, input_tensor, device_label)
-
-    # --- Total CPU memory (process + model params on CPU) ---
-    cpu_total_memory_MB = cpu_after + params_MB_cpu
+    # GPU memory
+    peak_gpu = torch.cuda.max_memory_allocated() / 1e6 if torch.cuda.is_available() and device_label.startswith("cuda") else 0.0
+    activation_MB = track_activation_memory(model, input_tensor, device_label=device_label)
+    other_GPU = peak_gpu - params_GPU - activation_MB if peak_gpu > 0 else 0.0
 
     return {
         "device": device_label,
-        "Params_MB_CPU": params_MB_cpu,
-        "Params_MB_GPU": params_MB_gpu,
-        "Peak_GPU_MB": gpu_mem_used,
+        "Params_MB_CPU": params_CPU,
+        "Params_MB_GPU": params_GPU,
+        "Activation_MB_GPU": activation_MB,
+        "Other_GPU_MB": other_GPU,
+        "Peak_GPU_MB": peak_gpu,
         "CPU_Process_MB": cpu_after,
-        "CPU_Memory_Used_MB": cpu_mem_used,
-        "CPU_Total_MB": cpu_total_memory_MB,
-        "Activation_Memory_MB": activation_memory_MB
+        "CPU_Used_MB": cpu_used,
+        "CPU_Total_MB": cpu_total
     }
 
-
-def calculate_memory_efficiency(params_MB_gpu, gpu_mem_used):
-    """Ratio of parameter memory to total GPU usage."""
-    return params_MB_gpu / gpu_mem_used if gpu_mem_used > 0 else 0.0
-
-
-def memory_decomposition(model, input_tensor, save_dir, exp_name):
-    """Measure and visualize CPU vs GPU memory migration."""
-
+# --------------------------
+# Memory Decomposition with Compilation
+# --------------------------
+def memory_decomposition(model, input_tensor, save_dir=".", exp_name="experiment"):
     if len(input_tensor.shape) == 3:
         input_tensor = input_tensor.unsqueeze(0)
 
     results = []
 
-    # --- CPU run ---
+    # --- Original CPU run ---
     results.append(run_and_measure(model, input_tensor, "cpu"))
 
-    # --- GPU run ---
+    # --- Original GPU run ---
     if torch.cuda.is_available():
         results.append(run_and_measure(model, input_tensor, "cuda"))
-    else:
-        print("⚠️ CUDA not available; skipping GPU run.")
 
-    # --- Extract data ---
+    # --- Compiled CPU run ---
+    compiled_model_cpu = torch.compile(model)
+    results.append(run_and_measure(compiled_model_cpu, input_tensor, "cpu_compiled"))
+
+    # --- Compiled GPU run ---
+    if torch.cuda.is_available():
+        compiled_model_gpu = torch.compile(model)
+        results.append(run_and_measure(compiled_model_gpu, input_tensor, "cuda_compiled"))
+
+    # ----------------------
+    # Prepare plotting data
+    # ----------------------
     devices = [r["device"] for r in results]
-    gpu_memories = [r["Peak_GPU_MB"] for r in results]
-    cpu_process_mem = [r["CPU_Process_MB"] for r in results]
-    cpu_used_mem = [r["CPU_Memory_Used_MB"] for r in results]
-    cpu_total_mem = [r["CPU_Total_MB"] for r in results]
+
+    # GPU memory
     params_gpu = [r["Params_MB_GPU"] for r in results]
-    params_cpu = [r["Params_MB_CPU"] for r in results]
-    activations = [r["Activation_Memory_MB"] for r in results]
+    activations_gpu = [r["Activation_MB_GPU"] for r in results]
+    other_gpu = [r["Other_GPU_MB"] for r in results]
+    peak_gpu = [r["Peak_GPU_MB"] for r in results]
 
+    # CPU memory
+    cpu_process = [r["CPU_Process_MB"] for r in results]
+    cpu_params = [r["Params_MB_CPU"] for r in results]
+
+    # ----------------------
+    # Plotting
+    # ----------------------
     sns.set_theme(style="whitegrid")
+    fig, axes = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
 
-    fig, axes = plt.subplots(2, 1, figsize=(10, 10), sharex=True)
+    # GPU stacked bar
+    axes[0].bar(devices, params_gpu, color="#1f77b4", label="Params (GPU)")
+    axes[0].bar(devices, activations_gpu, bottom=params_gpu, color="#ff7f0e", label="Activations (GPU)")
+    bottom_gpu = [params_gpu[i] + activations_gpu[i] for i in range(len(devices))]
+    axes[0].bar(devices, other_gpu, bottom=bottom_gpu, color="#2ca02c", label="Other GPU Memory")
 
-    # =======================
-    # GPU MEMORY BREAKDOWN
-    # =======================
-    axes[0].bar(devices, params_gpu, color="#1f77b4", label="Params (GPU)", zorder=3)
-    axes[0].bar(devices, activations, bottom=params_gpu, color="#ff7f0e", label="Activations (GPU)", zorder=2)
-
-    for i, peak in enumerate(gpu_memories):
+    for i, peak in enumerate(peak_gpu):
         if peak > 0:
-            axes[0].plot([i - 0.3, i + 0.3], [peak, peak], linestyle='--', color="gray", linewidth=1)
-            axes[0].text(i, peak + 5, f"Peak: {peak:.1f} MB", ha='center', va='bottom', fontsize=11)
+            axes[0].plot([i - 0.3, i + 0.3], [peak, peak], linestyle="--", color="gray")
+            axes[0].text(i, peak + 5, f"Peak: {peak:.1f} MB", ha="center")
 
-    axes[0].set_ylabel("GPU Memory (MB)", fontsize=14)
-    axes[0].set_title(f"GPU Memory Usage — {exp_name}", fontsize=16)
-    axes[0].legend(fontsize=12)
+    axes[0].set_ylabel("GPU Memory (MB)")
+    axes[0].set_title(f"GPU Memory Usage — {exp_name}")
+    axes[0].legend()
     axes[0].grid(True, axis="y", linestyle="--", alpha=0.6)
 
-    gpu_ymax = max(max(gpu_memories, default=0), max(params_gpu[i] + activations[i] for i in range(len(devices))))
-    axes[0].set_ylim(0, gpu_ymax * 1.15 if gpu_ymax > 0 else 1)
-
-    # =======================
-    # CPU MEMORY BREAKDOWN
-    # =======================
+    # CPU stacked bar
     width = 0.35
     x = np.arange(len(devices))
+    axes[1].bar(x - width/2, cpu_process, width, color="#9467bd", label="Process RAM")
+    axes[1].bar(x + width/2, cpu_params, width, color="#8c564b", label="Params (CPU)")
 
-    axes[1].bar(x - width/2, cpu_process_mem, width, color="#2ca02c", label="Process RAM", zorder=3)
-    axes[1].bar(x + width/2, params_cpu, width, color="#9467bd", label="Params (CPU)", zorder=3)
+    for i, v in enumerate(cpu_process):
+        axes[1].text(x[i] - width/2, v + 5, f"{v:.1f}", ha="center")
+    for i, v in enumerate(cpu_params):
+        axes[1].text(x[i] + width/2, v + 5, f"{v:.1f}", ha="center")
 
-    # Annotate bars
-    for i, v in enumerate(cpu_process_mem):
-        axes[1].text(x[i] - width/2, v + 5, f"{v:.1f}", ha="center", va="bottom", fontsize=11)
-    for i, v in enumerate(params_cpu):
-        axes[1].text(x[i] + width/2, v + 5, f"{v:.1f}", ha="center", va="bottom", fontsize=11)
-
-    axes[1].set_ylabel("CPU Memory (MB)", fontsize=14)
-    axes[1].set_xlabel("Device Used for Inference", fontsize=14)
-    axes[1].set_title(f"CPU Memory Usage — {exp_name}", fontsize=16)
-    axes[1].legend(fontsize=12)
+    axes[1].set_ylabel("CPU Memory (MB)")
+    axes[1].set_xlabel("Device / Compilation")
+    axes[1].set_title(f"CPU Memory Usage — {exp_name}")
+    axes[1].legend()
     axes[1].grid(True, axis="y", linestyle="--", alpha=0.6)
-
-    cpu_ymax = max(max(cpu_process_mem, default=0), max(params_cpu, default=0))
-    axes[1].set_ylim(0, cpu_ymax * 1.25 if cpu_ymax > 0 else 1)
 
     plt.xticks(x, devices)
     plt.tight_layout()
-
     os.makedirs(save_dir, exist_ok=True)
     svg_path = os.path.join(save_dir, f"{exp_name}_memory_comparison.svg")
     plt.savefig(svg_path, dpi=300)
     plt.close()
+    print(f"Saved memory breakdown to: {svg_path}")
 
-    print(f"✅ Saved memory breakdown to: {svg_path}")
     return results
+
 # -------------------------
 # Collapse analysis (unchanged but robust)
 # -------------------------
-
 def predict_collapse_parameters(in_channels, out_channels, kernel_size, num_layers_collapsed):
     original_params = num_layers_collapsed * (in_channels * out_channels * kernel_size * kernel_size + out_channels)
     collapsed_params = in_channels * out_channels * kernel_size * kernel_size + out_channels
@@ -434,7 +399,6 @@ def analyze_collapse_effects(model, collapse_range, save_dir, exp_name):
 # -------------------------
 # Cross-experiment per-layer aggregation (robust + readable)
 # -------------------------
-
 def debug_tensor_shape(tensor, description="Tensor"):
     """ Helper function to debug tensor shapes. """
     if tensor is not None:
@@ -442,11 +406,9 @@ def debug_tensor_shape(tensor, description="Tensor"):
     else:
         print(f"{description} is None!")
 
-
 # -------------------------
 # Robust plotting helpers
 # -------------------------
-
 def plot_flops_vs_latency(metrics_dict, save_dir, exp_name):
     metrics = normalize_metrics(metrics_dict)
     if not metrics:
@@ -644,7 +606,6 @@ def plot_heatmap(metrics_dict, save_dir, exp_name):
     df_norm.to_csv(os.path.join(save_dir, f"{exp_name}_metrics_heatmap.csv"))
     plt.close()
 
-
 def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name, dtype_bytes=4):
     import json
     from collections import defaultdict
@@ -735,17 +696,25 @@ def plot_accuracy_loss_curve(acc_list, loss_list, workflow, experiment, save_dir
     
 def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None, flops=None, total_sizes=None):
     import seaborn as sns
+    import matplotlib.pyplot as plt
+    import os
+
+    # Extract experiment from filename
+    experiment = ' '.join(filename.split('/')[-1].replace('.svg','').split('_')[:1])
     sns.set(style="whitegrid", palette="Set2", font_scale=1.1)
     
     fig, axs = plt.subplots(3, 1, figsize=(18, 18))
     
-    # Sort by parameter size
-    sorted_data = sorted(zip(params, accs, names, infer_times or [], mem_usages or [], flops or []), key=lambda x: x[0])
+    # --- Sort by parameter size, then alphabetically ---
+    sorted_data = sorted(
+        zip(params, accs, names, infer_times or [], mem_usages or [], flops or []),
+        key=lambda x: (x[0], x[2].lower())
+    )
     params, accs, names, infer_times, mem_usages, flops = zip(*sorted_data)
     
     # --- Accuracy vs Parameters ---
     sns.barplot(x=list(names), y=list(accs), ax=axs[0], palette="Blues_d")
-    axs[0].set_title(f"{dataset or ''} - {title} - Final Accuracy (%)", fontsize=16)
+    axs[0].set_title(f"{dataset or ''} - {experiment} - {title} - Final Accuracy (%)", fontsize=16)
     axs[0].set_ylabel("Accuracy (%)", fontsize=14)
     axs[0].grid(alpha=0.3)
     
@@ -756,8 +725,12 @@ def plot_results(params, accs, names, title, filename, dataset=None, infer_times
     # Secondary axis for parameters
     ax0_twin = axs[0].twinx()
     ax0_twin.plot(range(len(params)), params, 'ro--', linewidth=2, markersize=6, label='Parameters')
-    ax0_twin.set_ylabel('Trainable Parameters (log scale)', color='red', fontsize=14)
-    ax0_twin.set_yscale('log')
+    ax0_twin.set_ylabel('Trainable Parameters', color='red', fontsize=14)
+    ax0_twin.set_yscale('linear')
+    
+    # Set zero at the smallest trainable parameter
+    min_param = min(params)
+    ax0_twin.set_ylim(bottom=min_param * 0.9, top=max(params) * 1.1)
     ax0_twin.tick_params(axis='y', colors='red')
     
     # --- Inference Time ---
