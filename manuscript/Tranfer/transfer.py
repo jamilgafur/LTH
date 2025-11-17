@@ -50,10 +50,10 @@ CHECKPOINT_BASES = {
              "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
          )[0]
          + "/",
-        "imagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
-        )[0]
-        + "/",
+        # "imagenet": glob.glob(
+        #     "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
+        # )[0]
+        # + "/",
         "tinyimagenet": glob.glob(
             "../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"
         )[0]
