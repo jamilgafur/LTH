@@ -185,8 +185,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
         collapse_range=collapse_range, device=device
     )
     data["diagnostics"] = diagnostics
-
-    plot_accuracy_loss_curve(data, plots_dir, exp_name, workflow)
+    plot_accuracy_loss_curve(acc_list=data.get("accuracies", []), loss_list=data.get("losses", []),workflow=workflow, experiment=exp_name, save_dir=plots_dir)
     # --- Save per-job metrics ---
     safe_update_metrics_json(model_root, f"{exp_name}_{workflow}", data, base_dir=metrics_dir)
 
