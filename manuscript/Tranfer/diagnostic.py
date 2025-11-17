@@ -313,16 +313,17 @@ def memory_decomposition(model, input_tensor, save_dir=".", exp_name="experiment
     # CPU
     results.append(profile_model_memory(model, input_tensor, "cpu"))
 
-    # CPU compiled
-    compiled_cpu = torch.compile(model)
-    results.append(profile_model_memory(compiled_cpu, input_tensor, "cpu_compiled"))
+    # TODO uncomment when torch.compile is stable
+    # # CPU compiled
+    # compiled_cpu = torch.compile(model)
+    # results.append(profile_model_memory(compiled_cpu, input_tensor, "cpu_compiled"))
 
     # GPU (if available)
     if torch.cuda.is_available():
         results.append(profile_model_memory(model, input_tensor, "cuda"))
 
-        compiled_gpu = torch.compile(model)
-        results.append(profile_model_memory(compiled_gpu, input_tensor, "cuda_compiled"))
+        # compiled_gpu = torch.compile(model)
+        # results.append(profile_model_memory(compiled_gpu, input_tensor, "cuda_compiled"))
 
     # Save results CSV
     os.makedirs(save_dir, exist_ok=True)
