@@ -65,6 +65,7 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
     diagnostics["memory_decomposition"] = mem if isinstance(mem, dict) else {}
     
     print(f"[✓] Diagnostics complete for {exp_name}")
+    print(diagnostics)
     return diagnostics
 # -------------------------
 # Per-layer analysis & activation analysis (robust + save)
@@ -343,34 +344,53 @@ def memory_decomposition(model, input_tensor, save_dir=".", exp_name="experiment
     cpu_process = df["CPU_Process_MB"]
     cpu_params = df["Params_MB_CPU"]
 
-    fig, axes = plt.subplots(2, 1, figsize=(12, 11), sharex=True)
+    fig, axes = plt.subplots(2, 1, figsize=(10, 12))
+    # ---------- GPU Memory Plot ----------
+    # compute workspace = reserved - allocated
+    workspace_gpu = df["Reserved_GPU_MB"] - df["Allocated_GPU_MB"]
 
-    # ----------- GPU Memory Plot -----------
-    axes[0].bar(devices, params_gpu, label="Parameters (GPU)", color="#1f77b4")
-    axes[0].bar(devices, activ_gpu, bottom=params_gpu, label="Activations (GPU)", color="#ff7f0e")
-    axes[0].bar(devices, other_gpu, bottom=params_gpu + activ_gpu, label="Other / Workspaces", color="#2ca02c")
+    # Base bars: parameters
+    axes[0].bar(devices, params_gpu, label="Parameters (GPU)", 
+                color="#1f77b4", edgecolor="black", linewidth=0.4)
 
+    # Activations on top
+    axes[0].bar(devices, activ_gpu, bottom=params_gpu,
+                label="Activations (GPU)", color="#ff7f0e", alpha=0.9)
+
+    # Workspace / other memory
+    axes[0].bar(devices, workspace_gpu, 
+                bottom=np.array(params_gpu) + np.array(activ_gpu),
+                label="Workspaces / Other", color="#2ca02c", alpha=0.8)
+
+    # Plot peak lines and annotations
+    max_peak = 0
     for i, peak in enumerate(peak_gpu):
         if peak > 0:
-            axes[0].plot([i - 0.3, i + 0.3], [peak, peak], linestyle="--", color="grey")
+            axes[0].plot([i - 0.3, i + 0.3], [peak, peak], 
+                        linestyle="--", color="grey")
             axes[0].text(i, peak + 5, f"{peak:.1f} MB", ha="center")
+            max_peak = max(max_peak, peak)
 
+    axes[0].set_ylim(0, max_peak * 1.18)
     axes[0].set_ylabel("GPU Memory (MB)")
     axes[0].set_title(f"GPU Memory Breakdown — {exp_name}")
     axes[0].legend()
     axes[0].grid(True, axis="y", linestyle="--", alpha=0.6)
 
-    # ----------- CPU Memory Plot -----------
-    x = np.arange(len(devices))
-    width = 0.35
 
-    axes[1].bar(devices, cpu_process, label="Process RAM", color="purple")
-    axes[1].bar(devices, cpu_params, bottom=cpu_process, label="Parameters (CPU)", color="brown")
 
+    # ---------- CPU Memory Plot ----------
+    cpu_overhead = np.array(cpu_process) - np.array(cpu_params)
+
+    axes[1].bar(devices, cpu_params, label="Parameters (CPU)", 
+                color="#8c564b", edgecolor="black", linewidth=0.4)
+
+    axes[1].bar(devices, cpu_overhead, bottom=cpu_params,
+                label="Overhead (Process RAM)", color="#9467bd", alpha=0.9)
+
+    # Annotate
     for i, v in enumerate(cpu_process):
-        axes[1].text(x[i] - width/2, v + 5, f"{v:.1f}", ha="center")
-    for i, v in enumerate(cpu_params):
-        axes[1].text(x[i] + width/2, v + 5, f"{v:.1f}", ha="center")
+        axes[1].text(i, v + 10, f"{v:.1f}", ha="center")
 
     axes[1].set_ylabel("CPU Memory (MB)")
     axes[1].set_xlabel("Device / Compilation")
@@ -378,11 +398,10 @@ def memory_decomposition(model, input_tensor, save_dir=".", exp_name="experiment
     axes[1].legend()
     axes[1].grid(True, axis="y", linestyle="--", alpha=0.6)
 
-    plt.xticks(x, devices)
-    plt.tight_layout()
 
+    plt.tight_layout()
     svg_path = os.path.join(save_dir, f"{exp_name}_memory.svg")
-    plt.savefig(svg_path, dpi=300)
+    plt.savefig(svg_path)
     plt.close()
 
     print(f"Saved memory CSV to {csv_path}")
