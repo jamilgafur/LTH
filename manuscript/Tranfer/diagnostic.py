@@ -346,8 +346,6 @@ def memory_decomposition(model, input_tensor, save_dir=".", exp_name="experiment
 
     fig, axes = plt.subplots(2, 1, figsize=(10, 12))
     # ---------- GPU Memory Plot ----------
-    # compute workspace = reserved - allocated
-    workspace_gpu = df["Reserved_GPU_MB"] - df["Allocated_GPU_MB"]
 
     # Base bars: parameters
     axes[0].bar(devices, params_gpu, label="Parameters (GPU)", 
@@ -356,11 +354,6 @@ def memory_decomposition(model, input_tensor, save_dir=".", exp_name="experiment
     # Activations on top
     axes[0].bar(devices, activ_gpu, bottom=params_gpu,
                 label="Activations (GPU)", color="#ff7f0e", alpha=0.9)
-
-    # Workspace / other memory
-    axes[0].bar(devices, workspace_gpu, 
-                bottom=np.array(params_gpu) + np.array(activ_gpu),
-                label="Workspaces / Other", color="#2ca02c", alpha=0.8)
 
     # Plot peak lines and annotations
     max_peak = 0
