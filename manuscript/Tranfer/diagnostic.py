@@ -400,7 +400,6 @@ def memory_decomposition(model, input_tensor, save_dir=".", exp_name="experiment
 
     print(f"Saved memory CSV to {csv_path}")
     print(f"Saved memory plot to {svg_path}")
-    import pdb; pdb.set_trace()
     return results
 # -------------------------
 # Collapse analysis (unchanged but robust)
