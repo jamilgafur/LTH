@@ -28,37 +28,37 @@ CHECKPOINT_BASES = {
             "../structured_study/pruning_checkpoints/*Vgg16*cifar10_*"
         )[0]
         + "/",
-        "Cifar100": glob.glob(
-            "../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"
-        )[0]
-        + "/",
-        "imagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"
-        )[0]
-        + "/",
-        "tinyimagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"
-        )[0]
-        + "/",
-    },
-    "RegNetX_400MF": {
-        "Cifar10": glob.glob(
-            "../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"
-        )[0]
-        + "/",
-         "Cifar100": glob.glob(
-             "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
-         )[0]
-         + "/",
-        # "imagenet": glob.glob(
-        #     "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
+        # "Cifar100": glob.glob(
+        #     "../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"
         # )[0]
         # + "/",
-        "tinyimagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"
-        )[0]
-        + "/",
+        # "imagenet": glob.glob(
+        #     "../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"
+        # )[0]
+        # + "/",
+        # "tinyimagenet": glob.glob(
+        #     "../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"
+        # )[0]
+        # + "/",
     },
+    # "RegNetX_400MF": {
+    #     "Cifar10": glob.glob(
+    #         "../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"
+    #     )[0]
+    #     + "/",
+    #      "Cifar100": glob.glob(
+    #          "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
+    #      )[0]
+    #      + "/",
+    #     # "imagenet": glob.glob(
+    #     #     "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
+    #     # )[0]
+    #     # + "/",
+    #     "tinyimagenet": glob.glob(
+    #         "../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"
+    #     )[0]
+    #     + "/",
+    # },
 }
 
 CHECKPOINT_FILES = {
