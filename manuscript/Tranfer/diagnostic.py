@@ -214,7 +214,7 @@ def run_and_measure(model, input_tensor, device_label="cpu"):
         torch.cuda.reset_peak_memory_stats()
         torch.cuda.synchronize()
 
-    device = torch.device(device_label)
+    device = torch.device("cpu" if "cpu" in device_label else "cuda")
     model = model.to(device)
     input_tensor = input_tensor.to(device)
 
