@@ -45,29 +45,18 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
     diagnostics = {}
 
     # Per-layer params/FLOPs (returns DataFrame or [] on error)
-    try:
-        df_params = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
-        diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records") if hasattr(df_params, "to_dict") else []
-    except Exception as e:
-        print(f"[!] Params/FLOPs analysis error: {e}")
-        diagnostics["per_layer_params_flops"] = []
-
+    
+    df_params = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
+    diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records") if hasattr(df_params, "to_dict") else []
+    
     # Activation sizes
-    try:
-        df_act = analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
-        diagnostics["activation_sizes"] = df_act.to_dict(orient="records") if hasattr(df_act, "to_dict") else []
-    except Exception as e:
-        print(f"[!] Activation analysis error: {e}")
-        diagnostics["activation_sizes"] = []
-
+    df_act = analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
+    diagnostics["activation_sizes"] = df_act.to_dict(orient="records") if hasattr(df_act, "to_dict") else []
+    
     # Memory decomposition
-    try:
-        mem = memory_decomposition(model, input_tensor, save_dir, exp_name)
-        diagnostics["memory_decomposition"] = mem if isinstance(mem, dict) else {}
-    except Exception as e:
-        print(f"[!] Memory decomposition error: {e}")
-        diagnostics["memory_decomposition"] = {}
-
+    mem = memory_decomposition(model, input_tensor, save_dir, exp_name)
+    diagnostics["memory_decomposition"] = mem if isinstance(mem, dict) else {}
+    
     print(f"[✓] Diagnostics complete for {exp_name}")
     return diagnostics
 # -------------------------
@@ -234,14 +223,14 @@ def run_and_measure(model, input_tensor, device_label="cpu"):
 
     # Params memory
     params_MB = get_model_params_memory_MB(model)
-    params_CPU = params_MB if device_label == "cpu" else 0.0
-    params_GPU = params_MB if device_label.startswith("cuda") else 0.0
+    params_CPU = params_MB if "cpu" in device_label else 0.0
+    params_GPU = params_MB if "cuda" in device_label else 0.0
 
     # Forward pass
     model.eval()
     with torch.no_grad():
         _ = model(input_tensor)
-    if torch.cuda.is_available() and device_label.startswith("cuda"):
+    if torch.cuda.is_available() and "cuda" in device_label:
         torch.cuda.synchronize()
 
     # CPU memory after
@@ -250,7 +239,7 @@ def run_and_measure(model, input_tensor, device_label="cpu"):
     cpu_total = cpu_after + params_CPU
 
     # GPU memory
-    peak_gpu = torch.cuda.max_memory_allocated() / 1e6 if torch.cuda.is_available() and device_label.startswith("cuda") else 0.0
+    peak_gpu = torch.cuda.max_memory_allocated() / 1e6 if torch.cuda.is_available() and "cuda" in device_label else 0.0
     activation_MB = track_activation_memory(model, input_tensor, device_label=device_label)
     other_GPU = peak_gpu - params_GPU - activation_MB if peak_gpu > 0 else 0.0
 
@@ -278,16 +267,14 @@ def memory_decomposition(model, input_tensor, save_dir=".", exp_name="experiment
     # --- Original CPU run ---
     results.append(run_and_measure(model, input_tensor, "cpu"))
 
-    # --- Original GPU run ---
-    if torch.cuda.is_available():
-        results.append(run_and_measure(model, input_tensor, "cuda"))
-
     # --- Compiled CPU run ---
     compiled_model_cpu = torch.compile(model)
     results.append(run_and_measure(compiled_model_cpu, input_tensor, "cpu_compiled"))
 
-    # --- Compiled GPU run ---
+    # --- Original GPU run ---
     if torch.cuda.is_available():
+        results.append(run_and_measure(model, input_tensor, "cuda"))
+
         compiled_model_gpu = torch.compile(model)
         results.append(run_and_measure(compiled_model_gpu, input_tensor, "cuda_compiled"))
 
@@ -454,7 +441,7 @@ def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
         return
 
     # --- Find the original model ---
-    base_key = next((k for k in metrics if k.startswith("Original_Model_")), None)
+    base_key = next((k for k in metrics if k.startswith("Original Model_")), None)
     if base_key is None:
         print("[WARN] No base model found matching 'Original_model_*'. Using first entry as fallback.")
         base_key = next(iter(metrics))
