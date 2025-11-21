@@ -28,37 +28,37 @@ CHECKPOINT_BASES = {
             "../structured_study/pruning_checkpoints/*Vgg16*cifar10_*"
         )[0]
         + "/",
-        # "Cifar100": glob.glob(
-        #     "../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"
-        # )[0]
-        # + "/",
-        # "imagenet": glob.glob(
-        #     "../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"
-        # )[0]
-        # + "/",
-        # "tinyimagenet": glob.glob(
-        #     "../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"
-        # )[0]
-        # + "/",
+        "Cifar100": glob.glob(
+            "../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"
+        )[0]
+        + "/",
+        "imagenet": glob.glob(
+            "../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"
+        )[0]
+        + "/",
+        "tinyimagenet": glob.glob(
+            "../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"
+        )[0]
+        + "/",
     },
-    # "RegNetX_400MF": {
-    #     "Cifar10": glob.glob(
-    #         "../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"
-    #     )[0]
-    #     + "/",
-    #      "Cifar100": glob.glob(
-    #          "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
-    #      )[0]
-    #      + "/",
-    #     # "imagenet": glob.glob(
-    #     #     "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
-    #     # )[0]
-    #     # + "/",
-    #     "tinyimagenet": glob.glob(
-    #         "../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"
-    #     )[0]
-    #     + "/",
-    # },
+    "RegNetX_400MF": {
+        "Cifar10": glob.glob(
+            "../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"
+        )[0]
+        + "/",
+         "Cifar100": glob.glob(
+             "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
+         )[0]
+         + "/",
+        "imagenet": glob.glob(
+            "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
+        )[0]
+        + "/",
+        "tinyimagenet": glob.glob(
+            "../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"
+        )[0]
+        + "/",
+    },
 }
 
 CHECKPOINT_FILES = {
@@ -113,6 +113,26 @@ EXPERIMENTS = {
             "Stage 2-5": ("features.conv_3", "features.conv_13"),
         },
         "Cifar100": {
+            "Original Model": None,
+            "Last 2": ("features.conv_12", "features.conv_13"),
+            "Stage 5": ("features.conv_11", "features.conv_13"),
+            "Stage 4": ("features.conv_8", "features.conv_10"),
+            "Stage 3": ("features.conv_5", "features.conv_7"),
+            "Stage 4-5": ("features.conv_8", "features.conv_13"),
+            "Stage 3-5": ("features.conv_5", "features.conv_13"),
+            "Stage 2-5": ("features.conv_3", "features.conv_13"),
+        },
+        "tinyimagenet": {
+            "Original Model": None,
+            "Last 2": ("features.conv_12", "features.conv_13"),
+            "Stage 5": ("features.conv_11", "features.conv_13"),
+            "Stage 4": ("features.conv_8", "features.conv_10"),
+            "Stage 3": ("features.conv_5", "features.conv_7"),
+            "Stage 4-5": ("features.conv_8", "features.conv_13"),
+            "Stage 3-5": ("features.conv_5", "features.conv_13"),
+            "Stage 2-5": ("features.conv_3", "features.conv_13"),
+        },
+        "imagenet": {
             "Original Model": None,
             "Last 2": ("features.conv_12", "features.conv_13"),
             "Stage 5": ("features.conv_11", "features.conv_13"),
@@ -201,6 +221,44 @@ EXPERIMENTS = {
             "Stage 4 last 2 conv": ("stage4.stage4_block4.block.conv3", "stage4.stage4_block5.block.conv3"),
         },
         "tinyimagenet": {
+            "Original Model": None,
+
+            # Single-stage collapses (single tuples)
+            "Last 2": ("stage4.stage4_block5.block.conv1", "stage4.stage4_block6.block.conv3"),
+            "Stage 4": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block3.block.conv3"),
+            "Stage 3": ("stage3.stage3_block1.block.conv1", "stage3.stage3_block1.block.conv3"),
+            "Stage 2": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),
+            "Stage 1": ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv3"),
+
+            # Multi-stage collapses (lists of tuples)
+            "Stage 3-4": [
+                ("stage3.stage3_block0.block.conv1", "stage3.stage3_block3.block.conv3"),  # Stage 3
+                ("stage4.stage4_block0.block.conv1", "stage4.stage4_block6.block.conv3"),  # Stage 4
+            ],
+            "Stage 2-4": [
+                ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),  # Stage 2
+                ("stage3.stage3_block0.block.conv1", "stage3.stage3_block3.block.conv3"),  # Stage 3
+                ("stage4.stage4_block0.block.conv1", "stage4.stage4_block6.block.conv3"),  # Stage 4
+            ],
+            "Stage 1-4": [
+                ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv3"),  # Stage 1
+                ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),  # Stage 2
+                ("stage3.stage3_block0.block.conv1", "stage3.stage3_block3.block.conv3"),  # Stage 3
+                ("stage4.stage4_block0.block.conv1", "stage4.stage4_block6.block.conv3"),  # Stage 4
+            ],
+
+            # Stage-specific first/last conv pairs
+            "Stage 1 first 2 conv": ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv2"),
+            "Stage 2 first 2 conv": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv2"),
+            "Stage 3 first 2 conv": ("stage3.stage3_block0.block.conv1", "stage3.stage3_block1.block.conv1"),
+            "Stage 4 first 2 conv": ("stage4.stage4_block0.block.conv1", "stage4.stage4_block1.block.conv1"),
+
+            "Stage 1 last 2 conv": ("stage1.stage1_block0.block.conv2", "stage1.stage1_block0.block.conv3"),
+            "Stage 2 last 2 conv": ("stage2.stage2_block0.block.conv2", "stage2.stage2_block0.block.conv3"),
+            "Stage 3 last 2 conv": ("stage3.stage3_block2.block.conv3", "stage3.stage3_block3.block.conv3"),
+            "Stage 4 last 2 conv": ("stage4.stage4_block4.block.conv3", "stage4.stage4_block5.block.conv3"),
+        },
+        "imagenet": {
             "Original Model": None,
 
             # Single-stage collapses (single tuples)
@@ -471,3 +529,4 @@ if __name__ == "__main__":
         args.post_compress_epochs,
         experiment_func=imp_prune,
     )
+
