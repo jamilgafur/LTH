@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Define models and datasets
-models=( "RegNetX_400MF" )
-datasets=("tinyimagenet" )
+models=( "VGG16" "RegNetX_400MF" )
+datasets=("tinyimagenet" "imagenet" "Cifar10" "Cifar100")
 
 # Define the experiments for each model and dataset directly as arrays
 
@@ -60,7 +60,7 @@ for model in "${models[@]}"; do
       # Loop through flags
       for flag in "JF" "Kevin"; do
         # Construct the command with appropriate variables
-        command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"$experiment\",FLAG=\"$flag\" submit_job.pbs"
+        command="qsub -q UI-GPU -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"$experiment\",FLAG=\"$flag\" submit_job.pbs"
         
         # Echo the command for debugging
         echo "Executing: $command"
