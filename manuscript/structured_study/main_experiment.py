@@ -202,6 +202,7 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
         )
 
     print("Running pruner")
+    pretrained_path = "Checkpoint_000000.pth"
     pruner.run(path=save_dir + "/" + pretrained_path)
     print("Pruning process complete.")
     return pruner
