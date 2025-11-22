@@ -14,7 +14,6 @@ rm submit_job.*
 # Change to the directory where qsub was called
 cd /Users/jgafur/LTH/manuscript/structured_study
 
-OUTPUT_FILE="${MODEL}_${DATASET}_prune_run.txt"
 # Run the Python script with the parameters
 time ~/env/lth_env/bin/python  main_experiment.py \
   --model ${MODEL} \
@@ -24,7 +23,7 @@ time ~/env/lth_env/bin/python  main_experiment.py \
   --strategy magnitude \
   --finetune_epochs 30 \
   --pretrain_epochs 10 \
-  --batch_size 128 > "$OUTPUT_FILE" 2>&1
+  --batch_size 128
 
 time ~/env/lth_env/bin/python  main_experiment.py \
   --model ${MODEL} \
@@ -34,4 +33,4 @@ time ~/env/lth_env/bin/python  main_experiment.py \
   --strategy magnitude \
   --finetune_epochs 30 \
   --pretrain_epochs 10 \
-  --batch_size 128 > "$OUTPUT_FILE" 2>&1
+  --batch_size 128
