@@ -64,15 +64,15 @@ CHECKPOINT_BASES = {
 CHECKPOINT_FILES = {
     "VGG16": {
         "Cifar10": (
-            "checkpoint_Finetuned_0.200000.pth",
+            "checkpoint_Finetuned_0.945024.pth",
             "checkpoint_Original_0.000000.pth",
         ),
         "Cifar100": (
-            "checkpoint_Finetuned_0.964816.pth",
+            "checkpoint_Finetuned_0.977482.pth",
             "checkpoint_Original_0.000000.pth",
         ),
         "imagenet": (
-            "checkpoint_Finetuned_0.000000.pth",
+            "checkpoint_Finetuned_0.832228.pth",
             "checkpoint_Original_0.000000.pth",
         ),
         "tinyimagenet": (
@@ -82,15 +82,15 @@ CHECKPOINT_FILES = {
     },
     "RegNetX_400MF": {
         "Cifar10": (
-            "checkpoint_Finetuned_0.200000.pth",
+            "checkpoint_Finetuned_0.981986.pth",
             "checkpoint_Original_0.000000.pth",
         ),
         "Cifar100": (
-            "checkpoint_Finetuned_0.931281.pth",
+            "checkpoint_Finetuned_0.985588.pth",
             "checkpoint_Original_0.000000.pth",
         ),
         "imagenet": (
-            "checkpoint_Finetuned_0.000000.pth",
+            "checkpoint_Finetuned_0.9414101.pth",
             "checkpoint_Original_0.000000.pth",
         ),
         "tinyimagenet": (
