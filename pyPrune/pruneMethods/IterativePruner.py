@@ -77,8 +77,8 @@ class IterativePruner(BasePruner):
         logger.info(f"[{prefix}] Accuracy at sparsity {step:.4f}: {acc:.6f}, Loss: {loss:.6f}")
         self.update_metrics(loss, acc, label=label)
 
-    def run(self) -> None:
-        self._maybe_pretrain()
+    def run(self, path=None) -> None:
+        self._maybe_pretrain(path)
         clean_memory()
 
         for step in self.steps:
@@ -86,8 +86,12 @@ class IterativePruner(BasePruner):
 
         self._final_evaluation()
 
-    def _maybe_pretrain(self) -> None:
-        self.pretrain()
+    def _maybe_pretrain(self, path=None) -> None:
+        if path is not None:
+            self.load_checkpoint(path)
+            logger.info(f"Loaded pre-trained model from {path}. Skipping pretraining.")
+        else:
+            self.pretrain()
        
     def _process_step(self, step: float) -> None:
         logger.info(f"[Step {step:.6f}] Starting pruning iteration.")
