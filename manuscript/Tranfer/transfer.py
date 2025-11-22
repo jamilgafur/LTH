@@ -60,7 +60,7 @@ CHECKPOINT_BASES = {
         + "/",
     },
 }
-
+#  ls *F*.pth | grep -v 'checkpoint_Finetuned_0.9414101.pth' |xargs rm -v
 CHECKPOINT_FILES = {
     "VGG16": {
         "Cifar10": (
