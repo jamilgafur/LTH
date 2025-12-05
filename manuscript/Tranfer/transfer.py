@@ -28,37 +28,37 @@ CHECKPOINT_BASES = {
             "../structured_study/pruning_checkpoints/*Vgg16*cifar10_*"
         )[0]
         + "/",
-        # "Cifar100": glob.glob(
-        #     "../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"
-        # )[0]
-        # + "/",
-        # "imagenet": glob.glob(
-        #     "../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"
-        # )[0]
-        # + "/",
-        # "tinyimagenet": glob.glob(
-        #     "../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"
-        # )[0]
-        # + "/",
+        "Cifar100": glob.glob(
+            "../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"
+        )[0]
+        + "/",
+        "imagenet": glob.glob(
+            "../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"
+        )[0]
+        + "/",
+        "tinyimagenet": glob.glob(
+            "../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"
+        )[0]
+        + "/",
     },
-    # "RegNetX_400MF": {
-    #     "Cifar10": glob.glob(
-    #         "../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"
-    #     )[0]
-    #     + "/",
-    #      "Cifar100": glob.glob(
-    #          "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
-    #      )[0]
-    #      + "/",
-    #     "imagenet": glob.glob(
-    #         "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
-    #     )[0]
-    #     + "/",
-    #     "tinyimagenet": glob.glob(
-    #         "../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"
-    #     )[0]
-    #     + "/",
-    # },
+    "RegNetX_400MF": {
+        "Cifar10": glob.glob(
+            "../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"
+        )[0]
+        + "/",
+         "Cifar100": glob.glob(
+             "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
+         )[0]
+         + "/",
+        "imagenet": glob.glob(
+            "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
+        )[0]
+        + "/",
+        "tinyimagenet": glob.glob(
+            "../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"
+        )[0]
+        + "/",
+    },
 }
 #  ls *F*.pth | grep -v 'checkpoint_Finetuned_0.9414101.pth' |xargs rm -v
 CHECKPOINT_FILES = {
@@ -68,11 +68,11 @@ CHECKPOINT_FILES = {
             "checkpoint_Original_0.000000.pth",
         ),
         "Cifar100": (
-            "checkpoint_Finetuned_0.977482.pth",
+            "checkpoint_Finetuned_0.000000.pth",
             "checkpoint_Original_0.000000.pth",
         ),
         "imagenet": (
-            "checkpoint_Finetuned_0.832228.pth",
+            "checkpoint_Finetuned_0.000000.pth",
             "checkpoint_Original_0.000000.pth",
         ),
         "tinyimagenet": (
@@ -82,15 +82,15 @@ CHECKPOINT_FILES = {
     },
     "RegNetX_400MF": {
         "Cifar10": (
-            "checkpoint_Finetuned_0.981986.pth",
+            "checkpoint_Finetuned_0.000000.pth",
             "checkpoint_Original_0.000000.pth",
         ),
         "Cifar100": (
-            "checkpoint_Finetuned_0.985588.pth",
+            "checkpoint_Finetuned_0.000000.pth",
             "checkpoint_Original_0.000000.pth",
         ),
         "imagenet": (
-            "checkpoint_Finetuned_0.9414101.pth",
+            "checkpoint_Finetuned_0.000000.pth",
             "checkpoint_Original_0.000000.pth",
         ),
         "tinyimagenet": (
