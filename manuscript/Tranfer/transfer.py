@@ -28,43 +28,43 @@ CHECKPOINT_BASES = {
             "../structured_study/pruning_checkpoints/*Vgg16*cifar10_*"
         )[0]
         + "/",
-        "Cifar100": glob.glob(
-            "../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"
-        )[0]
-        + "/",
-        "imagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"
-        )[0]
-        + "/",
-        "tinyimagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"
-        )[0]
-        + "/",
+        # "Cifar100": glob.glob(
+        #     "../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"
+        # )[0]
+        # + "/",
+        # "imagenet": glob.glob(
+        #     "../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"
+        # )[0]
+        # + "/",
+        # "tinyimagenet": glob.glob(
+        #     "../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"
+        # )[0]
+        # + "/",
     },
-    "RegNetX_400MF": {
-        "Cifar10": glob.glob(
-            "../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"
-        )[0]
-        + "/",
-         "Cifar100": glob.glob(
-             "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
-         )[0]
-         + "/",
-        "imagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
-        )[0]
-        + "/",
-        "tinyimagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"
-        )[0]
-        + "/",
-    },
+    # "RegNetX_400MF": {
+    #     "Cifar10": glob.glob(
+    #         "../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"
+    #     )[0]
+    #     + "/",
+    #      "Cifar100": glob.glob(
+    #          "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
+    #      )[0]
+    #      + "/",
+    #     "imagenet": glob.glob(
+    #         "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
+    #     )[0]
+    #     + "/",
+    #     "tinyimagenet": glob.glob(
+    #         "../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"
+    #     )[0]
+    #     + "/",
+    # },
 }
 #  ls *F*.pth | grep -v 'checkpoint_Finetuned_0.9414101.pth' |xargs rm -v
 CHECKPOINT_FILES = {
     "VGG16": {
         "Cifar10": (
-            "checkpoint_Finetuned_0.945024.pth",
+            "checkpoint_Finetuned_0.000000.pth",
             "checkpoint_Original_0.000000.pth",
         ),
         "Cifar100": (
@@ -375,6 +375,7 @@ def run_experiments_for_dataset(
     model_kwargs,
     post_compress_epochs,
     experiment_func,
+    quant=False
 ):
     """Run specified experiment for a given dataset."""
     save_path = f"{model_class.__name__}_{dataset}_{CHECKPOINT_FILES[model_class.__name__][dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
@@ -414,13 +415,9 @@ def run_experiments_for_dataset(
                 data_shape=input_size,
                 save_path=save_path,
                 post_compress_epochs=post_compress_epochs,
+                quant=quant
             )
-            # if args.imp:
-            #     optimizer, scheduler = create_optimizer_scheduler(model)
-            #     imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
-            #   pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
-            #   save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
-
+          
         elif args.Kevin:
             model = run_kevin_experiment(
                 {name: layers},
@@ -434,12 +431,9 @@ def run_experiments_for_dataset(
                 data_shape=input_size,
                 save_path=save_path,
                 post_compress_epochs=post_compress_epochs,
+                quant=quant
             )
-            # if args.imp:
-            #     optimizer, scheduler = create_optimizer_scheduler(model)
-            #     imp_prune(model, optimizer, scheduler, criterion, train_loader, test_loader, steps,
-            #               pretrain_epochs=pretrain, finetune_epochs=pretrain, device=device,
-            #               save_dir=save_path, strategy="magnitude", patience=5, experiment_name=name)
+            
         else:
             raise ValueError(
                 "You must specify either --JF or --Kevin to run the corresponding experiment."
@@ -488,6 +482,9 @@ if __name__ == "__main__":
     )
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
+    parser.add_argument(
+        "--quant", action="store_true", help="Apply Quantization Aware Training"
+    )
 
     args = parser.parse_args()
     print(args)
@@ -528,5 +525,6 @@ if __name__ == "__main__":
         model_kwargs,
         args.post_compress_epochs,
         experiment_func=imp_prune,
+        quant=args.quant
     )
 

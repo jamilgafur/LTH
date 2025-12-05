@@ -1,18 +1,19 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import tqdm
+
 # -------------------------
 # Training and Evaluation
 # -------------------------
-import torch.optim as optim
-import torch.nn as nn
-import tqdm
-def train_and_evaluate(model, train_loader, test_loader, device=None, epochs=10, post_compress_epochs=False):
+
+def train_and_evaluate(model, train_loader, test_loader, device=None, epochs=10, post_compress_epochs=False, quant=False):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"[Start training] device:{device}")
+    print(f"[Start training] device: {device}")
+    
     if epochs <= 0:
         print("[Warning] Number of training epochs is zero or negative!")
-        final_acc = evaluate(model, test_loader, device)
+        final_acc = evaluate(model, test_loader, device, quant)
         print(f"Final Test Accuracy (no training): {final_acc:.2f}%")
         return {
             "accuracies": [],
@@ -24,6 +25,7 @@ def train_and_evaluate(model, train_loader, test_loader, device=None, epochs=10,
     print("[INFO] Training started...")
     model.to(device)
     print(f"model on device: {next(model.parameters()).device}")
+
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     loss_fn = nn.CrossEntropyLoss()
 
@@ -36,19 +38,29 @@ def train_and_evaluate(model, train_loader, test_loader, device=None, epochs=10,
 
     epochs_no_improve = 0
     best_acc = 0
-
     epoch = 0
+
+    # Use mixed precision context if quant flag is True and device is CUDA
+    use_autocast = quant and device.type == 'cuda'
+    
     while True:
         # Train one epoch
         print(f"[INFO] Starting Epoch {epoch + 1} of training...")
         model.train()
         total_loss = correct = total = 0
+
         for xb, yb in tqdm.tqdm(train_loader):
             xb, yb = xb.to(device), yb.to(device)
-            model = model.to(device)
-            preds = model(xb)
-            loss = loss_fn(preds, yb)
             optimizer.zero_grad()
+
+            if use_autocast:
+                with torch.cuda.amp.autocast():
+                    preds = model(xb)
+                    loss = loss_fn(preds, yb)
+            else:
+                preds = model(xb)
+                loss = loss_fn(preds, yb)
+
             loss.backward()
             optimizer.step()
 
@@ -62,7 +74,7 @@ def train_and_evaluate(model, train_loader, test_loader, device=None, epochs=10,
 
         phase = "Post-compress" if (post_compress_epochs and epoch >= epochs) else "Epoch"
         print(f"{phase} {epoch + 1}: Loss={avg_loss:.4f}, Acc={acc:.2f}%")
-        
+
         accuracies.append(acc)
         losses.append(avg_loss)
         total_epochs_trained += 1
@@ -91,7 +103,7 @@ def train_and_evaluate(model, train_loader, test_loader, device=None, epochs=10,
                 break
 
     print("[INFO] Evaluating model on the test set...")
-    final_acc = evaluate(model, test_loader, device)
+    final_acc = evaluate(model, test_loader, device, quant)
     print(f"Final Test Accuracy: {final_acc:.2f}%")
 
     return {
@@ -101,13 +113,19 @@ def train_and_evaluate(model, train_loader, test_loader, device=None, epochs=10,
         "total_epochs_trained": total_epochs_trained,
     }
 
-def evaluate(model, loader, device):
+def evaluate(model, loader, device, quant=False):
     model.eval()
     correct = total = 0
+    use_autocast = quant and device.type == 'cuda'
+    
     with torch.no_grad():
         for xb, yb in loader:
             xb, yb = xb.to(device), yb.to(device)
-            preds = model(xb)
+            if use_autocast:
+                with torch.cuda.amp.autocast():
+                    preds = model(xb)
+            else:
+                preds = model(xb)
             _, predicted = preds.max(1)
             correct += (predicted == yb).sum().item()
             total += yb.size(0)

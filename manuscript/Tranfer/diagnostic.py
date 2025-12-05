@@ -35,38 +35,149 @@ import numpy as np
 # -------------------------
 # Diagnostics (robust)
 # -------------------------
-def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, collapse_range=None, device="cuda"):
+def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, collapse_range=None, device="cuda", quant=False):
+    """
+    Run a complete diagnostic suite on a PyTorch model.
+    
+    Supports:
+        - GPU-safe quantization (FP16/FP8/INT8)
+        - Per-layer FLOPs and params
+        - Activation size analysis
+        - Memory decomposition (CPU/GPU)
+        - Optional collapse analysis
+
+    Args:
+        model: PyTorch model
+        input_shape: tuple or list, model input shape (C,H,W) or (N,C,H,W)
+        metrics_dict: dict, to store evaluation metrics
+        save_dir: str, path to save CSVs/plots
+        exp_name: str, experiment name
+        collapse_range: tuple, optional layer collapse stages
+        device: str, "cuda" or "cpu"
+        quant: bool, whether to use quantization (FP16/INT8/QAT)
+    Returns:
+        diagnostics dict
+    """
     print(f"[•] Running diagnostics for {exp_name}...")
     ensure_dir(save_dir)
+    
+    # Device setup
+    device = torch.device(device if torch.cuda.is_available() else "cpu")
     model.to(device)
     model.eval()
 
-    # Prepare input tensor (4D)
+    # -----------------------------
+    # Prepare input tensor safely
+    # -----------------------------
     if len(input_shape) == 2:
         input_tensor = torch.randn((1, 3, *input_shape), device=device)
     elif len(input_shape) == 3:
         input_tensor = torch.randn((1, *input_shape), device=device)
     else:
         input_tensor = torch.randn(input_shape, device=device)
-    
+
+    # -----------------------------
+    # Quantization handling
+    # -----------------------------
+    if quant:
+        try:
+            # GPU-safe mixed precision
+            if device.type == "cuda":
+                if torch.cuda.is_bf16_supported():
+                    model = model.to(dtype=torch.bfloat16)
+                    input_tensor = input_tensor.to(dtype=torch.bfloat16)
+                else:
+                    model = model.half()
+                    input_tensor = input_tensor.half()
+            else:
+                model = model.float()  # CPU does not support FP16 well
+                input_tensor = input_tensor.float()
+            print(f"[•] Quantization enabled: model dtype {next(model.parameters()).dtype}")
+        except Exception as e:
+            print(f"[!] Quantization conversion failed: {e}. Falling back to FP32.")
+            model = model.float()
+            input_tensor = input_tensor.float()
+
     diagnostics = {}
 
-    # Per-layer params/FLOPs (returns DataFrame or [] on error)
-    
-    df_params = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
-    diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records") if hasattr(df_params, "to_dict") else []
-    
+    # -----------------------------
+    # Per-layer params/FLOPs
+    # -----------------------------
+    try:
+        df_params = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
+        diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records")
+    except Exception as e:
+        print(f"[!] Per-layer params/FLOPs analysis failed: {e}")
+        diagnostics["per_layer_params_flops"] = []
+
+    # -----------------------------
     # Activation sizes
-    df_act = analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
-    diagnostics["activation_sizes"] = df_act.to_dict(orient="records") if hasattr(df_act, "to_dict") else []
-    
+    # -----------------------------
+    try:
+        df_act = analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
+        diagnostics["activation_sizes"] = df_act.to_dict(orient="records")
+    except Exception as e:
+        print(f"[!] Activation size analysis failed: {e}")
+        diagnostics["activation_sizes"] = []
+
+    # -----------------------------
     # Memory decomposition
-    mem = memory_decomposition(model, input_tensor, save_dir, exp_name)
-    diagnostics["memory_decomposition"] = mem if isinstance(mem, dict) else {}
-    
+    # -----------------------------
+    try:
+        mem = memory_decomposition(model, input_tensor, save_dir, exp_name)
+        diagnostics["memory_decomposition"] = mem
+    except Exception as e:
+        print(f"[!] Memory decomposition failed: {e}")
+        diagnostics["memory_decomposition"] = {}
+
+    # -----------------------------
+    # Optional collapse analysis
+    # -----------------------------
+    if collapse_range:
+        try:
+            analyze_collapse_effects(model, collapse_range, save_dir, exp_name)
+        except Exception as e:
+            print(f"[!] Collapse analysis failed: {e}")
+
     print(f"[✓] Diagnostics complete for {exp_name}")
-    print(diagnostics)
     return diagnostics
+
+# def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, collapse_range=None, device="cuda",quant=False):
+#     if quant:
+#         model = model.half()
+        
+
+#     print(f"[•] Running diagnostics for {exp_name}...")
+#     ensure_dir(save_dir)
+#     model.to(device)
+#     model.eval()
+
+#     # Prepare input tensor (4D)
+#     if len(input_shape) == 2:
+#         input_tensor = torch.randn((1, 3, *input_shape), device=device)
+#     elif len(input_shape) == 3:
+#         input_tensor = torch.randn((1, *input_shape), device=device)
+#     else:
+#         input_tensor = torch.randn(input_shape, device=device)
+    
+#     diagnostics = {}
+
+#     # Per-layer params/FLOPs (returns DataFrame or [] on error)
+    
+#     df_params = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
+#     diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records") if hasattr(df_params, "to_dict") else []
+    
+#     # Activation sizes
+#     df_act = analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
+#     diagnostics["activation_sizes"] = df_act.to_dict(orient="records") if hasattr(df_act, "to_dict") else []
+    
+#     # Memory decomposition
+#     mem = memory_decomposition(model, input_tensor, save_dir, exp_name)
+#     diagnostics["memory_decomposition"] = mem if isinstance(mem, dict) else {}
+    
+#     print(f"[✓] Diagnostics complete for {exp_name}")
+#     print(diagnostics)
+#     return diagnostics
 # -------------------------
 # Per-layer analysis & activation analysis (robust + save)
 # -------------------------

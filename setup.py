@@ -13,6 +13,7 @@ setup(
         'scipy',
         'scikit-learn',
         'tqdm',
+        'shap',
         'torchvision',
         'codecarbon',
         'fvcore',
