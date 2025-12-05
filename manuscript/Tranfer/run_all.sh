@@ -71,7 +71,7 @@ for model in "${models[@]}"; do
           echo "Executing: $command"
           
           # Run the command
-          # eval "$command"
+          eval "$command"
         done
       done
     done
