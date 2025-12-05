@@ -20,6 +20,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from fvcore.nn import FlopCountAnalysis
 
+
 # Local modules
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.utils import *
@@ -139,7 +140,10 @@ def _make_compression_set(collapse_range):
 # -------------------------
 def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None, device='cuda',
                    epochs=10, workflow='default', exp_name='experiment', collapse_range=None,
-                   data_shape=(1, 3, 32, 32), save_path="./runs", post_compress_epochs=False):
+                   data_shape=(1, 3, 32, 32), save_path="./runs", post_compress_epochs=False, quant=False):
+
+    if quant:
+        exp_name += "_quant"
 
     print(f"[•] Starting experiment '{exp_name}' in workflow '{workflow}'")
     ckpt_dir = os.path.join(save_path, "checkpoints")
@@ -164,14 +168,14 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
         quit()
 
     data = train_and_evaluate(
-        model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs
+        model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs,quant=quant
     )
 
     torch.save({'model': model.state_dict()}, ckpt_path)
 
     # --- Compute metrics and diagnostics ---
     param_count = count_trainable_params(model)
-    infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device)
+    infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device,quant=quant)
     data.update({
         "param_count": param_count,
         "inference_time": infer_time,
@@ -182,7 +186,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
 
     diagnostics = run_full_diagnostics(
         model, data_shape, {exp_name: data}, plots_dir, exp_name,
-        collapse_range=collapse_range, device=device
+        collapse_range=collapse_range, device=device, quant=quant
     )
     data["diagnostics"] = diagnostics
     plot_accuracy_loss_curve(acc_list=data.get("accuracies", []), loss_list=data.get("losses", []),workflow=workflow, experiment=exp_name, save_dir=plots_dir)
@@ -268,8 +272,10 @@ def run_jf_experiment(
     model_kwargs=None,
     data_shape=None,
     save_path="./runs",
-    post_compress_epochs=False
+    post_compress_epochs=False,
+    quant=False
 ):
+
     model_kwargs = model_kwargs or {}
     print("\n=== Running JF experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
@@ -308,7 +314,8 @@ def run_jf_experiment(
         exp_name=exp_name,
         data_shape=data_shape,
         save_path=save_path,
-        post_compress_epochs=post_compress_epochs
+        post_compress_epochs=post_compress_epochs, 
+        quant=quant
     )
     return base_model
 
@@ -324,7 +331,8 @@ def run_kevin_experiment(
     model_kwargs=None,
     data_shape=None,
     save_path="./runs",
-    post_compress_epochs=False
+    post_compress_epochs=False, 
+    quant=False
 ):
     model_kwargs = model_kwargs or {}
     print("\n=== Running Kevin experiment ===")
@@ -363,8 +371,8 @@ def run_kevin_experiment(
         exp_name=exp_name,
         data_shape=data_shape,
         save_path=save_path,
-        post_compress_epochs=post_compress_epochs
+        post_compress_epochs=post_compress_epochs,
+        quant=quant
     )
     return base_model
 
-# -------------------------
