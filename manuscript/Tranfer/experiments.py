@@ -282,8 +282,9 @@ def run_jf_experiment(
 
     # Load pretrained model
     base_model = model_class(**model_kwargs)
-    ckpt = torch.load(model_path_097, map_location='cpu')
-    base_model.load_state_dict(ckpt['model'])
+    if not "None" in model_path_097:
+        ckpt = torch.load(model_path_097, map_location='cpu')
+        base_model.load_state_dict(ckpt['model'])
     print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
 
     # Collapse if requested
@@ -340,8 +341,9 @@ def run_kevin_experiment(
 
     # Initialize and load pretrained model
     base_model = model_class(**model_kwargs)
-    ckpt = torch.load(model_path_000, map_location='cpu')
-    base_model.load_state_dict(ckpt['model'])
+    if not "None" in model_path_000:
+        ckpt = torch.load(model_path_000, map_location='cpu')
+        base_model.load_state_dict(ckpt['model'])
     print(f"[INFO] Initialized Model: {describe_model(base_model, train_loader)}")
 
     # Collapse if requested
