@@ -59,6 +59,14 @@ for model in "${models[@]}"; do
       experiment_names=("${RegNetX_400MF_Imagenet[@]}")
     elif [[ "$experiment_key" == "RegNetX_400MF_tinyimagenet" ]]; then
       experiment_names=("${RegNetX_400MF_Tinyimagenet[@]}")
+    elif [[ "$experiment_key" == "InceptionNet_Cifar10" ]]; then
+      experiment_names=("${InceptionNet_Cifar10[@]}")
+    elif [[ "$experiment_key" == "InceptionNet_Cifar100" ]]; then
+      experiment_names=("${InceptionNet_Cifar100[@]}")
+    elif [[ "$experiment_key" == "InceptionNet_imagenet" ]]; then
+      experiment_names=("${InceptionNet_Imagenet[@]}")
+    elif [[ "$experiment_key" == "InceptionNet_tinyimagenet" ]]; then
+      experiment_names=("${InceptionNet_Tinyimagenet[@]}")
     else
       echo "Unknown model-dataset combination: $experiment_key"
       continue
