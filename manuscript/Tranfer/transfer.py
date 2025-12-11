@@ -450,7 +450,11 @@ def run_experiments_for_dataset(
 
     criterion = torch.nn.CrossEntropyLoss()
 
-    steps = exponential_decay_list(steps=21)
+    # if model is inceptionNet 0 steps
+    if model_class == InceptionNet:
+        steps = [0]
+    else:
+        steps = exponential_decay_list(steps=21)
     print(f"Pruning steps: {steps}")
 
     train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(
