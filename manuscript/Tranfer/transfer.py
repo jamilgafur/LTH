@@ -453,6 +453,8 @@ def run_experiments_for_dataset(
     # if model is inceptionNet 0 steps
     if model_class == InceptionNet:
         steps = [0]
+        epochs = pretrain
+        pretrain = 0
     else:
         steps = exponential_decay_list(steps=21)
     print(f"Pruning steps: {steps}")
@@ -466,7 +468,7 @@ def run_experiments_for_dataset(
 
     for name, layers in experiments.items():
         print(f"\n--- Running experiment: {name} ---")
-
+            
         if args.JF:
             model = run_jf_experiment(
                 {name: layers},
@@ -485,9 +487,10 @@ def run_experiments_for_dataset(
             )
           
         elif args.Kevin:
-            # if inceptionNet train model from scratch with pretrain epochs
-            if model_class == InceptionNet:
-                pretrain = epochs
+            # if experiment is original model epochs = pretrain + epochs
+            if name == "Original Model":
+                epochs = pretrain + epochs
+        
                 
             model = run_kevin_experiment(
                 {name: layers},
