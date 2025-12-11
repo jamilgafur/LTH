@@ -384,7 +384,9 @@ def imp_prune(
     Function to run pruning based on the IterativePruner class.
     """
     save_dir = os.path.join(save_dir, experiment_name)
-
+    # if model is inceptionNet steps = 0 for IMP
+    if isinstance(model, InceptionNet):
+        steps = [0]
     print("\nModel:", model)
     print("Optimizer:", optimizer)
     print("Scheduler:", scheduler)
