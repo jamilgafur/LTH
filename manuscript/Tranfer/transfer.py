@@ -3,6 +3,7 @@ import os
 import torch
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.models.RegNetX import RegNetX_400MF
+from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.pruneMethods.IterativePruner import IterativePruner
 from pyPrune.strategies import MagnitudePruningStrategy
 from experiments import *
@@ -22,44 +23,70 @@ cudnn.benchmark = False
 import glob
 import os
 
+
+def safe_glob(path_pattern):
+    matches = glob.glob(path_pattern)
+    return matches[0] + "/" if matches else "None"   # or "" if you prefer empty string
+
 CHECKPOINT_BASES = {
     "VGG16": {
-        "Cifar10": glob.glob(
-            "../structured_study/pruning_checkpoints/*Vgg16*cifar10_*"
-        )[0]
-        + "/",
-        "Cifar100": glob.glob(
-            "../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"
-        )[0]
-        + "/",
-        "imagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"
-        )[0]
-        + "/",
-        "tinyimagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"
-        )[0]
-        + "/",
+        "Cifar10": safe_glob("../structured_study/pruning_checkpoints/*Vgg16*cifar10_*"),
+        "Cifar100": safe_glob("../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"),
+        "imagenet": safe_glob("../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"),
+        "tinyimagenet": safe_glob("../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"),
     },
     "RegNetX_400MF": {
-        "Cifar10": glob.glob(
-            "../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"
-        )[0]
-        + "/",
-         "Cifar100": glob.glob(
-             "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
-         )[0]
-         + "/",
-        "imagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
-        )[0]
-        + "/",
-        "tinyimagenet": glob.glob(
-            "../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"
-        )[0]
-        + "/",
+        "Cifar10": safe_glob("../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"),
+        "Cifar100": safe_glob("../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"),
+        "imagenet": safe_glob("../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"),
+        "tinyimagenet": safe_glob("../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"),
+    },
+    "InceptionNet": {
+        "Cifar10": safe_glob("../structured_study/pruning_checkpoints/*InceptionNet*cifar10_*"),
+        "Cifar100": safe_glob("../structured_study/pruning_checkpoints/*InceptionNet*cifar100_*"),
+        "imagenet": safe_glob("../structured_study/pruning_checkpoints/*InceptionNet*datasetimagenet_*"),
+        "tinyimagenet": safe_glob("../structured_study/pruning_checkpoints/*InceptionNet*datasettinyimagenet_*"),
     },
 }
+
+# CHECKPOINT_BASES = {
+#     "VGG16": {
+#         "Cifar10": glob.glob(
+#             "../structured_study/pruning_checkpoints/*Vgg16*cifar10_*"
+#         )[0]
+#         + "/",
+#         "Cifar100": glob.glob(
+#             "../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"
+#         )[0]
+#         + "/",
+#         "imagenet": glob.glob(
+#             "../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"
+#         )[0]
+#         + "/",
+#         "tinyimagenet": glob.glob(
+#             "../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"
+#         )[0]
+#         + "/",
+#     },
+#     "RegNetX_400MF": {
+#         "Cifar10": glob.glob(
+#             "../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"
+#         )[0]
+#         + "/",
+#          "Cifar100": glob.glob(
+#              "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
+#          )[0]
+#          + "/",
+#         "imagenet": glob.glob(
+#             "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
+#         )[0]
+#         + "/",
+#         "tinyimagenet": glob.glob(
+#             "../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"
+#         )[0]
+#         + "/",
+#     },
+# }
 #  ls *F*.pth | grep -v 'checkpoint_Finetuned_0.9414101.pth' |xargs rm -v
 CHECKPOINT_FILES = {
     "VGG16": {
@@ -96,6 +123,24 @@ CHECKPOINT_FILES = {
         "tinyimagenet": (
             "checkpoint_Finetuned_0.000000.pth",
             "checkpoint_Original_0.000000.pth",
+        ),
+    },
+    "InceptionNet": {
+        "Cifar10": (
+            "None",
+            "None",
+        ),
+        "Cifar100": (
+            "None",
+            "None",
+        ),
+        "imagenet": (
+            "None",
+            "None",
+        ),
+        "tinyimagenet": (
+            "None",
+            "None",
         ),
     },
 }
@@ -296,7 +341,21 @@ EXPERIMENTS = {
             "Stage 3 last 2 conv": ("stage3.stage3_block2.block.conv3", "stage3.stage3_block3.block.conv3"),
             "Stage 4 last 2 conv": ("stage4.stage4_block4.block.conv3", "stage4.stage4_block5.block.conv3"),
         }
-    }
+    },
+    "InceptionNet": {
+        "Cifar10": {
+            "Original Model": None,
+        },
+        "Cifar100": {
+            "Original Model": None,
+        },
+        "tinyimagenet": {
+            "Original Model": None,
+        },
+        "imagenet": {
+            "Original Model": None,
+        },
+    },
 }
 
 
@@ -325,7 +384,9 @@ def imp_prune(
     Function to run pruning based on the IterativePruner class.
     """
     save_dir = os.path.join(save_dir, experiment_name)
-
+    # if model is inceptionNet steps = 0 for IMP
+    if isinstance(model, InceptionNet):
+        steps = [0]
     print("\nModel:", model)
     print("Optimizer:", optimizer)
     print("Scheduler:", scheduler)
@@ -389,7 +450,11 @@ def run_experiments_for_dataset(
 
     criterion = torch.nn.CrossEntropyLoss()
 
-    steps = exponential_decay_list(steps=21)
+    # if model is inceptionNet 0 steps
+    if model_class == InceptionNet:
+        steps = [0]
+    else:
+        steps = exponential_decay_list(steps=21)
     print(f"Pruning steps: {steps}")
 
     train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(
@@ -401,6 +466,7 @@ def run_experiments_for_dataset(
 
     for name, layers in experiments.items():
         print(f"\n--- Running experiment: {name} ---")
+
         if args.JF:
             model = run_jf_experiment(
                 {name: layers},
@@ -453,7 +519,7 @@ if __name__ == "__main__":
         "--model",
         type=str,
         default="VGG16",
-        choices=["VGG16", "RegNetX_400MF"],
+        choices=["VGG16", "RegNetX_400MF", "InceptionNet"],
         help="Model architecture to use",
     )
     parser.add_argument(
@@ -466,7 +532,7 @@ if __name__ == "__main__":
         "--epochs", type=int, default=1, help="Number of epochs to train for"
     )
     parser.add_argument(
-        "--pretrain", type=int, default=1, help="Number of pretraining epochs"
+        "--pretrain", type=int, default=10, help="Number of pretraining epochs"
     )
     parser.add_argument(
         "--experiment", type=str, required=True, help="Experiment to run"
@@ -494,10 +560,15 @@ if __name__ == "__main__":
 
     model_name = args.model
     dataset = args.dataset
-    model_class = VGG16 if model_name == "VGG16" else RegNetX_400MF
+    model_class = VGG16 if model_name == "VGG16" else RegNetX_400MF if model_name == "RegNetX_400MF" else InceptionNet
     model_kwargs = {}
-
+    # if inceptionnet and JF quit
+    if model_name == "InceptionNet" and args.JF:
+        raise ValueError("JF experiments are not supported for InceptionNet.")
+    
     base_path = CHECKPOINT_BASES[model_name][dataset]
+    print(f"Base path for checkpoints: {base_path}")
+    print(f"Model checkpoints: {CHECKPOINT_FILES[model_name][dataset]}")
     model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[model_name][dataset][0])
     model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[model_name][dataset][1])
 

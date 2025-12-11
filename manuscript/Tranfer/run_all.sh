@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Define models and datasets
-models=( "VGG16" )
-datasets=("Cifar10")
+models=("InceptionNet" "VGG16")
+datasets=("Cifar10" "Cifar100")
 
 # Define the experiments for each model and dataset directly as arrays
 
 # VGG16 Experiments
-VGG16_Cifar10=("Original Model" "Last 2" "Stage 5" "Stage 4" "Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
-VGG16_Cifar100=("Original Model" "Last 2" "Stage 5" "Stage 4" "Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
+VGG16_Cifar10=("Original Model" "Last 2" "Stage 3-5" "Stage 2-5")
+VGG16_Cifar100=("Original Model" "Last 2" "Stage 3-5" "Stage 2-5")
 VGG16_Imagenet=("Original Model" "Last 2" "Stage 5" "Stage 4" "Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
 VGG16_Tinyimagenet=("Original Model" "Last 2" "Stage 5" "Stage 4" "Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
 
@@ -24,6 +24,12 @@ RegNetX_400MF_Imagenet=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" 
 
 RegNetX_400MF_Tinyimagenet=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 1-4" "Stage 2-4" "Stage 3-4"
 "Stage 4 last 2 conv" "Stage 3 last 2 conv" "Stage 2 last 2 conv" "Stage 4 first 2 conv" "Stage 3 first 2 conv" "Stage 2 first 2 conv")
+
+# InceptionNet Experiments
+InceptionNet_Cifar10=("Original Model" )
+InceptionNet_Cifar100=("Original Model" )
+InceptionNet_Imagenet=("Original Model" )
+InceptionNet_Tinyimagenet=("Original Model" )
 
 # Quant = list of true and false
 quant=("True" "False")
@@ -53,6 +59,14 @@ for model in "${models[@]}"; do
       experiment_names=("${RegNetX_400MF_Imagenet[@]}")
     elif [[ "$experiment_key" == "RegNetX_400MF_tinyimagenet" ]]; then
       experiment_names=("${RegNetX_400MF_Tinyimagenet[@]}")
+    elif [[ "$experiment_key" == "InceptionNet_Cifar10" ]]; then
+      experiment_names=("${InceptionNet_Cifar10[@]}")
+    elif [[ "$experiment_key" == "InceptionNet_Cifar100" ]]; then
+      experiment_names=("${InceptionNet_Cifar100[@]}")
+    elif [[ "$experiment_key" == "InceptionNet_imagenet" ]]; then
+      experiment_names=("${InceptionNet_Imagenet[@]}")
+    elif [[ "$experiment_key" == "InceptionNet_tinyimagenet" ]]; then
+      experiment_names=("${InceptionNet_Tinyimagenet[@]}")
     else
       echo "Unknown model-dataset combination: $experiment_key"
       continue
