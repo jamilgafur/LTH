@@ -460,6 +460,7 @@ def run_experiments_for_dataset(
 
     for name, layers in experiments.items():
         print(f"\n--- Running experiment: {name} ---")
+
         if args.JF:
             model = run_jf_experiment(
                 {name: layers},
@@ -525,7 +526,7 @@ if __name__ == "__main__":
         "--epochs", type=int, default=1, help="Number of epochs to train for"
     )
     parser.add_argument(
-        "--pretrain", type=int, default=100, help="Number of pretraining epochs"
+        "--pretrain", type=int, default=10, help="Number of pretraining epochs"
     )
     parser.add_argument(
         "--experiment", type=str, required=True, help="Experiment to run"
