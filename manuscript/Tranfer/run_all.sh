@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Define models and datasets
-models=("InceptionNet")
-datasets=("Cifar10")
+models=("InceptionNet" "VGG16")
+datasets=("Cifar10" "Cifar100")
 
 # Define the experiments for each model and dataset directly as arrays
 
 # VGG16 Experiments
-VGG16_Cifar10=("Original Model" "Last 2" "Stage 5" "Stage 4" "Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
-VGG16_Cifar100=("Original Model" "Last 2" "Stage 5" "Stage 4" "Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
+VGG16_Cifar10=("Original Model" "Last 2" "Stage 3-5" "Stage 2-5")
+VGG16_Cifar100=("Original Model" "Last 2" "Stage 3-5" "Stage 2-5")
 VGG16_Imagenet=("Original Model" "Last 2" "Stage 5" "Stage 4" "Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
 VGG16_Tinyimagenet=("Original Model" "Last 2" "Stage 5" "Stage 4" "Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
 
