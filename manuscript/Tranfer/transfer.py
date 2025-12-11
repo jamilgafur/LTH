@@ -26,7 +26,7 @@ import os
 
 def safe_glob(path_pattern):
     matches = glob.glob(path_pattern)
-    return matches[0] + "/" if matches else None   # or "" if you prefer empty string
+    return matches[0] + "/" if matches else "None"   # or "" if you prefer empty string
 
 CHECKPOINT_BASES = {
     "VGG16": {
@@ -555,7 +555,10 @@ if __name__ == "__main__":
     dataset = args.dataset
     model_class = VGG16 if model_name == "VGG16" else RegNetX_400MF if model_name == "RegNetX_400MF" else InceptionNet
     model_kwargs = {}
-
+    # if inceptionnet and JF quit
+    if model_name == "InceptionNet" and args.JF:
+        raise ValueError("JF experiments are not supported for InceptionNet.")
+    
     base_path = CHECKPOINT_BASES[model_name][dataset]
     print(f"Base path for checkpoints: {base_path}")
     print(f"Model checkpoints: {CHECKPOINT_FILES[model_name][dataset]}")
