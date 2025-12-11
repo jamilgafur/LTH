@@ -16,6 +16,7 @@ from torchvision import datasets, transforms
 
 # Custom models
 from pyPrune.models.LeNet import LeNet
+from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.models.ResNet20 import ResNet20
 from pyPrune.models.ResNet50 import ResNet50
 from pyPrune.models.RegNetX import RegNetX_400MF
@@ -35,18 +36,18 @@ from experiments.NeuronSimilarity import NeuronSimilarity
 # -----------------------------
 parser = argparse.ArgumentParser(description="Run pruning and experiments with a specified model, dataset, and experiments.")
 
-parser.add_argument('--model', type=str, default='Vgg16',
-                    choices=['LeNet', 'ResNet20', 'Vgg16', 'RegNetX', 'EfficientNet', 'ResNet50'],
+parser.add_argument('--model', type=str, default='InceptionNet',
+                    choices=['LeNet', 'ResNet20', 'Vgg16', 'RegNetX', 'EfficientNet', 'ResNet50', 'InceptionNet'],
                     help="The model architecture to use for pruning.")
-parser.add_argument('--dataset', type=str, default='tinyimagenet',
+parser.add_argument('--dataset', type=str, default='cifar10',
                     choices=['cifar10', 'imagenet', 'tinyimagenet', 'cifar100', 'stl10', 'caltech101', 'fashionmnist', 'mnist'],
                     help="Dataset to use.")
 parser.add_argument('--experiments', type=str, nargs='+', default=['None'],
                     choices=['NeuronSimilarity', 'NeuronZeroing', 'WeightZeroing', "None"],
                     help="List of experiments to run.")
 parser.add_argument('--steps', type=int, default=21)
-parser.add_argument('--pretrain_epochs', type=int, default=10)
-parser.add_argument('--finetune_epochs', type=int, default=30)
+parser.add_argument('--pretrain_epochs', type=int, default=1)
+parser.add_argument('--finetune_epochs', type=int, default=3)
 parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'])
 parser.add_argument('--save_dir', type=str, default='./pruning_checkpoints/')
 parser.add_argument('--patience', type=int, default=5)
@@ -142,6 +143,11 @@ def initialize_pruner(model: nn.Module, train_loader: DataLoader, test_loader: D
             optimizer = SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4, nesterov=True)
             scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda_func)
 
+        elif model_name == 'InceptionNet':
+            scaled_lr = 0.1 * (args.batch_size / 256)
+            optimizer = SGD(model.parameters(), lr=scaled_lr, momentum=0.9, weight_decay=5e-4, nesterov=True)
+            scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
+            
         else:
             raise ValueError(f"Unsupported model: {model_name}")
 
@@ -226,10 +232,6 @@ def run_experiments(pruner: IterativePruner, experiment_names: list[str]) -> Non
         print("Running WeightZeroing experiment...")
         sample_fractions = {'linear': .01, 'conv': .01}
         WeightZeroing(pruner, sample_fractions).run_experiment()
-
-# -----------------------------
-# Main Logic
-# -----------------------------
 
 # -----------------------------
 # Main Logic
@@ -333,6 +335,17 @@ def main() -> None:
         else:
             raise ValueError(f"Unsupported dataset for EfficientNet: {dataset}")
 
+    elif args.model == 'InceptionNet':
+        if dataset == 'imagenet':
+            train_loader, test_loader = load_imagenet(args.batch_size, args.num_workers)
+        elif dataset == 'tinyimagenet':
+            train_loader, test_loader = load_tiny_imagenet(args.batch_size, args.num_workers)
+        elif dataset == 'cifar10':
+            train_loader, test_loader = load_cifar10(args.batch_size, args.num_workers)
+        else:
+            raise ValueError(f"Unsupported dataset for InceptionNet: {dataset}")
+        input_tensor = next(iter(train_loader))[0]
+        model = InceptionNet(one_batch=input_tensor, num_classes=num_classes)
     else:
         raise ValueError(f"Unsupported model: {args.model}")
 
