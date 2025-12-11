@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define models and datasets
-models=( "VGG16" )
+models=( "VGG16" "InceptionNet")
 datasets=("Cifar10")
 
 # Define the experiments for each model and dataset directly as arrays
@@ -24,6 +24,12 @@ RegNetX_400MF_Imagenet=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" 
 
 RegNetX_400MF_Tinyimagenet=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 1-4" "Stage 2-4" "Stage 3-4"
 "Stage 4 last 2 conv" "Stage 3 last 2 conv" "Stage 2 last 2 conv" "Stage 4 first 2 conv" "Stage 3 first 2 conv" "Stage 2 first 2 conv")
+
+# InceptionNet Experiments
+InceptionNet_Cifar10=("Original Model" )
+InceptionNet_Cifar100=("Original Model" )
+InceptionNet_Imagenet=("Original Model" )
+InceptionNet_Tinyimagenet=("Original Model" )
 
 # Quant = list of true and false
 quant=("True" "False")
