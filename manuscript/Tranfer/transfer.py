@@ -557,6 +557,8 @@ if __name__ == "__main__":
     model_kwargs = {}
 
     base_path = CHECKPOINT_BASES[model_name][dataset]
+    print(f"Base path for checkpoints: {base_path}")
+    print(f"Model checkpoints: {CHECKPOINT_FILES[model_name][dataset]}")
     model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[model_name][dataset][0])
     model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[model_name][dataset][1])
 
