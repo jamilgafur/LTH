@@ -485,6 +485,10 @@ def run_experiments_for_dataset(
             )
           
         elif args.Kevin:
+            # if inceptionNet train model from scratch with pretrain epochs
+            if model_class == InceptionNet:
+                pretrain = epochs
+                
             model = run_kevin_experiment(
                 {name: layers},
                 model_path_000,
