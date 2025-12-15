@@ -2,7 +2,7 @@
 
 # Define models and datasets
 models=("InceptionNet" "VGG16")
-datasets=("Cifar10" "Cifar100")
+datasets=("tinyimagenet" )
 
 # Define the experiments for each model and dataset directly as arrays
 
