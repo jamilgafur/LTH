@@ -4,6 +4,8 @@ import torch
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.models.RegNetX import RegNetX_400MF
 from pyPrune.models.InceptionNet import InceptionNet
+from pyPrune.models.XceptionNet import XceptionNet
+from pyPrune.models.MobileNet import MobileNet
 from pyPrune.pruneMethods.IterativePruner import IterativePruner
 from pyPrune.strategies import MagnitudePruningStrategy
 from experiments import *
@@ -49,45 +51,6 @@ CHECKPOINT_BASES = {
     },
 }
 
-# CHECKPOINT_BASES = {
-#     "VGG16": {
-#         "Cifar10": glob.glob(
-#             "../structured_study/pruning_checkpoints/*Vgg16*cifar10_*"
-#         )[0]
-#         + "/",
-#         "Cifar100": glob.glob(
-#             "../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"
-#         )[0]
-#         + "/",
-#         "imagenet": glob.glob(
-#             "../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"
-#         )[0]
-#         + "/",
-#         "tinyimagenet": glob.glob(
-#             "../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"
-#         )[0]
-#         + "/",
-#     },
-#     "RegNetX_400MF": {
-#         "Cifar10": glob.glob(
-#             "../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"
-#         )[0]
-#         + "/",
-#          "Cifar100": glob.glob(
-#              "../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"
-#          )[0]
-#          + "/",
-#         "imagenet": glob.glob(
-#             "../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"
-#         )[0]
-#         + "/",
-#         "tinyimagenet": glob.glob(
-#             "../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"
-#         )[0]
-#         + "/",
-#     },
-# }
-#  ls *F*.pth | grep -v 'checkpoint_Finetuned_0.9414101.pth' |xargs rm -v
 CHECKPOINT_FILES = {
     "VGG16": {
         "Cifar10": (
@@ -126,6 +89,42 @@ CHECKPOINT_FILES = {
         ),
     },
     "InceptionNet": {
+        "Cifar10": (
+            "None",
+            "None",
+        ),
+        "Cifar100": (
+            "None",
+            "None",
+        ),
+        "imagenet": (
+            "None",
+            "None",
+        ),
+        "tinyimagenet": (
+            "None",
+            "None",
+        ),
+    },
+    "MobileNet": {
+        "Cifar10": (
+            "None",
+            "None",
+        ),
+        "Cifar100": (
+            "None",
+            "None",
+        ),
+        "imagenet": (
+            "None",
+            "None",
+        ),
+        "tinyimagenet": (
+            "None",
+            "None",
+        ),
+    },
+    "XceptionNet": {
         "Cifar10": (
             "None",
             "None",
@@ -356,71 +355,100 @@ EXPERIMENTS = {
             "Original Model": None,
         },
     },
+    "XceptionNet": {
+        "Cifar10": {
+            "Original Model": None,
+        },
+        "Cifar100": {
+            "Original Model": None,
+        },
+        "tinyimagenet": {
+            "Original Model": None,
+        },
+        "imagenet": {
+            "Original Model": None,
+        },
+    },"MobileNet": {
+        "Cifar10": {
+            "Original Model": None,
+        },
+        "Cifar100": {
+            "Original Model": None,
+        },
+        "tinyimagenet": {
+            "Original Model": None,
+        },
+        "imagenet": {
+            "Original Model": None,
+        },
+    },
 }
 
 
-# -------------------------------
-# IMP Pruning Logic Integration
-# -------------------------------
-
-
-def imp_prune(
-    model,
-    optimizer,
-    scheduler,
-    criterion,
-    train_loader,
-    test_loader,
-    steps,
-    pretrain_epochs,
-    finetune_epochs,
-    device,
-    save_dir,
-    strategy,
-    patience,
-    experiment_name=None,
-):
-    """
-    Function to run pruning based on the IterativePruner class.
-    """
-    save_dir = os.path.join(save_dir, experiment_name)
-    # if model is inceptionNet steps = 0 for IMP
-    if isinstance(model, InceptionNet):
-        steps = [0]
-    print("\nModel:", model)
-    print("Optimizer:", optimizer)
-    print("Scheduler:", scheduler)
-    print("Criterion:", criterion)
-    print("Train Loader:", train_loader)
-    print("Test Loader:", test_loader)
-    print("Steps:", steps)
-    print("Pretrain Epochs:", pretrain_epochs)
-    print("Device:", device)
-    print("Finetune Epochs:", finetune_epochs)
-    print("Save Dir:", save_dir)
-    print("Strategy:", strategy)
-    # Initialize the IterativePruner
-    pruner = IterativePruner(
-        model=model,
-        train_loader=train_loader,
-        test_loader=test_loader,
-        optimizer=optimizer,
-        criterion=criterion,
-        steps=steps,
-        device=device,
-        save_dir=save_dir,
-        pretrain_epochs=pretrain_epochs,
-        finetune_epochs=finetune_epochs,
-        scheduler=scheduler,
-        strategy=MagnitudePruningStrategy.MagnitudePruningStrategy(device=device),
+# Helper functions
+def create_optimizer_scheduler(model, learning_rate=1e-3):
+    """Creates optimizer and scheduler for training."""
+    optimizer = torch.optim.SGD(
+        model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4
     )
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    return optimizer, scheduler
 
-    print("Running pruning process...")
-    pruner.run()  # Start pruning process
-    print("Pruning process complete.")
+def initialize_model_and_data(args):
+    """Initialize the model and dataset based on the provided arguments."""
+    model_class = args.model
+    dataset = args.dataset
+    model_kwargs = {}
 
-    return pruner
+    # Ensure InceptionNet is not used with JF experiments
+    if model_class == InceptionNet and args.JF:
+        raise ValueError("JF experiments are not supported for InceptionNet.")
+    
+    input_size, input_channels, num_classes = load_dataset(dataset, model_class.__name__)
+    model_kwargs["num_classes"] = num_classes
+    model_kwargs["one_batch"] = next(iter(load_dataset(dataset, model_class.__name__)[0]))[0]
+    
+    return model_class, model_kwargs, input_size, input_channels, num_classes
 
+def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device):
+    """Runs the appropriate experiment based on the arguments (JF or Kevin)."""
+    if args.JF:
+        return run_jf_experiment(
+            {experiment_name: layers},
+            model_path_097,
+            train_loader,
+            test_loader,
+            device,
+            epochs,
+            pretrain,
+            model_class=model_class,
+            model_kwargs=model_kwargs,
+            data_shape=input_size,
+            save_path=save_path,
+            post_compress_epochs=post_compress_epochs,
+            quant=quant
+        )
+    elif args.Kevin:
+        # Adjust epochs for original model experiment
+        if experiment_name == "Original Model":
+            epochs = pretrain + epochs
+        
+        return run_kevin_experiment(
+            {experiment_name: layers},
+            model_path_000,
+            train_loader,
+            test_loader,
+            device,
+            epochs,
+            model_class=model_class,
+            model_kwargs=model_kwargs,
+            data_shape=input_size,
+            save_path=save_path,
+            post_compress_epochs=post_compress_epochs,
+            quant=quant
+        )
+    else:
+        raise ValueError("You must specify either --JF or --Kevin to run the corresponding experiment.")
 
 def run_experiments_for_dataset(
     experiments,
@@ -438,20 +466,11 @@ def run_experiments_for_dataset(
     experiment_func,
     quant=False
 ):
-    """Run specified experiment for a given dataset."""
+    """Run specified experiments for a given dataset."""
     save_path = f"{model_class.__name__}_{dataset}_{CHECKPOINT_FILES[model_class.__name__][dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
 
-    def create_optimizer_scheduler(model, learning_rate=1e-3):
-        optimizer = torch.optim.SGD(
-            model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4
-        )
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-        return optimizer, scheduler
-
-    criterion = torch.nn.CrossEntropyLoss()
-
-    # if model is inceptionNet 0 steps
-    if model_class == InceptionNet:
+    # Handle special cases for InceptionNet, XceptionNet, and MobileNet
+    if model_class in [InceptionNet, XceptionNet, MobileNet]:
         steps = [0]
         epochs = pretrain
         pretrain = 0
@@ -459,150 +478,57 @@ def run_experiments_for_dataset(
         steps = exponential_decay_list(steps=21)
     print(f"Pruning steps: {steps}")
 
-    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(
-        dataset, model_class.__name__
-    )
-    model_kwargs["num_classes"] = num_classes
-    input_tensor = next(iter(train_loader))[0]
-    model_kwargs["one_batch"] = input_tensor
+    # Initialize the dataset
+    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, model_class.__name__)
 
+    # Iterate over experiments and run
     for name, layers in experiments.items():
         print(f"\n--- Running experiment: {name} ---")
-            
-        if args.JF:
-            model = run_jf_experiment(
-                {name: layers},
-                model_path_097,
-                train_loader,
-                test_loader,
-                device,
-                epochs,
-                pretrain,
-                model_class=model_class,
-                model_kwargs=model_kwargs,
-                data_shape=input_size,
-                save_path=save_path,
-                post_compress_epochs=post_compress_epochs,
-                quant=quant
-            )
-          
-        elif args.Kevin:
-            # if experiment is original model epochs = pretrain + epochs
-            if name == "Original Model":
-                epochs = pretrain + epochs
-        
-                
-            model = run_kevin_experiment(
-                {name: layers},
-                model_path_000,
-                train_loader,
-                test_loader,
-                device,
-                epochs,
-                model_class=model_class,
-                model_kwargs=model_kwargs,
-                data_shape=input_size,
-                save_path=save_path,
-                post_compress_epochs=post_compress_epochs,
-                quant=quant
-            )
-            
-        else:
-            raise ValueError(
-                "You must specify either --JF or --Kevin to run the corresponding experiment."
-            )
-
-
-# -------------------------------
-# Main Function
-# -------------------------------
-
-if __name__ == "__main__":
-    import argparse
-
-    # Initialize the argument parser
+        model = run_jf_or_kevin_experiment(
+            name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path,
+            post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device
+        )
+    
+# Main function
+def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--model",
-        type=str,
-        default="VGG16",
-        choices=["VGG16", "RegNetX_400MF", "InceptionNet"],
-        help="Model architecture to use",
-    )
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        help="Dataset to use (Cifar10, Cifar100, ImageNet, TinyImageNet)",
-        default="Cifar10",
-    )
-    parser.add_argument(
-        "--epochs", type=int, default=1, help="Number of epochs to train for"
-    )
-    parser.add_argument(
-        "--pretrain", type=int, default=10, help="Number of pretraining epochs"
-    )
-    parser.add_argument(
-        "--experiment", type=str, required=True, help="Experiment to run"
-    )  # Now required
-    parser.add_argument(
-        "--post_compress_epochs",
-        type=int,
-        default=0,
-        help="Number of post-pruning compression epochs",
-    )
-    parser.add_argument(
-        "--imp", action="store_false", help="Apply Iterative Magnitude Pruning"
-    )
+    parser.add_argument("--model", type=str, default="VGG16", choices=["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet"], help="Model architecture to use")
+    parser.add_argument("--dataset", type=str, default="Cifar10", help="Dataset to use (Cifar10, Cifar100, ImageNet, TinyImageNet)")
+    parser.add_argument("--epochs", type=int, default=1, help="Number of epochs to train for")
+    parser.add_argument("--pretrain", type=int, default=10, help="Number of pretraining epochs")
+    parser.add_argument("--experiment", type=str, required=True, help="Experiment to run")
+    parser.add_argument("--post_compress_epochs", type=int, default=0, help="Number of post-pruning compression epochs")
+    parser.add_argument("--imp", action="store_false", help="Apply Iterative Magnitude Pruning")
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
-    parser.add_argument(
-        "--quant", action="store_true", help="Apply Quantization Aware Training"
-    )
+    parser.add_argument("--quant", action="store_true", help="Apply Quantization Aware Training")
 
     args = parser.parse_args()
     print(args)
     print(f"has GPU: {torch.cuda.is_available()}")
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    model_name = args.model
-    dataset = args.dataset
-    model_class = VGG16 if model_name == "VGG16" else RegNetX_400MF if model_name == "RegNetX_400MF" else InceptionNet
-    model_kwargs = {}
-    # if inceptionnet and JF quit
-    if model_name == "InceptionNet" and args.JF:
-        raise ValueError("JF experiments are not supported for InceptionNet.")
-    
-    base_path = CHECKPOINT_BASES[model_name][dataset]
+    model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
+
+    base_path = CHECKPOINT_BASES[args.model][args.dataset]
     print(f"Base path for checkpoints: {base_path}")
-    print(f"Model checkpoints: {CHECKPOINT_FILES[model_name][dataset]}")
-    model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[model_name][dataset][0])
-    model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[model_name][dataset][1])
+    model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
+    model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][1])
 
-    # Ensure selected experiment exists
-    if args.experiment not in EXPERIMENTS[model_name][dataset]:
-        raise ValueError(
-            f"Experiment '{args.experiment}' not found for model '{model_name}' and dataset '{dataset}'."
-        )
+    if args.experiment not in EXPERIMENTS[args.model][args.dataset]:
+        raise ValueError(f"Experiment '{args.experiment}' not found for model '{args.model}' and dataset '{args.dataset}'.")
 
-    experiment_dict = {
-        args.experiment: EXPERIMENTS[model_name][dataset][args.experiment]
-    }
+    experiment_dict = {args.experiment: EXPERIMENTS[args.model][args.dataset][args.experiment]}
 
     run_experiments_for_dataset(
         experiment_dict,
-        dataset,
+        args.dataset,
         model_path_097,
         model_path_000,
-        None,
-        None,
-        "cpu",
-        args.epochs,
-        args.pretrain,
-        model_class,
-        model_kwargs,
-        args.post_compress_epochs,
-        experiment_func=imp_prune,
-        quant=args.quant
+        None, None, device, args.epochs, args.pretrain, model_class,
+        model_kwargs, args.post_compress_epochs, None, args.quant
     )
 
+# Entry point
+if __name__ == "__main__":
+    main()
