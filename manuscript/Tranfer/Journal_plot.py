@@ -54,6 +54,8 @@ def infer_dataset_from_path(p: Path) -> str:
 
 def infer_architecture_from_path(p: Path) -> str:
     name = p.parent.parent.name.lower()
+    if "regnet" in name:
+        return "RegNetX"
     if "vgg" in name:
         return "VGG16"
     if "inception" in name:
