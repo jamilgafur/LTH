@@ -31,6 +31,17 @@ InceptionNet_Cifar100=("Original Model" )
 InceptionNet_Imagenet=("Original Model" )
 InceptionNet_Tinyimagenet=("Original Model" )
 
+# XceptionNet Experiments
+XceptionNet_Cifar10=("Original Model" )
+XceptionNet_Cifar100=("Original Model" )
+XceptionNet_Imagenet=("Original Model" )
+XceptionNet_Tinyimagenet=("Original Model" )
+# MobileNet Experiments
+MobileNet_Cifar10=("Original Model" )
+MobileNet_Cifar100=("Original Model" )
+MobileNet_Imagenet=("Original Model" )
+MobileNet_Tinyimagenet=("Original Model" )
+
 # Quant = list of true and false
 quant=("True" "False")
 rm ~/submit*
