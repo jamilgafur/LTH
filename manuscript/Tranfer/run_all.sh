@@ -39,7 +39,7 @@ MobileNet_Imagenet=("Original Model" )
 MobileNet_Tinyimagenet=("Original Model" )
 
 # Quant = list of true and false
-quant=("True" "False")
+quant=("False")
 rm ~/submit*
 
 # Loop through models
