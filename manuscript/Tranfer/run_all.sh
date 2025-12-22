@@ -2,24 +2,24 @@
 
 # Define models and datasets
 models=("InceptionNet" "XceptionNet" "MobileNet" "VGG16" "RegNetX_400MF" )
-datasets=( "Cifar10" "Cifar100" )
+datasets=( "Cifar10"  )
 
 # Define the experiments for each model and dataset directly as arrays
 
 # VGG16 Experiments
-VGG16_Cifar10=("Original Model" "Last 2" "Stage 3-5" "Stage 2-5")
-VGG16_Cifar100=("Original Model" "Last 2" "Stage 3-5" "Stage 2-5")
-VGG16_Imagenet=("Original Model" "Last 2" "Stage 5" "Stage 4" "Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
-VGG16_Tinyimagenet=("Original Model" "Last 2" "Stage 5" "Stage 4" "Stage 3" "Stage 4-5" "Stage 3-5" "Stage 2-5")
+VGG16_Cifar10=("Original Model")
+VGG16_Cifar100=("Original Model")
+VGG16_Imagenet=("Original Model" )
+VGG16_Tinyimagenet=("Original Model")
 
 # RegNetX_400MF Experiments
-RegNetX_400MF_Cifar10=("Original Model" "Last 2"  "Stage 2 first 2 conv")
+RegNetX_400MF_Cifar10=("Original Model" )
 
-RegNetX_400MF_Cifar100=("Original Model" "Last 2"  "Stage 2 first 2 conv")
+RegNetX_400MF_Cifar100=("Original Model")
 
-RegNetX_400MF_Imagenet=("Original Model" "Last 2"  "Stage 2 first 2 conv")
+RegNetX_400MF_Imagenet=("Original Model")
 
-RegNetX_400MF_Tinyimagenet=("Original Model" "Last 2"  "Stage 2 first 2 conv")
+RegNetX_400MF_Tinyimagenet=("Original Model" )
 
 # InceptionNet Experiments
 InceptionNet_Cifar10=("Original Model" )
