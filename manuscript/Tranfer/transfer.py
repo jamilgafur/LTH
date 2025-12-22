@@ -23,6 +23,7 @@ torch.manual_seed(seed)
 cudnn.deterministic = True
 cudnn.benchmark = False
 import glob
+import argparse
 import os
 
 
@@ -492,7 +493,7 @@ def run_experiments_for_dataset(
 # Main function
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="VGG16", choices=["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet"], help="Model architecture to use")
+    parser.add_argument("--model", type=str, default="XceptionNet", choices=["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet"], help="Model architecture to use")
     parser.add_argument("--dataset", type=str, default="Cifar10", help="Dataset to use (Cifar10, Cifar100, ImageNet, TinyImageNet)")
     parser.add_argument("--epochs", type=int, default=1, help="Number of epochs to train for")
     parser.add_argument("--pretrain", type=int, default=10, help="Number of pretraining epochs")
