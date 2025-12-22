@@ -50,6 +50,18 @@ CHECKPOINT_BASES = {
         "imagenet": safe_glob("../structured_study/pruning_checkpoints/*InceptionNet*datasetimagenet_*"),
         "tinyimagenet": safe_glob("../structured_study/pruning_checkpoints/*InceptionNet*datasettinyimagenet_*"),
     },
+    "MobileNet": {
+        "Cifar10": safe_glob("../structured_study/pruning_checkpoints/*MobileNet*cifar10_*"),
+        "Cifar100": safe_glob("../structured_study/pruning_checkpoints/*MobileNet*cifar100_*"),
+        "imagenet": safe_glob("../structured_study/pruning_checkpoints/*MobileNet*datasetimagenet_*"),
+        "tinyimagenet": safe_glob("../structured_study/pruning_checkpoints/*MobileNet*datasettinyimagenet_*"),
+    },
+    "XceptionNet": {
+        "Cifar10": safe_glob("../structured_study/pruning_checkpoints/*XceptionNet*cifar10_*"),
+        "Cifar100": safe_glob("../structured_study/pruning_checkpoints/*XceptionNet*cifar100_*"),
+        "imagenet": safe_glob("../structured_study/pruning_checkpoints/*XceptionNet*datasetimagenet_*"),
+        "tinyimagenet": safe_glob("../structured_study/pruning_checkpoints/*XceptionNet*datasettinyimagenet_*"),
+    },
 }
 
 CHECKPOINT_FILES = {
@@ -405,14 +417,15 @@ def initialize_model_and_data(args):
     if model_class == InceptionNet and args.JF:
         raise ValueError("JF experiments are not supported for InceptionNet.")
     
-    input_size, input_channels, num_classes = load_dataset(dataset, model_class.__name__)
+    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, model_class)
     model_kwargs["num_classes"] = num_classes
-    model_kwargs["one_batch"] = next(iter(load_dataset(dataset, model_class.__name__)[0]))[0]
+    model_kwargs["one_batch"] = next(iter(load_dataset(dataset, model_class)[0]))[0]
     
-    return model_class, model_kwargs, input_size, input_channels, num_classes
+    return train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes
 
-def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device):
+def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
     """Runs the appropriate experiment based on the arguments (JF or Kevin)."""
+    model_class = eval(model_class)
     if args.JF:
         return run_jf_experiment(
             {experiment_name: layers},
@@ -465,10 +478,11 @@ def run_experiments_for_dataset(
     model_kwargs,
     post_compress_epochs,
     experiment_func,
-    quant=False
+    quant=False,
+    args=None
 ):
     """Run specified experiments for a given dataset."""
-    save_path = f"{model_class.__name__}_{dataset}_{CHECKPOINT_FILES[model_class.__name__][dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
+    save_path = f"{model_class}_{dataset}_{CHECKPOINT_FILES[model_class][dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
 
     # Handle special cases for InceptionNet, XceptionNet, and MobileNet
     if model_class in [InceptionNet, XceptionNet, MobileNet]:
@@ -480,14 +494,14 @@ def run_experiments_for_dataset(
     print(f"Pruning steps: {steps}")
 
     # Initialize the dataset
-    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, model_class.__name__)
+    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, model_class)
 
     # Iterate over experiments and run
     for name, layers in experiments.items():
         print(f"\n--- Running experiment: {name} ---")
         model = run_jf_or_kevin_experiment(
             name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path,
-            post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device
+            post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args
         )
     
 # Main function
@@ -509,8 +523,8 @@ def main():
     print(f"has GPU: {torch.cuda.is_available()}")
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
-    model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
-
+    train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
+    
     base_path = CHECKPOINT_BASES[args.model][args.dataset]
     print(f"Base path for checkpoints: {base_path}")
     model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
@@ -527,7 +541,7 @@ def main():
         model_path_097,
         model_path_000,
         None, None, device, args.epochs, args.pretrain, model_class,
-        model_kwargs, args.post_compress_epochs, None, args.quant
+        model_kwargs, args.post_compress_epochs, None, args.quant, args
     )
 
 # Entry point
