@@ -4,7 +4,6 @@ import json
 import warnings
 from pathlib import Path
 from typing import List
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -85,6 +84,7 @@ def pareto_front(x, y):
             keep.append(i)
     return keep
 
+
 # =========================
 # Data Loading
 # =========================
@@ -164,6 +164,17 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
 
     return pd.DataFrame(out)
 
+def add_param_proxy_columns(df: pd.DataFrame, tau: float = 0.5) -> pd.DataFrame:
+    df = df.copy()
+
+    # Fraction of parameters removed (proxy for depth)
+    df["collapsed_fraction"] = df["d_params"] / 100.0
+
+    # Acceptance proxy: within accuracy tolerance
+    df["accepted"] = df["d_acc"] >= -tau
+
+    return df
+
 # =========================
 # Figures (SVG)
 # =========================
@@ -175,7 +186,6 @@ def extract_layer_series(plpf, key):
         if isinstance(layer, dict) and key in layer:
             vals.append(layer[key])
     return np.array(vals) if vals else None
-
 def fig_pareto_grouped(df, dataset):
     archs = df["architecture"].unique()
     n_arch = len(archs)
@@ -227,8 +237,6 @@ def fig_pareto_grouped(df, dataset):
     plt.tight_layout()
     plt.savefig(FIG_DIR / f"{dataset}_pareto.svg")
     plt.close()
-
-
 def fig_efficiency_grouped(df, dataset):
     archs = df["architecture"].unique()
     n_arch = len(archs)
@@ -288,8 +296,6 @@ def fig_efficiency_grouped(df, dataset):
     plt.tight_layout()
     plt.savefig(FIG_DIR / f"{dataset}_efficiency.svg")
     plt.close()
-
-
 def fig_activation_heatmap_grouped(df, dataset):
     archs = df["architecture"].unique()
     n_arch = len(archs)
@@ -337,8 +343,6 @@ def fig_activation_heatmap_grouped(df, dataset):
     plt.tight_layout()
     plt.savefig(FIG_DIR / f"{dataset}_activation_heatmap_transposed.svg")
     plt.close()
-
-
 def fig_memory_decomp_grouped(df, dataset):
     archs = df["architecture"].unique()
     n_arch = len(archs)
@@ -390,7 +394,128 @@ def fig_memory_decomp_grouped(df, dataset):
     plt.savefig(FIG_DIR / f"{dataset}_memory_decomposition.svg")
     plt.close()
 
+def fig_accuracy_vs_depth(df: pd.DataFrame):
+    plt.figure(figsize=(5.5, 4))
 
+    sns.lineplot(
+        data=df,
+        x="collapsed_fraction",
+        y="accuracy",
+        hue="architecture",
+        style="model_type",
+        markers=True,
+        dashes=False
+    )
+
+    plt.xlabel("Fraction of Parameters Removed (proxy for depth)")
+    plt.ylabel("Top-1 Accuracy (%)")
+    plt.title("Accuracy vs Collapsed Depth (parameter proxy)")
+    plt.tight_layout()
+    plt.savefig(FIG_DIR / "fig1_accuracy_vs_depth.svg")
+    plt.close()
+def fig_block_acceptance(df: pd.DataFrame):
+    plt.figure(figsize=(6, 3.5))
+
+    sns.scatterplot(
+        data=df[df["model_type"] == "collapsed"],
+        x="collapsed_fraction",
+        y="architecture",
+        hue="accepted",
+        style="accepted",
+        palette={True: "green", False: "red"},
+        s=80
+    )
+
+    plt.xlabel("Fraction of Parameters Removed (proxy depth)")
+    plt.ylabel("Architecture")
+    plt.title("Collapse Acceptance vs Depth (proxy)")
+    plt.tight_layout()
+    plt.savefig(FIG_DIR / "fig2_block_acceptance.svg")
+    plt.close()
+def fig_surrogate_vs_accuracy(df: pd.DataFrame):
+    plt.figure(figsize=(5, 4))
+
+    sns.scatterplot(
+        data=df[df["model_type"] == "collapsed"],
+        x="collapsed_fraction",
+        y="d_acc",
+        hue="accepted",
+        palette={True: "green", False: "red"},
+        s=80
+    )
+
+    plt.axhline(0, linestyle="--", color="0.5")
+    plt.xlabel("Fraction of Parameters Removed (proxy)")
+    plt.ylabel("Δ Accuracy (pp)")
+    plt.title("Approximation Severity vs Accuracy Change")
+    plt.tight_layout()
+    plt.savefig(FIG_DIR / "fig3_surrogate_vs_accuracy.svg")
+    plt.close()
+def fig_collapsible_depth_consistency(df: pd.DataFrame, tau=0.5):
+    rows = []
+
+    for (ds, arch), g in df.groupby(["dataset", "architecture"]):
+        ok = g[g["d_acc"] >= -tau]
+        if ok.empty:
+            continue
+        rows.append({
+            "dataset": ds,
+            "architecture": arch,
+            "collapsible_fraction": ok["collapsed_fraction"].max()
+        })
+
+    dfc = pd.DataFrame(rows)
+
+    plt.figure(figsize=(6, 4))
+    sns.barplot(
+        data=dfc,
+        x="architecture",
+        y="collapsible_fraction",
+        hue="dataset"
+    )
+
+    plt.ylabel("Fraction of Parameters Removable")
+    plt.title("Consistency of Collapsible Depth (proxy)")
+    plt.tight_layout()
+    plt.savefig(FIG_DIR / "fig4_collapsible_depth_consistency.svg")
+    plt.close()
+def fig_efficiency_vs_depth(df: pd.DataFrame):
+    fig, axes = plt.subplots(3, 1, figsize=(5.5, 8), sharex=True)
+
+    sns.lineplot(df, x="collapsed_fraction", y="params", ax=axes[0])
+    axes[0].set_ylabel("Parameters")
+
+    sns.lineplot(df, x="collapsed_fraction", y="flops", ax=axes[1])
+    axes[1].set_ylabel("FLOPs")
+
+    sns.lineplot(df, x="collapsed_fraction", y="memory", ax=axes[2])
+    axes[2].set_ylabel("Memory (MB)")
+    axes[2].set_xlabel("Fraction of Parameters Removed")
+
+    for ax in axes:
+        ax.grid(alpha=0.3)
+
+    plt.suptitle("Efficiency Effects of Depth Reduction (proxy)")
+    plt.tight_layout()
+    plt.savefig(FIG_DIR / "fig5_efficiency_vs_depth.svg")
+    plt.close()
+def fig_failure_case(df: pd.DataFrame):
+    fails = df[(df["model_type"] == "collapsed") & (~df["accepted"])]
+    if fails.empty:
+        return
+
+    f = fails.sort_values("d_acc").iloc[0]
+
+    plt.figure(figsize=(5.5, 3.5))
+    plt.scatter(f["collapsed_fraction"], f["accuracy"], color="red", s=120)
+    plt.axhline(f["accuracy"], linestyle="--", color="red", alpha=0.5)
+
+    plt.xlabel("Fraction of Parameters Removed")
+    plt.ylabel("Accuracy (%)")
+    plt.title(f"Failure Case: {f['architecture']} ({f['exp_name']})")
+    plt.tight_layout()
+    plt.savefig(FIG_DIR / "fig6_failure_case.svg")
+    plt.close()
 
 # =========================
 # Tables (booktabs-safe)
@@ -422,35 +547,27 @@ def save_table(df, cols, caption, label, path):
 # Main
 # =========================
 
+def add_param_proxy_depth(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    if "d_params" in df.columns:
+        df["collapsed_fraction"] = df["d_params"] / 100.0
+    return df
+
+
 if __name__ == "__main__":
     raw = load_results()
     df = normalize(raw)
+    df = add_param_proxy_columns(df, tau=0.5)
+
+    fig_accuracy_vs_depth(df)
+    fig_block_acceptance(df)
+    fig_surrogate_vs_accuracy(df)
+    fig_collapsible_depth_consistency(df)
+    fig_efficiency_vs_depth(df)
+    fig_failure_case(df)
 
     for ds, g in df.groupby("dataset"):
         fig_pareto_grouped(g, ds)
         fig_efficiency_grouped(g, ds)
         fig_memory_decomp_grouped(g, ds)
         fig_activation_heatmap_grouped(g, ds)
-
-        # Tables unchanged, still per-arch
-        for arch, ga in g.groupby("architecture"):
-            save_table(
-                ga,
-                ["dataset", "architecture", "exp_name",
-                 "accuracy", "d_acc",
-                 "params", "d_params",
-                 "flops", "d_flops",
-                 "memory", "d_memory"],
-                "Overall performance and compression deltas.",
-                f"tab:{ds}_{arch}_overall",
-                TABLE_DIR / f"{ds}_{arch}_overall.tex",
-            )
-
-            save_table(
-                ga,
-                ["dataset", "architecture", "exp_name",
-                 "acc_per_mparam", "acc_per_gflop"],
-                "Compression efficiency metrics.",
-                f"tab:{ds}_{arch}_efficiency",
-                TABLE_DIR / f"{ds}_{arch}_efficiency.tex",
-            )
