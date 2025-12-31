@@ -517,7 +517,6 @@ def main():
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
     parser.add_argument("--quant", action="store_true", help="Apply Quantization Aware Training")
-
     args = parser.parse_args()
     print(args)
     print(f"has GPU: {torch.cuda.is_available()}")

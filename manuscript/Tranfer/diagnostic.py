@@ -35,18 +35,7 @@ import numpy as np
 # -------------------------
 # Diagnostics (robust)
 # -------------------------
-def run_full_diagnostics(
-    model,
-    input_shape,
-    metrics_dict,
-    save_dir,
-    exp_name,
-    collapse_range=None,
-    device="cuda",
-    quant=False,
-    collapse_results=None,     # list[dict]
-    accuracy_tolerance=None,   # float τ
-):
+def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, collapse_range=None, device="cuda", quant=False):
     """
     Run a complete diagnostic suite on a PyTorch model.
     
@@ -151,57 +140,44 @@ def run_full_diagnostics(
             print(f"[!] Collapse analysis failed: {e}")
 
     print(f"[✓] Diagnostics complete for {exp_name}")
-    try:
-        run_results_analysis(
-            collapse_results=collapse_results,
-            tau=accuracy_tolerance,
-            save_dir=save_dir,
-        )
-    except Exception as e:
-        print(f"[!] Results analysis failed: {e}")
     return diagnostics
 
-def run_results_analysis(
-    collapse_results,
-    tau,
-    save_dir,
-):
-    """
-    Generates all Results section figures and tables (Fig.1–6, Table.1–6)
-    """
+# def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, collapse_range=None, device="cuda",quant=False):
+#     if quant:
+#         model = model.half()
+        
 
-    if not collapse_results or tau is None:
-        print("[•] No collapse results or τ provided — skipping Results figures.")
-        return
+#     print(f"[•] Running diagnostics for {exp_name}...")
+#     ensure_dir(save_dir)
+#     model.to(device)
+#     model.eval()
 
-    print("[•] Generating Results section figures and tables...")
+#     # Prepare input tensor (4D)
+#     if len(input_shape) == 2:
+#         input_tensor = torch.randn((1, 3, *input_shape), device=device)
+#     elif len(input_shape) == 3:
+#         input_tensor = torch.randn((1, *input_shape), device=device)
+#     else:
+#         input_tensor = torch.randn(input_shape, device=device)
+    
+#     diagnostics = {}
 
-    # ---- Fig 1 + Table 1 ----
-    plot_accuracy_vs_collapsed_depth(collapse_results, tau, save_dir)
-    table1 = table_max_collapsible_depth(collapse_results, tau, save_dir)
-
-    # ---- Fig 2 + Table 2 ----
-    plot_block_acceptance_by_depth(collapse_results, save_dir)
-    table_block_statistics(collapse_results, save_dir)
-
-    # ---- Fig 3 + Table 3 ----
-    plot_surrogate_error_vs_accuracy(collapse_results, save_dir)
-    table_surrogate_summary(collapse_results, save_dir)
-
-    # ---- Fig 4 + Table 4 ----
-    plot_collapsible_depth_across_models(table1, save_dir)
-    table_collapsible_depth_stats(table1, save_dir)
-
-    # ---- Fig 5 + Table 5 ----
-    plot_efficiency_vs_collapse(collapse_results, save_dir)
-    table_efficiency_comparison(collapse_results, save_dir)
-
-    # ---- Fig 6 + Table 6 ----
-    plot_failure_case(collapse_results, save_dir)
-    table_failure_modes(collapse_results, save_dir)
-
-    print("[✓] Results section artifacts generated.")
-
+#     # Per-layer params/FLOPs (returns DataFrame or [] on error)
+    
+#     df_params = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
+#     diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records") if hasattr(df_params, "to_dict") else []
+    
+#     # Activation sizes
+#     df_act = analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
+#     diagnostics["activation_sizes"] = df_act.to_dict(orient="records") if hasattr(df_act, "to_dict") else []
+    
+#     # Memory decomposition
+#     mem = memory_decomposition(model, input_tensor, save_dir, exp_name)
+#     diagnostics["memory_decomposition"] = mem if isinstance(mem, dict) else {}
+    
+#     print(f"[✓] Diagnostics complete for {exp_name}")
+#     print(diagnostics)
+#     return diagnostics
 # -------------------------
 # Per-layer analysis & activation analysis (robust + save)
 # -------------------------
