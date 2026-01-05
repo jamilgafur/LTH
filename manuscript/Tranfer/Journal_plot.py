@@ -32,8 +32,6 @@ sns.set_theme(
     font_scale=1.1,
 )
 
-
-
 # =========================
 # Data Loading
 # =========================
@@ -51,11 +49,13 @@ def load_results() -> pd.DataFrame:
             raw = json.load(f)
 
         for exp, m in raw.items():
+            posthoc_or_posttrain = infer_posthoc_or_posttrain(exp)
             rows.append(
                 {
                     "dataset": dataset,
                     "architecture": arch,
                     "exp_name": exp,
+                    "posthoc_or_posttrain": posthoc_or_posttrain,  # Updated field name
                     "model_type": infer_model_type(exp),
                     "is_quantized": infer_isquant(exp),
                     "accuracy": m.get("final_accuracy"),
@@ -94,6 +94,15 @@ def infer_architecture_from_path(p: Path) -> str:
     raise ValueError(f"Cannot infer architecture from {p}")
 
 
+def infer_posthoc_or_posttrain(exp_name: str) -> str:
+    n = exp_name.lower()
+    if "jf" in n:
+        return "posttrain"  # Clearly distinguishing posttrain experiments
+    if "kevin" in n:
+        return "posthoc"  # Clearly distinguishing posthoc experiments
+    raise ValueError(f"Cannot infer posthoc or posttrain from {exp_name}")
+
+
 def infer_model_type(exp_name: str) -> str:
     n = exp_name.lower()
     if "original" in n or "baseline" in n:
@@ -112,6 +121,7 @@ def find_baseline(df: pd.DataFrame):
     )
     m = df[mask].sort_values("exp_name")
     return None if m.empty else m.iloc[0]
+
 
 def normalize(df: pd.DataFrame) -> pd.DataFrame:
     out = []
@@ -139,258 +149,257 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
 # =========================
 
 def fig1(df: pd.DataFrame):
-    # this method saves into the FIG_DIR
-    # For each architecture as a row and dataset as a column in a single subplot
-    # plot a line plot d_params vs d_acc, for is_quantized and non-quantized 
-    # use df.unique to get all architectures, and DATASET_ORDER for datasets
-    # x axis log scale
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import numpy as np
 
     architectures = df["architecture"].unique()
     datasets = df["dataset"].unique()
+
     fig, axes = plt.subplots(
         len(architectures),
         len(datasets),
         figsize=(5 * len(datasets), 4 * len(architectures)),
         sharex=True,
         sharey=True,
+        squeeze=False,  # <-- critical: always 2D
     )
+
     for i, arch in enumerate(architectures):
         for j, ds in enumerate(datasets):
-            ax = axes[i, j] if len(architectures) > 1 else axes[j]
-            subdf = df[(df["architecture"] == arch) & (df["dataset"] == ds)]
+            ax = axes[i, j]
+
+            subdf = df[
+                (df["architecture"] == arch) &
+                (df["dataset"] == ds)
+            ]
+
             if subdf.empty:
-                ax.set_title(f"{arch} - {ds} (no data)")
+                ax.set_title(f"{arch} - {ds}\n(no data)")
+                ax.axis("off")
                 continue
+
+            # Safety check: drop rows with missing values
+            subdf = subdf.dropna(subset=["d_params", "d_acc"])
+
             sns.lineplot(
                 data=subdf,
                 x="d_params",
                 y="d_acc",
-                hue="is_quantized",
-                style="model_type",
+                hue="posthoc_or_posttrain",   # Posthoc vs Posttrain
+                style="is_quantized",         # Quantized vs FP
                 markers=True,
                 dashes=False,
                 ax=ax,
             )
-            ax.axhline(0, color="gray", linestyle="--")
-            ax.set_title(f"{arch} - {ds}")
+
+            ax.axhline(0, color="gray", linestyle="--", linewidth=1)
+
+            ax.set_title(f"{arch} – {ds}")
             ax.set_xlabel("Parameter Reduction (%)")
             ax.set_ylabel("Accuracy Change (%)")
-            ax.legend(title="Quantized / Model Type")
+
+            # Improve legend readability
+            ax.legend(
+                title="Training / Quantization",
+                fontsize=9,
+                title_fontsize=10,
+                frameon=True,
+            )
+
     plt.tight_layout()
+
     fig_path = FIG_DIR / "fig1_dparams_vs_dacc.png"
-    plt.savefig(fig_path)
+    plt.savefig(fig_path, dpi=300)
     print(f"Figure saved to {fig_path}")
+
     plt.close()
-    # print out the data and statistics used in the figure to the terminal
+
+    # -----------------------------
+    # Terminal debug output
+    # -----------------------------
     print("\nData used in Figure 1:")
-    for i, arch in enumerate(architectures):
-        for j, ds in enumerate(datasets):
-            subdf = df[(df["architecture"] == arch) & (df["dataset"] == ds)]
+    for arch in architectures:
+        for ds in datasets:
+            subdf = df[
+                (df["architecture"] == arch) &
+                (df["dataset"] == ds)
+            ]
             if subdf.empty:
                 continue
+
             print(f"\nArchitecture: {arch}, Dataset: {ds}")
-            print(subdf[["d_params", "d_acc", "is_quantized", "model_type"]].to_string(index=False))
-    # print a latex table for each archtirecture and dataset the baseline accuracy, maximum collapsible fraction, corresponding exp_name and accuracy drop
-    print("\nLatex Tables:")
-    for i, arch in enumerate(architectures):
-        for j, ds in enumerate(datasets):
-            subdf = df[(df["architecture"] == arch) & (df["dataset"] == ds)]
-            if subdf.empty:
-                continue
-            baseline = find_baseline(subdf)
-            if baseline is None:
-                continue
-            max_collapse = subdf.loc[subdf["collapsed_fraction"].idxmax()]
-            print(f"\nArchitecture: {arch}, Dataset: {ds}")
-            print("\\begin{table}[h]")
-            print("\\centering")
-            print("\\begin{tabular}{lcc}")
-            print("\\hline")
-            print(" & Baseline & Max Collapse \\\\")
-            print("\\hline")
-            print(f"Exp Name & {baseline['exp_name']} & {max_collapse['exp_name']} \\\\")
-            print(f"Accuracy & {baseline['accuracy']:.2f} & {max_collapse['accuracy']:.2f} \\\\")
-            print(f"Collapsed Fraction & 0.00 & {max_collapse['collapsed_fraction']:.2f} \\\\")
-            print(f"Accuracy Drop & 0.00 & {max_collapse['d_acc']:.2f} \\\\")
-            print("\\hline")
-            print("\\end{tabular}")
-            print(f"\\caption{{Baseline and Maximum Collapse for {arch} on {ds}}}")
-            print("\\end{table}")
+            print(
+                subdf[
+                    ["posthoc_or_posttrain", "is_quantized", "model_type",
+                     "d_params", "d_acc"]
+                ].to_string(index=False)
+            )
 
 def fig2(df: pd.DataFrame):
-    # In here we show the FLOPS reduction, memory reduction and parameter reduction as their own columns in a subplot
     architectures = df["architecture"].unique()
     datasets = df["dataset"].unique()
+
     fig, axes = plt.subplots(
         len(architectures),
         len(datasets),
         figsize=(5 * len(datasets), 4 * len(architectures)),
         sharex=True,
         sharey=True,
+        squeeze=False,
     )
+
     for i, arch in enumerate(architectures):
         for j, ds in enumerate(datasets):
-            ax = axes[i, j] if len(architectures) > 1 else axes[j]
-            subdf = df[(df["architecture"] == arch) & (df["dataset"] == ds)]
+            ax = axes[i, j]
+            subdf = df[
+                (df["architecture"] == arch) &
+                (df["dataset"] == ds)
+            ].dropna(subset=["d_flops", "d_acc"])
+
             if subdf.empty:
-                ax.set_title(f"{arch} - {ds} (no data)")
+                ax.set_title(f"{arch} – {ds}\n(no data)")
+                ax.axis("off")
                 continue
+
             sns.lineplot(
                 data=subdf,
                 x="d_flops",
                 y="d_acc",
-                hue="is_quantized",
-                style="model_type",
+                hue="posthoc_or_posttrain",
+                style="is_quantized",
                 markers=True,
                 dashes=False,
                 ax=ax,
             )
-            ax.axhline(0, color="gray", linestyle="--")
-            ax.set_title(f"{arch} - {ds}")
-            ax.set_xlabel("FLOPS Reduction (%)")
+
+            ax.axhline(0, color="gray", linestyle="--", linewidth=1)
+            ax.set_title(f"{arch} – {ds}")
+            ax.set_xlabel("FLOPs Reduction (%)")
             ax.set_ylabel("Accuracy Change (%)")
-            ax.legend(title="Quantized / Model Type")
+            ax.legend(title="Training / Quantization")
+
     plt.tight_layout()
     fig_path = FIG_DIR / "fig2_dflops_vs_dacc.png"
-    plt.savefig(fig_path)
+    plt.savefig(fig_path, dpi=300)
     print(f"Figure saved to {fig_path}")
     plt.close()
-    # print out the data and statistics used in the figure to the terminal
-    print("\nData used in Figure 2:")
-    for i, arch in enumerate(architectures):
-        for j, ds in enumerate(datasets):
-            subdf = df[(df["architecture"] == arch) & (df["dataset"] == ds)]
-            if subdf.empty:
-                continue
-            print(f"\nArchitecture: {arch}, Dataset: {ds}")
-            print(subdf[["d_flops", "d_acc", "is_quantized", "model_type"]].to_string(index=False))
 
 def fig3(df: pd.DataFrame):
-    # Surrogate Approximation Error (Fig. 3): A scatter plot correlating the local approximation error of the surrogate with the final downstream accuracy.
     architectures = df["architecture"].unique()
     datasets = df["dataset"].unique()
-    
+
     fig, axes = plt.subplots(
         len(architectures),
         len(datasets),
         figsize=(5 * len(datasets), 4 * len(architectures)),
         sharex=True,
         sharey=True,
+        squeeze=False,
     )
-    
+
     for i, arch in enumerate(architectures):
         for j, ds in enumerate(datasets):
-            ax = axes[i, j] if len(architectures) > 1 else axes[j]
-            subdf = df[(df["architecture"] == arch) & (df["dataset"] == ds)]
+            ax = axes[i, j]
+            subdf = df[
+                (df["architecture"] == arch) &
+                (df["dataset"] == ds)
+            ].dropna(subset=["collapsed_fraction", "d_acc"])
+
             if subdf.empty:
-                ax.set_title(f"{arch} - {ds} (no data)")
+                ax.set_title(f"{arch} – {ds}\n(no data)")
+                ax.axis("off")
                 continue
 
-            # Use collapsed_fraction as a proxy for the approximation error
             sns.scatterplot(
                 data=subdf,
-                x="collapsed_fraction",  # Collapsed fraction as a proxy for approximation error
+                x="collapsed_fraction",
                 y="d_acc",
-                hue="is_quantized",
-                style="model_type",
+                hue="posthoc_or_posttrain",
+                style="is_quantized",
                 ax=ax,
-                markers=True,
             )
-            ax.set_title(f"{arch} - {ds}")
-            ax.set_xlabel("Collapsed Fraction (Proxy for Approximation Error)")
+
+            ax.set_title(f"{arch} – {ds}")
+            ax.set_xlabel("Collapsed Fraction (Approximation Error Proxy)")
             ax.set_ylabel("Accuracy Change (%)")
-            ax.legend(title="Quantized / Model Type")
+            ax.legend(title="Training / Quantization")
 
     plt.tight_layout()
     fig_path = FIG_DIR / "fig3_approximation_error_vs_accuracy.png"
-    plt.savefig(fig_path)
+    plt.savefig(fig_path, dpi=300)
     print(f"Figure saved to {fig_path}")
     plt.close()
-    
-    # Print out the data and statistics used in the figure to the terminal
-    print("\nData used in Figure 3:")
-    for i, arch in enumerate(architectures):
-        for j, ds in enumerate(datasets):
-            subdf = df[(df["architecture"] == arch) & (df["dataset"] == ds)]
-            if subdf.empty:
-                continue
-            print(f"\nArchitecture: {arch}, Dataset: {ds}")
-            print(subdf[["collapsed_fraction", "d_acc", "is_quantized", "model_type"]].to_string(index=False))
 
 def fig4(df: pd.DataFrame):
-    # Efficiency Trade-offs (Fig. 4): Line or scatter plots showing the reduction in FLOPs, latency, and activation memory footprint as more of the network is collapsed.
     architectures = df["architecture"].unique()
     datasets = df["dataset"].unique()
-    
+
     fig, axes = plt.subplots(
         len(architectures),
         len(datasets),
         figsize=(5 * len(datasets), 4 * len(architectures)),
         sharex=True,
         sharey=True,
+        squeeze=False,
     )
-    
+
     for i, arch in enumerate(architectures):
         for j, ds in enumerate(datasets):
-            ax = axes[i, j] if len(architectures) > 1 else axes[j]
-            subdf = df[(df["architecture"] == arch) & (df["dataset"] == ds)]
+            ax = axes[i, j]
+            subdf = df[
+                (df["architecture"] == arch) &
+                (df["dataset"] == ds)
+            ].dropna(subset=["collapsed_fraction", "d_flops"])
+
             if subdf.empty:
-                ax.set_title(f"{arch} - {ds} (no data)")
+                ax.set_title(f"{arch} – {ds}\n(no data)")
+                ax.axis("off")
                 continue
 
             sns.lineplot(
                 data=subdf,
-                x="collapsed_fraction",  # Fraction of network collapsed
+                x="collapsed_fraction",
                 y="d_flops",
-                hue="is_quantized",
-                style="model_type",
+                hue="posthoc_or_posttrain",
+                style="is_quantized",
                 markers=True,
                 dashes=False,
                 ax=ax,
             )
-            ax.axhline(0, color="gray", linestyle="--")
-            ax.set_title(f"{arch} - {ds}")
+
+            ax.axhline(0, color="gray", linestyle="--", linewidth=1)
+            ax.set_title(f"{arch} – {ds}")
             ax.set_xlabel("Collapsed Fraction")
-            ax.set_ylabel("FLOPS Reduction (%)")
-            ax.legend(title="Quantized / Model Type")
+            ax.set_ylabel("FLOPs Reduction (%)")
+            ax.legend(title="Training / Quantization")
 
     plt.tight_layout()
     fig_path = FIG_DIR / "fig4_flops_vs_collapsed_fraction.png"
-    plt.savefig(fig_path)
+    plt.savefig(fig_path, dpi=300)
     print(f"Figure saved to {fig_path}")
     plt.close()
-    
-    # Print out the data and statistics used in the figure to the terminal
-    print("\nData used in Figure 4:")
-    for i, arch in enumerate(architectures):
-        for j, ds in enumerate(datasets):
-            subdf = df[(df["architecture"] == arch) & (df["dataset"] == ds)]
-            if subdf.empty:
-                continue
-            print(f"\nArchitecture: {arch}, Dataset: {ds}")
-            print(subdf[["collapsed_fraction", "d_flops", "is_quantized", "model_type"]].to_string(index=False))
+
 
 def fig5(df: pd.DataFrame):
-    # Cross-Architecture Comparisons (Fig. 5): A bar chart comparing the maximum collapsible fraction across various models.
     max_collapse_data = []
-    
-    for arch in df["architecture"].unique():
-        for ds in df["dataset"].unique():
-            subdf = df[(df["architecture"] == arch) & (df["dataset"] == ds)]
-            if subdf.empty:
-                continue
-            max_collapse = subdf.loc[subdf["collapsed_fraction"].idxmax()]
-            max_collapse_data.append(
-                {
-                    "architecture": arch,
-                    "dataset": ds,
-                    "max_collapsed_fraction": max_collapse["collapsed_fraction"],
-                }
-            )
+
+    for (arch, ds), g in df.groupby(["architecture", "dataset"]):
+        g = g.dropna(subset=["collapsed_fraction"])
+        if g.empty:
+            continue
+
+        r = g.loc[g["collapsed_fraction"].idxmax()]
+        max_collapse_data.append(
+            {
+                "architecture": arch,
+                "dataset": ds,
+                "max_collapsed_fraction": r["collapsed_fraction"],
+            }
+        )
 
     max_collapse_df = pd.DataFrame(max_collapse_data)
-    
-    # Bar plot for max collapsed fraction comparison
+
     fig, ax = plt.subplots(figsize=(10, 6))
     sns.barplot(
         data=max_collapse_df,
@@ -399,29 +408,34 @@ def fig5(df: pd.DataFrame):
         hue="dataset",
         ax=ax,
     )
+
     ax.set_title("Cross-Architecture Comparison of Maximum Collapsibility")
     ax.set_xlabel("Architecture")
     ax.set_ylabel("Max Collapsed Fraction")
     ax.legend(title="Dataset")
 
     fig_path = FIG_DIR / "fig5_cross_architecture_comparisons.png"
-    plt.savefig(fig_path)
+    plt.savefig(fig_path, dpi=300)
     print(f"Figure saved to {fig_path}")
     plt.close()
-    
-    # Print out the data and statistics used in the figure to the terminal
-    print("\nData used in Figure 5:")
-    print(max_collapse_df[["architecture", "dataset", "max_collapsed_fraction"]].to_string(index=False))
 
 def tab1(df: pd.DataFrame):
-    # Tabular Summary for Baseline vs Max Collapse (Tab. 2)
-    # This table compares the baseline performance with the maximum collapsed fraction for each dataset and architecture.
+    """
+    Tab. 2 — Baseline vs Max Collapse comparison per (dataset, architecture).
+    """
     comparison_data = []
+
     for (ds, arch), g in df.groupby(["dataset", "architecture"]):
         baseline = find_baseline(g)
         if baseline is None:
             continue
-        max_collapse = g.loc[g["collapsed_fraction"].idxmax()]
+
+        g_valid = g.dropna(subset=["collapsed_fraction"])
+        if g_valid.empty:
+            continue
+
+        max_collapse = g_valid.loc[g_valid["collapsed_fraction"].idxmax()]
+
         comparison_data.append(
             {
                 "dataset": ds,
@@ -438,48 +452,80 @@ def tab1(df: pd.DataFrame):
                 "accuracy_drop": max_collapse["d_acc"],
             }
         )
-    
-    comparison_df = pd.DataFrame(comparison_data)
-    print("\nTabular Summary (Tab. 2): Baseline vs Max Collapse Comparison:")
+
+    comparison_df = (
+        pd.DataFrame(comparison_data)
+        .sort_values(["dataset", "architecture"])
+        .reset_index(drop=True)
+    )
+
+    print("\nTabular Summary (Tab. 2): Baseline vs Max Collapse Comparison")
     print(comparison_df.to_string(index=False))
 
-    # Save as latex table
+    # Save LaTeX table
     table_path = TABLE_DIR / "tab1_baseline_vs_max_collapse.tex"
     with open(table_path, "w") as f:
-        f.write(comparison_df.to_latex(index=False, float_format="%.2f"))
+        f.write(
+            comparison_df.to_latex(
+                index=False,
+                float_format="%.2f",
+                caption="Baseline vs. maximum collapsed model comparison.",
+                label="tab:baseline_vs_max_collapse",
+            )
+        )
+
     print(f"Table saved to {table_path}")
 
 def tab2(df: pd.DataFrame):
-    # Tabular Summary of Model Efficiency (Tab. 3)
-    # This table shows the compression ratio, accuracy drop, and parameter reduction for collapsed models.
+    """
+    Tab. 3 — Model efficiency for collapsed models.
+    Reports compression, accuracy drop, and resource reductions.
+    """
     efficiency_data = []
+
     for (ds, arch), g in df.groupby(["dataset", "architecture"]):
         baseline = find_baseline(g)
         if baseline is None:
             continue
+
         for _, r in g.iterrows():
-            if r["model_type"] == "collapsed":
-                efficiency_data.append(
-                    {
-                        "dataset": ds,
-                        "architecture": arch,
-                        "exp_name": r["exp_name"],
-                        "compression_ratio": 100 * (1 - r["params"] / baseline["params"]),
-                        "accuracy_drop": r["d_acc"],
-                        "d_params": r["d_params"],
-                        "d_flops": r["d_flops"],
-                        "d_memory": r["d_memory"],
-                    }
-                )
-    
-    efficiency_df = pd.DataFrame(efficiency_data)
-    print("\nTabular Summary (Tab. 3): Model Efficiency (Compression Ratio, Accuracy Drop, and Parameter Reduction):")
+            if r["model_type"] != "collapsed":
+                continue
+
+            efficiency_data.append(
+                {
+                    "dataset": ds,
+                    "architecture": arch,
+                    "exp_name": r["exp_name"],
+                    "compression_ratio": 100 * (1 - r["params"] / baseline["params"]),
+                    "accuracy_drop": r["d_acc"],
+                    "d_params": r["d_params"],
+                    "d_flops": r["d_flops"],
+                    "d_memory": r["d_memory"],
+                }
+            )
+
+    efficiency_df = (
+        pd.DataFrame(efficiency_data)
+        .sort_values(["dataset", "architecture", "compression_ratio"])
+        .reset_index(drop=True)
+    )
+
+    print("\nTabular Summary (Tab. 3): Model Efficiency")
     print(efficiency_df.to_string(index=False))
 
-    # Save as latex table
+    # Save LaTeX table
     table_path = TABLE_DIR / "tab2_model_efficiency.tex"
     with open(table_path, "w") as f:
-        f.write(efficiency_df.to_latex(index=False, float_format="%.2f"))
+        f.write(
+            efficiency_df.to_latex(
+                index=False,
+                float_format="%.2f",
+                caption="Efficiency metrics for collapsed models.",
+                label="tab:model_efficiency",
+            )
+        )
+
     print(f"Table saved to {table_path}")
 
 # =========================
@@ -488,6 +534,7 @@ def tab2(df: pd.DataFrame):
 if __name__ == "__main__":
     raw = load_results()
     df = normalize(raw)
+
 
     print("\n==============================")
     print(" NON-OVERVIEW PAPER FIGURES ")
