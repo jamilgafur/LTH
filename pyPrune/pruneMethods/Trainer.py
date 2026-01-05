@@ -197,23 +197,51 @@ class BaseTrainer(ABC):
         epochs: int,
         phase: str = "pretrain",
         eval: bool = False
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
+        start_time = time.time()
         acc, loss = 0.0, 0.0
+
         for epoch in range(epochs):
+            epoch_start = time.time()
             acc, loss = self._epoch(train=True)
-            logger.info(f"{phase.capitalize()} epoch {epoch + 1}/{epochs} - Accuracy: {acc:.6f}%, Loss: {loss:.4f}")
-            
+            epoch_end = time.time()
+            epoch_duration = epoch_end - epoch_start
+
+            logger.info(
+                f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] "
+                f"{phase.capitalize()} epoch {epoch + 1}/{epochs} - "
+                f"Accuracy: {acc:.6f}%, Loss: {loss:.4f}, "
+                f"Epoch time: {epoch_duration:.2f}s"
+            )
+
+        total_duration = time.time() - start_time
+        logger.info(
+            f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] "
+            f"{phase.capitalize()} training completed in {total_duration:.2f}s"
+        )
+
         return acc, loss
 
-    def evaluate(self) -> Tuple[float, float]:
+
+    def evaluate(self) -> tuple[float, float]:
+        eval_start = time.time()
         clean_memory()
+
         acc, loss = self._epoch(train=False)
+
         if acc > self.best_model_weights[0]:
             self.best_model_weights = (acc, deepcopy(self.model.state_dict()))
-        clean_memory()
-        logger.info(f"Evaluation - Accuracy: {acc:.6f}%, Loss: {loss:.4f}")
-        return acc, loss
 
+        clean_memory()
+        eval_duration = time.time() - eval_start
+
+        logger.info(
+            f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] "
+            f"Evaluation - Accuracy: {acc:.6f}%, Loss: {loss:.4f}, "
+            f"Evaluation time: {eval_duration:.2f}s"
+        )
+
+        return acc, loss
     def save_checkpoint(self, suffix: str):
         path = os.path.join(self.save_dir, f"checkpoint_{suffix}.pth")
         torch.save({'model': deepcopy(self.model.state_dict())}, path)

@@ -6,88 +6,221 @@ import logging
 from utils import ensure_dir
 import pandas as pd
 import seaborn as sns
+import os
+from typing import List, Dict
+
+import matplotlib.pyplot as plt
 matplotlib.set_loglevel('ERROR')
 
 
-def plot_accuracy_loss_curve(acc_list, loss_list, workflow, experiment, save_dir="plots"):
-    import seaborn as sns
-    sns.set(style="whitegrid", palette="muted", font_scale=1.2)
-    
-    os.makedirs(save_dir, exist_ok=True)
-    plt.figure(figsize=(12, 6))
-    
-    plt.plot(acc_list, label='Accuracy', marker='o', linewidth=2, markersize=6)
-    plt.plot(loss_list, label='Loss', marker='x', linewidth=2, markersize=6)
-    
-    plt.title(f'{workflow} - {experiment} Accuracy & Loss', fontsize=16)
-    plt.xlabel('Epoch', fontsize=14)
-    plt.ylabel('Value', fontsize=14)
-    plt.xticks(range(len(acc_list)))
-    plt.grid(alpha=0.3)
-    plt.legend(fontsize=12)
-    
-    filename = os.path.join(save_dir, f"{workflow}_{experiment.replace(' ', '_')}_metrics.svg")
-    plt.tight_layout()
-    plt.savefig(filename, format='svg')
-    plt.close()
-    print(f"[✓] Saved plot: {filename}")
+def table_failure_modes(collapse_results, save_dir):
+    df = pd.DataFrame(collapse_results)
+    failures = df[~df["accepted"]]
+    failures.to_csv(os.path.join(save_dir, "table6_failure_cases.csv"), index=False)
 
-import os
-import matplotlib.pyplot as plt
-def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None, flops=None, total_sizes=None):
-    import seaborn as sns
-    sns.set(style="whitegrid", palette="Set2", font_scale=1.1)
-    
-    fig, axs = plt.subplots(3, 1, figsize=(18, 18))
-    
-    # Sort by parameter size
-    sorted_data = sorted(zip(params, accs, names, infer_times or [], mem_usages or [], flops or []), key=lambda x: x[0])
-    params, accs, names, infer_times, mem_usages, flops = zip(*sorted_data)
-    
-    # --- Accuracy vs Parameters ---
-    sns.barplot(x=list(names), y=list(accs), ax=axs[0], palette="Blues_d")
-    axs[0].set_title(f"{dataset or ''} - {title} - Final Accuracy (%)", fontsize=16)
-    axs[0].set_ylabel("Accuracy (%)", fontsize=14)
-    axs[0].grid(alpha=0.3)
-    
-    # Annotate bars
-    for i, v in enumerate(accs):
-        axs[0].text(i, v + 0.5, f"{v:.1f}%", ha='center', fontsize=10)
-    
-    # Secondary axis for parameters
-    ax0_twin = axs[0].twinx()
-    ax0_twin.plot(range(len(params)), params, 'ro--', linewidth=2, markersize=6, label='Parameters')
-    ax0_twin.set_ylabel('Trainable Parameters (log scale)', color='red', fontsize=14)
-    ax0_twin.set_yscale('log')
-    ax0_twin.tick_params(axis='y', colors='red')
-    
-    # --- Inference Time ---
-    if infer_times:
-        sns.barplot(x=list(names), y=list(infer_times), ax=axs[1], palette="Oranges_d")
-        axs[1].set_title("Average Inference Time per Batch (s)", fontsize=16)
-        axs[1].set_ylabel("Time (s)", fontsize=14)
-        axs[1].grid(alpha=0.3)
-    
-    # --- Memory or FLOPs ---
-    if mem_usages:
-        mem_mb = [m / 1e6 for m in mem_usages]
-        sns.barplot(x=list(names), y=mem_mb, ax=axs[2], palette="Greens_d")
-        axs[2].set_title("Peak GPU Memory (MB)", fontsize=16)
-        axs[2].set_ylabel("Memory (MB)", fontsize=14)
-    elif flops:
-        flops_g = [f / 1e9 for f in flops]
-        sns.barplot(x=list(names), y=flops_g, ax=axs[2], palette="Greens_d")
-        axs[2].set_title("FLOPs (GFLOPs)", fontsize=16)
-        axs[2].set_ylabel("GFLOPs", fontsize=14)
-    else:
-        axs[2].axis('off')
-    
-    # Rotate x-ticks
-    for ax in axs:
-        ax.set_xticklabels(names, rotation=30, ha='right')
-    
+def plot_failure_case(collapse_results, save_dir):
+    df = pd.DataFrame(collapse_results)
+    failures = df[~df["accepted"]].sort_values("delta_accuracy")
+
+    if failures.empty:
+        return
+
+    f = failures.iloc[0]
+
+    plt.figure(figsize=(7, 4))
+    plt.plot(
+        df["block_idx"],
+        df["accuracy"],
+        marker="o"
+    )
+
+    plt.axvline(f["block_idx"], color="red", linestyle="--")
+    plt.annotate(
+        f"Failure at block {f['block_idx']}",
+        xy=(f["block_idx"], f["accuracy"]),
+        xytext=(10, -15),
+        textcoords="offset points",
+        arrowprops=dict(arrowstyle="->")
+    )
+
+    plt.xlabel("Block Index")
+    plt.ylabel("Accuracy (%)")
+    plt.title("Representative Failure Case")
+    plt.grid(alpha=0.3)
+
     plt.tight_layout()
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    plt.savefig(filename, format='svg')
-    plt.show()
-    print(f"[✓] Saved plot: {filename}")
+    plt.savefig(os.path.join(save_dir, "fig6_failure_case.svg"))
+    plt.close()
+
+def table_efficiency_comparison(collapse_results, save_dir):
+    df = pd.DataFrame(collapse_results)
+    cols = ["model", "collapsed_fraction", "params", "flops", "activation_mb"]
+    df[cols].to_csv(os.path.join(save_dir, "table5_efficiency.csv"), index=False)
+
+def plot_efficiency_vs_collapse(collapse_results, save_dir):
+    df = pd.DataFrame(collapse_results)
+
+    fig, axs = plt.subplots(3, 1, figsize=(8, 12), sharex=True)
+
+    axs[0].plot(df["collapsed_fraction"], df["params"] / 1e6, marker="o")
+    axs[0].set_ylabel("Parameters (M)")
+
+    axs[1].plot(df["collapsed_fraction"], df["flops"] / 1e9, marker="o")
+    axs[1].set_ylabel("FLOPs (G)")
+
+    axs[2].plot(df["collapsed_fraction"], df["activation_mb"], marker="o")
+    axs[2].set_ylabel("Activation Memory (MB)")
+    axs[2].set_xlabel("Collapsed Depth Fraction")
+
+    for ax in axs:
+        ax.grid(alpha=0.3)
+
+    plt.suptitle("Efficiency Effects of Depth Reduction")
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, "fig5_efficiency_vs_collapse.svg"))
+    plt.close()
+
+def table_collapsible_depth_stats(summary_table, save_dir):
+    stats = summary_table.groupby("model")["max_collapsed_fraction"].agg(["mean", "std"])
+    stats.to_csv(os.path.join(save_dir, "table4_collapsible_depth_stats.csv"))
+    return stats
+
+def plot_collapsible_depth_across_models(summary_table, save_dir):
+    plt.figure(figsize=(10, 5))
+    sns.barplot(
+        data=summary_table,
+        x="model",
+        y="max_collapsed_fraction",
+        hue="dataset"
+    )
+
+    plt.ylabel("Fraction of Collapsible Depth")
+    plt.title("Consistency of Collapsible Depth Across Models & Datasets")
+    plt.grid(axis="y", alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, "fig4_cross_model_consistency.svg"))
+    plt.close()
+
+def table_surrogate_summary(collapse_results, save_dir):
+    df = pd.DataFrame(collapse_results)
+    summary = df.groupby("accepted")[["surrogate_error", "delta_accuracy"]].agg(
+        ["mean", "std"]
+    )
+    summary.to_csv(os.path.join(save_dir, "table3_surrogate_summary.csv"))
+    return summary
+
+def plot_surrogate_error_vs_accuracy(collapse_results, save_dir):
+    df = pd.DataFrame(collapse_results)
+
+    plt.figure(figsize=(7, 6))
+    sns.scatterplot(
+        data=df,
+        x="surrogate_error",
+        y="delta_accuracy",
+        hue="accepted",
+        palette={True: "green", False: "red"},
+        s=70,
+    )
+
+    plt.axhline(0, linestyle="--", color="gray")
+    plt.xlabel("Surrogate Approximation Error (MSE)")
+    plt.ylabel("Δ Test Accuracy (%)")
+    plt.title("Surrogate Error vs Downstream Accuracy Change")
+    plt.grid(alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, "fig3_surrogate_vs_accuracy.svg"))
+    plt.close()
+
+def table_block_statistics(collapse_results, save_dir):
+    df = pd.DataFrame(collapse_results)
+    cols = [
+        "model", "dataset", "block_idx", "normalized_depth",
+        "surrogate_error", "delta_accuracy", "accepted"
+    ]
+    out = df[cols]
+    out.to_csv(os.path.join(save_dir, "table2_block_stats.csv"), index=False)
+    return out
+
+def plot_block_acceptance_by_depth(collapse_results, save_dir):
+    df = pd.DataFrame(collapse_results)
+
+    plt.figure(figsize=(9, 4))
+    sns.scatterplot(
+        data=df,
+        x="normalized_depth",
+        y="model",
+        hue="accepted",
+        style="accepted",
+        palette={True: "green", False: "red"},
+        s=80,
+    )
+
+    plt.xlabel("Normalized Network Depth")
+    plt.ylabel("Architecture")
+    plt.title("Block-Level Collapse Outcomes Across Depth")
+    plt.grid(alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, "fig2_block_acceptance.svg"))
+    plt.close()
+
+def table_max_collapsible_depth(collapse_results, tau, save_dir):
+    df = pd.DataFrame(collapse_results)
+
+    rows = []
+    for (model, dataset), g in df.groupby(["model", "dataset"]):
+        baseline = g["baseline_accuracy"].iloc[0]
+        valid = g[g["accuracy"] >= baseline - tau]
+        max_frac = valid["collapsed_fraction"].max()
+        acc_change = valid.loc[
+            valid["collapsed_fraction"] == max_frac, "delta_accuracy"
+        ].iloc[0]
+
+        rows.append({
+            "model": model,
+            "dataset": dataset,
+            "total_depth": g["block_idx"].max(),
+            "max_collapsed_fraction": max_frac,
+            "delta_accuracy": acc_change,
+        })
+
+    table = pd.DataFrame(rows)
+    table.to_csv(os.path.join(save_dir, "table1_max_collapsible_depth.csv"), index=False)
+    return table
+
+def plot_accuracy_vs_collapsed_depth(
+    collapse_results: List[Dict],
+    tau: float,
+    save_dir: str,
+):
+    df = pd.DataFrame(collapse_results)
+
+    ensure_dir(save_dir)
+    plt.figure(figsize=(8, 6))
+
+    for (model, dataset), g in df.groupby(["model", "dataset"]):
+        plt.plot(
+            g["collapsed_fraction"],
+            g["accuracy"],
+            marker="o",
+            label=f"{model} / {dataset}"
+        )
+
+    plt.axhline(
+        y=df["baseline_accuracy"].iloc[0] - tau,
+        linestyle="--",
+        color="red",
+        label=r"Accuracy tolerance $\tau$"
+    )
+
+    plt.xlabel("Fraction of Sequential Depth Collapsed")
+    plt.ylabel("Top-1 Test Accuracy (%)")
+    plt.title("Accuracy vs Collapsed Sequential Depth")
+    plt.legend()
+    plt.grid(alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(save_dir, "fig1_accuracy_vs_depth.svg"))
+    plt.close()

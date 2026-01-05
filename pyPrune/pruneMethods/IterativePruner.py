@@ -78,7 +78,7 @@ class IterativePruner(BasePruner):
         self.update_metrics(loss, acc, label=label)
 
     def run(self) -> None:
-        self._maybe_pretrain()
+        self._maybe_pretrain(save_dir=self.save_dir)
         clean_memory()
 
         for step in self.steps:
@@ -86,8 +86,13 @@ class IterativePruner(BasePruner):
 
         self._final_evaluation()
 
-    def _maybe_pretrain(self) -> None:
-        self.pretrain()
+    def _maybe_pretrain(self, save_dir=None) -> None:
+        if os.path.isfile(save_dir+"/checkpoint_Trained_0.000000.pth"):
+            checkpoint = torch.load(save_dir+"/checkpoint_Trained_0.000000.pth", map_location=self.device)
+            self.model.load_state_dict(checkpoint['model'])
+            logger.info(f"Loaded pre-trained model from {save_dir}+ /checkpoint_Trained_0.000000.pth. Skipping pretraining.")
+        else:
+            self.pretrain()
        
     def _process_step(self, step: float) -> None:
         logger.info(f"[Step {step:.6f}] Starting pruning iteration.")
