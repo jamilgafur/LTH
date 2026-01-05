@@ -134,7 +134,7 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
 
         for _, r in g.iterrows():
             row = r.copy()
-            row["d_acc"] = baseline["accuracy"] - r["accuracy"]
+            row["d_acc"] =  r["accuracy"] - baseline["accuracy"] 
             row["d_params"] = 100 * (1 - r["params"] / baseline["params"])
             row["d_flops"] = 100 * (1 - r["flops"] / baseline["flops"])
             row["d_memory"] = 100 * (1 - r["memory"] / baseline["memory"])
@@ -311,7 +311,7 @@ def fig3(df: pd.DataFrame):
                 ax.axis("off")
                 continue
 
-            sns.scatterplot(
+            sns.lineplot(
                 data=subdf,
                 x="collapsed_fraction",
                 y="d_acc",

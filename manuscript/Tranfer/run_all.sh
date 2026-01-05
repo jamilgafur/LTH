@@ -7,36 +7,36 @@ datasets=( "tinyimagenet" )
 # Define the experiments for each model and dataset directly as arrays
 
 # VGG16 Experiments
-VGG16_Cifar10=("Original Model", "Last 2", "Stage 5", "Stage 4-5", "Stage 3-5" )
-VGG16_Cifar100=("Original Model", "Last 2", "Stage 5", "Stage 4-5", "Stage 3-5" )
-VGG16_Imagenet=("Original Model")
-VGG16_Tinyimagenet=("Original Model")
+VGG16_Cifar10=("Original Model" "Last 2" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" )
+VGG16_Cifar100=("Original Model" "Last 2" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" )
+VGG16_Imagenet=("Original Model" "Last 2" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" )
+VGG16_Tinyimagenet=("Original Model" "Last 2" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" )
 
 # RegNetX_400MF Experiments
-RegNetX_400MF_Cifar10=("Original Model", "Last 2", "Stage 4", "Stage 3", "Stage 2", "Stage 1" )
+RegNetX_400MF_Cifar10=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 3-4" "Stage 2-4" "Stage 1-4" )
 
-RegNetX_400MF_Cifar100=("Original Model", "Last 2", "Stage 4", "Stage 3", "Stage 2", "Stage 1" )
+RegNetX_400MF_Cifar100=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 3-4" "Stage 2-4" "Stage 1-4" )
 
-RegNetX_400MF_Imagenet=("Original Model")
+RegNetX_400MF_Imagenet=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 3-4" "Stage 2-4" "Stage 1-4" )
 
-RegNetX_400MF_Tinyimagenet=("Original Model" )
+RegNetX_400MF_Tinyimagenet=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 3-4" "Stage 2-4" "Stage 1-4" )
 
 # InceptionNet Experiments
-InceptionNet_Cifar10=("Original Model" )
-InceptionNet_Cifar100=("Original Model" )
-InceptionNet_Imagenet=("Original Model" )
-InceptionNet_Tinyimagenet=("Original Model" )
+InceptionNet_Cifar10=("Original Model" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" "Last 2" )
+InceptionNet_Cifar100=("Original Model" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" "Last 2" )
+InceptionNet_Imagenet=("Original Model" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" "Last 2" )
+InceptionNet_Tinyimagenet=("Original Model" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" "Last 2" )
 
 # XceptionNet Experiments
-XceptionNet_Cifar10=("Original Model" )
-XceptionNet_Cifar100=("Original Model" )
-XceptionNet_Imagenet=("Original Model" )
-XceptionNet_Tinyimagenet=("Original Model" )
+XceptionNet_Cifar10=("Original Model" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" "Last 2" )
+XceptionNet_Cifar100=("Original Model" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" "Last 2" )
+XceptionNet_Imagenet=("Original Model" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" "Last 2" )
+XceptionNet_Tinyimagenet=("Original Model" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" "Last 2" )
 # MobileNet Experiments
-MobileNet_Cifar10=("Original Model" )
-MobileNet_Cifar100=("Original Model" )
-MobileNet_Imagenet=("Original Model" )
-MobileNet_Tinyimagenet=("Original Model" )
+MobileNet_Cifar10=("Original Model" "Stage 7" "Stage 6-7" "Stage 5-7" "Stage 4-7" "Stage 3-7" "Stage 2-7" "Stage 1-7" "Stage 6" "Stage 5" "Stage 4" "Stage 3" "Stage 2" "Stage 1" )
+MobileNet_Cifar100=("Original Model" "Stage 7" "Stage 6-7" "Stage 5-7" "Stage 4-7" "Stage 3-7" "Stage 2-7" "Stage 1-7" "Stage 6" "Stage 5" "Stage 4" "Stage 3" "Stage 2" "Stage 1" )
+MobileNet_Imagenet=("Original Model" "Stage 7" "Stage 6-7" "Stage 5-7" "Stage 4-7" "Stage 3-7" "Stage 2-7" "Stage 1-7" "Stage 6" "Stage 5" "Stage 4" "Stage 3" "Stage 2" "Stage 1" )
+MobileNet_Tinyimagenet=("Original Model" "Stage 7" "Stage 6-7" "Stage 5-7" "Stage 4-7" "Stage 3-7" "Stage 2-7" "Stage 1-7" "Stage 6" "Stage 5" "Stage 4" "Stage 3" "Stage 2" "Stage 1" )
 
 # Quant = list of true and false
 quant=("False", "True")
