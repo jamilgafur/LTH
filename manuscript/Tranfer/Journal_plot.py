@@ -42,7 +42,7 @@ TABLE_DIR = Path("./tables")
 FIG_DIR.mkdir(exist_ok=True)
 TABLE_DIR.mkdir(exist_ok=True)
 
-DATASET_ORDER = ["cifar10_", "cifar100_", "imagenet", "tinyimagenet"]
+DATASET_ORDER = ["cifar10_", "cifar100_", "tinyimagenet", "imagenet"]
 
 # =========================
 # Data Loading
@@ -173,7 +173,7 @@ def standard_legend(ax):
 def fig1(df: pd.DataFrame):
     architectures = sorted(df["architecture"].unique())
     datasets = sorted(df["dataset"].unique())
-
+    print(datasets)
     fig, axes = plt.subplots(
         len(architectures),
         len(datasets),
