@@ -736,7 +736,14 @@ def _insert_corrective_pool(
     # Capture the activation feeding that linear
     print(f"[STEP] Capturing activation entering '{next_linear_name}' to compute true flattened size...")
     try:
-        _, cap = _simulate_input_hook(model, next_linear_name, input_shape, device=str(dev))
+        probe_shape = (1,) + tuple(input_shape[1:])
+        _, cap = _simulate_input_hook(
+            model,
+            next_linear_name,
+            probe_shape,
+            device=str(dev)
+        )
+
         print(f"[DEBUG] Activation capture succeeded. Activation shape: {tuple(cap.shape)}")
     except Exception as e:
         print(f"[WARN] Failed to capture activation for '{next_linear_name}': {e}")
