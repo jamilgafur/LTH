@@ -142,10 +142,13 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
                    epochs=10, workflow='default', exp_name='experiment', collapse_range=None,
                    data_shape=(1, 3, 32, 32), save_path="./runs", post_compress_epochs=False, quant=False):
 
+    import os, json, time, torch, glob
+
     if quant:
         exp_name += "_quant"
 
     print(f"[•] Starting experiment '{exp_name}' in workflow '{workflow}'")
+
     ckpt_dir = os.path.join(save_path, "checkpoints")
     metrics_dir = os.path.join(save_path, "metrics")
     plots_dir = os.path.join(save_path, "plots")
@@ -153,29 +156,86 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     ensure_dir(metrics_dir)
     ensure_dir(plots_dir)
 
-    ckpt_path = os.path.join(
-        ckpt_dir, get_checkpoint_filename(workflow, exp_name, model.__class__.__name__, epochs)
-    )
-    model.to(device)
-
-    model_root = f"{model.__class__.__name__}_{train_loader.dataset.__class__.__name__}"
-
-    # --- Run training ---
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    if not torch.cuda.is_available():
+    if device.type != "cuda":
         print("[!] Warning: CUDA not available.")
         quit()
 
-    data = train_and_evaluate(
-        model, train_loader, test_loader, device, epochs, post_compress_epochs=post_compress_epochs,quant=quant
+    model.to(device)
+
+    # ----------------------------------------
+    # Checkpoint discovery (resume logic)
+    # ----------------------------------------
+    base_ckpt_name = f"{workflow}_{exp_name}_{model.__class__.__name__}"
+    ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
+
+    existing_ckpts = sorted(
+        glob.glob(ckpt_pattern),
+        key=lambda x: int(os.path.basename(x).split("epoch")[-1].split(".")[0])
     )
 
-    torch.save({'model': model.state_dict()}, ckpt_path)
+    start_epoch = 0
+    all_data = {"accuracies": [], "losses": []}
 
-    # --- Compute metrics and diagnostics ---
+    if existing_ckpts:
+        last_ckpt = existing_ckpts[-1]
+        ckpt = torch.load(last_ckpt, map_location=device)
+        model.load_state_dict(ckpt["model"])
+        start_epoch = ckpt["epoch"]
+        all_data = ckpt["data"]
+        print(f"[✓] Resuming from checkpoint: epoch {start_epoch}")
+    else:
+        print("[•] No checkpoint found — starting fresh")
+
+    # ----------------------------------------
+    # Epoch-by-epoch training with checkpointing
+    # ----------------------------------------
+    for epoch in range(start_epoch + 1, epochs + 1):
+        print(f"[•] Epoch {epoch}/{epochs}")
+
+        data = train_and_evaluate(
+            model,
+            train_loader,
+            test_loader,
+            device,
+            epochs=1,  # ONE EPOCH AT A TIME
+            post_compress_epochs=post_compress_epochs,
+            quant=quant
+        )
+
+        # Append metrics
+        all_data["accuracies"].extend(data.get("accuracies", []))
+        all_data["losses"].extend(data.get("losses", []))
+
+        # Save checkpoint (atomic write)
+        ckpt_path = os.path.join(
+            ckpt_dir, f"{base_ckpt_name}_epoch{epoch}.pt"
+        )
+        tmp_path = ckpt_path + ".tmp"
+
+        torch.save({
+            "epoch": epoch,
+            "model": model.state_dict(),
+            "data": all_data
+        }, tmp_path)
+        os.replace(tmp_path, ckpt_path)
+
+        print(f"[✓] Checkpoint saved → {ckpt_path}")
+
+    data = all_data
+
+    # ----------------------------------------
+    # Final checkpoint
+    # ----------------------------------------
+    final_path = os.path.join(ckpt_dir, f"final_{base_ckpt_name}.pt")
+    torch.save({"model": model.state_dict(), "data": data}, final_path)
+
+    # ----------------------------------------
+    # Metrics + diagnostics (unchanged)
+    # ----------------------------------------
     param_count = count_trainable_params(model)
-    infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device,quant=quant)
+    infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device, quant=quant)
+
     data.update({
         "param_count": param_count,
         "inference_time": infer_time,
@@ -189,69 +249,22 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
         collapse_range=collapse_range, device=device, quant=quant
     )
     data["diagnostics"] = diagnostics
-    plot_accuracy_loss_curve(acc_list=data.get("accuracies", []), loss_list=data.get("losses", []),workflow=workflow, experiment=exp_name, save_dir=plots_dir)
-    # --- Save per-job metrics ---
+
+    plot_accuracy_loss_curve(
+        acc_list=data.get("accuracies", []),
+        loss_list=data.get("losses", []),
+        workflow=workflow,
+        experiment=exp_name,
+        save_dir=plots_dir
+    )
+
+    model_root = f"{model.__class__.__name__}_{train_loader.dataset.__class__.__name__}"
     safe_update_metrics_json(model_root, f"{exp_name}_{workflow}", data, base_dir=metrics_dir)
 
     merged_path = merge_all_metrics(base_dir=metrics_dir)
     print(f"[✓] Metrics merged successfully → {merged_path}")
 
-    # --- Save final checkpoint ---
-    final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
-    torch.save({'model': model.state_dict()}, final_path)
-    with open(merged_path, "r") as f:
-        for attempt in range(100):
-            try:
-                with open(merged_path, "r") as f:
-                    all_metrics = json.load(f)
-                break
-            except json.JSONDecodeError:
-                print(f"[!] JSON not ready yet, retrying ({attempt+1}/3)...")
-                time.sleep(1)
-
-        params = []
-        accs = []
-        names = []
-        infer_times = []
-        mem_usages = []
-        flops = []
-        total_sizes = []  # List to store total size for plotting
-
-        # Iterate through each model's metrics to prepare data for plotting
-        for name, metrics in all_metrics.items():
-            names.append(name)
-            params.append(metrics.get("param_count", 0))
-            accs.append(metrics.get("final_accuracy", 0))
-            infer_times.append(metrics.get("inference_time", 0))
-            mem_usages.append(metrics.get("total_size_mb", 0))
-            flops.append(metrics.get("flops", 0))  # Collect FLOPs
-
-        # Save comparison plot
-        save_path = merged_path.replace("metrics", "plots").replace("json", "svg")
-        
-        plot_results(params, accs, names, f"{workflow} Experiments", save_path,
-                    dataset=workflow, infer_times=infer_times, mem_usages=mem_usages, flops=flops, total_sizes=total_sizes)
-    norm_metrics = normalize_metrics(all_metrics)
-    # Plots (each function is robust to input)
-    for func in [plot_flops_vs_latency, analyze_collapse_effects, plot_delta_accuracy_vs_params,
-                 plot_flops_vs_memory, plot_accuracy_vs_memory, plot_heatmap]:
-        try:
-            if func.__name__ == "analyze_collapse_effects":
-                try:
-                    func(model, collapse_range, plots_dir, exp_name)
-                except TypeError:
-                    func(norm_metrics, plots_dir, exp_name)
-            else:
-                func(norm_metrics, plots_dir, exp_name)
-        except Exception as e:
-            print(f"[!] {func.__name__} error: {e}")
-
-    # Cross-experiment plots
-    plot_memory_per_layer_across_experiments(glob.glob(os.path.join(metrics_dir, "*.json")), plots_dir, workflow)
-    # Final checkpoint
-    final_path = os.path.join(ckpt_dir, f"final_{os.path.basename(ckpt_path)}")
-    torch.save({'model': model.state_dict()}, final_path)
-    print(f"[✓] Experiment '{exp_name}' completed. Checkpoints and metrics saved.")
+    print(f"[✓] Experiment '{exp_name}' completed successfully.")
     return data
 
 
