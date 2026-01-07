@@ -226,30 +226,30 @@ def load_dataset(dataset_name, model_name="VGG16"):
             input_size = sample_input.shape[-2:]
             input_channels = sample_input.shape[1]
             num_classes = 200
-    elif model_name == "ConvNetX":
+    elif model_name == "ConvNeXt":
         if dataset_name == "Cifar10":
-            print("Loading CIFAR-10 data for ConvNetX...")
+            print("Loading CIFAR-10 data for ConvNeXt...")
             train_loader, test_loader = load_cifar10()
             sample_input = next(iter(train_loader))[0]
             input_size = sample_input.shape[-2:]
             input_channels = sample_input.shape[1]
             num_classes = 10
         elif dataset_name == "Cifar100":
-            print("Loading CIFAR-100 data for ConvNetX...")
+            print("Loading CIFAR-100 data for ConvNeXt...")
             train_loader, test_loader = load_cifar100()
             sample_input = next(iter(train_loader))[0]
             input_size = sample_input.shape[-2:]
             input_channels = sample_input.shape[1]
             num_classes = 100
         elif dataset_name == "TinyImageNet" or dataset_name == "tinyimagenet":
-            print("Loading Tiny ImageNet data for ConvNetX...")
+            print("Loading Tiny ImageNet data for ConvNeXt...")
             train_loader, test_loader = load_tiny_imagenet()
             sample_input = next(iter(train_loader))[0]
             input_size = sample_input.shape[-2:]
             input_channels = sample_input.shape[1]
             num_classes = 200
         elif dataset_name == "ImageNet" or dataset_name == "imagenet":
-            print("Loading ImageNet data for ConvNetX...")
+            print("Loading ImageNet data for ConvNeXt...")
             train_loader, test_loader = load_imagenet()
             sample_input = next(iter(train_loader))[0]
             input_size = sample_input.shape[-2:]
