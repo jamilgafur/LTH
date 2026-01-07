@@ -607,8 +607,17 @@ def _find_next_linear(model, end_layer_name, debug):
 
     return next_linear_name, next_linear_mod
 
-
-def _analyze_block_output(model, full_block, conv_layers, named_layers, end_idx, layer_type, x, next_linear_mod, debug):
+def _analyze_block_output(
+    model,
+    full_block,
+    conv_layers,
+    named_layers,
+    end_idx,
+    layer_type,
+    x,
+    next_linear_mod,
+    debug,
+):
     if debug:
         print(f"\n[STEP] Analyzing output of collapsed block ({len(full_block)} layers)...")
         print(f"[DEBUG] Input tensor shape before block: {tuple(x.shape)}")
@@ -616,56 +625,83 @@ def _analyze_block_output(model, full_block, conv_layers, named_layers, end_idx,
 
     with torch.no_grad():
         y = x.clone()
-        last_conv = None
         for idx, (name, layer) in enumerate(full_block):
             if debug:
-                print(f"    [DEBUG] Layer {idx+1}/{len(full_block)}: {name} ({layer.__class__.__name__}) input={tuple(y.shape)}")
+                print(
+                    f"    [DEBUG] Layer {idx+1}/{len(full_block)}: "
+                    f"{name} ({layer.__class__.__name__}) input={tuple(y.shape)}"
+                )
             y = layer(y)
-            if isinstance(layer, nn.Conv2d):
-                last_conv = layer
             if debug:
                 print(f"        └── output shape: {tuple(y.shape)}")
 
+    # --- Ground-truth output characteristics ---
     out_shape = tuple(y.shape)
-    out_channels = (
-        last_conv.out_channels if last_conv is not None
-        else (conv_layers[-1].out_channels if layer_type == nn.Conv2d else None)
-    )
+
+    # 🔧 CRITICAL FIX:
+    # Infer channels from actual tensor, not from layer attributes
+    out_channels = y.shape[1] if y.ndim >= 2 else None
 
     if debug:
         print(f"[DEBUG] Final block output shape: {out_shape}")
         print(f"[DEBUG] Determined out_channels={out_channels}")
 
-    pool_layer = next((m for _, m in reversed(full_block)
-                       if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))), None)
+    # --- Detect pooling inside original block (informational) ---
+    pool_layer = next(
+        (
+            m for _, m in reversed(full_block)
+            if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))
+        ),
+        None,
+    )
+
     if debug:
         if pool_layer is not None:
             print(f"[DEBUG] Detected pool in original block: {type(pool_layer).__name__}")
         else:
             print(f"[DEBUG] No explicit pooling layer detected inside block.")
 
+    # --- Linear compatibility heuristic ---
     linear_in_features_heuristic = next_linear_mod.in_features if next_linear_mod else None
     if debug:
         print(f"[DEBUG] Heuristic next linear in_features = {linear_in_features_heuristic}")
 
     adaptive_pool_to_use = None
-    if layer_type == nn.Conv2d and linear_in_features_heuristic is not None and out_channels:
+    if (
+        layer_type == nn.Conv2d
+        and linear_in_features_heuristic is not None
+        and out_channels is not None
+        and len(out_shape) >= 4
+    ):
         expected_hw = max(1, linear_in_features_heuristic // out_channels)
         cur_H, cur_W = out_shape[-2], out_shape[-1]
         cur_hw = cur_H * cur_W
+
         if debug:
-            print(f"[DEBUG] Comparing spatial dims: expected_hw={expected_hw}, current_hw={cur_hw} (HxW={cur_H}x{cur_W})")
+            print(
+                f"[DEBUG] Comparing spatial dims: "
+                f"expected_hw={expected_hw}, current_hw={cur_hw} (HxW={cur_H}x{cur_W})"
+            )
+
         if cur_hw != expected_hw:
             target_H = int(round(math.sqrt(expected_hw))) if expected_hw > 1 else 1
             target_W = max(1, expected_hw // target_H)
             adaptive_pool_to_use = nn.AdaptiveAvgPool2d((target_H, target_W))
-            if debug:
-                print(f"[DEBUG] Suggest AdaptiveAvgPool2d({target_H},{target_W}) to reconcile linear in_features mismatch.")
 
+            if debug:
+                print(
+                    f"[DEBUG] Suggest AdaptiveAvgPool2d({target_H},{target_W}) "
+                    f"to reconcile linear in_features mismatch."
+                )
+
+    # --- Shortcut detection (unchanged) ---
     shortcut_out_channels = None
     for nm, mod in model.named_modules():
-        if hasattr(mod, 'shortcut') and isinstance(mod.shortcut, nn.Module):
-            first_conv = next((m for m in mod.shortcut.modules() if isinstance(m, nn.Conv2d)), None)
+        if hasattr(mod, "shortcut") and isinstance(mod.shortcut, nn.Module):
+            first_conv = next(
+                (m for m in mod.shortcut.modules() if isinstance(m, nn.Conv2d)),
+                None,
+            )
             if first_conv is not None:
                 shortcut_out_channels = first_conv.out_channels
                 if debug:
@@ -688,6 +724,88 @@ def _analyze_block_output(model, full_block, conv_layers, named_layers, end_idx,
         "shortcut_out_channels": shortcut_out_channels,
         "linear_in_features_heuristic": linear_in_features_heuristic,
     }
+
+
+# def _analyze_block_output(model, full_block, conv_layers, named_layers, end_idx, layer_type, x, next_linear_mod, debug):
+#     if debug:
+#         print(f"\n[STEP] Analyzing output of collapsed block ({len(full_block)} layers)...")
+#         print(f"[DEBUG] Input tensor shape before block: {tuple(x.shape)}")
+#         print(f"[DEBUG] Running forward pass through block layers:")
+
+#     with torch.no_grad():
+#         y = x.clone()
+#         last_conv = None
+#         for idx, (name, layer) in enumerate(full_block):
+#             if debug:
+#                 print(f"    [DEBUG] Layer {idx+1}/{len(full_block)}: {name} ({layer.__class__.__name__}) input={tuple(y.shape)}")
+#             y = layer(y)
+#             if isinstance(layer, nn.Conv2d):
+#                 last_conv = layer
+#             if debug:
+#                 print(f"        └── output shape: {tuple(y.shape)}")
+
+#     out_shape = tuple(y.shape)
+#     out_channels = (
+#         last_conv.out_channels if last_conv is not None
+#         else (conv_layers[-1].out_channels if layer_type == nn.Conv2d else None)
+#     )
+
+#     if debug:
+#         print(f"[DEBUG] Final block output shape: {out_shape}")
+#         print(f"[DEBUG] Determined out_channels={out_channels}")
+
+#     pool_layer = next((m for _, m in reversed(full_block)
+#                        if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))), None)
+#     if debug:
+#         if pool_layer is not None:
+#             print(f"[DEBUG] Detected pool in original block: {type(pool_layer).__name__}")
+#         else:
+#             print(f"[DEBUG] No explicit pooling layer detected inside block.")
+
+#     linear_in_features_heuristic = next_linear_mod.in_features if next_linear_mod else None
+#     if debug:
+#         print(f"[DEBUG] Heuristic next linear in_features = {linear_in_features_heuristic}")
+
+#     adaptive_pool_to_use = None
+#     if layer_type == nn.Conv2d and linear_in_features_heuristic is not None and out_channels:
+#         expected_hw = max(1, linear_in_features_heuristic // out_channels)
+#         cur_H, cur_W = out_shape[-2], out_shape[-1]
+#         cur_hw = cur_H * cur_W
+#         if debug:
+#             print(f"[DEBUG] Comparing spatial dims: expected_hw={expected_hw}, current_hw={cur_hw} (HxW={cur_H}x{cur_W})")
+#         if cur_hw != expected_hw:
+#             target_H = int(round(math.sqrt(expected_hw))) if expected_hw > 1 else 1
+#             target_W = max(1, expected_hw // target_H)
+#             adaptive_pool_to_use = nn.AdaptiveAvgPool2d((target_H, target_W))
+#             if debug:
+#                 print(f"[DEBUG] Suggest AdaptiveAvgPool2d({target_H},{target_W}) to reconcile linear in_features mismatch.")
+
+#     shortcut_out_channels = None
+#     for nm, mod in model.named_modules():
+#         if hasattr(mod, 'shortcut') and isinstance(mod.shortcut, nn.Module):
+#             first_conv = next((m for m in mod.shortcut.modules() if isinstance(m, nn.Conv2d)), None)
+#             if first_conv is not None:
+#                 shortcut_out_channels = first_conv.out_channels
+#                 if debug:
+#                     print(f"[DEBUG] Found shortcut conv → out_channels={shortcut_out_channels}")
+#                 break
+
+#     if debug:
+#         print(f"[RESULT] Block analysis complete:")
+#         print(f"         out_shape={out_shape}")
+#         print(f"         out_channels={out_channels}")
+#         print(f"         has_pool={pool_layer is not None}")
+#         print(f"         adaptive_pool_to_use={adaptive_pool_to_use}")
+#         print(f"         shortcut_out_channels={shortcut_out_channels}")
+
+#     return {
+#         "out_shape": out_shape,
+#         "out_channels": out_channels,
+#         "pool_layer": pool_layer,
+#         "adaptive_pool_to_use": adaptive_pool_to_use,
+#         "shortcut_out_channels": shortcut_out_channels,
+#         "linear_in_features_heuristic": linear_in_features_heuristic,
+#     }
 
 
 def _validate_downstream(
