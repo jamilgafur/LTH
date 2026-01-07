@@ -922,87 +922,232 @@ def _validate_downstream(
 
     print(f"[RESULT] ✅ Downstream validation for '{start_container_name}' completed successfully.")
 
-
-
-def _insert_corrective_pool(
-    model: nn.Module,
-    next_linear_name: str,
-    input_shape: Tuple[int, ...],
-    debug: bool = False
-) -> nn.Module:
+def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
     """
-    If a Linear layer’s expected input size does not match the actual flattened activation
-    shape feeding it, replace it with a corrected Linear layer using the actual size.
+    Insert AdaptiveAvgPool2d only when a true spatial → flattened mismatch exists.
+    Safe for ConvNeXt, VGG, RegNetX, ResNet, and Sequential containers.
     """
-    print(f"\n[STEP] ===== Starting _insert_corrective_pool =====")
-    print(f"[DEBUG] next_linear_name='{next_linear_name}', input_shape={input_shape}")
 
-    if next_linear_name is None:
-        print(f"[DEBUG] No next_linear_name provided; skipping corrective pooling step.")
+    if debug:
+        print(f"\n[STEP] ===== Starting _insert_corrective_pool =====")
+        print(f"[DEBUG] next_linear_name='{next_linear_name}', input_shape={input_shape}")
+
+    # ------------------------------------------------------------------
+    # 1. ConvNeXt SAFETY: pwconv Linear layers are channel mixers
+    # ------------------------------------------------------------------
+    if next_linear_name and ".pwconv" in next_linear_name:
+        if debug:
+            print("[INFO] Detected ConvNeXt pwconv — skipping corrective pooling.")
         return model
 
-    # Locate the linear layer
-    try:
-        next_linear_mod = get_layer(model, next_linear_name)
-        print(f"[INFO] Located next linear layer: '{next_linear_name}' ({next_linear_mod.__class__.__name__})")
-    except Exception as e:
-        raise RuntimeError(f"[ERROR] Could not locate next linear '{next_linear_name}': {e}")
+    # ------------------------------------------------------------------
+    # 2. Locate next Linear safely (NO attribute walking)
+    # ------------------------------------------------------------------
+    next_linear_mod = None
+    next_linear_parent = None
+    next_linear_parent_name = None
+    next_linear_child_name = None
 
-    expected = next_linear_mod.in_features
-    dev = next((p.device for p in model.parameters()), torch.device('cpu'))
+    for name, mod in model.named_modules():
+        if name == next_linear_name:
+            next_linear_mod = mod
+            break
 
-    # Capture the activation feeding that linear
-    print(f"[STEP] Capturing activation entering '{next_linear_name}' to compute true flattened size...")
-    try:
-        probe_shape = (1,) + tuple(input_shape[1:])
-        _, cap = _simulate_input_hook(
-            model,
-            next_linear_name,
-            probe_shape,
-            device=str(dev)
-        )
-
-        print(f"[DEBUG] Activation capture succeeded. Activation shape: {tuple(cap.shape)}")
-    except Exception as e:
-        print(f"[WARN] Failed to capture activation for '{next_linear_name}': {e}")
-        raise
-
-    flat_actual = cap.view(cap.size(0), -1).size(1)
-    print(f"[INFO] Linear layer expected in_features={expected}, actual flattened={flat_actual}")
-
-    if flat_actual == expected:
-        print(f"[DEBUG] Linear input size matches expected. No corrective action needed.")
+    if next_linear_mod is None:
+        if debug:
+            print(f"[WARN] Next linear '{next_linear_name}' not found — skipping corrective pooling.")
         return model
 
-    # Replace mismatched Linear
-    print(f"[STEP] Replacing mismatched Linear '{next_linear_name}' ({expected} → {flat_actual})...")
-    parent_path, child_name = (
-        next_linear_name.rsplit('.', 1)
-        if '.' in next_linear_name
-        else ("", next_linear_name)
-    )
+    # Locate parent container
+    for parent_name, parent_mod in model.named_modules():
+        for child_name, child_mod in parent_mod.named_children():
+            if child_mod is next_linear_mod:
+                next_linear_parent = parent_mod
+                next_linear_parent_name = parent_name
+                next_linear_child_name = child_name
+                break
+        if next_linear_parent is not None:
+            break
 
-    if parent_path == "":
-        raise RuntimeError("[ERROR] Cannot safely replace a top-level Linear without parent container context.")
+    if next_linear_parent is None:
+        if debug:
+            print("[WARN] Could not resolve parent of next linear — skipping corrective pooling.")
+        return model
 
-    new_linear = nn.Linear(
-        flat_actual,
-        next_linear_mod.out_features,
-        bias=(next_linear_mod.bias is not None)
-    )
+    if debug:
+        print(f"[DEBUG] Found next linear at '{next_linear_name}'")
+        print(f"[DEBUG] Parent container: '{next_linear_parent_name}', child='{next_linear_child_name}'")
 
-    parent_mod = get_layer(model, parent_path)
-    if isinstance(parent_mod, nn.Sequential):
-        new_od = OrderedDict()
-        for n, m in parent_mod.named_children():
-            new_od[n] = new_linear if n == child_name else m
-        _update_container(model, parent_path, nn.Sequential(new_od))
+    # ------------------------------------------------------------------
+    # 3. Only apply pooling if linear EXPECTS FLATTENED INPUT
+    # ------------------------------------------------------------------
+    if not isinstance(next_linear_mod, nn.Linear):
+        if debug:
+            print("[INFO] Next module is not nn.Linear — skipping corrective pooling.")
+        return model
+
+    in_features = next_linear_mod.in_features
+
+    # If model still outputs spatial tensors, infer channels
+    # We assume NCHW
+    if len(input_shape) == 4:
+        _, C, H, W = input_shape
+        current_features = C * H * W
     else:
-        setattr(parent_mod, child_name, new_linear)
+        if debug:
+            print("[INFO] Input already flattened — skipping corrective pooling.")
+        return model
 
-    print(f"[WARN] ⚠ Corrected Linear '{next_linear_name}' in_features updated from {expected} to {flat_actual}")
-    print(f"[RESULT] ✅ Corrective pool insertion completed for '{next_linear_name}'")
+    if debug:
+        print(f"[DEBUG] Linear expects in_features={in_features}")
+        print(f"[DEBUG] Current feature size={current_features}")
+
+    # No mismatch → no corrective pooling
+    if current_features == in_features:
+        if debug:
+            print("[INFO] No feature mismatch — corrective pooling not required.")
+        return model
+
+    # ------------------------------------------------------------------
+    # 4. Compute required spatial size
+    # ------------------------------------------------------------------
+    if in_features % C != 0:
+        if debug:
+            print("[WARN] in_features not divisible by channels — unsafe to pool. Skipping.")
+        return model
+
+    expected_hw = in_features // C
+    target_hw = int(round(expected_hw ** 0.5))
+
+    if target_hw * target_hw != expected_hw:
+        if debug:
+            print("[WARN] Non-square spatial target — skipping corrective pooling.")
+        return model
+
+    if debug:
+        print(f"[INFO] Inserting AdaptiveAvgPool2d({target_hw}, {target_hw})")
+
+    corrective_pool = nn.AdaptiveAvgPool2d((target_hw, target_hw))
+
+    # ------------------------------------------------------------------
+    # 5. Insert pooling BEFORE the linear
+    # ------------------------------------------------------------------
+    new_children = OrderedDict()
+    inserted = False
+
+    for name, mod in next_linear_parent.named_children():
+        if name == next_linear_child_name and not inserted:
+            new_children["corrective_pool"] = corrective_pool
+            inserted = True
+        new_children[name] = mod
+
+    if not inserted:
+        if debug:
+            print("[WARN] Failed to insert corrective pooling — skipping.")
+        return model
+
+    # Replace parent container
+    if isinstance(next_linear_parent, nn.Sequential):
+        new_parent = nn.Sequential(new_children)
+    else:
+        for name, mod in new_children.items():
+            setattr(next_linear_parent, name, mod)
+        return model
+
+    # Update model reference
+    if next_linear_parent_name == "":
+        model = new_parent
+    else:
+        container, attr = _get_container_and_subname(next_linear_parent_name)
+        parent_container = get_layer(model, container) if container else model
+        setattr(parent_container, attr, new_parent)
+
+    if debug:
+        print("[RESULT] Corrective pooling inserted successfully.")
+
     return model
+
+
+
+# def _insert_corrective_pool(
+#     model: nn.Module,
+#     next_linear_name: str,
+#     input_shape: Tuple[int, ...],
+#     debug: bool = False
+# ) -> nn.Module:
+#     """
+#     If a Linear layer’s expected input size does not match the actual flattened activation
+#     shape feeding it, replace it with a corrected Linear layer using the actual size.
+#     """
+#     print(f"\n[STEP] ===== Starting _insert_corrective_pool =====")
+#     print(f"[DEBUG] next_linear_name='{next_linear_name}', input_shape={input_shape}")
+
+#     if next_linear_name is None:
+#         print(f"[DEBUG] No next_linear_name provided; skipping corrective pooling step.")
+#         return model
+
+#     # Locate the linear layer
+#     try:
+#         next_linear_mod = get_layer(model, next_linear_name)
+#         print(f"[INFO] Located next linear layer: '{next_linear_name}' ({next_linear_mod.__class__.__name__})")
+#     except Exception as e:
+#         raise RuntimeError(f"[ERROR] Could not locate next linear '{next_linear_name}': {e}")
+
+#     expected = next_linear_mod.in_features
+#     dev = next((p.device for p in model.parameters()), torch.device('cpu'))
+
+#     # Capture the activation feeding that linear
+#     print(f"[STEP] Capturing activation entering '{next_linear_name}' to compute true flattened size...")
+#     try:
+#         probe_shape = (1,) + tuple(input_shape[1:])
+#         _, cap = _simulate_input_hook(
+#             model,
+#             next_linear_name,
+#             probe_shape,
+#             device=str(dev)
+#         )
+
+#         print(f"[DEBUG] Activation capture succeeded. Activation shape: {tuple(cap.shape)}")
+#     except Exception as e:
+#         print(f"[WARN] Failed to capture activation for '{next_linear_name}': {e}")
+#         raise
+
+#     flat_actual = cap.view(cap.size(0), -1).size(1)
+#     print(f"[INFO] Linear layer expected in_features={expected}, actual flattened={flat_actual}")
+
+#     if flat_actual == expected:
+#         print(f"[DEBUG] Linear input size matches expected. No corrective action needed.")
+#         return model
+
+#     # Replace mismatched Linear
+#     print(f"[STEP] Replacing mismatched Linear '{next_linear_name}' ({expected} → {flat_actual})...")
+#     parent_path, child_name = (
+#         next_linear_name.rsplit('.', 1)
+#         if '.' in next_linear_name
+#         else ("", next_linear_name)
+#     )
+
+#     if parent_path == "":
+#         raise RuntimeError("[ERROR] Cannot safely replace a top-level Linear without parent container context.")
+
+#     new_linear = nn.Linear(
+#         flat_actual,
+#         next_linear_mod.out_features,
+#         bias=(next_linear_mod.bias is not None)
+#     )
+
+#     parent_mod = get_layer(model, parent_path)
+#     if isinstance(parent_mod, nn.Sequential):
+#         new_od = OrderedDict()
+#         for n, m in parent_mod.named_children():
+#             new_od[n] = new_linear if n == child_name else m
+#         _update_container(model, parent_path, nn.Sequential(new_od))
+#     else:
+#         setattr(parent_mod, child_name, new_linear)
+
+#     print(f"[WARN] ⚠ Corrected Linear '{next_linear_name}' in_features updated from {expected} to {flat_actual}")
+#     print(f"[RESULT] ✅ Corrective pool insertion completed for '{next_linear_name}'")
+#     return model
 
 # -----------------------------------------------------------------------------
 # Top-level multi-block collapse function (flexible API)
