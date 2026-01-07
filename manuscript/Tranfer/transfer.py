@@ -399,7 +399,7 @@ EXPERIMENTS = {
             "Stage 2-5": ("stem.conv1", "stage5.inception_5b"),
             "Stage 4-5": ("stage4.inception_4a", "stage5.inception_5b"),
             "Last 2": ("stage4.inception_4d", "stage5.inception_5b"),
-},
+        },
     },
     "XceptionNet": {
         "Cifar10": {
@@ -505,6 +505,7 @@ EXPERIMENTS = {
         },
     },
 }
+
 
 
 # Helper functions
