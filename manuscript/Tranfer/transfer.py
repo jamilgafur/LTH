@@ -157,6 +157,24 @@ CHECKPOINT_FILES = {
             "None",
         ),
     },
+    "ConvNeXt": {
+        "Cifar10": (
+            "None",
+            "None",
+        ),
+        "Cifar100": (
+            "None",
+            "None",
+        ),
+        "imagenet": (
+            "None",
+            "None",
+        ),
+        "tinyimagenet": (
+            "None",
+            "None",
+        ),
+    },
 }
 
 Vgg_common = {
