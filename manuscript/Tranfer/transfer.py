@@ -712,118 +712,64 @@ EXPERIMENTS = {
             "Original Model": None,
             # Single-stage collapses
             "Stage 5": (
-                "stage5.inception_5a.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
+                "stage5.inception_5a",
+                "stage5.inception_5b",
             ),
             "Stage 4": (
-                "stage4.inception_4a.branch1.conv1",
-                "stage4.inception_4b.branch4.bn",
+                "stage4.inception_4a",
+                "stage4.inception_4b",
             ),
             "Stage 3": (
-                "stage3.inception_3a.branch1.conv1",
-                "stage3.inception_3b.branch4.bn",
-            ),
-            "Stage 2": ("stem.conv1", "stem.pool2"),
-            # Multi-stage collapses
-            "Stage 3-5": (
-                "stage3.inception_3a.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
-            ),
-            "Stage 2-5": ("stem.conv1", "stage5.inception_5b.branch4.bn"),
-            "Stage 4-5": (
-                "stage4.inception_4a.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
-            ),
-            "Last 2": (
-                "stage4.inception_4d.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
+                "stage3.inception_3a",
+                "stage3.inception_3b",
             ),
         },
-        "Cifar100": {  # identical structure
+        "Cifar100": {
             "Original Model": None,
+            # Single-stage collapses
             "Stage 5": (
-                "stage5.inception_5a.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
+                "stage5.inception_5a",
+                "stage5.inception_5b",
             ),
             "Stage 4": (
-                "stage4.inception_4a.branch1.conv1",
-                "stage4.inception_4b.branch4.bn",
+                "stage4.inception_4a",
+                "stage4.inception_4b",
             ),
             "Stage 3": (
-                "stage3.inception_3a.branch1.conv1",
-                "stage3.inception_3b.branch4.bn",
-            ),
-            "Stage 2": ("stem.conv1", "stem.pool2"),
-            "Stage 3-5": (
-                "stage3.inception_3a.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
-            ),
-            "Stage 2-5": ("stem.conv1", "stage5.inception_5b.branch4.bn"),
-            "Stage 4-5": (
-                "stage4.inception_4a.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
-            ),
-            "Last 2": (
-                "stage4.inception_4d.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
+                "stage3.inception_3a",
+                "stage3.inception_3b",
             ),
         },
-        "tinyimagenet": {  # same again
+        "tinyimagenet":{
             "Original Model": None,
+            # Single-stage collapses
             "Stage 5": (
-                "stage5.inception_5a.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
+                "stage5.inception_5a",
+                "stage5.inception_5b",
             ),
             "Stage 4": (
-                "stage4.inception_4a.branch1.conv1",
-                "stage4.inception_4b.branch4.bn",
+                "stage4.inception_4a",
+                "stage4.inception_4b",
             ),
             "Stage 3": (
-                "stage3.inception_3a.branch1.conv1",
-                "stage3.inception_3b.branch4.bn",
-            ),
-            "Stage 2": ("stem.conv1", "stem.pool2"),
-            "Stage 3-5": (
-                "stage3.inception_3a.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
-            ),
-            "Stage 2-5": ("stem.conv1", "stage5.inception_5b.branch4.bn"),
-            "Stage 4-5": (
-                "stage4.inception_4a.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
-            ),
-            "Last 2": (
-                "stage4.inception_4d.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
+                "stage3.inception_3a",
+                "stage3.inception_3b",
             ),
         },
-        "imagenet": {  # same
+        "imagenet":{
             "Original Model": None,
+            # Single-stage collapses
             "Stage 5": (
-                "stage5.inception_5a.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
+                "stage5.inception_5a",
+                "stage5.inception_5b",
             ),
             "Stage 4": (
-                "stage4.inception_4a.branch1.conv1",
-                "stage4.inception_4b.branch4.bn",
+                "stage4.inception_4a",
+                "stage4.inception_4b",
             ),
             "Stage 3": (
-                "stage3.inception_3a.branch1.conv1",
-                "stage3.inception_3b.branch4.bn",
-            ),
-            "Stage 2": ("stem.conv1", "stem.pool2"),
-            "Stage 3-5": (
-                "stage3.inception_3a.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
-            ),
-            "Stage 2-5": ("stem.conv1", "stage5.inception_5b.branch4.bn"),
-            "Stage 4-5": (
-                "stage4.inception_4a.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
-            ),
-            "Last 2": (
-                "stage4.inception_4d.branch1.conv1",
-                "stage5.inception_5b.branch4.bn",
+                "stage3.inception_3a",
+                "stage3.inception_3b",
             ),
         },
     },
