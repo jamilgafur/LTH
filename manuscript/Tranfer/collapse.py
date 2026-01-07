@@ -259,14 +259,14 @@ def _build_and_replace_block(
     if debug:
         print(f"[DEBUG] Replacing children indices {start_idx}..{end_idx} in container '{start_container_name}'")
     updated_container = _replace_layers(
-    named_layers,
-    start_idx,
-    end_idx,
-    replacement,
-    start_name=info["first_layer"],
-    end_name=info["last_layer"],
-)
-_update_container(model, start_container_name, updated_container)
+            named_layers,
+            start_idx,
+            end_idx,
+            replacement,
+            start_name=info["first_layer"],
+            end_name=info["last_layer"],
+        )
+    _update_container(model, start_container_name, updated_container)
     model.to(device)
 
     post_params = count_trainable_params(model)
