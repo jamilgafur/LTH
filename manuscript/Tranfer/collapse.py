@@ -91,6 +91,8 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
         f"{sum(isinstance(l, nn.Linear) for l in conv_layers)} Linear "
         f"(collapse_mode={collapse_mode})"
     )
+    layer_type = nn.Conv2d if collapse_mode == "conv" else nn.Linear
+
 
     return {
         "container": container,
@@ -99,6 +101,7 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
         "start_idx": start_idx,
         "end_idx": end_idx,
         "full_block": full_block,
+        "layer_type": layer_type,
         "conv_layers": conv_layers,
         "collapse_mode": collapse_mode,
         "first_layer": conv_layers[0],
