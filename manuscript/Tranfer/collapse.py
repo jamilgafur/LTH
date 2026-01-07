@@ -210,7 +210,7 @@ def _build_and_replace_block(
     if post_params > pre_params:
         print(f"[WARN] ⚠ Collapsed block increased parameter count — investigate collapse policy.")
         quit()
-        
+
     if debug:
         print(f"[RESULT] Block replacement complete for '{start_layer_name}'.")
 
@@ -903,7 +903,7 @@ def collapse_only(
             print(f"[INFO] ✅ Successfully collapsed block '{name}' ({start} → {end})")
         except Exception as e:
             print(f"[WARN] ⚠ Collapse failed for block '{name}': {e}")
-            continue
+            quit()
 
         if handle_skips:
             print(f"[STEP] Patching skip connections (if any)...")
