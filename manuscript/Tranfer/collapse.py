@@ -344,18 +344,30 @@ def _get_container_and_subname(layer_name: str) -> Tuple[str, str]:
     parts = layer_name.split('.')
     return '.'.join(parts[:-1]), parts[-1]
 
-def _replace_layers(named_layers: Sequence[Tuple[str, nn.Module]], start_idx: int, end_idx: int, new_block: nn.Module) -> nn.Sequential:
-    """Replace layers start_idx..end_idx inclusive in named_layers with new_block (Sequential)."""
-    new_layers = []
-    unique_suffix = uuid4().hex[:8]
-    for i, (name, layer) in enumerate(named_layers):
-        if i == start_idx:
-            new_layers.append((f"collapsed_{unique_suffix}", new_block))
-        elif start_idx < i <= end_idx:
-            continue
-        else:
-            new_layers.append((name, layer))
-    return nn.Sequential(OrderedDict(new_layers))
+def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=None, end_name=None):
+    """
+    Replace a slice of named_layers with a deterministically named collapsed module.
+    This guarantees checkpoint compatibility across runs.
+    """
+
+    new_layers = OrderedDict()
+
+    for i, (name, mod) in enumerate(named_layers):
+        if i < start_idx or i > end_idx:
+            new_layers[name] = mod
+        elif i == start_idx:
+            # 🔒 DETERMINISTIC NAME
+            if start_name and end_name:
+                collapsed_name = f"collapsed_{start_name}_to_{end_name}"
+            else:
+                collapsed_name = f"collapsed_{start_idx}_{end_idx}"
+
+            # sanitize dots for nn.Module
+            collapsed_name = collapsed_name.replace(".", "_")
+
+            new_layers[collapsed_name] = replacement
+
+    return nn.Sequential(new_layers)
 
 
 def _update_container(model: nn.Module, container_path: str, new_container: nn.Module):
