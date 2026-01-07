@@ -18,7 +18,6 @@ RegNetX_400MF_Cifar100=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" 
 RegNetX_400MF_Imagenet=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 3-4" "Stage 2-4" "Stage 1-4" )
 RegNetX_400MF_Tinyimagenet=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 3-4" "Stage 2-4" "Stage 1-4" )
 
-
 # ConvNetX Experiments
 ConvNetX_Cifar10=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
 ConvNetX_Cifar100=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
