@@ -280,7 +280,6 @@ XceptionNet_common =  {
             "Stage 2-5": ("block2.depthwise", "block5.depthwise"),
             "Stage 1-5": ("block1.depthwise", "block5"),
         }
-    
 mobileNet_common =  {
             "Original Model": None,
             "Stage 7": ("block7.depthwise", "block7.bn2"),
@@ -311,8 +310,8 @@ InceptionNet_common = {
                 "stage3.inception_3b",
             ),
         }
-
 ConvNeXt_common = {
+    "Original Model": None,
     # Stage 1
     "Stage 1": ("stage1.block1_1", "stage1.block1_2"),
 
