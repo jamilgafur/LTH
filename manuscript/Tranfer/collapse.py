@@ -191,24 +191,26 @@ def _build_and_replace_block(
             print(f"[WARN] Could not find inserted collapsed module for validation.")
     except Exception as e:
         print(f"[WARN] Replacement forward validation failed: {e}")
-
+        quit()
     try:
         if debug:
             print(f"[STEP] Validating downstream after replacement...")
         _validate_downstream(model, start_container_name, start_idx, x, input_shape, next_linear_name, next_linear_mod, device, debug)
     except Exception as e:
         print(f"[WARN] Downstream validation failed: {e}")
-
+        quit()
     try:
         if debug:
             print(f"[STEP] Performing corrective pooling (if needed)...")
         model = _insert_corrective_pool(model, next_linear_name, input_shape, debug)
     except Exception as e:
         print(f"[WARN] Corrective pool insertion failed: {e}")
+        quit()
 
     if post_params > pre_params:
         print(f"[WARN] ⚠ Collapsed block increased parameter count — investigate collapse policy.")
-
+        quit()
+        
     if debug:
         print(f"[RESULT] Block replacement complete for '{start_layer_name}'.")
 
