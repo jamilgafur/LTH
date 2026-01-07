@@ -345,10 +345,10 @@ EXPERIMENTS = {
         "imagenet": XceptionNet_common,
     },
     "MobileNet": {
-        "Cifar10": MobileNet_common,
-        "Cifar100": MobileNet_common,
-        "tinyimagenet": MobileNet_common,
-        "imagenet": MobileNet_common,
+        "Cifar10": mobileNet_common,
+        "Cifar100": mobileNet_common,
+        "tinyimagenet": mobileNet_common,
+        "imagenet": mobileNet_common,
     },
     "InceptionNet": {
         "Cifar10": InceptionNet_common,
