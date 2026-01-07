@@ -102,6 +102,8 @@ def infer_architecture_from_path(p: Path) -> str:
         return "Xception"
     if "mobilenet" in name:
         return "MobileNet"
+    if "convnext" in name:
+        return "ConvNeXt"
     raise ValueError(f"Cannot infer architecture from {p}")
 
 def infer_posthoc_or_posttrain(exp_name: str) -> str:
