@@ -189,6 +189,7 @@ Vgg_common = {
             "Stage 5": ("features.conv_11", "features.conv_13"),
             "Stage 4": ("features.conv_8", "features.conv_10"),
             "Stage 3": ("features.conv_5", "features.conv_7"),
+            "Stage 2": ("features.conv_3", "features.conv_4"),
             "Stage 4-5": ("features.conv_8", "features.conv_13"),
             "Stage 3-5": ("features.conv_5", "features.conv_13"),
             "Stage 2-5": ("features.conv_3", "features.conv_13"),
@@ -332,6 +333,56 @@ InceptionNet_common = {
             "Stage 3": (
                 "stage3.inception_3a",
                 "stage3.inception_3b",
+            ),
+            "Stage 2": (
+                "stage2.inception_2a",
+                "stage2.inception_2b",
+            ),
+            "Stage 2-5": [
+                (
+                    "stage2.inception_2a",
+                    "stage2.inception_2b",
+                ),  # Stage 2
+                (
+                    "stage3.inception_3a",
+                    "stage3.inception_3b",
+                ),  # Stage 3
+                (
+                    "stage4.inception_4a",
+                    "stage4.inception_4b",
+                ),  # Stage 4
+                (
+                    "stage5.inception_5a",
+                    "stage5.inception_5b",
+                ),  # Stage 5
+            ],
+            "Stage 3-5": [
+                (
+                    "stage3.inception_3a",
+                    "stage3.inception_3b",
+                ),  # Stage 3
+                (
+                    "stage4.inception_4a",
+                    "stage4.inception_4b",
+                ),  # Stage 4
+                (
+                    "stage5.inception_5a",
+                    "stage5.inception_5b",
+                ),  # Stage 5
+            ],
+            "Stage 4-5": [
+                (
+                    "stage4.inception_4a",
+                    "stage4.inception_4b",
+                ),  # Stage 4
+                (
+                    "stage5.inception_5a",
+                    "stage5.inception_5b",
+                ),  # Stage 5
+            ],  
+            "Last 2": (
+                "stage5.inception_5a",
+                "stage5.inception_5b",
             ),
         }
 ConvNeXt_common = {
