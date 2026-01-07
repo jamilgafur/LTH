@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define models and datasets
-models=("ConvNetX" "VGG16" "RegNetX_400MF")
+models=("ConvNeXt" "VGG16" "RegNetX_400MF")
 datasets=( "Cifar10" "Cifar100" "tinyimagenet" )
 
 # Define the experiments for each model and dataset directly as arrays
@@ -18,11 +18,11 @@ RegNetX_400MF_Cifar100=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" 
 RegNetX_400MF_Imagenet=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 3-4" "Stage 2-4" "Stage 1-4" )
 RegNetX_400MF_Tinyimagenet=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 3-4" "Stage 2-4" "Stage 1-4" )
 
-# ConvNetX Experiments
-ConvNetX_Cifar10=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
-ConvNetX_Cifar100=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
-ConvNetX_Imagenet=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
-ConvNetX_Tinyimagenet=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
+# ConvNeXt Experiments
+ConvNeXt_Cifar10=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
+ConvNeXt_Cifar100=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
+ConvNeXt_Imagenet=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
+ConvNeXt_Tinyimagenet=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
 
 # InceptionNet Experiments
 InceptionNet_Cifar10=("Original Model" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" "Last 2" )
@@ -93,14 +93,14 @@ for model in "${models[@]}"; do
       experiment_names=("${MobileNet_Imagenet[@]}")
     elif [[ "$experiment_key" == "MobileNet_tinyimagenet" ]]; then
       experiment_names=("${MobileNet_Tinyimagenet[@]}")
-    elif [[ "$experiment_key" == "ConvNetX_Cifar10" ]]; then
-      experiment_names=("${ConvNetX_Cifar10[@]}")
-    elif [[ "$experiment_key" == "ConvNetX_Cifar100" ]]; then
-      experiment_names=("${ConvNetX_Cifar100[@]}")
-    elif [[ "$experiment_key" == "ConvNetX_imagenet" ]]; then
-      experiment_names=("${ConvNetX_Imagenet[@]}")
-    elif [[ "$experiment_key" == "ConvNetX_tinyimagenet" ]]; then
-      experiment_names=("${ConvNetX_Tinyimagenet[@]}")
+    elif [[ "$experiment_key" == "ConvNeXt_Cifar10" ]]; then
+      experiment_names=("${ConvNeXt_Cifar10[@]}")
+    elif [[ "$experiment_key" == "ConvNeXt_Cifar100" ]]; then
+      experiment_names=("${ConvNeXt_Cifar100[@]}")
+    elif [[ "$experiment_key" == "ConvNeXt_imagenet" ]]; then
+      experiment_names=("${ConvNeXt_Imagenet[@]}")
+    elif [[ "$experiment_key" == "ConvNeXt_tinyimagenet" ]]; then
+      experiment_names=("${ConvNeXt_Tinyimagenet[@]}")
     else
       echo "Unknown model-dataset combination: $experiment_key"
       continue
