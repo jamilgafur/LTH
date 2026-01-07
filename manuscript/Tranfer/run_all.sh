@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Define models and datasets
-models=("InceptionNet" "XceptionNet" "MobileNet" "VGG16" "RegNetX_400MF" )
-datasets=( "tinyimagenet" )
+models=("ConvNetX" )
+datasets=( "Cifar10" "Cifar100" )
 
 # Define the experiments for each model and dataset directly as arrays
 
@@ -14,12 +14,16 @@ VGG16_Tinyimagenet=("Original Model" "Last 2" "Stage 5" "Stage 4-5" "Stage 3-5" 
 
 # RegNetX_400MF Experiments
 RegNetX_400MF_Cifar10=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 3-4" "Stage 2-4" "Stage 1-4" )
-
 RegNetX_400MF_Cifar100=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 3-4" "Stage 2-4" "Stage 1-4" )
-
 RegNetX_400MF_Imagenet=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 3-4" "Stage 2-4" "Stage 1-4" )
-
 RegNetX_400MF_Tinyimagenet=("Original Model" "Last 2" "Stage 4" "Stage 3" "Stage 2" "Stage 1" "Stage 3-4" "Stage 2-4" "Stage 1-4" )
+
+
+# ConvNetX Experiments
+ConvNetX_Cifar10=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
+ConvNetX_Cifar100=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
+ConvNetX_Imagenet=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
+ConvNetX_Tinyimagenet=("Original Model" "Stage 4" "Stage 3" "Stage 2" "Stage 1")
 
 # InceptionNet Experiments
 InceptionNet_Cifar10=("Original Model" "Stage 5" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 4" "Stage 3" "Stage 2" "Last 2" )
