@@ -42,7 +42,7 @@ TABLE_DIR = Path("./tables")
 FIG_DIR.mkdir(exist_ok=True)
 TABLE_DIR.mkdir(exist_ok=True)
 
-DATASET_ORDER = ["cifar10_", "cifar100_", "tinyimagenet", "imagenet"]
+DATASET_ORDER = ["cifar10_", "cifar100_", "tinyimagenet", "imagenet" "ConvNeXt"]
 
 # =========================
 # Data Loading
