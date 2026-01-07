@@ -356,7 +356,7 @@ EXPERIMENTS = {
         "tinyimagenet": InceptionNet_common,
         "imagenet":InceptionNet_common,
     },
-    "ConvNetX": {
+    "ConvNeXt": {
         "Cifar10": ConvNeXt_common,
         "Cifar100": ConvNeXt_common,
         "tinyimagenet": ConvNeXt_common,
