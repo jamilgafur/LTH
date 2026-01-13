@@ -146,14 +146,12 @@ def save_plot_source_data(df: pd.DataFrame, filename: str):
     df.to_csv(filepath, index=False)
     print(f"\n[Data Export] Saved source data for {filename} to {filepath}")
     
-    # --- FIX: Only print columns that actually exist in this dataframe ---
-    desired_cols = ["dataset", "architecture", "exp_name", "d_acc", "d_params", "collapsed_fraction"]
+    desired_cols = ["dataset", "architecture", "exp_name", "d_acc", "d_params", "collapsed_fraction", "accuracy_delta"]
     existing_cols = [c for c in desired_cols if c in df.columns]
     
     if existing_cols:
         print(df[existing_cols].head(3).to_string())
     else:
-        # Fallback if none of the desired columns exist (e.g. for simple aggregated tables)
         print(df.head(3).to_string())
 
 # =========================
@@ -173,7 +171,7 @@ def standard_legend(ax):
     ax.legend(title="Configuration", frameon=True, loc="best")
 
 # =========================
-# Figures 1-5 (Line Plots)
+# Figures 1-5 (Existing)
 # =========================
 def fig1(df: pd.DataFrame):
     architectures = sorted(df["architecture"].unique())
@@ -424,6 +422,190 @@ def fig5(df: pd.DataFrame):
     plt.close()
 
 # =========================
+# NEW: Figure 6 (Pareto Frontier)
+# =========================
+def fig6_pareto_frontier(df: pd.DataFrame):
+    """
+    Plots the 'Optimal Trade-off' curve (Pareto Frontier) for each dataset/architecture.
+    It highlights the best models (highest accuracy for a given compression) 
+    and fades out suboptimal ones.
+    """
+    architectures = sorted(df["architecture"].unique())
+    datasets = sorted(df["dataset"].unique())
+
+    fig, axes = plt.subplots(
+        len(architectures), len(datasets),
+        figsize=(5.5 * len(datasets), 4.5 * len(architectures)),
+        sharex=True, sharey=True, squeeze=False,
+    )
+    
+    plot_data_accum = []
+
+    for i, arch in enumerate(architectures):
+        for j, ds in enumerate(datasets):
+            ax = axes[i, j]
+            subdf = df[
+                (df["architecture"] == arch) &
+                (df["dataset"] == ds)
+            ].dropna(subset=["d_params", "d_acc"])
+
+            if subdf.empty:
+                ax.axis("off")
+                continue
+            
+            # 1. Identify Pareto Frontier
+            # Sort by compression (ascending d_params)
+            # We want to maximize d_acc for any given d_params
+            subdf = subdf.sort_values("d_params")
+            pareto_points = []
+            current_max_acc = -np.inf
+            
+            # Simple heuristic: scan from right (high compression) to left? 
+            # Actually, standard pareto for trade-off:
+            # We want Max(d_params) AND Max(d_acc).
+            # A point is on the frontier if no other point has BOTH higher params AND higher accuracy.
+            # Simplified for plotting: Just the "Upper Envelope"
+            
+            # Sort by d_params descending (highest compression first)
+            sorted_points = subdf.sort_values("d_params", ascending=False)
+            current_max_acc = -np.inf
+            
+            for _, row in sorted_points.iterrows():
+                if row["d_acc"] >= current_max_acc:
+                    pareto_points.append(row)
+                    current_max_acc = row["d_acc"]
+            
+            pareto_df = pd.DataFrame(pareto_points).sort_values("d_params")
+            plot_data_accum.append(pareto_df)
+
+            # 2. Plot ALL points faintly
+            sns.scatterplot(
+                data=subdf, x="d_params", y="d_acc",
+                color="lightgray", alpha=0.5, s=30, ax=ax, legend=False
+            )
+
+            # 3. Plot Pareto Frontier strongly
+            sns.lineplot(
+                data=pareto_df, x="d_params", y="d_acc",
+                color="black", linewidth=2, linestyle="--", 
+                marker="o", label="Pareto Frontier", ax=ax
+            )
+            
+            ax.set_title(f"{arch} on {ds}")
+            if i == len(architectures)-1: format_reduction_axis(ax, "Parameter")
+            if j == 0: format_accuracy_axis(ax)
+            
+            # Legend only on first
+            if i==0 and j==0: 
+                ax.legend(loc="best", fontsize=8)
+            else:
+                if ax.get_legend(): ax.get_legend().remove()
+
+    if plot_data_accum:
+        save_plot_source_data(pd.concat(plot_data_accum), "fig6_pareto_source")
+
+    fig.suptitle("Pareto Frontier: Optimal Accuracy-Compression Trade-off", fontsize=16, y=1.02)
+    plt.tight_layout()
+    plt.savefig(FIG_DIR / "fig6_pareto_frontier.png", bbox_inches='tight')
+    plt.close()
+
+
+# =========================
+# NEW: Figure 7 (Method Delta)
+# =========================
+def fig7_method_delta(df: pd.DataFrame):
+    """
+    Bar chart showing the Accuracy Delta (Method A - Method B).
+    Specifically: Post-Prune (JF) minus No-Prune (Kevin).
+    Positive = Post-Prune is better. Negative = No-Prune is better.
+    """
+    
+    # 1. Prepare Data: Match JF and Kevin experiments
+    # We need a common key. We used 'exp_group' earlier which strips the suffix.
+    df = df.copy()
+    df["exp_base"] = (
+        df["exp_name"]
+        .str.replace("_JF", "", regex=False)
+        .str.replace("_Kevin", "", regex=False)
+        .str.strip()
+    )
+    
+    # Filter for only the two methods we care about
+    valid_methods = ["Post-Prune (JF)", "No-Prune (Kevin)"]
+    df_methods = df[df["posthoc_or_posttrain"].isin(valid_methods)]
+    
+    # Pivot to align them side-by-side
+    pivot_cols = ["dataset", "architecture", "exp_base", "is_quantized"]
+    df_pivot = df_methods.pivot_table(
+        index=pivot_cols,
+        columns="posthoc_or_posttrain",
+        values="accuracy"
+    ).reset_index()
+    
+    # Calculate Delta
+    if "Post-Prune (JF)" in df_pivot.columns and "No-Prune (Kevin)" in df_pivot.columns:
+        df_pivot["accuracy_delta"] = df_pivot["Post-Prune (JF)"] - df_pivot["No-Prune (Kevin)"]
+    else:
+        print("Skipping Fig 7: Missing matching data for JF vs Kevin comparison.")
+        return
+
+    # Drop NaNs (unmatched experiments)
+    df_pivot = df_pivot.dropna(subset=["accuracy_delta"])
+    
+    # Save Source Data
+    save_plot_source_data(df_pivot, "fig7_method_delta_source")
+
+    # 2. Plotting
+    architectures = sorted(df_pivot["architecture"].unique())
+    datasets = sorted(df_pivot["dataset"].unique())
+    
+    fig, axes = plt.subplots(
+        len(architectures), len(datasets),
+        figsize=(5.5 * len(datasets), 4.5 * len(architectures)),
+        sharex=True, sharey=True, squeeze=False,
+    )
+
+    for i, arch in enumerate(architectures):
+        for j, ds in enumerate(datasets):
+            ax = axes[i, j]
+            subdf = df_pivot[
+                (df_pivot["architecture"] == arch) &
+                (df_pivot["dataset"] == ds)
+            ].sort_values("exp_base")
+            
+            if subdf.empty:
+                ax.axis("off")
+                continue
+            
+            # Color bars: Blue if positive (JF wins), Red if negative (Kevin wins)
+            colors = ["#1f77b4" if x >= 0 else "#d62728" for x in subdf["accuracy_delta"]]
+            
+            sns.barplot(
+                data=subdf, x="exp_base", y="accuracy_delta",
+                ax=ax, palette=colors, hue="exp_base", legend=False # hue to avoid warning
+            )
+            
+            ax.axhline(0, color="black", linewidth=1)
+            ax.set_title(f"{arch} on {ds}")
+            
+            if j == 0:
+                ax.set_ylabel("Acc Delta (JF - Kevin)\n(>0 means Post-Prune wins)")
+            else:
+                ax.set_ylabel("")
+                
+            if i == len(architectures)-1:
+                ax.set_xlabel("Experiment Group")
+                ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right", fontsize=8)
+            else:
+                ax.set_xlabel("")
+                ax.set_xticklabels([])
+
+    fig.suptitle("Method Comparison: Post-Prune (JF) vs No-Prune (Kevin)", fontsize=16, y=1.02)
+    plt.tight_layout()
+    plt.savefig(FIG_DIR / "fig7_method_delta.png", bbox_inches='tight')
+    plt.close()
+
+# =========================
 # Tables
 # =========================
 def tab1(df: pd.DataFrame):
@@ -477,22 +659,17 @@ def tab2(df: pd.DataFrame):
 
 
 # =========================
-# Multi Metric Plot (Lineplot)
+# Multi Metric Plot
 # =========================
 def plot_expname_multi_metric(
     df: pd.DataFrame,
     metrics: list[str] = ["accuracy", "params", "flops", "memory"],
     out_dir: Path = Path("./plots"),
 ):
-    """
-    Plots metrics with distinct visual splits using line plots.
-    """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     df = df.copy()
-
-    # 1. Clean exp_group so JF and Kevin share the same X-tick
     df["exp_group"] = (
         df["exp_name"]
         .str.replace("_quant", "", regex=False)
@@ -510,7 +687,6 @@ def plot_expname_multi_metric(
         n_rows = len(datasets)
         n_cols = len(metrics)
 
-        # 2. Determine ordering (Largest Params -> Smallest Params)
         if "params" in df_arch.columns:
             exp_order_index = (
                 df_arch.groupby("exp_group")["params"]
@@ -521,7 +697,6 @@ def plot_expname_multi_metric(
         else:
             exp_order_index = sorted(df_arch["exp_group"].unique())
             
-        # Convert exp_group to ordered categorical so lineplot connects them sequentially
         df_arch["exp_group"] = pd.Categorical(
             df_arch["exp_group"], categories=exp_order_index, ordered=True
         )
@@ -607,6 +782,11 @@ if __name__ == "__main__":
         fig3(df)
         fig4(df)
         fig5(df)
+        
+        # New Figures
+        fig6_pareto_frontier(df)
+        fig7_method_delta(df)
+        
         tab1(df)
         tab2(df)
 
