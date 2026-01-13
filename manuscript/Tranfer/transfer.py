@@ -316,6 +316,9 @@ mobileNet_common =  {
             "Stage 1": ("block1.depthwise", "block2.depthwise"),
             "Stage 5-7": ("block5.depthwise", "block7.depthwise"),
             "Stage 4-7": ("block4.depthwise", "block7.depthwise"),
+            "Stage 6-7": ("block6.depthwise", "block7.depthwise"),
+            "Stage 3-7": ("block3.depthwise", "block7.depthwise"),
+            "Stage 2-7": ("block2.depthwise", "block7.depthwise"),
             "Stage 1-7": ("block1.depthwise", "block7.depthwise"),
             "Last 2": ("block6.depthwise", "block7.depthwise"),
         }
