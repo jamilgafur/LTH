@@ -11,10 +11,9 @@ import seaborn as sns
 
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
-pd.set_option("display.max_rows", None)
 
 # =========================
-# Plotting Style (Accessible & Scientific)
+# Plotting Style
 # =========================
 sns.set_theme(
     context="paper",
@@ -30,6 +29,8 @@ plt.rcParams.update({
     "axes.labelsize": 11,
     "legend.fontsize": 9,
     "legend.title_fontsize": 10,
+    "lines.linewidth": 2.5,
+    "lines.markersize": 8,
 })
 
 
@@ -46,7 +47,7 @@ TABLE_DIR.mkdir(exist_ok=True)
 DATASET_ORDER = ["cifar10_", "cifar100_", "tinyimagenet", "imagenet", "ConvNeXt"]
 
 # =========================
-# Data Loading
+# Data Loading & Utilities
 # =========================
 def load_results() -> pd.DataFrame:
     files = list(RESULTS_DIR.rglob("*merged_metrics.json"))
@@ -79,10 +80,6 @@ def load_results() -> pd.DataFrame:
 
     return pd.DataFrame(rows)
 
-
-# =========================
-# Utilities
-# =========================
 def infer_dataset_from_path(p: Path) -> str:
     name = p.parent.parent.name.lower()
     for ds in DATASET_ORDER:
@@ -92,34 +89,24 @@ def infer_dataset_from_path(p: Path) -> str:
 
 def infer_architecture_from_path(p: Path) -> str:
     name = p.parent.parent.name.lower()
-    if "regnet" in name:
-        return "RegNetX"
-    if "vgg" in name:
-        return "VGG16"
-    if "inception" in name:
-        return "InceptionNet"
-    if "xception" in name:
-        return "Xception"
-    if "mobilenet" in name:
-        return "MobileNet"
-    if "convnext" in name:
-        return "ConvNeXt"
+    if "regnet" in name: return "RegNetX"
+    if "vgg" in name: return "VGG16"
+    if "inception" in name: return "InceptionNet"
+    if "xception" in name: return "Xception"
+    if "mobilenet" in name: return "MobileNet"
+    if "convnext" in name: return "ConvNeXt"
     return "UnknownArch"
 
 def infer_posthoc_or_posttrain(exp_name: str) -> str:
     n = exp_name.lower()
-    if "jf" in n:
-        return "Post-Prune (JF)"  # Explicit Label
-    if "kevin" in n:
-        return "No-Prune (Kevin)" # Explicit Label
-    if "original" in n or "baseline" in n:
-        return "Baseline"
+    if "jf" in n: return "Post-Prune (JF)"
+    if "kevin" in n: return "No-Prune (Kevin)"
+    if "original" in n or "baseline" in n: return "Baseline"
     return "Unknown"
 
 def infer_model_type(exp_name: str) -> str:
     n = exp_name.lower()
-    if "original" in n or "baseline" in n:
-        return "baseline"
+    if "original" in n or "baseline" in n: return "baseline"
     return "collapsed"
 
 def infer_isquant(exp_name: str) -> bool:
@@ -135,19 +122,15 @@ def find_baseline(df: pd.DataFrame):
 
 def normalize(df: pd.DataFrame) -> pd.DataFrame:
     out = []
-
     for (ds, arch), g in df.groupby(["dataset", "architecture"]):
         baseline = find_baseline(g)
         if baseline is None:
             warnings.warn(f"No baseline for {ds}-{arch}")
-            # Still add rows, but without relative metrics
-            for _, r in g.iterrows():
-                out.append(r)
+            for _, r in g.iterrows(): out.append(r)
             continue
 
         for _, r in g.iterrows():
             row = r.copy()
-            # Avoid division by zero if params are missing
             if baseline["params"]:
                 row["d_acc"] =  r["accuracy"] - baseline["accuracy"] 
                 row["d_params"] = 100 * (1 - r["params"] / baseline["params"])
@@ -155,8 +138,15 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
                 row["d_memory"] = 100 * (1 - r["memory"] / baseline["memory"])
                 row["collapsed_fraction"] = row["d_params"] / 100.0
             out.append(row)
-
     return pd.DataFrame(out)
+
+def save_plot_source_data(df: pd.DataFrame, filename: str):
+    """Saves the data used for a specific plot to CSV and prints a preview."""
+    filepath = TABLE_DIR / f"{filename}.csv"
+    df.to_csv(filepath, index=False)
+    print(f"\n[Data Export] Saved source data for {filename} to {filepath}")
+    # Print a small table preview to console
+    print(df[["dataset", "architecture", "exp_name", "d_acc", "d_params"]].head(3).to_string())
 
 # =========================
 # Plotting Helpers
@@ -172,62 +162,61 @@ def format_fraction_axis(ax):
     ax.set_xlabel("Collapsed Fraction\n(higher = more compression)")
 
 def standard_legend(ax):
-    ax.legend(
-        title="Configuration",
-        frameon=True,
-        loc="best",
-    )
+    ax.legend(title="Configuration", frameon=True, loc="best")
 
 # =========================
-# Figures 1-5 (Standard)
+# Figures 1-5 (Updated to Line Plots)
 # =========================
 def fig1(df: pd.DataFrame):
     architectures = sorted(df["architecture"].unique())
     datasets = sorted(df["dataset"].unique())
     
     fig, axes = plt.subplots(
-        len(architectures),
-        len(datasets),
+        len(architectures), len(datasets),
         figsize=(5.5 * len(datasets), 4.5 * len(architectures)),
-        sharex=True,
-        sharey=True,
-        squeeze=False,
+        sharex=True, sharey=True, squeeze=False,
     )
+
+    plot_data_accum = []
 
     for i, arch in enumerate(architectures):
         for j, ds in enumerate(datasets):
             ax = axes[i, j]
+            # Filter
             subdf = df[
                 (df["architecture"] == arch) &
                 (df["dataset"] == ds)
             ].dropna(subset=["d_params", "d_acc"])
+            
+            # Sort for line plot (x-axis ascending)
+            subdf = subdf.sort_values("d_params")
+            plot_data_accum.append(subdf)
 
             if subdf.empty:
                 ax.axis("off")
                 continue
 
-            sns.scatterplot(
+            sns.lineplot(
                 data=subdf,
                 x="d_params",
                 y="d_acc",
                 hue="posthoc_or_posttrain",
                 style="is_quantized",
-                s=100, # size
-                alpha=0.8,
+                markers=True,
+                dashes=False,
                 ax=ax,
             )
 
             ax.set_title(f"{arch} on {ds}")
-            if i == len(architectures)-1:
-                format_reduction_axis(ax, "Parameter")
-            if j == 0:
-                format_accuracy_axis(ax)
-            
-            # Simplified legend for individual plots
-            if i==0 and j==0:
-                standard_legend(ax)
-            else:
-                ax.get_legend().remove()
+            if i == len(architectures)-1: format_reduction_axis(ax, "Parameter")
+            if j == 0: format_accuracy_axis(ax)
+            if i==0 and j==0: standard_legend(ax)
+            else: 
+                if ax.get_legend(): ax.get_legend().remove()
+
+    # Save aggregated data for this figure
+    if plot_data_accum:
+        save_plot_source_data(pd.concat(plot_data_accum), "fig1_source_data")
 
     fig.suptitle("Accuracy vs Parameter Reduction", fontsize=16, y=1.02)
     plt.tight_layout()
@@ -239,13 +228,12 @@ def fig2(df: pd.DataFrame):
     datasets = sorted(df["dataset"].unique())
 
     fig, axes = plt.subplots(
-        len(architectures),
-        len(datasets),
+        len(architectures), len(datasets),
         figsize=(5.5 * len(datasets), 4.5 * len(architectures)),
-        sharex=True,
-        sharey=True,
-        squeeze=False,
+        sharex=True, sharey=True, squeeze=False,
     )
+
+    plot_data_accum = []
 
     for i, arch in enumerate(architectures):
         for j, ds in enumerate(datasets):
@@ -254,32 +242,34 @@ def fig2(df: pd.DataFrame):
                 (df["architecture"] == arch) &
                 (df["dataset"] == ds)
             ].dropna(subset=["d_flops", "d_acc"])
+            
+            subdf = subdf.sort_values("d_flops")
+            plot_data_accum.append(subdf)
 
             if subdf.empty:
                 ax.axis("off")
                 continue
 
-            sns.scatterplot(
+            sns.lineplot(
                 data=subdf,
                 x="d_flops",
                 y="d_acc",
                 hue="posthoc_or_posttrain",
                 style="is_quantized",
-                s=100,
-                alpha=0.8,
+                markers=True,
+                dashes=False,
                 ax=ax,
             )
 
             ax.set_title(f"{arch} on {ds}")
-            if i == len(architectures)-1:
-                format_reduction_axis(ax, "FLOPs")
-            if j == 0:
-                format_accuracy_axis(ax)
-            
-            if i==0 and j==0:
-                standard_legend(ax)
-            else:
-                ax.get_legend().remove()
+            if i == len(architectures)-1: format_reduction_axis(ax, "FLOPs")
+            if j == 0: format_accuracy_axis(ax)
+            if i==0 and j==0: standard_legend(ax)
+            else: 
+                if ax.get_legend(): ax.get_legend().remove()
+
+    if plot_data_accum:
+        save_plot_source_data(pd.concat(plot_data_accum), "fig2_source_data")
 
     fig.suptitle("Accuracy vs FLOPs Reduction", fontsize=16, y=1.02)
     plt.tight_layout()
@@ -291,13 +281,12 @@ def fig3(df: pd.DataFrame):
     datasets = sorted(df["dataset"].unique())
 
     fig, axes = plt.subplots(
-        len(architectures),
-        len(datasets),
+        len(architectures), len(datasets),
         figsize=(5.5 * len(datasets), 4.5 * len(architectures)),
-        sharex=True,
-        sharey=True,
-        squeeze=False,
+        sharex=True, sharey=True, squeeze=False,
     )
+
+    plot_data_accum = []
 
     for i, arch in enumerate(architectures):
         for j, ds in enumerate(datasets):
@@ -307,30 +296,33 @@ def fig3(df: pd.DataFrame):
                 (df["dataset"] == ds)
             ].dropna(subset=["collapsed_fraction", "d_acc"])
 
+            subdf = subdf.sort_values("collapsed_fraction")
+            plot_data_accum.append(subdf)
+
             if subdf.empty:
                 ax.axis("off")
                 continue
 
-            sns.scatterplot(
+            sns.lineplot(
                 data=subdf,
                 x="collapsed_fraction",
                 y="d_acc",
                 hue="posthoc_or_posttrain",
                 style="is_quantized",
-                s=100,
+                markers=True,
+                dashes=False,
                 ax=ax,
             )
 
             ax.set_title(f"{arch} on {ds}")
-            if i == len(architectures)-1:
-                format_fraction_axis(ax)
-            if j == 0:
-                format_accuracy_axis(ax)
+            if i == len(architectures)-1: format_fraction_axis(ax)
+            if j == 0: format_accuracy_axis(ax)
+            if i==0 and j==0: standard_legend(ax)
+            else: 
+                if ax.get_legend(): ax.get_legend().remove()
 
-            if i==0 and j==0:
-                standard_legend(ax)
-            else:
-                ax.get_legend().remove()
+    if plot_data_accum:
+        save_plot_source_data(pd.concat(plot_data_accum), "fig3_source_data")
 
     fig.suptitle("Accuracy vs Collapsed Fraction", fontsize=16, y=1.02)
     plt.tight_layout()
@@ -338,20 +330,18 @@ def fig3(df: pd.DataFrame):
     plt.close()
 
 def fig4(df: pd.DataFrame):
-    # Only if collapsed_fraction and d_flops exist
     if "collapsed_fraction" not in df.columns: return
 
     architectures = sorted(df["architecture"].unique())
     datasets = sorted(df["dataset"].unique())
 
     fig, axes = plt.subplots(
-        len(architectures),
-        len(datasets),
+        len(architectures), len(datasets),
         figsize=(5.5 * len(datasets), 4.5 * len(architectures)),
-        sharex=True,
-        sharey=True,
-        squeeze=False,
+        sharex=True, sharey=True, squeeze=False,
     )
+
+    plot_data_accum = []
 
     for i, arch in enumerate(architectures):
         for j, ds in enumerate(datasets):
@@ -361,30 +351,33 @@ def fig4(df: pd.DataFrame):
                 (df["dataset"] == ds)
             ].dropna(subset=["collapsed_fraction", "d_flops"])
 
+            subdf = subdf.sort_values("collapsed_fraction")
+            plot_data_accum.append(subdf)
+
             if subdf.empty:
                 ax.axis("off")
                 continue
 
-            sns.scatterplot(
+            sns.lineplot(
                 data=subdf,
                 x="collapsed_fraction",
                 y="d_flops",
                 hue="posthoc_or_posttrain",
                 style="is_quantized",
-                s=100,
+                markers=True,
+                dashes=False,
                 ax=ax,
             )
 
             ax.set_title(f"{arch} on {ds}")
-            if i == len(architectures)-1:
-                format_fraction_axis(ax)
-            if j == 0:
-                ax.set_ylabel("FLOPs Reduction (%)")
-            
-            if i==0 and j==0:
-                standard_legend(ax)
-            else:
-                ax.get_legend().remove()
+            if i == len(architectures)-1: format_fraction_axis(ax)
+            if j == 0: ax.set_ylabel("FLOPs Reduction (%)")
+            if i==0 and j==0: standard_legend(ax)
+            else: 
+                if ax.get_legend(): ax.get_legend().remove()
+
+    if plot_data_accum:
+        save_plot_source_data(pd.concat(plot_data_accum), "fig4_source_data")
 
     fig.suptitle("FLOPs Reduction vs Collapsed Fraction", fontsize=16, y=1.02)
     plt.tight_layout()
@@ -403,6 +396,8 @@ def fig5(df: pd.DataFrame):
     )
 
     if max_collapse.empty: return
+
+    save_plot_source_data(max_collapse, "fig5_source_data")
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -423,7 +418,6 @@ def fig5(df: pd.DataFrame):
     plt.savefig(FIG_DIR / "fig5_max_collapsibility.png", bbox_inches='tight')
     plt.close()
 
-
 # =========================
 # Tables
 # =========================
@@ -433,80 +427,52 @@ def tab1(df: pd.DataFrame):
     for (ds, arch), g in df.groupby(["dataset", "architecture"]):
         baseline = find_baseline(g)
         if baseline is None: continue
-
         g_valid = g.dropna(subset=["collapsed_fraction"])
         if g_valid.empty: continue
-
         max_collapse = g_valid.loc[g_valid["collapsed_fraction"].idxmax()]
-
-        comparison_data.append(
-            {
-                "Dataset": ds,
-                "Arch": arch,
-                "Base Acc": baseline["accuracy"],
-                "Max Col Acc": max_collapse["accuracy"],
-                "Acc Drop": max_collapse["d_acc"],
-                "Col Fraction": max_collapse["collapsed_fraction"],
-            }
-        )
+        comparison_data.append({
+            "Dataset": ds, "Arch": arch,
+            "Base Acc": baseline["accuracy"], "Max Col Acc": max_collapse["accuracy"],
+            "Acc Drop": max_collapse["d_acc"], "Col Fraction": max_collapse["collapsed_fraction"],
+        })
 
     if not comparison_data: return
-
     comparison_df = pd.DataFrame(comparison_data).sort_values(["Dataset", "Arch"])
     
-    # Save LaTeX table
+    save_plot_source_data(comparison_df, "tab1_baseline_max_collapse")
+
     table_path = TABLE_DIR / "tab1_baseline_vs_max_collapse.tex"
     with open(table_path, "w") as f:
-        f.write(
-            comparison_df.to_latex(
-                index=False,
-                float_format="%.2f",
-                caption="Baseline vs. Max Collapse.",
-                label="tab:baseline_vs_max_collapse",
-            )
-        )
+        f.write(comparison_df.to_latex(index=False, float_format="%.2f"))
     print(f"Table 1 saved to {table_path}")
 
 def tab2(df: pd.DataFrame):
     efficiency_data = []
-
     for (ds, arch), g in df.groupby(["dataset", "architecture"]):
         baseline = find_baseline(g)
         if baseline is None: continue
-
         for _, r in g.iterrows():
             if r["model_type"] != "collapsed": continue
-
-            efficiency_data.append(
-                {
-                    "Dataset": ds,
-                    "Arch": arch,
-                    "Exp": r["exp_name"],
-                    "Comp Ratio (%)": r.get("d_params", 0),
-                    "Acc Drop (%)": r.get("d_acc", 0),
-                    "FLOPs Red (%)": r.get("d_flops", 0),
-                }
-            )
+            efficiency_data.append({
+                "Dataset": ds, "Arch": arch, "Exp": r["exp_name"],
+                "Comp Ratio (%)": r.get("d_params", 0),
+                "Acc Drop (%)": r.get("d_acc", 0),
+                "FLOPs Red (%)": r.get("d_flops", 0),
+            })
 
     if not efficiency_data: return
-
     efficiency_df = pd.DataFrame(efficiency_data).sort_values(["Dataset", "Arch"])
+    
+    save_plot_source_data(efficiency_df, "tab2_model_efficiency")
 
     table_path = TABLE_DIR / "tab2_model_efficiency.tex"
     with open(table_path, "w") as f:
-        f.write(
-            efficiency_df.to_latex(
-                index=False,
-                float_format="%.2f",
-                caption="Efficiency metrics.",
-                label="tab:model_efficiency",
-            )
-        )
+        f.write(efficiency_df.to_latex(index=False, float_format="%.2f"))
     print(f"Table 2 saved to {table_path}")
 
 
 # =========================
-# UPDATED: Split Plotting
+# UPDATED: Split Plotting (Fixed Errors)
 # =========================
 def plot_expname_multi_metric(
     df: pd.DataFrame,
@@ -514,19 +480,15 @@ def plot_expname_multi_metric(
     out_dir: Path = Path("./plots"),
 ):
     """
-    Plots metrics with distinct visual splits for:
-    1. Prune (JF) vs No-Prune (Kevin) -> mapped to Hue
-    2. Quantized vs FP32 -> mapped to Style (markers)
-    3. Model Groups -> mapped to X-axis
+    Plots metrics with distinct visual splits using line plots.
+    Fixes: Replaces sns.pointplot with sns.lineplot to support 'style' and fix 'join'/'scale' errors.
     """
-
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     df = df.copy()
 
     # 1. Clean exp_group so JF and Kevin share the same X-tick
-    # Remove _quant, _JF, _Kevin to get the "Base" configuration name
     df["exp_group"] = (
         df["exp_name"]
         .str.replace("_quant", "", regex=False)
@@ -536,8 +498,7 @@ def plot_expname_multi_metric(
         .str.strip("_")
     )
 
-    # 2. Filter out baselines from this specific ablation plot to avoid clutter
-    # (Optional, but usually ablations focus on the collapsed models)
+    # 2. Filter out baselines for this specific ablation
     df_ablation = df[df["model_type"] == "collapsed"].copy()
 
     for architecture, df_arch in df_ablation.groupby("architecture"):
@@ -546,28 +507,36 @@ def plot_expname_multi_metric(
         n_rows = len(datasets)
         n_cols = len(metrics)
 
-        # Sort exp_groups by average parameter count (Largest -> Smallest)
-        # This ensures the X-axis is ordered by model size
+        # 3. Determine ordering (Largest Params -> Smallest Params)
+        # We must enforce this order on the categorical X-axis for lineplot to connect correctly
         if "params" in df_arch.columns:
-            exp_order = (
+            exp_order_index = (
                 df_arch.groupby("exp_group")["params"]
                 .mean()
                 .sort_values(ascending=False)
                 .index
             )
         else:
-            exp_order = sorted(df_arch["exp_group"].unique())
+            exp_order_index = sorted(df_arch["exp_group"].unique())
+            
+        # Convert exp_group to ordered categorical so lineplot connects them sequentially
+        df_arch["exp_group"] = pd.Categorical(
+            df_arch["exp_group"], categories=exp_order_index, ordered=True
+        )
+
+        # Save data source
+        save_plot_source_data(df_arch, f"{architecture}_ablation_source")
 
         fig, axes = plt.subplots(
-            n_rows,
-            n_cols,
-            figsize=(max(6, 0.8 * len(exp_order)) * n_cols, 4.0 * n_rows),
-            squeeze=False,
-            sharex='col' # Share X per column
+            n_rows, n_cols,
+            figsize=(max(6, 0.9 * len(exp_order_index)) * n_cols, 4.0 * n_rows),
+            squeeze=False, sharex='col'
         )
 
         for i, dataset in enumerate(datasets):
-            g_dataset = df_arch[df_arch["dataset"] == dataset]
+            g_dataset = df_arch[df_arch["dataset"] == dataset].copy()
+            # Ensure sorting holds locally
+            g_dataset = g_dataset.sort_values("exp_group")
 
             for j, metric in enumerate(metrics):
                 ax = axes[i, j]
@@ -576,21 +545,16 @@ def plot_expname_multi_metric(
                     ax.axis("off")
                     continue
 
-                # === THE SPLIT ===
-                # Hue = Prune vs No Prune (posthoc_or_posttrain)
-                # Style = Quantized vs Not (is_quantized)
-                sns.pointplot(
+                # === FIX: Use lineplot instead of pointplot ===
+                sns.lineplot(
                     data=g_dataset,
                     x="exp_group",
                     y=metric,
                     hue="posthoc_or_posttrain", 
                     style="is_quantized",
-                    order=exp_order,
-                    dodge=0.4,       # Separate the hues clearly side-by-side
-                    join=False,      # Don't connect lines across groups (confusing)
-                    markers=["o", "s", "^", "D"], 
-                    scale=1.2,
-                    errorbar=None,
+                    markers=True,     # Ensures points are visible
+                    dashes=True,      # Uses different dash styles for style column
+                    linewidth=2.5,
                     ax=ax,
                 )
 
@@ -609,27 +573,23 @@ def plot_expname_multi_metric(
                 else:
                     ax.set_ylabel("")
 
-                # Grid
                 ax.grid(True, axis="y", linestyle="--", alpha=0.5)
 
-                # Legend Management: Only show on top-left plot to save space
+                # Legend on top-left only
                 if i == 0 and j == 0:
                     ax.legend(title="Method / Quant", fontsize=8, loc='upper right')
                 else:
-                    if ax.get_legend():
-                        ax.get_legend().remove()
+                    if ax.get_legend(): ax.get_legend().remove()
 
         fig.suptitle(
             f"{architecture}: Ablation Study\n"
-            "Split by Pruning Method (Color) and Quantization (Shape)",
-            fontsize=16,
-            y=1.02,
+            "Split by Pruning Method (Color) and Quantization (Shape/Dash)",
+            fontsize=16, y=1.02,
         )
 
         plt.tight_layout()
         save_path = out_dir / f"{architecture}_ablation_split.png"
         plt.savefig(save_path, bbox_inches='tight')
-        print(f"Saved ablation plot: {save_path}")
         plt.close()
 
 
@@ -641,31 +601,24 @@ if __name__ == "__main__":
         raw = load_results()
         df = normalize(raw)
         
-        print("\nLoaded Data Summary:")
-        print(df.head())
-
         print("\n==============================")
-        print(" GENERATING FIGURES ")
+        print(" GENERATING FIGURES & DATA ")
         print("==============================")
         
-        # Standard Figures
         fig1(df)
         fig2(df)
         fig3(df)
         fig4(df)
         fig5(df)
-        
-        # Tables
         tab1(df)
         tab2(df)
 
-        # The Requested Update
         plot_expname_multi_metric(
             df,
             out_dir=FIG_DIR / "expname_ablations",
         )
         
-        print("\nDone.")
+        print("\nDone. Check the 'tables/' folder for CSV data sources.")
         
     except FileNotFoundError as e:
         print(f"Error: {e}")
