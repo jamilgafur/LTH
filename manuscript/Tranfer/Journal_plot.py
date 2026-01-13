@@ -145,8 +145,16 @@ def save_plot_source_data(df: pd.DataFrame, filename: str):
     filepath = TABLE_DIR / f"{filename}.csv"
     df.to_csv(filepath, index=False)
     print(f"\n[Data Export] Saved source data for {filename} to {filepath}")
-    # Print a small table preview to console
-    print(df[["dataset", "architecture", "exp_name", "d_acc", "d_params"]].head(3).to_string())
+    
+    # --- FIX: Only print columns that actually exist in this dataframe ---
+    desired_cols = ["dataset", "architecture", "exp_name", "d_acc", "d_params", "collapsed_fraction"]
+    existing_cols = [c for c in desired_cols if c in df.columns]
+    
+    if existing_cols:
+        print(df[existing_cols].head(3).to_string())
+    else:
+        # Fallback if none of the desired columns exist (e.g. for simple aggregated tables)
+        print(df.head(3).to_string())
 
 # =========================
 # Plotting Helpers
@@ -165,7 +173,7 @@ def standard_legend(ax):
     ax.legend(title="Configuration", frameon=True, loc="best")
 
 # =========================
-# Figures 1-5 (Updated to Line Plots)
+# Figures 1-5 (Line Plots)
 # =========================
 def fig1(df: pd.DataFrame):
     architectures = sorted(df["architecture"].unique())
@@ -182,13 +190,11 @@ def fig1(df: pd.DataFrame):
     for i, arch in enumerate(architectures):
         for j, ds in enumerate(datasets):
             ax = axes[i, j]
-            # Filter
             subdf = df[
                 (df["architecture"] == arch) &
                 (df["dataset"] == ds)
             ].dropna(subset=["d_params", "d_acc"])
             
-            # Sort for line plot (x-axis ascending)
             subdf = subdf.sort_values("d_params")
             plot_data_accum.append(subdf)
 
@@ -214,7 +220,6 @@ def fig1(df: pd.DataFrame):
             else: 
                 if ax.get_legend(): ax.get_legend().remove()
 
-    # Save aggregated data for this figure
     if plot_data_accum:
         save_plot_source_data(pd.concat(plot_data_accum), "fig1_source_data")
 
@@ -472,7 +477,7 @@ def tab2(df: pd.DataFrame):
 
 
 # =========================
-# UPDATED: Split Plotting (Fixed Errors)
+# Multi Metric Plot (Lineplot)
 # =========================
 def plot_expname_multi_metric(
     df: pd.DataFrame,
@@ -481,7 +486,6 @@ def plot_expname_multi_metric(
 ):
     """
     Plots metrics with distinct visual splits using line plots.
-    Fixes: Replaces sns.pointplot with sns.lineplot to support 'style' and fix 'join'/'scale' errors.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -498,7 +502,6 @@ def plot_expname_multi_metric(
         .str.strip("_")
     )
 
-    # 2. Filter out baselines for this specific ablation
     df_ablation = df[df["model_type"] == "collapsed"].copy()
 
     for architecture, df_arch in df_ablation.groupby("architecture"):
@@ -507,8 +510,7 @@ def plot_expname_multi_metric(
         n_rows = len(datasets)
         n_cols = len(metrics)
 
-        # 3. Determine ordering (Largest Params -> Smallest Params)
-        # We must enforce this order on the categorical X-axis for lineplot to connect correctly
+        # 2. Determine ordering (Largest Params -> Smallest Params)
         if "params" in df_arch.columns:
             exp_order_index = (
                 df_arch.groupby("exp_group")["params"]
@@ -524,7 +526,6 @@ def plot_expname_multi_metric(
             df_arch["exp_group"], categories=exp_order_index, ordered=True
         )
 
-        # Save data source
         save_plot_source_data(df_arch, f"{architecture}_ablation_source")
 
         fig, axes = plt.subplots(
@@ -535,7 +536,6 @@ def plot_expname_multi_metric(
 
         for i, dataset in enumerate(datasets):
             g_dataset = df_arch[df_arch["dataset"] == dataset].copy()
-            # Ensure sorting holds locally
             g_dataset = g_dataset.sort_values("exp_group")
 
             for j, metric in enumerate(metrics):
@@ -545,20 +545,18 @@ def plot_expname_multi_metric(
                     ax.axis("off")
                     continue
 
-                # === FIX: Use lineplot instead of pointplot ===
                 sns.lineplot(
                     data=g_dataset,
                     x="exp_group",
                     y=metric,
                     hue="posthoc_or_posttrain", 
                     style="is_quantized",
-                    markers=True,     # Ensures points are visible
-                    dashes=True,      # Uses different dash styles for style column
+                    markers=True,
+                    dashes=True,
                     linewidth=2.5,
                     ax=ax,
                 )
 
-                # Titles and Labels
                 if i == 0:
                     ax.set_title(metric.capitalize(), fontsize=13, fontweight='bold')
                 
@@ -575,7 +573,6 @@ def plot_expname_multi_metric(
 
                 ax.grid(True, axis="y", linestyle="--", alpha=0.5)
 
-                # Legend on top-left only
                 if i == 0 and j == 0:
                     ax.legend(title="Method / Quant", fontsize=8, loc='upper right')
                 else:
