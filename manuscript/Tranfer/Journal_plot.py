@@ -198,7 +198,7 @@ def fig1(df: pd.DataFrame):
                 ax.axis("off")
                 continue
 
-            sns.lineplot(
+            sns.scatterplot(
                 data=subdf,
                 x="d_params",
                 y="d_acc",
@@ -250,7 +250,7 @@ def fig2(df: pd.DataFrame):
                 ax.axis("off")
                 continue
 
-            sns.lineplot(
+            sns.scatterplot(
                 data=subdf,
                 x="d_flops",
                 y="d_acc",
@@ -303,7 +303,7 @@ def fig3(df: pd.DataFrame):
                 ax.axis("off")
                 continue
 
-            sns.lineplot(
+            sns.scatterplot(
                 data=subdf,
                 x="collapsed_fraction",
                 y="d_acc",
@@ -355,7 +355,7 @@ def fig4(df: pd.DataFrame):
                 ax.axis("off")
                 continue
 
-            sns.lineplot(
+            sns.scatterplot(
                 data=subdf,
                 x="collapsed_fraction",
                 y="d_flops",
