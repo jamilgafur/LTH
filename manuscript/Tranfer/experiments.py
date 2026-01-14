@@ -222,6 +222,15 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
 
         print(f"[✓] Checkpoint saved → {ckpt_path}")
 
+        # remove older checkpoints to save space
+        if epoch > 1:
+            old_ckpt = os.path.join(
+                ckpt_dir, f"{base_ckpt_name}_epoch{epoch - 1}.pt"
+            )
+            if os.path.exists(old_ckpt):
+                os.remove(old_ckpt)
+                print(f"[•] Removed old checkpoint → {old_ckpt}")
+
     data = all_data
 
     # ----------------------------------------
