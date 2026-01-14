@@ -147,92 +147,106 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
     if quant:
         exp_name += "_quant"
 
-    print(f"[•] Starting experiment '{exp_name}' in workflow '{workflow}'")
-
     ckpt_dir = os.path.join(save_path, "checkpoints")
     metrics_dir = os.path.join(save_path, "metrics")
     plots_dir = os.path.join(save_path, "plots")
-    ensure_dir(ckpt_dir)
-    ensure_dir(metrics_dir)
-    ensure_dir(plots_dir)
+    for d in [ckpt_dir, metrics_dir, plots_dir]: os.makedirs(d, exist_ok=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if device.type != "cuda":
-        print("[!] Warning: CUDA not available.")
-        quit()
-
     model.to(device)
 
+    # Initialize Optimizer
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    
     # ----------------------------------------
     # Checkpoint discovery (resume logic)
     # ----------------------------------------
     base_ckpt_name = f"{workflow}_{exp_name}_{model.__class__.__name__}"
     ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
-
-    existing_ckpts = sorted(
-        glob.glob(ckpt_pattern),
-        key=lambda x: int(os.path.basename(x).split("epoch")[-1].split(".")[0])
-    )
+    existing_ckpts = sorted(glob.glob(ckpt_pattern), key=lambda x: int(x.split("epoch")[-1].split(".")[0]))
 
     start_epoch = 0
+    best_acc = 0
+    epochs_no_improve = 0
     all_data = {"accuracies": [], "losses": []}
 
     if existing_ckpts:
         last_ckpt = existing_ckpts[-1]
         ckpt = torch.load(last_ckpt, map_location=device)
         model.load_state_dict(ckpt["model"])
+        optimizer.load_state_dict(ckpt["optimizer"]) # Restore optimizer buffers
         start_epoch = ckpt["epoch"]
         all_data = ckpt["data"]
-        print(f"[✓] Resuming from checkpoint: epoch {start_epoch}")
+        best_acc = ckpt.get("best_acc", 0)
+        epochs_no_improve = ckpt.get("patience_counter", 0)
+        print(f"[✓] Resumed from epoch {start_epoch} (Best Acc: {best_acc:.2f}%)")
     else:
-        print("[•] No checkpoint found — starting fresh")
+        print("[•] Starting fresh experiment")
+
+    use_autocast = quant and device.type == 'cuda'
+    patience = 5
+    threshold = 0.05
 
     # ----------------------------------------
-    # Epoch-by-epoch training with checkpointing
+    # Main Epoch Loop
     # ----------------------------------------
-    for epoch in range(start_epoch + 1, epochs + 1):
-        print(f"[•] Epoch {epoch}/{epochs}")
+    # We run until 'epochs' is reached, then potentially continue if post_compress_epochs is True
+    epoch = start_epoch + 1
+    while True:
+        # Stop condition
+        if not post_compress_epochs and epoch > epochs:
+            break
+        if post_compress_epochs and epochs_no_improve >= patience:
+            print(f"[!] Early stopping triggered at epoch {epoch}")
+            break
+        if post_compress_epochs and epoch > (epochs + 100): # Hard cap
+            break
 
-        data = train_and_evaluate(
-            model,
-            train_loader,
-            test_loader,
-            device,
-            epochs=1,  # ONE EPOCH AT A TIME
-            post_compress_epochs=post_compress_epochs,
-            quant=quant
+        print(f"\n[•] Epoch {epoch} | Workflow: {workflow}")
+        
+        avg_loss, acc = train_and_evaluate(
+            model, train_loader, test_loader, optimizer, device, 
+            quant=quant, use_autocast=use_autocast
         )
 
-        # Append metrics
-        all_data["accuracies"].extend(data.get("accuracies", []))
-        all_data["losses"].extend(data.get("losses", []))
+        all_data["accuracies"].append(acc)
+        all_data["losses"].append(avg_loss)
 
-        # Save checkpoint (atomic write)
-        ckpt_path = os.path.join(
-            ckpt_dir, f"{base_ckpt_name}_epoch{epoch}.pt"
-        )
+        # Update Early Stopping / Best Acc Logic
+        if acc > best_acc + threshold:
+            best_acc = acc
+            epochs_no_improve = 0
+        else:
+            if epoch > epochs: # Only count patience during post-compression
+                epochs_no_improve += 1
+
+        # ----------------------------------------
+        # SAVE CHECKPOINT (Atomic + State Persistent)
+        # ----------------------------------------
+        ckpt_path = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch}.pt")
         tmp_path = ckpt_path + ".tmp"
-
-        torch.save({
+        
+        save_dict = {
             "epoch": epoch,
             "model": model.state_dict(),
-            "data": all_data
-        }, tmp_path)
+            "optimizer": optimizer.state_dict(),
+            "data": all_data,
+            "best_acc": best_acc,
+            "patience_counter": epochs_no_improve
+        }
+        
+        torch.save(save_dict, tmp_path)
         os.replace(tmp_path, ckpt_path)
 
-        print(f"[✓] Checkpoint saved → {ckpt_path}")
-
-        # remove older checkpoints to save space
-        if epoch > 1:
-            old_ckpt = os.path.join(
-                ckpt_dir, f"{base_ckpt_name}_epoch{epoch - 1}.pt"
-            )
+        # ----------------------------------------
+        # SPACE EFFICIENCY: Remove N-2 Checkpoint
+        # ----------------------------------------
+        if epoch > 2:
+            old_ckpt = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch - 2}.pt")
             if os.path.exists(old_ckpt):
                 os.remove(old_ckpt)
-                print(f"[•] Removed old checkpoint → {old_ckpt}")
 
-    data = all_data
-
+        epoch += 1
     # ----------------------------------------
     # Final checkpoint
     # ----------------------------------------
