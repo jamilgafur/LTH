@@ -276,7 +276,7 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
 
 
     diagnostics = run_full_diagnostics(
-        model, data_shape, {exp_name: data}, plots_dir, exp_name,
+        model, data_shape, {exp_name: data}, plots_dir, exp_name, test_dataloader=test_loader,
         collapse_range=collapse_range, device=device, quant=quant
     )
     data["diagnostics"] = diagnostics
