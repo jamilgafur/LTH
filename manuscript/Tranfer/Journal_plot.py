@@ -14,6 +14,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from pyPrune.models.Vgg16 import VGG16
+from pyPrune.models.RegNetX import RegNetX_400MF
+from pyPrune.models.ConvNetX import ConvNeXt
+from pyPrune.models.InceptionNet import InceptionNet
+from pyPrune.models.XceptionNet import XceptionNet
+from pyPrune.models.MobileNet import MobileNet
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
 
@@ -696,12 +702,22 @@ def fig9_fig10(directory: str):
 
     # Helper to load model (Adjust this to your actual model loading logic)
     def load_model_from_checkpoint(path):
-        # This assumes your checkpoints are state_dicts or saved models
-        # You may need to instantiate the architecture first: model = MyModelClass(...)
-        model = torch.load(path, map_location=device)
-        if isinstance(model, dict) and 'state_dict' in model:
-            # If you need to init architecture first, do it here
-            pass 
+        if model_name == "VGG16":
+            model = VGG16(num_classes=num_classes, input_channels=input_channels)
+        elif model_name == "RegNetX_400MF":
+            model = RegNetX_400MF(num_classes=num_classes)
+        elif model_name == "ConvNeXt":
+            model = ConvNeXt(num_classes=num_classes)
+        elif model_name == "InceptionNet":
+            model = InceptionNet(num_classes=num_classes, input_channels=input_channels)
+        elif model_name == "XceptionNet":
+            model = XceptionNet(num_classes=num_classes, input_channels=input_channels)
+        elif model_name == "MobileNet":
+            model = MobileNet(num_classes=num_classes, input_channels=input_channels)
+        else:
+            raise ValueError(f"Unsupported model architecture: {model_name}")
+        model.load_state_dict(torch.load(path, map_location=device))
+
         model.eval()
         return model
 
