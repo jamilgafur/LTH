@@ -702,7 +702,7 @@ def fig9_fig10(directory: str):
 
     # Helper to load model (Adjust this to your actual model loading logic)
     def load_model_from_checkpoint(path, device="cuda"):
-        ckpt = torch.load(path, map_location=device)
+        ckpt = torch.load(path, map_location=device,weights_only=False)
 
         model = ckpt["model"]
         model.to(device)
