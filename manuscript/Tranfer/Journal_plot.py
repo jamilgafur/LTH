@@ -709,7 +709,7 @@ def fig9_fig10(directory: str):
         model.eval()
 
         return model
-    baseline_model = load_model_from_checkpoint(train_loader, num_classes, baseline_path).to(device)
+    baseline_model = load_model_from_checkpoint(baseline_path, device).to(device)
 
     # 3. Activation Hook Setup
     activation_data = {}
@@ -729,7 +729,7 @@ def fig9_fig10(directory: str):
 
     for v_path in variant_paths:
         v_name = Path(v_path).stem
-        variant_model = load_model_from_checkpoint(train_loader, num_classes, v_path).to(device)
+        variant_model = load_model_from_checkpoint(v_path, device=device).to(device)
         
         layer_sims_shap = {}
         layer_sims_drift = {}
