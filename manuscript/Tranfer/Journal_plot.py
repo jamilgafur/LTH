@@ -75,14 +75,14 @@ def load_results() -> pd.DataFrame:
     for p in files:
         dataset = infer_dataset_from_path(p)
         arch = infer_architecture_from_path(p)
-
+        
         with open(p) as f:
             raw = json.load(f)
 
         for exp_name, metrics in raw.items():
             diagnostics = metrics.get('diagnostics', {})
             explainability_data = diagnostics.get("explainability_reports", [])
-
+            
             rows.append(
                 {
                     "dataset": dataset,
@@ -831,7 +831,6 @@ def fig10(
         base_name, base_model = baseline
 
         # Use training data saved with the baseline
-        import pbd;pbd.set_trace()
         allModelNames = ["VGG16", "RegNetX_400MF", "ConvNeXt", "InceptionNet", "XceptionNet", "MobileNet"]
         modelName = [arch for arch in allModelNames if arch in ckpt_dir.parent.name][0]
         allDatasets = ["cifar10_", "cifar100_", "tinyimagenet", "imagenet"]

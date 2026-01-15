@@ -49,25 +49,60 @@ def ensure_dir(directory):
 def safe_update_metrics_json(model_root, exp_name, new_data, base_dir="./runs/metrics"):
     """
     Writes metrics to a per-job JSON file with a unique timestamp.
-    Later, all these per-job JSONs can be merged using merge_all_metrics().
+    Fully preserves raw NumPy arrays by converting them to lists.
     """
     ensure_dir(base_dir)
 
-    # Create a unique filename per process based on timestamp and PID
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     pid = os.getpid()
-    json_path = os.path.join(base_dir, f"{model_root}_metrics_{timestamp}_{pid}.json")
+    json_path = os.path.join(
+        base_dir, f"{model_root}_metrics_{timestamp}_{pid}.json"
+    )
 
     try:
-        with open(json_path, "w") as f:
-            json.dump({exp_name: new_data}, f, indent=4)
+        safe_data = convert_ndarrays_to_lists(new_data)
+
+        tmp_fd, tmp_path = tempfile.mkstemp(
+            dir=base_dir, prefix="tmp_metrics_", suffix=".json"
+        )
+
+        with os.fdopen(tmp_fd, "w") as f:
+            json.dump({exp_name: safe_data}, f, indent=4)
+
+        # Atomic replace (prevents corrupted files)
+        os.replace(tmp_path, json_path)
+
         print(f"[✓] Saved metrics for '{exp_name}' → {json_path}")
         return json_path
+
     except Exception as e:
         print(f"[!] Failed to save metrics JSON: {e}")
         return None
 
 
+def convert_ndarrays_to_lists(obj):
+    """
+    Recursively convert NumPy arrays to Python lists so JSON can serialize them.
+    """
+    if isinstance(obj, dict):
+        return {k: convert_ndarrays_to_lists(v) for k, v in obj.items()}
+
+    if isinstance(obj, list):
+        return [convert_ndarrays_to_lists(v) for v in obj]
+
+    if isinstance(obj, tuple):
+        return [convert_ndarrays_to_lists(v) for v in obj]
+
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+
+    if isinstance(obj, (np.float32, np.float64)):
+        return float(obj)
+
+    if isinstance(obj, (np.int32, np.int64)):
+        return int(obj)
+
+    return obj
 # -------------------------
 # Merge All Metrics (Hybrid mode)
 # -------------------------
