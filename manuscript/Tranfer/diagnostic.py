@@ -93,7 +93,7 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, t
     # 4. Explainability Data (Updated to save to dictionary)
     if test_dataloader is not None:
         try:
-            exp_data = plot_explainability_maps(model, test_dataloader, device, exp_name)
+            exp_data = save_explainability_maps(model, test_dataloader, device, exp_name)
             diagnostics["explainability_reports"] = exp_data
         except Exception as e:
             print(f"[!] Explainability analysis failed: {e}")
@@ -889,73 +889,95 @@ def plot_weight_distributions(model, save_dir, exp_name):
     print(f"[✓] Weight distributions saved to {save_path}")
 
 
-
-def plot_explainability_maps(model, dataloader, device, exp_name):
+def save_explainability_maps(model, dataloader, device, exp_name):
     """
     Generates Saliency, Integrated Gradients, and Gradient SHAP data for 
-    the first instance of each unique class. Returns data as a list of dicts.
+    the first instance of each unique class.
     """
     print(f"[•] Extracting explainability data for {exp_name}...")
+
+    # --- FORCE FP32 FOR CAPTUM ---
+    model = model.to(device).float()
     model.eval()
-    
+
     explainability_results = []
     unique_samples = {}
-    
+
     # Identify one unique sample per class
     with torch.no_grad():
         for inputs, labels in dataloader:
+            inputs = inputs.to(device).float()
+
             for i in range(len(labels)):
                 label = labels[i].item()
                 if label not in unique_samples:
-                    unique_samples[label] = inputs[i:i+1].to(device)
-            
-            # Stop if we found all classes (assumes classes attribute exists or default to 10)
-            num_classes = len(dataloader.dataset.classes) if hasattr(dataloader.dataset, 'classes') else 10
+                    unique_samples[label] = inputs[i:i+1]
+
+            num_classes = (
+                len(dataloader.dataset.classes)
+                if hasattr(dataloader.dataset, "classes")
+                else 10
+            )
             if len(unique_samples) >= num_classes:
                 break
 
-    # Initialize Attribution Algorithms
     try:
         from captum.attr import Saliency, IntegratedGradients, GradientShap
+
         saliency = Saliency(model)
         ig = IntegratedGradients(model)
-        # GradientShap requires a baseline (distribution of images)
-        dist_images = next(iter(dataloader))[0][:5].to(device) 
+
+        # Baseline distribution (must match dtype)
+        dist_images = next(iter(dataloader))[0][:5].to(device).float()
         shap = GradientShap(model)
-    except (NameError, ImportError):
-        print("[!] Captum algorithms could not be initialized.")
+
+    except ImportError as e:
+        print(f"[!] Captum init failed: {e}")
         return []
 
     for label, input_tensor in unique_samples.items():
-        input_tensor.requires_grad = True
-        
-        # Define methods to run
+        input_tensor = input_tensor.clone().detach().requires_grad_(True)
+
         methods = {
             "Saliency": saliency,
             "Integrated Gradients": ig,
-            "Gradient SHAP": shap
+            "Gradient SHAP": shap,
         }
 
         for method_name, algo in methods.items():
-                # Calculate attribution
+            try:
                 if method_name == "Gradient SHAP":
-                    attr = algo.attribute(input_tensor, baselines=dist_images, target=label)
+                    attr = algo.attribute(
+                        input_tensor,
+                        baselines=dist_images,
+                        target=label,
+                    )
                 elif method_name == "Integrated Gradients":
-                    attr = algo.attribute(input_tensor, target=label, n_steps=50)
+                    attr = algo.attribute(
+                        input_tensor,
+                        target=label,
+                        n_steps=50,
+                    )
                 else:
-                    attr = algo.attribute(input_tensor, target=label)
+                    attr = algo.attribute(
+                        input_tensor,
+                        target=label,
+                    )
 
-                # Store data in dictionary
-                explainability_results.append({
-                    "exp_name": exp_name,
-                    "prediction_class": label,
-                    "explainability_method": method_name,
-                    "input_values": input_tensor.detach().cpu().numpy(),
-                    "attribution_output": attr.detach().cpu().numpy()
-                })
+                explainability_results.append(
+                    {
+                        "exp_name": exp_name,
+                        "prediction_class": label,
+                        "explainability_method": method_name,
+                        "input_values": input_tensor.detach().cpu().numpy(),
+                        "attribution_output": attr.detach().cpu().numpy(),
+                    }
+                )
 
-    print(f"[✓] Extracted explainability data for {len(explainability_results)} samples.")
-    print(f"[✓] Example entry keys: {list(explainability_results[0].keys()) if explainability_results else 'N/A'}")
-    print(f"[✓] data: {explainability_results}")
+            except Exception as e:
+                print(
+                    f"[!] Failed {method_name} for class {label}: {e}"
+                )
 
+    print(f"[✓] Extracted explainability data for {len(explainability_results)} entries.")
     return explainability_results
