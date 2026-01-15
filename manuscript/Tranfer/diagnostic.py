@@ -937,7 +937,6 @@ def plot_explainability_maps(model, dataloader, device, exp_name):
         }
 
         for method_name, algo in methods.items():
-            try:
                 # Calculate attribution
                 if method_name == "Gradient SHAP":
                     attr = algo.attribute(input_tensor, baselines=dist_images, target=label)
@@ -954,7 +953,9 @@ def plot_explainability_maps(model, dataloader, device, exp_name):
                     "input_values": input_tensor.detach().cpu().numpy(),
                     "attribution_output": attr.detach().cpu().numpy()
                 })
-            except Exception as e:
-                print(f"[!] Failed to compute {method_name} for class {label}: {e}")
+
+    print(f"[✓] Extracted explainability data for {len(explainability_results)} samples.")
+    print(f"[✓] Example entry keys: {list(explainability_results[0].keys()) if explainability_results else 'N/A'}")
+    print(f"[✓] data: {explainability_results}")
 
     return explainability_results
