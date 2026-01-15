@@ -809,7 +809,7 @@ def fig10(
 
         # Load checkpoints
         for ckpt_path in ckpt_files:
-            ckpt = torch.load(ckpt_path, map_location=device)
+            ckpt = torch.load(ckpt_path, map_location=device,weights_only=False)
             model = ckpt["model"].to(device)
 
             name = ckpt_path.stem
