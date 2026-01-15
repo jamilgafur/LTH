@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Define models and datasets
-models=("ConvNeXt" "VGG16" "RegNetX_400MF")
-datasets=( "Cifar10" "Cifar100" "tinyimagenet" )
+models=("ConvNeXt" "MobileNet" "InceptionNet" "XceptionNet" "RegNetX_400MF" "VGG16")
+datasets=("Cifar10" "Cifar100")
 
 # Define the experiments for each model and dataset directly as arrays
 
