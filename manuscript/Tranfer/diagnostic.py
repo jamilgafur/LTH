@@ -31,11 +31,12 @@ import torch, psutil, os, gc
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-
+from captum.attr import Saliency, IntegratedGradients, GradientShap
+from captum.attr import visualization as viz
 # -------------------------
 # Diagnostics (robust)
 # -------------------------
-def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, collapse_range=None, device="cuda", quant=False):
+def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, test_dataloader, collapse_range=None, device="cuda", quant=False):
     """
     Run a complete diagnostic suite on a PyTorch model.
     
@@ -130,6 +131,16 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
         print(f"[!] Memory decomposition failed: {e}")
         diagnostics["memory_decomposition"] = {}
 
+    try:
+        plot_weight_distributions(model, save_dir, exp_name)
+    except Exception as e:
+        print(f"[!] Weight distribution plot failed: {e}")
+
+    if test_dataloader is not None:
+        try:
+            plot_explainability_maps(model, test_dataloader, device, save_dir, exp_name)
+        except Exception as e:
+            print(f"[!] Explainability maps failed: {e}")  
     # -----------------------------
     # Optional collapse analysis
     # -----------------------------
@@ -142,42 +153,7 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
     print(f"[✓] Diagnostics complete for {exp_name}")
     return diagnostics
 
-# def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, collapse_range=None, device="cuda",quant=False):
-#     if quant:
-#         model = model.half()
-        
 
-#     print(f"[•] Running diagnostics for {exp_name}...")
-#     ensure_dir(save_dir)
-#     model.to(device)
-#     model.eval()
-
-#     # Prepare input tensor (4D)
-#     if len(input_shape) == 2:
-#         input_tensor = torch.randn((1, 3, *input_shape), device=device)
-#     elif len(input_shape) == 3:
-#         input_tensor = torch.randn((1, *input_shape), device=device)
-#     else:
-#         input_tensor = torch.randn(input_shape, device=device)
-    
-#     diagnostics = {}
-
-#     # Per-layer params/FLOPs (returns DataFrame or [] on error)
-    
-#     df_params = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
-#     diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records") if hasattr(df_params, "to_dict") else []
-    
-#     # Activation sizes
-#     df_act = analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
-#     diagnostics["activation_sizes"] = df_act.to_dict(orient="records") if hasattr(df_act, "to_dict") else []
-    
-#     # Memory decomposition
-#     mem = memory_decomposition(model, input_tensor, save_dir, exp_name)
-#     diagnostics["memory_decomposition"] = mem if isinstance(mem, dict) else {}
-    
-#     print(f"[✓] Diagnostics complete for {exp_name}")
-#     print(diagnostics)
-#     return diagnostics
 # -------------------------
 # Per-layer analysis & activation analysis (robust + save)
 # -------------------------
@@ -920,3 +896,106 @@ def plot_results(params, accs, names, title, filename, dataset=None, infer_times
     plt.savefig(filename, format='svg')
     plt.show()
     print(f"[✓] Saved plot: {filename}")
+
+def plot_weight_distributions(model, save_dir, exp_name):
+    """
+    Creates a grid of histograms showing the distribution of weights for each layer.
+    """
+    print(f"[•] Plotting weight distributions for {exp_name}...")
+    
+    # Filter for layers that actually have weights (Conv, Linear)
+    weight_params = [(n, p) for n, p in model.named_parameters() if "weight" in n and p.dim() > 1]
+    
+    if not weight_params:
+        print("[!] No weights found to plot.")
+        return
+
+    num_layers = len(weight_params)
+    cols = 4
+    rows = (num_layers + cols - 1) // cols
+    
+    fig, axes = plt.subplots(rows, cols, figsize=(cols * 4, rows * 3))
+    axes = axes.flatten()
+
+    for i, (name, param) in enumerate(weight_params):
+        weights = param.detach().cpu().numpy().flatten()
+        sns.histplot(weights, bins=50, kde=True, ax=axes[i], color="purple")
+        axes[i].set_title(f"{name}\n(Mean: {weights.mean():.4f}, Std: {weights.std():.4f})", fontsize=10)
+        axes[i].set_xlabel("Weight Value")
+
+    # Hide unused axes
+    for j in range(i + 1, len(axes)):
+        axes[j].axis('off')
+
+    plt.tight_layout()
+    save_path = os.path.join(save_dir, f"{exp_name}_weight_distributions.svg")
+    plt.savefig(save_path)
+    plt.close()
+    print(f"[✓] Weight distributions saved to {save_path}")
+
+def plot_explainability_maps(model, dataloader, device, save_dir, exp_name):
+    """
+    Generates Saliency, Integrated Gradients, and Gradient SHAP maps for 
+    the first instance of each unique class found in the dataloader.
+    """
+    print(f"[•] Generating explainability maps for {exp_name}...")
+    model.eval()
+    
+    # Identify one unique sample per class
+    unique_samples = {}
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            for i in range(len(labels)):
+                label = labels[i].item()
+                if label not in unique_samples:
+                    unique_samples[label] = inputs[i:i+1].to(device)
+            if len(unique_samples) >= len(dataloader.dataset.classes if hasattr(dataloader.dataset, 'classes') else 10):
+                break
+
+    # Initialize Attribution Algorithms
+    try:
+        saliency = Saliency(model)
+        ig = IntegratedGradients(model)
+        # GradientShap requires a baseline (distribution of images)
+        dist_images = next(iter(dataloader))[0][:5].to(device) 
+        shap = GradientShap(model)
+    except NameError:
+        print("[!] Captum algorithms could not be initialized.")
+        return
+
+    for label, input_tensor in unique_samples.items():
+        input_tensor.requires_grad = True
+        
+        # 1. Saliency
+        attr_saliency = saliency.attribute(input_tensor, target=label)
+        
+        # 2. Integrated Gradients
+        attr_ig = ig.attribute(input_tensor, target=label, n_steps=50)
+        
+        # 3. Gradient SHAP
+        attr_shap = shap.attribute(input_tensor, baselines=dist_images, target=label)
+
+        # Plotting
+        methods = ["Original", "Saliency", "Int. Gradients", "Gradient SHAP"]
+        attrs = [None, attr_saliency, attr_ig, attr_shap]
+        
+        fig, axes = plt.subplots(1, 4, figsize=(16, 4))
+        img_plot = input_tensor.detach().cpu().squeeze().permute(1, 2, 0).numpy()
+        # Simple un-normalization if needed: img_plot = (img_plot - img_plot.min()) / (img_plot.max() - img_plot.min())
+
+        for idx, (method, attr) in enumerate(zip(methods, attrs)):
+            if idx == 0:
+                axes[idx].imshow(img_plot)
+            else:
+                # Transpose to (H, W, C) for visualization
+                attr_viz = np.transpose(attr.squeeze().cpu().detach().numpy(), (1, 2, 0))
+                viz.visualize_image_attr(attr_viz, img_plot, method="heat_map", 
+                                         plt_fig_axis=(fig, axes[idx]), use_pyplot=False)
+            axes[idx].set_title(method)
+
+        plt.suptitle(f"Explainability: Class {label} ({exp_name})")
+        save_path = os.path.join(save_dir, f"{exp_name}_explainability_class_{label}.svg")
+        plt.savefig(save_path)
+        plt.close()
+    
+    print(f"[✓] Explainability maps saved to {save_dir}")
