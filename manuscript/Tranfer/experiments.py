@@ -143,11 +143,6 @@ def _make_compression_set(collapse_range):
 # -------------------------
 # Modified run_experiment (calls merge_all_metrics at the end)
 # -------------------------
-# -------------------------
-
-# Modified run_experiment (calls merge_all_metrics at the end)
-
-# -------------------------
 
 def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None, device='cuda',
                    epochs=10, workflow='default', exp_name='experiment', collapse_range=None,
