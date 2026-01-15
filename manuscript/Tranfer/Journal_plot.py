@@ -672,7 +672,6 @@ def fig9_fig10(directory: str):
         return
     print(f"Processing Fig 9 & 10 for {directory}...")
     print(f"Identified model: {model_name}")
-    print(f"Identified dataset: {parts[0]}")
     tempdir = directory[directory.index(model_name) + len(model_name)+1:]
     dataset_name = tempdir.split("_")[0]
     
