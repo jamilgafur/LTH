@@ -82,7 +82,7 @@ def load_results() -> pd.DataFrame:
         for exp_name, metrics in raw.items():
             diagnostics = metrics.get('diagnostics', {})
             explainability_data = diagnostics.get("explainability_reports", [])
-            
+            import pdb; pdb.set_trace() 
             rows.append(
                 {
                     "dataset": dataset,

@@ -2,7 +2,7 @@
 
 # Define models and datasets
 models=("VGG16" "RegNetX_400MF")
-datasets=("Cifar10" "Cifar100" "Tinyimagenet")
+datasets=("Cifar10")
 
 # Define the experiments for each model and dataset directly as arrays
 
@@ -42,7 +42,7 @@ MobileNet_Imagenet=("Original Model" "Stage 7" "Stage 6-7" "Stage 5-7" "Stage 4-
 MobileNet_Tinyimagenet=("Original Model" "Stage 7" "Stage 6-7" "Stage 5-7" "Stage 4-7" "Stage 3-7" "Stage 2-7" "Stage 1-7" "Stage 6" "Stage 5" "Stage 4" "Stage 3" "Stage 2" "Stage 1" )
 
 # Quant = list of true and false
-quant=("False")
+quant=("True" "False")
 rm ~/submit*
 
 # Loop through models
