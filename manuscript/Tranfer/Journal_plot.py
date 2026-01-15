@@ -782,8 +782,116 @@ def fig9_explainability_grid(
 
         print(f"[✓] Saved {save_path}")
 
+def fig10(
+    results_dir: Path = RESULTS_DIR,
+    out_dir: Path = FIG_DIR / "pwcca",
+    device: str = "cuda",
+):
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Lazy import so fig10 does not break the pipeline
+    from pwcca import pwcca_distance
 
 
+    checkpoint_dirs = list(results_dir.glob("*/checkpoints"))
+    if not checkpoint_dirs:
+        print("[!] No checkpoint directories found")
+        return
+
+    for ckpt_dir in checkpoint_dirs:
+        ckpt_files = sorted(ckpt_dir.glob("*.pt"))
+        if not ckpt_files:
+            continue
+
+        print(f"[•] Processing {ckpt_dir}")
+
+        baseline = None
+        others = []
+
+        # Load checkpoints
+        for ckpt_path in ckpt_files:
+            ckpt = torch.load(ckpt_path, map_location=device)
+            model = ckpt["model"].to(device)
+
+            name = ckpt_path.stem
+
+            if (
+                "Kevin" in name
+                and "Original" in name
+                and "quant" not in name
+            ):
+                baseline = (name, model)
+            else:
+                others.append((name, model))
+
+        if baseline is None:
+            print("[!] No baseline found, skipping")
+            continue
+
+        base_name, base_model = baseline
+
+        # Use training data saved with the baseline
+        import pbd;pbd.set_trace()
+        allModelNames = ["VGG16", "RegNetX_400MF", "ConvNeXt", "InceptionNet", "XceptionNet", "MobileNet"]
+        modelName = [arch for arch in allModelNames if arch in ckpt_dir.parent.name][0]
+        allDatasets = ["cifar10_", "cifar100_", "tinyimagenet", "imagenet"]
+        dataset_name = [ds for ds in allDatasets if ds in ckpt_dir.parent.name][0]
+        train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name=dataset_name, model_name=modelName)
+
+        print(f"[✓] Baseline: {base_name}")
+
+        # Extract baseline representation
+        base_repr = extract_representation(
+            base_model, test_loader, device
+        )
+
+        pwcca_scores = []
+
+        for name, model in others:
+            try:
+                repr_other = extract_representation(
+                    model, test_loader, device
+                )
+
+                score = pwcca_distance(base_repr, repr_other)
+
+                pwcca_scores.append({
+                    "model": name,
+                    "pwcca": score,
+                })
+
+            except Exception as e:
+                print(f"[!] Failed PWCCA for {name}: {e}")
+
+        if not pwcca_scores:
+            continue
+
+        # ---- Plot ----
+        pwcca_scores.sort(key=lambda x: x["pwcca"], reverse=True)
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.bar(
+            [x["model"] for x in pwcca_scores],
+            [x["pwcca"] for x in pwcca_scores],
+        )
+
+        ax.set_ylabel("PWCCA Similarity")
+        ax.set_xlabel("Model Variant")
+        ax.set_title(
+            f"PWCCA Drift from Baseline\n{ckpt_dir.parent.name}",
+            fontsize=14,
+        )
+        ax.set_ylim(0, 1)
+        ax.grid(True, axis="y", linestyle="--", alpha=0.5)
+
+        plt.xticks(rotation=45, ha="right")
+        plt.tight_layout()
+
+        save_path = out_dir / f"{ckpt_dir.parent.name}_pwcca.png"
+        plt.savefig(save_path, bbox_inches="tight")
+        plt.close()
+
+        print(f"[✓] Saved {save_path}")
 # =========================
 # Tables
 # =========================
@@ -837,22 +945,33 @@ def tab2(df: pd.DataFrame):
     print(f"Table 2 saved to {table_path}")
 
 
-def summarize_attribution(attr: np.ndarray, metric: str) -> float:
-    """
-    Reduce attribution tensor to scalar for plotting.
-    """
-    abs_attr = np.abs(attr)
+def extract_representation(model, dataloader, device, max_batches=5):
+    model.eval()
+    activations = []
 
-    if metric == "mean":
-        return abs_attr.mean()
-    if metric == "sum":
-        return abs_attr.sum()
-    if metric == "max":
-        return abs_attr.max()
-    if metric == "l2":
-        return np.sqrt((abs_attr ** 2).sum())
+    def hook_fn(_, __, output):
+        activations.append(output.detach().cpu())
 
-    raise ValueError(f"Unknown metric: {metric}")
+    # Register hook on last linear / conv layer
+    hook = None
+    for m in reversed(list(model.modules())):
+        if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d)):
+            hook = m.register_forward_hook(hook_fn)
+            break
+
+    if hook is None:
+        raise RuntimeError("No suitable layer found for PWCCA")
+
+    with torch.no_grad():
+        for i, (x, _) in enumerate(dataloader):
+            if i >= max_batches:
+                break
+            model(x.to(device))
+
+    hook.remove()
+
+    acts = torch.cat(activations, dim=0)
+    return acts.flatten(start_dim=1).numpy()
 # =========================
 # Main
 # =========================
