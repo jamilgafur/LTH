@@ -70,8 +70,6 @@ def timestamped_filename(base):
     name, ext = os.path.splitext(base)
     return f"{name}_{t}{ext}" if ext else f"{base}_{t}"
 
-
-
 def load_dataset(dataset_name, model_name="VGG16"):
     if model_name == "VGG16":
         if dataset_name == "TinyImageNet" or dataset_name == "tinyimagenet":
