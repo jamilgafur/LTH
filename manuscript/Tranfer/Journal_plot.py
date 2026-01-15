@@ -1225,8 +1225,11 @@ if __name__ == "__main__":
             out_dir=FIG_DIR / "expname_ablations",
         )
         print("\n[•] Generating Diagnostic Figures from saved data...")
-        fig9_explainability_grid(df)
-        
+        fig9(
+            results_dir=RESULTS_DIR,
+            out_dir=FIG_DIR / "explainability",
+            device="cuda" if torch.cuda.is_available() else "cpu",
+        )
         fig10(
             results_dir=RESULTS_DIR,
             out_dir=FIG_DIR / "pwcca",
