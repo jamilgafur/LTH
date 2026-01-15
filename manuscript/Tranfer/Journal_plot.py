@@ -702,6 +702,7 @@ def fig9_fig10(directory: str):
 
     # Helper to load model (Adjust this to your actual model loading logic)
     def load_model_from_checkpoint(path):
+        import pdb; pdb.set_trace()
         if model_name == "VGG16":
             model = VGG16(num_classes=num_classes, input_channels=input_channels)
         elif model_name == "RegNetX_400MF":
