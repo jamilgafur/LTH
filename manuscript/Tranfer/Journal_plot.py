@@ -664,6 +664,10 @@ def fig9_fig10(directory: str):
     if model_name == "UnknownArch":
         print(f"Unknown architecture in path: {directory}, skipping drift analysis.")
         return
+    print(f"Processing Fig 9 & 10 for {directory}...")
+    print(f"Identified model: {model_name}")
+    print(f"Identified dataset: {parts[0]}")
+    import pdb; pdb.set_trace()
     tempdir = directory[directory.index(model_name.lower())+1:]
     dataset_name = tempdir.split("_")[0]
     
