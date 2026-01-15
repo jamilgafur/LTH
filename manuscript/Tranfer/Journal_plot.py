@@ -790,7 +790,6 @@ def fig10(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Lazy import so fig10 does not break the pipeline
-    from pwcca import pwcca_distance
 
 
     checkpoint_dirs = list(results_dir.glob("*/checkpoints"))
@@ -943,6 +942,60 @@ def tab2(df: pd.DataFrame):
         f.write(efficiency_df.to_latex(index=False, float_format="%.2f"))
     print(f"Table 2 saved to {table_path}")
 
+import numpy as np
+
+def summarize_attribution(attr: np.ndarray, metric: str) -> float:
+    """
+    Reduce attribution tensor to scalar for plotting.
+    """
+    abs_attr = np.abs(attr)
+
+    if metric == "mean":
+        return abs_attr.mean()
+    if metric == "sum":
+        return abs_attr.sum()
+    if metric == "max":
+        return abs_attr.max()
+    if metric == "l2":
+        return np.sqrt((abs_attr ** 2).sum())
+
+    raise ValueError(f"Unknown metric: {metric}")
+import numpy as np
+
+def pwcca_distance(X, Y, epsilon=1e-10):
+    """
+    Projection Weighted Canonical Correlation Analysis (PWCCA)
+
+    X, Y: shape (num_samples, num_features)
+    Returns similarity score in [0, 1]
+    """
+
+    # Center
+    X = X - X.mean(axis=0, keepdims=True)
+    Y = Y - Y.mean(axis=0, keepdims=True)
+
+    # Covariance matrices
+    Cxx = X.T @ X + epsilon * np.eye(X.shape[1])
+    Cyy = Y.T @ Y + epsilon * np.eye(Y.shape[1])
+    Cxy = X.T @ Y
+
+    # Whitening
+    Ux, Sx, _ = np.linalg.svd(Cxx)
+    Uy, Sy, _ = np.linalg.svd(Cyy)
+
+    Sx_inv_sqrt = np.diag(1.0 / np.sqrt(Sx + epsilon))
+    Sy_inv_sqrt = np.diag(1.0 / np.sqrt(Sy + epsilon))
+
+    T = Sx_inv_sqrt @ Ux.T @ Cxy @ Uy @ Sy_inv_sqrt
+
+    # CCA
+    _, s, Vt = np.linalg.svd(T)
+
+    # Projection weights
+    alpha = np.sum(np.abs(Vt), axis=1)
+    alpha /= np.sum(alpha)
+
+    return float(np.sum(alpha * s))
 
 def extract_representation(model, dataloader, device, max_batches=5):
     model.eval()
