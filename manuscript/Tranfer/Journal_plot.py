@@ -701,12 +701,12 @@ def fig9_fig10(directory: str):
         return
 
     # Helper to load model (Adjust this to your actual model loading logic)
-    def load_model_from_checkpoint(path):
+    def load_model_from_checkpoint(train_loader, num_classes, path):
         import pdb; pdb.set_trace()
         if model_name == "VGG16":
             model = VGG16(num_classes=num_classes, input_channels=input_channels)
         elif model_name == "RegNetX_400MF":
-            model = RegNetX_400MF(num_classes=num_classes)
+            model = RegNetX_400MF(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
         elif model_name == "ConvNeXt":
             model = ConvNeXt(num_classes=num_classes)
         elif model_name == "InceptionNet":
@@ -722,7 +722,7 @@ def fig9_fig10(directory: str):
         model.eval()
         return model
 
-    baseline_model = load_model_from_checkpoint(baseline_path).to(device)
+    baseline_model = load_model_from_checkpoint(train_loader, num_classes, baseline_path).to(device)
 
     # 3. Activation Hook Setup
     activation_data = {}
@@ -742,7 +742,7 @@ def fig9_fig10(directory: str):
 
     for v_path in variant_paths:
         v_name = Path(v_path).stem
-        variant_model = load_model_from_checkpoint(v_path).to(device)
+        variant_model = load_model_from_checkpoint(train_loader, num_classes, v_path).to(device)
         
         layer_sims_shap = {}
         layer_sims_drift = {}
