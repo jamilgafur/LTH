@@ -80,8 +80,7 @@ def load_results() -> pd.DataFrame:
             raw = json.load(f)
 
         for exp_name, metrics in raw.items():
-            diagnostics = metrics.get('diagnostics', {})
-            explainability_data = diagnostics.get("explainability_reports", [])
+           
             rows.append(
                 {
                     "dataset": dataset,
@@ -96,11 +95,6 @@ def load_results() -> pd.DataFrame:
                     "params": metrics.get("param_count"),
                     "flops": metrics.get("flops"),
                     "memory": metrics.get("total_size_mb"),
-
-                    # Explainability
-                    "has_explainability": bool(explainability_data),
-                    "num_explainability_entries": len(explainability_data),
-                    "explainability_data": explainability_data,
                 }
             )
 
@@ -679,94 +673,197 @@ import seaborn as sns
 from pathlib import Path
 import pandas as pd
 
-def fig9_explainability_grid(
-    df: pd.DataFrame,
+def fig9(
+    results_dir: Path = RESULTS_DIR,
     out_dir: Path = Path("./figures/explainability"),
     cmap: str = "seismic",
+    device: str = "cuda",
 ):
-    out_dir = Path(out_dir)
+    """
+    Explainability visualization figure.
+
+    For each architecture / dataset:
+      - Glob checkpoint directories
+      - Load model variants
+      - Extract explainability maps
+      - Plot grid:
+            rows    -> model variants (size-descending)
+            columns -> classes
+    One figure per explainability method.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import torch
+
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Explode explainability data
-    rows = []
-    for _, r in df.iterrows():
-        for e in r.explainability_data:
-            rows.append({
-                "dataset": r.dataset,
-                "architecture": r.architecture,
-                "exp_name": r.exp_name,
-                "method": e["explainability_method"],
-                "prediction_class": e["prediction_class"],
-                "attr": e["attribution_output"],
-            })
+    allModelNames = [
+        "VGG16",
+        "RegNetX_400MF",
+        "ConvNeXt",
+        "InceptionNet",
+        "XceptionNet",
+        "MobileNet",
+    ]
+    allDatasets = ["Cifar10", "Cifar100", "TinyImageNet", "imagenet"]
 
-    if not rows:
-        print("[!] No explainability data found")
+    checkpoint_dirs = list(results_dir.glob("*/checkpoints"))
+    if not checkpoint_dirs:
+        print("[!] No checkpoint directories found")
         return
 
-    edf = pd.DataFrame(rows)
+    for ckpt_dir in checkpoint_dirs:
+        parent_name = ckpt_dir.parent.name
 
-    # One figure per (method, dataset, architecture)
-    for (method, dataset, arch), g in edf.groupby(
-        ["method", "dataset", "architecture"]
-    ):
-        classes = sorted(g["prediction_class"].unique())
-        exp_names = sorted(g["exp_name"].unique())
+        # ---- Infer architecture / dataset ----
+        try:
+            architecture = [m for m in allModelNames if m in parent_name][0]
+            dataset = [d for d in allDatasets if d in parent_name][0]
+        except IndexError:
+            continue
 
-        n_rows = len(exp_names)
-        n_cols = len(classes)
+        print(f"\n[•] Processing {architecture} / {dataset}")
 
-        fig, axes = plt.subplots(
-            n_rows,
-            n_cols,
-            figsize=(2.2 * n_cols, 1.8 * n_rows),
-            squeeze=False,
+        ckpt_files = sorted(ckpt_dir.glob("final*.pt"))
+        if not ckpt_files:
+            continue
+
+        # ---- Load dataset once ----
+        train_loader, test_loader, _, _, num_classes = load_dataset(
+            dataset_name=dataset,
+            model_name=architecture,
         )
 
-        for i, exp in enumerate(exp_names):
-            g_exp = g[g["exp_name"] == exp]
+        model_entries = []
 
-            for j, cls in enumerate(classes):
-                ax = axes[i, j]
-                g_cell = g_exp[g_exp["prediction_class"] == cls]
+        # ---- Load models ----
+        for ckpt_path in ckpt_files:
+            ckpt = torch.load(
+                ckpt_path,
+                map_location=device,
+                weights_only=False,
+            )
+            model = ckpt["model"].to(device)
 
-                if g_cell.empty:
+            exp_name = ckpt_path.stem
+
+            # Match fig8 exp_group normalization
+            exp_group = (
+                exp_name
+                .replace("_quant", "")
+                .replace("_JF", "")
+                .replace("_Kevin", "")
+                .strip("_")
+            )
+
+            params = sum(p.numel() for p in model.parameters())
+
+            model_entries.append({
+                "exp_name": exp_name,
+                "exp_group": exp_group,
+                "params": params,
+                "model": model,
+            })
+
+        if not model_entries:
+            continue
+
+        # ---- Order models size-descending (fig8 behavior) ----
+        model_entries = sorted(
+            model_entries,
+            key=lambda x: x["params"],
+            reverse=True,
+        )
+
+        # ---- Extract explainability ----
+        explainability_by_method = {
+            "Saliency": [],
+            "Integrated Gradients": [],
+            "Gradient SHAP": [],
+        }
+
+        for entry in model_entries:
+            results = save_explainability_maps(
+                model=entry["model"],
+                dataloader=test_loader,
+                device=device,
+                exp_name=entry["exp_group"],
+            )
+
+            for r in results:
+                explainability_by_method[
+                    r["explainability_method"]
+                ].append(r)
+
+        # ---- Plot ----
+        for method_name, results in explainability_by_method.items():
+            if not results:
+                continue
+
+            fig, axes = plt.subplots(
+                nrows=len(model_entries),
+                ncols=num_classes,
+                figsize=(1.8 * num_classes,
+                         1.8 * len(model_entries)),
+                squeeze=False,
+            )
+
+            lookup = {
+                (r["exp_name"], r["prediction_class"]): r
+                for r in results
+            }
+
+            for i, entry in enumerate(model_entries):
+                for c in range(num_classes):
+                    ax = axes[i, c]
+                    key = (entry["exp_group"], c)
+
+                    if key not in lookup:
+                        ax.axis("off")
+                        continue
+
+                    attr = lookup[key]["attribution_output"][0]
+
+                    # Aggregate channels
+                    if attr.ndim == 3:
+                        attr = np.sum(np.abs(attr), axis=0)
+
+                    vmax = np.percentile(np.abs(attr), 99)
+
+                    ax.imshow(
+                        attr,
+                        cmap=cmap,
+                        vmin=-vmax,
+                        vmax=vmax,
+                    )
                     ax.axis("off")
-                    continue
 
-                attr = g_cell.iloc[0]["attr"]
+                    if i == 0:
+                        ax.set_title(f"Class {c}", fontsize=8)
 
-                im = ax.imshow(attr, cmap=cmap, vmin=-1, vmax=1)
-                ax.axis("off")
+                axes[i, 0].set_ylabel(
+                    entry["exp_group"],
+                    fontsize=8,
+                    rotation=0,
+                    labelpad=35,
+                )
 
-                if i == 0:
-                    ax.set_title(f"Class {cls}", fontsize=11, fontweight="bold")
+            fig.suptitle(
+                f"{architecture} — {dataset}\n{method_name}",
+                fontsize=15,
+            )
+            plt.tight_layout(rect=[0, 0, 1, 0.95])
 
-                if j == 0:
-                    ax.set_ylabel(exp, fontsize=9)
+            save_path = (
+                out_dir
+                / f"{architecture}_{dataset}_{method_name.replace(' ', '')}.png"
+            )
+            plt.savefig(save_path, dpi=300, bbox_inches="tight")
+            plt.close()
 
-        # Colorbar (shared)
-        cbar = fig.colorbar(
-            im,
-            ax=axes,
-            orientation="vertical",
-            fraction=0.02,
-            pad=0.01,
-        )
-        cbar.set_label("Normalized Attribution", fontsize=10)
+            print(f"[✓] Saved {save_path}")
 
-        fig.suptitle(
-            f"{arch} — {method}\nDataset: {dataset}",
-            fontsize=14,
-            y=1.02,
-        )
 
-        plt.tight_layout()
-        save_path = out_dir / f"{arch}_{method.replace(' ', '')}_{dataset}.png"
-        plt.savefig(save_path, bbox_inches="tight")
-        plt.close(fig)
-
-        print(f"[✓] Saved {save_path}")
 def fig10(
     results_dir: Path = RESULTS_DIR,
     out_dir: Path = FIG_DIR / "pwcca",
@@ -982,6 +1079,99 @@ def pwcca_distance(X, Y, epsilon=1e-10):
     alpha /= np.sum(alpha)
 
     return float(np.sum(alpha * s))
+
+def save_explainability_maps(model, dataloader, device, exp_name):
+    """
+    Generates Saliency, Integrated Gradients, and Gradient SHAP data for 
+    the first instance of each unique class.
+    """
+    print(f"[•] Extracting explainability data for {exp_name}...")
+
+    # --- FORCE FP32 FOR CAPTUM ---
+    model = model.to(device).float()
+    model.eval()
+
+    explainability_results = []
+    unique_samples = {}
+
+    # Identify one unique sample per class
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs = inputs.to(device).float()
+
+            for i in range(len(labels)):
+                label = labels[i].item()
+                if label not in unique_samples:
+                    unique_samples[label] = inputs[i:i+1]
+
+            num_classes = (
+                len(dataloader.dataset.classes)
+                if hasattr(dataloader.dataset, "classes")
+                else 10
+            )
+            if len(unique_samples) >= num_classes:
+                break
+
+    try:
+        from captum.attr import Saliency, IntegratedGradients, GradientShap
+
+        saliency = Saliency(model)
+        ig = IntegratedGradients(model)
+
+        # Baseline distribution (must match dtype)
+        dist_images = next(iter(dataloader))[0][:5].to(device).float()
+        shap = GradientShap(model)
+
+    except ImportError as e:
+        print(f"[!] Captum init failed: {e}")
+        return []
+
+    for label, input_tensor in unique_samples.items():
+        input_tensor = input_tensor.clone().detach().requires_grad_(True)
+
+        methods = {
+            "Saliency": saliency,
+            "Integrated Gradients": ig,
+            "Gradient SHAP": shap,
+        }
+
+        for method_name, algo in methods.items():
+            try:
+                if method_name == "Gradient SHAP":
+                    attr = algo.attribute(
+                        input_tensor,
+                        baselines=dist_images,
+                        target=label,
+                    )
+                elif method_name == "Integrated Gradients":
+                    attr = algo.attribute(
+                        input_tensor,
+                        target=label,
+                        n_steps=50,
+                    )
+                else:
+                    attr = algo.attribute(
+                        input_tensor,
+                        target=label,
+                    )
+
+                explainability_results.append(
+                    {
+                        "exp_name": exp_name,
+                        "prediction_class": label,
+                        "explainability_method": method_name,
+                        "input_values": input_tensor.detach().cpu().numpy(),
+                        "attribution_output": attr.detach().cpu().numpy(),
+                    }
+                )
+
+            except Exception as e:
+                print(
+                    f"[!] Failed {method_name} for class {label}: {e}"
+                )
+
+    print(f"[✓] Extracted explainability data for {len(explainability_results)} entries.")
+    return explainability_results
 
 def extract_representation(model, dataloader, device, max_batches=5):
     model.eval()
