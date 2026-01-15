@@ -783,7 +783,7 @@ def fig10(
         return
 
     for ckpt_dir in checkpoint_dirs:
-        ckpt_files = sorted(ckpt_dir.glob("*.pt"))
+        ckpt_files = sorted(ckpt_dir.glob("final*.pt"))
         if not ckpt_files:
             continue
 
