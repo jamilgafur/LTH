@@ -832,8 +832,9 @@ def fig10(
         # Use training data saved with the baseline
         allModelNames = ["VGG16", "RegNetX_400MF", "ConvNeXt", "InceptionNet", "XceptionNet", "MobileNet"]
         modelName = [arch for arch in allModelNames if arch in ckpt_dir.parent.name][0]
-        allDatasets = ["cifar10_", "cifar100_", "tinyimagenet", "imagenet"]
-        dataset_name = [ds for ds in allDatasets if ds in ckpt_dir.parent.name][0]
+        allDatasets = ["Cifar10_", "Cifar100_", "TinyImageNet", "imagenet"]
+        model_name = [arch for arch in allModelNames if arch in str(ckpt_dir)][0]
+        dataset_name = [ds for ds in allDatasets if ds in  str(ckpt_dir)][0].replace("_","")
         train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name=dataset_name, model_name=modelName)
 
         print(f"[✓] Baseline: {base_name}")
