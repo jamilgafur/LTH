@@ -734,7 +734,7 @@ def fig9_explainability_grid(
                     ax.axis("off")
                     continue
 
-                attr = normalize_attribution(g_cell.iloc[0]["attr"])
+                attr = g_cell.iloc[0]["attr"]
 
                 im = ax.imshow(attr, cmap=cmap, vmin=-1, vmax=1)
                 ax.axis("off")
