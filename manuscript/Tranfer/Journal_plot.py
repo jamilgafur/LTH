@@ -702,19 +702,18 @@ def fig9_fig10(directory: str):
 
     # Helper to load model (Adjust this to your actual model loading logic)
     def load_model_from_checkpoint(train_loader, num_classes, path):
-        import pdb; pdb.set_trace()
         if model_name == "VGG16":
-            model = VGG16(num_classes=num_classes, input_channels=input_channels)
+            model = VGG16(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
         elif model_name == "RegNetX_400MF":
             model = RegNetX_400MF(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
         elif model_name == "ConvNeXt":
-            model = ConvNeXt(num_classes=num_classes)
+            model = ConvNeXt(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
         elif model_name == "InceptionNet":
-            model = InceptionNet(num_classes=num_classes, input_channels=input_channels)
+            model = InceptionNet(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
         elif model_name == "XceptionNet":
-            model = XceptionNet(num_classes=num_classes, input_channels=input_channels)
+            model = XceptionNet(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
         elif model_name == "MobileNet":
-            model = MobileNet(num_classes=num_classes, input_channels=input_channels)
+            model = MobileNet(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
         else:
             raise ValueError(f"Unsupported model architecture: {model_name}")
         model.load_state_dict(torch.load(path, map_location=device))
