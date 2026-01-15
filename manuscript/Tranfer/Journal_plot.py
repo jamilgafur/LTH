@@ -20,6 +20,7 @@ from pyPrune.models.ConvNetX import ConvNeXt
 from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
+from collapse import collapse_only
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
 
@@ -700,27 +701,14 @@ def fig9_fig10(directory: str):
         return
 
     # Helper to load model (Adjust this to your actual model loading logic)
-    def load_model_from_checkpoint(train_loader, num_classes, path):
-        if model_name == "VGG16":
-            model = VGG16(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
-        elif model_name == "RegNetX_400MF":
-            model = RegNetX_400MF(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
-        elif model_name == "ConvNeXt":
-            model = ConvNeXt(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
-        elif model_name == "InceptionNet":
-            model = InceptionNet(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
-        elif model_name == "XceptionNet":
-            model = XceptionNet(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
-        elif model_name == "MobileNet":
-            model = MobileNet(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
-        else:
-            raise ValueError(f"Unsupported model architecture: {model_name}")
-        import pdb; pdb.set_trace()
-        model.load_state_dict(torch.load(path, map_location=device)["model"])
+    def load_model_from_checkpoint(path, device="cuda"):
+        ckpt = torch.load(path, map_location=device)
 
+        model = ckpt["model"]
+        model.to(device)
         model.eval()
-        return model
 
+        return model
     baseline_model = load_model_from_checkpoint(train_loader, num_classes, baseline_path).to(device)
 
     # 3. Activation Hook Setup
