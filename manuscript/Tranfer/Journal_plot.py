@@ -715,7 +715,7 @@ def fig9_fig10(directory: str):
             model = MobileNet(one_batch=next(iter(train_loader))[0], num_classes=num_classes)
         else:
             raise ValueError(f"Unsupported model architecture: {model_name}")
-        model.load_state_dict(torch.load(path, map_location=device))
+        model.load_state_dict(torch.load(path, map_location=device)["model"])
 
         model.eval()
         return model
