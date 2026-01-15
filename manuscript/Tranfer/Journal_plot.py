@@ -7,13 +7,17 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import shap
+import matplotlib.pyplot as plt
+import seaborn as sns
+from pathlib import Path
+import pandas as pd
 from typing import Dict, List
-from manuscript.Tranfer.utils import load_dataset
+from manuscript.Tranfer.utils import load_dataset, compute_pwcca
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+from scipy import linalg
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.models.RegNetX import RegNetX_400MF
 from pyPrune.models.ConvNetX import ConvNeXt
@@ -67,6 +71,7 @@ def load_results() -> pd.DataFrame:
         raise FileNotFoundError("No merged_metrics.json files found")
 
     rows = []
+
     for p in files:
         dataset = infer_dataset_from_path(p)
         arch = infer_architecture_from_path(p)
@@ -74,21 +79,29 @@ def load_results() -> pd.DataFrame:
         with open(p) as f:
             raw = json.load(f)
 
-        for exp, m in raw.items():
-            import pdb; pdb.set_trace()
+        for exp_name, metrics in raw.items():
+            diagnostics = metrics.get("diagnostic", {})
+            explainability_data = diagnostics.get("explainability_reports", [])
+
             rows.append(
                 {
                     "dataset": dataset,
                     "architecture": arch,
-                    "exp_name": exp,
-                    "posthoc_or_posttrain": infer_posthoc_or_posttrain(exp),
-                    "model_type": infer_model_type(exp),
-                    "is_quantized": infer_isquant(exp),
-                    "accuracy": m.get("final_accuracy"),
-                    "params": m.get("param_count"),
-                    "flops": m.get("flops"),
-                    "memory": m.get("total_size_mb"),
+                    "exp_name": exp_name,
+                    "posthoc_or_posttrain": infer_posthoc_or_posttrain(exp_name),
+                    "model_type": infer_model_type(exp_name),
+                    "is_quantized": infer_isquant(exp_name),
 
+                    # Core metrics
+                    "accuracy": metrics.get("final_accuracy"),
+                    "params": metrics.get("param_count"),
+                    "flops": metrics.get("flops"),
+                    "memory": metrics.get("total_size_mb"),
+
+                    # Explainability
+                    "has_explainability": bool(explainability_data),
+                    "num_explainability_entries": len(explainability_data),
+                    "explainability_data": explainability_data,
                 }
             )
 
@@ -662,148 +675,115 @@ def fig8(
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+from pathlib import Path
+import pandas as pd
 
-def fig9_fig10(directory: str):
-    path_obj = Path(directory)
-    # directory is "dataset_model/checkpoints/"
-    # parent.name is "dataset_model"
-    parts = path_obj.parent.name.split("_")
-    modelNames = ["RegNetX_400MF", "VGG16", "InceptionNet", "XceptionNet", "MobileNet", "ConvNeXt"]
-    model_name = next((m for m in modelNames if m.lower() in path_obj.parent.name.lower()), "UnknownArch")
-    if model_name == "UnknownArch":
-        print(f"Unknown architecture in path: {directory}, skipping drift analysis.")
-        return
-    print(f"Processing Fig 9 & 10 for {directory}...")
-    print(f"Identified model: {model_name}")
-    tempdir = directory[directory.index(model_name) + len(model_name)+1:]
-    dataset_name = tempdir.split("_")[0]
-    
+def fig9_explainability_grid(
+    df: pd.DataFrame,
+    explainability_metrics: list[str] = ["mean", "sum", "max", "l2"],
+    out_dir: Path = Path("./plots/explainability"),
+):
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Load Data
-    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name, model_name)
-    
-    # Use a small subset for SHAP (computationally expensive)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    data_iter = iter(test_loader)
-    images, labels = next(data_iter)
-    images = images[:20].to(device) # Small batch for attribution
-    
-    checkpoint_files = glob.glob(f"{directory}/*.pt")
-    if not checkpoint_files:
-        print(f"No checkpoints found in {directory}")
-        return
+    # Explode explainability data
+    rows = []
+    for _, r in df.iterrows():
+        for e in r.explainability_data:
+            rows.append({
+                "dataset": r.dataset,
+                "architecture": r.architecture,
+                "exp_name": r.exp_name,
+                "method": e["explainability_method"],
+                "prediction_class": e["prediction_class"],
+                "attr": e["attribution_output"],
+            })
 
-    # 2. Identify Baseline vs NAS Variants
-    # We assume the baseline contains 'original' or 'baseline' in the filename
-    baseline_path = next((f for f in checkpoint_files if "original" in f.lower() or "baseline" in f.lower()), None)
-    variant_paths = [f for f in checkpoint_files if f != baseline_path]
-
-    if not baseline_path:
-        print(f"No baseline found in {directory}, skipping drift analysis.")
+    if not rows:
+        print("[!] No explainability data found")
         return
 
-    # Helper to load model (Adjust this to your actual model loading logic)
-    def load_model_from_checkpoint(path, device="cuda"):
-        ckpt = torch.load(path, map_location=device,weights_only=False)
+    edf = pd.DataFrame(rows)
 
-        model = ckpt["model"]
-        model.to(device)
-        model.eval()
+    # Compute scalar metrics
+    for m in explainability_metrics:
+        edf[m] = edf["attr"].apply(lambda x: summarize_attribution(x, m))
 
-        return model
-    baseline_model = load_model_from_checkpoint(baseline_path, device).to(device)
+    # Iterate per (method, dataset, architecture)
+    for (method, dataset, arch), g in edf.groupby(
+        ["method", "dataset", "architecture"]
+    ):
+        classes = sorted(g["prediction_class"].unique())
+        exp_names = sorted(g["exp_name"].unique())
 
-    # 3. Activation Hook Setup
-    activation_data = {}
-    def get_activation(name):
-        def hook(model, input, output):
-            activation_data[name] = output.detach()
-        return hook
+        n_rows = len(exp_names)
+        n_cols = len(classes)
 
-    # Define "Collapse Levels" (Adjust names based on your architecture, e.g., 'layer1', 'features.0')
-    # This automatically finds top-level modules (blocks)
-    target_layers = [name for name, layer in baseline_model.named_children() 
-                     if not isinstance(layer, (nn.Softmax, nn.ReLU, nn.Dropout))]
+        fig, axes = plt.subplots(
+            n_rows,
+            n_cols,
+            figsize=(1.8 * n_cols + 3, 0.9 * n_rows + 3),
+            squeeze=False,
+            sharex=True,
+        )
 
-    # 4. Process Variants
-    results_shap = []
-    results_drift = []
+        for i, exp in enumerate(exp_names):
+            g_exp = g[g["exp_name"] == exp]
 
-    for v_path in variant_paths:
-        v_name = Path(v_path).stem
-        variant_model = load_model_from_checkpoint(v_path, device=device).to(device)
-        
-        layer_sims_shap = {}
-        layer_sims_drift = {}
+            for j, cls in enumerate(classes):
+                ax = axes[i, j]
+                g_cell = g_exp[g_exp["prediction_class"] == cls]
 
-        for layer_name in target_layers:
-            # --- Figure 10: Activation Drift ---
-            # Hook baseline
-            h1 = getattr(baseline_model, layer_name).register_forward_hook(get_activation("base"))
-            # Hook variant
-            h2 = getattr(variant_model, layer_name).register_forward_hook(get_activation("variant"))
-            
-            with torch.no_grad():
-                baseline_model(images)
-                variant_model(images)
-            
-            h1.remove()
-            h2.remove()
+                if g_cell.empty:
+                    ax.axis("off")
+                    continue
 
-            # Compute Cosine Similarity on Activations
-            flat_base = activation_data["base"].view(images.size(0), -1)
-            flat_var = activation_data["variant"].view(images.size(0), -1)
-            
-            cos = nn.CosineSimilarity(dim=1)
-            sim = cos(flat_base, flat_var).mean().item()
-            layer_sims_drift[layer_name] = sim
+                values = g_cell[explainability_metrics].iloc[0].values
 
-            # --- Figure 9: SHAP Cosine Similarity ---
-            # Using GradientExplainer for speed on PyTorch
-            # We treat each layer's output as the "feature" to attribute from
-            explainer_base = shap.GradientExplainer(baseline_model, images)
-            explainer_var = shap.GradientExplainer(variant_model, images)
-            
-            shap_base = explainer_base.shap_values(images)
-            shap_var = explainer_var.shap_values(images)
-            
-            # Flatten SHAP values to compute similarity of "Importance Vectors"
-            # shap_values is often a list (for each class)
-            s_base = np.array(shap_base).flatten()
-            s_var = np.array(shap_var).flatten()
-            
-            shap_sim = np.dot(s_base, s_var) / (np.linalg.norm(s_base) * np.linalg.norm(s_var))
-            layer_sims_shap[layer_name] = shap_sim
+                ax.plot(
+                    explainability_metrics,
+                    values,
+                    marker="o",
+                    linewidth=2.0,
+                )
 
-        results_drift.append({"variant": v_name, **layer_sims_drift})
-        results_shap.append({"variant": v_name, **layer_sims_shap})
+                if i == 0:
+                    ax.set_title(f"Class {cls}", fontsize=11, fontweight="bold")
 
-    # 5. Plotting
-    plot_drift_analysis(results_shap, results_drift, dataset_name, model_name)
+                if j == 0:
+                    ax.set_ylabel(exp, fontsize=10)
+                else:
+                    ax.set_ylabel("")
 
-def plot_drift_analysis(shap_data, drift_data, ds, arch):
-    df_shap = pd.DataFrame(shap_data).melt(id_vars="variant", var_name="Layer", value_name="Similarity")
-    df_drift = pd.DataFrame(drift_data).melt(id_vars="variant", var_name="Layer", value_name="Similarity")
+                if i == n_rows - 1:
+                    ax.set_xticklabels(
+                        explainability_metrics,
+                        rotation=45,
+                        ha="right",
+                        fontsize=9,
+                    )
+                else:
+                    ax.set_xticklabels([])
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10), sharex=True)
+                ax.grid(True, axis="y", linestyle="--", alpha=0.4)
 
-    # Fig 9: SHAP
-    sns.lineplot(data=df_shap, x="Layer", y="Similarity", hue="variant", marker="o", ax=ax1)
-    ax1.set_title(f"Fig 9: SHAP Feature Attribution Similarity ({arch} on {ds})")
-    ax1.set_ylabel("Cosine Similarity (SHAP)")
-    ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
+        fig.suptitle(
+            f"{arch} — {method} Explainability\nDataset: {dataset}",
+            fontsize=15,
+            y=1.02,
+        )
 
-    # Fig 10: Activations
-    sns.lineplot(data=df_drift, x="Layer", y="Similarity", hue="variant", marker="s", ax=ax2)
-    ax2.set_title(f"Fig 10: Layer-wise Activation Drift ({arch} on {ds})")
-    ax2.set_ylabel("Cosine Similarity (Activations)")
-    ax2.set_xlabel("Collapse Level / Depth")
-    ax2.get_legend().remove()
+        plt.tight_layout()
+        save_path = out_dir / f"{arch}_{method.replace(' ', '')}_{dataset}.png"
+        plt.savefig(save_path, bbox_inches="tight")
+        plt.close(fig)
 
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig(FIG_DIR / f"fig9_10_{ds}_{arch}_analysis.png", bbox_inches='tight')
-    plt.close()
+        print(f"[✓] Saved {save_path}")
+
+
+
 # =========================
 # Tables
 # =========================
@@ -857,6 +837,22 @@ def tab2(df: pd.DataFrame):
     print(f"Table 2 saved to {table_path}")
 
 
+def summarize_attribution(attr: np.ndarray, metric: str) -> float:
+    """
+    Reduce attribution tensor to scalar for plotting.
+    """
+    abs_attr = np.abs(attr)
+
+    if metric == "mean":
+        return abs_attr.mean()
+    if metric == "sum":
+        return abs_attr.sum()
+    if metric == "max":
+        return abs_attr.max()
+    if metric == "l2":
+        return np.sqrt((abs_attr ** 2).sum())
+
+    raise ValueError(f"Unknown metric: {metric}")
 # =========================
 # Main
 # =========================
@@ -881,11 +877,9 @@ if __name__ == "__main__":
             df,
             out_dir=FIG_DIR / "expname_ablations",
         )
+        print("\n[•] Generating Diagnostic Figures from saved data...")
+        fig9_explainability_grid(df)
         
-        folders = glob.glob(str("*/checkpoints/"))
-        for folder in folders:
-            fig9_fig10(folder)
-            
         tab1(df)
         tab2(df)
 
