@@ -12,7 +12,7 @@ import seaborn as sns
 from pathlib import Path
 import pandas as pd
 from typing import Dict, List
-from manuscript.Tranfer.utils import load_dataset, compute_pwcca
+from manuscript.Tranfer.utils import load_dataset
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -575,7 +575,7 @@ def fig7(df: pd.DataFrame):
 def fig8(
     df: pd.DataFrame,
     metrics: list[str] = ["accuracy", "params", "flops", "memory"],
-    out_dir: Path = Path("./plots"),
+    out_dir: Path = Path("./figures"),
 ):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -683,7 +683,7 @@ import pandas as pd
 def fig9_explainability_grid(
     df: pd.DataFrame,
     explainability_metrics: list[str] = ["mean", "sum", "max", "l2"],
-    out_dir: Path = Path("./plots/explainability"),
+    out_dir: Path = Path("./figures/explainability"),
 ):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
