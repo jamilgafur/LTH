@@ -682,8 +682,8 @@ import pandas as pd
 
 def fig9_explainability_grid(
     df: pd.DataFrame,
-    explainability_metrics: list[str] = ["mean", "sum", "max", "l2"],
     out_dir: Path = Path("./figures/explainability"),
+    cmap: str = "seismic",
 ):
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -707,11 +707,7 @@ def fig9_explainability_grid(
 
     edf = pd.DataFrame(rows)
 
-    # Compute scalar metrics
-    for m in explainability_metrics:
-        edf[m] = edf["attr"].apply(lambda x: summarize_attribution(x, m))
-
-    # Iterate per (method, dataset, architecture)
+    # One figure per (method, dataset, architecture)
     for (method, dataset, arch), g in edf.groupby(
         ["method", "dataset", "architecture"]
     ):
@@ -724,9 +720,8 @@ def fig9_explainability_grid(
         fig, axes = plt.subplots(
             n_rows,
             n_cols,
-            figsize=(1.8 * n_cols + 3, 0.9 * n_rows + 3),
+            figsize=(2.2 * n_cols, 1.8 * n_rows),
             squeeze=False,
-            sharex=True,
         )
 
         for i, exp in enumerate(exp_names):
@@ -740,38 +735,30 @@ def fig9_explainability_grid(
                     ax.axis("off")
                     continue
 
-                values = g_cell[explainability_metrics].iloc[0].values
+                attr = normalize_attribution(g_cell.iloc[0]["attr"])
 
-                ax.plot(
-                    explainability_metrics,
-                    values,
-                    marker="o",
-                    linewidth=2.0,
-                )
+                im = ax.imshow(attr, cmap=cmap, vmin=-1, vmax=1)
+                ax.axis("off")
 
                 if i == 0:
                     ax.set_title(f"Class {cls}", fontsize=11, fontweight="bold")
 
                 if j == 0:
-                    ax.set_ylabel(exp, fontsize=10)
-                else:
-                    ax.set_ylabel("")
+                    ax.set_ylabel(exp, fontsize=9)
 
-                if i == n_rows - 1:
-                    ax.set_xticklabels(
-                        explainability_metrics,
-                        rotation=45,
-                        ha="right",
-                        fontsize=9,
-                    )
-                else:
-                    ax.set_xticklabels([])
-
-                ax.grid(True, axis="y", linestyle="--", alpha=0.4)
+        # Colorbar (shared)
+        cbar = fig.colorbar(
+            im,
+            ax=axes,
+            orientation="vertical",
+            fraction=0.02,
+            pad=0.01,
+        )
+        cbar.set_label("Normalized Attribution", fontsize=10)
 
         fig.suptitle(
-            f"{arch} — {method} Explainability\nDataset: {dataset}",
-            fontsize=15,
+            f"{arch} — {method}\nDataset: {dataset}",
+            fontsize=14,
             y=1.02,
         )
 
@@ -781,7 +768,6 @@ def fig9_explainability_grid(
         plt.close(fig)
 
         print(f"[✓] Saved {save_path}")
-
 def fig10(
     results_dir: Path = RESULTS_DIR,
     out_dir: Path = FIG_DIR / "pwcca",
