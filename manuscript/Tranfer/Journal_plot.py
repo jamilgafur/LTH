@@ -75,6 +75,7 @@ def load_results() -> pd.DataFrame:
             raw = json.load(f)
 
         for exp, m in raw.items():
+            import pdb; pdb.set_trace()
             rows.append(
                 {
                     "dataset": dataset,
@@ -87,6 +88,7 @@ def load_results() -> pd.DataFrame:
                     "params": m.get("param_count"),
                     "flops": m.get("flops"),
                     "memory": m.get("total_size_mb"),
+
                 }
             )
 
@@ -802,30 +804,6 @@ def plot_drift_analysis(shap_data, drift_data, ds, arch):
     plt.tight_layout()
     plt.savefig(FIG_DIR / f"fig9_10_{ds}_{arch}_analysis.png", bbox_inches='tight')
     plt.close()
-# Figure 9 – Representation change across NAS variants using SHAP cosine similarity.
-    # For each experiment directory, load the final checkpoint (*.pt) corresponding to the last training epoch. Evaluate all models on the same held-out dataset.
-    # For each model, compute SHAP values at each predefined collapse level (e.g., layer group / block / resolution stage). For each collapse level, compute the cosine similarity between the SHAP attribution vectors of the baseline model and the NAS-modified model.
-    # Aggregate cosine similarity across samples and report mean ± std per collapse level. This figure visualizes where in the network the NAS procedure alters the learned representations, even when accuracy and FLOPs remain similar.
-
-# Figure 10 – Layer-wise representational drift (activation space)
-    # Question it answers
-    # Do the NAS variants change how information is represented, even if predictions are similar?
-    # What to compute
-    # Run the same input batch through all models
-    # For each collapse level:
-    # Extract activations
-    # Flatten per-sample
-    # Compute cosine similarity between baseline and NAS model activations
-    # Average across samples
-    # Visualization
-    # Line plot
-    # x-axis: collapse level / depth
-    # y-axis: cosine similarity of activations
-    # one line per model variant
-    # Interpretation
-    # Early-layer divergence → architectural changes affect low-level features
-    # Late-layer divergence → changes affect task-specific reasoning
-    # This pairs extremely well with SHAP (Figure 9 = what features matter, Figure 10 = how they are encoded).
 # =========================
 # Tables
 # =========================
