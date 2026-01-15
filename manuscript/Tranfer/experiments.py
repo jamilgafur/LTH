@@ -146,6 +146,7 @@ def _make_compression_set(collapse_range):
 
 def run_experiment(
     model,
+    model_kwargs=None,
     train_loader=None,
     test_loader=None,
     device="cuda",
