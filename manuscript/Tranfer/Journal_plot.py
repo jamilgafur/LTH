@@ -659,8 +659,14 @@ def fig9_fig10(directory: str):
     # directory is "dataset_model/checkpoints/"
     # parent.name is "dataset_model"
     parts = path_obj.parent.name.split("_")
-    dataset_name = parts[0]
-    model_name = parts[1]
+    modelNames = ["RegNetX_400MF", "VGG16", "InceptionNet", "XceptionNet", "MobileNet", "ConvNeXt"]
+    model_name = next((m for m in modelNames if m.lower() in path_obj.parent.name.lower()), "UnknownArch")
+    if model_name == "UnknownArch":
+        print(f"Unknown architecture in path: {directory}, skipping drift analysis.")
+        return
+    tempdir = directory[directory.index(model_name.lower())+1:]
+    dataset_name = tempdir.split("_")[0]
+    
 
     # 1. Load Data
     train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name, model_name)
