@@ -1051,6 +1051,11 @@ if __name__ == "__main__":
         print("\n[•] Generating Diagnostic Figures from saved data...")
         fig9_explainability_grid(df)
         
+        fig10(
+            results_dir=RESULTS_DIR,
+            out_dir=FIG_DIR / "pwcca",
+            device="cuda" if torch.cuda.is_available() else "cpu",
+        )
         tab1(df)
         tab2(df)
 
