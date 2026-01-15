@@ -147,11 +147,10 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
                    epochs=10, workflow='default', exp_name='experiment', collapse_range=None,
                    data_shape=(1, 3, 32, 32), save_path="./runs", post_compress_epochs=False, quant=False):
 
-    import os, json, time, torch, glob
-
     if quant:
         exp_name += "_quant"
 
+    # Directory Management
     ckpt_dir = os.path.join(save_path, "checkpoints")
     metrics_dir = os.path.join(save_path, "metrics")
     plots_dir = os.path.join(save_path, "plots")
@@ -159,142 +158,109 @@ def run_experiment(model, model_kwargs=None, train_loader=None, test_loader=None
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
-
-    # Initialize Optimizer
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    
+
     # ----------------------------------------
-    # Checkpoint discovery (resume logic)
+    # Resume Logic & State Discovery
     # ----------------------------------------
     base_ckpt_name = f"{workflow}_{exp_name}_{model.__class__.__name__}"
     ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
     existing_ckpts = sorted(glob.glob(ckpt_pattern), key=lambda x: int(x.split("epoch")[-1].split(".")[0]))
 
-    start_epoch = 0
-    best_acc = 0
-    epochs_no_improve = 0
+    start_epoch, best_acc, epochs_no_improve = 0, 0, 0
     all_data = {"accuracies": [], "losses": []}
 
     if existing_ckpts:
-        last_ckpt = existing_ckpts[-1]
-        ckpt = torch.load(last_ckpt, map_location=device)
+        ckpt = torch.load(existing_ckpts[-1], map_location=device)
         model.load_state_dict(ckpt["model"])
-        optimizer.load_state_dict(ckpt["optimizer"]) # Restore optimizer buffers
+        optimizer.load_state_dict(ckpt["optimizer"])
         start_epoch = ckpt["epoch"]
         all_data = ckpt["data"]
         best_acc = ckpt.get("best_acc", 0)
         epochs_no_improve = ckpt.get("patience_counter", 0)
-        print(f"[✓] Resumed from epoch {start_epoch} (Best Acc: {best_acc:.2f}%)")
+        print(f"[✓] Resumed from epoch {start_epoch}")
     else:
         print("[•] Starting fresh experiment")
 
     use_autocast = quant and device.type == 'cuda'
-    patience = 5
-    threshold = 0.05
+    patience, threshold = 5, 0.05
+    epoch = start_epoch + 1
 
     # ----------------------------------------
-    # Main Epoch Loop
+    # Training Loop
     # ----------------------------------------
-    # We run until 'epochs' is reached, then potentially continue if post_compress_epochs is True
-    epoch = start_epoch + 1
     while True:
-        # Stop condition
+        # Loop Breaking Conditions
         if not post_compress_epochs and epoch > epochs:
             break
         if post_compress_epochs and epochs_no_improve >= patience:
-            print(f"[!] Early stopping triggered at epoch {epoch}")
+            print(f"[!] Early stopping at epoch {epoch}")
             break
-        if post_compress_epochs and epoch > (epochs + 100): # Hard cap
+        if post_compress_epochs and epoch > (epochs + 100):
             break
 
-        print(f"\n[•] Epoch {epoch} | Workflow: {workflow}")
-        
-        avg_loss, acc = train_and_evaluate(
-            model, train_loader, test_loader, optimizer, device, 
-            quant=quant, use_autocast=use_autocast
-        )
-
+        avg_loss, acc = train_and_evaluate(model, train_loader, optimizer, device, use_autocast)
         all_data["accuracies"].append(acc)
         all_data["losses"].append(avg_loss)
 
-        # Update Early Stopping / Best Acc Logic
+        # Accuracy Tracking for Early Stopping
         if acc > best_acc + threshold:
-            best_acc = acc
-            epochs_no_improve = 0
-        else:
-            if epoch > epochs: # Only count patience during post-compression
-                epochs_no_improve += 1
+            best_acc, epochs_no_improve = acc, 0
+        elif epoch > epochs: 
+            epochs_no_improve += 1
 
-        # ----------------------------------------
-        # SAVE CHECKPOINT (Atomic + State Persistent)
-        # ----------------------------------------
+        # ATOMIC CHECKPOINT SAVE
         ckpt_path = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch}.pt")
         tmp_path = ckpt_path + ".tmp"
-        
-        save_dict = {
-            "epoch": epoch,
-            "model": model.state_dict(),
-            "optimizer": optimizer.state_dict(),
-            "data": all_data,
-            "best_acc": best_acc,
-            "patience_counter": epochs_no_improve
-        }
-        
-        torch.save(save_dict, tmp_path)
+        torch.save({
+            "epoch": epoch, "model": model.state_dict(), "optimizer": optimizer.state_dict(),
+            "data": all_data, "best_acc": best_acc, "patience_counter": epochs_no_improve
+        }, tmp_path)
         os.replace(tmp_path, ckpt_path)
 
-        # ----------------------------------------
-        # SPACE EFFICIENCY: Remove N-2 Checkpoint
-        # ----------------------------------------
+        # SPACE EFFICIENCY: Keep only last 2 checkpoints
         if epoch > 2:
             old_ckpt = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch - 2}.pt")
-            if os.path.exists(old_ckpt):
-                os.remove(old_ckpt)
-
+            if os.path.exists(old_ckpt): os.remove(old_ckpt)
+        
         epoch += 1
+
     # ----------------------------------------
-    # Final checkpoint
+    # Final Metrics & Cleanup
     # ----------------------------------------
     final_path = os.path.join(ckpt_dir, f"final_{base_ckpt_name}.pt")
-    torch.save({"model": model.state_dict(), "data": data}, final_path)
+    torch.save({"model": model.state_dict(), "data": all_data}, final_path)
 
-    # ----------------------------------------
-    # Metrics + diagnostics (unchanged)
-    # ----------------------------------------
+    # Benchmarking
     param_count = count_trainable_params(model)
     infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device, quant=quant)
 
-    data.update({
+    all_data.update({
         "param_count": param_count,
         "inference_time": infer_time,
         "flops": flops,
         "total_size_mb": total_size_mb,
-        "final_accuracy": data.get("accuracies", [0])[-1] if data.get("accuracies") else 0,
+        "final_accuracy": all_data["accuracies"][-1] if all_data["accuracies"] else 0,
     })
 
-    diagnostics = run_full_diagnostics(
-        model, data_shape, {exp_name: data}, plots_dir, exp_name,
+    # Diagnostics & Plotting
+    all_data["diagnostics"] = run_full_diagnostics(
+        model, data_shape, {exp_name: all_data}, plots_dir, exp_name,
         collapse_range=collapse_range, device=device, quant=quant
     )
-    data["diagnostics"] = diagnostics
 
     plot_accuracy_loss_curve(
-        acc_list=data.get("accuracies", []),
-        loss_list=data.get("losses", []),
-        workflow=workflow,
-        experiment=exp_name,
-        save_dir=plots_dir
+        acc_list=all_data["accuracies"], loss_list=all_data["losses"],
+        workflow=workflow, experiment=exp_name, save_dir=plots_dir
     )
 
+    # Persistence to JSON and Global Merge
     model_root = f"{model.__class__.__name__}_{train_loader.dataset.__class__.__name__}"
-    safe_update_metrics_json(model_root, f"{exp_name}_{workflow}", data, base_dir=metrics_dir)
-
+    safe_update_metrics_json(model_root, f"{exp_name}_{workflow}", all_data, base_dir=metrics_dir)
     merged_path = merge_all_metrics(base_dir=metrics_dir)
-    print(f"[✓] Metrics merged successfully → {merged_path}")
 
-    print(f"[✓] Experiment '{exp_name}' completed successfully.")
-    return data
-
+    print(f"[✓] Experiment '{exp_name}' complete. Metrics merged → {merged_path}")
+    return all_data
 
 # =====================================================
 # === Experiment Entry Points (JF & Kevin) ===
