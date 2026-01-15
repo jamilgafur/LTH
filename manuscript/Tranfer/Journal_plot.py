@@ -80,7 +80,7 @@ def load_results() -> pd.DataFrame:
             raw = json.load(f)
 
         for exp_name, metrics in raw.items():
-            diagnostics = metrics.get("diagnostic", {})
+            diagnostics = metrics.get('diagnostics', {})
             explainability_data = diagnostics.get("explainability_reports", [])
 
             rows.append(
