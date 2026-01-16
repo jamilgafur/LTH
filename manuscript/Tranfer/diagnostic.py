@@ -93,7 +93,7 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, t
     # 4. Explainability Data (Updated to save to dictionary)
     if test_dataloader is not None:
         try:
-             plot_explainability_maps(model, test_dataloader, device, exp_name)
+             plot_explainability_maps(model, test_dataloader, device, save_path=os.path.join(save_dir, f"{exp_name}_explainability"))
         except Exception as e:
             print(f"[!] Explainability analysis failed: {e}")
             diagnostics["explainability_reports"] = []
@@ -983,7 +983,6 @@ def plot_explainability_maps(
     )
 
     print(f"[✓] Explainability figure saved to {save_path}")
-
 
 def _plot_explainability_grid(attributions, exp_name, save_path):
     """
