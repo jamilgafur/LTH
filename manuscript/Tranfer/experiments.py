@@ -235,7 +235,7 @@ def run_experiment(
     # ----------------------------------------
     if existing_ckpts:
         last_ckpt = existing_ckpts[-1]
-        ckpt = torch.load(last_ckpt, map_location=device, weights=False)
+        ckpt = torch.load(last_ckpt, map_location=device, weights_only=True)
 
         model = ckpt["model"].to(device)
         start_epoch = ckpt["epoch"]
