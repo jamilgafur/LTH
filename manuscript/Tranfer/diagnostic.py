@@ -90,6 +90,14 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, t
     except Exception as e:
         diagnostics["memory_decomposition"] = {}
 
+    # 4. Explainability Data (Updated to save to dictionary)
+    if test_dataloader is not None:
+        try:
+             plot_explainability_maps(model, test_dataloader, device, exp_name)
+        except Exception as e:
+            print(f"[!] Explainability analysis failed: {e}")
+            diagnostics["explainability_reports"] = []
+
     # 5. Optional collapse analysis
     if collapse_range:
         try:
@@ -879,4 +887,151 @@ def plot_weight_distributions(model, save_dir, exp_name):
     plt.close()
     print(f"[✓] Weight distributions saved to {save_path}")
 
+def plot_explainability_maps(
+    model,
+    dataloader,
+    device,
+    exp_name,
+    save_path="explainability_maps.png",
+):
+    """
+    Generates Saliency, Integrated Gradients, and Gradient SHAP maps and
+    plots them as a figure:
+        - columns = input classes
+        - rows = explainability methods
+    """
 
+    print(f"[•] Extracting explainability data for {exp_name}...")
+
+    model = model.to(device).float()
+    model.eval()
+
+    unique_samples = {}
+
+    # --- Get one sample per class ---
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs = inputs.to(device).float()
+
+            for i in range(len(labels)):
+                label = labels[i].item()
+                if label not in unique_samples:
+                    unique_samples[label] = inputs[i : i + 1]
+
+            num_classes = (
+                len(dataloader.dataset.classes)
+                if hasattr(dataloader.dataset, "classes")
+                else len(unique_samples)
+            )
+            if len(unique_samples) >= num_classes:
+                break
+
+    try:
+        from captum.attr import Saliency, IntegratedGradients, GradientShap
+
+        methods = {
+            "Saliency": Saliency(model),
+            "Integrated Gradients": IntegratedGradients(model),
+            "Gradient SHAP": GradientShap(model),
+        }
+
+        dist_images = next(iter(dataloader))[0][:5].to(device).float()
+
+    except ImportError as e:
+        print(f"[!] Captum init failed: {e}")
+        return
+
+    # --- Compute attributions ---
+    attributions = {m: {} for m in methods.keys()}
+
+    for label, input_tensor in unique_samples.items():
+        input_tensor = input_tensor.clone().detach().requires_grad_(True)
+
+        for method_name, algo in methods.items():
+            try:
+                if method_name == "Gradient SHAP":
+                    attr = algo.attribute(
+                        input_tensor,
+                        baselines=dist_images,
+                        target=label,
+                    )
+                elif method_name == "Integrated Gradients":
+                    attr = algo.attribute(
+                        input_tensor,
+                        target=label,
+                        n_steps=50,
+                    )
+                else:
+                    attr = algo.attribute(
+                        input_tensor,
+                        target=label,
+                    )
+
+                attributions[method_name][label] = (
+                    input_tensor.detach().cpu(),
+                    attr.detach().cpu(),
+                )
+
+            except Exception as e:
+                print(f"[!] Failed {method_name} for class {label}: {e}")
+
+    # --- Plot ---
+    _plot_explainability_grid(
+        attributions,
+        exp_name,
+        save_path,
+    )
+
+    print(f"[✓] Explainability figure saved to {save_path}")
+
+
+def _plot_explainability_grid(attributions, exp_name, save_path):
+    """
+    Rows = explainability methods
+    Columns = classes
+    """
+
+    methods = list(attributions.keys())
+    classes = sorted(next(iter(attributions.values())).keys())
+
+    n_rows = len(methods)
+    n_cols = len(classes)
+
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(3 * n_cols, 3 * n_rows),
+        squeeze=False,
+    )
+
+    for r, method in enumerate(methods):
+        for c, cls in enumerate(classes):
+            ax = axes[r, c]
+
+            input_tensor, attr = attributions[method][cls]
+
+            img = input_tensor[0]
+            attr = attr[0]
+
+            # Sum channels for visualization
+            if img.ndim == 3:
+                img_vis = img.permute(1, 2, 0).numpy()
+                attr_vis = attr.abs().sum(dim=0).numpy()
+            else:
+                img_vis = img.squeeze().numpy()
+                attr_vis = attr.squeeze().abs().numpy()
+
+            ax.imshow(img_vis, cmap="gray")
+            ax.imshow(attr_vis, cmap="hot", alpha=0.5)
+            ax.axis("off")
+
+            if r == 0:
+                ax.set_title(f"Class {cls}", fontsize=12)
+
+            if c == 0:
+                ax.set_ylabel(method, fontsize=12)
+
+    fig.suptitle(f"Explainability Maps – {exp_name}", fontsize=16)
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    plt.savefig(save_path, dpi=300)
+    plt.close(fig)
