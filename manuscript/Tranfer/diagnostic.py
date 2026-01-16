@@ -886,21 +886,83 @@ def plot_weight_distributions(model, save_dir, exp_name):
     plt.savefig(save_path)
     plt.close()
     print(f"[✓] Weight distributions saved to {save_path}")
+import os
+import numpy as np
+import torch
+import matplotlib.pyplot as plt
+
+def _plot_explainability_grid(
+    inputs_np,
+    attributions_np,
+    exp_name,
+    save_path,
+):
+    """
+    Grid layout:
+      rows = [Original, Saliency, Integrated Gradients, Gradient SHAP]
+      columns = classes
+    """
+
+    class_labels = sorted(inputs_np.keys())
+    method_names = list(attributions_np.keys())
+
+    n_rows = 1 + len(method_names)
+    n_cols = len(class_labels)
+
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(3 * n_cols, 3 * n_rows),
+        squeeze=False,
+    )
+
+    # --- First row: Original inputs ---
+    for col, label in enumerate(class_labels):
+        img = inputs_np[label][0]
+
+        if img.shape[0] == 1:  # grayscale
+            img = img[0]
+
+        axes[0, col].imshow(img, cmap="gray")
+        axes[0, col].set_title(f"Class {label}")
+        axes[0, col].axis("off")
+
+    axes[0, 0].set_ylabel("Original", fontsize=12)
+
+    # --- Explainability rows ---
+    for row, method_name in enumerate(method_names, start=1):
+        for col, label in enumerate(class_labels):
+            attr = attributions_np[method_name][label][0]
+
+            # aggregate channels if needed
+            if attr.ndim == 3:
+                attr = np.mean(np.abs(attr), axis=0)
+
+            axes[row, col].imshow(attr, cmap="hot")
+            axes[row, col].axis("off")
+
+        axes[row, 0].set_ylabel(method_name, fontsize=12)
+
+    plt.suptitle(exp_name, fontsize=14)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+
 
 def plot_explainability_maps(
     model,
     dataloader,
     device,
     exp_name,
-    save_path="explainability_maps.png",
+    save_path="explainability_maps.svg",
 ):
     """
-    Generates Saliency, Integrated Gradients, and Gradient SHAP maps and
-    plots them as a figure:
-        - columns = input classes
-        - rows = explainability methods
+    Generates explainability maps and saves:
+      - input images
+      - explainability maps
+      - model outputs
     """
-
+    save_numpy_path = save_path.replace(".svg", ".npz")
     print(f"[•] Extracting explainability data for {exp_name}...")
 
     model = model.to(device).float()
@@ -941,11 +1003,21 @@ def plot_explainability_maps(
         print(f"[!] Captum init failed: {e}")
         return
 
-    # --- Compute attributions ---
-    attributions = {m: {} for m in methods.keys()}
+    # --- Storage ---
+    inputs_np = {}
+    outputs_np = {}
+    attributions_np = {m: {} for m in methods}
 
+    # --- Compute attributions ---
     for label, input_tensor in unique_samples.items():
         input_tensor = input_tensor.clone().detach().requires_grad_(True)
+
+        # model output
+        with torch.no_grad():
+            output = model(input_tensor)
+
+        inputs_np[label] = input_tensor.detach().cpu().numpy()
+        outputs_np[label] = output.detach().cpu().numpy()
 
         for method_name, algo in methods.items():
             try:
@@ -967,24 +1039,33 @@ def plot_explainability_maps(
                         target=label,
                     )
 
-                attributions[method_name][label] = (
-                    input_tensor.detach().cpu(),
-                    attr.detach().cpu(),
+                attributions_np[method_name][label] = (
+                    attr.detach().cpu().numpy()
                 )
 
             except Exception as e:
                 print(f"[!] Failed {method_name} for class {label}: {e}")
 
+    # --- Save numpy arrays ---
+    np.savez(
+        save_numpy_path,
+        inputs=inputs_np,
+        outputs=outputs_np,
+        **{f"attr_{k}": v for k, v in attributions_np.items()},
+    )
+
+    print(f"[✓] Saved explainability arrays to {save_numpy_path}")
+
     # --- Plot ---
     _plot_explainability_grid(
-        attributions,
+        inputs_np,
+        attributions_np,
         exp_name,
         save_path,
     )
 
     print(f"[✓] Explainability figure saved to {save_path}")
 
-def _plot_explainability_grid(attributions, exp_name, save_path):
     """
     Rows = explainability methods
     Columns = classes
