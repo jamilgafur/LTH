@@ -920,8 +920,15 @@ def _plot_explainability_grid(
     for col, label in enumerate(class_labels):
         img = inputs_np[label][0]
 
-        if img.shape[0] == 1:  # grayscale
+        if img.ndim == 3 and img.shape[0] == 3:  # RGB CHW → HWC
+            img = np.transpose(img, (1, 2, 0))
+            axes[0, col].imshow(img)
+        elif img.ndim == 3 and img.shape[0] == 1:  # grayscale CHW
             img = img[0]
+            axes[0, col].imshow(img, cmap="gray")
+        else:  # already HW
+            axes[0, col].imshow(img, cmap="gray")
+
 
         axes[0, col].imshow(img, cmap="gray")
         axes[0, col].set_title(f"Class {label}")
