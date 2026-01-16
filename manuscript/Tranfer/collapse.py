@@ -147,10 +147,17 @@ def _build_and_replace_block(
     if debug:
         print(f"[DEBUG] Replacement conv in_channels={in_channels}, out_channels={out_channels}")
 
-    conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=True)
+    conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False)
+    # Using BatchNorm2d to stabilize learning if you plan to fine-tune
+    bn = nn.BatchNorm2d(out_channels) 
+    relu = nn.ReLU(inplace=False) # out-of-place for autograd safety
     pool = nn.AdaptiveAvgPool2d((target_H, target_W))
+
+    # Rebuilding the surrogate with increased capacity
     replacement = nn.Sequential(OrderedDict([
         ("conv_1x1", conv),
+        ("bn", bn),
+        ("relu", relu),
         ("adaptive_pool", pool),
     ]))
     if debug:
