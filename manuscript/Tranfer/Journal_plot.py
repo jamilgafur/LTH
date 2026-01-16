@@ -831,24 +831,6 @@ def tab2(df: pd.DataFrame):
 
 import numpy as np
 
-def summarize_attribution(attr: np.ndarray, metric: str) -> float:
-    """
-    Reduce attribution tensor to scalar for plotting.
-    """
-    abs_attr = np.abs(attr)
-
-    if metric == "mean":
-        return abs_attr.mean()
-    if metric == "sum":
-        return abs_attr.sum()
-    if metric == "max":
-        return abs_attr.max()
-    if metric == "l2":
-        return np.sqrt((abs_attr ** 2).sum())
-
-    raise ValueError(f"Unknown metric: {metric}")
-import numpy as np
-
 def pwcca_distance(X, Y, epsilon=1e-10):
     """
     Projection Weighted Canonical Correlation Analysis (PWCCA)
@@ -883,99 +865,6 @@ def pwcca_distance(X, Y, epsilon=1e-10):
     alpha /= np.sum(alpha)
 
     return float(np.sum(alpha * s))
-
-def save_explainability_maps(model, dataloader, device, exp_name):
-    """
-    Generates Saliency, Integrated Gradients, and Gradient SHAP data for 
-    the first instance of each unique class.
-    """
-    print(f"[•] Extracting explainability data for {exp_name}...")
-
-    # --- FORCE FP32 FOR CAPTUM ---
-    model = model.to(device).float()
-    model.eval()
-
-    explainability_results = []
-    unique_samples = {}
-
-    # Identify one unique sample per class
-    with torch.no_grad():
-        for inputs, labels in dataloader:
-            inputs = inputs.to(device).float()
-
-            for i in range(len(labels)):
-                label = labels[i].item()
-                if label not in unique_samples:
-                    unique_samples[label] = inputs[i:i+1]
-
-            num_classes = (
-                len(dataloader.dataset.classes)
-                if hasattr(dataloader.dataset, "classes")
-                else 10
-            )
-            if len(unique_samples) >= num_classes:
-                break
-
-    try:
-        from captum.attr import Saliency, IntegratedGradients, GradientShap
-
-        saliency = Saliency(model)
-        ig = IntegratedGradients(model)
-
-        # Baseline distribution (must match dtype)
-        dist_images = next(iter(dataloader))[0][:5].to(device).float()
-        shap = GradientShap(model)
-
-    except ImportError as e:
-        print(f"[!] Captum init failed: {e}")
-        return []
-
-    for label, input_tensor in unique_samples.items():
-        input_tensor = input_tensor.clone().detach().requires_grad_(True)
-
-        methods = {
-            "Saliency": saliency,
-            "Integrated Gradients": ig,
-            "Gradient SHAP": shap,
-        }
-
-        for method_name, algo in methods.items():
-            try:
-                if method_name == "Gradient SHAP":
-                    attr = algo.attribute(
-                        input_tensor,
-                        baselines=dist_images,
-                        target=label,
-                    )
-                elif method_name == "Integrated Gradients":
-                    attr = algo.attribute(
-                        input_tensor,
-                        target=label,
-                        n_steps=50,
-                    )
-                else:
-                    attr = algo.attribute(
-                        input_tensor,
-                        target=label,
-                    )
-
-                explainability_results.append(
-                    {
-                        "exp_name": exp_name,
-                        "prediction_class": label,
-                        "explainability_method": method_name,
-                        "input_values": input_tensor.detach().cpu().numpy(),
-                        "attribution_output": attr.detach().cpu().numpy(),
-                    }
-                )
-
-            except Exception as e:
-                print(
-                    f"[!] Failed {method_name} for class {label}: {e}"
-                )
-
-    print(f"[✓] Extracted explainability data for {len(explainability_results)} entries.")
-    return explainability_results
 
 def extract_representation(model, dataloader, device, max_batches=5):
     model.eval()
