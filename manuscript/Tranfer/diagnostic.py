@@ -955,6 +955,49 @@ def _plot_explainability_grid(
     plt.savefig(save_path, dpi=300)
     plt.close()
 
+def plot_weight_magnitude_distributions(
+    model,
+    save_path="weight_distributions.svg",
+    bins=50,
+):
+    """
+    Plots distribution of absolute weight magnitudes per layer using subplots.
+    """
+
+    # Collect weights
+    layer_weights = []
+    layer_names = []
+
+    for name, param in model.named_parameters():
+        if param.requires_grad and param.dim() > 1:  # skip biases / scalars
+            weights = param.detach().cpu().numpy().ravel()
+            layer_weights.append(np.abs(weights))
+            layer_names.append(name)
+
+    num_layers = len(layer_weights)
+    cols = 3
+    rows = math.ceil(num_layers / cols)
+
+    fig, axes = plt.subplots(rows, cols, figsize=(cols * 5, rows * 4))
+    axes = axes.flatten()
+
+    for idx, (weights, name) in enumerate(zip(layer_weights, layer_names)):
+        axes[idx].hist(weights, bins=bins, log=True)
+        axes[idx].set_title(name)
+        axes[idx].set_xlabel("|Weight|")
+        axes[idx].set_ylabel("Count (log)")
+
+    # Remove empty subplots
+    for ax in axes[num_layers:]:
+        ax.axis("off")
+
+    fig.suptitle("Weight Magnitude Distributions per Layer", fontsize=16)
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    fig.savefig(save_path)
+    plt.close(fig)
+
+    print(f"[✓] Weight distribution figure saved to {save_path}")
+
 
 def plot_explainability_maps(
     model,
@@ -974,7 +1017,14 @@ def plot_explainability_maps(
 
     model = model.to(device).float()
     model.eval()
+    weight_plot_path = save_path.replace(
+        ".svg", "_weight_distributions.svg"
+    )
 
+    plot_weight_magnitude_distributions(
+        model,
+        save_path=weight_plot_path,
+    )
     unique_samples = {}
 
     # --- Get one sample per class ---
