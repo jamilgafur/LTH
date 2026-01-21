@@ -172,7 +172,7 @@ def main():
 
     # 9. Generate Bash Script
     PBS_DIR = "/LTH/manuscript/Transcript"
-    PBS_SCRIPT = os.path.join(PBS_DIR, "main_1.pbs")
+    PBS_SCRIPT = os.path.join(PBS_DIR, "main_2.pbs")
 
     bash_script = f"""#!/bin/bash
 # Auto-generated script to submit collapse jobs
