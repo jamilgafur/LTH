@@ -1,6 +1,17 @@
 import glob
 import os
 import torch
+import gc
+import time
+import random
+import tempfile
+import numpy as np
+import json
+import argparse
+from datetime import datetime
+from torch.backends import cudnn
+
+# Import custom modules (Assuming these are in your path)
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.models.RegNetX import RegNetX_400MF
 from pyPrune.models.ConvNetX import ConvNeXt
@@ -12,17 +23,8 @@ from diagnostic import *
 from utils import *
 from trainer import *
 from pyPrune.utils import *
-import tempfile
-
-from datetime import datetime
-from torch.backends import cudnn
-import random
-import math 
-import numpy as np
-import argparse
-import json
 from config import *
-# Set seed for reproducibility
+
 def set_seed(seed=42):
     """Set random seeds for reproducibility across different modules."""
     random.seed(seed)
@@ -30,10 +32,6 @@ def set_seed(seed=42):
     torch.manual_seed(seed)
     cudnn.deterministic = True
     cudnn.benchmark = False
-# python main_2.py --model VGG16 --dataset Cifar10 --epochs 6 --epochs 1 --collapse_start features.conv_1 --collapse_end features.bn_4
-
-set_seed(42)
-
 
 def initialize_model_and_data(args):
     """Initialize the model and dataset based on the provided arguments."""
@@ -41,7 +39,6 @@ def initialize_model_and_data(args):
     dataset = args.dataset
     model_kwargs = {}
 
-    # Ensure InceptionNet is not used with JF experiments
     if model_class == InceptionNet and args.JF:
         raise ValueError("JF experiments are not supported for InceptionNet.")
     
@@ -54,46 +51,28 @@ def initialize_model_and_data(args):
 def train_model(model, train_loader, test_loader, epochs, device):
     """Train the model and return losses and accuracies."""
     optimizer, scheduler = create_optimizer_scheduler(model)
-
-    history = {
-        "train_loss": [],
-        "train_accuracy": [],
-        "test_loss": [],
-        "test_accuracy": []
-    }
+    history = {"train_loss": [], "train_accuracy": [], "test_loss": [], "test_accuracy": []}
 
     for epoch in range(epochs):
         model.train()
-        train_loss, train_accuracy = train_one_epoch(
-            model, train_loader, optimizer, device
-        )
+        train_loss, train_accuracy = train_one_epoch(model, train_loader, optimizer, device)
 
         model.eval()
-        test_loss, test_accuracy = evaluate_model(
-            model, test_loader, device
-        )
+        test_loss, test_accuracy = evaluate_model(model, test_loader, device)
 
-        # Store metrics
         history["train_loss"].append(train_loss)
         history["train_accuracy"].append(train_accuracy)
         history["test_loss"].append(test_loss)
         history["test_accuracy"].append(test_accuracy)
 
-        print(
-            f"Epoch {epoch + 1}/{epochs} | "
-            f"Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy:.4f} | "
-            f"Test Loss: {test_loss:.4f}, Test Acc: {test_accuracy:.4f}"
-        )
-
+        print(f"Epoch {epoch + 1}/{epochs} | Train Loss: {train_loss:.4f}, Acc: {train_accuracy:.4f}")
         scheduler.step()
 
     return history
 
 def create_optimizer_scheduler(model, learning_rate=1e-3):
     """Creates optimizer and scheduler for training."""
-    optimizer = torch.optim.SGD(
-        model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4
-    )
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     return optimizer, scheduler
 
@@ -113,66 +92,83 @@ def convert_ndarrays_to_lists(data):
         return data
 
 def safe_update_metrics_json(model_root, exp_name, new_data, base_dir="./runs/metrics"):
-    """Writes metrics to a per-job JSON file with a unique timestamp."""
+    """
+    HPC-Safe: Writes metrics using directory-based locking to avoid race conditions.
+    """
     os.makedirs(base_dir, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    pid = os.getpid()
-    json_path = os.path.join(base_dir, f"{model_root}_metrics_{timestamp}_{pid}.json")
+    master_path = os.path.join(base_dir, "master_metrics.json")
+    lock_dir = master_path + ".lock"
+    
+    # Clean data first
+    safe_data = convert_ndarrays_to_lists(new_data)
+    
+    # Retry mechanism for acquiring lock
+    max_retries = 100
+    acquired = False
+    for _ in range(max_retries):
+        try:
+            os.makedirs(lock_dir)
+            acquired = True
+            break
+        except FileExistsError:
+            time.sleep(random.uniform(0.5, 2.0)) # Jittered wait
+
+    if not acquired:
+        print(f"[!] Could not acquire lock for {master_path}. Saving to emergency file.")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        emergency_path = os.path.join(base_dir, f"backup_{timestamp}_{exp_name}.json")
+        with open(emergency_path, "w") as f:
+            json.dump({exp_name: safe_data}, f, indent=4)
+        return
 
     try:
-        # Crucial: Deep clean data for JSON compatibility
-        safe_data = convert_ndarrays_to_lists(new_data)
-
-        # Write to temp file first for atomic operations
-        tmp_fd, tmp_path = tempfile.mkstemp(dir=base_dir, prefix="tmp_metrics_", suffix=".json")
+        # Read-Modify-Write
+        master_data = {}
+        if os.path.exists(master_path):
+            with open(master_path, "r") as f:
+                try:
+                    master_data = json.load(f)
+                except:
+                    pass
+        
+        master_data[exp_name] = safe_data
+        
+        # Atomic write
+        tmp_fd, tmp_path = tempfile.mkstemp(dir=base_dir, prefix="tmp_master_", suffix=".json")
         with os.fdopen(tmp_fd, "w") as f:
-            json.dump({exp_name: safe_data}, f, indent=4)
-
-        os.replace(tmp_path, json_path)
-        print(f"[✓] Saved metrics for '{exp_name}' → {json_path}")
-        return json_path
-    except Exception as e:
-        print(f"[!] Failed to save metrics JSON: {e}")
-        return None
+            json.dump(master_data, f, indent=4)
+            f.flush()
+            os.fsync(f.fileno())
+        
+        os.replace(tmp_path, master_path)
+        print(f"[✓] Safely updated master metrics at {master_path}")
+        
+    finally:
+        try:
+            os.rmdir(lock_dir)
+        except:
+            pass
 
 def merge_all_metrics(base_dir="./runs/metrics", merged_name="merged_metrics.json"):
     """Safely merges all metrics JSON files into one consolidated file."""
+    # Note: Logic is now largely covered by safe_update_metrics_json, 
+    # but kept for compatibility.
     os.makedirs(base_dir, exist_ok=True)
-    
-    # Improved glob: Look for any .json file that contains 'metrics' but isn't the merged file itself
-    json_files = [
-        f for f in glob.glob(os.path.join(base_dir, "*.json")) 
-        if "_metrics_" in os.path.basename(f) and merged_name not in os.path.basename(f)
-    ]
+    json_files = [f for f in glob.glob(os.path.join(base_dir, "*.json")) 
+                  if "_metrics_" in f and merged_name not in f]
     
     merged_data = {}
-    print(f"[•] Found {len(json_files)} component files in {base_dir}")
-
     for jf in json_files:
         try:
-            if os.path.getsize(jf) == 0: continue
             with open(jf, "r") as f:
                 data = json.load(f)
-                if isinstance(data, dict):
-                    merged_data.update(data)
-        except Exception as e:
-            print(f"[!] Skipping {jf}: {e}")
+                if isinstance(data, dict): merged_data.update(data)
+        except Exception as e: print(f"[!] Skipping {jf}: {e}")
 
     merged_path = os.path.join(base_dir, merged_name)
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=base_dir, prefix="tmp_merge_", suffix=".json")
-    
-    with os.fdopen(tmp_fd, "w") as tmp_file:
-        json.dump(merged_data, tmp_file, indent=4)
-
-    os.replace(tmp_path, merged_path)
-    print(f"[✓] Successfully merged all metrics → {merged_path}")
+    with open(merged_path, "w") as f:
+        json.dump(merged_data, f, indent=4)
     return merged_path
-
-import os
-import glob
-import torch
-import json
-import argparse
 
 def main():
     parser = argparse.ArgumentParser()
@@ -184,95 +180,88 @@ def main():
     parser.add_argument("--quant", action="store_true")
     args = parser.parse_args()
 
-    # 1. Environment & Shared Paths
+    set_seed(42)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     exp_name = f"{args.model}_{args.dataset}"
     if args.quant: exp_name += "_quant"
     
     # 2. Model & Data Initialization
-    # Use a more flexible glob pattern and print what we find for debugging
     search_pattern = f"baseline*/*{args.model}*{args.dataset}*/**/*.pt"
-    print(f"[•] Searching for baseline models with pattern: {search_pattern}")
-
     model_files = glob.glob(search_pattern, recursive=True)
-
-    # Filter out common non-model files if necessary
     model_files = [f for f in model_files if "checkpoint" in f.lower() or "pretrained" in f.lower()]
 
     if not model_files:
-        # Diagnostic: Print the contents of the baseline folder to see why it's failing
-        print("[!] Glob failed. Current directory contents:")
-        os.system("ls -d baseline*/*") 
-        raise ValueError(f"No baseline model found for {args.model} on {args.dataset} using pattern {search_pattern}")
+        raise ValueError(f"No baseline model found for {args.model}")
 
     baseline_model_file = model_files[0]
-    print(f"[✓] Found baseline model: {baseline_model_file}")
     args.dataset = args.dataset.replace("_", "")
     train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
 
     # 3. Experiment Directory Setup
-    post_collapse_dir = os.path.join(os.path.dirname(os.path.dirname(model_files[0])), f"post_collapse_{args.collapse_start}_{args.collapse_end}_epochs{args.epochs}")
-    shared_metrics_dir = f"./{post_collapse_dir}/metrics" 
-    
+    post_collapse_dir = os.path.join(os.path.dirname(os.path.dirname(model_files[0])), 
+                                     f"post_collapse_{args.collapse_start}_{args.collapse_end}_epochs{args.epochs}")
+    shared_metrics_dir = os.path.join(post_collapse_dir, "metrics")
     ckpt_dir = os.path.join(post_collapse_dir, "checkpoints")
     for d in [ckpt_dir, shared_metrics_dir]: os.makedirs(d, exist_ok=True)
 
-    # 4. Resume Logic - Efficiency: Loading state_dict instead of full objects
-    base_ckpt_name = f"{args.collapse_start+args.collapse_end}_{exp_name}"
+    # 4. Resume Logic
+    base_ckpt_name = f"{args.collapse_start}_{args.collapse_end}_{exp_name}"
     ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
     existing_ckpts = sorted(glob.glob(ckpt_pattern), key=lambda x: int(os.path.basename(x).split("epoch")[-1].split(".")[0]))
 
     start_epoch = 0
     all_data = {"accuracies": [], "losses": []}
     model = eval(model_class)(**model_kwargs).to(device)
-    print(f"[•] Initialized model: {args.model} on {args.dataset}")
-    print(f"[•] Collapse Range: {args.collapse_start} to {args.collapse_end}")
-    print(f"[•] Checkpoints Directory: {ckpt_dir}")
 
     if existing_ckpts:
-        print(f"[•] Found existing checkpoints: {existing_ckpts}")
         last_ckpt = existing_ckpts[-1]
         print(f"[✓] Resuming from: {last_ckpt}")
         ckpt = torch.load(last_ckpt, map_location=device)
-        model.load_state_dict(ckpt["model_state_dict"]) # Memory efficient loading
+        model.load_state_dict(ckpt["model_state_dict"])
         start_epoch = ckpt["epoch"]
         all_data = ckpt["data"]
-        del ckpt # Free memory
+        del ckpt
     else:
-        print(f"[•] No existing checkpoints found. Loading baseline model from {baseline_model_file}")
         checkpoint = torch.load(baseline_model_file, map_location=device)
-        model.load_state_dict(checkpoint['model'])
-    # Perform collapse if specified
-    if args.collapse_start and args.collapse_end:
-        model = collapse_only(model=model, model_weights_1=None, compression_set={(args.collapse_start, args.collapse_end)}, 
-                                model_class=model_class, input_shape=input_size, device=device)
-    del checkpoint
+        # Handle both 'model' and 'model_state_dict' keys depending on baseline format
+        state_dict = checkpoint.get('model', checkpoint.get('model_state_dict', checkpoint))
+        model.load_state_dict(state_dict)
+        
+        if args.collapse_start and args.collapse_end:
+            model = collapse_only(model=model, model_weights_1=None, 
+                                 compression_set={(args.collapse_start, args.collapse_end)}, 
+                                 model_class=model_class, input_shape=input_size, device=device)
+        del checkpoint
 
-    # 5. Training Loop - Efficiency: Periodically clearing CUDA cache
+    # 5. Training Loop with Rolling Checkpoints (Keep last 2)
     for epoch in range(start_epoch + 1, args.epochs + 1):
         step_data = train_model(model, train_loader, test_loader, epochs=1, device=device)
         all_data["accuracies"].extend(step_data.get("test_accuracy", []))
         all_data["losses"].extend(step_data.get("test_loss", []))
 
-        # Save state_dict only (much smaller files and lower RAM usage)
+        # Atomic Checkpoint Save
         ckpt_path = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch}.pt")
+        tmp_ckpt = ckpt_path + ".tmp"
         torch.save({
             "epoch": epoch, 
             "model_state_dict": model.state_dict(), 
             "data": all_data
-        }, ckpt_path)
+        }, tmp_ckpt)
+        os.replace(tmp_ckpt, ckpt_path) # Atomic swap
 
-        if epoch > 1:
-            old_ckpt = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch-1}.pt")
-            if os.path.exists(old_ckpt): os.remove(old_ckpt)
+        # Rolling Cleanup: Keep current (N) and previous (N-1), delete (N-2)
+        if epoch > 2:
+            old_ckpt = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch-2}.pt")
+            if os.path.exists(old_ckpt):
+                try: os.remove(old_ckpt)
+                except: pass
         
         torch.cuda.empty_cache()
         gc.collect()
 
-    # 6. Final Evaluation & Single JSON Merge
-    print("[•] Running final diagnostics...")
+    # 6. Final Evaluation
     model.eval()
-    with torch.no_grad(): # Ensure no gradients are stored during evaluation
+    with torch.no_grad():
         cka_scores, layer_names = calculate_central_kernel_alignment(model, test_loader, post_collapse_dir, 1, device)
         param_count = count_trainable_params(model)
         infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device, quant=args.quant)
@@ -280,36 +269,20 @@ def main():
         diagnostic = run_full_diagnostics(model, input_size, {exp_name: all_data}, post_collapse_dir, exp_name, 
                                           test_loader, (args.collapse_start, args.collapse_end), device, args.quant)
 
-    # Consolidate everything into diagnostic via .update
     diagnostic.update({
         "param_count": param_count,
         "inference_time": infer_time,
         "flops": flops,
         "total_size_mb": total_size_mb,
         "final_accuracy": all_data["accuracies"][-1] if all_data["accuracies"] else 0,
-        "metadata": {
-            "dataset": args.dataset,
-            "architecture": args.model,
-            "collapse": [args.collapse_start, args.collapse_end]
-        },
+        "dataset": args.dataset, "architecture": args.model, "collapse": [args.collapse_start, args.collapse_end],
         "cka": {"scores": cka_scores, "layers": layer_names},
         "history": all_data
     })
 
-    # Memory efficient JSON writing
-    master_path = os.path.join(shared_metrics_dir, "master_metrics.json")
-    master_data = {}
-    if os.path.exists(master_path):
-        with open(master_path, "r") as f:
-            try: master_data = json.load(f)
-            except: pass
-
-    master_data[f"{exp_name}_{args.collapse_start+args.collapse_end}"] = convert_ndarrays_to_lists(diagnostic)
-
-    with open(master_path, "w") as f:
-        json.dump(master_data, f, indent=4)
-
-    print(f"[✓] Experiment complete. Merged metrics saved to {master_path}")
+    # 7. HPC-Safe Final Save
+    entry_key = f"{exp_name}_{args.collapse_start}_{args.collapse_end}"
+    safe_update_metrics_json(args.model, entry_key, diagnostic, base_dir=shared_metrics_dir)
 
 if __name__ == "__main__":
     main()
