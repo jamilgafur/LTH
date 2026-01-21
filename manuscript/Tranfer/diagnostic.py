@@ -22,7 +22,15 @@ import torch
 import torch.nn as nn
 from fvcore.nn import FlopCountAnalysis
 import psutil
+import math
 
+
+import logging
+import matplotlib
+import matplotlib.pyplot as plt
+
+# Set the logging level for matplotlib to WARNING or ERROR to suppress debug/info messages
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
 # =====================================
 # Utility Imports (Project-specific)
 # =====================================
@@ -57,53 +65,29 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, t
 
     # Quantization handling
     if quant:
-        try:
-            if device.type == "cuda":
-                dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.half
-                model = model.to(dtype=dtype)
-                input_tensor = input_tensor.to(dtype=dtype)
-            print(f"[•] Quantization enabled: {next(model.parameters()).dtype}")
-        except Exception as e:
-            print(f"[!] Quantization failed: {e}. Falling back to FP32.")
-            model = model.float()
-            input_tensor = input_tensor.float()
-
+        if device.type == "cuda":
+            dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.half
+            model = model.to(dtype=dtype)
+            input_tensor = input_tensor.to(dtype=dtype)
+        print(f"[•] Quantization enabled: {next(model.parameters()).dtype}")
+        
     diagnostics = {}
 
     # 1. Per-layer params/FLOPs
-    try:
-        df_params = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
-        diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records")
-    except Exception as e:
-        diagnostics["per_layer_params_flops"] = []
-
+    df_params = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
+    diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records")
+   
     # 2. Activation sizes
-    try:
-        df_act = analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
-        diagnostics["activation_sizes"] = df_act.to_dict(orient="records")
-    except Exception as e:
-        diagnostics["activation_sizes"] = []
+    df_act = analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
+    diagnostics["activation_sizes"] = df_act.to_dict(orient="records")
 
     # 3. Memory decomposition
-    try:
-        diagnostics["memory_decomposition"] = memory_decomposition(model, input_tensor, save_dir, exp_name)
-    except Exception as e:
-        diagnostics["memory_decomposition"] = {}
+    diagnostics["memory_decomposition"] = memory_decomposition(model, input_tensor, save_dir, exp_name)
 
     # 4. Explainability Data (Updated to save to dictionary)
     if test_dataloader is not None:
-        try:
-             plot_explainability_maps(model, test_dataloader, device, exp_name=exp_name,save_path=os.path.join(save_dir, f"{exp_name}_explainability.svg"))
-        except Exception as e:
-            print(f"[!] Explainability analysis failed: {e}")
-            diagnostics["explainability_reports"] = []
+        plot_explainability_maps(model, test_dataloader, device, exp_name=exp_name,save_path=os.path.join(save_dir, f"{exp_name}_explainability.svg"))
 
-    # 5. Optional collapse analysis
-    if collapse_range:
-        try:
-            analyze_collapse_effects(model, collapse_range, save_dir, exp_name)
-        except Exception as e:
-            print(f"[!] Collapse analysis failed: {e}")
 
     print(f"[✓] Diagnostics complete for {exp_name}")
     return diagnostics
@@ -117,12 +101,10 @@ def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
         input_tensor = input_tensor.unsqueeze(0)
     
     from fvcore.nn import FlopCountAnalysis
-    try:
-        flops = FlopCountAnalysis(model, input_tensor)
-        per_module_flops = flops.by_module()
-    except Exception:
-        per_module_flops = {}
-
+    
+    flops = FlopCountAnalysis(model, input_tensor)
+    per_module_flops = flops.by_module()
+    
     layer_data = []
     for name, module in model.named_modules():
         if len(list(module.children())) == 0:
@@ -166,10 +148,7 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
 
     def hook(name):
         def fn(_, __, output):
-            try:
-                activations[name] = int(output.numel()) if isinstance(output, torch.Tensor) else 0
-            except Exception:
-                activations[name] = 0
+            activations[name] = int(output.numel()) if isinstance(output, torch.Tensor) else 0
         return fn
 
     if len(input_tensor.shape) == 3:
@@ -451,37 +430,6 @@ def predict_collapse_parameters(in_channels, out_channels, kernel_size, num_laye
     delta = collapsed_params - original_params
     return {"original": original_params, "collapsed": collapsed_params, "delta": delta}
 
-def analyze_collapse_effects(model, collapse_range, save_dir, exp_name):
-    if not collapse_range:
-        return
-    try:
-        start_stage, end_stage = collapse_range
-        stage_channels = [64, 128, 256, 512, 512, 4096]
-        in_ch = stage_channels[start_stage - 1]
-        out_ch = stage_channels[end_stage - 1]
-        num_layers = (end_stage - start_stage + 1) * 3
-        pred = predict_collapse_parameters(in_ch, out_ch, 3, num_layers)
-        observed_params = count_trainable_params(model)
-        df = pd.DataFrame([{
-            "stage_range": f"{start_stage}-{end_stage}",
-            "predicted_params": pred["collapsed"],
-            "original_est": pred["original"],
-            "delta_predicted": pred["delta"],
-            "observed_total": observed_params
-        }])
-        ensure_dir(save_dir)
-        df.to_csv(os.path.join(save_dir, f"{exp_name}_collapse_prediction.csv"), index=False)
-        plt.figure(figsize=(8, 5))
-        plt.bar(["Original","Predicted Collapsed","Observed Total"],
-                [pred["original"], pred["collapsed"], observed_params],
-                color=["gray","orange","blue"])
-        plt.ylabel("Parameter Count")
-        plt.title(f"Collapse {start_stage}-{end_stage} Parameter Comparison")
-        plt.tight_layout()
-        plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_prediction.svg"))
-        plt.close()
-    except Exception as e:
-        print(f"[!] analyze_collapse_effects error: {e}")
 
 # -------------------------
 # Cross-experiment per-layer aggregation (robust + readable)

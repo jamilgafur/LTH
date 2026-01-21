@@ -20,20 +20,9 @@ echo "EXPERIMENT=$EXPERIMENT"
 echo "FLAG=$FLAG"
 echo "QUANT=$QUANT"
 
-# --- Check for required variables ---
-if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$EXPERIMENT" ] || [ -z "$FLAG" ] || [ -z "$QUANT" ]; then
-    echo "Error: One or more required environment variables (MODEL, DATASET, EXPERIMENT, FLAG, QUANT) are not set." >&2
-    exit 1
-fi
 
 # --- Prepare output file ---
 OUTPUT_FILE="${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}_${QUANT}_run.txt"
-
-# Remove existing output file if it exists
-if [ -f "$OUTPUT_FILE" ]; then
-    echo "Removing existing output file: $OUTPUT_FILE"
-    rm "$OUTPUT_FILE"
-fi
 
 # --- Check if quant flag should be added ---
 QUANT_FLAG=""
@@ -42,17 +31,13 @@ if [ "$QUANT" == "True" ]; then
 fi
 
 # --- Run the Python script ---
-echo "Executing: ~/env/lth_env/bin/python transfer.py --model $MODEL --dataset $DATASET --experiment $EXPERIMENT --$FLAG --pretrain 50 --epochs 50 --post_compress_epochs 0 $QUANT_FLAG"
+echo "Executing: python main_2.py --model $MODEL -dataset $DATASET -epochs $EPOCHS -collapse_start $COLLAPSE_START -collapse_end $COLLAPSE_END $QUANT_FLAG"
 
-time ~/env/lth_env/bin/python transfer.py \
-    --model "$MODEL" \
-    --dataset "$DATASET" \
-    --experiment "$EXPERIMENT" \
-    --pretrain 2 \
-    --epochs 2 \
-    --post_compress_epochs 0 \
-    --"$FLAG" \
-    $QUANT_FLAG \
-    > "$OUTPUT_FILE" 2>&1
-
-time ~/env/lth_env/bin/python Journal_plot.py  
+# time ~/env/lth_env/bin/python main_2.py \
+#     --model "$MODEL" \
+#     --dataset "$DATASET" \
+#     --epochs "$EPOCHS" \
+#     --collapse_start "$COLLAPSE_START" \
+#     --collapse_end "$COLLAPSE_END" \
+#     $QUANT_FLAG \
+#     > "$OUTPUT_FILE" 2>&1

@@ -4,3 +4,4 @@ from .pruneMethods.Trainer import *
 from .utils import *
 from .models import *
 from .strategies.PruningStrategy import *
+from .strategies.collapse import *

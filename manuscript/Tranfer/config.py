@@ -1,4 +1,10 @@
 
+import glob
+
+def safe_glob(path_pattern):
+    matches = glob.glob(path_pattern)
+    return matches[0] + "/" if matches else "None"   # or "" if you prefer empty string
+
 CHECKPOINT_BASES = {
     "VGG16": {
         "Cifar10": safe_glob("../structured_study/pruning_checkpoints/*Vgg16*cifar10_*"),

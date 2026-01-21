@@ -18,6 +18,7 @@ setup(
         'codecarbon',
         'fvcore',
         'torchinfo',
+        'llvmlite',
         
     ],
     author="Jamil Gafur",

@@ -24,7 +24,7 @@ from pyPrune.models.ConvNetX import ConvNeXt
 from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
-from collapse import collapse_only
+from pyPrune.strategies.collapse import collapse_only
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
 
@@ -66,7 +66,8 @@ DATASET_ORDER = ["cifar10_", "cifar100_", "tinyimagenet", "imagenet", "ConvNeXt"
 # Data Loading & Utilities
 # =========================
 def load_results() -> pd.DataFrame:
-    files = list(RESULTS_DIR.rglob("*merged_metrics.json"))
+    files = list(RESULTS_DIR.rglob("*metrics.json"))
+    print(f"[•] Found {len(files)} merged_metrics.json files: {files}")
     if not files:
         raise FileNotFoundError("No merged_metrics.json files found")
 
@@ -78,37 +79,40 @@ def load_results() -> pd.DataFrame:
         
         with open(p) as f:
             raw = json.load(f)
-
         for exp_name, metrics in raw.items():
-           
-            rows.append(
-                {
-                    "dataset": dataset,
-                    "architecture": arch,
-                    "exp_name": exp_name,
-                    "posthoc_or_posttrain": infer_posthoc_or_posttrain(exp_name),
-                    "model_type": infer_model_type(exp_name),
-                    "is_quantized": infer_isquant(exp_name),
-
-                    # Core metrics
-                    "accuracy": metrics.get("final_accuracy"),
-                    "params": metrics.get("param_count"),
-                    "flops": metrics.get("flops"),
-                    "memory": metrics.get("total_size_mb"),
-                }
-            )
-
+            #  metrics.keys()
+            # dict_keys(['per_layer_params_flops', 'activation_sizes', 'memory_decomposition', 'param_count', 'inference_time', 'flops', 'total_size_mb', 'final_accuracy', 'metadata', 'cka', 'history'])  
+            row = { "per_layer_params_flops": metrics.get("per_layer_params_flops", None),
+                    "activation_sizes": metrics.get("activation_sizes", None),
+                    "memory_decomposition": metrics.get("memory_decomposition", None),
+                    "params": metrics.get("param_count", None),
+                    "inference_time": metrics.get("inference_time", None),
+                    "flops": metrics.get("flops", None),
+                    "memory": metrics.get("total_size_mb", None),
+                    "accuracy": metrics.get("final_accuracy", None),
+                    "metadata": metrics.get("metadata", None),
+                    "cka": metrics.get("cka", None),
+                    "history": metrics.get("history", None),
+                    "file_path": str(p)
+                   }
+            row["dataset"] = dataset
+            row["architecture"] = arch
+            row["exp_name"] = exp_name
+            row["posthoc_or_posttrain"] = infer_posthoc_or_posttrain(exp_name)
+            row["model_type"] = infer_model_type(exp_name)
+            row["is_quantized"] = infer_isquant(exp_name)
+            rows.append(row)
     return pd.DataFrame(rows)
 
 def infer_dataset_from_path(p: Path) -> str:
-    name = p.parent.parent.name.lower()
+    print(str(p))
     for ds in DATASET_ORDER:
-        if ds in name:
+        if ds in str(p).lower():
             return ds
     return "unknown" 
 
 def infer_architecture_from_path(p: Path) -> str:
-    name = p.parent.parent.name.lower()
+    name = str(p).lower()
     if "regnet" in name: return "RegNetX"
     if "vgg" in name: return "VGG16"
     if "inception" in name: return "InceptionNet"
@@ -133,11 +137,13 @@ def infer_isquant(exp_name: str) -> bool:
     return "quant" in exp_name.lower()
 
 def find_baseline(df: pd.DataFrame):
+
     mask = (
-        df["exp_name"].str.lower().str.contains("original")
-        | df["exp_name"].str.lower().str.contains("baseline")
+        df["file_path"].str.lower().str.contains("original")
+        | df["file_path"].str.lower().str.contains("baseline")
     )
-    m = df[mask].sort_values("exp_name")
+    m = df[mask].sort_values("file_path")
+
     return None if m.empty else m.iloc[0]
 
 def normalize(df: pd.DataFrame) -> pd.DataFrame:
@@ -897,41 +903,35 @@ def extract_representation(model, dataloader, device, max_batches=5):
 # Main
 # =========================
 if __name__ == "__main__":
-    try:
-        raw = load_results()
-        df = normalize(raw)
-        
-        print("\n==============================")
-        print(" GENERATING FIGURES & DATA ")
-        print("==============================")
-        
-        fig1(df)
-        fig2(df)
-        fig4(df)
-        fig5(df)
-        
-        fig6(df)
-        fig7(df)
-        
-        fig8(
-            df,
-            out_dir=FIG_DIR / "expname_ablations",
-        )
-        print("\n[•] Generating Diagnostic Figures from saved data...")
-      
-        fig10(
-            results_dir=RESULTS_DIR,
-            out_dir=FIG_DIR / "pwcca",
-            device="cuda" if torch.cuda.is_available() else "cpu",
-        )
-        tab1(df)
-        tab2(df)
+    df = load_results()
+    df = normalize(df)
+    print(df.head())
+    
+    print("\n==============================")
+    print(" GENERATING FIGURES & DATA ")
+    print("==============================")
+    
+    fig1(df)
+    fig2(df)
+    fig4(df)
+    fig5(df)
+    
+    fig6(df)
+    fig7(df)
+    
+    fig8(
+        df,
+        out_dir=FIG_DIR / "expname_ablations",
+    )
+    print("\n[•] Generating Diagnostic Figures from saved data...")
+    
+    fig10(
+        results_dir=RESULTS_DIR,
+        out_dir=FIG_DIR / "pwcca",
+        device="cuda" if torch.cuda.is_available() else "cpu",
+    )
+    tab1(df)
+    tab2(df)
 
-        print("\nDone. Check the 'tables/' folder for CSV data sources.")
-        
-    except FileNotFoundError as e:
-        print(f"Error: {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        import traceback
-        traceback.print_exc()
+    print("\nDone. Check the 'tables/' folder for CSV data sources.")
+    
