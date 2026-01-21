@@ -171,17 +171,31 @@ def main():
         json.dump(master_data, f, indent=4)
 
     # 9. Generate Bash Script
-    bash_script = ""
-    base_script = "#!/bin/bash\n# Auto-generated script to submit collapse jobs\n\n"
-    bash_script += base_script
+    bash_script = "#!/bin/bash\n# Auto-generated script to submit collapse jobs\n\n"
+
     for layer_name in layer_names:
-        # Note: Assuming layer_name structure [index, start_node, end_node]
         epochs = 5
-        command = f"qsub -q all.q -l ngpus=1 -v MODEL={args.model},DATASET={args.dataset},EPOCHS={epochs},COLLAPSE_START={layer_name[1]},COLLAPSE_END={layer_name[2]}  submit_jobs.pbd"
-        print(f"[•] To submit collapse job for layer {layer_name}, run:\n{command}\n")
-        bash_script += command + "\n"
-    with open(os.path.join(baseline_model_dir, "submit_collapse_jobs.sh"), "w") as f:
+
+        command = (
+            'command="qsub -q all.q -l ngpus=1 '
+            '-v MODEL=${model},'
+            'DATASET=${dataset},'
+            f'EPOCHS={epochs},'
+            f'COLLAPSE_START={layer_name[1]},'
+            f'COLLAPSE_END={layer_name[2]} '
+            'main_1.pbs"\n'
+            'echo "Submitting job with command: $command"\n'
+            'eval "$command"\n\n'
+        )
+
+        print(f"[•] Generating collapse job for layer {layer_name}")
+        bash_script += command
+
+    script_path = os.path.join(baseline_model_dir, "submit_collapse_jobs.sh")
+    with open(script_path, "w") as f:
         f.write(bash_script)
+
+    os.chmod(script_path, 0o755)
 
     print(f"[✓] Baseline complete. Results saved in: {baseline_model_dir}")
 
