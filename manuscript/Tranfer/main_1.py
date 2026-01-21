@@ -58,11 +58,23 @@ def initialize_model_and_data(args):
     
     return train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes
 
-def train_model(model, train_loader, test_loader, epochs, device):
-    optimizer, scheduler = create_optimizer_scheduler(model)
-    history = {"train_loss": [], "train_accuracy": [], "test_loss": [], "test_accuracy": []}
+def get_latest_checkpoint(ckpt_dir):
+    """Finds the checkpoint file with the highest epoch number."""
+    ckpts = glob.glob(os.path.join(ckpt_dir, "checkpoint_epoch_*.pt"))
+    if not ckpts:
+        return None
+    # Extract epoch numbers and find the max
+    epochs = [int(f.split('_')[-1].split('.')[0]) for f in ckpts]
+    latest_idx = np.argmax(epochs)
+    return ckpts[latest_idx]
 
-    for epoch in range(epochs):
+def train_model(model, train_loader, test_loader, epochs, device, 
+                optimizer, scheduler, start_epoch=0, checkpoint_dir=None, history=None):
+    
+    if history is None:
+        history = {"train_loss": [], "train_accuracy": [], "test_loss": [], "test_accuracy": []}
+
+    for epoch in range(start_epoch, epochs):
         model.train()
         train_loss, train_accuracy = train_one_epoch(model, train_loader, optimizer, device)
 
@@ -76,6 +88,30 @@ def train_model(model, train_loader, test_loader, epochs, device):
 
         print(f"Epoch {epoch + 1}/{epochs} | Train Acc: {train_accuracy:.4f} | Test Acc: {test_accuracy:.4f}")
         scheduler.step()
+
+        # --- Rotating HPC Checkpoint Logic ---
+        if checkpoint_dir:
+            current_ckpt = os.path.join(checkpoint_dir, f"checkpoint_epoch_{epoch + 1}.pt")
+            
+            # 1. Save to a temporary file first (Atomic Write to prevent corruption)
+            temp_path = os.path.join(checkpoint_dir, "temp.pt")
+            torch.save({
+                'epoch': epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'history': history,
+            }, temp_path)
+            
+            # 2. Rename temp to the formal epoch name
+            os.replace(temp_path, current_ckpt)
+            
+            # 3. Space Management: Delete the checkpoint from TWO epochs ago
+            # This keeps 'current' and 'previous' only.
+            old_ckpt = os.path.join(checkpoint_dir, f"checkpoint_epoch_{epoch - 1}.pt")
+            if os.path.exists(old_ckpt):
+                os.remove(old_ckpt)
+                print(f"Removed old checkpoint: {old_ckpt}")
 
     return history
 
@@ -102,62 +138,85 @@ def main():
     base_path = CHECKPOINT_BASES[args.model][args.dataset]
     model_path_pruned = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
     model_path_initalized = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][1])
-
     baseline_model_dir = os.path.join("baseline_models", f"{args.model}_{args.dataset}_pretrain{args.pretrain}_break{args.break_group}")
-    
-    # 3. Model Loading
-    model = eval(model_class)(**model_kwargs).to(device)
-    
-    if "None" not in model_path_initalized and os.path.isfile(model_path_initalized):
-        model.load_state_dict(torch.load(model_path_initalized, map_location=device)['model'])
-        baseline_model_dir += "_initialized"        
 
-    if "None" not in model_path_pruned and os.path.isfile(model_path_pruned):
-        model.load_state_dict(torch.load(model_path_pruned, map_location=device)['model'])
-        baseline_model_dir += "_pruned"
-
-    # 4. Directory & Sub-dir Setup
+    # 3. Directory Setup
     metrics_dir = os.path.join(baseline_model_dir, "metrics")
     ckpt_dir = os.path.join(baseline_model_dir, "checkpoints")
     for d in [metrics_dir, ckpt_dir]: os.makedirs(d, exist_ok=True)
 
-    # 5. Pretraining
-    history = train_model(model, train_loader, test_loader, epochs=args.pretrain, device=device)       
+    # 4. Model & Optimizer Initialization
+    model = eval(model_class)(**model_kwargs).to(device)
+    optimizer, scheduler = create_optimizer_scheduler(model)
+    
+    # 5. HPC Resume Logic
+    latest_ckpt = get_latest_checkpoint(ckpt_dir)
+    start_epoch = 0
+    history = None
 
-    # 6. Diagnostics
+    if latest_ckpt:
+        print(f"[!] Found existing checkpoint: {latest_ckpt}. Resuming...")
+        checkpoint = torch.load(latest_ckpt, map_location=device)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        start_epoch = checkpoint['epoch']
+        history = checkpoint['history']
+        print(f"[✓] Resumed from epoch {start_epoch}")
+    else:
+        # If no checkpoint exists, use your original path-loading logic
+        if "None" not in model_path_initalized and os.path.isfile(model_path_initalized):
+            model.load_state_dict(torch.load(model_path_initalized, map_location=device)['model'])
+            print(f"Loaded initialized weights from: {model_path_initalized}")
+
+        if "None" not in model_path_pruned and os.path.isfile(model_path_pruned):
+            model.load_state_dict(torch.load(model_path_pruned, map_location=device)['model'])
+            print(f"Loaded pruned weights from: {model_path_pruned}")
+
+    # 6. Training (Skips or finishes based on start_epoch)
+    if start_epoch < args.pretrain:
+        history = train_model(
+            model, train_loader, test_loader, 
+            epochs=args.pretrain, 
+            device=device,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            start_epoch=start_epoch,
+            checkpoint_dir=ckpt_dir,
+            history=history
+        )
+    else:
+        print("[•] Training already completed for target epochs.")
+
+    # 7. Diagnostics (Only run after training loop is done)
     print("[•] Running diagnostics and CKA...")
     cka_scores, layer_names = calculate_central_kernel_alignment(model, test_loader, baseline_model_dir, 3, device)
     
-    # Benchmark metrics
     param_count = count_trainable_params(model)
     infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device)
 
-    # 7. Structured Metadata Assembly
+    # 8. Structured Metadata Assembly
     diagnostic = {
         "param_count": param_count,
         "inference_time": infer_time,
         "flops": flops,
         "total_size_mb": total_size_mb,
-        "final_accuracy": history["test_accuracy"][-1] if history["test_accuracy"] else 0,
+        "final_accuracy": history["test_accuracy"][-1] if history and history["test_accuracy"] else 0,
         "history": history,
         "cka": {"scores": cka_scores, "layers": layer_names},
-        "metadata": {
-            "dataset": args.dataset,
-            "architecture": args.model,
-            "pretrain_epochs": args.pretrain,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "dataset": args.dataset,
+        "architecture": args.model,
+        "pretrain_epochs": args.pretrain,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-    }
 
-    # 8. Safe Saving
-    # Save Model Checkpoint
+    # 9. Final Save (Final Model & JSON)
     torch.save({
         'model': model.state_dict(),
         'history': history,
         'args': vars(args)
-    }, os.path.join(ckpt_dir, "pretrained_model.pt"))
+    }, os.path.join(ckpt_dir, "final_pretrained_model.pt"))
 
-    # Save Master JSON
     master_path = os.path.join(metrics_dir, "master_metrics.json")
     master_data = {}
     if os.path.exists(master_path):
@@ -166,50 +225,35 @@ def main():
             except: pass
 
     master_data[exp_name] = convert_ndarrays_to_lists(diagnostic)
-
     with open(master_path, "w") as f:
         json.dump(master_data, f, indent=4)
 
-    # 9. Generate Bash Script
+    # 10. Generate Bash Script (unchanged)
     PBS_DIR = "/Users/jgafur/LTH/manuscript/Tranfer/"
-    PBS_SCRIPT = os.path.join(PBS_DIR, "main_2.pbs")
-
     bash_script = f"""#!/bin/bash
 # Auto-generated script to submit collapse jobs
-
 set -e
-
 MODEL={args.model}
 DATASET={args.dataset}
-EPOCHS=5
-
+EPOCHS={args.epochs}
 cd {PBS_DIR} || exit 1
-
 """
-
     for layer_name in layer_names:
-        collapse_start = layer_name[1]
-        collapse_end = layer_name[2]
-
-        print(f"[•] Generating collapse job for {collapse_start} → {collapse_end}")
-
+        collapse_start, collapse_end = layer_name[1], layer_name[2]
         bash_script += f"""
 command="qsub -q all.q -l ngpus=1 \\
   -v MODEL=${{MODEL}},DATASET=${{DATASET}},EPOCHS=${{EPOCHS}},COLLAPSE_START={collapse_start},COLLAPSE_END={collapse_end} \\
   main_2.pbs"
-echo "Submitting job with command:"
-echo "$command"
-eval "$command "
+echo "Submitting: $command"
+eval "$command"
 """
 
     script_path = os.path.join(baseline_model_dir, "submit_collapse_jobs.sh")
     with open(script_path, "w") as f:
         f.write(bash_script)
-
     os.chmod(script_path, 0o755)
-    print(f"[✓] Collapse job submission script saved to: {script_path}")
 
-    print(f"[✓] Baseline complete. Results saved in: {baseline_model_dir}")
+    print(f"[✓] Baseline complete. Results: {baseline_model_dir}")
 
 if __name__ == "__main__":
     main()
