@@ -120,12 +120,62 @@ def create_optimizer_scheduler(model, learning_rate=1e-3):
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     return optimizer, scheduler
 
+
+
+def safe_load_weights(model, file_path, device):
+    """
+    Loads weights safely. If there is a shape mismatch (e.g. Cifar100 -> Cifar10),
+    it skips the mismatched layers (like the FC layer) to prevent crashes.
+    """
+    try:
+        checkpoint = torch.load(file_path, map_location=device)
+        
+        # Standardize state_dict access
+        if isinstance(checkpoint, dict):
+            if 'model' in checkpoint: state_dict = checkpoint['model']
+            elif 'model_state_dict' in checkpoint: state_dict = checkpoint['model_state_dict']
+            else: state_dict = checkpoint
+        else:
+            state_dict = checkpoint
+
+        model_dict = model.state_dict()
+        pretrained_dict = {}
+        mismatched_keys = []
+
+        # Filter keys
+        for k, v in state_dict.items():
+            if k in model_dict:
+                if v.size() == model_dict[k].size():
+                    pretrained_dict[k] = v
+                else:
+                    mismatched_keys.append(k)
+            # Handle DataParallel 'module.' prefix
+            elif k.startswith("module.") and k[7:] in model_dict:
+                k_clean = k[7:]
+                if v.size() == model_dict[k_clean].size():
+                    pretrained_dict[k_clean] = v
+                else:
+                    mismatched_keys.append(k_clean)
+
+        if mismatched_keys:
+            print(f"[!] Warning: Skipped layers due to shape mismatch (Transfer Learning detected): {mismatched_keys}")
+        
+        # Load with strict=False to ignore the missing (skipped) layers
+        model.load_state_dict(pretrained_dict, strict=False)
+        print(f"[✓] Successfully loaded weights from: {file_path}")
+        return True
+    except Exception as e:
+        print(f"[x] Failed to load {file_path}: {e}")
+        return False
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="VGG16")
     parser.add_argument("--dataset", type=str, default="Cifar10")
     parser.add_argument("--pretrain", type=int, default=0)
     parser.add_argument("--break_group", type=int, default=3)
+    # Add an optional argument to force a specific checkpoint path if needed
+    parser.add_argument("--ckpt_path", type=str, default=None) 
     args = parser.parse_args()
 
     # 1. Environment Setup
@@ -134,10 +184,18 @@ def main():
     
     train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
     
-    # 2. Path Logic
-    base_path = CHECKPOINT_BASES[args.model][args.dataset]
-    model_path_pruned = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
-    model_path_initalized = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][1])
+    # 2. Path Logic (With Automatic Fallback)
+    # Try getting path from Config
+    try:
+        base_path = CHECKPOINT_BASES[args.model][args.dataset]
+        model_path_pruned = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
+        model_path_initalized = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][1])
+    except KeyError:
+        # If config entry is missing, set placeholders
+        base_path = ""
+        model_path_pruned = "None"
+        model_path_initalized = "None"
+
     baseline_model_dir = os.path.join("baseline_models", f"{args.model}_{args.dataset}_pretrain{args.pretrain}_break{args.break_group}")
 
     # 3. Directory Setup
@@ -164,16 +222,37 @@ def main():
         history = checkpoint['history']
         print(f"[✓] Resumed from epoch {start_epoch}")
     else:
-        # If no checkpoint exists, use your original path-loading logic
-        if "None" not in model_path_initalized and os.path.isfile(model_path_initalized):
-            model.load_state_dict(torch.load(model_path_initalized, map_location=device)['model'])
-            print(f"Loaded initialized weights from: {model_path_initalized}")
+        # --- NEW: Automatic File Selection & Safe Loading ---
+        
+        # Priority 1: User explicitly provided a path via CLI
+        if args.ckpt_path and os.path.isfile(args.ckpt_path):
+             safe_load_weights(model, args.ckpt_path, device)
+        
+        # Priority 2: Config paths (if they actually exist)
+        elif "None" not in model_path_initalized and os.path.isfile(model_path_initalized):
+             safe_load_weights(model, model_path_initalized, device)
+        elif "None" not in model_path_pruned and os.path.isfile(model_path_pruned):
+             safe_load_weights(model, model_path_pruned, device)
+             
+        # Priority 3: Fallback Search (If config points to Cifar10 files that don't exist, look for Cifar100)
+        else:
+            print("[?] specific checkpoint not found. Searching for fallback baseline...")
+            # Look for ANY .pt file related to this model architecture in 'baseline_models' or similar
+            # This helps find Cifar100 checkpoints even if running Cifar10
+            search_pattern = f"**/{args.model}*/**/*.pt"
+            candidates = glob.glob(search_pattern, recursive=True)
+            # Filter for likely checkpoint names
+            candidates = [f for f in candidates if "checkpoint" in f or "final" in f]
+            
+            if candidates:
+                # Pick the first one (or logic to pick best)
+                fallback_ckpt = candidates[0]
+                print(f"[!] Found fallback checkpoint: {fallback_ckpt}")
+                safe_load_weights(model, fallback_ckpt, device)
+            else:
+                print("[!] No baseline checkpoint found. Training from scratch.")
 
-        if "None" not in model_path_pruned and os.path.isfile(model_path_pruned):
-            model.load_state_dict(torch.load(model_path_pruned, map_location=device)['model'])
-            print(f"Loaded pruned weights from: {model_path_pruned}")
-
-    # 6. Training (Skips or finishes based on start_epoch)
+    # 6. Training
     if start_epoch < args.pretrain:
         history = train_model(
             model, train_loader, test_loader, 
@@ -188,7 +267,7 @@ def main():
     else:
         print("[•] Training already completed for target epochs.")
 
-    # 7. Diagnostics (Only run after training loop is done)
+    # 7. Diagnostics
     print("[•] Running diagnostics and CKA...")
     cka_scores, layer_names = calculate_central_kernel_alignment(model, test_loader, baseline_model_dir, 3, device)
     
@@ -210,7 +289,7 @@ def main():
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
-    # 9. Final Save (Final Model & JSON)
+    # 9. Final Save
     torch.save({
         'model': model.state_dict(),
         'history': history,
@@ -228,14 +307,14 @@ def main():
     with open(master_path, "w") as f:
         json.dump(master_data, f, indent=4)
 
-    # 10. Generate Bash Script (unchanged)
+    # 10. Generate Bash Script
     PBS_DIR = "/Users/jgafur/LTH/manuscript/Tranfer/"
     bash_script = f"""#!/bin/bash
 # Auto-generated script to submit collapse jobs
 set -e
 MODEL={args.model}
 DATASET={args.dataset}
-EPOCHS={args.epochs}
+EPOCHS={args.epochs if hasattr(args, 'epochs') else 1} 
 cd {PBS_DIR} || exit 1
 """
     for layer_name in layer_names:
