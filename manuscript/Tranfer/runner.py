@@ -33,3 +33,4 @@ if __name__ == "__main__":
             command = f"qsub -v MODEL={model_name},DATASET={dataset_name},EPOCHS={epochs},COLLAPSE_START={collapse_start},COLLAPSE_END={collapse_end} submit_job.pbs"
             print(f"Executing command: {command}")
             print(f"python main_2.py --model {model_name} --dataset {dataset_name} --epochs {epochs} --collapse_start {collapse_start} --collapse_end {collapse_end}")
+            os.system(command)
