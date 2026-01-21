@@ -192,7 +192,7 @@ def main():
     # 2. Model & Data Initialization
     search = f"baseline*/*{args.model}*{args.dataset}*/check*/*pt"
     model_files = glob.glob(search)
-    print("[•] Searching for baseline models in  {search}")
+    print(f"[•] Searching for baseline models in {search}")
     if not model_files:
         raise ValueError(f"No baseline model found for {args.model} on {args.dataset}.")
     model_files = [mf for mf in model_files if args.model in mf and args.dataset+"_" in mf]
