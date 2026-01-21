@@ -697,9 +697,6 @@ def standard_legend(ax):
 #             plt.savefig(out_dir / f"{architecture}_{break_group}_ablation.png")
 #             plt.close()
 
-Here is the updated code with added logging statements to track what is being plotted, which columns are used, and the relevant labels for each figure.
-
-Python
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
