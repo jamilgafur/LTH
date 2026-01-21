@@ -207,31 +207,11 @@ eval "$command"
         f.write(bash_script)
 
     os.chmod(script_path, 0o755)
-
-    # # 9. Generate Bash Script
-    # bash_script = "#!/bin/bash\n# Auto-generated script to submit collapse jobs\n\n"
-
-    # for layer_name in layer_names:
-    #     epochs = 5
-
-    #     command = (
-    #         'command="qsub -q all.q -l ngpus=1 '
-    #         '-v MODEL=${args.model},'
-    #         'DATASET={args.dataset},'
-    #         f'EPOCHS={epochs},'
-    #         f'COLLAPSE_START={layer_name[1]},'
-    #         f'COLLAPSE_END={layer_name[2]} '
-    #         'main_1.pbs"\n'
-    #         'echo "Submitting job with command: $command"\n'
-    #         'eval "$command"\n\n'
-    #     )
-
-    #     print(f"[•] Generating collapse job for layer {layer_name}")
-    #     bash_script += command
-
-    # script_path = os.path.join(baseline_model_dir, "submit_collapse_jobs.sh")
-    # with open(script_path, "w") as f:
-    #     f.write(bash_script)
+    print(f"[✓] Collapse job submission script saved to: {script_path}")
+    # run bash script
+    # change directory to bash script directory
+    os.chdir(baseline_model_dir)
+    os.system(f"bash {script_path}")
 
     print(f"[✓] Baseline complete. Results saved in: {baseline_model_dir}")
 
