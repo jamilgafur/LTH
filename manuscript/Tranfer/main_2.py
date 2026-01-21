@@ -190,15 +190,23 @@ def main():
     if args.quant: exp_name += "_quant"
     
     # 2. Model & Data Initialization
-    search = f"baseline*/*{args.model}*{args.dataset}*/check*/*pt"
-    model_files = glob.glob(search)
-    print(f"[•] Searching for baseline models in {search}")
+    # Use a more flexible glob pattern and print what we find for debugging
+    search_pattern = f"baseline*/*{args.model}*{args.dataset}*/**/*.pt"
+    print(f"[•] Searching for baseline models with pattern: {search_pattern}")
+
+    model_files = glob.glob(search_pattern, recursive=True)
+
+    # Filter out common non-model files if necessary
+    model_files = [f for f in model_files if "checkpoint" in f.lower() or "pretrained" in f.lower()]
+
     if not model_files:
-        raise ValueError(f"No baseline model found for {args.model} on {args.dataset}.")
-    model_files = [mf for mf in model_files if args.model in mf and args.dataset+"_" in mf]
-    if not model_files:
-        raise ValueError(f"No baseline model found for {args.model} on {args.dataset}.")
+        # Diagnostic: Print the contents of the baseline folder to see why it's failing
+        print("[!] Glob failed. Current directory contents:")
+        os.system("ls -d baseline*/*") 
+        raise ValueError(f"No baseline model found for {args.model} on {args.dataset} using pattern {search_pattern}")
+
     baseline_model_file = model_files[0]
+    print(f"[✓] Found baseline model: {baseline_model_file}")
     
     train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
 
