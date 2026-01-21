@@ -101,8 +101,8 @@ def load_results() -> pd.DataFrame:
             row["dataset"] = dataset
             row["architecture"] = arch
             row["exp_name"] = exp_name
-            row["posthoc_or_posttrain"] = infer_posthoc_or_posttrain(exp_name)
-            row["model_type"] = infer_model_type(exp_name)
+            row["posthoc_or_posttrain"] = infer_posthoc_or_posttrain(str(p))
+            row["model_type"] = infer_model_type(str(p))
             row["is_quantized"] = infer_isquant(exp_name)
             rows.append(row)
     return pd.DataFrame(rows)
@@ -124,17 +124,17 @@ def infer_architecture_from_path(p: Path) -> str:
     if "convnext" in name: return "ConvNeXt"
     return "UnknownArch"
 
-def infer_posthoc_or_posttrain(exp_name: str) -> str:
-    n = exp_name.lower()
-    if "jf" in n: return "Post-Prune (JF)"
+def infer_posthoc_or_posttrain(filename: str) -> str:
+    n = filename.lower()
+    if "_pruned" in n: return "Post-Prune (JF)"
     if "kevin" in n: return "No-Prune (Kevin)"
     if "original" in n or "baseline" in n: return "Baseline"
     return "Unknown"
 
-def infer_model_type(exp_name: str) -> str:
-    n = exp_name.lower()
-    if "original" in n or "baseline" in n: return "baseline"
-    return "collapsed"
+def infer_model_type(filename: str) -> str:
+    n = filename.lower()
+    if "post_collapse" in p: return "collapsed"
+    return "Baseline"
 
 def infer_isquant(exp_name: str) -> bool:
     return "quant" in exp_name.lower()
