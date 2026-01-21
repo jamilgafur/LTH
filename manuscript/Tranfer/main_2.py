@@ -190,7 +190,7 @@ def main():
     if args.quant: exp_name += "_quant"
     
     # 2. Model & Data Initialization
-    model_files = glob.glob(f"baseline*/*/check*/*pt")
+    model_files = glob.glob(f"baseline*/*{args.model}*{args.dataset}*/check*/*pt")
     if not model_files:
         raise ValueError(f"No baseline model found for {args.model} on {args.dataset}.")
     model_files = [mf for mf in model_files if args.model in mf and args.dataset+"_" in mf]
