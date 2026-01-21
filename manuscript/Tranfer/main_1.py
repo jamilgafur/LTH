@@ -197,9 +197,11 @@ cd {PBS_DIR} || exit 1
 command="qsub -q all.q -l ngpus=1 \\
   -v MODEL=${{MODEL}},DATASET=${{DATASET}},EPOCHS=${{EPOCHS}},COLLAPSE_START={collapse_start},COLLAPSE_END={collapse_end} \\
   main_2.pbs"
+output_file="{baseline_model_dir}/collapse_{collapse_start}_to_{collapse_end}.out"
+echo "Logging output to: $output_file"
 echo "Submitting job with command:"
 echo "$command"
-eval "$command"
+eval "$command > $output_file 2>&1 &"
 """
 
     script_path = os.path.join(baseline_model_dir, "submit_collapse_jobs.sh")
@@ -208,10 +210,6 @@ eval "$command"
 
     os.chmod(script_path, 0o755)
     print(f"[✓] Collapse job submission script saved to: {script_path}")
-    # run bash script
-    # change directory to bash script directory
-    os.chdir(baseline_model_dir)
-    os.system(f"bash {script_path}")
 
     print(f"[✓] Baseline complete. Results saved in: {baseline_model_dir}")
 
