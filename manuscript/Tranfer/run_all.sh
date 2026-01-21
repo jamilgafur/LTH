@@ -8,7 +8,7 @@ epochs=2
 # Loop through each combination of model and dataset and qsub the job
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do
-        command="qsub -v MODEL=${model},DATASET=${dataset},EPOCHS=${epochs} main_1.pbs"
+        command="qsub -q all.q -l ngpus=1 -v MODEL=${model},DATASET=${dataset},EPOCHS=${epochs} main_1.pbs"
         echo "Submitting job with command: $command"
         eval "$command"
     done
