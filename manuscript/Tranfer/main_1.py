@@ -89,6 +89,7 @@ def main():
     parser.add_argument("--model", type=str, default="VGG16")
     parser.add_argument("--dataset", type=str, default="Cifar10")
     parser.add_argument("--pretrain", type=int, default=0)
+    parser.add_argument("--break_group", type=int, default=3)
     args = parser.parse_args()
 
     # 1. Environment Setup
@@ -102,8 +103,7 @@ def main():
     model_path_pruned = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
     model_path_initalized = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][1])
 
-    break_group = 6
-    baseline_model_dir = os.path.join("baseline_models", f"{args.model}_{args.dataset}_pretrain{args.pretrain}_break{break_group}")
+    baseline_model_dir = os.path.join("baseline_models", f"{args.model}_{args.dataset}_pretrain{args.pretrain}_break{args.break_group}")
     
     # 3. Model Loading
     model = eval(model_class)(**model_kwargs).to(device)
