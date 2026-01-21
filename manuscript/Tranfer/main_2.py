@@ -115,6 +115,7 @@ def safe_update_metrics_json(exp_name, new_data, base_dir):
         try: os.rmdir(lock_dir)
         except: pass
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="XceptionNet")
@@ -132,11 +133,19 @@ def main():
     
     # 1. Locate Baseline Model
     search_pattern = f"baseline*/*{args.model}*{args.dataset}*/**/*.pt"
+    # Note: This pattern might still find Cifar100 checkpoints if the folder structure implies it.
+    # The fix below handles the file mismatch regardless of how it was found.
     model_files = glob.glob(search_pattern, recursive=True)
     model_files = [f for f in model_files if "checkpoint" in f.lower() or "pretrained" in f.lower() or "final" in f.lower()]
 
     if not model_files:
-        raise ValueError(f"No baseline model found for {args.model}")
+        # Fallback: Try finding *any* baseline for this model if the specific dataset one is missing (Transfer Learning case)
+        search_pattern_fallback = f"baseline*/*{args.model}*/**/*.pt"
+        model_files = glob.glob(search_pattern_fallback, recursive=True)
+        model_files = [f for f in model_files if "checkpoint" in f.lower() or "pretrained" in f.lower() or "final" in f.lower()]
+        
+        if not model_files:
+            raise ValueError(f"No baseline model found for {args.model}")
 
     baseline_model_file = model_files[0]
     
@@ -172,14 +181,41 @@ def main():
         del ckpt
     else:
         # Initial Load & Collapse
+        print(f"Loading baseline from: {baseline_model_file}")
         checkpoint = torch.load(baseline_model_file, map_location=device)
         state_dict = checkpoint.get('model', checkpoint.get('model_state_dict', checkpoint))
-        model.load_state_dict(state_dict)
+        
+        ### --- MODIFIED SECTION START ---
+        # Robust loading: Filter out layers with shape mismatches (e.g., Cifar100 FC -> Cifar10 FC)
+        model_dict = model.state_dict()
+        pretrained_dict = {}
+        mismatched_keys = []
+
+        for k, v in state_dict.items():
+            if k in model_dict:
+                if v.size() == model_dict[k].size():
+                    pretrained_dict[k] = v
+                else:
+                    mismatched_keys.append(k)
+            # Handle DataParallel 'module.' prefix if necessary
+            elif k.startswith("module.") and k[7:] in model_dict:
+                k_clean = k[7:]
+                if v.size() == model_dict[k_clean].size():
+                    pretrained_dict[k_clean] = v
+                else:
+                    mismatched_keys.append(k_clean)
+
+        if mismatched_keys:
+            print(f"[!] Warning: The following layers were skipped due to shape mismatch (expected for transfer learning): {mismatched_keys}")
+        
+        # strict=False allows us to load the weights even if the Final Layer (FC) is missing from pretrained_dict
+        model.load_state_dict(pretrained_dict, strict=False)
+        ### --- MODIFIED SECTION END ---
         
         if args.collapse_start and args.collapse_end:
             model = collapse_only(model=model, model_weights_1=None, 
-                                 compression_set={(args.collapse_start, args.collapse_end)}, 
-                                 model_class=model_class, input_shape=input_size, device=device)
+                                  compression_set={(args.collapse_start, args.collapse_end)}, 
+                                  model_class=model_class, input_shape=input_size, device=device)
         del checkpoint
 
     # 4. Training Loop (Rotating Checkpoints)
