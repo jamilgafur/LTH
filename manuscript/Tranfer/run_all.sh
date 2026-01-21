@@ -9,3 +9,7 @@ epochs=2
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do
         command="qsub -v MODEL=${model},DATASET=${dataset},EPOCHS=${epochs} main_1.pbs"
+        echo "Submitting job with command: $command"
+        eval "$command"
+    done
+done
