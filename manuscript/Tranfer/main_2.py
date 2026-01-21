@@ -207,7 +207,7 @@ def main():
 
     baseline_model_file = model_files[0]
     print(f"[✓] Found baseline model: {baseline_model_file}")
-    
+    args.dataset = args.dataset.replace("_", "")
     train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
 
     # 3. Experiment Directory Setup
