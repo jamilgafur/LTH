@@ -191,7 +191,7 @@ def main():
     
     # 2. Model & Data Initialization
     # Use a more flexible glob pattern and print what we find for debugging
-    search_pattern = f"baseline*/*{args.model}*{args.dataset}*/**/*.pt"
+    search_pattern = f"baseline*/*{args.model}*{args.dataset}_*/**/*.pt"
     print(f"[•] Searching for baseline models with pattern: {search_pattern}")
 
     model_files = glob.glob(search_pattern, recursive=True)
