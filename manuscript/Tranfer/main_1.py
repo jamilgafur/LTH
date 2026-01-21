@@ -171,14 +171,14 @@ def main():
         json.dump(master_data, f, indent=4)
 
     # 9. Generate Bash Script
-    bash_path = os.path.join(baseline_model_dir, "rerun_experiment.sh")
-    with open(bash_path, "w") as f:
-        f.write("#!/bin/bash\n")
-        for layer_name in layer_names:
-            # Note: Assuming layer_name structure [index, start_node, end_node]
-            cmd_base = f"python main_2.py --model {args.model} --dataset {args.dataset} --epochs 1 --collapse_start {layer_name[1]} --collapse_end {layer_name[2]}"
-            f.write(cmd_base + "\n")
-            f.write(cmd_base + " --quant\n")
+    
+    for layer_name in layer_names:
+        # Note: Assuming layer_name structure [index, start_node, end_node]
+        epochs = 5
+        command = f"qsub -q all.q -l ngpus=1 -v MODEL={args.model},DATASET={args.dataset},EPOCHS={epochs},COLLAPSE_START={layer_name[1]},COLLAPSE_END={layer_name[2]}  submit_jobs.pbd"
+        print(f"[•] To submit collapse job for layer {layer_name}, run:\n{command}\n")
+        import os
+        os.system(command)
 
     print(f"[✓] Baseline complete. Results saved in: {baseline_model_dir}")
 
