@@ -539,24 +539,43 @@ def fig7(df: pd.DataFrame):
 
 def fig8(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", "memory"]):
     """
-    Ablation Study: Plots metrics across sorted experiment groups.
+    Ablation Study: Plots metrics across experiment groups.
+    Updates:
+    - Splits trends by 'posthoc_or_posttrain' (Color)
+    - Distinguishes 'break_group' (Style/Dashing) to compare break strategies.
+    - Sorts x-axis by parameter count to show the "compression trajectory".
     """
     out_dir = FIG_DIR / "expname_ablations"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     df = df.copy()
-    # Create a cleaner display name for the x-axis
-    df["display_group"] = df["exp_name"].apply(lambda x: x.split("_pretrain")[0])
+    
+    # Clean up the experiment name for the X-axis label
+    # This removes redundant suffixes to make the chart readable
+    df["display_group"] = (
+        df["exp_name"]
+        .str.replace("_quant", "", regex=False)
+        .str.replace("_JF", "", regex=False)
+        .str.replace("_Kevin", "", regex=False)
+        .str.split("_pretrain").str[0]  # Shorten to Arch_Dataset usually
+    )
 
-    # Filter only for collapsed models to see the trend
+    # Filter: We usually only care about the collapsed models for the ablation curve
+    # But we include baseline if available for reference (optional)
     df_ablation = df[df["model_type"] == "collapsed"].copy()
 
+    if df_ablation.empty:
+        print("[!] No collapsed models found for Fig 8.")
+        return
+
+    # Iterate per Architecture
     for architecture, df_arch in df_ablation.groupby("architecture"):
         datasets = sorted(df_arch["dataset"].unique())
         n_rows = len(datasets)
         n_cols = len(metrics)
         
-        # Sort experiments by parameter count (descending) to show "compression progress"
+        # Determine X-axis Order: Sort by parameter count (Descending)
+        # This makes the x-axis go from "Largest Model" -> "Smallest Model"
         if "params" in df_arch.columns:
             exp_order = (
                 df_arch.groupby("display_group")["params"]
@@ -567,9 +586,10 @@ def fig8(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
         else:
             exp_order = sorted(df_arch["display_group"].unique())
 
+        # Create Subplots
         fig, axes = plt.subplots(
             n_rows, n_cols,
-            figsize=(max(6, 1.2 * len(exp_order)) * n_cols, 4.0 * n_rows),
+            figsize=(max(6, 1.5 * len(exp_order)) * n_cols, 4.0 * n_rows),
             squeeze=False, sharex='col'
         )
 
@@ -578,29 +598,103 @@ def fig8(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
             
             for j, metric in enumerate(metrics):
                 ax = axes[i, j]
+                
                 if g_dataset.empty or metric not in g_dataset.columns:
                     ax.axis("off")
                     continue
 
+                # PLOTTING CORE
                 sns.lineplot(
                     data=g_dataset,
-                    x="display_group", y=metric,
-                    hue="posthoc_or_posttrain", 
-                    style="break_group", # Differentiate breaks
-                    markers=True, dashes=False,
-                    ax=ax
+                    x="display_group", 
+                    y=metric,
+                    hue="posthoc_or_posttrain",  # Color = Method
+                    style="break_group",         # Dash Style = Break Group (3 vs 4)
+                    markers=True, 
+                    dashes=True,
+                    linewidth=2.5,
+                    ax=ax,
+                    errorbar=None # Clean lines
                 )
 
-                if i == 0: ax.set_title(metric.capitalize(), fontweight='bold')
+                # Formatting
+                if i == 0: 
+                    ax.set_title(metric.capitalize(), fontsize=13, fontweight='bold')
+                
                 if i == n_rows - 1:
+                    ax.set_xlabel("Model Config (Size Descending)", fontsize=10)
                     ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right")
                 else:
                     ax.set_xlabel("")
+                    ax.set_xticklabels([])
 
-        fig.suptitle(f"{architecture}: Ablation Study", fontsize=16, y=1.02)
+                if j == 0:
+                    ax.set_ylabel(f"{dataset}\n{metric}", fontsize=11)
+                else:
+                    ax.set_ylabel("")
+
+                ax.grid(True, axis="y", linestyle="--", alpha=0.5)
+                
+                # Legend handling: Only distinct legend on first plot
+                if i == 0 and j == 0:
+                    ax.legend(title="Method / Break", fontsize=8, loc='best')
+                else:
+                    if ax.get_legend(): ax.get_legend().remove()
+
+        fig.suptitle(
+            f"{architecture}: Ablation Study\n"
+            "Color=Method (JF/Kevin), Style=Break Group",
+            fontsize=16, y=1.02,
+        )
+
         plt.tight_layout()
-        plt.savefig(out_dir / f"{architecture}_ablation.png", bbox_inches='tight')
+        save_path = out_dir / f"{architecture}_ablation_combined.png"
+        plt.savefig(save_path, bbox_inches='tight')
         plt.close()
+        print(f"[✓] Saved Fig 8: {save_path}")
+
+def fig8_per_break(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops"]):
+    """
+    OPTIONAL: Generates separate ablation figures for EACH break group.
+    Use this if the combined Fig 8 is too messy.
+    """
+    out_dir = FIG_DIR / "expname_ablations" / "per_break"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Iterate over break groups first
+    for break_group, df_break in df.groupby("break_group"):
+        # Then reuse standard plotting logic
+        # We rename the architecture in the loop to create separate files
+        print(f"[•] Generating ablations for {break_group}...")
+        
+        # Call the main fig8 logic but on filtered data
+        # Note: We need to modify fig8 slightly to accept a filename suffix or just do it inline here.
+        # For brevity, I will just replicate the core plotting loop here simplified:
+        
+        df_break = df_break.copy()
+        df_break["display_group"] = df_break["exp_name"].str.split("_pretrain").str[0]
+        
+        for architecture, df_arch in df_break.groupby("architecture"):
+            datasets = sorted(df_arch["dataset"].unique())
+            fig, axes = plt.subplots(len(datasets), len(metrics), figsize=(5*len(metrics), 4*len(datasets)), squeeze=False)
+            
+            for i, ds in enumerate(datasets):
+                g_ds = df_arch[df_arch["dataset"] == ds]
+                for j, met in enumerate(metrics):
+                    ax = axes[i,j]
+                    if g_ds.empty: continue
+                    
+                    sns.lineplot(
+                        data=g_ds, x="display_group", y=met, 
+                        hue="posthoc_or_posttrain", markers=True, ax=ax
+                    )
+                    if i==len(datasets)-1: 
+                        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right")
+            
+            plt.suptitle(f"{architecture} - {break_group}")
+            plt.tight_layout()
+            plt.savefig(out_dir / f"{architecture}_{break_group}_ablation.png")
+            plt.close()
 
 def tab1(df: pd.DataFrame):
     """
@@ -741,7 +835,8 @@ if __name__ == "__main__":
         fig5(df)  # Restored
         fig6(df)
         fig7(df)  # Restored
-        fig8(df)  # Restored
+        fig8(df)
+        fig8_per_break(df)
         
         # fig10(device="cuda" if torch.cuda.is_available() else "cpu")
         
@@ -751,23 +846,3 @@ if __name__ == "__main__":
         print("\nDone. Check the 'tables/' folder for CSV data sources.")
     df = load_results()
     
-    if df.empty:
-        print("[!] No results found. Check your directory structure.")
-    else:
-        df = normalize(df)
-        print(f"[•] Loaded {len(df)} rows. Sample:")
-        print(df[["dataset", "architecture", "break_group", "posthoc_or_posttrain"]].head())
-
-        print("\n==============================")
-        print(" GENERATING FIGURES & DATA ")
-        print("==============================")
-        
-        fig1(df)
-        fig2(df)
-        fig4(df)
-        fig6(df)
-        
-        # PWCCA requires live model loading, can be slow
-        # fig10(device="cuda" if torch.cuda.is_available() else "cpu")
-
-        print("\nDone. Check the 'tables/' folder for CSV data sources.")
