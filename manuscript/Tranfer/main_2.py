@@ -212,8 +212,12 @@ def main():
     start_epoch = 0
     all_data = {"accuracies": [], "losses": []}
     model = eval(model_class)(**model_kwargs).to(device)
+    print(f"[•] Initialized model: {args.model} on {args.dataset}")
+    print(f"[•] Collapse Range: {args.collapse_start} to {args.collapse_end}")
+    print(f"[•] Checkpoints Directory: {ckpt_dir}")
 
     if existing_ckpts:
+        print(f"[•] Found existing checkpoints: {existing_ckpts}")
         last_ckpt = existing_ckpts[-1]
         print(f"[✓] Resuming from: {last_ckpt}")
         ckpt = torch.load(last_ckpt, map_location=device)
@@ -222,12 +226,14 @@ def main():
         all_data = ckpt["data"]
         del ckpt # Free memory
     else:
+        print(f"[•] No existing checkpoints found. Loading baseline model from {baseline_model_file}")
         checkpoint = torch.load(baseline_model_file, map_location=device)
         model.load_state_dict(checkpoint['model'])
-        if args.collapse_start and args.collapse_end:
-            model = collapse_only(model=model, model_weights_1=None, compression_set={(args.collapse_start, args.collapse_end)}, 
-                                 model_class=model_class, input_shape=input_size, device=device)
-        del checkpoint
+    # Perform collapse if specified
+    if args.collapse_start and args.collapse_end:
+        model = collapse_only(model=model, model_weights_1=None, compression_set={(args.collapse_start, args.collapse_end)}, 
+                                model_class=model_class, input_shape=input_size, device=device)
+    del checkpoint
 
     # 5. Training Loop - Efficiency: Periodically clearing CUDA cache
     for epoch in range(start_epoch + 1, args.epochs + 1):
