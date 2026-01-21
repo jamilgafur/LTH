@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# --- Environment Setup ---
+echo "Activating conda environment..."
+conda activate ~/env/lth_env/
+echo "Loaded CUDA and GCC modules..."
+module load cuda/11.1.1_gcc-9.3.0
+module load gcc/9.3.0
+
+# --- Move to script directory ---
+cd ~/LTH/manuscript/Tranfer/ || {
+    echo "Failed to change directory to ~/LTH/manuscript/Tranfer/"
+    exit 1
+}
+# get variables
+
+echo "MODEL: $MODEL"
+echo "DATASET: $DATASET"
+echo "EPOCHS: $EPOCHS"
+
+
+python main_1.py --model "$MODEL" --dataset "$DATASET" --epochs "$EPOCHS"
