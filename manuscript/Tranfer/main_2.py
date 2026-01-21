@@ -37,7 +37,7 @@ def initialize_model_and_data(args):
     dataset = args.dataset
     model_kwargs = {}
 
-    if model_class == InceptionNet and args.JF:
+    if model_class == "InceptionNet" and hasattr(args, 'JF') and args.JF:
         raise ValueError("JF experiments are not supported for InceptionNet.")
     
     train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, model_class)
@@ -46,31 +46,15 @@ def initialize_model_and_data(args):
     
     return train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes
 
-def train_model(model, train_loader, test_loader, epochs, device):
-    optimizer, scheduler = create_optimizer_scheduler(model)
-    history = {"train_loss": [], "train_accuracy": [], "test_loss": [], "test_accuracy": []}
-
-    for epoch in range(epochs):
-        model.train()
-        train_loss, train_accuracy = train_one_epoch(model, train_loader, optimizer, device)
-
-        model.eval()
-        test_loss, test_accuracy = evaluate_model(model, test_loader, device)
-
-        history["train_loss"].append(train_loss)
-        history["train_accuracy"].append(train_accuracy)
-        history["test_loss"].append(test_loss)
-        history["test_accuracy"].append(test_accuracy)
-
-        print(f"Epoch {epoch + 1}/{epochs} | Train Loss: {train_loss:.4f}, Acc: {train_accuracy:.4f}")
-        scheduler.step()
-
-    return history
-
-def create_optimizer_scheduler(model, learning_rate=1e-3):
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-    return optimizer, scheduler
+def train_one_step(model, train_loader, test_loader, device, optimizer, scheduler):
+    """Wrapper to train for exactly one epoch and return metrics."""
+    model.train()
+    train_loss, train_accuracy = train_one_epoch(model, train_loader, optimizer, device)
+    model.eval()
+    test_loss, test_accuracy = evaluate_model(model, test_loader, device)
+    scheduler.step()
+    return {"train_loss": train_loss, "train_acc": train_accuracy, 
+            "test_loss": test_loss, "test_acc": test_accuracy}
 
 def convert_ndarrays_to_lists(data):
     if isinstance(data, dict):
@@ -87,9 +71,7 @@ def convert_ndarrays_to_lists(data):
         return data
 
 def safe_update_metrics_json(exp_name, new_data, base_dir):
-    """
-    HPC-Safe: Writes metrics using directory-based locking to avoid race conditions.
-    """
+    """HPC-Safe: Writes metrics using directory-based locking."""
     os.makedirs(base_dir, exist_ok=True)
     master_path = os.path.join(base_dir, "master_metrics.json")
     lock_dir = master_path + ".lock"
@@ -107,7 +89,6 @@ def safe_update_metrics_json(exp_name, new_data, base_dir):
             time.sleep(random.uniform(0.5, 2.0))
 
     if not acquired:
-        print(f"[!] Could not acquire lock for {master_path}. Saving to emergency file.")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         emergency_path = os.path.join(base_dir, f"backup_{timestamp}_{exp_name}.json")
         with open(emergency_path, "w") as f:
@@ -118,10 +99,8 @@ def safe_update_metrics_json(exp_name, new_data, base_dir):
         master_data = {}
         if os.path.exists(master_path):
             with open(master_path, "r") as f:
-                try:
-                    master_data = json.load(f)
-                except:
-                    pass
+                try: master_data = json.load(f)
+                except: pass
         
         master_data[exp_name] = safe_data
         
@@ -132,13 +111,9 @@ def safe_update_metrics_json(exp_name, new_data, base_dir):
             os.fsync(f.fileno())
         
         os.replace(tmp_path, master_path)
-        print(f"[✓] Safely updated master metrics at {master_path}")
-        
     finally:
-        try:
-            os.rmdir(lock_dir)
-        except:
-            pass
+        try: os.rmdir(lock_dir)
+        except: pass
 
 def main():
     parser = argparse.ArgumentParser()
@@ -155,48 +130,48 @@ def main():
     exp_name = f"{args.model}_{args.dataset}"
     if args.quant: exp_name += "_quant"
     
-    # 2. Model & Data Initialization
+    # 1. Locate Baseline Model
     search_pattern = f"baseline*/*{args.model}*{args.dataset}*/**/*.pt"
     model_files = glob.glob(search_pattern, recursive=True)
-    model_files = [f for f in model_files if "checkpoint" in f.lower() or "pretrained" in f.lower()]
+    model_files = [f for f in model_files if "checkpoint" in f.lower() or "pretrained" in f.lower() or "final" in f.lower()]
 
     if not model_files:
         raise ValueError(f"No baseline model found for {args.model}")
 
     baseline_model_file = model_files[0]
-    args.dataset = args.dataset.replace("_", "")
+    
+    # 2. Initialization
     train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
-
-    # 3. Experiment Directory Setup
-    # Path for this specific collapse experiment
+    
     project_root = os.path.dirname(os.path.dirname(model_files[0]))
     post_collapse_dir = os.path.join(project_root, f"post_collapse_{args.collapse_start}_{args.collapse_end}_epochs{args.epochs}")
-    
-    # FIXED: Central metrics directory at the project root level
     central_metrics_dir = os.path.join(project_root, "metrics_consolidated")
     ckpt_dir = os.path.join(post_collapse_dir, "checkpoints")
     
-    os.makedirs(ckpt_dir, exist_ok=True)
-    os.makedirs(central_metrics_dir, exist_ok=True)
+    for d in [ckpt_dir, central_metrics_dir]: os.makedirs(d, exist_ok=True)
 
-    # 4. Resume Logic
+    # 3. Resume Logic
     base_ckpt_name = f"{args.collapse_start}_{args.collapse_end}_{exp_name}"
     ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
     existing_ckpts = sorted(glob.glob(ckpt_pattern), key=lambda x: int(os.path.basename(x).split("epoch")[-1].split(".")[0]))
 
+    model = eval(model_class)(**model_kwargs).to(device)
+    optimizer, scheduler = create_optimizer_scheduler(model)
     start_epoch = 0
     all_data = {"accuracies": [], "losses": []}
-    model = eval(model_class)(**model_kwargs).to(device)
 
     if existing_ckpts:
         last_ckpt = existing_ckpts[-1]
-        print(f"[✓] Resuming from: {last_ckpt}")
+        print(f"[✓] Resuming from checkpoint: {last_ckpt}")
         ckpt = torch.load(last_ckpt, map_location=device)
         model.load_state_dict(ckpt["model_state_dict"])
+        optimizer.load_state_dict(ckpt["optimizer_state_dict"])
+        scheduler.load_state_dict(ckpt["scheduler_state_dict"])
         start_epoch = ckpt["epoch"]
         all_data = ckpt["data"]
         del ckpt
     else:
+        # Initial Load & Collapse
         checkpoint = torch.load(baseline_model_file, map_location=device)
         state_dict = checkpoint.get('model', checkpoint.get('model_state_dict', checkpoint))
         model.load_state_dict(state_dict)
@@ -207,31 +182,36 @@ def main():
                                  model_class=model_class, input_shape=input_size, device=device)
         del checkpoint
 
-    # 5. Training Loop
+    # 4. Training Loop (Rotating Checkpoints)
     for epoch in range(start_epoch + 1, args.epochs + 1):
-        step_data = train_model(model, train_loader, test_loader, epochs=1, device=device)
-        all_data["accuracies"].extend(step_data.get("test_accuracy", []))
-        all_data["losses"].extend(step_data.get("test_loss", []))
+        step_metrics = train_one_step(model, train_loader, test_loader, device, optimizer, scheduler)
+        
+        all_data["accuracies"].append(step_metrics["test_acc"])
+        all_data["losses"].append(step_metrics["test_loss"])
+        print(f"Epoch {epoch}/{args.epochs} | Loss: {step_metrics['test_loss']:.4f} | Acc: {step_metrics['test_acc']:.4f}")
 
+        # Atomic Save
         ckpt_path = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch}.pt")
-        tmp_ckpt = ckpt_path + ".tmp"
+        temp_ckpt = ckpt_path + ".tmp"
         torch.save({
             "epoch": epoch, 
-            "model_state_dict": model.state_dict(), 
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "scheduler_state_dict": scheduler.state_dict(),
             "data": all_data
-        }, tmp_ckpt)
-        os.replace(tmp_ckpt, ckpt_path)
+        }, temp_ckpt)
+        os.replace(temp_ckpt, ckpt_path)
 
-        if epoch > 2:
-            old_ckpt = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch-2}.pt")
-            if os.path.exists(old_ckpt):
-                try: os.remove(old_ckpt)
-                except: pass
+        # Space Management: Keep only last 2 epochs
+        old_ckpt = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch-2}.pt")
+        if os.path.exists(old_ckpt):
+            try: os.remove(old_ckpt)
+            except: pass
         
         torch.cuda.empty_cache()
         gc.collect()
 
-    # 6. Final Evaluation
+    # 5. Final Diagnostics
     model.eval()
     with torch.no_grad():
         cka_scores, layer_names = calculate_central_kernel_alignment(model, test_loader, post_collapse_dir, 1, device)
@@ -247,14 +227,17 @@ def main():
         "flops": flops,
         "total_size_mb": total_size_mb,
         "final_accuracy": all_data["accuracies"][-1] if all_data["accuracies"] else 0,
-        "dataset": args.dataset, "architecture": args.model, "collapse": [args.collapse_start, args.collapse_end],
+        "dataset": args.dataset, 
+        "architecture": args.model, 
+        "collapse": [args.collapse_start, args.collapse_end],
         "cka": {"scores": cka_scores, "layers": layer_names},
         "history": all_data
     })
 
-    # 7. HPC-Safe Final Save to CENTRAL directory
+    # 6. Final Save to CENTRAL directory
     entry_key = f"{exp_name}_{args.collapse_start}_{args.collapse_end}"
     safe_update_metrics_json(entry_key, diagnostic, base_dir=central_metrics_dir)
+    print(f"[✓] Post-collapse complete for {args.collapse_start} -> {args.collapse_end}")
 
 if __name__ == "__main__":
     main()
