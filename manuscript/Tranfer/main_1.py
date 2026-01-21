@@ -171,7 +171,7 @@ def main():
         json.dump(master_data, f, indent=4)
 
     # 9. Generate Bash Script
-    PBS_DIR = "/LTH/manuscript/Transcript"
+    PBS_DIR = "/Users/jgafur/LTH/manuscript/Tranfer/"
     PBS_SCRIPT = os.path.join(PBS_DIR, "main_2.pbs")
 
     bash_script = f"""#!/bin/bash
@@ -196,7 +196,7 @@ cd {PBS_DIR} || exit 1
         bash_script += f"""
 command="qsub -q all.q -l ngpus=1 \\
   -v MODEL=${{MODEL}},DATASET=${{DATASET}},EPOCHS=${{EPOCHS}},COLLAPSE_START={collapse_start},COLLAPSE_END={collapse_end} \\
-  {PBS_SCRIPT}"
+  main_2.pbs"
 echo "Submitting job with command:"
 echo "$command"
 eval "$command"
