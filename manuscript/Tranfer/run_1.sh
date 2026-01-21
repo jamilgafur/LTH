@@ -4,7 +4,7 @@
 models=("VGG16" "RegNetX_400MF")
 datasets=("Cifar10" "Cifar100" "tinyimagenet")
 epochs=50
-break_group=(3 6 8)
+break_group=(6)
 
 # Loop through each combination of model and dataset and qsub the job
 for model in "${models[@]}"; do
