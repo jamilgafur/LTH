@@ -27,7 +27,10 @@ from pyPrune.models.MobileNet import MobileNet
 from pyPrune.strategies.collapse import collapse_only
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
+import logging
 
+# Set the logging level for matplotlib to WARNING or ERROR
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
 # =========================
 # Plotting Style
 # =========================
