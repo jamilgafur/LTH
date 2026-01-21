@@ -133,7 +133,7 @@ def infer_posthoc_or_posttrain(filename: str) -> str:
 
 def infer_model_type(filename: str) -> str:
     n = filename.lower()
-    if "post_collapse" in p: return "collapsed"
+    if "post_collapse" in n: return "collapsed"
     return "Baseline"
 
 def infer_isquant(exp_name: str) -> bool:
