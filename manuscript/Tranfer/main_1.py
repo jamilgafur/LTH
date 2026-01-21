@@ -177,7 +177,6 @@ def main():
         epochs = 5
         command = f"qsub -q all.q -l ngpus=1 -v MODEL={args.model},DATASET={args.dataset},EPOCHS={epochs},COLLAPSE_START={layer_name[1]},COLLAPSE_END={layer_name[2]}  submit_jobs.pbd"
         print(f"[•] To submit collapse job for layer {layer_name}, run:\n{command}\n")
-        import os
         os.system(command)
 
     print(f"[✓] Baseline complete. Results saved in: {baseline_model_dir}")
