@@ -260,10 +260,467 @@ def standard_legend(ax):
 # =========================
 # Figures 1-5
 # =========================
+# def fig1(df: pd.DataFrame):
+#     """Accuracy vs Parameter Reduction"""
+#     df_plot = df.dropna(subset=["d_params", "d_acc"]).sort_values("d_params")
+#     if df_plot.empty: return
+
+#     g = sns.relplot(
+#         data=df_plot,
+#         x="d_params", y="d_acc",
+#         col="dataset", row="architecture",
+#         hue="posthoc_or_posttrain", style="break_group",
+#         kind="line", markers=True, dashes=False,
+#         height=3, aspect=1.2,
+#         facet_kws={'sharex': True, 'sharey': False} # Allow y-axis to vary per arch
+#     )
+    
+#     g.set_titles("{row_name} | {col_name}")
+#     g.set_xlabels("Param Reduction (%)")
+#     g.set_ylabels("Acc Change (%)")
+    
+#     for ax in g.axes.flat:
+#         ax.axhline(0, color='gray', linestyle='--', linewidth=1)
+
+#     save_plot_source_data(df_plot, "fig1_source_data")
+#     plt.savefig(FIG_DIR / "fig1_params_vs_accuracy.png", bbox_inches='tight')
+#     plt.close()
+
+# def fig2(df: pd.DataFrame):
+#     """Accuracy vs FLOPs Reduction"""
+#     df_plot = df.dropna(subset=["d_flops", "d_acc"]).sort_values("d_flops")
+#     if df_plot.empty: return
+
+#     g = sns.relplot(
+#         data=df_plot,
+#         x="d_flops", y="d_acc",
+#         col="dataset", row="architecture",
+#         hue="posthoc_or_posttrain", style="break_group",
+#         kind="line", markers=True, dashes=False,
+#         height=3, aspect=1.2,
+#         facet_kws={'sharex': True, 'sharey': False}
+#     )
+
+#     g.set_titles("{row_name} | {col_name}")
+#     g.set_xlabels("FLOPs Reduction (%)")
+#     g.set_ylabels("Acc Change (%)")
+
+#     for ax in g.axes.flat:
+#         ax.axhline(0, color='gray', linestyle='--', linewidth=1)
+
+#     save_plot_source_data(df_plot, "fig2_source_data")
+#     plt.savefig(FIG_DIR / "fig2_flops_vs_accuracy.png", bbox_inches='tight')
+#     plt.close()
+
+# def fig4(df: pd.DataFrame):
+#     """FLOPs Reduction vs Collapsed Fraction (Linearity check)"""
+#     df_plot = df.dropna(subset=["collapsed_fraction", "d_flops"]).sort_values("collapsed_fraction")
+#     if df_plot.empty: return
+
+#     g = sns.relplot(
+#         data=df_plot,
+#         x="collapsed_fraction", y="d_flops",
+#         col="dataset", row="architecture",
+#         hue="posthoc_or_posttrain",
+#         kind="line", markers=True,
+#         height=3, aspect=1.2
+#     )
+    
+#     save_plot_source_data(df_plot, "fig4_source_data")
+#     plt.savefig(FIG_DIR / "fig4_collapsed_fraction_vs_flops.png", bbox_inches='tight')
+#     plt.close()
+
+# def fig6(df: pd.DataFrame):
+#     """Pareto Frontier"""
+#     architectures = sorted(df["architecture"].dropna().unique())
+#     datasets = sorted(df["dataset"].dropna().unique())
+
+#     if not architectures or not datasets: return
+
+#     fig, axes = plt.subplots(
+#         len(architectures), len(datasets),
+#         figsize=(5.0 * len(datasets), 4.0 * len(architectures)),
+#         sharex=True, sharey=False, squeeze=False,
+#     )
+    
+#     plot_data_accum = []
+
+#     for i, arch in enumerate(architectures):
+#         for j, ds in enumerate(datasets):
+#             ax = axes[i, j]
+#             subdf = df[
+#                 (df["architecture"] == arch) &
+#                 (df["dataset"] == ds)
+#             ].dropna(subset=["d_params", "d_acc"])
+
+#             if subdf.empty:
+#                 ax.axis("off")
+#                 continue
+            
+#             # Identify Pareto points
+#             subdf = subdf.sort_values("d_params", ascending=False) # High compression first
+#             pareto_points = []
+#             current_max_acc = -np.inf
+            
+#             for _, row in subdf.iterrows():
+#                 if row["d_acc"] >= current_max_acc:
+#                     pareto_points.append(row)
+#                     current_max_acc = row["d_acc"]
+            
+#             pareto_df = pd.DataFrame(pareto_points).sort_values("d_params")
+#             plot_data_accum.append(pareto_df)
+
+#             # Plot All points
+#             sns.scatterplot(
+#                 data=subdf, x="d_params", y="d_acc",
+#                 hue="posthoc_or_posttrain", style="break_group",
+#                 alpha=0.6, s=60, ax=ax, legend=(i==0 and j==0)
+#             )
+
+#             # Plot Frontier
+#             sns.lineplot(
+#                 data=pareto_df, x="d_params", y="d_acc",
+#                 color="black", linewidth=2, linestyle="--", 
+#                 label="Pareto Frontier" if i==0 and j==0 else None, ax=ax,
+#                 errorbar=None
+#             )
+            
+#             ax.set_title(f"{arch} on {ds}")
+#             ax.axhline(0, color="gray", alpha=0.5, linestyle=":")
+            
+#             if i == len(architectures)-1: format_reduction_axis(ax, "Parameter")
+#             if j == 0: format_accuracy_axis(ax)
+
+#     if plot_data_accum:
+#         save_plot_source_data(pd.concat(plot_data_accum), "fig6_pareto_source")
+
+#     plt.tight_layout()
+#     plt.savefig(FIG_DIR / "fig6_pareto_frontier.png", bbox_inches='tight')
+#     plt.close()
+
+# def fig5(df: pd.DataFrame):
+#     """
+#     Bar chart of Maximum Model Collapsibility per architecture/dataset.
+#     """
+#     if "collapsed_fraction" not in df.columns: return
+    
+#     # Get the max collapse observed for each Arch/Dataset pair
+#     # We ignore break_group here to find the absolute max across all runs
+#     max_collapse = (
+#         df.dropna(subset=["collapsed_fraction"])
+#           .groupby(["architecture", "dataset"])
+#           .collapsed_fraction
+#           .max()
+#           .reset_index()
+#     )
+
+#     if max_collapse.empty: return
+
+#     save_plot_source_data(max_collapse, "fig5_source_data")
+
+#     fig, ax = plt.subplots(figsize=(10, 6))
+
+#     sns.barplot(
+#         data=max_collapse,
+#         x="architecture",
+#         y="collapsed_fraction",
+#         hue="dataset",
+#         ax=ax,
+#         palette="viridis"
+#     )
+
+#     ax.set_title("Maximum Model Collapsibility Observed")
+#     ax.set_xlabel("Architecture")
+#     ax.set_ylabel("Max Collapsed Fraction (0-1)")
+#     ax.legend(title="Dataset", bbox_to_anchor=(1.05, 1), loc='upper left')
+    
+#     ax.axhline(0, color="black", linewidth=1)
+
+#     plt.tight_layout()
+#     plt.savefig(FIG_DIR / "fig5_max_collapsibility.png", bbox_inches='tight')
+#     plt.close()
+
+# def fig7(df: pd.DataFrame):
+#     """
+#     Bar chart showing the Accuracy Delta (Method A - Method B).
+#     Updated for new labels: "Post-Hoc (JF)" vs "Post-Train (Kevin)".
+#     """
+#     df = df.copy()
+    
+#     # 1. Create a common key to match experiments (strip the method suffix)
+#     # We use 'exp_name' but need to remove the method identifiers
+#     df["exp_base"] = (
+#         df["exp_name"]
+#         .str.replace("_JF", "", regex=False)
+#         .str.replace("_Kevin", "", regex=False)
+#         .str.replace("_pruned", "", regex=False)
+#         .str.replace("_initialized", "", regex=False)
+#         .str.strip()
+#     )
+    
+#     # 2. Filter for the two methods we compare
+#     # Note: Ensure these match the outputs of infer_posthoc_or_posttrain
+#     valid_methods = ["Post-Hoc (JF)", "Post-Train (Kevin)"]
+#     df_methods = df[df["posthoc_or_posttrain"].isin(valid_methods)]
+    
+#     if df_methods.empty:
+#         print("[!] Fig7 Skipped: No matching Post-Hoc/Post-Train pairs found.")
+#         return
+
+#     # 3. Pivot to align them side-by-side
+#     # We must include 'break_group' in the index so we don't mix different breaks
+#     pivot_cols = ["dataset", "architecture", "exp_base", "break_group", "is_quantized"]
+    
+#     try:
+#         df_pivot = df_methods.pivot_table(
+#             index=pivot_cols,
+#             columns="posthoc_or_posttrain",
+#             values="accuracy"
+#         ).reset_index()
+#     except Exception as e:
+#         print(f"[!] Fig7 Pivot Failed: {e}")
+#         return
+
+#     # 4. Calculate Delta (Post-Hoc - Post-Train)
+#     if "Post-Hoc (JF)" in df_pivot.columns and "Post-Train (Kevin)" in df_pivot.columns:
+#         df_pivot["accuracy_delta"] = df_pivot["Post-Hoc (JF)"] - df_pivot["Post-Train (Kevin)"]
+#     else:
+#         print("[!] Fig7 Skipped: Missing one of the required columns after pivot.")
+#         return
+
+#     df_pivot = df_pivot.dropna(subset=["accuracy_delta"])
+#     save_plot_source_data(df_pivot, "fig7_method_delta_source")
+
+#     # 5. Plotting
+#     architectures = sorted(df_pivot["architecture"].unique())
+#     datasets = sorted(df_pivot["dataset"].unique())
+    
+#     fig, axes = plt.subplots(
+#         len(architectures), len(datasets),
+#         figsize=(5.5 * len(datasets), 4.5 * len(architectures)),
+#         sharex=True, sharey=True, squeeze=False,
+#     )
+
+#     for i, arch in enumerate(architectures):
+#         for j, ds in enumerate(datasets):
+#             ax = axes[i, j]
+#             subdf = df_pivot[
+#                 (df_pivot["architecture"] == arch) &
+#                 (df_pivot["dataset"] == ds)
+#             ].sort_values("exp_base")
+            
+#             if subdf.empty:
+#                 ax.axis("off")
+#                 continue
+            
+#             # Color: Blue if Positive (JF better), Red if Negative (Kevin better)
+#             colors = ["#1f77b4" if x >= 0 else "#d62728" for x in subdf["accuracy_delta"]]
+            
+#             sns.barplot(
+#                 data=subdf, x="exp_base", y="accuracy_delta",
+#                 ax=ax, palette=colors, hue="exp_base", legend=False
+#             )
+            
+#             ax.axhline(0, color="black", linewidth=1)
+#             ax.set_title(f"{arch} on {ds}")
+            
+#             if j == 0:
+#                 ax.set_ylabel("Acc Delta (JF - Kevin)")
+#             else:
+#                 ax.set_ylabel("")
+                
+#             if i == len(architectures)-1:
+#                 ax.set_xlabel("Experiment Group")
+#                 ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right", fontsize=8)
+
+#     fig.suptitle("Method Comparison: Post-Hoc (JF) vs Post-Train (Kevin)", fontsize=16, y=1.02)
+#     plt.tight_layout()
+#     plt.savefig(FIG_DIR / "fig7_method_delta.png", bbox_inches='tight')
+#     plt.close()
+
+# def fig8(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", "memory"]):
+#     """
+#     Ablation Study: Plots metrics across experiment groups.
+#     Updates:
+#     - Splits trends by 'posthoc_or_posttrain' (Color)
+#     - Distinguishes 'break_group' (Style/Dashing) to compare break strategies.
+#     - Sorts x-axis by parameter count to show the "compression trajectory".
+#     """
+#     out_dir = FIG_DIR / "expname_ablations"
+#     out_dir.mkdir(parents=True, exist_ok=True)
+
+#     df = df.copy()
+    
+#     # Clean up the experiment name for the X-axis label
+#     # This removes redundant suffixes to make the chart readable
+#     df["display_group"] = (
+#         df["exp_name"]
+#         .str.replace("_quant", "", regex=False)
+#         .str.replace("_JF", "", regex=False)
+#         .str.replace("_Kevin", "", regex=False)
+#         .str.split("_pretrain").str[0]  # Shorten to Arch_Dataset usually
+#     )
+
+#     # Filter: We usually only care about the collapsed models for the ablation curve
+#     # But we include baseline if available for reference (optional)
+#     df_ablation = df[df["model_type"] == "collapsed"].copy()
+
+#     if df_ablation.empty:
+#         print("[!] No collapsed models found for Fig 8.")
+#         return
+
+#     # Iterate per Architecture
+#     for architecture, df_arch in df_ablation.groupby("architecture"):
+#         datasets = sorted(df_arch["dataset"].unique())
+#         n_rows = len(datasets)
+#         n_cols = len(metrics)
+        
+#         # Determine X-axis Order: Sort by parameter count (Descending)
+#         # This makes the x-axis go from "Largest Model" -> "Smallest Model"
+#         if "params" in df_arch.columns:
+#             exp_order = (
+#                 df_arch.groupby("display_group")["params"]
+#                 .mean()
+#                 .sort_values(ascending=False)
+#                 .index
+#             )
+#         else:
+#             exp_order = sorted(df_arch["display_group"].unique())
+
+#         # Create Subplots
+#         fig, axes = plt.subplots(
+#             n_rows, n_cols,
+#             figsize=(max(6, 1.5 * len(exp_order)) * n_cols, 4.0 * n_rows),
+#             squeeze=False, sharex='col'
+#         )
+
+#         for i, dataset in enumerate(datasets):
+#             g_dataset = df_arch[df_arch["dataset"] == dataset].copy()
+            
+#             for j, metric in enumerate(metrics):
+#                 ax = axes[i, j]
+                
+#                 if g_dataset.empty or metric not in g_dataset.columns:
+#                     ax.axis("off")
+#                     continue
+
+#                 # PLOTTING CORE
+#                 sns.lineplot(
+#                     data=g_dataset,
+#                     x="display_group", 
+#                     y=metric,
+#                     hue="posthoc_or_posttrain",  # Color = Method
+#                     style="break_group",         # Dash Style = Break Group (3 vs 4)
+#                     markers=True, 
+#                     dashes=True,
+#                     linewidth=2.5,
+#                     ax=ax,
+#                     errorbar=None # Clean lines
+#                 )
+
+#                 # Formatting
+#                 if i == 0: 
+#                     ax.set_title(metric.capitalize(), fontsize=13, fontweight='bold')
+                
+#                 if i == n_rows - 1:
+#                     ax.set_xlabel("Model Config (Size Descending)", fontsize=10)
+#                     ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right")
+#                 else:
+#                     ax.set_xlabel("")
+#                     ax.set_xticklabels([])
+
+#                 if j == 0:
+#                     ax.set_ylabel(f"{dataset}\n{metric}", fontsize=11)
+#                 else:
+#                     ax.set_ylabel("")
+
+#                 ax.grid(True, axis="y", linestyle="--", alpha=0.5)
+                
+#                 # Legend handling: Only distinct legend on first plot
+#                 if i == 0 and j == 0:
+#                     ax.legend(title="Method / Break", fontsize=8, loc='best')
+#                 else:
+#                     if ax.get_legend(): ax.get_legend().remove()
+
+#         fig.suptitle(
+#             f"{architecture}: Ablation Study\n"
+#             "Color=Method (JF/Kevin), Style=Break Group",
+#             fontsize=16, y=1.02,
+#         )
+
+#         plt.tight_layout()
+#         save_path = out_dir / f"{architecture}_ablation_combined.png"
+#         plt.savefig(save_path, bbox_inches='tight')
+#         plt.close()
+#         print(f"[✓] Saved Fig 8: {save_path}")
+
+# def fig8_per_break(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops"]):
+#     """
+#     OPTIONAL: Generates separate ablation figures for EACH break group.
+#     Use this if the combined Fig 8 is too messy.
+#     """
+#     out_dir = FIG_DIR / "expname_ablations" / "per_break"
+#     out_dir.mkdir(parents=True, exist_ok=True)
+    
+#     # Iterate over break groups first
+#     for break_group, df_break in df.groupby("break_group"):
+#         # Then reuse standard plotting logic
+#         # We rename the architecture in the loop to create separate files
+#         print(f"[•] Generating ablations for {break_group}...")
+        
+#         # Call the main fig8 logic but on filtered data
+#         # Note: We need to modify fig8 slightly to accept a filename suffix or just do it inline here.
+#         # For brevity, I will just replicate the core plotting loop here simplified:
+        
+#         df_break = df_break.copy()
+#         df_break["display_group"] = df_break["exp_name"].str.split("_pretrain").str[0]
+        
+#         for architecture, df_arch in df_break.groupby("architecture"):
+#             datasets = sorted(df_arch["dataset"].unique())
+#             fig, axes = plt.subplots(len(datasets), len(metrics), figsize=(5*len(metrics), 4*len(datasets)), squeeze=False)
+            
+#             for i, ds in enumerate(datasets):
+#                 g_ds = df_arch[df_arch["dataset"] == ds]
+#                 for j, met in enumerate(metrics):
+#                     ax = axes[i,j]
+#                     if g_ds.empty: continue
+                    
+#                     sns.lineplot(
+#                         data=g_ds, x="display_group", y=met, 
+#                         hue="posthoc_or_posttrain", markers=True, ax=ax
+#                     )
+#                     if i==len(datasets)-1: 
+#                         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right")
+            
+#             plt.suptitle(f"{architecture} - {break_group}")
+#             plt.tight_layout()
+#             plt.savefig(out_dir / f"{architecture}_{break_group}_ablation.png")
+#             plt.close()
+
+Here is the updated code with added logging statements to track what is being plotted, which columns are used, and the relevant labels for each figure.
+
+Python
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import numpy as np
+from pathlib import Path
+
+# Assuming FIG_DIR is defined globally as per your snippet
+# FIG_DIR = Path("path/to/figures") 
+
 def fig1(df: pd.DataFrame):
     """Accuracy vs Parameter Reduction"""
+    print(f"\n[Plotting] Fig 1: Accuracy vs Parameter Reduction")
+    
     df_plot = df.dropna(subset=["d_params", "d_acc"]).sort_values("d_params")
-    if df_plot.empty: return
+    if df_plot.empty: 
+        print("  ! Skipping Fig 1: No valid data after dropping NaNs in 'd_params' or 'd_acc'.")
+        return
+
+    print(f"  - Columns used: x='d_params', y='d_acc'")
+    print(f"  - Grouping: col='dataset', row='architecture', hue='posthoc_or_posttrain', style='break_group'")
+    print(f"  - Data points: {len(df_plot)}")
 
     g = sns.relplot(
         data=df_plot,
@@ -283,13 +740,23 @@ def fig1(df: pd.DataFrame):
         ax.axhline(0, color='gray', linestyle='--', linewidth=1)
 
     save_plot_source_data(df_plot, "fig1_source_data")
-    plt.savefig(FIG_DIR / "fig1_params_vs_accuracy.png", bbox_inches='tight')
+    out_path = FIG_DIR / "fig1_params_vs_accuracy.png"
+    plt.savefig(out_path, bbox_inches='tight')
+    print(f"  - Saved to: {out_path}")
     plt.close()
 
 def fig2(df: pd.DataFrame):
     """Accuracy vs FLOPs Reduction"""
+    print(f"\n[Plotting] Fig 2: Accuracy vs FLOPs Reduction")
+
     df_plot = df.dropna(subset=["d_flops", "d_acc"]).sort_values("d_flops")
-    if df_plot.empty: return
+    if df_plot.empty: 
+        print("  ! Skipping Fig 2: No valid data after dropping NaNs.")
+        return
+
+    print(f"  - Columns used: x='d_flops', y='d_acc'")
+    print(f"  - Grouping: col='dataset', row='architecture', hue='posthoc_or_posttrain'")
+    print(f"  - Data points: {len(df_plot)}")
 
     g = sns.relplot(
         data=df_plot,
@@ -309,13 +776,23 @@ def fig2(df: pd.DataFrame):
         ax.axhline(0, color='gray', linestyle='--', linewidth=1)
 
     save_plot_source_data(df_plot, "fig2_source_data")
-    plt.savefig(FIG_DIR / "fig2_flops_vs_accuracy.png", bbox_inches='tight')
+    out_path = FIG_DIR / "fig2_flops_vs_accuracy.png"
+    plt.savefig(out_path, bbox_inches='tight')
+    print(f"  - Saved to: {out_path}")
     plt.close()
 
 def fig4(df: pd.DataFrame):
     """FLOPs Reduction vs Collapsed Fraction (Linearity check)"""
+    print(f"\n[Plotting] Fig 4: FLOPs Reduction vs Collapsed Fraction")
+
     df_plot = df.dropna(subset=["collapsed_fraction", "d_flops"]).sort_values("collapsed_fraction")
-    if df_plot.empty: return
+    if df_plot.empty: 
+        print("  ! Skipping Fig 4: No valid data after dropping NaNs.")
+        return
+
+    print(f"  - Columns used: x='collapsed_fraction', y='d_flops'")
+    print(f"  - Grouping: col='dataset', row='architecture'")
+    print(f"  - Data points: {len(df_plot)}")
 
     g = sns.relplot(
         data=df_plot,
@@ -327,15 +804,25 @@ def fig4(df: pd.DataFrame):
     )
     
     save_plot_source_data(df_plot, "fig4_source_data")
-    plt.savefig(FIG_DIR / "fig4_collapsed_fraction_vs_flops.png", bbox_inches='tight')
+    out_path = FIG_DIR / "fig4_collapsed_fraction_vs_flops.png"
+    plt.savefig(out_path, bbox_inches='tight')
+    print(f"  - Saved to: {out_path}")
     plt.close()
 
 def fig6(df: pd.DataFrame):
     """Pareto Frontier"""
+    print(f"\n[Plotting] Fig 6: Pareto Frontier Analysis")
+
     architectures = sorted(df["architecture"].dropna().unique())
     datasets = sorted(df["dataset"].dropna().unique())
 
-    if not architectures or not datasets: return
+    if not architectures or not datasets: 
+        print("  ! Skipping Fig 6: Missing architectures or datasets.")
+        return
+
+    print(f"  - Architectures: {architectures}")
+    print(f"  - Datasets: {datasets}")
+    print(f"  - Grid: {len(architectures)} rows x {len(datasets)} cols")
 
     fig, axes = plt.subplots(
         len(architectures), len(datasets),
@@ -395,16 +882,22 @@ def fig6(df: pd.DataFrame):
         save_plot_source_data(pd.concat(plot_data_accum), "fig6_pareto_source")
 
     plt.tight_layout()
-    plt.savefig(FIG_DIR / "fig6_pareto_frontier.png", bbox_inches='tight')
+    out_path = FIG_DIR / "fig6_pareto_frontier.png"
+    plt.savefig(out_path, bbox_inches='tight')
+    print(f"  - Saved to: {out_path}")
     plt.close()
+
 def fig5(df: pd.DataFrame):
     """
     Bar chart of Maximum Model Collapsibility per architecture/dataset.
     """
-    if "collapsed_fraction" not in df.columns: return
+    print(f"\n[Plotting] Fig 5: Maximum Model Collapsibility")
+
+    if "collapsed_fraction" not in df.columns: 
+        print("  ! Skipping Fig 5: 'collapsed_fraction' column missing.")
+        return
     
     # Get the max collapse observed for each Arch/Dataset pair
-    # We ignore break_group here to find the absolute max across all runs
     max_collapse = (
         df.dropna(subset=["collapsed_fraction"])
           .groupby(["architecture", "dataset"])
@@ -413,8 +906,12 @@ def fig5(df: pd.DataFrame):
           .reset_index()
     )
 
-    if max_collapse.empty: return
+    if max_collapse.empty: 
+        print("  ! Skipping Fig 5: No data found after grouping.")
+        return
 
+    print(f"  - Columns used: x='architecture', y='collapsed_fraction', hue='dataset'")
+    
     save_plot_source_data(max_collapse, "fig5_source_data")
 
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -436,18 +933,20 @@ def fig5(df: pd.DataFrame):
     ax.axhline(0, color="black", linewidth=1)
 
     plt.tight_layout()
-    plt.savefig(FIG_DIR / "fig5_max_collapsibility.png", bbox_inches='tight')
+    out_path = FIG_DIR / "fig5_max_collapsibility.png"
+    plt.savefig(out_path, bbox_inches='tight')
+    print(f"  - Saved to: {out_path}")
     plt.close()
 
 def fig7(df: pd.DataFrame):
     """
     Bar chart showing the Accuracy Delta (Method A - Method B).
-    Updated for new labels: "Post-Hoc (JF)" vs "Post-Train (Kevin)".
     """
+    print(f"\n[Plotting] Fig 7: Accuracy Delta (Method Comparison)")
+
     df = df.copy()
     
-    # 1. Create a common key to match experiments (strip the method suffix)
-    # We use 'exp_name' but need to remove the method identifiers
+    # 1. Create a common key
     df["exp_base"] = (
         df["exp_name"]
         .str.replace("_JF", "", regex=False)
@@ -458,16 +957,16 @@ def fig7(df: pd.DataFrame):
     )
     
     # 2. Filter for the two methods we compare
-    # Note: Ensure these match the outputs of infer_posthoc_or_posttrain
     valid_methods = ["Post-Hoc (JF)", "Post-Train (Kevin)"]
     df_methods = df[df["posthoc_or_posttrain"].isin(valid_methods)]
     
     if df_methods.empty:
-        print("[!] Fig7 Skipped: No matching Post-Hoc/Post-Train pairs found.")
+        print("  ! Skipping Fig 7: No matching Post-Hoc/Post-Train pairs found.")
         return
 
-    # 3. Pivot to align them side-by-side
-    # We must include 'break_group' in the index so we don't mix different breaks
+    print(f"  - Methods filtered: {valid_methods}")
+
+    # 3. Pivot
     pivot_cols = ["dataset", "architecture", "exp_base", "break_group", "is_quantized"]
     
     try:
@@ -477,17 +976,20 @@ def fig7(df: pd.DataFrame):
             values="accuracy"
         ).reset_index()
     except Exception as e:
-        print(f"[!] Fig7 Pivot Failed: {e}")
+        print(f"  ! Fig 7 Pivot Failed: {e}")
         return
 
-    # 4. Calculate Delta (Post-Hoc - Post-Train)
+    # 4. Calculate Delta
     if "Post-Hoc (JF)" in df_pivot.columns and "Post-Train (Kevin)" in df_pivot.columns:
         df_pivot["accuracy_delta"] = df_pivot["Post-Hoc (JF)"] - df_pivot["Post-Train (Kevin)"]
+        print("  - Calculated Delta: Post-Hoc (JF) - Post-Train (Kevin)")
     else:
-        print("[!] Fig7 Skipped: Missing one of the required columns after pivot.")
+        print("  ! Skipping Fig 7: Missing one of the required columns after pivot.")
         return
 
     df_pivot = df_pivot.dropna(subset=["accuracy_delta"])
+    print(f"  - Total valid comparisons plotted: {len(df_pivot)}")
+    
     save_plot_source_data(df_pivot, "fig7_method_delta_source")
 
     # 5. Plotting
@@ -534,39 +1036,40 @@ def fig7(df: pd.DataFrame):
 
     fig.suptitle("Method Comparison: Post-Hoc (JF) vs Post-Train (Kevin)", fontsize=16, y=1.02)
     plt.tight_layout()
-    plt.savefig(FIG_DIR / "fig7_method_delta.png", bbox_inches='tight')
+    out_path = FIG_DIR / "fig7_method_delta.png"
+    plt.savefig(out_path, bbox_inches='tight')
+    print(f"  - Saved to: {out_path}")
     plt.close()
 
 def fig8(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", "memory"]):
     """
     Ablation Study: Plots metrics across experiment groups.
-    Updates:
-    - Splits trends by 'posthoc_or_posttrain' (Color)
-    - Distinguishes 'break_group' (Style/Dashing) to compare break strategies.
-    - Sorts x-axis by parameter count to show the "compression trajectory".
     """
+    print(f"\n[Plotting] Fig 8: Ablation Study (Combined)")
+    print(f"  - Metrics: {metrics}")
+
     out_dir = FIG_DIR / "expname_ablations"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     df = df.copy()
     
-    # Clean up the experiment name for the X-axis label
-    # This removes redundant suffixes to make the chart readable
+    # Clean up the experiment name
     df["display_group"] = (
         df["exp_name"]
         .str.replace("_quant", "", regex=False)
         .str.replace("_JF", "", regex=False)
         .str.replace("_Kevin", "", regex=False)
-        .str.split("_pretrain").str[0]  # Shorten to Arch_Dataset usually
+        .str.split("_pretrain").str[0] 
     )
 
-    # Filter: We usually only care about the collapsed models for the ablation curve
-    # But we include baseline if available for reference (optional)
     df_ablation = df[df["model_type"] == "collapsed"].copy()
 
     if df_ablation.empty:
-        print("[!] No collapsed models found for Fig 8.")
+        print("  ! Skipping Fig 8: No collapsed models found.")
         return
+    
+    unique_archs = df_ablation["architecture"].unique()
+    print(f"  - Architectures found: {unique_archs}")
 
     # Iterate per Architecture
     for architecture, df_arch in df_ablation.groupby("architecture"):
@@ -574,8 +1077,9 @@ def fig8(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
         n_rows = len(datasets)
         n_cols = len(metrics)
         
-        # Determine X-axis Order: Sort by parameter count (Descending)
-        # This makes the x-axis go from "Largest Model" -> "Smallest Model"
+        print(f"    > Plotting {architecture} ({len(datasets)} datasets)...")
+
+        # Determine X-axis Order
         if "params" in df_arch.columns:
             exp_order = (
                 df_arch.groupby("display_group")["params"]
@@ -608,13 +1112,13 @@ def fig8(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
                     data=g_dataset,
                     x="display_group", 
                     y=metric,
-                    hue="posthoc_or_posttrain",  # Color = Method
-                    style="break_group",         # Dash Style = Break Group (3 vs 4)
+                    hue="posthoc_or_posttrain",  
+                    style="break_group",        
                     markers=True, 
                     dashes=True,
                     linewidth=2.5,
                     ax=ax,
-                    errorbar=None # Clean lines
+                    errorbar=None 
                 )
 
                 # Formatting
@@ -635,7 +1139,7 @@ def fig8(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
 
                 ax.grid(True, axis="y", linestyle="--", alpha=0.5)
                 
-                # Legend handling: Only distinct legend on first plot
+                # Legend handling
                 if i == 0 and j == 0:
                     ax.legend(title="Method / Break", fontsize=8, loc='best')
                 else:
@@ -651,25 +1155,22 @@ def fig8(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
         save_path = out_dir / f"{architecture}_ablation_combined.png"
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
-        print(f"[✓] Saved Fig 8: {save_path}")
+        print(f"      - Saved: {save_path.name}")
 
 def fig8_per_break(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops"]):
     """
     OPTIONAL: Generates separate ablation figures for EACH break group.
-    Use this if the combined Fig 8 is too messy.
     """
+    print(f"\n[Plotting] Fig 8 (Per Break): Detailed Ablations")
     out_dir = FIG_DIR / "expname_ablations" / "per_break"
     out_dir.mkdir(parents=True, exist_ok=True)
     
     # Iterate over break groups first
+    break_groups = df["break_group"].unique()
+    print(f"  - Break Groups found: {break_groups}")
+
     for break_group, df_break in df.groupby("break_group"):
-        # Then reuse standard plotting logic
-        # We rename the architecture in the loop to create separate files
-        print(f"[•] Generating ablations for {break_group}...")
-        
-        # Call the main fig8 logic but on filtered data
-        # Note: We need to modify fig8 slightly to accept a filename suffix or just do it inline here.
-        # For brevity, I will just replicate the core plotting loop here simplified:
+        print(f"    > Processing break_group: {break_group}")
         
         df_break = df_break.copy()
         df_break["display_group"] = df_break["exp_name"].str.split("_pretrain").str[0]
@@ -693,9 +1194,10 @@ def fig8_per_break(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params",
             
             plt.suptitle(f"{architecture} - {break_group}")
             plt.tight_layout()
-            plt.savefig(out_dir / f"{architecture}_{break_group}_ablation.png")
+            out_path = out_dir / f"{architecture}_{break_group}_ablation.png"
+            plt.savefig(out_path)
             plt.close()
-
+            print(f"      - Saved: {out_path.name}")
 def tab1(df: pd.DataFrame):
     """
     Table 1: Baseline Accuracy vs Max Collapsed Accuracy vs Drop.
