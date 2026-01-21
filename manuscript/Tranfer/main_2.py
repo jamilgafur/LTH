@@ -193,6 +193,9 @@ def main():
     model_files = glob.glob(f"baseline*/*/check*/*pt")
     if not model_files:
         raise ValueError(f"No baseline model found for {args.model} on {args.dataset}.")
+    model_files = [mf for mf in model_files if args.model in mf and args.dataset in mf]
+    if not model_files:
+        raise ValueError(f"No baseline model found for {args.model} on {args.dataset}.")
     baseline_model_file = model_files[0]
     
     train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)

@@ -180,7 +180,7 @@ def main():
 set -e
 
 MODEL={args.model}
-DATASET={args.dataset}_
+DATASET={args.dataset}
 EPOCHS=5
 
 cd {PBS_DIR} || exit 1
