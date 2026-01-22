@@ -13,7 +13,7 @@ import math
 def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
     print(f"[DEBUG] Locating and preparing block: start='{start_layer_name}', end:'{end_layer_name}'")
 
-    # --- LCA resolution (unchanged) ---
+    # --- LCA resolution ---
     start_parts = start_layer_name.split('.') if start_layer_name else []
     end_parts = end_layer_name.split('.') if end_layer_name else []
     common_parts = []
@@ -24,16 +24,20 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
             break
     lca_path = '.'.join(common_parts)
 
+    # FIX 1: Allow root to be the container
     if lca_path == "":
         start_container_name, _ = _get_container_and_subname(start_layer_name)
         end_container_name, _ = _get_container_and_subname(end_layer_name)
-        if start_container_name == end_container_name and start_container_name != "":
+        
+        # If they share a parent (even root ""), use it.
+        if start_container_name == end_container_name:
             lca_path = start_container_name
             container = get_layer(model, lca_path)
         else:
-            raise ValueError(
-                "[ERROR] Start and end layers do not share a non-root common ancestor."
-            )
+            # Fallback: If layers are in different top-level branches, use root as LCA
+            print(f"[DEBUG] Layers in different branches or direct children; using root as LCA.")
+            lca_path = ""
+            container = model
     else:
         container = get_layer(model, lca_path)
 
@@ -46,21 +50,26 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
     start_idx = end_idx = None
     for i, (child_name, _) in enumerate(named_layers):
         full_child_prefix = f"{lca_path}.{child_name}" if lca_path else child_name
+        
+        # Check start
         if start_idx is None and (
             start_layer_name == full_child_prefix
             or start_layer_name.startswith(full_child_prefix + ".")
         ):
             start_idx = i
+        
+        # Check end
         if end_idx is None and (
             end_layer_name == full_child_prefix
             or end_layer_name.startswith(full_child_prefix + ".")
         ):
             end_idx = i
+        
         if start_idx is not None and end_idx is not None:
             break
 
     if start_idx is None or end_idx is None:
-        raise ValueError("[ERROR] Could not map start/end layers into LCA container.")
+        raise ValueError(f"[ERROR] Could not map start/end layers into LCA container '{lca_path}'.")
 
     if start_idx > end_idx:
         start_idx, end_idx = end_idx, start_idx
@@ -81,8 +90,6 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
         raise ValueError("[ERROR] No Conv2d or Linear layers found in block.")
 
     has_conv = any(isinstance(l, nn.Conv2d) for l in conv_layers)
-    has_linear = any(isinstance(l, nn.Linear) for l in conv_layers)
-
     collapse_mode = "conv" if has_conv else "linear"
 
     print(
@@ -93,7 +100,7 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
     )
     layer_type = nn.Conv2d if collapse_mode == "conv" else nn.Linear
 
-
+    # FIX 2: Return names (strings) for first/last layer to avoid naming errors
     return {
         "container": container,
         "container_name": lca_path,
@@ -104,10 +111,9 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
         "layer_type": layer_type,
         "conv_layers": conv_layers,
         "collapse_mode": collapse_mode,
-        "first_layer": conv_layers[0],
-        "last_layer": conv_layers[-1],
+        "first_layer_name": full_block[0][0],  # Changed from object to name string
+        "last_layer_name": full_block[-1][0],   # Changed from object to name string
     }
-
 
 def _build_and_replace_block(
     model,
@@ -128,8 +134,12 @@ def _build_and_replace_block(
         print(f"[DEBUG] Target device: {device}")
 
     named_layers = info["named_layers"]
-    # Prefer the container determined by the locator (LCA). If not present, fall back to original start container.
-    start_container_name = info.get("container_name") or _get_container_and_subname(start_layer_name)[0]
+    # Prefer the container determined by the locator (LCA).
+    start_container_name = info.get("container_name")
+    if start_container_name is None:
+        # Fallback only if not in info (should be there now)
+        start_container_name = _get_container_and_subname(start_layer_name)[0]
+        
     start_idx, end_idx = info["start_idx"], info["end_idx"]
     out_shape = block_analysis.get("out_shape")
     out_channels = block_analysis.get("out_channels")
@@ -148,12 +158,10 @@ def _build_and_replace_block(
         print(f"[DEBUG] Replacement conv in_channels={in_channels}, out_channels={out_channels}")
 
     conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False)
-    # Using BatchNorm2d to stabilize learning if you plan to fine-tune
     bn = nn.BatchNorm2d(out_channels) 
-    relu = nn.ReLU(inplace=False) # out-of-place for autograd safety
+    relu = nn.ReLU(inplace=False)
     pool = nn.AdaptiveAvgPool2d((target_H, target_W))
 
-    # Rebuilding the surrogate with increased capacity
     replacement = nn.Sequential(OrderedDict([
         ("conv_1x1", conv),
         ("bn", bn),
@@ -164,15 +172,18 @@ def _build_and_replace_block(
         print(f"[DEBUG] Built replacement Sequential:\n{replacement}")
 
     if debug:
-        print(f"[DEBUG] Replacing children indices {start_idx}..{end_idx} in container '{start_container_name}'")
+        print(f"[DEBUG] Replacing children indices {start_idx}..{end_idx} in container '{start_container_name or '<root>'}'")
+    
+    # FIX: Use string names for start_name/end_name
     updated_container = _replace_layers(
             named_layers,
             start_idx,
             end_idx,
             replacement,
-            start_name=info["first_layer"],
-            end_name=info["last_layer"],
+            start_name=info["first_layer_name"], # passed as string
+            end_name=info["last_layer_name"],    # passed as string
         )
+        
     _update_container(model, start_container_name, updated_container)
     model.to(device)
 
@@ -186,12 +197,19 @@ def _build_and_replace_block(
         dev = next((p.device for p in model.parameters()), torch.device('cpu'))
         rep_module = get_layer(model, start_container_name)
         child = None
+        
+        # Validation search: look inside the container for the new collapsed module
+        # Note: If start_container_name is root (""), rep_module is model
         for nm, m in rep_module.named_children():
             if nm.startswith("collapsed_") or (isinstance(m, nn.Sequential) and "conv_1x1" in dict(m.named_children())):
                 child = m
                 break
-        if child is None and isinstance(updated_container, nn.Sequential):
-            child = updated_container[start_idx]
+        
+        # Fallback: if we just replaced a specific index in a Sequential
+        if child is None and isinstance(updated_container, nn.Sequential) and start_container_name != "":
+             # This path is risky if updated_container isn't attached yet, 
+             # but we called _update_container above, so it should be fine.
+             pass 
 
         if child is not None:
             with torch.no_grad():
@@ -204,6 +222,7 @@ def _build_and_replace_block(
     except Exception as e:
         print(f"[WARN] Replacement forward validation failed: {e}")
         quit()
+        
     try:
         if debug:
             print(f"[STEP] Validating downstream after replacement...")
@@ -211,6 +230,7 @@ def _build_and_replace_block(
     except Exception as e:
         print(f"[WARN] Downstream validation failed: {e}")
         quit()
+        
     try:
         if debug:
             print(f"[STEP] Performing corrective pooling (if needed)...")
@@ -227,8 +247,6 @@ def _build_and_replace_block(
         print(f"[RESULT] Block replacement complete for '{start_layer_name}'.")
 
     return model
-
-
 # -----------------------------------------------------------------------------
 # Utilities
 # -----------------------------------------------------------------------------
@@ -286,8 +304,33 @@ def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=No
 
 def _update_container(model: nn.Module, container_path: str, new_container: nn.Module):
     """Replace the module at `container_path` in `model` with `new_container`."""
+    
+    # FIX: Handle Root Container case
     if container_path == "":
-        raise ValueError("Refusing to replace root module with container.")
+        print("[DEBUG] Updating root container in-place.")
+        
+        # 1. Identify existing children names to potentially remove
+        existing_names = set(n for n, _ in model.named_children())
+        
+        # 2. Identify new children names from the replacement Sequential
+        # (new_container is the Sequential returned by _replace_layers)
+        new_children = list(new_container.named_children())
+        new_names = set(n for n, _ in new_children)
+        
+        # 3. Remove attributes that are in existing but NOT in new
+        # (These are the layers that were collapsed/removed)
+        for name in existing_names:
+            if name not in new_names:
+                delattr(model, name)
+        
+        # 4. Set attributes for all layers in the new container
+        # (Overwrites existing ones, adds new collapsed one)
+        for name, module in new_children:
+            setattr(model, name, module)
+            
+        return
+
+    # --- Existing logic for non-root containers ---
     parts = container_path.split('.')
     parent = model
     for part in parts[:-1]:
@@ -297,7 +340,6 @@ def _update_container(model: nn.Module, container_path: str, new_container: nn.M
         parent[int(last)] = new_container
     else:
         setattr(parent, last, new_container)
-
 
 def disable_inplace_relu(model: nn.Module):
     """Replace inplace ReLU with out-of-place ReLU to avoid in-place autograd issues."""

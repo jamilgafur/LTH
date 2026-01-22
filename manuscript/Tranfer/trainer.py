@@ -46,6 +46,7 @@ def train_one_epoch(model, train_loader, optimizer, device, scaler=None, use_aut
         total += yb.size(0)
 
     return total_loss / total, 100. * correct / total
+
 def evaluate(model, loader, device, quant=False):
     model.eval()
     correct = total = 0
