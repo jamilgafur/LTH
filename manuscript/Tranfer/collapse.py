@@ -258,7 +258,6 @@ def _is_int_str(s: str) -> bool:
     except Exception:
         return False
 
-
 def get_layer(model: nn.Module, layer_name: str) -> nn.Module:
     """Access layer via dot-separated path (supports Sequential indices). Empty -> model."""
     if layer_name == "":
@@ -268,78 +267,12 @@ def get_layer(model: nn.Module, layer_name: str) -> nn.Module:
         layer = layer[int(part)] if _is_int_str(part) else getattr(layer, part)
     return layer
 
-
 def _get_container_and_subname(layer_name: str) -> Tuple[str, str]:
     """Return (container_path, subname) from layer_name."""
     if layer_name == "":
         return "", ""
     parts = layer_name.split('.')
     return '.'.join(parts[:-1]), parts[-1]
-
-def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=None, end_name=None):
-    """
-    Replace a slice of named_layers with a deterministically named collapsed module.
-    This guarantees checkpoint compatibility across runs.
-    """
-
-    new_layers = OrderedDict()
-
-    for i, (name, mod) in enumerate(named_layers):
-        if i < start_idx or i > end_idx:
-            new_layers[name] = mod
-        elif i == start_idx:
-            # 🔒 DETERMINISTIC NAME
-            if start_name and end_name:
-                collapsed_name = f"collapsed_{start_name}_to_{end_name}"
-            else:
-                collapsed_name = f"collapsed_{start_idx}_{end_idx}"
-
-            # sanitize dots for nn.Module
-            collapsed_name = collapsed_name.replace(".", "_")
-
-            new_layers[collapsed_name] = replacement
-
-    return nn.Sequential(new_layers)
-
-
-def _update_container(model: nn.Module, container_path: str, new_container: nn.Module):
-    """Replace the module at `container_path` in `model` with `new_container`."""
-    
-    # FIX: Handle Root Container case
-    if container_path == "":
-        print("[DEBUG] Updating root container in-place.")
-        
-        # 1. Identify existing children names to potentially remove
-        existing_names = set(n for n, _ in model.named_children())
-        
-        # 2. Identify new children names from the replacement Sequential
-        # (new_container is the Sequential returned by _replace_layers)
-        new_children = list(new_container.named_children())
-        new_names = set(n for n, _ in new_children)
-        
-        # 3. Remove attributes that are in existing but NOT in new
-        # (These are the layers that were collapsed/removed)
-        for name in existing_names:
-            if name not in new_names:
-                delattr(model, name)
-        
-        # 4. Set attributes for all layers in the new container
-        # (Overwrites existing ones, adds new collapsed one)
-        for name, module in new_children:
-            setattr(model, name, module)
-            
-        return
-
-    # --- Existing logic for non-root containers ---
-    parts = container_path.split('.')
-    parent = model
-    for part in parts[:-1]:
-        parent = parent[int(part)] if _is_int_str(part) else getattr(parent, part)
-    last = parts[-1]
-    if _is_int_str(last):
-        parent[int(last)] = new_container
-    else:
-        setattr(parent, last, new_container)
 
 def disable_inplace_relu(model: nn.Module):
     """Replace inplace ReLU with out-of-place ReLU to avoid in-place autograd issues."""
@@ -356,7 +289,6 @@ def disable_inplace_relu(model: nn.Module):
             replaced += 1
     if replaced:
         print(f"[INFO] Replaced {replaced} in-place ReLU(s) with out-of-place variants.")
-
 
 def _simulate_input_hook(model: nn.Module, target_layer_path: str, input_shape: Tuple[int, ...], device='cpu') -> Tuple[torch.Tensor, torch.Tensor]:
     """
@@ -384,6 +316,195 @@ def _simulate_input_hook(model: nn.Module, target_layer_path: str, input_shape: 
         raise RuntimeError(f"Failed to capture activation at {target_layer_path}.")
     return dummy_input, captured['in']
 
+def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=None, end_name=None):
+    """
+    Replace a slice of layers. 
+    
+    CRITICAL CHANGE: 
+    Preserves the name of the 'start' layer and replaces subsequent layers 
+    in the range with Identity(). This ensures models with hardcoded 
+    forward methods (e.g., 'x = self.block4(x); x = self.block5(x)') 
+    do not crash with AttributeError.
+    """
+    new_layers = OrderedDict()
+
+    for i, (name, mod) in enumerate(named_layers):
+        if i < start_idx or i > end_idx:
+            new_layers[name] = mod
+        elif i == start_idx:
+            # FIX: Use the ORIGINAL name (e.g., 'block4') for the replacement.
+            # This ensures 'self.block4(x)' finds the new collapsed block.
+            new_layers[name] = replacement
+        else:
+            # FIX: Replace subsumed layers (e.g., 'block5') with Identity 
+            # instead of deleting them. 'self.block5(x)' becomes a no-op.
+            new_layers[name] = nn.Identity()
+
+    return nn.Sequential(new_layers)
+
+def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
+    """
+    Insert AdaptiveAvgPool2d only when a true spatial -> flattened mismatch exists.
+    Uses a forward hook to measure the ACTUAL tensor shape entering the linear layer.
+    """
+
+    if debug:
+        print(f"\n[STEP] ===== Starting _insert_corrective_pool =====")
+        print(f"[DEBUG] next_linear_name='{next_linear_name}'")
+
+    if not next_linear_name:
+        if debug:
+            print("[INFO] No next linear layer specified — skipping.")
+        return model
+
+    # 1. ConvNeXt SAFETY
+    if ".pwconv" in next_linear_name:
+        if debug:
+            print("[INFO] Detected ConvNeXt pwconv — skipping corrective pooling.")
+        return model
+
+    # 2. Capture ACTUAL input shape to the linear layer
+    # We use the existing _simulate_input_hook to run a dummy pass and see what hits the linear layer
+    try:
+        device = next((p.device for p in model.parameters()), torch.device('cpu'))
+        # input_shape here is the MODEL input (e.g., 1, 3, 32, 32)
+        _, actual_input = _simulate_input_hook(model, next_linear_name, input_shape, device=device)
+        
+        # Flattened size per batch item (N, C, H, W) -> C*H*W
+        current_features = actual_input[0].numel() 
+        current_shape = actual_input.shape # e.g. [1, 728, 1, 1]
+        
+        if debug:
+            print(f"[DEBUG] Actual tensor shape entering '{next_linear_name}': {tuple(current_shape)}")
+            print(f"[DEBUG] Flattened size per sample: {current_features}")
+            
+    except Exception as e:
+        print(f"[WARN] Failed to simulate forward pass for corrective pool check: {e}")
+        return model
+
+    # 3. Get Linear layer expectations
+    next_linear_mod = None
+    next_linear_parent = None
+    next_linear_parent_name = None
+    next_linear_child_name = None
+
+    # Locate module and parent
+    for name, mod in model.named_modules():
+        if name == next_linear_name:
+            next_linear_mod = mod
+            break
+            
+    if not isinstance(next_linear_mod, nn.Linear):
+        if debug:
+            print(f"[INFO] Target '{next_linear_name}' is not nn.Linear — skipping.")
+        return model
+        
+    in_features = next_linear_mod.in_features
+    if debug:
+        print(f"[DEBUG] Linear '{next_linear_name}' expects in_features={in_features}")
+
+    # 4. Compare and Decide
+    if current_features == in_features:
+        if debug:
+            print("[INFO] ✅ Shapes match (Current == Expected) — no corrective pooling needed.")
+        return model
+
+    # 5. Calculate Pooling logic (if mismatch exists)
+    # Assume NCHW layout for calculation
+    if len(current_shape) < 4:
+         if debug:
+            print("[WARN] Input is already flattened but size mismatches. Cannot fix with pooling.")
+         return model
+
+    C = current_shape[1]
+    if in_features % C != 0:
+        if debug:
+            print(f"[WARN] in_features ({in_features}) not divisible by channels ({C}) — unsafe to pool.")
+        return model
+
+    expected_hw = in_features // C
+    target_hw = int(round(expected_hw ** 0.5))
+
+    if target_hw * target_hw != expected_hw:
+        if debug:
+             print(f"[WARN] Target spatial area {expected_hw} is not square — skipping.")
+        return model
+
+    if debug:
+        print(f"[INFO] 🛠 Mismatch detected! Inserting AdaptiveAvgPool2d({target_hw}, {target_hw})")
+
+    # 6. Insert the pool
+    # Locate parent container again to perform insertion
+    for parent_name, parent_mod in model.named_modules():
+        for child_name, child_mod in parent_mod.named_children():
+            if child_mod is next_linear_mod:
+                next_linear_parent = parent_mod
+                next_linear_parent_name = parent_name
+                next_linear_child_name = child_name
+                break
+        if next_linear_parent is not None:
+            break
+
+    corrective_pool = nn.AdaptiveAvgPool2d((target_hw, target_hw))
+    
+    new_children = OrderedDict()
+    inserted = False
+    for name, mod in next_linear_parent.named_children():
+        if name == next_linear_child_name and not inserted:
+            new_children["corrective_pool"] = corrective_pool
+            inserted = True
+        new_children[name] = mod
+
+    # Apply update
+    if isinstance(next_linear_parent, nn.Sequential):
+        new_parent = nn.Sequential(new_children)
+    else:
+        new_parent = nn.Sequential(new_children)
+
+    # Update the model with the new parent container
+    if next_linear_parent_name == "":
+        # Special handling if the linear layer is a direct child of the root model
+        setattr(model, next_linear_child_name, nn.Sequential(
+            corrective_pool,
+            next_linear_mod
+        ))
+    else:
+        _update_container(model, next_linear_parent_name, new_parent)
+
+    if debug:
+        print("[RESULT] Corrective pooling inserted successfully.")
+
+    return model
+
+def _update_container(model: nn.Module, container_path: str, new_container: nn.Module):
+    """Replace the module at `container_path` in `model` with `new_container`."""
+    
+    # FIX: Handle Root Container case
+    if container_path == "":
+        print("[DEBUG] Updating root container in-place (Preserving attribute names).")
+        
+        # new_container is the Sequential returned by _replace_layers.
+        # It contains the exact names we want to exist on the model.
+        new_children = list(new_container.named_children())
+        
+        # Update attributes directly. 
+        # 'block4' becomes the collapsed module.
+        # 'block5' becomes Identity().
+        for name, module in new_children:
+            setattr(model, name, module)
+            
+        return
+
+    # --- Existing logic for non-root containers ---
+    parts = container_path.split('.')
+    parent = model
+    for part in parts[:-1]:
+        parent = parent[int(part)] if _is_int_str(part) else getattr(parent, part)
+    last = parts[-1]
+    if _is_int_str(last):
+        parent[int(last)] = new_container
+    else:
+        setattr(parent, last, new_container)
 
 # -----------------------------------------------------------------------------
 # Skip connection patcher
@@ -806,151 +927,6 @@ def _validate_downstream(
             return
 
     print(f"[RESULT] ✅ Downstream validation for '{start_container_name}' completed successfully.")
-
-def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
-    """
-    Insert AdaptiveAvgPool2d only when a true spatial → flattened mismatch exists.
-    Safe for ConvNeXt, VGG, RegNetX, ResNet, and Sequential containers.
-    """
-
-    if debug:
-        print(f"\n[STEP] ===== Starting _insert_corrective_pool =====")
-        print(f"[DEBUG] next_linear_name='{next_linear_name}', input_shape={input_shape}")
-
-    # ------------------------------------------------------------------
-    # 1. ConvNeXt SAFETY: pwconv Linear layers are channel mixers
-    # ------------------------------------------------------------------
-    if next_linear_name and ".pwconv" in next_linear_name:
-        if debug:
-            print("[INFO] Detected ConvNeXt pwconv — skipping corrective pooling.")
-        return model
-
-    # ------------------------------------------------------------------
-    # 2. Locate next Linear safely (NO attribute walking)
-    # ------------------------------------------------------------------
-    next_linear_mod = None
-    next_linear_parent = None
-    next_linear_parent_name = None
-    next_linear_child_name = None
-
-    for name, mod in model.named_modules():
-        if name == next_linear_name:
-            next_linear_mod = mod
-            break
-
-    if next_linear_mod is None:
-        if debug:
-            print(f"[WARN] Next linear '{next_linear_name}' not found — skipping corrective pooling.")
-        return model
-
-    # Locate parent container
-    for parent_name, parent_mod in model.named_modules():
-        for child_name, child_mod in parent_mod.named_children():
-            if child_mod is next_linear_mod:
-                next_linear_parent = parent_mod
-                next_linear_parent_name = parent_name
-                next_linear_child_name = child_name
-                break
-        if next_linear_parent is not None:
-            break
-
-    if next_linear_parent is None:
-        if debug:
-            print("[WARN] Could not resolve parent of next linear — skipping corrective pooling.")
-        return model
-
-    if debug:
-        print(f"[DEBUG] Found next linear at '{next_linear_name}'")
-        print(f"[DEBUG] Parent container: '{next_linear_parent_name}', child='{next_linear_child_name}'")
-
-    # ------------------------------------------------------------------
-    # 3. Only apply pooling if linear EXPECTS FLATTENED INPUT
-    # ------------------------------------------------------------------
-    if not isinstance(next_linear_mod, nn.Linear):
-        if debug:
-            print("[INFO] Next module is not nn.Linear — skipping corrective pooling.")
-        return model
-
-    in_features = next_linear_mod.in_features
-
-    # If model still outputs spatial tensors, infer channels
-    # We assume NCHW
-    if len(input_shape) == 4:
-        _, C, H, W = input_shape
-        current_features = C * H * W
-    else:
-        if debug:
-            print("[INFO] Input already flattened — skipping corrective pooling.")
-        return model
-
-    if debug:
-        print(f"[DEBUG] Linear expects in_features={in_features}")
-        print(f"[DEBUG] Current feature size={current_features}")
-
-    # No mismatch → no corrective pooling
-    if current_features == in_features:
-        if debug:
-            print("[INFO] No feature mismatch — corrective pooling not required.")
-        return model
-
-    # ------------------------------------------------------------------
-    # 4. Compute required spatial size
-    # ------------------------------------------------------------------
-    if in_features % C != 0:
-        if debug:
-            print("[WARN] in_features not divisible by channels — unsafe to pool. Skipping.")
-        return model
-
-    expected_hw = in_features // C
-    target_hw = int(round(expected_hw ** 0.5))
-
-    if target_hw * target_hw != expected_hw:
-        if debug:
-            print("[WARN] Non-square spatial target — skipping corrective pooling.")
-        return model
-
-    if debug:
-        print(f"[INFO] Inserting AdaptiveAvgPool2d({target_hw}, {target_hw})")
-
-    corrective_pool = nn.AdaptiveAvgPool2d((target_hw, target_hw))
-
-    # ------------------------------------------------------------------
-    # 5. Insert pooling BEFORE the linear
-    # ------------------------------------------------------------------
-    new_children = OrderedDict()
-    inserted = False
-
-    for name, mod in next_linear_parent.named_children():
-        if name == next_linear_child_name and not inserted:
-            new_children["corrective_pool"] = corrective_pool
-            inserted = True
-        new_children[name] = mod
-
-    if not inserted:
-        if debug:
-            print("[WARN] Failed to insert corrective pooling — skipping.")
-        return model
-
-    # Replace parent container
-    if isinstance(next_linear_parent, nn.Sequential):
-        new_parent = nn.Sequential(new_children)
-    else:
-        for name, mod in new_children.items():
-            setattr(next_linear_parent, name, mod)
-        return model
-
-    # Update model reference
-    if next_linear_parent_name == "":
-        model = new_parent
-    else:
-        container, attr = _get_container_and_subname(next_linear_parent_name)
-        parent_container = get_layer(model, container) if container else model
-        setattr(parent_container, attr, new_parent)
-
-    if debug:
-        print("[RESULT] Corrective pooling inserted successfully.")
-
-    return model
 
 
 # -----------------------------------------------------------------------------
