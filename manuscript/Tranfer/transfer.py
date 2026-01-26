@@ -460,7 +460,6 @@ def initialize_model_and_data(args):
     dataset = args.dataset
     model_kwargs = {}
 
-    # Ensure InceptionNet is not used with JF experiments
     if model_class == InceptionNet and args.JF:
         raise ValueError("JF experiments are not supported for InceptionNet.")
     
@@ -469,6 +468,86 @@ def initialize_model_and_data(args):
     model_kwargs["one_batch"] = next(iter(load_dataset(dataset, model_class)[0]))[0]
     
     return train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes
+
+
+# -------------------------------------------------------------
+# HPC Safe Heuristic Profiling (Single Job Only)
+# -------------------------------------------------------------
+def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epochs, device, dataset, model_name):
+    """
+    Safely runs the pre-experiment training and heuristic analysis (Identity Score, Arithmetic Intensity).
+    Uses atomic directory creation (os.mkdir) to ensure only ONE job in an HPC array performs this task.
+    """
+    # Define paths
+    lock_dir_path = f"{model_name}_{dataset}_heuristics.lock_dir"
+    done_marker_path = f"{model_name}_{dataset}_heuristics_done.marker"
+    plots_dir = os.path.join("runs", "plots")
+    
+    ensure_dir(plots_dir)
+
+    # 1. Check if already done
+    if os.path.exists(done_marker_path):
+        print("[INFO] Heuristic profiling already completed. Skipping.")
+        return
+
+    # 2. Attempt to acquire lock via Atomic Directory Creation
+    # os.mkdir is atomic on POSIX systems (including NFS), making it a safe lock mechanism.
+    print(f"[INFO] Attempting to acquire lock for heuristic profiling: {lock_dir_path}")
+    try:
+        os.mkdir(lock_dir_path)
+        print("[INFO] Lock acquired! Starting training for heuristic analysis...")
+    except FileExistsError:
+        print("[INFO] Lock busy. Another job is performing the heuristic profiling. Skipping.")
+        return
+    except OSError as e:
+        print(f"[WARN] Failed to acquire lock due to unexpected OS error: {e}")
+        return
+
+    try:
+        # --- Critical Section (Only one job runs this) ---
+        
+        # A. Resolve class from string if necessary
+        if isinstance(model_class, str):
+            model_class_obj = eval(model_class) #
+        else:
+            model_class_obj = model_class
+
+        # B. Initialize fresh model
+        model = model_class_obj(**model_kwargs).to(device)
+        optimizer, scheduler = create_optimizer_scheduler(model, learning_rate=0.001) 
+        
+        # C. Train for specified epochs to stabilize weights
+        print(f"[INFO] Training model for {epochs} epochs to analyze functional redundancy...")
+        for epoch in range(1, epochs + 1):
+            train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, device) #
+            print(f"    [Epoch {epoch}] Loss: {train_loss:.4f} | Acc: {train_acc:.2f}%")
+            if scheduler: scheduler.step()
+            
+        # D. Run Heuristic Analysis (Identity Score & Arithmetic Intensity)
+        input_sample = model_kwargs["one_batch"].to(device)
+        exp_name = f"{model_name}_{dataset}_Heuristics"
+        
+        # Call the updated diagnostic function
+        analyze_collapse_heuristics(model, input_sample, plots_dir, exp_name) #
+        
+        # E. Mark as done
+        with open(done_marker_path, 'w') as f:
+            f.write(f"Completed at {time.ctime()}")
+            
+        print("[INFO] Heuristic profiling complete. Plots saved.")
+
+    except Exception as e:
+        print(f"[ERROR] An error occurred during heuristic profiling: {e}")
+        # Optional: You might want to remove the lock dir here if you want to allow retries,
+        # but usually on HPC errors you want to inspect manually.
+
+    finally:
+        # F. Release lock
+        try:
+            os.rmdir(lock_dir_path)
+            print("[INFO] Lock released.")
+        except OSError:
+            print("[WARN] Could not remove lock directory (it may have been removed already).")
 
 def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
     """Runs the appropriate experiment based on the arguments (JF or Kevin)."""
@@ -490,7 +569,6 @@ def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwarg
             quant=quant
         )
     elif args.Kevin:
-        # Adjust epochs for original model experiment
         if experiment_name == "Original Model":
             epochs = pretrain + epochs
         
@@ -510,6 +588,146 @@ def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwarg
         )
     else:
         raise ValueError("You must specify either --JF or --Kevin to run the corresponding experiment.")
+
+def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
+    """
+    Analyzes layers for 'collapsibility' using two key metrics:
+    1. Identity Score: Cosine similarity between Input and Output. 
+       High Score (-> 1.0) implies the layer is redundant (conceptually an identity mapping).
+    2. Arithmetic Intensity: FLOPs / Byte Access.
+       Low Intensity implies memory-bound latency, a good candidate for LBL optimization.
+    """
+    print(f"[•] Running Collapse Heuristics (Identity Score & Arithmetic Intensity)...")
+    
+    model.eval()
+    if len(input_tensor.shape) == 3:
+        input_tensor = input_tensor.unsqueeze(0)
+
+    # 1. Get FLOPs first using fvcore
+    try:
+        flops_counter = FlopCountAnalysis(model, input_tensor)
+        flops_dict = flops_counter.by_module()
+    except Exception as e:
+        print(f"[!] FLOPs count failed in heuristics: {e}")
+        flops_dict = {}
+
+    layer_stats = {}
+
+    # 2. Hook to capture Inputs, Outputs, and calculate metrics
+    def heuristic_hook(name):
+        def fn(module, inp, out):
+            # inp is a tuple, out is a tensor
+            if not isinstance(out, torch.Tensor) or not isinstance(inp[0], torch.Tensor):
+                return
+            
+            x = inp[0].detach()
+            y = out.detach()
+            
+            # --- Metric A: Identity Score ---
+            # We measure how much the layer *changes* the data.
+            # If shapes match, we compute cosine similarity. 
+            # If shapes differ (e.g., stride, channel change), similarity is naturally 0 for our purpose (transformative).
+            identity_score = 0.0
+            if x.shape == y.shape:
+                # Flatten to (N, -1) for cosine similarity
+                x_flat = x.flatten(start_dim=1)
+                y_flat = y.flatten(start_dim=1)
+                try:
+                    # Mean similarity across the batch
+                    identity_score = F.cosine_similarity(x_flat, y_flat, dim=1).mean().item()
+                except Exception:
+                    identity_score = 0.0
+            
+            # --- Metric B: Arithmetic Intensity ---
+            # AI = FLOPs / Memory Access (Bytes)
+            # Memory Access ≈ Read(Input) + Read(Weights) + Write(Output)
+            # Assuming float32 (4 bytes) or the tensor's actual element size
+            dtype_size = x.element_size()
+            
+            input_bytes = x.numel() * dtype_size
+            output_bytes = y.numel() * dtype_size
+            weight_bytes = sum(p.numel() * p.element_size() for p in module.parameters())
+            
+            total_bytes = input_bytes + output_bytes + weight_bytes
+            
+            layer_stats[name] = {
+                "identity_score": identity_score,
+                "memory_bytes": total_bytes,
+                "input_shape": tuple(x.shape),
+                "output_shape": tuple(y.shape)
+            }
+        return fn
+
+    # Register hooks on leaf layers (Conv, Linear, etc.) or specific blocks if identifiable
+    hooks = []
+    for name, module in model.named_modules():
+        # Focus on layers that perform computation
+        if isinstance(module, (nn.Conv2d, nn.Linear, nn.BatchNorm2d)) or "block" in name.lower():
+            hooks.append(module.register_forward_hook(heuristic_hook(name)))
+
+    # Run forward pass
+    with torch.no_grad():
+        model(input_tensor)
+
+    # Cleanup hooks
+    for h in hooks: h.remove()
+
+    # 3. Aggregate Data
+    results = []
+    for name, stats in layer_stats.items():
+        flops_val = flops_dict.get(name, 0)
+        
+        # Avoid division by zero
+        mem_bytes = stats["memory_bytes"]
+        ai = flops_val / mem_bytes if mem_bytes > 0 else 0.0
+        
+        results.append({
+            "layer": name,
+            "identity_score": stats["identity_score"],
+            "arithmetic_intensity": ai,
+            "flops": flops_val,
+            "memory_bytes": mem_bytes
+        })
+
+    df = pd.DataFrame(results)
+    
+    # Save CSV
+    os.makedirs(save_dir, exist_ok=True)
+    csv_path = os.path.join(save_dir, f"{exp_name}_collapse_heuristics.csv")
+    df.to_csv(csv_path, index=False)
+
+    # 4. Plotting
+    if not df.empty:
+        fig, axes = plt.subplots(2, 1, figsize=(max(12, len(df)*0.4), 10))
+        
+        # Plot A: Identity Score (Higher = More Redundant -> Good Collapse Candidate)
+        sns.barplot(x="layer", y="identity_score", data=df, ax=axes[0], color="mediumpurple")
+        axes[0].set_title(f"Identity Score (Higher = Stronger Candidate for Collapse)\n{exp_name}")
+        axes[0].set_ylabel("Cosine Similarity (Input vs Output)")
+        axes[0].set_ylim(0, 1.1)
+        axes[0].tick_params(axis='x', rotation=90, labelsize=8)
+        axes[0].grid(axis='y', linestyle='--', alpha=0.5)
+        
+        # Annotate high scores
+        for i, row in df.iterrows():
+            if row["identity_score"] > 0.8: # Threshold for "highly redundant"
+                axes[0].text(i, row["identity_score"], f"{row['identity_score']:.2f}", 
+                             ha='center', va='bottom', fontsize=7, color='black', fontweight='bold')
+
+        # Plot B: Arithmetic Intensity (Lower = Memory Bound -> Good LBL Candidate to fix latency)
+        sns.barplot(x="layer", y="arithmetic_intensity", data=df, ax=axes[1], color="coral")
+        axes[1].set_title(f"Arithmetic Intensity (Lower = Memory Bound/Latency Bottleneck)\n{exp_name}")
+        axes[1].set_ylabel("FLOPs / Byte")
+        axes[1].tick_params(axis='x', rotation=90, labelsize=8)
+        axes[1].grid(axis='y', linestyle='--', alpha=0.5)
+
+        plt.tight_layout()
+        plot_path = os.path.join(save_dir, f"{exp_name}_collapse_heuristics.svg")
+        plt.savefig(plot_path)
+        plt.close()
+        print(f"[✓] Collapse heuristics saved to {plot_path}")
+
+    return df
 
 def run_experiments_for_dataset(
     experiments,
@@ -531,7 +749,6 @@ def run_experiments_for_dataset(
     """Run specified experiments for a given dataset."""
     save_path = f"{model_class}_{dataset}_{CHECKPOINT_FILES[model_class][dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
 
-    # Handle special cases for InceptionNet, XceptionNet, and MobileNet
     if model_class in [InceptionNet, XceptionNet, MobileNet]:
         steps = [0]
         epochs = pretrain
@@ -543,18 +760,33 @@ def run_experiments_for_dataset(
     # Initialize the dataset
     train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, model_class)
 
-    # Iterate over experiments and run
+    # ------------------------------------------------------------------------
+    # STEP 1: Pre-Experiment Heuristic Profiling (HPC Safe)
+    # ------------------------------------------------------------------------
+    # This runs ONCE across all jobs to identify Identify Score & Arithmetic Intensity
+    run_heuristic_profiling_safely(
+        model_class=model_class,
+        model_kwargs=model_kwargs,
+        train_loader=train_loader,
+        epochs=epochs, # Uses the main epoch count for the profiling training
+        device=device,
+        dataset=dataset,
+        model_name=args.model
+    )
+    
+    # ------------------------------------------------------------------------
+    # STEP 2: Main Experiments
+    # ------------------------------------------------------------------------
     for name, layers in experiments.items():
         print(f"\n--- Running experiment: {name} ---")
         model = run_jf_or_kevin_experiment(
             name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path,
             post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args
         )
-    
 # Main function
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="XceptionNet", choices=["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet", "ConvNeXt"], help="Model architecture to use")
+    parser.add_argument("--model", type=str, default="RegNetX_400MF", choices=["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet", "ConvNeXt"], help="Model architecture to use")
     parser.add_argument("--dataset", type=str, default="Cifar10", help="Dataset to use (Cifar10, Cifar100, ImageNet, TinyImageNet)")
     parser.add_argument("--epochs", type=int, default=1, help="Number of epochs to train for")
     parser.add_argument("--pretrain", type=int, default=10, help="Number of pretraining epochs")
