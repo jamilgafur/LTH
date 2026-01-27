@@ -15,6 +15,8 @@ from pyPrune.utils import *
 from torch.backends import cudnn
 import random
 import numpy as np
+import seaborn as sns
+import pandas as pd
 
 # set seed for reproducibility
 seed = 42
@@ -592,10 +594,8 @@ def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwarg
 def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
     """
     Analyzes layers for 'collapsibility' using two key metrics:
-    1. Identity Score: Cosine similarity between Input and Output. 
-       High Score (-> 1.0) implies the layer is redundant (conceptually an identity mapping).
-    2. Arithmetic Intensity: FLOPs / Byte Access.
-       Low Intensity implies memory-bound latency, a good candidate for LBL optimization.
+    1. Identity Score (Conv Only): Cosine similarity on Conv layers. High Score = Redundant.
+    2. Arithmetic Intensity: FLOPs / Byte Access. Low Intensity = Memory Bound.
     """
     print(f"[•] Running Collapse Heuristics (Identity Score & Arithmetic Intensity)...")
     
@@ -605,6 +605,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
 
     # 1. Get FLOPs first using fvcore
     try:
+        from fvcore.nn import FlopCountAnalysis
         flops_counter = FlopCountAnalysis(model, input_tensor)
         flops_dict = flops_counter.by_module()
     except Exception as e:
@@ -614,7 +615,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
     layer_stats = {}
 
     # 2. Hook to capture Inputs, Outputs, and calculate metrics
-    def heuristic_hook(name):
+    def heuristic_hook(name, layer_type):
         def fn(module, inp, out):
             # inp is a tuple, out is a tensor
             if not isinstance(out, torch.Tensor) or not isinstance(inp[0], torch.Tensor):
@@ -626,7 +627,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
             # --- Metric A: Identity Score ---
             # We measure how much the layer *changes* the data.
             # If shapes match, we compute cosine similarity. 
-            # If shapes differ (e.g., stride, channel change), similarity is naturally 0 for our purpose (transformative).
             identity_score = 0.0
             if x.shape == y.shape:
                 # Flatten to (N, -1) for cosine similarity
@@ -640,8 +640,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
             
             # --- Metric B: Arithmetic Intensity ---
             # AI = FLOPs / Memory Access (Bytes)
-            # Memory Access ≈ Read(Input) + Read(Weights) + Write(Output)
-            # Assuming float32 (4 bytes) or the tensor's actual element size
             dtype_size = x.element_size()
             
             input_bytes = x.numel() * dtype_size
@@ -651,6 +649,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
             total_bytes = input_bytes + output_bytes + weight_bytes
             
             layer_stats[name] = {
+                "layer_type": layer_type,  # <--- NEW: Store type to filter later
                 "identity_score": identity_score,
                 "memory_bytes": total_bytes,
                 "input_shape": tuple(x.shape),
@@ -658,12 +657,13 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
             }
         return fn
 
-    # Register hooks on leaf layers (Conv, Linear, etc.) or specific blocks if identifiable
+    # Register hooks
     hooks = []
     for name, module in model.named_modules():
         # Focus on layers that perform computation
         if isinstance(module, (nn.Conv2d, nn.Linear, nn.BatchNorm2d)) or "block" in name.lower():
-            hooks.append(module.register_forward_hook(heuristic_hook(name)))
+            # Pass the class name to the hook
+            hooks.append(module.register_forward_hook(heuristic_hook(name, type(module).__name__)))
 
     # Run forward pass
     with torch.no_grad():
@@ -683,6 +683,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
         
         results.append({
             "layer": name,
+            "layer_type": stats["layer_type"],
             "identity_score": stats["identity_score"],
             "arithmetic_intensity": ai,
             "flops": flops_val,
@@ -700,23 +701,31 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
     if not df.empty:
         fig, axes = plt.subplots(2, 1, figsize=(max(12, len(df)*0.4), 10))
         
-        # Plot A: Identity Score (Higher = More Redundant -> Good Collapse Candidate)
-        sns.barplot(x="layer", y="identity_score", data=df, ax=axes[0], color="mediumpurple")
-        axes[0].set_title(f"Identity Score (Higher = Stronger Candidate for Collapse)\n{exp_name}")
-        axes[0].set_ylabel("Cosine Similarity (Input vs Output)")
-        axes[0].set_ylim(0, 1.1)
-        axes[0].tick_params(axis='x', rotation=90, labelsize=8)
-        axes[0].grid(axis='y', linestyle='--', alpha=0.5)
+        # --- Plot A: Identity Score (FILTERED FOR CONV ONLY) ---
+        #         # We only plot Conv2d layers here to avoid the "Batch Norm Trap"
+        df_conv = df[df['layer_type'].str.contains("Conv", case=False, na=False)]
         
-        # Annotate high scores
-        for i, row in df.iterrows():
-            if row["identity_score"] > 0.8: # Threshold for "highly redundant"
-                axes[0].text(i, row["identity_score"], f"{row['identity_score']:.2f}", 
-                             ha='center', va='bottom', fontsize=7, color='black', fontweight='bold')
+        if not df_conv.empty:
+            sns.barplot(x="layer", y="identity_score", data=df_conv, ax=axes[0], color="mediumpurple")
+            axes[0].set_title(f"Identity Score (CONV LAYERS ONLY)\n(Higher = Stronger Candidate for Collapse) - {exp_name}")
+            axes[0].set_ylabel("Cosine Similarity (Input vs Output)")
+            axes[0].set_ylim(0, 1.1)
+            axes[0].tick_params(axis='x', rotation=90, labelsize=8)
+            axes[0].grid(axis='y', linestyle='--', alpha=0.5)
+            
+            # Annotate high scores
+            for i, row in enumerate(df_conv.itertuples()):
+                if row.identity_score > 0.8: 
+                    # Note: 'i' is the index in the filtered plot, not the original df
+                    axes[0].text(i, row.identity_score, f"{row.identity_score:.2f}", 
+                                 ha='center', va='bottom', fontsize=7, color='black', fontweight='bold')
+        else:
+            axes[0].text(0.5, 0.5, "No Conv layers found or shapes mismatched", ha='center')
 
-        # Plot B: Arithmetic Intensity (Lower = Memory Bound -> Good LBL Candidate to fix latency)
+        # --- Plot B: Arithmetic Intensity (ALL LAYERS) ---
+        # We keep all layers here because latency bottlenecks can happen anywhere
         sns.barplot(x="layer", y="arithmetic_intensity", data=df, ax=axes[1], color="coral")
-        axes[1].set_title(f"Arithmetic Intensity (Lower = Memory Bound/Latency Bottleneck)\n{exp_name}")
+        axes[1].set_title(f"Arithmetic Intensity (All Layers)\n(Lower = Memory Bound/Latency Bottleneck) - {exp_name}")
         axes[1].set_ylabel("FLOPs / Byte")
         axes[1].tick_params(axis='x', rotation=90, labelsize=8)
         axes[1].grid(axis='y', linestyle='--', alpha=0.5)

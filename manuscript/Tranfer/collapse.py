@@ -512,35 +512,54 @@ def _update_container(model: nn.Module, container_path: str, new_container: nn.M
 
 def patch_skip_connections(model: nn.Module):
     """
-    Patches module forwards and initializes a counter for bypassed residuals.
+    Patches module forwards to robustly handle residual connections.
+    If the collapsed block output shape differs from the shortcut, 
+    this attempts to spatially align the shortcut instead of severing the connection.
     """
-    # Initialize a counter on the model instance
     model._bypassed_residuals = 0
 
     for name, module in model.named_modules():
+        # Look for ResNet/ConvNeXt style blocks with 'shortcut' and 'block'
         if hasattr(module, 'shortcut') and isinstance(module.shortcut, nn.Module) and hasattr(module, 'block'):
-            orig_forward = getattr(module, 'forward', None)
-            if orig_forward is None:
-                continue
+            
+            # Save original forward if not already patched
+            if not hasattr(module, '_orig_forward'):
+                module._orig_forward = getattr(module, 'forward')
 
             def make_patched_forward(mod_name):
                 def new_forward(self, x):
+                    # 1. Run the (potentially collapsed) main block
                     out = self.block(x)
+                    
+                    # 2. Run the shortcut
                     try:
                         sc = self.shortcut(x)
-                        if out.shape != sc.shape:
-                            # Increment global model counter
+                    except Exception:
+                        # Fallback if shortcut itself fails
+                        return F.relu(out)
+
+                    # 3. CRITICAL FIX: Align shapes instead of giving up
+                    if out.shape != sc.shape:
+                        # Case A: Spatial Mismatch (e.g., 16x16 vs 32x32)
+                        # We use adaptive pooling on the SHORTCUT to match the OUTPUT
+                        if out.shape[2:] != sc.shape[2:]:
+                            sc = F.adaptive_avg_pool2d(sc, out.shape[2:])
+                        
+                        # Case B: Channel Mismatch
+                        # If channels still don't match after spatial fix, we unfortunately
+                        # cannot add them without a learned 1x1 conv. We must bypass.
+                        # (However, collapse.py usually preserves channel counts, so this is rare)
+                        if out.shape[1] != sc.shape[1]:
                             model._bypassed_residuals += 1
                             return F.relu(out)
-                        return F.relu(out + sc)
-                    except Exception:
-                        model._bypassed_residuals += 1
-                        return F.relu(out)
+
+                    # 4. Add residual
+                    return F.relu(out + sc)
                 return new_forward
 
-            # Use mod_name to help with any potential future logging
+            # Apply the patch
             module.forward = make_patched_forward(name).__get__(module)
-            print(f"[PATCH] Patched residual block forward: {name}")
+            print(f"[PATCH] Patched residual block forward (with spatial align): {name}")
 # -----------------------------------------------------------------------------
 # Core collapse of a single block (simple replacement)
 # -----------------------------------------------------------------------------
