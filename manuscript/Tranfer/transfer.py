@@ -303,6 +303,7 @@ XceptionNet_common =  {
             "Stage 3": ("block3.depthwise", "block4.depthwise"),
             "Stage 2": ("block2.depthwise", "block3.depthwise"),
             "Stage 1": ("block1.depthwise", "block2.depthwise"),
+            "Stage 4-5": ("block4.depthwise", "block5.bn2"),
             "Stage 3-5": ("block3.depthwise", "block5.depthwise"),
             "Stage 2-5": ("block2.depthwise", "block5.depthwise"),
             "Stage 1-5": ("block1.depthwise", "block5"),
