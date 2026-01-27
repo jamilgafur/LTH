@@ -674,9 +674,16 @@ def fig10(
     device: str = "cuda",
 ):
     out_dir.mkdir(parents=True, exist_ok=True)
-
-    # Lazy import so fig10 does not break the pipeline
-
+    
+    # Map strings to the actual imported classes
+    model_map = {
+        "VGG16": VGG16,
+        "RegNetX_400MF": RegNetX_400MF,
+        "ConvNeXt": ConvNeXt,
+        "InceptionNet": InceptionNet,
+        "XceptionNet": XceptionNet,
+        "MobileNet": MobileNet
+    }
 
     checkpoint_dirs = list(results_dir.glob("*/checkpoints"))
     if not checkpoint_dirs:
@@ -688,95 +695,120 @@ def fig10(
         if not ckpt_files:
             continue
 
-        print(f"[•] Processing {ckpt_dir}")
+        dir_name = ckpt_dir.parent.name
+        print(f"[•] Processing {dir_name}")
+
+        # 1. Infer Model and Dataset from Directory Name
+        try:
+            # Find which model name is in the directory string
+            model_str = next((m for m in model_map.keys() if m in dir_name), None)
+            
+            # Find dataset
+            if "tinyimagenet" in dir_name.lower(): ds_name = "tinyimagenet"
+            elif "cifar100" in dir_name.lower(): ds_name = "Cifar100"
+            elif "cifar10" in dir_name.lower(): ds_name = "Cifar10"
+            elif "imagenet" in dir_name.lower(): ds_name = "imagenet"
+            else: ds_name = "Cifar10" # Default/Fallback
+
+            if not model_str:
+                print(f"[!] Could not infer architecture from {dir_name}, skipping.")
+                continue
+
+            # 2. Load Data Config & Instantiate Model Class
+            # We need num_classes and one_batch (for shapes) to instantiate correctly
+            train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name=ds_name, model_name=model_str)
+            
+            # Fetch a dummy batch for models like RegNet/ConvNeXt that need input shape
+            one_batch = next(iter(train_loader))[0]
+
+            ModelClass = model_map[model_str]
+            
+        except Exception as e:
+            print(f"[!] Setup failed for {dir_name}: {e}")
+            continue
 
         baseline = None
         others = []
 
-        # Load checkpoints
+        # 3. Load Checkpoints
         for ckpt_path in ckpt_files:
-            ckpt = torch.load(ckpt_path, map_location=device,weights_only=False)
-            model = ckpt["model"].to(device)
+            try:
+                # Instantiate a FRESH model for every checkpoint
+                model = ModelClass(num_classes=num_classes, one_batch=one_batch).to(device)
+                
+                # Load the weights
+                ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+                
+                # Handle different saving conventions
+                if "model_state_dict" in ckpt:
+                    model.load_state_dict(ckpt["model_state_dict"])
+                elif "model" in ckpt and isinstance(ckpt["model"], dict):
+                     # Sometimes state_dict is saved under 'model' key (rare but possible)
+                    model.load_state_dict(ckpt["model"])
+                else:
+                    # Fallback: assume the ckpt itself is the state_dict
+                    model.load_state_dict(ckpt)
+                
+                model.eval()
 
-            name = ckpt_path.stem
-
-            if (
-                "Kevin" in name
-                and "Original" in name
-                and "quant" not in name
-            ):
-                baseline = (name, model)
-            else:
-                others.append((name, model))
+                name = ckpt_path.stem
+                if "Kevin" in name and "Original" in name and "quant" not in name:
+                    baseline = (name, model)
+                else:
+                    others.append((name, model))
+            
+            except Exception as e:
+                print(f"[!] Error loading {ckpt_path.name}: {e}")
+                continue
 
         if baseline is None:
             print("[!] No baseline found, skipping")
             continue
 
         base_name, base_model = baseline
-
-        # Use training data saved with the baseline
-        allModelNames = ["VGG16", "RegNetX_400MF", "ConvNeXt", "InceptionNet", "XceptionNet", "MobileNet"]
-        modelName = [arch for arch in allModelNames if arch in ckpt_dir.parent.name][0]
-        allDatasets = ["Cifar10_", "Cifar100_", "TinyImageNet", "imagenet"]
-        model_name = [arch for arch in allModelNames if arch in str(ckpt_dir)][0]
-        dataset_name = [ds for ds in allDatasets if ds in  str(ckpt_dir)][0].replace("_","")
-        train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name=dataset_name, model_name=modelName)
-
         print(f"[✓] Baseline: {base_name}")
 
-        # Extract baseline representation
-        base_repr = extract_representation(
-            base_model, test_loader, device
-        )
+        # 4. Calculate PWCCA
+        try:
+            base_repr = extract_representation(base_model, test_loader, device)
+            pwcca_scores = []
 
-        pwcca_scores = []
+            for name, model in others:
+                try:
+                    repr_other = extract_representation(model, test_loader, device)
+                    score = pwcca_distance(base_repr, repr_other)
+                    pwcca_scores.append({"model": name, "pwcca": score})
+                except Exception as e:
+                    print(f"[!] Failed PWCCA for {name}: {e}")
 
-        for name, model in others:
-            try:
-                repr_other = extract_representation(
-                    model, test_loader, device
-                )
+            if not pwcca_scores:
+                continue
 
-                score = pwcca_distance(base_repr, repr_other)
+            # ---- Plot ----
+            pwcca_scores.sort(key=lambda x: x["pwcca"], reverse=True)
 
-                pwcca_scores.append({
-                    "model": name,
-                    "pwcca": score,
-                })
+            fig, ax = plt.subplots(figsize=(10, 5))
+            ax.bar(
+                [x["model"] for x in pwcca_scores],
+                [x["pwcca"] for x in pwcca_scores],
+            )
 
-            except Exception as e:
-                print(f"[!] Failed PWCCA for {name}: {e}")
+            ax.set_ylabel("PWCCA Similarity")
+            ax.set_xlabel("Model Variant")
+            ax.set_title(f"PWCCA Drift from Baseline\n{dir_name}", fontsize=14)
+            ax.set_ylim(0, 1)
+            ax.grid(True, axis="y", linestyle="--", alpha=0.5)
 
-        if not pwcca_scores:
-            continue
+            plt.xticks(rotation=45, ha="right")
+            plt.tight_layout()
 
-        # ---- Plot ----
-        pwcca_scores.sort(key=lambda x: x["pwcca"], reverse=True)
+            save_path = out_dir / f"{dir_name}_pwcca.png"
+            plt.savefig(save_path, bbox_inches="tight")
+            plt.close()
+            print(f"[✓] Saved {save_path}")
 
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.bar(
-            [x["model"] for x in pwcca_scores],
-            [x["pwcca"] for x in pwcca_scores],
-        )
-
-        ax.set_ylabel("PWCCA Similarity")
-        ax.set_xlabel("Model Variant")
-        ax.set_title(
-            f"PWCCA Drift from Baseline\n{ckpt_dir.parent.name}",
-            fontsize=14,
-        )
-        ax.set_ylim(0, 1)
-        ax.grid(True, axis="y", linestyle="--", alpha=0.5)
-
-        plt.xticks(rotation=45, ha="right")
-        plt.tight_layout()
-
-        save_path = out_dir / f"{ckpt_dir.parent.name}_pwcca.png"
-        plt.savefig(save_path, bbox_inches="tight")
-        plt.close()
-
-        print(f"[✓] Saved {save_path}")
+        except Exception as e:
+            print(f"[!] Analysis failed for {dir_name}: {e}")
 # =========================
 # Tables
 # =========================

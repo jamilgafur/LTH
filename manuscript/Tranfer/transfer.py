@@ -593,91 +593,89 @@ def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwarg
 
 def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
     """
-    Analyzes layers for 'collapsibility' using two key metrics:
-    1. Identity Score (Conv Only): Cosine similarity on Conv layers. High Score = Redundant.
-    2. Arithmetic Intensity: FLOPs / Byte Access. Low Intensity = Memory Bound.
+    Analyzes layers using 4 metrics to identify collapse candidates:
+    1. Identity Score (Conv Only): Is input ≈ output? (High = Redundant)
+    2. Arithmetic Intensity: FLOPs / Byte (Low = Memory Bound/Latency Bottleneck)
+    3. Weight Magnitude (L1): Are weights near zero? (Low = Insignificant)
+    4. Activation Variance: Is output static? (Low = Dead/Constant features)
     """
-    print(f"[•] Running Collapse Heuristics (Identity Score & Arithmetic Intensity)...")
+    print(f"[•] Running Extended Collapse Heuristics...")
     
     model.eval()
     if len(input_tensor.shape) == 3:
         input_tensor = input_tensor.unsqueeze(0)
 
-    # 1. Get FLOPs first using fvcore
+    # 1. Get FLOPs first
     try:
         from fvcore.nn import FlopCountAnalysis
         flops_counter = FlopCountAnalysis(model, input_tensor)
         flops_dict = flops_counter.by_module()
     except Exception as e:
-        print(f"[!] FLOPs count failed in heuristics: {e}")
+        print(f"[!] FLOPs count failed: {e}")
         flops_dict = {}
 
     layer_stats = {}
 
-    # 2. Hook to capture Inputs, Outputs, and calculate metrics
+    # 2. Hook for metrics
     def heuristic_hook(name, layer_type):
         def fn(module, inp, out):
-            # inp is a tuple, out is a tensor
             if not isinstance(out, torch.Tensor) or not isinstance(inp[0], torch.Tensor):
                 return
             
             x = inp[0].detach()
             y = out.detach()
             
-            # --- Metric A: Identity Score ---
-            # We measure how much the layer *changes* the data.
-            # If shapes match, we compute cosine similarity. 
+            # --- Metric A: Identity Score (Cosine Sim) ---
             identity_score = 0.0
             if x.shape == y.shape:
-                # Flatten to (N, -1) for cosine similarity
                 x_flat = x.flatten(start_dim=1)
                 y_flat = y.flatten(start_dim=1)
                 try:
-                    # Mean similarity across the batch
                     identity_score = F.cosine_similarity(x_flat, y_flat, dim=1).mean().item()
-                except Exception:
+                except:
                     identity_score = 0.0
             
-            # --- Metric B: Arithmetic Intensity ---
-            # AI = FLOPs / Memory Access (Bytes)
+            # --- Metric B: Memory Bytes (for Intensity) ---
             dtype_size = x.element_size()
-            
-            input_bytes = x.numel() * dtype_size
-            output_bytes = y.numel() * dtype_size
             weight_bytes = sum(p.numel() * p.element_size() for p in module.parameters())
-            
-            total_bytes = input_bytes + output_bytes + weight_bytes
+            total_bytes = (x.numel() * dtype_size) + (y.numel() * dtype_size) + weight_bytes
+
+            # --- Metric C: Weight Magnitude (Normalized L1) ---
+            # Measures if the layer is "doing work" or just effectively zero
+            weight_l1 = 0.0
+            if hasattr(module, 'weight') and module.weight is not None:
+                # Normalize by number of elements so large layers don't dominate
+                weight_l1 = module.weight.norm(p=1).item() / module.weight.numel()
+
+            # --- Metric D: Activation Variance ---
+            # Measures if the feature map contains diverse information
+            act_var = y.var().item()
             
             layer_stats[name] = {
-                "layer_type": layer_type,  # <--- NEW: Store type to filter later
+                "layer_type": layer_type,
                 "identity_score": identity_score,
                 "memory_bytes": total_bytes,
-                "input_shape": tuple(x.shape),
-                "output_shape": tuple(y.shape)
+                "weight_l1": weight_l1,
+                "act_var": act_var
             }
         return fn
 
     # Register hooks
     hooks = []
     for name, module in model.named_modules():
-        # Focus on layers that perform computation
         if isinstance(module, (nn.Conv2d, nn.Linear, nn.BatchNorm2d)) or "block" in name.lower():
-            # Pass the class name to the hook
             hooks.append(module.register_forward_hook(heuristic_hook(name, type(module).__name__)))
 
     # Run forward pass
     with torch.no_grad():
         model(input_tensor)
 
-    # Cleanup hooks
     for h in hooks: h.remove()
 
     # 3. Aggregate Data
     results = []
     for name, stats in layer_stats.items():
         flops_val = flops_dict.get(name, 0)
-        
-        # Avoid division by zero
         mem_bytes = stats["memory_bytes"]
         ai = flops_val / mem_bytes if mem_bytes > 0 else 0.0
         
@@ -686,55 +684,60 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
             "layer_type": stats["layer_type"],
             "identity_score": stats["identity_score"],
             "arithmetic_intensity": ai,
-            "flops": flops_val,
-            "memory_bytes": mem_bytes
+            "weight_l1": stats["weight_l1"],
+            "act_var": stats["act_var"],
+            "flops": flops_val
         })
 
     df = pd.DataFrame(results)
     
     # Save CSV
     os.makedirs(save_dir, exist_ok=True)
-    csv_path = os.path.join(save_dir, f"{exp_name}_collapse_heuristics.csv")
-    df.to_csv(csv_path, index=False)
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_extended_heuristics.csv"), index=False)
 
-    # 4. Plotting
+    # 4. Plotting (4 Rows)
     if not df.empty:
-        fig, axes = plt.subplots(2, 1, figsize=(max(12, len(df)*0.4), 10))
+        fig, axes = plt.subplots(4, 1, figsize=(max(12, len(df)*0.3), 16), sharex=True)
         
-        # --- Plot A: Identity Score (FILTERED FOR CONV ONLY) ---
-        #         # We only plot Conv2d layers here to avoid the "Batch Norm Trap"
+        # Row 1: Identity Score (Conv Only)
         df_conv = df[df['layer_type'].str.contains("Conv", case=False, na=False)]
-        
         if not df_conv.empty:
             sns.barplot(x="layer", y="identity_score", data=df_conv, ax=axes[0], color="mediumpurple")
-            axes[0].set_title(f"Identity Score (CONV LAYERS ONLY)\n(Higher = Stronger Candidate for Collapse) - {exp_name}")
-            axes[0].set_ylabel("Cosine Similarity (Input vs Output)")
-            axes[0].set_ylim(0, 1.1)
-            axes[0].tick_params(axis='x', rotation=90, labelsize=8)
-            axes[0].grid(axis='y', linestyle='--', alpha=0.5)
-            
-            # Annotate high scores
+            axes[0].set_title(f"1. Identity Score (Conv Only) - Higher = Collapse Candidate")
+            axes[0].set_ylim(0, 1.05)
+            # Annotate top candidates
             for i, row in enumerate(df_conv.itertuples()):
-                if row.identity_score > 0.8: 
-                    # Note: 'i' is the index in the filtered plot, not the original df
+                if row.identity_score > 0.8:
                     axes[0].text(i, row.identity_score, f"{row.identity_score:.2f}", 
-                                 ha='center', va='bottom', fontsize=7, color='black', fontweight='bold')
-        else:
-            axes[0].text(0.5, 0.5, "No Conv layers found or shapes mismatched", ha='center')
-
-        # --- Plot B: Arithmetic Intensity (ALL LAYERS) ---
-        # We keep all layers here because latency bottlenecks can happen anywhere
+                                 ha='center', va='bottom', fontsize=7, fontweight='bold')
+        
+        # Row 2: Arithmetic Intensity
         sns.barplot(x="layer", y="arithmetic_intensity", data=df, ax=axes[1], color="coral")
-        axes[1].set_title(f"Arithmetic Intensity (All Layers)\n(Lower = Memory Bound/Latency Bottleneck) - {exp_name}")
-        axes[1].set_ylabel("FLOPs / Byte")
-        axes[1].tick_params(axis='x', rotation=90, labelsize=8)
-        axes[1].grid(axis='y', linestyle='--', alpha=0.5)
+        axes[1].set_title(f"2. Arithmetic Intensity (FLOPs/Byte) - Lower = Memory Bound")
+        axes[1].set_yscale("log") # Log scale often helps here
+
+        # Row 3: Weight Magnitude (L1)
+        sns.barplot(x="layer", y="weight_l1", data=df, ax=axes[2], color="teal")
+        axes[2].set_title(f"3. Weight Magnitude (Norm. L1) - Lower = Insignificant Weights")
+
+        # Row 4: Activation Variance
+        sns.barplot(x="layer", y="act_var", data=df, ax=axes[3], color="goldenrod")
+        axes[3].set_title(f"4. Activation Variance - Lower = Dead/Static Features")
+        axes[3].set_yscale("log")
+
+        # Layout cleanup
+        for ax in axes:
+            ax.grid(axis='y', linestyle='--', alpha=0.5)
+            ax.set_xlabel("")
+        
+        axes[-1].set_xticklabels(axes[-1].get_xticklabels(), rotation=90, fontsize=8)
+        axes[-1].set_xlabel("Layer Name")
 
         plt.tight_layout()
-        plot_path = os.path.join(save_dir, f"{exp_name}_collapse_heuristics.svg")
+        plot_path = os.path.join(save_dir, f"{exp_name}_extended_heuristics.svg")
         plt.savefig(plot_path)
         plt.close()
-        print(f"[✓] Collapse heuristics saved to {plot_path}")
+        print(f"[✓] Extended heuristics saved to {plot_path}")
 
     return df
 
