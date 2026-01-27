@@ -583,7 +583,7 @@ def fig8(
         .str.strip("_")
     )
 
-    df_ablation = df[df["model_type"] == "collapsed"].copy()
+    df_ablation = df[df["model_type"].isin(["collapsed", "baseline"])].copy()
 
     for architecture, df_arch in df_ablation.groupby("architecture"):
 
