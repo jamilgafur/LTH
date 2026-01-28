@@ -594,13 +594,16 @@ def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwarg
 
 def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
     """
-    Analyzes layers using 4 metrics to identify collapse candidates:
-    1. Identity Score (Conv Only): Is input ≈ output? (High = Redundant)
-    2. Arithmetic Intensity: FLOPs / Byte (Low = Memory Bound/Latency Bottleneck)
+    Analyzes ONLY Conv2d and Linear layers using 4 metrics to identify collapse candidates.
+    Filters out BatchNorm, ReLU, and container blocks to reduce noise.
+    
+    Metrics:
+    1. Identity Score: Is input ≈ output? (High = Redundant)
+    2. Arithmetic Intensity: FLOPs / Byte (Low = Memory Bound)
     3. Weight Magnitude (L1): Are weights near zero? (Low = Insignificant)
     4. Activation Variance: Is output static? (Low = Dead/Constant features)
     """
-    print(f"[•] Running Extended Collapse Heuristics...")
+    print(f"[•] Running Extended Collapse Heuristics (Conv/Linear Only)...")
     
     model.eval()
     if len(input_tensor.shape) == 3:
@@ -642,14 +645,11 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
             total_bytes = (x.numel() * dtype_size) + (y.numel() * dtype_size) + weight_bytes
 
             # --- Metric C: Weight Magnitude (Normalized L1) ---
-            # Measures if the layer is "doing work" or just effectively zero
             weight_l1 = 0.0
             if hasattr(module, 'weight') and module.weight is not None:
-                # Normalize by number of elements so large layers don't dominate
                 weight_l1 = module.weight.norm(p=1).item() / module.weight.numel()
 
             # --- Metric D: Activation Variance ---
-            # Measures if the feature map contains diverse information
             act_var = y.var().item()
             
             layer_stats[name] = {
@@ -661,10 +661,12 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
             }
         return fn
 
-    # Register hooks
+    # Register hooks - STRICT FILTER APPLIED HERE
     hooks = []
     for name, module in model.named_modules():
-        if isinstance(module, (nn.Conv2d, nn.Linear, nn.BatchNorm2d)) or "block" in name.lower():
+        # ONLY capture Conv2d and Linear. 
+        # Removed BatchNorm2d, and removed generic "block" string matching.
+        if isinstance(module, (nn.Conv2d, nn.Linear)):
             hooks.append(module.register_forward_hook(heuristic_hook(name, type(module).__name__)))
 
     # Run forward pass
@@ -698,24 +700,22 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
 
     # 4. Plotting (4 Rows)
     if not df.empty:
+        # Increase height slightly to accommodate labels
         fig, axes = plt.subplots(4, 1, figsize=(max(12, len(df)*0.3), 16), sharex=True)
         
-        # Row 1: Identity Score (Conv Only)
-        df_conv = df[df['layer_type'].str.contains("Conv", case=False, na=False)]
-        if not df_conv.empty:
-            sns.barplot(x="layer", y="identity_score", data=df_conv, ax=axes[0], color="mediumpurple")
-            axes[0].set_title(f"1. Identity Score (Conv Only) - Higher = Collapse Candidate")
-            axes[0].set_ylim(0, 1.05)
-            # Annotate top candidates
-            for i, row in enumerate(df_conv.itertuples()):
-                if row.identity_score > 0.8:
-                    axes[0].text(i, row.identity_score, f"{row.identity_score:.2f}", 
-                                 ha='center', va='bottom', fontsize=7, fontweight='bold')
+        # Row 1: Identity Score
+        sns.barplot(x="layer", y="identity_score", data=df, ax=axes[0], color="mediumpurple")
+        axes[0].set_title(f"1. Identity Score (High = Redundant)")
+        axes[0].set_ylim(0, 1.05)
+        for i, row in enumerate(df.itertuples()):
+            if row.identity_score > 0.8:
+                axes[0].text(i, row.identity_score, f"{row.identity_score:.2f}", 
+                             ha='center', va='bottom', fontsize=7, fontweight='bold')
         
         # Row 2: Arithmetic Intensity
         sns.barplot(x="layer", y="arithmetic_intensity", data=df, ax=axes[1], color="coral")
         axes[1].set_title(f"2. Arithmetic Intensity (FLOPs/Byte) - Lower = Memory Bound")
-        axes[1].set_yscale("log") # Log scale often helps here
+        axes[1].set_yscale("log")
 
         # Row 3: Weight Magnitude (L1)
         sns.barplot(x="layer", y="weight_l1", data=df, ax=axes[2], color="teal")
@@ -731,8 +731,9 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
             ax.grid(axis='y', linestyle='--', alpha=0.5)
             ax.set_xlabel("")
         
+        # Rotate x-labels on the bottom plot
         axes[-1].set_xticklabels(axes[-1].get_xticklabels(), rotation=90, fontsize=8)
-        axes[-1].set_xlabel("Layer Name")
+        axes[-1].set_xlabel("Layer Name (Conv/Linear Only)")
 
         plt.tight_layout()
         plot_path = os.path.join(save_dir, f"{exp_name}_extended_heuristics.svg")
@@ -741,6 +742,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
         print(f"[✓] Extended heuristics saved to {plot_path}")
 
     return df
+
 
 def run_experiments_for_dataset(
     experiments,
