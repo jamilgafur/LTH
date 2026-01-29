@@ -478,15 +478,20 @@ def initialize_model_and_data(args):
 # -------------------------------------------------------------
 def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epochs, device, dataset, model_name):
     """
-    Safely runs the pre-experiment training and heuristic analysis (Identity Score, Arithmetic Intensity).
-    Uses atomic directory creation (os.mkdir) to ensure only ONE job in an HPC array performs this task.
+    Safely runs the pre-experiment training and heuristic analysis.
+    
+    Changes:
+    - Creates atomic locks to prevent race conditions in HPC arrays.
+    - passes explicit model_name and dataset to the analysis function for better file naming/titles.
+    - Generates 4 separate plots in categorized directories (e.g. runs/plots/identity_score/Model_Dataset.png).
     """
     # Define paths
     lock_dir_path = f"{model_name}_{dataset}_heuristics.lock_dir"
     done_marker_path = f"{model_name}_{dataset}_heuristics_done.marker"
-    plots_dir = os.path.join("runs", "plots")
     
-    ensure_dir(plots_dir)
+    # Base directory for all plots
+    plots_root_dir = os.path.join("runs", "plots")
+    ensure_dir(plots_root_dir)
 
     # 1. Check if already done
     if os.path.exists(done_marker_path):
@@ -494,7 +499,6 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
         return
 
     # 2. Attempt to acquire lock via Atomic Directory Creation
-    # os.mkdir is atomic on POSIX systems (including NFS), making it a safe lock mechanism.
     print(f"[INFO] Attempting to acquire lock for heuristic profiling: {lock_dir_path}")
     try:
         os.mkdir(lock_dir_path)
@@ -511,7 +515,7 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
         
         # A. Resolve class from string if necessary
         if isinstance(model_class, str):
-            model_class_obj = eval(model_class) #
+            model_class_obj = eval(model_class)
         else:
             model_class_obj = model_class
 
@@ -522,16 +526,21 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
         # C. Train for specified epochs to stabilize weights
         print(f"[INFO] Training model for {epochs} epochs to analyze functional redundancy...")
         for epoch in range(1, epochs + 1):
-            train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, device) #
+            train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, device)
             print(f"    [Epoch {epoch}] Loss: {train_loss:.4f} | Acc: {train_acc:.2f}%")
             if scheduler: scheduler.step()
             
-        # D. Run Heuristic Analysis (Identity Score & Arithmetic Intensity)
+        # D. Run Heuristic Analysis
+        # We pass model_name and dataset explicitly for better plot titles and filenames
         input_sample = model_kwargs["one_batch"].to(device)
-        exp_name = f"{model_name}_{dataset}_Heuristics"
         
-        # Call the updated diagnostic function
-        analyze_collapse_heuristics(model, input_sample, plots_dir, exp_name) #
+        analyze_collapse_heuristics(
+            model=model, 
+            input_tensor=input_sample, 
+            save_root_dir=plots_root_dir, 
+            model_name=model_name,
+            dataset_name=dataset
+        )
         
         # E. Mark as done
         with open(done_marker_path, 'w') as f:
@@ -541,8 +550,8 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
 
     except Exception as e:
         print(f"[ERROR] An error occurred during heuristic profiling: {e}")
-        # Optional: You might want to remove the lock dir here if you want to allow retries,
-        # but usually on HPC errors you want to inspect manually.
+        import traceback
+        traceback.print_exc()
 
     finally:
         # F. Release lock
@@ -552,64 +561,36 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
         except OSError:
             print("[WARN] Could not remove lock directory (it may have been removed already).")
 
-def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
-    """Runs the appropriate experiment based on the arguments (JF or Kevin)."""
-    model_class = eval(model_class)
-    if args.JF:
-        return run_jf_experiment(
-            {experiment_name: layers},
-            model_path_097,
-            train_loader,
-            test_loader,
-            device,
-            epochs,
-            pretrain,
-            model_class=model_class,
-            model_kwargs=model_kwargs,
-            data_shape=input_size,
-            save_path=save_path,
-            post_compress_epochs=post_compress_epochs,
-            quant=quant
-        )
-    elif args.Kevin:
-        if experiment_name == "Original Model":
-            epochs = pretrain + epochs
-        
-        return run_kevin_experiment(
-            {experiment_name: layers},
-            model_path_000,
-            train_loader,
-            test_loader,
-            device,
-            epochs,
-            model_class=model_class,
-            model_kwargs=model_kwargs,
-            data_shape=input_size,
-            save_path=save_path,
-            post_compress_epochs=post_compress_epochs,
-            quant=quant
-        )
-    else:
-        raise ValueError("You must specify either --JF or --Kevin to run the corresponding experiment.")
 
-def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
+def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
     """
-    Analyzes ONLY Conv2d and Linear layers using 4 metrics to identify collapse candidates.
-    Filters out BatchNorm, ReLU, and container blocks to reduce noise.
+    Analyzes Conv2d and Linear layers using 4 metrics and saves individual plots.
     
-    Metrics:
-    1. Identity Score: Is input ≈ output? (High = Redundant)
-    2. Arithmetic Intensity: FLOPs / Byte (Low = Memory Bound)
-    3. Weight Magnitude (L1): Are weights near zero? (Low = Insignificant)
-    4. Activation Variance: Is output static? (Low = Dead/Constant features)
+    Structure:
+        runs/plots/
+            ├── identity_score/
+            │     └── RegNetX_Cifar100.png
+            ├── arithmetic_intensity/
+            │     └── RegNetX_Cifar100.png
+            ├── weight_magnitude/
+            │     └── ...
+            └── activation_variance/
+                  └── ...
+
+    Args:
+        model: PyTorch model
+        input_tensor: Sample input for forward pass
+        save_root_dir: Root directory for plots (e.g. 'runs/plots')
+        model_name: Name of the model (for title/filename)
+        dataset_name: Name of the dataset (for title/filename)
     """
-    print(f"[•] Running Extended Collapse Heuristics (Conv/Linear Only)...")
+    print(f"[•] Running Extended Collapse Heuristics (Conv/Linear Only) for {model_name} on {dataset_name}...")
     
     model.eval()
     if len(input_tensor.shape) == 3:
         input_tensor = input_tensor.unsqueeze(0)
 
-    # 1. Get FLOPs first
+    # 1. Get FLOPs
     try:
         from fvcore.nn import FlopCountAnalysis
         flops_counter = FlopCountAnalysis(model, input_tensor)
@@ -661,11 +642,9 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
             }
         return fn
 
-    # Register hooks - STRICT FILTER APPLIED HERE
+    # Register hooks
     hooks = []
     for name, module in model.named_modules():
-        # ONLY capture Conv2d and Linear. 
-        # Removed BatchNorm2d, and removed generic "block" string matching.
         if isinstance(module, (nn.Conv2d, nn.Linear)):
             hooks.append(module.register_forward_hook(heuristic_hook(name, type(module).__name__)))
 
@@ -694,55 +673,138 @@ def analyze_collapse_heuristics(model, input_tensor, save_dir, exp_name):
 
     df = pd.DataFrame(results)
     
-    # Save CSV
-    os.makedirs(save_dir, exist_ok=True)
-    df.to_csv(os.path.join(save_dir, f"{exp_name}_extended_heuristics.csv"), index=False)
+    if df.empty:
+        print("[WARN] No layers found for analysis.")
+        return df
 
-    # 4. Plotting (4 Rows)
-    if not df.empty:
-        # Increase height slightly to accommodate labels
-        fig, axes = plt.subplots(4, 1, figsize=(max(12, len(df)*0.3), 16), sharex=True)
+    # Save Raw Data CSV in the root plot dir
+    csv_name = f"{model_name}_{dataset_name}_heuristics.csv"
+    df.to_csv(os.path.join(save_root_dir, csv_name), index=False)
+
+    # 4. Plotting Configuration
+    # We define distinct metrics with their specific colors and folder names
+    metrics_config = [
+        {
+            "col": "identity_score",
+            "title": "Identity Score (High = Redundant)",
+            "folder": "identity_score",
+            "color": "mediumpurple",
+            "log_scale": False,
+            "threshold_text": 0.8  # Show text value if bar > 0.8
+        },
+        {
+            "col": "arithmetic_intensity",
+            "title": "Arithmetic Intensity (FLOPs/Byte) - Lower = Memory Bound",
+            "folder": "arithmetic_intensity",
+            "color": "coral",
+            "log_scale": True,
+            "threshold_text": None
+        },
+        {
+            "col": "weight_l1",
+            "title": "Weight Magnitude (Norm. L1) - Lower = Insignificant Weights",
+            "folder": "weight_magnitude",
+            "color": "teal",
+            "log_scale": False,
+            "threshold_text": None
+        },
+        {
+            "col": "act_var",
+            "title": "Activation Variance - Lower = Dead/Static Features",
+            "folder": "activation_variance",
+            "color": "goldenrod",
+            "log_scale": True,
+            "threshold_text": None
+        }
+    ]
+
+    # Generate Individual Plots
+    for config in metrics_config:
+        # Create sub-directory: runs/plots/{folder_name}
+        metric_dir = os.path.join(save_root_dir, config["folder"])
+        os.makedirs(metric_dir, exist_ok=True)
         
-        # Row 1: Identity Score
-        sns.barplot(x="layer", y="identity_score", data=df, ax=axes[0], color="mediumpurple")
-        axes[0].set_title(f"1. Identity Score (High = Redundant)")
-        axes[0].set_ylim(0, 1.05)
-        for i, row in enumerate(df.itertuples()):
-            if row.identity_score > 0.8:
-                axes[0].text(i, row.identity_score, f"{row.identity_score:.2f}", 
-                             ha='center', va='bottom', fontsize=7, fontweight='bold')
+        # Setup Figure
+        plt.figure(figsize=(max(12, len(df)*0.3), 6)) # Dynamic width based on layer count
         
-        # Row 2: Arithmetic Intensity
-        sns.barplot(x="layer", y="arithmetic_intensity", data=df, ax=axes[1], color="coral")
-        axes[1].set_title(f"2. Arithmetic Intensity (FLOPs/Byte) - Lower = Memory Bound")
-        axes[1].set_yscale("log")
-
-        # Row 3: Weight Magnitude (L1)
-        sns.barplot(x="layer", y="weight_l1", data=df, ax=axes[2], color="teal")
-        axes[2].set_title(f"3. Weight Magnitude (Norm. L1) - Lower = Insignificant Weights")
-
-        # Row 4: Activation Variance
-        sns.barplot(x="layer", y="act_var", data=df, ax=axes[3], color="goldenrod")
-        axes[3].set_title(f"4. Activation Variance - Lower = Dead/Static Features")
-        axes[3].set_yscale("log")
-
-        # Layout cleanup
-        for ax in axes:
-            ax.grid(axis='y', linestyle='--', alpha=0.5)
-            ax.set_xlabel("")
+        # Draw Plot
+        ax = sns.barplot(x="layer", y=config["col"], data=df, color=config["color"])
         
-        # Rotate x-labels on the bottom plot
-        axes[-1].set_xticklabels(axes[-1].get_xticklabels(), rotation=90, fontsize=8)
-        axes[-1].set_xlabel("Layer Name (Conv/Linear Only)")
+        # Styling
+        full_title = f"{config['title']}\nModel: {model_name} | Dataset: {dataset_name}"
+        ax.set_title(full_title, fontsize=12, fontweight='bold')
+        ax.grid(axis='y', linestyle='--', alpha=0.5)
+        
+        if config["log_scale"]:
+            ax.set_yscale("log")
+            
+        # Optional: Add text labels for high values (used for Identity Score)
+        if config["threshold_text"]:
+            for i, row in enumerate(df.itertuples()):
+                val = getattr(row, config["col"])
+                if val > config["threshold_text"]:
+                    ax.text(i, val, f"{val:.2f}", ha='center', va='bottom', fontsize=8, fontweight='bold', color='black')
+        
+        if config["col"] == "identity_score":
+            ax.set_ylim(0, 1.05)
+
+        # X-Axis Labels
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=8)
+        ax.set_xlabel("Layer Name", fontsize=10)
+        ax.set_ylabel(config["col"], fontsize=10)
 
         plt.tight_layout()
-        plot_path = os.path.join(save_dir, f"{exp_name}_extended_heuristics.svg")
-        plt.savefig(plot_path)
+        
+        # Save File: runs/plots/{folder}/{model}_{dataset}.png
+        filename = f"{model_name}_{dataset_name}.png"
+        save_path = os.path.join(metric_dir, filename)
+        plt.savefig(save_path, dpi=150)
         plt.close()
-        print(f"[✓] Extended heuristics saved to {plot_path}")
+        
+        print(f"    [Saved] {config['folder']} -> {save_path}")
 
     return df
 
+
+def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
+    """Runs the appropriate experiment based on the arguments (JF or Kevin)."""
+    model_class = eval(model_class)
+    if args.JF:
+        return run_jf_experiment(
+            {experiment_name: layers},
+            model_path_097,
+            train_loader,
+            test_loader,
+            device,
+            epochs,
+            pretrain,
+            model_class=model_class,
+            model_kwargs=model_kwargs,
+            data_shape=input_size,
+            save_path=save_path,
+            post_compress_epochs=post_compress_epochs,
+            quant=quant
+        )
+    elif args.Kevin:
+        if experiment_name == "Original Model":
+            epochs = pretrain + epochs
+        
+        return run_kevin_experiment(
+            {experiment_name: layers},
+            model_path_000,
+            train_loader,
+            test_loader,
+            device,
+            epochs,
+            model_class=model_class,
+            model_kwargs=model_kwargs,
+            data_shape=input_size,
+            save_path=save_path,
+            post_compress_epochs=post_compress_epochs,
+            quant=quant
+        )
+    else:
+        raise ValueError("You must specify either --JF or --Kevin to run the corresponding experiment.")
 
 def run_experiments_for_dataset(
     experiments,
