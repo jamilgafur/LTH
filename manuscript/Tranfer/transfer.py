@@ -185,225 +185,234 @@ CHECKPOINT_FILES = {
     },
 }
 
+# ==============================================================================
+# 1. VGG16 Common (The "V-Shape" Crash Probe)
+# Updated Strategy: 
+# - Test Stage 3 (High Variance) -> Expect Failure
+# - Test Stage 1 (Low Variance)  -> Expect Success (Control Group)
+# ==============================================================================
 Vgg_common = {
-            "Original Model": None,
-            "Last 2": ("features.conv_12", "features.conv_13"),
-            "Stage 5": ("features.conv_11", "features.conv_13"),
-            "Stage 4": ("features.conv_8", "features.conv_10"),
-            "Stage 3": ("features.conv_5", "features.conv_7"),
-            "Stage 2": ("features.conv_3", "features.conv_4"),
-            "Stage 4-5": ("features.conv_8", "features.conv_13"),
-            "Stage 3-5": ("features.conv_5", "features.conv_13"),
-            "Stage 2-5": ("features.conv_3", "features.conv_13"),
-        }
-RegNetX_common =  {
-            "Original Model": None,
-            # Single-stage collapses (single tuples)
-            "Last 2": (
-                "stage4.stage4_block5.block.conv1",
-                "stage4.stage4_block6.block.conv3",
-            ),
-            "Stage 4": (
-                "stage4.stage4_block0.block.conv1",
-                "stage4.stage4_block6.block.conv3",
-            ),
-            "Stage 3": (
-                "stage3.stage3_block0.block.conv1",
-                "stage3.stage3_block3.block.conv3",
-            ),
-            "Stage 2": (
-                "stage2.stage2_block0.block.conv1",
-                "stage2.stage2_block0.block.conv3",
-            ),
-            "Stage 1": (
-                "stage1.stage1_block0.block.conv1",
-                "stage1.stage1_block0.block.conv3",
-            ),
-            # Multi-stage collapses (lists of tuples)
-            "Stage 3-4": [
-                (
-                    "stage3.stage3_block0.block.conv1",
-                    "stage3.stage3_block3.block.conv3",
-                ),  # Stage 3
-                (
-                    "stage4.stage4_block0.block.conv1",
-                    "stage4.stage4_block6.block.conv3",
-                ),  # Stage 4
-            ],
-            "Stage 2-4": [
-                (
-                    "stage2.stage2_block0.block.conv1",
-                    "stage2.stage2_block0.block.conv3",
-                ),  # Stage 2
-                (
-                    "stage3.stage3_block0.block.conv1",
-                    "stage3.stage3_block3.block.conv3",
-                ),  # Stage 3
-                (
-                    "stage4.stage4_block0.block.conv1",
-                    "stage4.stage4_block6.block.conv3",
-                ),  # Stage 4
-            ],
-            "Stage 1-4": [
-                (
-                    "stage1.stage1_block0.block.conv1",
-                    "stage1.stage1_block0.block.conv3",
-                ),  # Stage 1
-                (
-                    "stage2.stage2_block0.block.conv1",
-                    "stage2.stage2_block0.block.conv3",
-                ),  # Stage 2
-                (
-                    "stage3.stage3_block0.block.conv1",
-                    "stage3.stage3_block3.block.conv3",
-                ),  # Stage 3
-                (
-                    "stage4.stage4_block0.block.conv1",
-                    "stage4.stage4_block6.block.conv3",
-                ),  # Stage 4
-            ],
-            # Stage-specific first/last conv pairs
-            "Stage 1 first 2 conv": (
-                "stage1.stage1_block0.block.conv1",
-                "stage1.stage1_block0.block.conv2",
-            ),
-            "Stage 2 first 2 conv": (
-                "stage2.stage2_block0.block.conv1",
-                "stage2.stage2_block0.block.conv2",
-            ),
-            "Stage 3 first 2 conv": (
-                "stage3.stage3_block0.block.conv1",
-                "stage3.stage3_block1.block.conv1",
-            ),
-            "Stage 4 first 2 conv": (
-                "stage4.stage4_block0.block.conv1",
-                "stage4.stage4_block1.block.conv1",
-            ),
-            "Stage 1 last 2 conv": (
-                "stage1.stage1_block0.block.conv2",
-                "stage1.stage1_block0.block.conv3",
-            ),
-            "Stage 2 last 2 conv": (
-                "stage2.stage2_block0.block.conv2",
-                "stage2.stage2_block0.block.conv3",
-            ),
-            "Stage 3 last 2 conv": (
-                "stage3.stage3_block2.block.conv3",
-                "stage3.stage3_block3.block.conv3",
-            ),
-            "Stage 4 last 2 conv": (
-                "stage4.stage4_block4.block.conv3",
-                "stage4.stage4_block5.block.conv3",
-            ),
-        }
-XceptionNet_common =  {
-            "Original Model": None,
-            "Stage 5": ("block5.depthwise", "block5.bn2"),
-            "Stage 4": ("block4.depthwise", "block5.depthwise"),
-            "Stage 3": ("block3.depthwise", "block4.depthwise"),
-            "Stage 2": ("block2.depthwise", "block3.depthwise"),
-            "Stage 1": ("block1.depthwise", "block2.depthwise"),
-            "Stage 4-5": ("block4.depthwise", "block5.bn2"),
-            "Stage 3-5": ("block3.depthwise", "block5.depthwise"),
-            "Stage 2-5": ("block2.depthwise", "block5.depthwise"),
-            "Stage 1-5": ("block1.depthwise", "block5"),
-        }
-mobileNet_common =  {
-            "Original Model": None,
-            "Stage 7": ("block7.depthwise", "block7.bn2"),
-            "Stage 6": ("block6.depthwise", "block7.depthwise"),
-            "Stage 5": ("block5.depthwise", "block6.depthwise"),
-            "Stage 4": ("block4.depthwise", "block5.depthwise"),
-            "Stage 3": ("block3.depthwise", "block4.depthwise"),
-            "Stage 2": ("block2.depthwise", "block3.depthwise"),
-            "Stage 1": ("block1.depthwise", "block2.depthwise"),
-            "Stage 5-7": ("block5.depthwise", "block7.depthwise"),
-            "Stage 4-7": ("block4.depthwise", "block7.depthwise"),
-            "Stage 6-7": ("block6.depthwise", "block7.depthwise"),
-            "Stage 3-7": ("block3.depthwise", "block7.depthwise"),
-            "Stage 2-7": ("block2.depthwise", "block7.depthwise"),
-            "Stage 1-7": ("block1.depthwise", "block7.depthwise"),
-            "Last 2": ("block6.depthwise", "block7.depthwise"),
-        }
+    "Original Model": None,
+
+    # --- 1. Coarse-Grained Stage Collapses ---
+    "Stage 5 (Full)": ("features.conv_11", "features.conv_13"),
+    "Stage 4 (Full)": ("features.conv_8", "features.conv_10"),
+    "Stage 3 (Full)": ("features.conv_5", "features.conv_7"), # High Variance (Crash Site)
+    "Stage 2 (Full)": ("features.conv_3", "features.conv_4"),
+    "Stage 1 (Full)": ("features.conv_1", "features.conv_2"), # Low Variance (Safety Check)
+    
+    # --- 2. Granular Sensitivity Checks (High Variance Probes) ---
+    # Isolating the Stage 3 crash
+    "Stage 3 Conv 1 Only": ("features.conv_5", "features.conv_5"),
+    "Stage 3 Conv 2 Only": ("features.conv_6", "features.conv_6"),
+    "Stage 3 Conv 3 Only": ("features.conv_7", "features.conv_7"),
+
+    # --- 3. Granular Sensitivity Checks (Low Variance Probes) ---
+    # These layers have minimal variance; collapsing them should be safe.
+    "Stage 1 Conv 1 Only": ("features.conv_1", "features.conv_1"),
+    "Stage 1 Conv 2 Only": ("features.conv_2", "features.conv_2"),
+
+    # --- 4. Multi-Stage Combinations ---
+    "Last 2": ("features.conv_12", "features.conv_13"),
+    "Stage 4-5": ("features.conv_8", "features.conv_13"),
+    "Stage 3-5": ("features.conv_5", "features.conv_13"),
+    "Stage 2-5": ("features.conv_3", "features.conv_13"),
+    "Stage 1-5": ("features.conv_1", "features.conv_13"), # Aggressive full-network collapse
+}
+
+# ==============================================================================
+# 2. RegNetX Common (The "Efficiency Wall")
+# Updated Strategy:
+# - Test Stage 4 (High Variance) -> Expect Failure
+# - Test Stage 1 (Lower Variance) -> Expect Less Failure
+# ==============================================================================
+RegNetX_common = {
+    "Original Model": None,
+
+    # --- 1. Coarse-Grained Stage Collapses ---
+    "Last 2": ("stage4.stage4_block5.block.conv1", "stage4.stage4_block6.block.conv3"),
+    "Stage 4 (Full)": ("stage4.stage4_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
+    "Stage 3 (Full)": ("stage3.stage3_block0.block.conv1", "stage3.stage3_block3.block.conv3"),
+    "Stage 2 (Full)": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),
+    "Stage 1 (Full)": ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv3"),
+
+    # --- 2. Granular Stage 3 Decomposition (High Variance) ---
+    "Stage 3 Block 0 Only": ("stage3.stage3_block0.block.conv1", "stage3.stage3_block0.block.conv3"),
+    "Stage 3 Block 1 Only": ("stage3.stage3_block1.block.conv1", "stage3.stage3_block1.block.conv3"),
+    "Stage 3 Block 2 Only": ("stage3.stage3_block2.block.conv1", "stage3.stage3_block2.block.conv3"),
+    "Stage 3 Block 3 Only": ("stage3.stage3_block3.block.conv1", "stage3.stage3_block3.block.conv3"),
+
+    # --- 3. Granular Stage 4 Decomposition (High Variance) ---
+    "Stage 4 Block 0 Only": ("stage4.stage4_block0.block.conv1", "stage4.stage4_block0.block.conv3"),
+    "Stage 4 Block 1 Only": ("stage4.stage4_block1.block.conv1", "stage4.stage4_block1.block.conv3"),
+    "Stage 4 Block 2 Only": ("stage4.stage4_block2.block.conv1", "stage4.stage4_block2.block.conv3"),
+    "Stage 4 Block 3 Only": ("stage4.stage4_block3.block.conv1", "stage4.stage4_block3.block.conv3"),
+    "Stage 4 Block 4 Only": ("stage4.stage4_block4.block.conv1", "stage4.stage4_block4.block.conv3"),
+    "Stage 4 Block 5 Only": ("stage4.stage4_block5.block.conv1", "stage4.stage4_block5.block.conv3"),
+    "Stage 4 Block 6 Only": ("stage4.stage4_block6.block.conv1", "stage4.stage4_block6.block.conv3"),
+
+    # --- 4. Low Variance Control Group (Stage 1) ---
+    "Stage 1 Block 0 Only": ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv3"),
+
+    # --- 5. Multi-Stage Combinations ---
+    "Stage 3-4": [
+        ("stage3.stage3_block0.block.conv1", "stage3.stage3_block3.block.conv3"),
+        ("stage4.stage4_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
+    ],
+    "Stage 2-4": [
+        ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),
+        ("stage3.stage3_block0.block.conv1", "stage3.stage3_block3.block.conv3"),
+        ("stage4.stage4_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
+    ],
+    "Stage 1-4": [
+        ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv3"),
+        ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv3"),
+        ("stage3.stage3_block0.block.conv1", "stage3.stage3_block3.block.conv3"),
+        ("stage4.stage4_block0.block.conv1", "stage4.stage4_block6.block.conv3"),
+    ],
+
+    # --- 6. Intra-Block Partial Collapses ---
+    "Stage 1 first 2 conv": ("stage1.stage1_block0.block.conv1", "stage1.stage1_block0.block.conv2"),
+    "Stage 2 first 2 conv": ("stage2.stage2_block0.block.conv1", "stage2.stage2_block0.block.conv2"),
+    "Stage 3 first 2 conv": ("stage3.stage3_block0.block.conv1", "stage3.stage3_block1.block.conv1"),
+    "Stage 4 first 2 conv": ("stage4.stage4_block0.block.conv1", "stage4.stage4_block1.block.conv1"),
+    "Stage 1 last 2 conv": ("stage1.stage1_block0.block.conv2", "stage1.stage1_block0.block.conv3"),
+    "Stage 2 last 2 conv": ("stage2.stage2_block0.block.conv2", "stage2.stage2_block0.block.conv3"),
+    "Stage 3 last 2 conv": ("stage3.stage3_block2.block.conv3", "stage3.stage3_block3.block.conv3"),
+    "Stage 4 last 2 conv": ("stage4.stage4_block4.block.conv3", "stage4.stage4_block5.block.conv3"),
+}
+
+# ==============================================================================
+# 3. MobileNet Common (The "Safe" Baseline)
+# Updated Strategy: 
+# - Block 1 has lowest variance. Block 7 has slightly higher.
+# - Verify safety across the spectrum.
+# ==============================================================================
+mobileNet_common = {
+    "Original Model": None,
+
+    # --- 1. Coarse-Grained Stage Collapses ---
+    "Stage 7": ("block7.depthwise", "block7.bn2"),
+    "Stage 6": ("block6.depthwise", "block7.depthwise"),
+    "Stage 5": ("block5.depthwise", "block6.depthwise"),
+    "Stage 4": ("block4.depthwise", "block5.depthwise"),
+    "Stage 3": ("block3.depthwise", "block4.depthwise"),
+    "Stage 2": ("block2.depthwise", "block3.depthwise"),
+    "Stage 1": ("block1.depthwise", "block2.depthwise"),
+
+    # --- 2. Granular Block Checks ---
+    "Block 7 Only": ("block7.depthwise", "block7.bn2"),
+    "Block 6 Only": ("block6.depthwise", "block6.pointwise"),
+    "Block 5 Only": ("block5.depthwise", "block5.pointwise"),
+    "Block 4 Only": ("block4.depthwise", "block4.pointwise"),
+    "Block 3 Only": ("block3.depthwise", "block3.pointwise"),
+    "Block 2 Only": ("block2.depthwise", "block2.pointwise"),
+    "Block 1 Only": ("block1.depthwise", "block1.pointwise"), # Lowest Variance
+
+    # --- 3. Multi-Stage Combinations ---
+    "Stage 5-7": ("block5.depthwise", "block7.depthwise"),
+    "Stage 4-7": ("block4.depthwise", "block7.depthwise"),
+    "Stage 6-7": ("block6.depthwise", "block7.depthwise"),
+    "Stage 3-7": ("block3.depthwise", "block7.depthwise"),
+    "Stage 2-7": ("block2.depthwise", "block7.depthwise"),
+    "Stage 1-7": ("block1.depthwise", "block7.depthwise"),
+    "Last 2": ("block6.depthwise", "block7.depthwise"),
+}
+
+# ==============================================================================
+# 4. XceptionNet Common (Low Variance)
+# ==============================================================================
+XceptionNet_common = {
+    "Original Model": None,
+
+    "Stage 5 (Full)": ("block5.depthwise", "block5.bn2"),
+    "Stage 4 (Full)": ("block4.depthwise", "block5.depthwise"),
+    "Stage 3 (Full)": ("block3.depthwise", "block4.depthwise"),
+    "Stage 2 (Full)": ("block2.depthwise", "block3.depthwise"),
+    "Stage 1 (Full)": ("block1.depthwise", "block2.depthwise"),
+
+    "Block 5 Only": ("block5.depthwise", "block5.bn2"),
+    "Block 4 Only": ("block4.depthwise", "block4.pointwise"),
+    "Block 3 Only": ("block3.depthwise", "block3.pointwise"),
+    "Block 2 Only": ("block2.depthwise", "block2.pointwise"),
+    "Block 1 Only": ("block1.depthwise", "block1.pointwise"),
+
+    "Stage 3-5": ("block3.depthwise", "block5.depthwise"),
+    "Stage 2-5": ("block2.depthwise", "block5.depthwise"),
+    "Stage 1-5": ("block1.depthwise", "block5.bn2"), 
+}
+
+# ==============================================================================
+# 5. InceptionNet Common (The "Stage 3" Anomaly)
+# Updated Strategy:
+# - Stage 3a has MASSIVE variance (The "Trap").
+# - Stem / Stage 1 has lower variance (Safety Check).
+# ==============================================================================
 InceptionNet_common = {
-            "Original Model": None,
-            # Single-stage collapses
-            "Stage 5": (
-                "stage5.inception_5a",
-                "stage5.inception_5b",
-            ),
-            "Stage 4": (
-                "stage4.inception_4a",
-                "stage4.inception_4b",
-            ),
-            "Stage 3": (
-                "stage3.inception_3a",
-                "stage3.inception_3b",
-            ),
-            "Stage 2": (
-                "stage2.inception_2a",
-                "stage2.inception_2b",
-            ),
-            "Stage 2-5": [
-                (
-                    "stage2.inception_2a",
-                    "stage2.inception_2b",
-                ),  # Stage 2
-                (
-                    "stage3.inception_3a",
-                    "stage3.inception_3b",
-                ),  # Stage 3
-                (
-                    "stage4.inception_4a",
-                    "stage4.inception_4b",
-                ),  # Stage 4
-                (
-                    "stage5.inception_5a",
-                    "stage5.inception_5b",
-                ),  # Stage 5
-            ],
-            "Stage 3-5": [
-                (
-                    "stage3.inception_3a",
-                    "stage3.inception_3b",
-                ),  # Stage 3
-                (
-                    "stage4.inception_4a",
-                    "stage4.inception_4b",
-                ),  # Stage 4
-                (
-                    "stage5.inception_5a",
-                    "stage5.inception_5b",
-                ),  # Stage 5
-            ],
-            "Stage 4-5": [
-                (
-                    "stage4.inception_4a",
-                    "stage4.inception_4b",
-                ),  # Stage 4
-                (
-                    "stage5.inception_5a",
-                    "stage5.inception_5b",
-                ),  # Stage 5
-            ],  
-            "Last 2": (
-                "stage5.inception_5a",
-                "stage5.inception_5b",
-            ),
-        }
+    "Original Model": None,
+
+    # --- 1. Coarse-Grained Stage Collapses ---
+    "Stage 5 (Full)": ("stage5.inception_5a", "stage5.inception_5b"),
+    "Stage 4 (Full)": ("stage4.inception_4a", "stage4.inception_4b"),
+    "Stage 3 (Full)": ("stage3.inception_3a", "stage3.inception_3b"),
+    "Stage 2 (Full)": ("stage2.inception_2a", "stage2.inception_2b"),
+    
+    # --- 2. Low Variance Control Group ---
+    # The Stem is usually safe. 
+    # (Assuming standard Inception V3 naming; adjust if using V1/GoogLeNet)
+    "Stem": ("stem.conv1", "stem.conv3"), 
+
+    # --- 3. High Variance Probes (Stage 3) ---
+    "Stage 3a Only": ("stage3.inception_3a", "stage3.inception_3a"), # Expected Failure Point
+    "Stage 3b Only": ("stage3.inception_3b", "stage3.inception_3b"),
+
+    # --- 4. Capacity Probes (Stage 4) ---
+    "Stage 4a Only": ("stage4.inception_4a", "stage4.inception_4a"),
+    "Stage 4b Only": ("stage4.inception_4b", "stage4.inception_4b"),
+
+    # --- 5. Multi-Stage Combinations ---
+    "Stage 2-5": [
+        ("stage2.inception_2a", "stage2.inception_2b"),
+        ("stage3.inception_3a", "stage3.inception_3b"),
+        ("stage4.inception_4a", "stage4.inception_4b"),
+        ("stage5.inception_5a", "stage5.inception_5b"),
+    ],
+    "Stage 3-5": [
+        ("stage3.inception_3a", "stage3.inception_3b"),
+        ("stage4.inception_4a", "stage4.inception_4b"),
+        ("stage5.inception_5a", "stage5.inception_5b"),
+    ],
+    "Stage 4-5": [
+        ("stage4.inception_4a", "stage4.inception_4b"),
+        ("stage5.inception_5a", "stage5.inception_5b"),
+    ],  
+    "Last 2": ("stage5.inception_5a", "stage5.inception_5b"),
+}
+
+# ==============================================================================
+# 6. ConvNeXt Common (The "Deep" Probe)
+# Updated Strategy: 
+# - Test Stage 1 (Low Variance) vs Stage 3 (High Redundancy)
+# ==============================================================================
 ConvNeXt_common = {
     "Original Model": None,
-    # Stage 1
-    "Stage 1": ("stage1.block1_1", "stage1.block1_2"),
 
-    # Stage 2
-    "Stage 2": ("stage2.block2_1", "stage2.block2_2"),
+    # --- 1. Coarse-Grained Stage Collapses ---
+    "Stage 4 (Full)": ("stage4.block4_1", "stage4.block4_2"),
+    "Stage 3 (Full)": ("stage3.block3_1", "stage3.block3_3"),
+    "Stage 2 (Full)": ("stage2.block2_1", "stage2.block2_2"),
+    "Stage 1 (Full)": ("stage1.block1_1", "stage1.block1_2"),
 
-    # Stage 3 (strong redundancy)
-    "Stage 3": ("stage3.block3_1", "stage3.block3_3"),
+    # --- 2. Granular Sensitivity Checks ---
+    "Stage 3 Block 1 Only": ("stage3.block3_1", "stage3.block3_1"),
+    "Stage 3 Block 2 Only": ("stage3.block3_2", "stage3.block3_2"), 
+    "Stage 3 Block 3 Only": ("stage3.block3_3", "stage3.block3_3"),
+    
+    # --- 3. Low Variance / Stem Probe ---
+    "Stage 1 Block 1 Only": ("stage1.block1_1", "stage1.block1_1"),
 
-    # Stage 4
-    "Stage 4": ("stage4.block4_1", "stage4.block4_2"),
+    # --- 4. Aggressive "Inner" Collapse ---
+    "Stage 3 Inner (Block 2)": ("stage3.block3_2", "stage3.block3_2"), 
 }
 
 EXPERIMENTS = {
