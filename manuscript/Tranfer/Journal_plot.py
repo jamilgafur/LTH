@@ -220,7 +220,7 @@ def fig1(df: pd.DataFrame):
                 ax.axis("off")
                 continue
 
-            sns.scatterplot(
+            sns.lineplot(
                 data=subdf,
                 x="d_params",
                 y="d_acc",
@@ -273,7 +273,7 @@ def fig2(df: pd.DataFrame):
                 ax.axis("off")
                 continue
 
-            sns.scatterplot(
+            sns.lineplot(
                 data=subdf,
                 x="d_flops",
                 y="d_acc",
@@ -328,7 +328,7 @@ def fig4(df: pd.DataFrame):
                 ax.axis("off")
                 continue
 
-            sns.scatterplot(
+            sns.lineplot(
                 data=subdf,
                 x="collapsed_fraction",
                 y="d_flops",
@@ -449,7 +449,7 @@ def fig6(df: pd.DataFrame):
             )
 
             # 3. Plot Pareto Frontier strongly
-            sns.scatterplot(
+            sns.lineplot(
                 data=pareto_df, x="d_params", y="d_acc",
                 color="black", linewidth=2, linestyle="--", 
                 marker="o", label="Pareto Frontier", ax=ax
@@ -624,7 +624,7 @@ def fig8(
                     ax.axis("off")
                     continue
 
-                sns.scatterplot(
+                sns.lineplot(
                     data=g_dataset,
                     x="exp_group",
                     y=metric,
