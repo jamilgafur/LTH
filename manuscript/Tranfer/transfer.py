@@ -735,8 +735,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         
         # Setup Figure
         plt.figure(figsize=(max(12, len(df)*0.3), 6)) # Dynamic width based on layer count
-        # alphanumeric sort the layername for better visualization
-        df = df.sort_values(by="layer", key=lambda x: x.str.lower())
 
         # Draw Plot
         ax = sns.barplot(x="layer", y=config["col"], data=df, color=config["color"])
