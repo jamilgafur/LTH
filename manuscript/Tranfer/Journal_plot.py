@@ -565,15 +565,23 @@ def fig7(df: pd.DataFrame):
     plt.savefig(FIG_DIR / "fig7_method_delta.svg", bbox_inches='tight')
     plt.close()
 
+
 def fig8(
     df: pd.DataFrame,
     metrics: list[str] = ["accuracy", "params", "flops", "memory"],
     out_dir: Path = Path("./figures"),
 ):
+    """
+    Generates an ablation study grid.
+    - Accuracy is plotted as a Bar Plot (discrete impact).
+    - Params/FLOPs/Memory are plotted as Line Plots (reduction trends).
+    - X-axis is consistently sorted by model size (Params descending).
+    """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     df = df.copy()
+    # Clean up experiment names for the X-axis labels
     df["exp_group"] = (
         df["exp_name"]
         .str.replace("_quant", "", regex=False)
@@ -583,6 +591,7 @@ def fig8(
         .str.strip("_")
     )
 
+    # Filter for relevant model types
     df_ablation = df[df["model_type"].isin(["collapsed", "baseline"])].copy()
 
     for architecture, df_arch in df_ablation.groupby("architecture"):
@@ -591,32 +600,42 @@ def fig8(
         n_rows = len(datasets)
         n_cols = len(metrics)
 
+        # -----------------------------
+        # 1. Consistent X-Axis Sorting
+        # -----------------------------
+        # Sort experiments by average Parameter count (Descending)
+        # This ensures Baseline is Left, Smallest Model is Right.
         if "params" in df_arch.columns:
             exp_order_index = (
                 df_arch.groupby("exp_group")["params"]
                 .mean()
-                .sort_values(ascending=False)
+                .sort_values(ascending=False) # Largest (Baseline) -> Smallest
                 .index
+                .tolist()
             )
         else:
             exp_order_index = sorted(df_arch["exp_group"].unique())
             
+        # Enforce this order on the dataframe
         df_arch["exp_group"] = pd.Categorical(
             df_arch["exp_group"], categories=exp_order_index, ordered=True
         )
 
         save_plot_source_data(df_arch, f"{architecture}_ablation_source")
 
+        # -----------------------------
+        # 2. Plotting Grid
+        # -----------------------------
         fig, axes = plt.subplots(
             n_rows, n_cols,
-            figsize=(max(6, 0.9 * len(exp_order_index)) * n_cols, 4.0 * n_rows),
-            squeeze=False, sharex='col'
+            figsize=(max(6, 1.5 * len(exp_order_index)) * n_cols, 4.0 * n_rows),
+            squeeze=False, sharex='col' # Share X per column to align plots vertically
         )
 
         for i, dataset in enumerate(datasets):
             g_dataset = df_arch[df_arch["dataset"] == dataset].copy()
-            g_dataset = g_dataset.sort_values("exp_group")
-
+            # Note: Sorting by the Categorical column happens automatically in Seaborn if we pass 'order'
+            
             for j, metric in enumerate(metrics):
                 ax = axes[i, j]
 
@@ -624,42 +643,87 @@ def fig8(
                     ax.axis("off")
                     continue
 
-                sns.lineplot(
-                    data=g_dataset,
-                    x="exp_group",
-                    y=metric,
-                    hue="posthoc_or_posttrain", 
-                    style="is_quantized",
-                    markers=True,
-                    dashes=True,
-                    linewidth=2.5,
-                    ax=ax,
-                )
+                # -----------------------------
+                # 3. Hybrid Plot Types
+                # -----------------------------
+                if metric == "accuracy":
+                    # BAR PLOT for Accuracy (Discrete Comparison)
+                    sns.barplot(
+                        data=g_dataset,
+                        x="exp_group",
+                        y=metric,
+                        hue="posthoc_or_posttrain", # Split bars by method
+                        order=exp_order_index,      # Enforce consistent sort
+                        palette="viridis",
+                        edgecolor="black",
+                        alpha=0.8,
+                        ax=ax
+                    )
+                    # Zoom in slightly on y-axis for accuracy if values are close
+                    min_acc = g_dataset[metric].min()
+                    max_acc = g_dataset[metric].max()
+                    margin = (max_acc - min_acc) * 0.2 if max_acc > min_acc else 5
+                    # Optional: uncomment to dynamic zoom, but 0-100 is often safer for honesty
+                    # ax.set_ylim(max(0, min_acc - margin), min(100, max_acc + margin))
 
+                else:
+                    # LINE PLOT for Resources (Visualizing the "Drop" Trend)
+                    sns.lineplot(
+                        data=g_dataset,
+                        x="exp_group",
+                        y=metric,
+                        hue="posthoc_or_posttrain",
+                        style="is_quantized",
+                        markers=True,
+                        dashes=True,
+                        linewidth=2.5,
+                        markersize=9,
+                        sort=False,             # Respect the categorical order
+                        ax=ax
+                    )
+
+                # -----------------------------
+                # 4. Formatting
+                # -----------------------------
+                # Titles only on top row
                 if i == 0:
                     ax.set_title(metric.capitalize(), fontsize=13, fontweight='bold')
                 
+                # X-Labels only on bottom row
                 if i == n_rows - 1:
                     ax.set_xlabel("Model Config (Size Descending)", fontsize=10)
-                    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right")
+                    ax.set_xticklabels(
+                        exp_order_index, 
+                        rotation=45, 
+                        ha="right", 
+                        fontweight='medium'
+                    )
                 else:
                     ax.set_xlabel("")
+                    ax.set_xticklabels([])
 
+                # Y-Labels only on first column
                 if j == 0:
-                    ax.set_ylabel(f"{dataset}\nValue", fontsize=11)
+                    ax.set_ylabel(f"{dataset}\nValue", fontsize=11, fontweight='bold')
                 else:
                     ax.set_ylabel("")
 
                 ax.grid(True, axis="y", linestyle="--", alpha=0.5)
 
-                if i == 0 and j == 0:
-                    ax.legend(title="Method / Quant", fontsize=8, loc='upper right')
+                # Legend Handling: Only one legend per figure (top-right most plot)
+                if i == 0 and j == n_cols - 1:
+                    ax.legend(
+                        title="Method", 
+                        fontsize=9, 
+                        title_fontsize=10, 
+                        bbox_to_anchor=(1.05, 1), 
+                        loc='upper left'
+                    )
                 else:
                     if ax.get_legend(): ax.get_legend().remove()
 
         fig.suptitle(
-            f"{architecture}: Ablation Study\n"
-            "Split by Pruning Method (Color) and Quantization (Shape/Dash)",
+            f"{architecture}: Ablation Study\nSorted by Model Size (Largest → Smallest)",
             fontsize=16, y=1.02,
         )
 
@@ -667,6 +731,7 @@ def fig8(
         save_path = out_dir / f"{architecture}_ablation_split.svg"
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
+        print(f"[Plot] Saved updated Fig8 to {save_path}")
 
 def fig10(
     results_dir: Path = RESULTS_DIR,
