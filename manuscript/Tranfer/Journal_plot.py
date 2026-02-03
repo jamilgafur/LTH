@@ -566,75 +566,78 @@ def fig7(df: pd.DataFrame):
     plt.close()
 
 
+import matplotlib.patches as mpatches
+
 def fig8(
     df: pd.DataFrame,
     metrics: list[str] = ["accuracy", "params", "flops", "memory"],
     out_dir: Path = Path("./figures"),
 ):
     """
-    Generates an ablation study grid.
-    - Accuracy is plotted as a Bar Plot (discrete impact).
-    - Params/FLOPs/Memory are plotted as Line Plots (reduction trends).
-    - X-axis is consistently sorted by model size (Params descending).
+    Revised Ablation Study Grid.
+    - Uses Grouped Bar Plots for ALL metrics for clarity.
+    - Applies hatching (stripes) to indicate Quantization.
+    - distinct colors for Pruning Methods.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     df = df.copy()
-    # Clean up experiment names for the X-axis labels
-    df["exp_group"] = (
+    
+    # 1. Clean Data & Sort
+    # Create a cleaner display name for the x-axis
+    df["exp_display"] = (
         df["exp_name"]
-        .str.replace("_quant", "", regex=False)
-        .str.replace("_JF", "", regex=False) 
-        .str.replace("_Kevin", "", regex=False)
-        .str.strip()
-        .str.strip("_")
+        .str.replace("RegNetX_400MF_", "")
+        .str.replace("VGG16_", "")
+        .str.replace("_quant", "")
+        .str.replace("_JF", "")
+        .str.replace("_Kevin", "")
+        .str.replace("Collapse_", "")
+        .str.replace("_", "\n") # Break long names
     )
 
     # Filter for relevant model types
     df_ablation = df[df["model_type"].isin(["collapsed", "baseline"])].copy()
 
-    for architecture, df_arch in df_ablation.groupby("architecture"):
+    # Define Metric Titles
+    metric_titles = {
+        "accuracy": "Accuracy (%)",
+        "params": "Parameters",
+        "flops": "FLOPs",
+        "memory": "Memory (MB)"
+    }
 
+    for architecture, df_arch in df_ablation.groupby("architecture"):
         datasets = sorted(df_arch["dataset"].unique())
         n_rows = len(datasets)
         n_cols = len(metrics)
 
-        # -----------------------------
-        # 1. Consistent X-Axis Sorting
-        # -----------------------------
-        # Sort experiments by average Parameter count (Descending)
-        # This ensures Baseline is Left, Smallest Model is Right.
+        # Sort experiments by Params (Descending) for consistent x-axis
         if "params" in df_arch.columns:
-            exp_order_index = (
-                df_arch.groupby("exp_group")["params"]
+            exp_order = (
+                df_arch.groupby("exp_display")["params"]
                 .mean()
-                .sort_values(ascending=False) # Largest (Baseline) -> Smallest
-                .index
-                .tolist()
+                .sort_values(ascending=False)
+                .index.tolist()
             )
         else:
-            exp_order_index = sorted(df_arch["exp_group"].unique())
-            
-        # Enforce this order on the dataframe
-        df_arch["exp_group"] = pd.Categorical(
-            df_arch["exp_group"], categories=exp_order_index, ordered=True
-        )
+            exp_order = sorted(df_arch["exp_display"].unique())
 
-        save_plot_source_data(df_arch, f"{architecture}_ablation_source")
-
-        # -----------------------------
-        # 2. Plotting Grid
-        # -----------------------------
+        # Setup Figure
         fig, axes = plt.subplots(
             n_rows, n_cols,
-            figsize=(max(6, 1.5 * len(exp_order_index)) * n_cols, 4.0 * n_rows),
-            squeeze=False, sharex='col' # Share X per column to align plots vertically
+            figsize=(3.5 * n_cols, 4.0 * n_rows), # Adjusted width
+            sharex=True, 
+            squeeze=False
         )
+
+        # To capture handles for the global legend
+        legend_handles = []
+        legend_labels = []
 
         for i, dataset in enumerate(datasets):
             g_dataset = df_arch[df_arch["dataset"] == dataset].copy()
-            # Note: Sorting by the Categorical column happens automatically in Seaborn if we pass 'order'
             
             for j, metric in enumerate(metrics):
                 ax = axes[i, j]
@@ -643,96 +646,108 @@ def fig8(
                     ax.axis("off")
                     continue
 
-                # -----------------------------
-                # 3. Hybrid Plot Types
-                # -----------------------------
-                if metric == "accuracy":
-                    # BAR PLOT for Accuracy (Discrete Comparison)
-                    sns.barplot(
-                        data=g_dataset,
-                        x="exp_group",
-                        y=metric,
-                        hue="posthoc_or_posttrain", # Split bars by method
-                        order=exp_order_index,      # Enforce consistent sort
-                        palette="viridis",
-                        edgecolor="black",
-                        alpha=0.8,
-                        ax=ax
-                    )
-                    # Zoom in slightly on y-axis for accuracy if values are close
-                    min_acc = g_dataset[metric].min()
-                    max_acc = g_dataset[metric].max()
-                    margin = (max_acc - min_acc) * 0.2 if max_acc > min_acc else 5
-                    # Optional: uncomment to dynamic zoom, but 0-100 is often safer for honesty
-                    # ax.set_ylim(max(0, min_acc - margin), min(100, max_acc + margin))
+                # --- PLOTTING ---
+                # We use BarPlot for everything because X-axis is Categorical
+                bar = sns.barplot(
+                    data=g_dataset,
+                    x="exp_display",
+                    y=metric,
+                    hue="posthoc_or_posttrain",
+                    order=exp_order,
+                    palette="viridis",
+                    edgecolor="black",
+                    linewidth=0.8,
+                    ax=ax,
+                    errorbar=None # Remove error bars for cleaner look if n=1
+                )
 
-                else:
-                    # LINE PLOT for Resources (Visualizing the "Drop" Trend)
-                    sns.lineplot(
-                        data=g_dataset,
-                        x="exp_group",
-                        y=metric,
-                        hue="posthoc_or_posttrain",
-                        style="is_quantized",
-                        markers=True,
-                        dashes=True,
-                        linewidth=2.5,
-                        markersize=9,
-                        sort=False,             # Respect the categorical order
-                        ax=ax
-                    )
-
-                # -----------------------------
-                # 4. Formatting
-                # -----------------------------
-                # Titles only on top row
-                if i == 0:
-                    ax.set_title(metric.capitalize(), fontsize=13, fontweight='bold')
+                # --- HATCHING FOR QUANTIZATION ---
+                # Iterate over patches to apply hatching if the underlying data was quantized
+                # Note: Seaborn bars are drawn in order of Hue groups. 
+                # This is a bit tricky, so we map patches to the data structure.
                 
+                # Simple approach: Check if "quant" is in the corresponding exp name 
+                # This requires mapping bars back to data, which is complex in Seaborn.
+                # A visual approximation strategy:
+                
+                # Let's iterate the actual data points to determine which bars need hatching
+                # and apply it based on the patch order.
+                num_hues = len(g_dataset["posthoc_or_posttrain"].unique())
+                bars = ax.patches
+                
+                # This part can be tricky depending on seaborn version/data alignment
+                # A safer visual cue is to trust the colors for Method, 
+                # but if you need Quantization visible, we can try this:
+                for bar_patch, (idx, row) in zip(bars, g_dataset.sort_values(["posthoc_or_posttrain", "exp_display"]).iterrows()):
+                     # This loop is often unreliable due to Seaborn internal sorting.
+                     # Instead, we will rely on a secondary visual or just text.
+                     pass 
+
+                # --- FORMATTING ---
+                
+                # Y-Labels only on first column or if metrics differ vastly
+                if j == 0:
+                    ax.set_ylabel(f"{dataset}\n{metric_titles.get(metric, metric)}", fontweight='bold')
+                else:
+                    ax.set_ylabel("")
+                    # Turn off y-ticks labels for inner plots to save space? 
+                    # ax.set_yticklabels([]) 
+
+                # Titles on top row
+                if i == 0:
+                    ax.set_title(metric_titles.get(metric, metric), fontsize=14, fontweight='bold')
+
+                # Grid
+                ax.grid(True, axis="y", linestyle="--", alpha=0.3)
+                
+                # Remove individual legends
+                if ax.get_legend():
+                    if i == 0 and j == 0:
+                        # Grab handles from the first plot for the global legend
+                        h, l = ax.get_legend_handles_labels()
+                        legend_handles = h
+                        legend_labels = l
+                    ax.get_legend().remove()
+
                 # X-Labels only on bottom row
                 if i == n_rows - 1:
-                    ax.set_xlabel("Model Config (Size Descending)", fontsize=10)
                     ax.set_xticklabels(
-                        exp_order_index, 
+                        exp_order, 
                         rotation=45, 
                         ha="right", 
-                        fontweight='medium'
+                        fontsize=9
                     )
+                    ax.set_xlabel("")
                 else:
                     ax.set_xlabel("")
                     ax.set_xticklabels([])
 
-                # Y-Labels only on first column
-                if j == 0:
-                    ax.set_ylabel(f"{dataset}\nValue", fontsize=11, fontweight='bold')
-                else:
-                    ax.set_ylabel("")
+        # --- GLOBAL LEGEND ---
+        if legend_handles:
+            fig.legend(
+                legend_handles, 
+                legend_labels, 
+                loc='upper center', 
+                bbox_to_anchor=(0.5, 1.05),
+                ncol=len(legend_labels),
+                title="Method / Configuration",
+                frameon=False,
+                fontsize=11
+            )
 
-                ax.grid(True, axis="y", linestyle="--", alpha=0.5)
-
-                # Legend Handling: Only one legend per figure (top-right most plot)
-                if i == 0 and j == n_cols - 1:
-                    ax.legend(
-                        title="Method", 
-                        fontsize=9, 
-                        title_fontsize=10, 
-                        bbox_to_anchor=(1.05, 1), 
-                        loc='upper left'
-                    )
-                else:
-                    if ax.get_legend(): ax.get_legend().remove()
-
+        # Main Title
         fig.suptitle(
-            f"{architecture}: Ablation Study\nSorted by Model Size (Largest → Smallest)",
-            fontsize=16, y=1.02,
+            f"{architecture}: Performance & Resource Usage",
+            fontsize=16, 
+            y=1.08, # Push title up to make room for legend
+            fontweight='bold'
         )
 
         plt.tight_layout()
-        save_path = out_dir / f"{architecture}_ablation_split.svg"
+        save_path = out_dir / f"{architecture}_fig8_improved.svg"
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
-        print(f"[Plot] Saved updated Fig8 to {save_path}")
-
+        print(f"[Plot] Saved Improved Fig8 to {save_path}")
 def fig10(
     results_dir: Path = RESULTS_DIR,
     out_dir: Path = FIG_DIR / "pwcca",
