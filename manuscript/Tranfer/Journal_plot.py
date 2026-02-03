@@ -565,7 +565,6 @@ def fig7(df: pd.DataFrame):
     plt.savefig(FIG_DIR / "fig7_method_delta.svg", bbox_inches='tight')
     plt.close()
 
-
 import matplotlib.patches as mpatches
 
 def fig8(
@@ -574,9 +573,9 @@ def fig8(
     out_dir: Path = Path("./figures"),
 ):
     """
-    Revised Ablation Study Grid.
-    - Uses Grouped Bar Plots for ALL metrics for clarity.
-    - Applies hatching (stripes) to indicate Quantization.
+    Revised Ablation Study Grid (Wide Format).
+    - Wider aspect ratio to prevent bar compression.
+    - Robust hatching for Quantization (Stripes = Quantized).
     - distinct colors for Pruning Methods.
     """
     out_dir = Path(out_dir)
@@ -584,12 +583,13 @@ def fig8(
 
     df = df.copy()
     
-    # 1. Clean Data & Sort
-    # Create a cleaner display name for the x-axis
+    # 1. Clean Data Names for Display
     df["exp_display"] = (
         df["exp_name"]
         .str.replace("RegNetX_400MF_", "")
         .str.replace("VGG16_", "")
+        .str.replace("MobileNet_", "")
+        .str.replace("ConvNeXt_", "")
         .str.replace("_quant", "")
         .str.replace("_JF", "")
         .str.replace("_Kevin", "")
@@ -613,26 +613,27 @@ def fig8(
         n_rows = len(datasets)
         n_cols = len(metrics)
 
-        # Sort experiments by Params (Descending) for consistent x-axis
+        # Consistent X-Axis Sort Order (by Params Descending)
         if "params" in df_arch.columns:
-            exp_order = (
-                df_arch.groupby("exp_display")["params"]
-                .mean()
-                .sort_values(ascending=False)
-                .index.tolist()
-            )
+            # We aggregate by exp_display to find the global average size order
+            order_series = df_arch.groupby("exp_display")["params"].mean().sort_values(ascending=False)
+            exp_order = order_series.index.tolist()
         else:
             exp_order = sorted(df_arch["exp_display"].unique())
 
-        # Setup Figure
+        # Create a lookup for quantization status to apply hatching later
+        # Returns True if ANY experiment with this display name was quantized
+        quant_lookup = df_arch[df_arch["is_quantized"] == True]["exp_display"].unique()
+
+        # --- FIGURE SETUP ---
+        # Increased width multiplier (from 3.5 to 5.0) to fix compression
         fig, axes = plt.subplots(
             n_rows, n_cols,
-            figsize=(3.5 * n_cols, 4.0 * n_rows), # Adjusted width
+            figsize=(5.0 * n_cols, 4.5 * n_rows), 
             sharex=True, 
             squeeze=False
         )
 
-        # To capture handles for the global legend
         legend_handles = []
         legend_labels = []
 
@@ -647,8 +648,8 @@ def fig8(
                     continue
 
                 # --- PLOTTING ---
-                # We use BarPlot for everything because X-axis is Categorical
-                bar = sns.barplot(
+                # Using barplot. Note: ci=None removes error bars for cleaner look
+                sns.barplot(
                     data=g_dataset,
                     x="exp_display",
                     y=metric,
@@ -658,96 +659,106 @@ def fig8(
                     edgecolor="black",
                     linewidth=0.8,
                     ax=ax,
-                    errorbar=None # Remove error bars for cleaner look if n=1
+                    errorbar=None 
                 )
 
-                # --- HATCHING FOR QUANTIZATION ---
-                # Iterate over patches to apply hatching if the underlying data was quantized
-                # Note: Seaborn bars are drawn in order of Hue groups. 
-                # This is a bit tricky, so we map patches to the data structure.
-                
-                # Simple approach: Check if "quant" is in the corresponding exp name 
-                # This requires mapping bars back to data, which is complex in Seaborn.
-                # A visual approximation strategy:
-                
-                # Let's iterate the actual data points to determine which bars need hatching
-                # and apply it based on the patch order.
-                num_hues = len(g_dataset["posthoc_or_posttrain"].unique())
-                bars = ax.patches
-                
-                # This part can be tricky depending on seaborn version/data alignment
-                # A safer visual cue is to trust the colors for Method, 
-                # but if you need Quantization visible, we can try this:
-                for bar_patch, (idx, row) in zip(bars, g_dataset.sort_values(["posthoc_or_posttrain", "exp_display"]).iterrows()):
-                     # This loop is often unreliable due to Seaborn internal sorting.
-                     # Instead, we will rely on a secondary visual or just text.
-                     pass 
+                # --- APPLY HATCHING MANUALLY ---
+                # Iterate over the patches (bars) and check if their label maps to a quantized experiment
+                # The x-tick labels correspond to the order in `exp_order`.
+                # We match the bar's x-position to the category index.
+                for patch in ax.patches:
+                    # Get the center x position of the bar
+                    x_pos = patch.get_x() + patch.get_width() / 2
+                    
+                    # Find which category index this corresponds to
+                    # (Simple rounding works because categorical bars are at integer indices 0, 1, 2...)
+                    cat_idx = int(round(x_pos))
+                    
+                    if 0 <= cat_idx < len(exp_order):
+                        exp_name = exp_order[cat_idx]
+                        # If this experiment name is in our quant_lookup, apply stripes
+                        if exp_name in quant_lookup:
+                            patch.set_hatch('///')
+                            patch.set_edgecolor('black') # Ensure edge is visible
+                            patch.set_linewidth(0.8)
 
                 # --- FORMATTING ---
                 
-                # Y-Labels only on first column or if metrics differ vastly
+                # Y-Labels: Only on the very first column
                 if j == 0:
-                    ax.set_ylabel(f"{dataset}\n{metric_titles.get(metric, metric)}", fontweight='bold')
+                    ax.set_ylabel(f"{dataset}\n{metric_titles.get(metric, metric)}", fontweight='bold', fontsize=11)
                 else:
                     ax.set_ylabel("")
-                    # Turn off y-ticks labels for inner plots to save space? 
-                    # ax.set_yticklabels([]) 
-
-                # Titles on top row
+                
+                # Metric Titles: Only on the top row
                 if i == 0:
                     ax.set_title(metric_titles.get(metric, metric), fontsize=14, fontweight='bold')
 
-                # Grid
+                # Grid lines
                 ax.grid(True, axis="y", linestyle="--", alpha=0.3)
                 
-                # Remove individual legends
+                # Extract legend handles from the first valid plot
+                if i == 0 and j == 0 and not legend_handles:
+                    h, l = ax.get_legend_handles_labels()
+                    legend_handles.extend(h)
+                    legend_labels.extend(l)
+
+                # Remove the default per-plot legend
                 if ax.get_legend():
-                    if i == 0 and j == 0:
-                        # Grab handles from the first plot for the global legend
-                        h, l = ax.get_legend_handles_labels()
-                        legend_handles = h
-                        legend_labels = l
                     ax.get_legend().remove()
 
-                # X-Labels only on bottom row
+                # X-Labels: Only on the bottom row
                 if i == n_rows - 1:
                     ax.set_xticklabels(
                         exp_order, 
                         rotation=45, 
                         ha="right", 
-                        fontsize=9
+                        fontsize=9,
+                        fontweight='medium'
                     )
                     ax.set_xlabel("")
                 else:
                     ax.set_xlabel("")
-                    ax.set_xticklabels([])
+                    # Hide ticks for cleaner look on upper rows
+                    ax.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
 
-        # --- GLOBAL LEGEND ---
-        if legend_handles:
-            fig.legend(
-                legend_handles, 
-                legend_labels, 
-                loc='upper center', 
-                bbox_to_anchor=(0.5, 1.05),
-                ncol=len(legend_labels),
-                title="Method / Configuration",
-                frameon=False,
-                fontsize=11
-            )
+        # --- GLOBAL LEGEND CONSTRUCTION ---
+        # 1. Method Legend (Colors)
+        # (Already captured in legend_handles)
+        
+        # 2. Quantization Legend (Patterns)
+        # Create dummy patches for the legend
+        quant_patch = mpatches.Patch(facecolor='white', edgecolor='black', hatch='///', label='Quantized (Int8)')
+        fp_patch = mpatches.Patch(facecolor='white', edgecolor='black', label='Full Precision (FP32)')
+        
+        # Combine handles
+        final_handles = legend_handles + [fp_patch, quant_patch]
+        final_labels = legend_labels + ["Full Precision", "Quantized"]
+
+        fig.legend(
+            final_handles, 
+            final_labels, 
+            loc='upper center', 
+            bbox_to_anchor=(0.5, 1.06), # Push slightly above title
+            ncol=len(final_labels),
+            frameon=False,
+            fontsize=11
+        )
 
         # Main Title
         fig.suptitle(
             f"{architecture}: Performance & Resource Usage",
-            fontsize=16, 
-            y=1.08, # Push title up to make room for legend
+            fontsize=18, 
+            y=1.09, # Make room for legend
             fontweight='bold'
         )
 
         plt.tight_layout()
-        save_path = out_dir / f"{architecture}_fig8_improved.svg"
+        save_path = out_dir / f"{architecture}_fig8_wide.svg"
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
-        print(f"[Plot] Saved Improved Fig8 to {save_path}")
+        print(f"[Plot] Saved Wide Fig8 to {save_path}")
+
 def fig10(
     results_dir: Path = RESULTS_DIR,
     out_dir: Path = FIG_DIR / "pwcca",
