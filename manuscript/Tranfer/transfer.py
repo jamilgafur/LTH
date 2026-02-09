@@ -11,13 +11,14 @@ from pyPrune.pruneMethods.IterativePruner import IterativePruner
 from pyPrune.strategies import MagnitudePruningStrategy
 from experiments import *
 from utils import *
+from plots import *
 from pyPrune.utils import *
 from torch.backends import cudnn
 import random
 import numpy as np
 import seaborn as sns
 import pandas as pd
-
+import matplotlib.pyplot as plt
 # set seed for reproducibility
 seed = 42
 random.seed(seed)
@@ -570,30 +571,12 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
         except OSError:
             print("[WARN] Could not remove lock directory (it may have been removed already).")
 
-
 def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
     """
-    Analyzes Conv2d and Linear layers using 4 metrics and saves individual plots.
-    
-    Structure:
-        runs/plots/
-            ├── identity_score/
-            │     └── RegNetX_Cifar100.png
-            ├── arithmetic_intensity/
-            │     └── RegNetX_Cifar100.png
-            ├── weight_magnitude/
-            │     └── ...
-            └── activation_variance/
-                  └── ...
-
-    Args:
-        model: PyTorch model
-        input_tensor: Sample input for forward pass
-        save_root_dir: Root directory for plots (e.g. 'runs/plots')
-        model_name: Name of the model (for title/filename)
-        dataset_name: Name of the dataset (for title/filename)
+    Analyzes Conv2d and Linear layers using metrics, calculates Adaptive Collapse Scores,
+    and generates research-quality plots.
     """
-    print(f"[•] Running Extended Collapse Heuristics (Conv/Linear Only) for {model_name} on {dataset_name}...")
+    print(f"[•] Running Extended Collapse Heuristics for {model_name} on {dataset_name}...")
     
     model.eval()
     if len(input_tensor.shape) == 3:
@@ -619,7 +602,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
             x = inp[0].detach()
             y = out.detach()
             
-            # --- Metric A: Identity Score (Cosine Sim) ---
+            # Metric A: Identity Score
             identity_score = 0.0
             if x.shape == y.shape:
                 x_flat = x.flatten(start_dim=1)
@@ -629,17 +612,17 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                 except:
                     identity_score = 0.0
             
-            # --- Metric B: Memory Bytes (for Intensity) ---
+            # Metric B: Memory Bytes
             dtype_size = x.element_size()
             weight_bytes = sum(p.numel() * p.element_size() for p in module.parameters())
             total_bytes = (x.numel() * dtype_size) + (y.numel() * dtype_size) + weight_bytes
 
-            # --- Metric C: Weight Magnitude (Normalized L1) ---
+            # Metric C: Weight Magnitude
             weight_l1 = 0.0
             if hasattr(module, 'weight') and module.weight is not None:
                 weight_l1 = module.weight.norm(p=1).item() / module.weight.numel()
 
-            # --- Metric D: Activation Variance ---
+            # Metric D: Activation Variance
             act_var = y.var().item()
             
             layer_stats[name] = {
@@ -686,12 +669,28 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         print("[WARN] No layers found for analysis.")
         return df
 
-    # Save Raw Data CSV in the root plot dir
+    # --- STEP 4: Calculate Adaptive Collapse Score ---
+    print("[•] Auto-calibrating collapse thresholds...")
+    tuned_params = calibrate_hyperparameters(df)
+    
+    df['collapse_score'] = df.apply(
+        lambda row: calculate_adaptive_score(row, len(df), tuned_params), 
+        axis=1
+    )
+
+    # Save Enhanced CSV
     csv_name = f"{model_name}_{dataset_name}_heuristics.csv"
     df.to_csv(os.path.join(save_root_dir, csv_name), index=False)
 
-    # 4. Plotting Configuration
-    # We define distinct metrics with their specific colors and folder names
+    # --- STEP 5: Generate Research Paper Plot (Collapse Score) ---
+    plot_paper_quality_scores(
+        df=df, 
+        save_root_dir=save_root_dir, 
+        model_name=model_name, 
+        dataset_name=dataset_name
+    )
+
+    # --- STEP 6: Generate Original 4 Metric Plots ---
     metrics_config = [
         {
             "col": "identity_score",
@@ -699,11 +698,11 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
             "folder": "identity_score",
             "color": "mediumpurple",
             "log_scale": False,
-            "threshold_text": 0.8  # Show text value if bar > 0.8
+            "threshold_text": 0.8
         },
         {
             "col": "arithmetic_intensity",
-            "title": "Arithmetic Intensity (FLOPs/Byte) - Lower = Memory Bound",
+            "title": "Arithmetic Intensity (FLOPs/Byte)",
             "folder": "arithmetic_intensity",
             "color": "coral",
             "log_scale": True,
@@ -711,7 +710,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         },
         {
             "col": "weight_l1",
-            "title": "Weight Magnitude (Norm. L1) - Lower = Insignificant Weights",
+            "title": "Weight Magnitude (Norm. L1)",
             "folder": "weight_magnitude",
             "color": "teal",
             "log_scale": False,
@@ -719,7 +718,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         },
         {
             "col": "act_var",
-            "title": "Activation Variance - Lower = Dead/Static Features",
+            "title": "Activation Variance",
             "folder": "activation_variance",
             "color": "goldenrod",
             "log_scale": True,
@@ -727,19 +726,13 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         }
     ]
 
-    # Generate Individual Plots
     for config in metrics_config:
-        # Create sub-directory: runs/plots/{folder_name}
         metric_dir = os.path.join(save_root_dir, config["folder"])
         os.makedirs(metric_dir, exist_ok=True)
         
-        # Setup Figure
-        plt.figure(figsize=(max(12, len(df)*0.3), 6)) # Dynamic width based on layer count
-
-        # Draw Plot
+        plt.figure(figsize=(max(12, len(df)*0.3), 6))
         ax = sns.barplot(x="layer", y=config["col"], data=df, color=config["color"])
         
-        # Styling
         full_title = f"{config['title']}\nModel: {model_name} | Dataset: {dataset_name}"
         ax.set_title(full_title, fontsize=12, fontweight='bold')
         ax.grid(axis='y', linestyle='--', alpha=0.5)
@@ -747,7 +740,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         if config["log_scale"]:
             ax.set_yscale("log")
             
-        # Optional: Add text labels for high values (used for Identity Score)
         if config["threshold_text"]:
             for i, row in enumerate(df.itertuples()):
                 val = getattr(row, config["col"])
@@ -757,14 +749,11 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         if config["col"] == "identity_score":
             ax.set_ylim(0, 1.05)
 
-        # X-Axis Labels
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=8)
         ax.set_xlabel("Layer Name", fontsize=10)
         ax.set_ylabel(config["col"], fontsize=10)
 
         plt.tight_layout()
-        
-        # Save File: runs/plots/{folder}/{model}_{dataset}.png
         filename = f"{model_name}_{dataset_name}.png"
         save_path = os.path.join(metric_dir, filename)
         plt.savefig(save_path, dpi=150)
@@ -773,7 +762,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         print(f"    [Saved] {config['folder']} -> {save_path}")
 
     return df
-
 
 def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
     """Runs the appropriate experiment based on the arguments (JF or Kevin)."""

@@ -12,7 +12,67 @@ from typing import List, Dict
 import matplotlib.pyplot as plt
 matplotlib.set_loglevel('ERROR')
 
-
+def plot_paper_quality_scores(df, save_root_dir, model_name, dataset_name):
+    """
+    Generates a publication-ready bar chart for Collapse Scores.
+    Features:
+    - Color-coded bars (Red=Danger, Green=Safe)
+    - Threshold lines at 0.4 and 0.8
+    - Clean, high-DPI output
+    """
+    # Create directory
+    score_dir = os.path.join(save_root_dir, "collapse_score")
+    os.makedirs(score_dir, exist_ok=True)
+    
+    # Set aesthetics (Whitegrid is standard for papers)
+    sns.set_theme(style="whitegrid")
+    plt.figure(figsize=(max(10, len(df)*0.25), 5))
+    
+    # Custom Color Map based on Safety
+    # Green > 0.8 (Safe), Red < 0.4 (Danger), Yellow (Risk)
+    colors = [
+        '#2ecc71' if x > 0.8 else '#e74c3c' if x < 0.4 else '#f1c40f' 
+        for x in df['collapse_score']
+    ]
+    
+    # Draw Bar Chart
+    ax = sns.barplot(
+        x="layer", 
+        y="collapse_score", 
+        data=df, 
+        palette=colors,
+        edgecolor="black",  # Adds definition for print
+        linewidth=0.5
+    )
+    
+    # Add Threshold Zones (Research Standard)
+    plt.axhline(0.8, color='darkgreen', linestyle='--', alpha=0.7, linewidth=1.5, label='Safe Zone (>0.8)')
+    plt.axhline(0.4, color='darkred', linestyle='--', alpha=0.7, linewidth=1.5, label='Critical Zone (<0.4)')
+    
+    # Formatting
+    plt.title(f"Structural Collapse Score\n{model_name} on {dataset_name}", fontsize=14, fontweight='bold', pad=15)
+    plt.ylabel("Collapse Score (CS)", fontsize=12, fontweight='bold')
+    plt.xlabel("Layer Depth (Input $\\to$ Output)", fontsize=12)
+    
+    # X-Axis Ticks (Rotate for readability)
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=8)
+    
+    # Y-Axis Limits (0 to 1.1 to show top clearance)
+    plt.ylim(0, 1.1)
+    
+    # Legend
+    plt.legend(loc='upper right', frameon=True, framealpha=0.9)
+    
+    # Layout adjustment
+    plt.tight_layout()
+    
+    # Save High-Res (300 DPI is standard for latex/papers)
+    filename = f"{model_name}_{dataset_name}_collapse_score.png"
+    save_path = os.path.join(score_dir, filename)
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    print(f"    [Saved] Research Plot -> {save_path}")
 def table_failure_modes(collapse_results, save_dir):
     df = pd.DataFrame(collapse_results)
     failures = df[~df["accepted"]]

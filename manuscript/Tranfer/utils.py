@@ -420,6 +420,81 @@ def describe_model(model, loader, device='cpu'):
     # layer_stats(model)
     print("=" * 60)
 
+
+def calibrate_hyperparameters(df):
+    """
+    Analyzes the heuristic DataFrame to find optimal scaling factors.
+    Returns a dict of tuned parameters: {'lambda_v', 'd_0'}
+    """
+    # 1. Calibrate Lambda (Variance Sensitivity)
+    # We want the bottom 20% of layers (by variance) to have a Silence Score > 0.5
+    # Formula: exp(-lambda * var_20th) = 0.5
+    # Solve for lambda: lambda = -ln(0.5) / var_20th
+    
+    # Filter for valid variances (conv/linear layers only)
+    variances = df[df['act_var'] > 0]['act_var']
+    
+    if variances.empty:
+        return {'lambda_v': 10.0, 'd_0': 0.15} # Fallback defaults
+        
+    var_20th_percentile = np.percentile(variances, 20)
+    
+    # Avoid division by zero if variance is extremely small
+    var_threshold = max(var_20th_percentile, 1e-6)
+    
+    lambda_v = -np.log(0.5) / var_threshold
+    
+    # 2. Calibrate Depth Gate (d_0)
+    # We assume the "Stem" is roughly the first 10% of layers, 
+    # but at least the first 5 layers.
+    total_layers = len(df)
+    stem_layers = max(5, int(total_layers * 0.10))
+    d_0 = stem_layers / total_layers
+    
+    print(f"[Auto-Calibrate] Tuned lambda_v: {lambda_v:.4f} (based on p20 var: {var_threshold:.4e})")
+    print(f"[Auto-Calibrate] Tuned d_0: {d_0:.4f} (Protecting first {stem_layers} layers)")
+    
+    return {'lambda_v': lambda_v, 'd_0': d_0}
+
+def calculate_adaptive_score(row, total_layers, tuned_params):
+    """
+    Calculates CS using the auto-calibrated parameters.
+    """
+    # Unpack tuned params
+    lambda_v = tuned_params['lambda_v']
+    d_0 = tuned_params['d_0']
+    
+    # Fixed params (these are generally robust)
+    k = 20.0       # Steepness of depth gate (20 makes it a sharp wall)
+    gamma = 0.2    # Residual bonus
+    
+    # --- Metrics from Dataframe ---
+    variance = row['act_var']
+    identity = row['identity_score']
+    # We approximate 'has_residual' by checking layer name or using a passed flag
+    # For now, we'll assume False or you can map it from your model graph
+    has_residual = False 
+    
+    # Calculate Relative Depth (0.0 to 1.0)
+    # Assuming the dataframe index corresponds to depth
+    relative_depth = (row.name + 1) / total_layers
+    
+    # 1. Depth Gating
+    depth_gate = 1 / (1 + np.exp(-k * (relative_depth - d_0)))
+    
+    # 2. Functional Score
+    silence_score = np.exp(-lambda_v * variance)
+    redundancy_score = identity
+    
+    # Weighted average (favoring silence slightly as it's a stronger signal)
+    functional_score = 0.6 * silence_score + 0.4 * redundancy_score
+    
+    # 3. Residual Bonus
+    residual_multiplier = 1.0 + (gamma if has_residual else 0.0)
+    
+    final_score = depth_gate * functional_score * residual_multiplier
+    
+    return final_score
 # ===============================
 # Basic Counting Utilities
 # ===============================
