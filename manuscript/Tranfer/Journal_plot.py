@@ -119,7 +119,7 @@ def infer_architecture_from_path(p: Path) -> str:
 
 def infer_posthoc_or_posttrain(exp_name: str) -> str:
     n = exp_name.lower()
-    if "jf" in n: return "Post-Prune (JF)"
+    if "jf" in n and ("vgg" in n or "reg" in n): return "Pruned (JF)"
     if "kevin" in n: return "No-Prune (Kevin)"
     if "original" in n or "baseline" in n: return "Baseline"
     return "Unknown"
