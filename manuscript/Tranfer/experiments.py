@@ -242,6 +242,7 @@ def run_experiment(
     import os, glob, torch, torch.optim as optim
     from torch.cuda.amp import GradScaler
 
+    # Adjust name for quantization if needed
     if quant:
         exp_name += "_quant"
 
@@ -256,13 +257,33 @@ def run_experiment(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    # 2. Initialize Training Components
-    # These MUST be initialized before loading the checkpoint
+    # Define the base name used for all checkpoints
+    base_ckpt_name = f"{workflow}_{exp_name}"
+
+    # ---------------------------------------------------------
+    # 2. Check for "Final" Completion (NEW ADDITION)
+    # ---------------------------------------------------------
+    final_ckpt_path = os.path.join(ckpt_dir, f"final_{base_ckpt_name}.pt")
+    
+    if os.path.exists(final_ckpt_path):
+        print(f"[✓] Experiment '{exp_name}' already completed. Found: {os.path.basename(final_ckpt_path)}")
+        print(f"    Skipping training and reloading metrics...")
+        
+        # Load the final data to return it (so downstream code doesn't break)
+        try:
+            checkpoint = torch.load(final_ckpt_path, map_location=device)
+            return checkpoint.get("data", {})
+        except Exception as e:
+            print(f"[!] Corrupt final checkpoint found ({e}). Restarting experiment...")
+            # If load fails, we fall through and restart/resume as normal
+            pass
+
+    # 3. Initialize Training Components
+    # These MUST be initialized before loading an epoch checkpoint
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     scaler = GradScaler(enabled=quant)
     
-    # 3. Checkpoint Discovery & State Initialization
-    base_ckpt_name = f"{workflow}_{exp_name}"
+    # 4. Checkpoint Discovery (Intermediate Epochs)
     ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
     existing_ckpts = sorted(
         glob.glob(ckpt_pattern),
@@ -278,10 +299,10 @@ def run_experiment(
         "patience_counter": 0
     }
 
-    # 4. Resume Logic (State Dict approach)
+    # 5. Resume Logic (State Dict approach)
     if existing_ckpts:
         last_ckpt = existing_ckpts[-1]
-        print(f"[•] Loading checkpoint: {last_ckpt}")
+        print(f"[•] Loading intermediate checkpoint: {last_ckpt}")
         checkpoint = torch.load(last_ckpt, map_location=device)
 
         # Restore structural states
@@ -299,10 +320,9 @@ def run_experiment(
         all_data = checkpoint['data']
         print(f"[✓] Resumed at epoch {start_epoch}")
     else:
-        print("[•] No checkpoint found — starting fresh")
+        print("[•] No intermediate checkpoint found — starting fresh")
 
-    # 5. Training Loop
-    # Note: We now loop here and call a single-epoch trainer
+    # 6. Training Loop
     for epoch in range(start_epoch + 1, epochs + 101 if post_compress_epochs else epochs + 1):
         print(f"[•] Epoch {epoch}")
 
@@ -322,7 +342,7 @@ def run_experiment(
         else:
             all_data["patience_counter"] += 1
 
-        # 6. Save State-Aware Checkpoint
+        # Save State-Aware Checkpoint
         ckpt_path = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch}.pt")
         tmp_path = ckpt_path + ".tmp"
 
@@ -351,8 +371,8 @@ def run_experiment(
                 break
 
     # 7. Finalization & Diagnostics
-    final_path = os.path.join(ckpt_dir, f"final_{base_ckpt_name}.pt")
-    torch.save({"model_state_dict": model.state_dict(), "data": all_data}, final_path)
+    # We re-use final_ckpt_path defined in Step 2.5
+    torch.save({"model_state_dict": model.state_dict(), "data": all_data}, final_ckpt_path)
 
     # Performance Benchmarking
     param_count = count_trainable_params(model)
@@ -379,6 +399,7 @@ def run_experiment(
 
     print(f"[✓] Experiment '{exp_name}' completed.")
     return all_data
+
 # =====================================================
 # === Experiment Entry Points (JF & Kevin) ===
 # =====================================================
