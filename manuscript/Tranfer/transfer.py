@@ -488,60 +488,111 @@ def initialize_model_and_data(args):
 # -------------------------------------------------------------
 def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epochs, device, dataset, model_name):
     """
-    Safely runs the pre-experiment training and heuristic analysis.
+    Safely runs the pre-experiment training and heuristic analysis with Checkpointing.
     
-    Changes:
-    - Creates atomic locks to prevent race conditions in HPC arrays.
-    - passes explicit model_name and dataset to the analysis function for better file naming/titles.
-    - Generates 4 separate plots in categorized directories (e.g. runs/plots/identity_score/Model_Dataset.png).
+    Updates:
+    - Resumes from the last saved epoch if interrupted.
+    - Saves checkpoints to 'runs/checkpoints/heuristics'.
+    - Cleans up old checkpoints to save space.
     """
-    # Define paths
+    import os
+    import glob
+    import torch
+    import time
+    
+    # --- 1. Define Paths ---
     lock_dir_path = f"{model_name}_{dataset}_heuristics.lock_dir"
     done_marker_path = f"{model_name}_{dataset}_heuristics_done.marker"
     
-    # Base directory for all plots
     plots_root_dir = os.path.join("runs", "plots")
+    ckpt_root_dir = os.path.join("runs", "checkpoints", "heuristics")
+    
     ensure_dir(plots_root_dir)
+    ensure_dir(ckpt_root_dir)
 
-    # 1. Check if already done
+    # --- 2. Check Completion ---
     if os.path.exists(done_marker_path):
-        print("[INFO] Heuristic profiling already completed. Skipping.")
+        print(f"[INFO] Heuristic profiling for {model_name} already completed. Skipping.")
         return
 
-    # 2. Attempt to acquire lock via Atomic Directory Creation
-    print(f"[INFO] Attempting to acquire lock for heuristic profiling: {lock_dir_path}")
+    # --- 3. Acquire Lock ---
+    print(f"[INFO] Attempting to acquire lock: {lock_dir_path}")
     try:
         os.mkdir(lock_dir_path)
-        print("[INFO] Lock acquired! Starting training for heuristic analysis...")
+        print("[INFO] Lock acquired! Starting/Resuming heuristic analysis...")
     except FileExistsError:
-        print("[INFO] Lock busy. Another job is performing the heuristic profiling. Skipping.")
+        print("[INFO] Lock busy. Another job is running this. Skipping.")
         return
     except OSError as e:
-        print(f"[WARN] Failed to acquire lock due to unexpected OS error: {e}")
+        print(f"[WARN] OS Error acquiring lock: {e}")
         return
 
     try:
-        # --- Critical Section (Only one job runs this) ---
+        # --- Critical Section ---
         
-        # A. Resolve class from string if necessary
+        # A. Initialize Model & Optimizer
         if isinstance(model_class, str):
             model_class_obj = eval(model_class)
         else:
             model_class_obj = model_class
 
-        # B. Initialize fresh model
         model = model_class_obj(**model_kwargs).to(device)
-        optimizer, scheduler = create_optimizer_scheduler(model, learning_rate=0.001) 
         
-        # C. Train for specified epochs to stabilize weights
-        print(f"[INFO] Training model for {epochs} epochs to analyze functional redundancy...")
-        for epoch in range(1, epochs + 1):
-            train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, device)
-            print(f"    [Epoch {epoch}] Loss: {train_loss:.4f} | Acc: {train_acc:.2f}%")
-            if scheduler: scheduler.step()
+        # Initialize Optimizer (Standard Adam if helper not available)
+        # Using standard Adam here to ensure self-containment, or use your helper if available
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+        # B. Checkpoint Discovery & Resumption
+        ckpt_prefix = f"{model_name}_{dataset}_heuristic"
+        ckpt_pattern = os.path.join(ckpt_root_dir, f"{ckpt_prefix}_epoch*.pt")
+        
+        # Find all existing checkpoints
+        existing_ckpts = sorted(
+            glob.glob(ckpt_pattern),
+            key=lambda x: int(os.path.basename(x).split("epoch")[-1].split(".")[0])
+        )
+
+        start_epoch = 0
+        
+        if existing_ckpts:
+            last_ckpt = existing_ckpts[-1]
+            print(f"[INFO] Found checkpoint: {last_ckpt}. Resuming...")
+            checkpoint = torch.load(last_ckpt, map_location=device)
             
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            start_epoch = checkpoint['epoch']
+            print(f"[✓] Resumed from Epoch {start_epoch}")
+        else:
+            print(f"[INFO] No checkpoint found. Starting from Epoch 1.")
+
+        # C. Training Loop
+        if start_epoch < epochs:
+            print(f"[INFO] Training model for {epochs} epochs...")
+            
+            for epoch in range(start_epoch + 1, epochs + 1):
+                # Train one epoch
+                train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, device)
+                print(f"    [Epoch {epoch}/{epochs}] Loss: {train_loss:.4f} | Acc: {train_acc:.2f}%")
+                
+                # Save Checkpoint
+                ckpt_path = os.path.join(ckpt_root_dir, f"{ckpt_prefix}_epoch{epoch}.pt")
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'loss': train_loss
+                }, ckpt_path)
+                
+                # Cleanup previous epoch to save space
+                prev_ckpt = os.path.join(ckpt_root_dir, f"{ckpt_prefix}_epoch{epoch-1}.pt")
+                if os.path.exists(prev_ckpt):
+                    os.remove(prev_ckpt)
+        else:
+            print(f"[INFO] Model already trained to {start_epoch} epochs. Proceeding to analysis.")
+
         # D. Run Heuristic Analysis
-        # We pass model_name and dataset explicitly for better plot titles and filenames
+        print("[INFO] Running analysis...")
         input_sample = model_kwargs["one_batch"].to(device)
         
         analyze_collapse_heuristics(
@@ -562,14 +613,18 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
         print(f"[ERROR] An error occurred during heuristic profiling: {e}")
         import traceback
         traceback.print_exc()
+        # Note: We do NOT delete the lock here, so you can investigate.
+        # However, if this crashes, the lock remains 'busy' for future jobs.
+        # You might want to manually delete the .lock_dir if you fix the bug.
 
     finally:
-        # F. Release lock
-        try:
-            os.rmdir(lock_dir_path)
-            print("[INFO] Lock released.")
-        except OSError:
-            print("[WARN] Could not remove lock directory (it may have been removed already).")
+        # F. Release lock (only if we acquired it successfully)
+        if os.path.exists(lock_dir_path):
+            try:
+                os.rmdir(lock_dir_path)
+                print("[INFO] Lock released.")
+            except OSError:
+                print("[WARN] Could not remove lock directory.")
 
 def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
     """
