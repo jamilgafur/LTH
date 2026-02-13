@@ -90,7 +90,10 @@ for model in "${models[@]}"; do
             for quant_flag in "${quant[@]}"; do
                 # Running both pruning/collapse flags (JF = Post-Collapse, Kevin = No-Collapse Baseline)
                 for flag in "JF" "Kevin"; do
-                    
+                    # only run the original model
+                    if [[ "$experiment" != "Original Model" ]]; then
+                        continue
+                    fi
                     # Submit job
                     command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"$experiment\",FLAG=\"$flag\",QUANT=\"$quant_flag\" submit_job.pbs"
                     
