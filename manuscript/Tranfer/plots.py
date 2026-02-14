@@ -38,7 +38,7 @@ def plot_paper_quality_scores(df, save_root_dir, model_name, dataset_name):
     #     df['norm_score'] = (df['collapse_score'] - min_score) / (max_score - min_score)
     # else:
     df['norm_score'] = df['collapse_score'] # Keep original if flat
-        
+    
     # --- 2. Setup Plot ---
     sns.set_theme(style="whitegrid")
     plt.figure(figsize=(max(10, len(df)*0.25), 5))
