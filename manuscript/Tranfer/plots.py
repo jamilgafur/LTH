@@ -8,6 +8,8 @@ import pandas as pd
 import seaborn as sns
 import os
 from typing import List, Dict
+import matplotlib.colors as mcolors
+import matplotlib.cm as cm
 
 import matplotlib.pyplot as plt
 matplotlib.set_loglevel('ERROR')
