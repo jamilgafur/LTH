@@ -34,10 +34,10 @@ def plot_paper_quality_scores(df, save_root_dir, model_name, dataset_name):
     max_score = df['collapse_score'].max()
     
     # Avoid division by zero if all scores are identical
-    if max_score > min_score:
-        df['norm_score'] = (df['collapse_score'] - min_score) / (max_score - min_score)
-    else:
-        df['norm_score'] = df['collapse_score'] # Keep original if flat
+    # if max_score > min_score:
+    #     df['norm_score'] = (df['collapse_score'] - min_score) / (max_score - min_score)
+    # else:
+    df['norm_score'] = df['collapse_score'] # Keep original if flat
         
     # --- 2. Setup Plot ---
     sns.set_theme(style="whitegrid")
@@ -61,7 +61,7 @@ def plot_paper_quality_scores(df, save_root_dir, model_name, dataset_name):
     )
     
     # --- 5. Formatting ---
-    plt.title(f"Structural Stability Score (Normalized)\n{model_name} on {dataset_name}", fontsize=14, fontweight='bold', pad=15)
+    plt.title(f"Structural Stability Score \n{model_name} on {dataset_name}", fontsize=14, fontweight='bold', pad=15)
     plt.ylabel("Stability Score (0=Critical, 1=Safe)", fontsize=12, fontweight='bold')
     plt.xlabel("Layer Depth", fontsize=12)
     
