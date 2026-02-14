@@ -65,40 +65,6 @@ DATASET_ORDER = ["cifar10_", "cifar100_", "tinyimagenet", "imagenet", "ConvNeXt"
 # =========================
 # Data Loading & Utilities
 # =========================
-def load_results() -> pd.DataFrame:
-    files = list(RESULTS_DIR.rglob("*merged_metrics.json"))
-    if not files:
-        raise FileNotFoundError("No merged_metrics.json files found")
-
-    rows = []
-
-    for p in files:
-        dataset = infer_dataset_from_path(p)
-        arch = infer_architecture_from_path(p)
-        
-        with open(p) as f:
-            raw = json.load(f)
-
-        for exp_name, metrics in raw.items():
-           
-            rows.append(
-                {
-                    "dataset": dataset,
-                    "architecture": arch,
-                    "exp_name": exp_name,
-                    "posthoc_or_posttrain": infer_posthoc_or_posttrain(exp_name),
-                    "model_type": infer_model_type(exp_name),
-                    "is_quantized": infer_isquant(exp_name),
-
-                    # Core metrics
-                    "accuracy": metrics.get("final_accuracy"),
-                    "params": metrics.get("param_count"),
-                    "flops": metrics.get("flops"),
-                    "memory": metrics.get("total_size_mb"),
-                }
-            )
-
-    return pd.DataFrame(rows)
 
 def infer_dataset_from_path(p: Path) -> str:
     name = p.parent.parent.name.lower()
@@ -117,12 +83,6 @@ def infer_architecture_from_path(p: Path) -> str:
     if "convnext" in name: return "ConvNeXt"
     return "UnknownArch"
 
-def infer_posthoc_or_posttrain(exp_name: str) -> str:
-    n = exp_name.lower()
-    if "jf" in n and ("vgg" in n or "reg" in n): return "Pruned (JF)"
-    if "kevin" in n: return "No-Prune (Kevin)"
-    if "original" in n or "baseline" in n: return "Baseline"
-    return "Unknown"
 
 def infer_model_type(exp_name: str) -> str:
     n = exp_name.lower()
@@ -571,38 +531,106 @@ import matplotlib.patches as mpatches
 from pathlib import Path
 import pandas as pd
 
+def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
+    """
+    Determines the method group.
+    - Baseline: If 'original' or 'baseline' in name.
+    - Pruned/No-Prune: ONLY for VGG16 and RegNetX.
+    - Collapsed: For all other architectures (averages JF/Kevin).
+    """
+    n = exp_name.lower()
+    
+    if "original" in n or "baseline" in n:
+        return "Baseline"
+        
+    # Only distinguish JF vs Kevin for specific architectures
+    if architecture in ["VGG16", "RegNetX"]:
+        if "jf" in n: return "Pruned (JF)"
+        if "kevin" in n: return "No-Prune (Kevin)"
+        
+    # For ConvNeXt, MobileNet, etc., merge them into one group
+    return "Collapsed"
+
+def load_results() -> pd.DataFrame:
+    files = list(RESULTS_DIR.rglob("*merged_metrics.json"))
+    if not files:
+        # Fallback if no subdirectories found (e.g. flat file)
+        if (RESULTS_DIR / "merged_metrics.json").exists():
+            files = [RESULTS_DIR / "merged_metrics.json"]
+        else:
+            raise FileNotFoundError("No merged_metrics.json files found")
+
+    rows = []
+
+    for p in files:
+        dataset = infer_dataset_from_path(p)
+        arch = infer_architecture_from_path(p)
+        
+        try:
+            with open(p) as f:
+                raw = json.load(f)
+        except Exception as e:
+            print(f"Skipping {p}: {e}")
+            continue
+
+        for exp_name, metrics in raw.items():
+            # Apply new grouping logic
+            method_group = infer_posthoc_or_posttrain(exp_name, arch)
+            
+            rows.append(
+                {
+                    "dataset": dataset,
+                    "architecture": arch,
+                    "exp_name": exp_name,
+                    "posthoc_or_posttrain": method_group, # This is used for Hue
+                    "model_type": infer_model_type(exp_name),
+                    "is_quantized": infer_isquant(exp_name),
+
+                    # Core metrics
+                    "accuracy": metrics.get("final_accuracy"),
+                    "params": metrics.get("param_count"),
+                    "flops": metrics.get("flops"),
+                    "memory": metrics.get("total_size_mb"),
+                }
+            )
+
+    return pd.DataFrame(rows)
+
 def fig8(
     df: pd.DataFrame,
     metrics: list[str] = ["accuracy", "params", "flops", "memory"],
     out_dir: Path = Path("./figures/individual_plots"),
 ):
     """
-    Generates INDIVIDUAL plot files for every dataset/metric combination.
-    - No subplots.
-    - Each chart is saved separately.
-    - Consistent X-axis sorting across metrics.
-    - Robust Hatching for Quantization.
+    Generates improved INDIVIDUAL plot files.
+    - Separates Quantized vs FP32 on X-axis.
+    - Groups "Collapsed" models (averaging JF/Kevin for non-VGG/RegNet).
+    - Applies robust hatching for Quantization.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     df = df.copy()
 
-    # 1. Clean Data Names
-    df["exp_display"] = (
-        df["exp_name"]
-        .str.replace("RegNetX_400MF_", "")
-        .str.replace("VGG16_", "")
-        .str.replace("MobileNet_", "")
-        .str.replace("ConvNeXt_", "")
-        .str.replace("_quant", "")
-        .str.replace("_JF", "")
-        .str.replace("_Kevin", "")
-        .str.replace("Collapse_", "")
-        .str.replace("_", "\n") 
-    )
+    # 1. Create a Clean Base Name (removing meta-tags)
+    def get_base_name(row):
+        n = row["exp_name"]
+        n = n.replace("_quant", "").replace("_JF", "").replace("_Kevin", "")
+        n = n.replace("RegNetX_400MF_", "").replace("VGG16_", "")
+        n = n.replace("MobileNet_", "").replace("ConvNeXt_", "")
+        n = n.replace("Block ", "Block-").replace("Stage ", "Stage-") # Shorten
+        n = n.replace(" Only", "")
+        if "Original" in n or "Baseline" in n: return "Original"
+        return n.strip()
 
-    df_ablation = df[df["model_type"].isin(["collapsed", "baseline"])].copy()
+    df["base_name"] = df.apply(get_base_name, axis=1)
+
+    # 2. Create Display Name: "Stage-1" vs "Stage-1 (Quant)"
+    # This ensures they are separate bars on the X-axis
+    df["display_name"] = df.apply(
+        lambda r: f"{r['base_name']}\n(Quant)" if r["is_quantized"] else r["base_name"], 
+        axis=1
+    )
 
     metric_titles = {
         "accuracy": "Accuracy (%)",
@@ -610,121 +638,94 @@ def fig8(
         "flops": "FLOPs",
         "memory": "Memory (MB)"
     }
+    
+    # Palette Mapping
+    palette = {
+        "Baseline": "#333333",      # Dark Grey
+        "Pruned (JF)": "#1f77b4",   # Blue
+        "No-Prune (Kevin)": "#ff7f0e", # Orange
+        "Collapsed": "#2ca02c"      # Green
+    }
 
     # Iterate Architecture -> Dataset -> Metric
-    for architecture, df_arch in df_ablation.groupby("architecture"):
-        
-        # 2. Establish Consistent Order (Arch level)
-        # We calculate this once per architecture so all separate files 
-        # have the same x-axis order (by model size).
-        if "params" in df_arch.columns:
-            order_series = df_arch.groupby("exp_display")["params"].mean().sort_values(ascending=False)
-            exp_order = order_series.index.tolist()
-        else:
-            exp_order = sorted(df_arch["exp_display"].unique())
-
-        # Lookup for quantization hatching
-        quant_lookup = df_arch[df_arch["is_quantized"] == True]["exp_display"].unique()
-        
-        datasets = sorted(df_arch["dataset"].unique())
-
-        for dataset in datasets:
+    for architecture, df_arch in df.groupby("architecture"):
+        for dataset in df_arch["dataset"].unique():
             g_dataset = df_arch[df_arch["dataset"] == dataset].copy()
+
+            # Sort X-axis: Original first, then others
+            # Helper to sort natural strings might be needed, but simple sort works often
+            if "params" in g_dataset.columns:
+                 # Sort by params descending (usually Baseline -> Pruned)
+                sort_order = g_dataset.groupby("display_name")["params"].mean().sort_values(ascending=False).index.tolist()
+            else:
+                sort_order = sorted(g_dataset["display_name"].unique())
 
             for metric in metrics:
                 if g_dataset.empty or metric not in g_dataset.columns:
                     continue
 
-                # 3. Create Individual Figure
-                # Standard 4:3ish ratio, good for slides
-                fig, ax = plt.subplots(figsize=(8, 6))
+                fig, ax = plt.subplots(figsize=(10, 6))
 
                 # Plot
+                # Hue = method (Colllapsed, JF, Kevin, Baseline)
+                # X = display_name (Stage-1, Stage-1 (Quant))
                 sns.barplot(
                     data=g_dataset,
-                    x="exp_display",
+                    x="display_name",
                     y=metric,
                     hue="posthoc_or_posttrain",
-                    order=exp_order,
-                    palette="viridis",
+                    order=sort_order,
+                    palette=palette,
                     edgecolor="black",
                     linewidth=1.0,
                     ax=ax,
                     errorbar=None 
                 )
 
-                # 4. Apply Hatching (Quantization)
+                # Hatching Logic: Apply hatch if label contains "(Quant)"
+                # This is more robust than mapping patches to data rows manually
+                # We check the x-tick label corresponding to the bar's position
+                
+                # Get tick positions and labels
+                locs = ax.get_xticks()
+                labels = [l.get_text() for l in ax.get_xticklabels()]
+                label_map = dict(zip(locs, labels))
+                
                 for patch in ax.patches:
-                    # Get center x position
-                    x_pos = patch.get_x() + patch.get_width() / 2
-                    cat_idx = int(round(x_pos))
+                    # Find which x-category this bar belongs to
+                    # The bar's center x should be close to a tick location
+                    # (Seaborn groups bars around the tick)
+                    x_center = patch.get_x() + patch.get_width() / 2
                     
-                    if 0 <= cat_idx < len(exp_order):
-                        exp_name = exp_order[cat_idx]
-                        if exp_name in quant_lookup:
-                            patch.set_hatch('///')
-                            patch.set_edgecolor('black')
-                            patch.set_linewidth(1.0)
+                    # Find closest tick
+                    closest_tick = min(locs, key=lambda l: abs(l - x_center))
+                    
+                    # If this category is Quantized, hatch it
+                    lbl = label_map.get(closest_tick, "")
+                    if "(Quant)" in lbl:
+                        patch.set_hatch("///")
+                        patch.set_edgecolor("black")
+                        patch.set_linewidth(1.0)
 
-                # 5. Formatting
+                # Formatting
                 ax.set_ylabel(metric_titles.get(metric, metric), fontsize=12, fontweight='bold')
-                ax.set_xlabel("") # X-axis labels explain themselves
+                ax.set_xlabel("")
+                ax.set_title(f"{architecture} - {dataset} ({metric})", fontsize=14, fontweight='bold')
                 
-                # Title specific to this file
-                ax.set_title(f"{architecture} - {dataset}\n{metric_titles.get(metric, metric)}", fontsize=14, fontweight='bold')
-
-                # X-Ticks (Always on, because it's an individual file)
-                ax.set_xticklabels(
-                    exp_order, 
-                    rotation=45, 
-                    ha="right", 
-                    fontsize=10,
-                    fontweight='medium'
-                )
+                # Legend
+                ax.legend(title="Method", loc='upper left', bbox_to_anchor=(1, 1), frameon=True)
                 
-                ax.grid(True, axis="y", linestyle="--", alpha=0.3)
-
-                # 6. Independent Legend
-                # We rebuild the legend for every file so they are standalone.
-                
-                # Get existing color handles
-                if ax.get_legend():
-                    handles, labels = ax.get_legend_handles_labels()
-                    ax.get_legend().remove()
-                else:
-                    handles, labels = [], []
-
-                # Add texture handles
-                quant_patch = mpatches.Patch(facecolor='white', edgecolor='black', hatch='///', label='Quantized')
-                fp_patch = mpatches.Patch(facecolor='white', edgecolor='black', label='Full Precision')
-                
-                final_handles = handles + [fp_patch, quant_patch]
-                final_labels = labels + ["Full Precision", "Quantized"]
-
-                # Place legend outside top right
-                ax.legend(
-                    final_handles, 
-                    final_labels, 
-                    loc='upper left', 
-                    bbox_to_anchor=(1.02, 1), 
-                    title="Configuration",
-                    frameon=True
-                )
-
-                # 7. Save
+                plt.xticks(rotation=45, ha="right")
+                plt.grid(True, axis="y", linestyle="--", alpha=0.3)
                 plt.tight_layout()
                 
-                # Clean filename
-                clean_metric = metric.replace(" ", "_").lower()
-                clean_ds = dataset.replace(" ", "_")
-                filename = f"{architecture}_{clean_ds}_{clean_metric}.svg"
-                
+                # Save
+                filename = f"{architecture}_{dataset}_{metric}.svg".replace(" ", "_")
                 save_path = out_dir / filename
                 plt.savefig(save_path, bbox_inches='tight')
                 plt.close()
-                
                 print(f"[Plot] Saved {filename}")
-
+                
 def fig10(
     results_dir: Path = RESULTS_DIR,
     out_dir: Path = FIG_DIR / "pwcca",
