@@ -491,9 +491,9 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
     Safely runs the pre-experiment training and heuristic analysis with Checkpointing.
     
     Updates:
+    - If done_marker exists: Loads the last checkpoint and proceeds to analysis (skips training).
     - Resumes from the last saved epoch if interrupted.
     - Saves checkpoints to 'runs/checkpoints/heuristics'.
-    - Cleans up old checkpoints to save space.
     """
     import os
     import glob
@@ -510,16 +510,17 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
     ensure_dir(plots_root_dir)
     ensure_dir(ckpt_root_dir)
 
-    # --- 2. Check Completion ---
-    if os.path.exists(done_marker_path):
-        print(f"[INFO] Heuristic profiling for {model_name} already completed. Skipping.")
-        return
+    # --- 2. Check Completion Status (Flag only) ---
+    # We do NOT return here anymore. We just note if it's done.
+    is_already_done = os.path.exists(done_marker_path)
+    if is_already_done:
+        print(f"[INFO] Done marker found for {model_name}. Will load checkpoint and skip to analysis.")
 
     # --- 3. Acquire Lock ---
     print(f"[INFO] Attempting to acquire lock: {lock_dir_path}")
     try:
         os.mkdir(lock_dir_path)
-        print("[INFO] Lock acquired! Starting/Resuming heuristic analysis...")
+        print("[INFO] Lock acquired! Starting/Resuming process...")
     except FileExistsError:
         print("[INFO] Lock busy. Another job is running this. Skipping.")
         return
@@ -538,8 +539,7 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
 
         model = model_class_obj(**model_kwargs).to(device)
         
-        # Initialize Optimizer (Standard Adam if helper not available)
-        # Using standard Adam here to ensure self-containment, or use your helper if available
+        # Initialize Optimizer
         optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
         # B. Checkpoint Discovery & Resumption
@@ -556,18 +556,22 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
         
         if existing_ckpts:
             last_ckpt = existing_ckpts[-1]
-            print(f"[INFO] Found checkpoint: {last_ckpt}. Resuming...")
+            print(f"[INFO] Found checkpoint: {last_ckpt}. Loading state...")
             checkpoint = torch.load(last_ckpt, map_location=device)
             
             model.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             start_epoch = checkpoint['epoch']
-            print(f"[✓] Resumed from Epoch {start_epoch}")
+            print(f"[✓] Model loaded. State is at Epoch {start_epoch}")
         else:
-            print(f"[INFO] No checkpoint found. Starting from Epoch 1.")
+            if is_already_done:
+                print("[WARN] Done marker exists but NO checkpoints found. Model will be random!")
+            else:
+                print(f"[INFO] No checkpoint found. Starting from Epoch 1.")
 
         # C. Training Loop
-        if start_epoch < epochs:
+        # We only train if the marker does NOT exist AND we haven't reached epoch count
+        if not is_already_done and start_epoch < epochs:
             print(f"[INFO] Training model for {epochs} epochs...")
             
             for epoch in range(start_epoch + 1, epochs + 1):
@@ -589,7 +593,8 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
                 if os.path.exists(prev_ckpt):
                     os.remove(prev_ckpt)
         else:
-            print(f"[INFO] Model already trained to {start_epoch} epochs. Proceeding to analysis.")
+            reason = "Done marker exists" if is_already_done else "Epochs completed"
+            print(f"[INFO] Skipping training loop ({reason}). Proceeding to analysis.")
 
         # D. Run Heuristic Analysis
         print("[INFO] Running analysis...")
@@ -603,9 +608,9 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
             dataset_name=dataset
         )
         
-        # E. Mark as done
+        # E. Update marker (refresh timestamp)
         with open(done_marker_path, 'w') as f:
-            f.write(f"Completed at {time.ctime()}")
+            f.write(f"Completed/Verified at {time.ctime()}")
             
         print("[INFO] Heuristic profiling complete. Plots saved.")
 
@@ -613,19 +618,16 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
         print(f"[ERROR] An error occurred during heuristic profiling: {e}")
         import traceback
         traceback.print_exc()
-        # Note: We do NOT delete the lock here, so you can investigate.
-        # However, if this crashes, the lock remains 'busy' for future jobs.
-        # You might want to manually delete the .lock_dir if you fix the bug.
 
     finally:
-        # F. Release lock (only if we acquired it successfully)
+        # F. Release lock
         if os.path.exists(lock_dir_path):
             try:
                 os.rmdir(lock_dir_path)
                 print("[INFO] Lock released.")
             except OSError:
                 print("[WARN] Could not remove lock directory.")
-
+                
 def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
     """
     Analyzes Conv2d and Linear layers using metrics, calculates Adaptive Collapse Scores,
