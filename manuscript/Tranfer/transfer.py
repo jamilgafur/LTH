@@ -762,7 +762,16 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
             summary_data = []
             layer_names = df['layer'].tolist()
             
-            for exp_name, (start_layer, end_layer) in exp_config.items():
+            # [FIX] Iterate over items as (key, value) first to avoid unpacking None
+            for exp_name, layer_range in exp_config.items():
+                
+                # [FIX] Skip entries like "Original Model": None
+                if layer_range is None:
+                    continue
+                    
+                # Safe unpacking now that we know it's not None
+                start_layer, end_layer = layer_range
+                
                 # Logic to find indices (fuzzy match)
                 start_idx = -1
                 end_idx = -1
@@ -796,7 +805,8 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                         "Mean ACS": acs_str
                     })
                 else:
-                    print(f"[WARN] Could not locate range {start_layer}->{end_layer} in model.")
+                    # Optional: Print warning only if strictly necessary to avoid clutter
+                    pass 
 
             if summary_data:
                 # Create the Summary DataFrame
@@ -823,9 +833,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
 
     except Exception as e:
         print(f"[!] Failed to generate LaTeX table: {e}")
-
-
-
 
 
     # --- STEP 5: Generate Research Paper Plot (Collapse Score) ---
