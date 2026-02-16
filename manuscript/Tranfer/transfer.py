@@ -752,27 +752,21 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     csv_name = f"{model_name}_{dataset_name}_heuristics.csv"
     df.to_csv(os.path.join(save_root_dir, csv_name), index=False)
 
-    # --- STEP 4.5: Generate LaTeX Table for Experiment Ranges ---
+
+
+    # --- STEP 4.5: Generate LaTeX Table for Experiment Ranges (Pandas Version) ---
     try:
         exp_config = get_experiment_config(model_name)
-        latex_lines = []
-        latex_lines.append(r"\begin{table}[h]")
-        latex_lines.append(r"\centering")
-        latex_lines.append(r"\caption{Predicted Collapse Scores for " + f"{model_name} on {dataset_name}" + r"}")
-        latex_lines.append(r"\label{tab:acs_" + f"{model_name.lower()}" + r"}")
-        latex_lines.append(r"\begin{tabular}{@{}llcc@{}}")
-        latex_lines.append(r"\toprule")
-        latex_lines.append(r"\textbf{Experiment Name} & \textbf{Layer Range} & \textbf{Mean Var ($\sigma^2$)} & \textbf{Mean ACS} \\ \midrule")
-
+        
         if exp_config:
+            summary_data = []
             layer_names = df['layer'].tolist()
             
             for exp_name, (start_layer, end_layer) in exp_config.items():
-                # Fuzzy matching for layer range indices
+                # Logic to find indices (fuzzy match)
                 start_idx = -1
                 end_idx = -1
                 
-                # Find exact or closest match
                 for i, lname in enumerate(layer_names):
                     if start_layer in lname: start_idx = i
                     if end_layer in lname: end_idx = i
@@ -786,30 +780,53 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                     mean_var = subset['act_var'].mean()
                     mean_acs = subset['collapse_score'].mean()
                     
-                    # Escape underscores for Latex
+                    # Custom Formatting Logic
+                    # We handle escaping manually here so we can use \textbf{} without it getting escaped later
                     range_str = f"{start_layer} $\\to$ {end_layer}".replace("_", "\\_")
                     exp_str = exp_name.replace("_", "\\_")
                     
-                    # Format numbers
-                    var_str = f"{mean_var:.2e}" if mean_var < 0.01 or mean_var > 1000 else f"{mean_var:.4f}"
-                    acs_str = f"{mean_acs:.4f}"
+                    # Scientific notation condition
+                    var_str = f"{mean_var:.2e}" if (mean_var < 0.01 or mean_var > 1000) else f"{mean_var:.4f}"
+                    acs_str = f"\\textbf{{{mean_acs:.4f}}}" # Apply bolding logic
                     
-                    latex_lines.append(f"{exp_str} & {range_str} & {var_str} & \\textbf{{{acs_str}}} \\\\")
+                    summary_data.append({
+                        "Experiment Name": exp_str,
+                        "Layer Range": range_str,
+                        "Mean Var ($\sigma^2$)": var_str,
+                        "Mean ACS": acs_str
+                    })
                 else:
                     print(f"[WARN] Could not locate range {start_layer}->{end_layer} in model.")
 
-        latex_lines.append(r"\bottomrule")
-        latex_lines.append(r"\end{tabular}")
-        latex_lines.append(r"\end{table}")
+            if summary_data:
+                # Create the Summary DataFrame
+                summary_df = pd.DataFrame(summary_data)
 
-        # Save .tex file
-        tex_filename = f"{model_name}_{dataset_name}_experiment_table.tex"
-        with open(os.path.join(save_root_dir, tex_filename), "w") as f:
-            f.write("\n".join(latex_lines))
-        print(f"[Saved] Experiment Table -> {tex_filename}")
+                # Save .tex file using pandas to_latex
+                tex_filename = f"{model_name}_{dataset_name}_experiment_table.tex"
+                save_path = os.path.join(save_root_dir, tex_filename)
+
+                # Note: escape=False is required to preserve the \textbf{} and \_ we added above
+                summary_df.to_latex(
+                    buf=save_path,
+                    index=False,
+                    escape=False, 
+                    column_format="llcc",
+                    caption=f"Predicted Collapse Scores for {model_name} on {dataset_name}",
+                    label=f"tab:acs_{model_name.lower()}",
+                    position="h",
+                    header=True
+                )
+                print(f"[Saved] Experiment Table -> {tex_filename}")
+            else:
+                print("[WARN] Experiment config exists but no matching layers found.")
 
     except Exception as e:
         print(f"[!] Failed to generate LaTeX table: {e}")
+
+
+
+
 
     # --- STEP 5: Generate Research Paper Plot (Collapse Score) ---
     # (Assuming plot_paper_quality_scores is defined in plots.py or similar)
