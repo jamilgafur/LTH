@@ -628,10 +628,20 @@ def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epoc
             except OSError:
                 print("[WARN] Could not remove lock directory.")
                 
+def get_experiment_config(model_name):
+    """Matches model string to experiment config."""
+    mn = model_name.lower()
+    if "vgg" in mn: return Vgg_common
+    if "regnet" in mn: return RegNetX_common
+    if "mobile" in mn: return MobileNet_common
+    if "xception" in mn: return XceptionNet_common
+    if "convnext" in mn: return ConvNeXt_common
+    return {}
+
 def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
     """
-    Analyzes Conv2d and Linear layers using metrics, calculates Adaptive Collapse Scores,
-    and generates research-quality plots.
+    Analyzes Conv2d and Linear layers, calculates Adaptive Collapse Scores (ACS),
+    and generates research-quality plots and LaTeX tables.
     """
     print(f"[•] Running Extended Collapse Heuristics for {model_name} on {dataset_name}...")
     
@@ -640,13 +650,13 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         input_tensor = input_tensor.unsqueeze(0)
 
     # 1. Get FLOPs
+    flops_dict = {}
     try:
         from fvcore.nn import FlopCountAnalysis
         flops_counter = FlopCountAnalysis(model, input_tensor)
         flops_dict = flops_counter.by_module()
     except Exception as e:
         print(f"[!] FLOPs count failed: {e}")
-        flops_dict = {}
 
     layer_stats = {}
 
@@ -669,7 +679,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                 except:
                     identity_score = 0.0
             
-            # Metric B: Memory Bytes
+            # Metric B: Memory & Bytes
             dtype_size = x.element_size()
             weight_bytes = sum(p.numel() * p.element_size() for p in module.parameters())
             total_bytes = (x.numel() * dtype_size) + (y.numel() * dtype_size) + weight_bytes
@@ -680,7 +690,12 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                 weight_l1 = module.weight.norm(p=1).item() / module.weight.numel()
 
             # Metric D: Activation Variance
-            act_var = y.var().item()
+            # Handle spatial variance (per channel) if 4D, else global
+            if y.ndim == 4:
+                # Spatial variance averaged across channels/batch
+                act_var = y.var(dim=[2, 3]).mean().item()
+            else:
+                act_var = y.var().item()
             
             layer_stats[name] = {
                 "layer_type": layer_type,
@@ -727,67 +742,102 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         return df
 
     # --- STEP 4: Calculate Adaptive Collapse Score ---
-    print("[•] Auto-calibrating collapse thresholds...")
-    tuned_params = calibrate_hyperparameters(df)
-    
-    df['collapse_score'] = df.apply(
-        lambda row: calculate_adaptive_score(row, len(df), tuned_params), 
-        axis=1
-    )
+    # Using the "Variance Only" metric decided in methodology
+    # ACS = exp(-lambda * variance)
+    print("[•] Calculating ACS (Variance-based)...")
+    lambda_val = 1.0  # Default sensitivity, can be calibrated
+    df['collapse_score'] = df['act_var'].apply(lambda v: torch.exp(torch.tensor(-lambda_val * v)).item())
 
     # Save Enhanced CSV
     csv_name = f"{model_name}_{dataset_name}_heuristics.csv"
     df.to_csv(os.path.join(save_root_dir, csv_name), index=False)
 
+    # --- STEP 4.5: Generate LaTeX Table for Experiment Ranges ---
+    try:
+        exp_config = get_experiment_config(model_name)
+        latex_lines = []
+        latex_lines.append(r"\begin{table}[h]")
+        latex_lines.append(r"\centering")
+        latex_lines.append(r"\caption{Predicted Collapse Scores for " + f"{model_name} on {dataset_name}" + r"}")
+        latex_lines.append(r"\label{tab:acs_" + f"{model_name.lower()}" + r"}")
+        latex_lines.append(r"\begin{tabular}{@{}llcc@{}}")
+        latex_lines.append(r"\toprule")
+        latex_lines.append(r"\textbf{Experiment Name} & \textbf{Layer Range} & \textbf{Mean Var ($\sigma^2$)} & \textbf{Mean ACS} \\ \midrule")
+
+        if exp_config:
+            layer_names = df['layer'].tolist()
+            
+            for exp_name, (start_layer, end_layer) in exp_config.items():
+                # Fuzzy matching for layer range indices
+                start_idx = -1
+                end_idx = -1
+                
+                # Find exact or closest match
+                for i, lname in enumerate(layer_names):
+                    if start_layer in lname: start_idx = i
+                    if end_layer in lname: end_idx = i
+                
+                if start_idx != -1 and end_idx != -1:
+                    # Ensure correct ordering
+                    if start_idx > end_idx: start_idx, end_idx = end_idx, start_idx
+                    
+                    # Slice Dataframe
+                    subset = df.iloc[start_idx : end_idx + 1]
+                    mean_var = subset['act_var'].mean()
+                    mean_acs = subset['collapse_score'].mean()
+                    
+                    # Escape underscores for Latex
+                    range_str = f"{start_layer} $\\to$ {end_layer}".replace("_", "\\_")
+                    exp_str = exp_name.replace("_", "\\_")
+                    
+                    # Format numbers
+                    var_str = f"{mean_var:.2e}" if mean_var < 0.01 or mean_var > 1000 else f"{mean_var:.4f}"
+                    acs_str = f"{mean_acs:.4f}"
+                    
+                    latex_lines.append(f"{exp_str} & {range_str} & {var_str} & \\textbf{{{acs_str}}} \\\\")
+                else:
+                    print(f"[WARN] Could not locate range {start_layer}->{end_layer} in model.")
+
+        latex_lines.append(r"\bottomrule")
+        latex_lines.append(r"\end{tabular}")
+        latex_lines.append(r"\end{table}")
+
+        # Save .tex file
+        tex_filename = f"{model_name}_{dataset_name}_experiment_table.tex"
+        with open(os.path.join(save_root_dir, tex_filename), "w") as f:
+            f.write("\n".join(latex_lines))
+        print(f"[Saved] Experiment Table -> {tex_filename}")
+
+    except Exception as e:
+        print(f"[!] Failed to generate LaTeX table: {e}")
+
     # --- STEP 5: Generate Research Paper Plot (Collapse Score) ---
-    plot_paper_quality_scores(
-        df=df, 
-        save_root_dir=save_root_dir, 
-        model_name=model_name, 
-        dataset_name=dataset_name
-    )
+    # (Assuming plot_paper_quality_scores is defined in plots.py or similar)
+    try:
+        # Pass the config to plots if supported, otherwise just plot df
+        from plots import plot_paper_quality_scores
+        plot_paper_quality_scores(
+            df=df, 
+            save_root_dir=save_root_dir, 
+            model_name=model_name, 
+            dataset_name=dataset_name
+        )
+    except ImportError:
+        pass
 
     # --- STEP 6: Generate Original 4 Metric Plots ---
     metrics_config = [
-        {
-            "col": "identity_score",
-            "title": "Identity Score (High = Redundant)",
-            "folder": "identity_score",
-            "color": "mediumpurple",
-            "log_scale": False,
-            "threshold_text": 0.8
-        },
-        {
-            "col": "arithmetic_intensity",
-            "title": "Arithmetic Intensity (FLOPs/Byte)",
-            "folder": "arithmetic_intensity",
-            "color": "coral",
-            "log_scale": True,
-            "threshold_text": None
-        },
-        {
-            "col": "weight_l1",
-            "title": "Weight Magnitude (Norm. L1)",
-            "folder": "weight_magnitude",
-            "color": "teal",
-            "log_scale": False,
-            "threshold_text": None
-        },
-        {
-            "col": "act_var",
-            "title": "Activation Variance",
-            "folder": "activation_variance",
-            "color": "goldenrod",
-            "log_scale": True,
-            "threshold_text": None
-        }
+        {"col": "identity_score", "title": "Identity Score (High = Redundant)", "folder": "identity_score", "color": "mediumpurple", "log_scale": False},
+        {"col": "act_var", "title": "Activation Variance", "folder": "activation_variance", "color": "goldenrod", "log_scale": True},
+        # Added ACS plot
+        {"col": "collapse_score", "title": "Adaptive Collapse Score (ACS)", "folder": "acs_score", "color": "crimson", "log_scale": False}
     ]
 
     for config in metrics_config:
         metric_dir = os.path.join(save_root_dir, config["folder"])
         os.makedirs(metric_dir, exist_ok=True)
         
-        plt.figure(figsize=(max(12, len(df)*0.3), 6))
+        plt.figure(figsize=(max(12, len(df)*0.25), 6))
         ax = sns.barplot(x="layer", y=config["col"], data=df, color=config["color"])
         
         full_title = f"{config['title']}\nModel: {model_name} | Dataset: {dataset_name}"
@@ -797,15 +847,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         if config["log_scale"]:
             ax.set_yscale("log")
             
-        if config["threshold_text"]:
-            for i, row in enumerate(df.itertuples()):
-                val = getattr(row, config["col"])
-                if val > config["threshold_text"]:
-                    ax.text(i, val, f"{val:.2f}", ha='center', va='bottom', fontsize=8, fontweight='bold', color='black')
-        
-        if config["col"] == "identity_score":
-            ax.set_ylim(0, 1.05)
-
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=8)
         ax.set_xlabel("Layer Name", fontsize=10)
         ax.set_ylabel(config["col"], fontsize=10)
@@ -819,7 +860,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         print(f"    [Saved] {config['folder']} -> {save_path}")
 
     return df
-
 def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
     """Runs the appropriate experiment based on the arguments (JF or Kevin)."""
     model_class = eval(model_class)
