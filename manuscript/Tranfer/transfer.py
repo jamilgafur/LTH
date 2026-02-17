@@ -646,6 +646,14 @@ import os
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+
 def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
     """
     Analyzes Conv2d and Linear layers, calculates Adaptive Collapse Scores (ACS),
@@ -757,11 +765,10 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     df.to_csv(os.path.join(save_root_dir, csv_name), index=False)
 
     # --- STEP 4.5: Aggregate Experiment Data (Logic Update) ---
-    # We create a specific list for plotting (raw numbers) and one for LaTeX (formatted strings)
     plot_data = [] 
 
     try:
-        # Assuming get_experiment_config is available in the global scope or imported
+        # Assuming get_experiment_config is available or imported globally
         exp_config = get_experiment_config(model_name)
         
         if exp_config:
@@ -769,8 +776,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
             layer_names = df['layer'].tolist()
             
             for exp_name, layer_range in exp_config.items():
-                if layer_range is None:
-                    continue
+                if layer_range is None: continue
                     
                 start_layer, end_layer = layer_range
                 
@@ -792,12 +798,12 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                     
                     # 1. Collect Raw Data for Plotting
                     plot_data.append({
-                        "Experiment": exp_name.replace("_", " "), # Clean for plot labels
+                        "Experiment": exp_name.replace("_", " "), 
                         "Mean Variance": mean_var,
                         "Mean ACS": mean_acs
                     })
 
-                    # 2. Collect Formatted Data for LaTeX
+                    # 2. Collect Formatted Data for Summary Table
                     range_str = f"{start_layer} $\\to$ {end_layer}".replace("_", "\\_")
                     exp_str = exp_name.replace("_", "\\_")
                     var_str = f"{mean_var:.2e}" if (mean_var < 0.01 or mean_var > 1000) else f"{mean_var:.4f}"
@@ -810,27 +816,38 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                         "Mean ACS": acs_str
                     })
 
-            # Save LaTeX Table
+            # Save Summary LaTeX Table
             if summary_data_latex:
                 summary_df = pd.DataFrame(summary_data_latex)
-                tex_filename = f"{model_name}_{dataset_name}_experiment_table.tex"
+                tex_filename = f"{model_name}_{dataset_name}_experiment_summary.tex"
                 save_path = os.path.join(save_root_dir, tex_filename)
                 summary_df.to_latex(
                     buf=save_path, index=False, escape=False, 
                     column_format="llcc",
-                    caption=f"Predicted Collapse Scores for {model_name}",
-                    label=f"tab:acs_{model_name.lower()}",
+                    caption=f"Predicted Collapse Scores Summary for {model_name}",
+                    label=f"tab:acs_summary_{model_name.lower()}",
                     position="h", header=True
                 )
-                print(f"[Saved] Experiment Table -> {tex_filename}")
+                print(f"[Saved] Experiment Summary Table -> {tex_filename}")
 
     except Exception as e:
         print(f"[!] Failed to process experiments: {e}")
 
-    # --- STEP 5: Generate Experiment-Wise Plots (NEW) ---
+    # --- STEP 5: Generate Experiment-Wise Plots & Save Data ---
     if plot_data:
         exp_df = pd.DataFrame(plot_data)
         
+        # [NEW] Save the Raw Plot Data to LaTeX
+        plot_data_tex = f"{model_name}_{dataset_name}_experiment_plot_data.tex"
+        exp_df.to_latex(
+            os.path.join(save_root_dir, plot_data_tex),
+            index=False,
+            float_format="%.4f",
+            caption=f"Aggregated Experiment Metrics for {model_name} Plots",
+            label=f"tab:exp_plot_data_{model_name.lower()}"
+        )
+        print(f"[Saved] Experiment Plot Data (TeX) -> {plot_data_tex}")
+
         # Plot A: Mean ACS per Experiment
         plt.figure(figsize=(10, 6))
         ax = sns.barplot(x="Experiment", y="Mean ACS", data=exp_df, palette="magma")
@@ -838,12 +855,9 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         plt.ylabel("Mean ACS (Lower is Better/Less Collapse)", fontsize=12)
         plt.xticks(rotation=45, ha='right')
         plt.grid(axis='y', linestyle='--', alpha=0.3)
-        plt.ylim(0, 1.1) # ACS is usually normalized 0-1
-        
-        # Add value labels
+        plt.ylim(0, 1.1) 
         for container in ax.containers:
             ax.bar_label(container, fmt='%.3f', padding=3)
-            
         plt.tight_layout()
         plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_ACS.png"), dpi=300)
         plt.close()
@@ -854,23 +868,36 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         plt.title(f"Mean Activation Variance by Experiment\n{model_name} | {dataset_name}", fontsize=14)
         plt.ylabel("Mean Variance", fontsize=12)
         plt.xticks(rotation=45, ha='right')
-        plt.yscale("log") # Variance often spans orders of magnitude
+        plt.yscale("log")
         plt.grid(axis='y', linestyle='--', alpha=0.3, which='both')
-        
         plt.tight_layout()
         plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_Variance.png"), dpi=300)
         plt.close()
         
-        print(f"[Saved] Experiment Plots -> {save_root_dir}")
     else:
         print("[WARN] No experiment data available for plotting.")
 
-    # --- STEP 6: Generate Original Layer-wise Plots ---
+    # --- STEP 6: Generate Original Layer-wise Plots & Save Data ---
     metrics_config = [
         {"col": "identity_score", "title": "Identity Score (High = Redundant)", "folder": "identity_score", "color": "mediumpurple", "log_scale": False},
         {"col": "act_var", "title": "Activation Variance", "folder": "activation_variance", "color": "goldenrod", "log_scale": True},
         {"col": "collapse_score", "title": "Adaptive Collapse Score (ACS)", "folder": "acs_score", "color": "crimson", "log_scale": False}
     ]
+
+    # [NEW] Save Layer-wise Plot Data to LaTeX (Long Table)
+    layer_tex_name = f"{model_name}_{dataset_name}_layerwise_plot_data.tex"
+    plot_cols = ["layer"] + [c["col"] for c in metrics_config]
+    
+    # We use a subset of the main df for this export
+    df[plot_cols].to_latex(
+        os.path.join(save_root_dir, layer_tex_name),
+        index=False,
+        float_format="%.2e", # Scientific notation for compactness
+        longtable=True,      # Important for layer-wise tables
+        caption=f"Detailed Layer-wise Metrics for {model_name}",
+        label=f"tab:layer_metrics_{model_name.lower()}"
+    )
+    print(f"[Saved] Layer-wise Plot Data (TeX) -> {layer_tex_name}")
 
     for config in metrics_config:
         metric_dir = os.path.join(save_root_dir, config["folder"])
@@ -897,254 +924,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         plt.close()
         
     return df
-
-# def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
-#     """
-#     Analyzes Conv2d and Linear layers, calculates Adaptive Collapse Scores (ACS),
-#     and generates research-quality plots and LaTeX tables.
-#     """
-#     print(f"[•] Running Extended Collapse Heuristics for {model_name} on {dataset_name}...")
-    
-#     model.eval()
-#     if len(input_tensor.shape) == 3:
-#         input_tensor = input_tensor.unsqueeze(0)
-
-#     # 1. Get FLOPs
-#     flops_dict = {}
-#     try:
-#         from fvcore.nn import FlopCountAnalysis
-#         flops_counter = FlopCountAnalysis(model, input_tensor)
-#         flops_dict = flops_counter.by_module()
-#     except Exception as e:
-#         print(f"[!] FLOPs count failed: {e}")
-
-#     layer_stats = {}
-
-#     # 2. Hook for metrics
-#     def heuristic_hook(name, layer_type):
-#         def fn(module, inp, out):
-#             if not isinstance(out, torch.Tensor) or not isinstance(inp[0], torch.Tensor):
-#                 return
-            
-#             x = inp[0].detach()
-#             y = out.detach()
-            
-#             # Metric A: Identity Score
-#             identity_score = 0.0
-#             if x.shape == y.shape:
-#                 x_flat = x.flatten(start_dim=1)
-#                 y_flat = y.flatten(start_dim=1)
-#                 try:
-#                     identity_score = F.cosine_similarity(x_flat, y_flat, dim=1).mean().item()
-#                 except:
-#                     identity_score = 0.0
-            
-#             # Metric B: Memory & Bytes
-#             dtype_size = x.element_size()
-#             weight_bytes = sum(p.numel() * p.element_size() for p in module.parameters())
-#             total_bytes = (x.numel() * dtype_size) + (y.numel() * dtype_size) + weight_bytes
-
-#             # Metric C: Weight Magnitude
-#             weight_l1 = 0.0
-#             if hasattr(module, 'weight') and module.weight is not None:
-#                 weight_l1 = module.weight.norm(p=1).item() / module.weight.numel()
-
-#             # Metric D: Activation Variance
-#             # Handle spatial variance (per channel) if 4D, else global
-#             if y.ndim == 4:
-#                 # Spatial variance averaged across channels/batch
-#                 act_var = y.var(dim=[2, 3]).mean().item()
-#             else:
-#                 act_var = y.var().item()
-            
-#             layer_stats[name] = {
-#                 "layer_type": layer_type,
-#                 "identity_score": identity_score,
-#                 "memory_bytes": total_bytes,
-#                 "weight_l1": weight_l1,
-#                 "act_var": act_var
-#             }
-#         return fn
-
-#     # Register hooks
-#     hooks = []
-#     for name, module in model.named_modules():
-#         if isinstance(module, (nn.Conv2d, nn.Linear)):
-#             hooks.append(module.register_forward_hook(heuristic_hook(name, type(module).__name__)))
-
-#     # Run forward pass
-#     with torch.no_grad():
-#         model(input_tensor)
-
-#     for h in hooks: h.remove()
-
-#     # 3. Aggregate Data
-#     results = []
-#     for name, stats in layer_stats.items():
-#         flops_val = flops_dict.get(name, 0)
-#         mem_bytes = stats["memory_bytes"]
-#         ai = flops_val / mem_bytes if mem_bytes > 0 else 0.0
-        
-#         results.append({
-#             "layer": name,
-#             "layer_type": stats["layer_type"],
-#             "identity_score": stats["identity_score"],
-#             "arithmetic_intensity": ai,
-#             "weight_l1": stats["weight_l1"],
-#             "act_var": stats["act_var"],
-#             "flops": flops_val
-#         })
-
-#     df = pd.DataFrame(results)
-    
-#     if df.empty:
-#         print("[WARN] No layers found for analysis.")
-#         return df
-
-#     # --- STEP 4: Calculate Adaptive Collapse Score ---
-#     # Using the "Variance Only" metric decided in methodology
-#     # ACS = exp(-lambda * variance)
-#     print("[•] Calculating ACS (Variance-based)...")
-#     lambda_val = 1.0  # Default sensitivity, can be calibrated
-#     df['collapse_score'] = df['act_var'].apply(lambda v: torch.exp(torch.tensor(-lambda_val * v)).item())
-
-#     # Save Enhanced CSV
-#     csv_name = f"{model_name}_{dataset_name}_heuristics.csv"
-#     df.to_csv(os.path.join(save_root_dir, csv_name), index=False)
-
-
-
-#     # --- STEP 4.5: Generate LaTeX Table for Experiment Ranges (Pandas Version) ---
-#     try:
-#         exp_config = get_experiment_config(model_name)
-        
-#         if exp_config:
-#             summary_data = []
-#             layer_names = df['layer'].tolist()
-            
-#             # [FIX] Iterate over items as (key, value) first to avoid unpacking None
-#             for exp_name, layer_range in exp_config.items():
-                
-#                 # [FIX] Skip entries like "Original Model": None
-#                 if layer_range is None:
-#                     continue
-                    
-#                 # Safe unpacking now that we know it's not None
-#                 start_layer, end_layer = layer_range
-                
-#                 # Logic to find indices (fuzzy match)
-#                 start_idx = -1
-#                 end_idx = -1
-                
-#                 for i, lname in enumerate(layer_names):
-#                     if start_layer in lname: start_idx = i
-#                     if end_layer in lname: end_idx = i
-                
-#                 if start_idx != -1 and end_idx != -1:
-#                     # Ensure correct ordering
-#                     if start_idx > end_idx: start_idx, end_idx = end_idx, start_idx
-                    
-#                     # Slice Dataframe
-#                     subset = df.iloc[start_idx : end_idx + 1]
-#                     mean_var = subset['act_var'].mean()
-#                     mean_acs = subset['collapse_score'].mean()
-                    
-#                     # Custom Formatting Logic
-#                     # We handle escaping manually here so we can use \textbf{} without it getting escaped later
-#                     range_str = f"{start_layer} $\\to$ {end_layer}".replace("_", "\\_")
-#                     exp_str = exp_name.replace("_", "\\_")
-                    
-#                     # Scientific notation condition
-#                     var_str = f"{mean_var:.2e}" if (mean_var < 0.01 or mean_var > 1000) else f"{mean_var:.4f}"
-#                     acs_str = f"\\textbf{{{mean_acs:.4f}}}" # Apply bolding logic
-                    
-#                     summary_data.append({
-#                         "Experiment Name": exp_str,
-#                         "Layer Range": range_str,
-#                         "Mean Var ($\sigma^2$)": var_str,
-#                         "Mean ACS": acs_str
-#                     })
-#                 else:
-#                     # Optional: Print warning only if strictly necessary to avoid clutter
-#                     pass 
-
-#             if summary_data:
-#                 # Create the Summary DataFrame
-#                 summary_df = pd.DataFrame(summary_data)
-
-#                 # Save .tex file using pandas to_latex
-#                 tex_filename = f"{model_name}_{dataset_name}_experiment_table.tex"
-#                 save_path = os.path.join(save_root_dir, tex_filename)
-
-#                 # Note: escape=False is required to preserve the \textbf{} and \_ we added above
-#                 summary_df.to_latex(
-#                     buf=save_path,
-#                     index=False,
-#                     escape=False, 
-#                     column_format="llcc",
-#                     caption=f"Predicted Collapse Scores for {model_name} on {dataset_name}",
-#                     label=f"tab:acs_{model_name.lower()}",
-#                     position="h",
-#                     header=True
-#                 )
-#                 print(f"[Saved] Experiment Table -> {tex_filename}")
-#             else:
-#                 print("[WARN] Experiment config exists but no matching layers found.")
-
-#     except Exception as e:
-#         print(f"[!] Failed to generate LaTeX table: {e}")
-
-
-#     # --- STEP 5: Generate Research Paper Plot (Collapse Score) ---
-#     # (Assuming plot_paper_quality_scores is defined in plots.py or similar)
-#     try:
-#         # Pass the config to plots if supported, otherwise just plot df
-#         from plots import plot_paper_quality_scores
-#         plot_paper_quality_scores(
-#             df=df, 
-#             save_root_dir=save_root_dir, 
-#             model_name=model_name, 
-#             dataset_name=dataset_name
-#         )
-#     except ImportError:
-#         pass
-
-#     # --- STEP 6: Generate Original 4 Metric Plots ---
-#     metrics_config = [
-#         {"col": "identity_score", "title": "Identity Score (High = Redundant)", "folder": "identity_score", "color": "mediumpurple", "log_scale": False},
-#         {"col": "act_var", "title": "Activation Variance", "folder": "activation_variance", "color": "goldenrod", "log_scale": True},
-#         # Added ACS plot
-#         {"col": "collapse_score", "title": "Adaptive Collapse Score (ACS)", "folder": "acs_score", "color": "crimson", "log_scale": False}
-#     ]
-
-#     for config in metrics_config:
-#         metric_dir = os.path.join(save_root_dir, config["folder"])
-#         os.makedirs(metric_dir, exist_ok=True)
-        
-#         plt.figure(figsize=(max(12, len(df)*0.25), 6))
-#         ax = sns.barplot(x="layer", y=config["col"], data=df, color=config["color"])
-        
-#         full_title = f"{config['title']}\nModel: {model_name} | Dataset: {dataset_name}"
-#         ax.set_title(full_title, fontsize=12, fontweight='bold')
-#         ax.grid(axis='y', linestyle='--', alpha=0.5)
-        
-#         if config["log_scale"]:
-#             ax.set_yscale("log")
-            
-#         ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=8)
-#         ax.set_xlabel("Layer Name", fontsize=10)
-#         ax.set_ylabel(config["col"], fontsize=10)
-
-#         plt.tight_layout()
-#         filename = f"{model_name}_{dataset_name}.png"
-#         save_path = os.path.join(metric_dir, filename)
-#         plt.savefig(save_path, dpi=150)
-#         plt.close()
-        
-#         print(f"    [Saved] {config['folder']} -> {save_path}")
-
-#     return df
-
 def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
     """Runs the appropriate experiment based on the arguments (JF or Kevin)."""
     model_class = eval(model_class)
