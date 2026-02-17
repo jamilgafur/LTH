@@ -7,7 +7,7 @@ rm ~/submit* 2>/dev/null
 # Note: Ensure "RegNetX_400MF" matches your python model class name if used there
 models=("VGG16" "RegNetX_400MF" "XceptionNet" "InceptionNet" "MobileNet" "ConvNeXt")
 datasets=("tinyimagenet") # Focused on TinyImageNet based on previous turns
-quant=("True")
+quant=("True" "False")
 
 # 3. Define Experiment Configurations
 # ==============================================================================
@@ -91,7 +91,7 @@ for model in "${models[@]}"; do
                 # Running both pruning/collapse flags (JF = Post-Collapse, Kevin = No-Collapse Baseline)
                 for flag in "JF" "Kevin"; do
                     # only run the original model
-                    if [[ "$experiment" != "Original Model" ]]; then
+                    if [[ "$experiment" == "Original Model" ]]; then
                         continue
                     fi
                     # Submit job
