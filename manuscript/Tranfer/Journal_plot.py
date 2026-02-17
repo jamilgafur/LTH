@@ -615,12 +615,20 @@ def fig8(
     # 1. Create a Clean Base Name (removing meta-tags)
     def get_base_name(row):
         n = row["exp_name"]
+        # Remove suffixes
         n = n.replace("_quant", "").replace("_JF", "").replace("_Kevin", "")
-        n = n.replace("RegNetX_400MF_", "").replace("VGG16_", "")
-        n = n.replace("MobileNet_", "").replace("ConvNeXt_", "")
-        n = n.replace("Block ", "Block-").replace("Stage ", "Stage-") # Shorten
+        # Remove architecture prefixes if present
+        for arch in ["RegNetX_400MF_", "VGG16_", "MobileNet_", "ConvNeXt_", "InceptionNet_", "XceptionNet_"]:
+            n = n.replace(arch, "")
+        
+        # Standardize Block/Stage
+        n = n.replace("Block ", "Block-").replace("Stage ", "Stage-") 
         n = n.replace(" Only", "")
-        if "Original" in n or "Baseline" in n: return "Original"
+        
+        # Handle Baseline/Original
+        if "Original" in n or "Baseline" in n: 
+            return "Original"
+            
         return n.strip()
 
     df["base_name"] = df.apply(get_base_name, axis=1)
@@ -652,19 +660,33 @@ def fig8(
         for dataset in df_arch["dataset"].unique():
             g_dataset = df_arch[df_arch["dataset"] == dataset].copy()
 
-            # Sort X-axis: Original first, then others
-            # Helper to sort natural strings might be needed, but simple sort works often
+            if g_dataset.empty: continue
+
+            # Determine Sort Order for X-axis
+            # Strategy: Sort by 'params' of the Base Name (max params per base name to handle quant)
+            # This keeps "Stage 1" and "Stage 1 (Quant)" adjacent if we sort display names based on base name rank
+            
+            # 1. Calculate representative params for each base_name
             if "params" in g_dataset.columns:
-                 # Sort by params descending (usually Baseline -> Pruned)
-                sort_order = g_dataset.groupby("display_name")["params"].mean().sort_values(ascending=False).index.tolist()
+                base_name_rank = g_dataset.groupby("base_name")["params"].max().sort_values(ascending=False)
             else:
-                sort_order = sorted(g_dataset["display_name"].unique())
+                base_name_rank = g_dataset.groupby("base_name")["accuracy"].max().sort_values(ascending=True) # Fallback
+            
+            # 2. Create index map
+            rank_map = {name: i for i, name in enumerate(base_name_rank.index)}
+            
+            # 3. Sort the dataframe temporarily to extract display_names in order
+            g_dataset["rank"] = g_dataset["base_name"].map(rank_map)
+            # Secondary sort: non-quant before quant
+            g_dataset.sort_values(["rank", "is_quantized"], ascending=[True, True], inplace=True)
+            
+            sort_order = g_dataset["display_name"].unique().tolist()
 
             for metric in metrics:
-                if g_dataset.empty or metric not in g_dataset.columns:
+                if metric not in g_dataset.columns:
                     continue
 
-                fig, ax = plt.subplots(figsize=(10, 6))
+                fig, ax = plt.subplots(figsize=(12, 6)) # Slightly wider
 
                 # Plot
                 # Hue = method (Colllapsed, JF, Kevin, Baseline)
@@ -682,30 +704,25 @@ def fig8(
                     errorbar=None 
                 )
 
-                # Hatching Logic: Apply hatch if label contains "(Quant)"
-                # This is more robust than mapping patches to data rows manually
-                # We check the x-tick label corresponding to the bar's position
-                
-                # Get tick positions and labels
+                # Hatching Logic
+                # We check the text of the x-tick corresponding to the bar
                 locs = ax.get_xticks()
                 labels = [l.get_text() for l in ax.get_xticklabels()]
-                label_map = dict(zip(locs, labels))
                 
                 for patch in ax.patches:
-                    # Find which x-category this bar belongs to
-                    # The bar's center x should be close to a tick location
-                    # (Seaborn groups bars around the tick)
+                    # Get bar center
                     x_center = patch.get_x() + patch.get_width() / 2
                     
-                    # Find closest tick
-                    closest_tick = min(locs, key=lambda l: abs(l - x_center))
-                    
-                    # If this category is Quantized, hatch it
-                    lbl = label_map.get(closest_tick, "")
-                    if "(Quant)" in lbl:
-                        patch.set_hatch("///")
-                        patch.set_edgecolor("black")
-                        patch.set_linewidth(1.0)
+                    # Find closest tick index
+                    # locs are usually 0, 1, 2...
+                    if len(locs) > 0:
+                        closest_idx = min(range(len(locs)), key=lambda i: abs(locs[i] - x_center))
+                        lbl = labels[closest_idx]
+                        
+                        if "(Quant)" in lbl:
+                            patch.set_hatch("///")
+                            patch.set_edgecolor("black")
+                            patch.set_linewidth(1.0)
 
                 # Formatting
                 ax.set_ylabel(metric_titles.get(metric, metric), fontsize=12, fontweight='bold')
@@ -725,7 +742,7 @@ def fig8(
                 plt.savefig(save_path, bbox_inches='tight')
                 plt.close()
                 print(f"[Plot] Saved {filename}")
-                
+
 def fig10(
     results_dir: Path = RESULTS_DIR,
     out_dir: Path = FIG_DIR / "pwcca",
