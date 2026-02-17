@@ -4,20 +4,19 @@ import glob
 import json
 import warnings
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple
+
 import torch
 import torch.nn as nn
 import shap
-import matplotlib.pyplot as plt
-import seaborn as sns
-from pathlib import Path
-import pandas as pd
-from typing import Dict, List
-from manuscript.Tranfer.utils import load_dataset
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import linalg
+
+# Local imports (Assumed available based on original file)
+from manuscript.Tranfer.utils import load_dataset
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.models.RegNetX import RegNetX_400MF
 from pyPrune.models.ConvNetX import ConvNeXt
@@ -25,12 +24,13 @@ from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
 from collapse import collapse_only
+
+# =========================
+# Configuration & Style
+# =========================
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
 
-# =========================
-# Plotting Style
-# =========================
 sns.set_theme(
     context="paper",
     style="whitegrid",
@@ -49,10 +49,6 @@ plt.rcParams.update({
     "lines.markersize": 8,
 })
 
-
-# =========================
-# Configuration
-# =========================
 RESULTS_DIR = Path("./")
 FIG_DIR = Path("./figures")
 TABLE_DIR = Path("./tables")
@@ -83,7 +79,6 @@ def infer_architecture_from_path(p: Path) -> str:
     if "convnext" in name: return "ConvNeXt"
     return "UnknownArch"
 
-
 def infer_model_type(exp_name: str) -> str:
     n = exp_name.lower()
     if "original" in n or "baseline" in n: return "baseline"
@@ -92,6 +87,49 @@ def infer_model_type(exp_name: str) -> str:
 def infer_isquant(exp_name: str) -> bool:
     return "quant" in exp_name.lower()
 
+def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
+    """
+    Determines the method group.
+    - Baseline: If 'original' or 'baseline' in name.
+    - Pruned/No-Prune: ONLY for VGG16 and RegNetX.
+    - Collapsed: For all other architectures (averages JF/Kevin).
+    """
+    n = exp_name.lower()
+    
+    if "original" in n or "baseline" in n:
+        return "Baseline"
+        
+    # Only distinguish JF vs Kevin for specific architectures
+    if architecture in ["VGG16", "RegNetX"]:
+        if "jf" in n: return "Pruned (JF)"
+        if "kevin" in n: return "No-Prune (Kevin)"
+        
+    # For ConvNeXt, MobileNet, etc., merge them into one group
+    return "Collapsed"
+
+def clean_exp_name(exp_name: str) -> str:
+    """
+    Standardizes experiment names by removing suffixes and meta-tags.
+    Used to group 'Stage 2-7' and 'Stage 2-7 (Quant)' together.
+    """
+    n = exp_name
+    # Remove suffixes
+    n = n.replace("_quant", "").replace("_JF", "").replace("_Kevin", "")
+    
+    # Remove architecture prefixes if present
+    for arch in ["RegNetX_400MF_", "VGG16_", "MobileNet_", "ConvNeXt_", "InceptionNet_", "XceptionNet_"]:
+        n = n.replace(arch, "")
+    
+    # Standardize Block/Stage format
+    n = n.replace("Block ", "Block-").replace("Stage ", "Stage-") 
+    n = n.replace(" Only", "")
+    
+    # Handle Baseline/Original
+    if "Original" in n or "Baseline" in n: 
+        return "Original"
+        
+    return n.strip()
+
 def find_baseline(df: pd.DataFrame):
     mask = (
         df["exp_name"].str.lower().str.contains("original")
@@ -99,6 +137,58 @@ def find_baseline(df: pd.DataFrame):
     )
     m = df[mask].sort_values("exp_name")
     return None if m.empty else m.iloc[0]
+
+def load_results() -> pd.DataFrame:
+    files = list(RESULTS_DIR.rglob("*merged_metrics.json"))
+    if not files:
+        # Fallback if no subdirectories found (e.g. flat file)
+        if (RESULTS_DIR / "merged_metrics.json").exists():
+            files = [RESULTS_DIR / "merged_metrics.json"]
+        else:
+            raise FileNotFoundError("No merged_metrics.json files found")
+
+    rows = []
+
+    for p in files:
+        dataset = infer_dataset_from_path(p)
+        arch = infer_architecture_from_path(p)
+        
+        try:
+            with open(p) as f:
+                raw = json.load(f)
+        except Exception as e:
+            print(f"Skipping {p}: {e}")
+            continue
+
+        for exp_name, metrics in raw.items():
+            # Basic inferences
+            method_group = infer_posthoc_or_posttrain(exp_name, arch)
+            is_quant = infer_isquant(exp_name)
+            
+            # Name cleaning for plotting
+            base_name = clean_exp_name(exp_name)
+            display_name = f"{base_name}\n(Quant)" if is_quant else base_name
+
+            rows.append(
+                {
+                    "dataset": dataset,
+                    "architecture": arch,
+                    "exp_name": exp_name,
+                    "base_name": base_name,
+                    "display_name": display_name,
+                    "posthoc_or_posttrain": method_group,
+                    "model_type": infer_model_type(exp_name),
+                    "is_quantized": is_quant,
+
+                    # Core metrics
+                    "accuracy": metrics.get("final_accuracy"),
+                    "params": metrics.get("param_count"),
+                    "flops": metrics.get("flops"),
+                    "memory": metrics.get("total_size_mb"),
+                }
+            )
+
+    return pd.DataFrame(rows)
 
 def normalize(df: pd.DataFrame) -> pd.DataFrame:
     out = []
@@ -151,7 +241,7 @@ def standard_legend(ax):
     ax.legend(title="Configuration", frameon=True, loc="best")
 
 # =========================
-# Figures 1-5 (Existing)
+# Figures 1-7
 # =========================
 def fig1(df: pd.DataFrame):
     architectures = sorted(df["architecture"].unique())
@@ -350,9 +440,7 @@ def fig5(df: pd.DataFrame):
 
 def fig6(df: pd.DataFrame):
     """
-    Plots the 'Optimal Trade-off' curve (Pareto Frontier) for each dataset/architecture.
-    It highlights the best models (highest accuracy for a given compression) 
-    and fades out suboptimal ones.
+    Plots the 'Optimal Trade-off' curve (Pareto Frontier).
     """
     architectures = sorted(df["architecture"].unique())
     datasets = sorted(df["dataset"].unique())
@@ -377,18 +465,9 @@ def fig6(df: pd.DataFrame):
                 ax.axis("off")
                 continue
             
-            # 1. Identify Pareto Frontier
-            # Sort by compression (ascending d_params)
-            # We want to maximize d_acc for any given d_params
+            # Identify Pareto Frontier
             subdf = subdf.sort_values("d_params")
             pareto_points = []
-            current_max_acc = -np.inf
-            
-            # Simple heuristic: scan from right (high compression) to left? 
-            # Actually, standard pareto for trade-off:
-            # We want Max(d_params) AND Max(d_acc).
-            # A point is on the frontier if no other point has BOTH higher params AND higher accuracy.
-            # Simplified for plotting: Just the "Upper Envelope"
             
             # Sort by d_params descending (highest compression first)
             sorted_points = subdf.sort_values("d_params", ascending=False)
@@ -402,13 +481,13 @@ def fig6(df: pd.DataFrame):
             pareto_df = pd.DataFrame(pareto_points).sort_values("d_params")
             plot_data_accum.append(pareto_df)
 
-            # 2. Plot ALL points faintly
+            # Plot ALL points faintly
             sns.scatterplot(
                 data=subdf, x="d_params", y="d_acc",
                 color="lightgray", alpha=0.5, s=30, ax=ax, legend=False
             )
 
-            # 3. Plot Pareto Frontier strongly
+            # Plot Pareto Frontier strongly
             sns.lineplot(
                 data=pareto_df, x="d_params", y="d_acc",
                 color="black", linewidth=2, linestyle="--", 
@@ -419,7 +498,6 @@ def fig6(df: pd.DataFrame):
             if i == len(architectures)-1: format_reduction_axis(ax, "Parameter")
             if j == 0: format_accuracy_axis(ax)
             
-            # Legend only on first
             if i==0 and j==0: 
                 ax.legend(loc="best", fontsize=8)
             else:
@@ -436,25 +514,14 @@ def fig6(df: pd.DataFrame):
 def fig7(df: pd.DataFrame):
     """
     Bar chart showing the Accuracy Delta (Method A - Method B).
-    Specifically: Post-Prune (JF) minus No-Prune (Kevin).
-    Positive = Post-Prune is better. Negative = No-Prune is better.
     """
-    
-    # 1. Prepare Data: Match JF and Kevin experiments
-    # We need a common key. We used 'exp_group' earlier which strips the suffix.
     df = df.copy()
-    df["exp_base"] = (
-        df["exp_name"]
-        .str.replace("_JF", "", regex=False)
-        .str.replace("_Kevin", "", regex=False)
-        .str.strip()
-    )
+    # Use clean base name from load_results
+    df["exp_base"] = df["base_name"]
     
-    # Filter for only the two methods we care about
     valid_methods = ["Post-Prune (JF)", "No-Prune (Kevin)"]
     df_methods = df[df["posthoc_or_posttrain"].isin(valid_methods)]
     
-    # Pivot to align them side-by-side
     pivot_cols = ["dataset", "architecture", "exp_base", "is_quantized"]
     df_pivot = df_methods.pivot_table(
         index=pivot_cols,
@@ -462,20 +529,15 @@ def fig7(df: pd.DataFrame):
         values="accuracy"
     ).reset_index()
     
-    # Calculate Delta
     if "Post-Prune (JF)" in df_pivot.columns and "No-Prune (Kevin)" in df_pivot.columns:
         df_pivot["accuracy_delta"] = df_pivot["Post-Prune (JF)"] - df_pivot["No-Prune (Kevin)"]
     else:
         print("Skipping Fig 7: Missing matching data for JF vs Kevin comparison.")
         return
 
-    # Drop NaNs (unmatched experiments)
     df_pivot = df_pivot.dropna(subset=["accuracy_delta"])
-    
-    # Save Source Data
     save_plot_source_data(df_pivot, "fig7_method_delta_source")
 
-    # 2. Plotting
     architectures = sorted(df_pivot["architecture"].unique())
     datasets = sorted(df_pivot["dataset"].unique())
     
@@ -497,12 +559,11 @@ def fig7(df: pd.DataFrame):
                 ax.axis("off")
                 continue
             
-            # Color bars: Blue if positive (JF wins), Red if negative (Kevin wins)
             colors = ["#1f77b4" if x >= 0 else "#d62728" for x in subdf["accuracy_delta"]]
             
             sns.barplot(
                 data=subdf, x="exp_base", y="accuracy_delta",
-                ax=ax, palette=colors, hue="exp_base", legend=False # hue to avoid warning
+                ax=ax, palette=colors, hue="exp_base", legend=False
             )
             
             ax.axhline(0, color="black", linewidth=1)
@@ -525,77 +586,9 @@ def fig7(df: pd.DataFrame):
     plt.savefig(FIG_DIR / "fig7_method_delta.svg", bbox_inches='tight')
     plt.close()
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-import matplotlib.patches as mpatches
-from pathlib import Path
-import pandas as pd
-
-def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
-    """
-    Determines the method group.
-    - Baseline: If 'original' or 'baseline' in name.
-    - Pruned/No-Prune: ONLY for VGG16 and RegNetX.
-    - Collapsed: For all other architectures (averages JF/Kevin).
-    """
-    n = exp_name.lower()
-    
-    if "original" in n or "baseline" in n:
-        return "Baseline"
-        
-    # Only distinguish JF vs Kevin for specific architectures
-    if architecture in ["VGG16", "RegNetX"]:
-        if "jf" in n: return "Pruned (JF)"
-        if "kevin" in n: return "No-Prune (Kevin)"
-        
-    # For ConvNeXt, MobileNet, etc., merge them into one group
-    return "Collapsed"
-
-def load_results() -> pd.DataFrame:
-    files = list(RESULTS_DIR.rglob("*merged_metrics.json"))
-    if not files:
-        # Fallback if no subdirectories found (e.g. flat file)
-        if (RESULTS_DIR / "merged_metrics.json").exists():
-            files = [RESULTS_DIR / "merged_metrics.json"]
-        else:
-            raise FileNotFoundError("No merged_metrics.json files found")
-
-    rows = []
-
-    for p in files:
-        dataset = infer_dataset_from_path(p)
-        arch = infer_architecture_from_path(p)
-        
-        try:
-            with open(p) as f:
-                raw = json.load(f)
-        except Exception as e:
-            print(f"Skipping {p}: {e}")
-            continue
-
-        for exp_name, metrics in raw.items():
-            # Apply new grouping logic
-            method_group = infer_posthoc_or_posttrain(exp_name, arch)
-            
-            rows.append(
-                {
-                    "dataset": dataset,
-                    "architecture": arch,
-                    "exp_name": exp_name,
-                    "posthoc_or_posttrain": method_group, # This is used for Hue
-                    "model_type": infer_model_type(exp_name),
-                    "is_quantized": infer_isquant(exp_name),
-
-                    # Core metrics
-                    "accuracy": metrics.get("final_accuracy"),
-                    "params": metrics.get("param_count"),
-                    "flops": metrics.get("flops"),
-                    "memory": metrics.get("total_size_mb"),
-                }
-            )
-
-    return pd.DataFrame(rows)
-
+# =========================
+# Figure 8 (Updated)
+# =========================
 def fig8(
     df: pd.DataFrame,
     metrics: list[str] = ["accuracy", "params", "flops", "memory"],
@@ -604,41 +597,12 @@ def fig8(
     """
     Generates improved INDIVIDUAL plot files.
     - Separates Quantized vs FP32 on X-axis.
-    - Groups "Collapsed" models (averaging JF/Kevin for non-VGG/RegNet).
+    - Groups "Collapsed" models.
     - Applies robust hatching for Quantization.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-
     df = df.copy()
-
-    # 1. Create a Clean Base Name (removing meta-tags)
-    def get_base_name(row):
-        n = row["exp_name"]
-        # Remove suffixes
-        n = n.replace("_quant", "").replace("_JF", "").replace("_Kevin", "")
-        # Remove architecture prefixes if present
-        for arch in ["RegNetX_400MF_", "VGG16_", "MobileNet_", "ConvNeXt_", "InceptionNet_", "XceptionNet_"]:
-            n = n.replace(arch, "")
-        
-        # Standardize Block/Stage
-        n = n.replace("Block ", "Block-").replace("Stage ", "Stage-") 
-        n = n.replace(" Only", "")
-        
-        # Handle Baseline/Original
-        if "Original" in n or "Baseline" in n: 
-            return "Original"
-            
-        return n.strip()
-
-    df["base_name"] = df.apply(get_base_name, axis=1)
-
-    # 2. Create Display Name: "Stage-1" vs "Stage-1 (Quant)"
-    # This ensures they are separate bars on the X-axis
-    df["display_name"] = df.apply(
-        lambda r: f"{r['base_name']}\n(Quant)" if r["is_quantized"] else r["base_name"], 
-        axis=1
-    )
 
     metric_titles = {
         "accuracy": "Accuracy (%)",
@@ -647,7 +611,6 @@ def fig8(
         "memory": "Memory (MB)"
     }
     
-    # Palette Mapping
     palette = {
         "Baseline": "#333333",      # Dark Grey
         "Pruned (JF)": "#1f77b4",   # Blue
@@ -655,29 +618,23 @@ def fig8(
         "Collapsed": "#2ca02c"      # Green
     }
 
-    # Iterate Architecture -> Dataset -> Metric
     for architecture, df_arch in df.groupby("architecture"):
         for dataset in df_arch["dataset"].unique():
             g_dataset = df_arch[df_arch["dataset"] == dataset].copy()
 
             if g_dataset.empty: continue
 
-            # Determine Sort Order for X-axis
-            # Strategy: Sort by 'params' of the Base Name (max params per base name to handle quant)
-            # This keeps "Stage 1" and "Stage 1 (Quant)" adjacent if we sort display names based on base name rank
-            
-            # 1. Calculate representative params for each base_name
+            # Determine Sort Order: Rank by non-quantized performance (or params) first
+            # 1. Calculate rank based on 'params' (or fallback to accuracy) of base_name
             if "params" in g_dataset.columns:
                 base_name_rank = g_dataset.groupby("base_name")["params"].max().sort_values(ascending=False)
             else:
-                base_name_rank = g_dataset.groupby("base_name")["accuracy"].max().sort_values(ascending=True) # Fallback
+                base_name_rank = g_dataset.groupby("base_name")["accuracy"].max().sort_values(ascending=True)
             
-            # 2. Create index map
             rank_map = {name: i for i, name in enumerate(base_name_rank.index)}
             
-            # 3. Sort the dataframe temporarily to extract display_names in order
+            # 2. Assign rank and sort (primary: rank, secondary: is_quantized)
             g_dataset["rank"] = g_dataset["base_name"].map(rank_map)
-            # Secondary sort: non-quant before quant
             g_dataset.sort_values(["rank", "is_quantized"], ascending=[True, True], inplace=True)
             
             sort_order = g_dataset["display_name"].unique().tolist()
@@ -686,11 +643,8 @@ def fig8(
                 if metric not in g_dataset.columns:
                     continue
 
-                fig, ax = plt.subplots(figsize=(12, 6)) # Slightly wider
+                fig, ax = plt.subplots(figsize=(12, 6))
 
-                # Plot
-                # Hue = method (Colllapsed, JF, Kevin, Baseline)
-                # X = display_name (Stage-1, Stage-1 (Quant))
                 sns.barplot(
                     data=g_dataset,
                     x="display_name",
@@ -704,17 +658,14 @@ def fig8(
                     errorbar=None 
                 )
 
-                # Hatching Logic
-                # We check the text of the x-tick corresponding to the bar
+                # Hatching Logic: check x-tick labels
                 locs = ax.get_xticks()
                 labels = [l.get_text() for l in ax.get_xticklabels()]
                 
                 for patch in ax.patches:
-                    # Get bar center
                     x_center = patch.get_x() + patch.get_width() / 2
                     
                     # Find closest tick index
-                    # locs are usually 0, 1, 2...
                     if len(locs) > 0:
                         closest_idx = min(range(len(locs)), key=lambda i: abs(locs[i] - x_center))
                         lbl = labels[closest_idx]
@@ -724,24 +675,75 @@ def fig8(
                             patch.set_edgecolor("black")
                             patch.set_linewidth(1.0)
 
-                # Formatting
                 ax.set_ylabel(metric_titles.get(metric, metric), fontsize=12, fontweight='bold')
                 ax.set_xlabel("")
                 ax.set_title(f"{architecture} - {dataset} ({metric})", fontsize=14, fontweight='bold')
                 
-                # Legend
                 ax.legend(title="Method", loc='upper left', bbox_to_anchor=(1, 1), frameon=True)
                 
                 plt.xticks(rotation=45, ha="right")
                 plt.grid(True, axis="y", linestyle="--", alpha=0.3)
                 plt.tight_layout()
                 
-                # Save
                 filename = f"{architecture}_{dataset}_{metric}.svg".replace(" ", "_")
-                save_path = out_dir / filename
-                plt.savefig(save_path, bbox_inches='tight')
+                plt.savefig(out_dir / filename, bbox_inches='tight')
                 plt.close()
                 print(f"[Plot] Saved {filename}")
+
+# =========================
+# Figure 10: PWCCA
+# =========================
+def pwcca_distance(X, Y, epsilon=1e-10):
+    # Center
+    X = X - X.mean(axis=0, keepdims=True)
+    Y = Y - Y.mean(axis=0, keepdims=True)
+
+    # Covariance matrices
+    Cxx = X.T @ X + epsilon * np.eye(X.shape[1])
+    Cyy = Y.T @ Y + epsilon * np.eye(Y.shape[1])
+    Cxy = X.T @ Y
+
+    # Whitening
+    Ux, Sx, _ = np.linalg.svd(Cxx)
+    Uy, Sy, _ = np.linalg.svd(Cyy)
+
+    Sx_inv_sqrt = np.diag(1.0 / np.sqrt(Sx + epsilon))
+    Sy_inv_sqrt = np.diag(1.0 / np.sqrt(Sy + epsilon))
+
+    T = Sx_inv_sqrt @ Ux.T @ Cxy @ Uy @ Sy_inv_sqrt
+
+    # CCA
+    _, s, Vt = np.linalg.svd(T)
+    alpha = np.sum(np.abs(Vt), axis=1)
+    alpha /= np.sum(alpha)
+
+    return float(np.sum(alpha * s))
+
+def extract_representation(model, dataloader, device, max_batches=5):
+    model.eval()
+    activations = []
+
+    def hook_fn(_, __, output):
+        activations.append(output.detach().cpu())
+
+    hook = None
+    for m in reversed(list(model.modules())):
+        if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d)):
+            hook = m.register_forward_hook(hook_fn)
+            break
+
+    if hook is None:
+        raise RuntimeError("No suitable layer found for PWCCA")
+
+    with torch.no_grad():
+        for i, (x, _) in enumerate(dataloader):
+            if i >= max_batches:
+                break
+            model(x.to(device))
+
+    hook.remove()
+    acts = torch.cat(activations, dim=0)
+    return acts.flatten(start_dim=1).numpy()
 
 def fig10(
     results_dir: Path = RESULTS_DIR,
@@ -750,7 +752,6 @@ def fig10(
 ):
     out_dir.mkdir(parents=True, exist_ok=True)
     
-    # Map strings to the actual imported classes
     model_map = {
         "VGG16": VGG16,
         "RegNetX_400MF": RegNetX_400MF,
@@ -773,29 +774,21 @@ def fig10(
         dir_name = ckpt_dir.parent.name
         print(f"[•] Processing {dir_name}")
 
-        # 1. Infer Model and Dataset from Directory Name
         try:
-            # Find which model name is in the directory string
             model_str = next((m for m in model_map.keys() if m in dir_name), None)
             
-            # Find dataset
             if "tinyimagenet" in dir_name.lower(): ds_name = "tinyimagenet"
             elif "cifar100" in dir_name.lower(): ds_name = "Cifar100"
             elif "cifar10" in dir_name.lower(): ds_name = "Cifar10"
             elif "imagenet" in dir_name.lower(): ds_name = "imagenet"
-            else: ds_name = "Cifar10" # Default/Fallback
+            else: ds_name = "Cifar10"
 
             if not model_str:
                 print(f"[!] Could not infer architecture from {dir_name}, skipping.")
                 continue
 
-            # 2. Load Data Config & Instantiate Model Class
-            # We need num_classes and one_batch (for shapes) to instantiate correctly
             train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name=ds_name, model_name=model_str)
-            
-            # Fetch a dummy batch for models like RegNet/ConvNeXt that need input shape
             one_batch = next(iter(train_loader))[0]
-
             ModelClass = model_map[model_str]
             
         except Exception as e:
@@ -805,33 +798,25 @@ def fig10(
         baseline = None
         others = []
 
-        # 3. Load Checkpoints
         for ckpt_path in ckpt_files:
             try:
-                # Instantiate a FRESH model for every checkpoint
                 model = ModelClass(num_classes=num_classes, one_batch=one_batch).to(device)
-                
-                # Load the weights
                 ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
                 
-                # Handle different saving conventions
                 if "model_state_dict" in ckpt:
                     model.load_state_dict(ckpt["model_state_dict"])
                 elif "model" in ckpt and isinstance(ckpt["model"], dict):
-                     # Sometimes state_dict is saved under 'model' key (rare but possible)
                     model.load_state_dict(ckpt["model"])
                 else:
-                    # Fallback: assume the ckpt itself is the state_dict
                     model.load_state_dict(ckpt)
                 
                 model.eval()
-
                 name = ckpt_path.stem
+                
                 if "Kevin" in name and "Original" in name and "quant" not in name:
                     baseline = (name, model)
                 else:
                     others.append((name, model))
-            
             except Exception as e:
                 print(f"[!] Error loading {ckpt_path.name}: {e}")
                 continue
@@ -843,7 +828,6 @@ def fig10(
         base_name, base_model = baseline
         print(f"[✓] Baseline: {base_name}")
 
-        # 4. Calculate PWCCA
         try:
             base_repr = extract_representation(base_model, test_loader, device)
             pwcca_scores = []
@@ -859,7 +843,6 @@ def fig10(
             if not pwcca_scores:
                 continue
 
-            # ---- Plot ----
             pwcca_scores.sort(key=lambda x: x["pwcca"], reverse=True)
 
             fig, ax = plt.subplots(figsize=(10, 5))
@@ -867,13 +850,11 @@ def fig10(
                 [x["model"] for x in pwcca_scores],
                 [x["pwcca"] for x in pwcca_scores],
             )
-
             ax.set_ylabel("PWCCA Similarity")
             ax.set_xlabel("Model Variant")
             ax.set_title(f"PWCCA Drift from Baseline\n{dir_name}", fontsize=14)
             ax.set_ylim(0, 1)
             ax.grid(True, axis="y", linestyle="--", alpha=0.5)
-
             plt.xticks(rotation=45, ha="right")
             plt.tight_layout()
 
@@ -884,6 +865,7 @@ def fig10(
 
         except Exception as e:
             print(f"[!] Analysis failed for {dir_name}: {e}")
+
 # =========================
 # Tables
 # =========================
@@ -904,7 +886,6 @@ def tab1(df: pd.DataFrame):
 
     if not comparison_data: return
     comparison_df = pd.DataFrame(comparison_data).sort_values(["Dataset", "Arch"])
-    
     save_plot_source_data(comparison_df, "tab1_baseline_max_collapse")
 
     table_path = TABLE_DIR / "tab1_baseline_vs_max_collapse.tex"
@@ -928,7 +909,6 @@ def tab2(df: pd.DataFrame):
 
     if not efficiency_data: return
     efficiency_df = pd.DataFrame(efficiency_data).sort_values(["Dataset", "Arch"])
-    
     save_plot_source_data(efficiency_df, "tab2_model_efficiency")
 
     table_path = TABLE_DIR / "tab2_model_efficiency.tex"
@@ -936,70 +916,6 @@ def tab2(df: pd.DataFrame):
         f.write(efficiency_df.to_latex(index=False, float_format="%.2f"))
     print(f"Table 2 saved to {table_path}")
 
-import numpy as np
-
-def pwcca_distance(X, Y, epsilon=1e-10):
-    """
-    Projection Weighted Canonical Correlation Analysis (PWCCA)
-
-    X, Y: shape (num_samples, num_features)
-    Returns similarity score in [0, 1]
-    """
-
-    # Center
-    X = X - X.mean(axis=0, keepdims=True)
-    Y = Y - Y.mean(axis=0, keepdims=True)
-
-    # Covariance matrices
-    Cxx = X.T @ X + epsilon * np.eye(X.shape[1])
-    Cyy = Y.T @ Y + epsilon * np.eye(Y.shape[1])
-    Cxy = X.T @ Y
-
-    # Whitening
-    Ux, Sx, _ = np.linalg.svd(Cxx)
-    Uy, Sy, _ = np.linalg.svd(Cyy)
-
-    Sx_inv_sqrt = np.diag(1.0 / np.sqrt(Sx + epsilon))
-    Sy_inv_sqrt = np.diag(1.0 / np.sqrt(Sy + epsilon))
-
-    T = Sx_inv_sqrt @ Ux.T @ Cxy @ Uy @ Sy_inv_sqrt
-
-    # CCA
-    _, s, Vt = np.linalg.svd(T)
-
-    # Projection weights
-    alpha = np.sum(np.abs(Vt), axis=1)
-    alpha /= np.sum(alpha)
-
-    return float(np.sum(alpha * s))
-
-def extract_representation(model, dataloader, device, max_batches=5):
-    model.eval()
-    activations = []
-
-    def hook_fn(_, __, output):
-        activations.append(output.detach().cpu())
-
-    # Register hook on last linear / conv layer
-    hook = None
-    for m in reversed(list(model.modules())):
-        if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d)):
-            hook = m.register_forward_hook(hook_fn)
-            break
-
-    if hook is None:
-        raise RuntimeError("No suitable layer found for PWCCA")
-
-    with torch.no_grad():
-        for i, (x, _) in enumerate(dataloader):
-            if i >= max_batches:
-                break
-            model(x.to(device))
-
-    hook.remove()
-
-    acts = torch.cat(activations, dim=0)
-    return acts.flatten(start_dim=1).numpy()
 # =========================
 # Main
 # =========================
@@ -1016,7 +932,6 @@ if __name__ == "__main__":
         fig2(df)
         fig4(df)
         fig5(df)
-        
         fig6(df)
         fig7(df)
         
