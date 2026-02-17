@@ -745,6 +745,70 @@ def extract_representation(model, dataloader, device, max_batches=5):
     acts = torch.cat(activations, dim=0)
     return acts.flatten(start_dim=1).numpy()
 
+
+def get_collapse_range(arch_name, exp_name):
+    """
+    Maps experiment names (e.g., 'Stage 1 (Full)') to layer ranges 
+    (e.g., ('stage1.block1_1', 'stage1.block1_2')) by importing directly from transfer.py.
+    """
+    # 1. Clean exp_name to match keys in the config dictionaries
+    # Removes prefixes like "final_JF_" and suffixes like "_quant" or ".pt"
+    name = exp_name.replace("final_JF_", "").replace("final_Kevin_", "") \
+                   .replace("_quant", "").replace(".pt", "").strip()
+    
+    # 2. Import experiment configurations
+    try:
+        from transfer import (
+            Vgg_common, 
+            RegNetX_common, 
+            ConvNeXt_common, 
+            InceptionNet_common, 
+            XceptionNet_common, 
+            mobileNet_common
+        )
+    except ImportError:
+        print("[!] Could not import experiment configs from transfer.py. Ensure it is in the path.")
+        return None
+
+    # 3. Map architecture strings to the imported dictionaries
+    mappings = {
+        "VGG16": Vgg_common,
+        "RegNetX": RegNetX_common,
+        "ConvNeXt": ConvNeXt_common,
+        "InceptionNet": InceptionNet_common,
+        "XceptionNet": XceptionNet_common,
+        "MobileNet": mobileNet_common
+    }
+
+    # 4. Fuzzy match the architecture name (e.g., "RegNetX_400MF" -> "RegNetX")
+    arch_key = None
+    an_lower = arch_name.lower()
+    
+    if "convnext" in an_lower: arch_key = "ConvNeXt"
+    elif "vgg" in an_lower: arch_key = "VGG16"
+    elif "regnet" in an_lower: arch_key = "RegNetX"
+    elif "inception" in an_lower: arch_key = "InceptionNet"
+    elif "xception" in an_lower: arch_key = "XceptionNet"
+    elif "mobile" in an_lower: arch_key = "MobileNet"
+    
+    # 5. Look up the specific experiment range
+    if arch_key and arch_key in mappings:
+        experiment_dict = mappings[arch_key]
+        
+        # Exact match attempt first
+        if name in experiment_dict:
+            val = experiment_dict[name]
+            # Ensure it is returned as a list of tuples (or list of lists) for collapse_only
+            return [val] if isinstance(val, tuple) else val
+            
+        # Fuzzy match experiment name (e.g., matching "Stage 1 (Full)" inside a longer string)
+        for key, val in experiment_dict.items():
+            if key in name: 
+                # If val is a tuple (start, end), wrap in list. If list of tuples, return as is.
+                return [val] if isinstance(val, tuple) else val
+                
+    return None
+
 def fig10(
     results_dir: Path = RESULTS_DIR,
     out_dir: Path = FIG_DIR / "pwcca",
@@ -787,6 +851,7 @@ def fig10(
                 print(f"[!] Could not infer architecture from {dir_name}, skipping.")
                 continue
 
+            # Load Dataset info
             train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name=ds_name, model_name=model_str)
             one_batch = next(iter(train_loader))[0]
             ModelClass = model_map[model_str]
@@ -800,7 +865,24 @@ def fig10(
 
         for ckpt_path in ckpt_files:
             try:
+                # 1. Initialize Baseline Model
                 model = ModelClass(num_classes=num_classes, one_batch=one_batch).to(device)
+                name = ckpt_path.stem
+
+                # 2. Apply Structural Collapse (Fixes the state_dict error)
+                if "Original" not in name and "Baseline" not in name:
+                    collapse_range = get_collapse_range(model_str, name)
+                    if collapse_range:
+                        # print(f"   [+] Applying structure collapse for {name}: {collapse_range}")
+                        model = collapse_only(
+                            model=model,
+                            compression_set=collapse_range,
+                            input_shape=one_batch.shape,
+                            device=device,
+                            debug=False 
+                        )
+                
+                # 3. Load Weights
                 ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
                 
                 if "model_state_dict" in ckpt:
@@ -811,14 +893,21 @@ def fig10(
                     model.load_state_dict(ckpt)
                 
                 model.eval()
-                name = ckpt_path.stem
                 
                 if "Kevin" in name and "Original" in name and "quant" not in name:
                     baseline = (name, model)
                 else:
                     others.append((name, model))
+
+            except RuntimeError as e:
+                # Catch mismatch errors specifically to print cleaner logs
+                if "Error(s) in loading state_dict" in str(e):
+                    print(f"[!] Arch mismatch for {name}. Ensure get_collapse_range covers this experiment.")
+                else:
+                    print(f"[!] Error loading {ckpt_path.name}: {e}")
+                continue
             except Exception as e:
-                print(f"[!] Error loading {ckpt_path.name}: {e}")
+                print(f"[!] Unexpected error loading {ckpt_path.name}: {e}")
                 continue
 
         if baseline is None:
@@ -865,7 +954,6 @@ def fig10(
 
         except Exception as e:
             print(f"[!] Analysis failed for {dir_name}: {e}")
-
 # =========================
 # Tables
 # =========================
