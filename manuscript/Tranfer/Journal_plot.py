@@ -589,16 +589,22 @@ def fig7(df: pd.DataFrame):
 # =========================
 # Figure 8 (Updated)
 # =========================
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from pathlib import Path
+
 def fig8(
     df: pd.DataFrame,
     metrics: list[str] = ["accuracy", "params", "flops", "memory"],
     out_dir: Path = Path("./figures/individual_plots"),
 ):
     """
-    Generates improved INDIVIDUAL plot files.
+    Generates improved INDIVIDUAL plot files AND LaTeX tables.
     - Separates Quantized vs FP32 on X-axis.
     - Groups "Collapsed" models.
     - Applies robust hatching for Quantization.
+    - Saves a LaTeX table summary for each Architecture/Dataset group.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -638,6 +644,30 @@ def fig8(
             g_dataset.sort_values(["rank", "is_quantized"], ascending=[True, True], inplace=True)
             
             sort_order = g_dataset["display_name"].unique().tolist()
+
+            # --- NEW: Save Data as LaTeX Table ---
+            # We filter for only the columns we want to present
+            table_cols = ["display_name", "posthoc_or_posttrain"] + [m for m in metrics if m in g_dataset.columns]
+            table_df = g_dataset[table_cols].copy()
+            
+            # Rename columns using the metric_titles dictionary for professional headers
+            rename_map = {"display_name": "Model", "posthoc_or_posttrain": "Type"}
+            rename_map.update(metric_titles)
+            table_df.rename(columns=rename_map, inplace=True)
+            
+            tex_filename = f"{architecture}_{dataset}_table.tex".replace(" ", "_")
+            
+            # Generate LaTeX with basic formatting
+            table_df.to_latex(
+                out_dir / tex_filename,
+                index=False,
+                float_format="%.2f", # Formats floats to 2 decimal places
+                caption=f"Performance metrics for {architecture} on {dataset}.",
+                label=f"tab:{architecture}_{dataset}",
+                escape=True # Escapes special characters like % or _
+            )
+            print(f"[Table] Saved {tex_filename}")
+            # -------------------------------------
 
             for metric in metrics:
                 if metric not in g_dataset.columns:
@@ -689,7 +719,6 @@ def fig8(
                 plt.savefig(out_dir / filename, bbox_inches='tight')
                 plt.close()
                 print(f"[Plot] Saved {filename}")
-
 # =========================
 # Figure 10: PWCCA
 # =========================
