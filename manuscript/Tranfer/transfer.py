@@ -354,37 +354,40 @@ InceptionNet_common = {
 
     # --- 1. Coarse-Grained Stage Collapses ---
     "Stage 5 (Full)": ("stage5.inception_5a", "stage5.inception_5b"),
-    "Stage 4 (Full)": ("stage4.inception_4a", "stage4.inception_4b"),
+    # Corrected: Stage 4 has blocks 4a through 4e
+    "Stage 4 (Full)": ("stage4.inception_4a", "stage4.inception_4e"), 
     "Stage 3 (Full)": ("stage3.inception_3a", "stage3.inception_3b"),
-    "Stage 2 (Full)": ("stage2.inception_2a", "stage2.inception_2b"),
+    # Corrected: Stage 2 has conv2/conv3, not Inception blocks
+    "Stage 2 (Full)": ("stage2.conv2", "stage2.conv3"), 
     
     # --- 2. Low Variance Control Group ---
-    # The Stem is usually safe. 
-    # (Assuming standard Inception V3 naming; adjust if using V1/GoogLeNet)
-    "Stem": ("stem.conv1", "stem.conv3"), 
+    # Corrected: "Stem" maps to Stage 1 in your model definition
+    "Stem": ("stage1.conv1", "stage1.pool1"), 
 
     # --- 3. High Variance Probes (Stage 3) ---
-    "Stage 3a Only": ("stage3.inception_3a", "stage3.inception_3a"), # Expected Failure Point
+    "Stage 3a Only": ("stage3.inception_3a", "stage3.inception_3a"),
     "Stage 3b Only": ("stage3.inception_3b", "stage3.inception_3b"),
 
     # --- 4. Capacity Probes (Stage 4) ---
     "Stage 4a Only": ("stage4.inception_4a", "stage4.inception_4a"),
     "Stage 4b Only": ("stage4.inception_4b", "stage4.inception_4b"),
+    # Added to match the full stage depth available
+    "Stage 4e Only": ("stage4.inception_4e", "stage4.inception_4e"),
 
     # --- 5. Multi-Stage Combinations ---
     "Stage 2-5": [
-        ("stage2.inception_2a", "stage2.inception_2b"),
+        ("stage2.conv2", "stage2.conv3"),
         ("stage3.inception_3a", "stage3.inception_3b"),
-        ("stage4.inception_4a", "stage4.inception_4b"),
+        ("stage4.inception_4a", "stage4.inception_4e"),
         ("stage5.inception_5a", "stage5.inception_5b"),
     ],
     "Stage 3-5": [
         ("stage3.inception_3a", "stage3.inception_3b"),
-        ("stage4.inception_4a", "stage4.inception_4b"),
+        ("stage4.inception_4a", "stage4.inception_4e"),
         ("stage5.inception_5a", "stage5.inception_5b"),
     ],
     "Stage 4-5": [
-        ("stage4.inception_4a", "stage4.inception_4b"),
+        ("stage4.inception_4a", "stage4.inception_4e"),
         ("stage5.inception_5a", "stage5.inception_5b"),
     ],  
     "Last 2": ("stage5.inception_5a", "stage5.inception_5b"),
