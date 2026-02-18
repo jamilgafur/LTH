@@ -293,7 +293,7 @@ def fig1(df: pd.DataFrame):
 
     fig.suptitle("Accuracy vs Parameter Reduction", fontsize=16, y=1.02)
     plt.tight_layout()
-    plt.savefig(FIG_DIR / "fig1_params_vs_accuracy.svg", bbox_inches='tight')
+    plt.savefig(FIG_DIR / "fig1_params_vs_accuracy.png", bbox_inches='tight')
     plt.close()
 
 def fig2(df: pd.DataFrame):
@@ -346,7 +346,7 @@ def fig2(df: pd.DataFrame):
 
     fig.suptitle("Accuracy vs FLOPs Reduction", fontsize=16, y=1.02)
     plt.tight_layout()
-    plt.savefig(FIG_DIR / "fig2_flops_vs_accuracy.svg", bbox_inches='tight')
+    plt.savefig(FIG_DIR / "fig2_flops_vs_accuracy.png", bbox_inches='tight')
     plt.close()
 
 def fig4(df: pd.DataFrame):
@@ -401,7 +401,7 @@ def fig4(df: pd.DataFrame):
 
     fig.suptitle("FLOPs Reduction vs Collapsed Fraction", fontsize=16, y=1.02)
     plt.tight_layout()
-    plt.savefig(FIG_DIR / "fig4_collapsed_fraction_vs_flops.svg", bbox_inches='tight')
+    plt.savefig(FIG_DIR / "fig4_collapsed_fraction_vs_flops.png", bbox_inches='tight')
     plt.close()
 
 def fig5(df: pd.DataFrame):
@@ -435,7 +435,7 @@ def fig5(df: pd.DataFrame):
     ax.legend(title="Dataset", bbox_to_anchor=(1.05, 1), loc='upper left')
 
     plt.tight_layout()
-    plt.savefig(FIG_DIR / "fig5_max_collapsibility.svg", bbox_inches='tight')
+    plt.savefig(FIG_DIR / "fig5_max_collapsibility.png", bbox_inches='tight')
     plt.close()
 
 def fig6(df: pd.DataFrame):
@@ -508,7 +508,7 @@ def fig6(df: pd.DataFrame):
 
     fig.suptitle("Pareto Frontier: Optimal Accuracy-Compression Trade-off", fontsize=16, y=1.02)
     plt.tight_layout()
-    plt.savefig(FIG_DIR / "fig6_pareto_frontier.svg", bbox_inches='tight')
+    plt.savefig(FIG_DIR / "fig6_pareto_frontier.png", bbox_inches='tight')
     plt.close()
 
 def fig7(df: pd.DataFrame):
@@ -583,7 +583,7 @@ def fig7(df: pd.DataFrame):
 
     fig.suptitle("Method Comparison: Post-Prune (JF) vs No-Prune (Kevin)", fontsize=16, y=1.02)
     plt.tight_layout()
-    plt.savefig(FIG_DIR / "fig7_method_delta.svg", bbox_inches='tight')
+    plt.savefig(FIG_DIR / "fig7_method_delta.png", bbox_inches='tight')
     plt.close()
 
 # =========================
@@ -685,7 +685,7 @@ def fig8(
                 plt.grid(True, axis="y", linestyle="--", alpha=0.3)
                 plt.tight_layout()
                 
-                filename = f"{architecture}_{dataset}_{metric}.svg".replace(" ", "_")
+                filename = f"{architecture}_{dataset}_{metric}.png".replace(" ", "_")
                 plt.savefig(out_dir / filename, bbox_inches='tight')
                 plt.close()
                 print(f"[Plot] Saved {filename}")
@@ -947,7 +947,7 @@ def fig10(
             plt.xticks(rotation=45, ha="right")
             plt.tight_layout()
 
-            save_path = out_dir / f"{dir_name}_pwcca.svg"
+            save_path = out_dir / f"{dir_name}_pwcca.png"
             plt.savefig(save_path, bbox_inches="tight")
             plt.close()
             print(f"[✓] Saved {save_path}")
