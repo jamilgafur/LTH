@@ -61,9 +61,7 @@ XceptionNet_experiments=(
 InceptionNet_experiments=(
     "Original Model"
     "Stage 5 (Full)" "Stage 4 (Full)" "Stage 3 (Full)" "Stage 2 (Full)"
-    "Stem"
-    "Stage 3a Only" "Stage 3b Only"
-    "Stage 4a Only" "Stage 4b Only" "Stage 4e Only"
+
     "Stage 2-5" "Stage 3-5" "Stage 4-5" "Last 2"
 )
 
