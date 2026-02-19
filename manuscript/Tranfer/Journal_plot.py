@@ -663,7 +663,8 @@ def fig8(
             table_df.rename(columns=rename_map, inplace=True)
             
             tex_filename = f"{architecture}_{dataset}_table.tex".replace(" ", "_")
-            
+            # remove duplicates from the LaTeX table as well
+            table_df = table_df.drop_duplicates(subset=["Model", "Type"])
             table_df.to_latex(
                 out_dir / tex_filename,
                 index=False,
