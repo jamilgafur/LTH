@@ -589,6 +589,7 @@ def fig7(df: pd.DataFrame):
 # =========================
 # Figure 8 (Updated)
 # =========================
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -601,19 +602,19 @@ def fig8(
 ):
     """
     Generates improved INDIVIDUAL plot files AND LaTeX tables.
-    - Separates Quantized vs FP32 on X-axis.
-    - Groups "Collapsed" models.
-    - Applies robust hatching for Quantization.
+    - Converts Params to Millions (M) and FLOPs to GFLOPs (G).
+    - Removes duplicate rows for cleaner tables.
     - Saves a LaTeX table summary for each Architecture/Dataset group.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     df = df.copy()
 
+    # Updated titles to reflect new units
     metric_titles = {
         "accuracy": "Accuracy (%)",
-        "params": "Parameters",
-        "flops": "FLOPs",
+        "params": "Params (M)",
+        "flops": "GFLOPs",
         "memory": "Memory (MB)"
     }
     
@@ -630,8 +631,7 @@ def fig8(
 
             if g_dataset.empty: continue
 
-            # Determine Sort Order: Rank by non-quantized performance (or params) first
-            # 1. Calculate rank based on 'params' (or fallback to accuracy) of base_name
+            # Determine Sort Order
             if "params" in g_dataset.columns:
                 base_name_rank = g_dataset.groupby("base_name")["params"].max().sort_values(ascending=False)
             else:
@@ -639,32 +639,38 @@ def fig8(
             
             rank_map = {name: i for i, name in enumerate(base_name_rank.index)}
             
-            # 2. Assign rank and sort (primary: rank, secondary: is_quantized)
             g_dataset["rank"] = g_dataset["base_name"].map(rank_map)
             g_dataset.sort_values(["rank", "is_quantized"], ascending=[True, True], inplace=True)
             
             sort_order = g_dataset["display_name"].unique().tolist()
 
-            # --- NEW: Save Data as LaTeX Table ---
-            # We filter for only the columns we want to present
+            # --- UPDATED: Save Data as LaTeX Table ---
             table_cols = ["display_name", "posthoc_or_posttrain"] + [m for m in metrics if m in g_dataset.columns]
             table_df = g_dataset[table_cols].copy()
             
-            # Rename columns using the metric_titles dictionary for professional headers
+            # 1. Scale metrics for better readability
+            if "params" in table_df.columns:
+                table_df["params"] = table_df["params"] / 1e6
+            if "flops" in table_df.columns:
+                table_df["flops"] = table_df["flops"] / 1e9
+
+            # 2. Drop duplicates (cleaning up repeated entries)
+            table_df = table_df.drop_duplicates()
+
+            # 3. Rename columns using the metric_titles dictionary
             rename_map = {"display_name": "Model", "posthoc_or_posttrain": "Type"}
             rename_map.update(metric_titles)
             table_df.rename(columns=rename_map, inplace=True)
             
             tex_filename = f"{architecture}_{dataset}_table.tex".replace(" ", "_")
             
-            # Generate LaTeX with basic formatting
             table_df.to_latex(
                 out_dir / tex_filename,
                 index=False,
-                float_format="%.2f", # Formats floats to 2 decimal places
+                float_format="%.2f",
                 caption=f"Performance metrics for {architecture} on {dataset}.",
                 label=f"tab:{architecture}_{dataset}",
-                escape=True # Escapes special characters like % or _
+                escape=True
             )
             print(f"[Table] Saved {tex_filename}")
             # -------------------------------------
@@ -675,6 +681,7 @@ def fig8(
 
                 fig, ax = plt.subplots(figsize=(12, 6))
 
+                # Note: Plotting still uses original g_dataset units unless you want plots scaled too
                 sns.barplot(
                     data=g_dataset,
                     x="display_name",
@@ -688,18 +695,14 @@ def fig8(
                     errorbar=None 
                 )
 
-                # Hatching Logic: check x-tick labels
                 locs = ax.get_xticks()
                 labels = [l.get_text() for l in ax.get_xticklabels()]
                 
                 for patch in ax.patches:
                     x_center = patch.get_x() + patch.get_width() / 2
-                    
-                    # Find closest tick index
                     if len(locs) > 0:
                         closest_idx = min(range(len(locs)), key=lambda i: abs(locs[i] - x_center))
                         lbl = labels[closest_idx]
-                        
                         if "(Quant)" in lbl:
                             patch.set_hatch("///")
                             patch.set_edgecolor("black")
@@ -719,6 +722,139 @@ def fig8(
                 plt.savefig(out_dir / filename, bbox_inches='tight')
                 plt.close()
                 print(f"[Plot] Saved {filename}")
+
+# import pandas as pd
+# import matplotlib.pyplot as plt
+# import seaborn as sns
+# from pathlib import Path
+
+# def fig8(
+#     df: pd.DataFrame,
+#     metrics: list[str] = ["accuracy", "params", "flops", "memory"],
+#     out_dir: Path = Path("./figures/individual_plots"),
+# ):
+#     """
+#     Generates improved INDIVIDUAL plot files AND LaTeX tables.
+#     - Separates Quantized vs FP32 on X-axis.
+#     - Groups "Collapsed" models.
+#     - Applies robust hatching for Quantization.
+#     - Saves a LaTeX table summary for each Architecture/Dataset group.
+#     """
+#     out_dir = Path(out_dir)
+#     out_dir.mkdir(parents=True, exist_ok=True)
+#     df = df.copy()
+
+#     # 1. Updated Titles for clarity
+#     metric_titles = {
+#         "accuracy": "Accuracy (%)",
+#         "params": "Params (M)",
+#         "flops": "GFLOPs",
+#         "memory": "Memory (MB)"
+#     }
+    
+#     palette = {
+#         "Baseline": "#333333",      # Dark Grey
+#         "Pruned (JF)": "#1f77b4",   # Blue
+#         "No-Prune (Kevin)": "#ff7f0e", # Orange
+#         "Collapsed": "#2ca02c"      # Green
+#     }
+
+#     for architecture, df_arch in df.groupby("architecture"):
+#         for dataset in df_arch["dataset"].unique():
+#             g_dataset = df_arch[df_arch["dataset"] == dataset].copy()
+
+#             if g_dataset.empty: continue
+
+#             # Determine Sort Order: Rank by non-quantized performance (or params) first
+#             # 1. Calculate rank based on 'params' (or fallback to accuracy) of base_name
+#             if "params" in g_dataset.columns:
+#                 base_name_rank = g_dataset.groupby("base_name")["params"].max().sort_values(ascending=False)
+#             else:
+#                 base_name_rank = g_dataset.groupby("base_name")["accuracy"].max().sort_values(ascending=True)
+            
+#             rank_map = {name: i for i, name in enumerate(base_name_rank.index)}
+            
+#             # 2. Assign rank and sort (primary: rank, secondary: is_quantized)
+#             g_dataset["rank"] = g_dataset["base_name"].map(rank_map)
+#             g_dataset.sort_values(["rank", "is_quantized"], ascending=[True, True], inplace=True)
+            
+#             sort_order = g_dataset["display_name"].unique().tolist()
+
+#             # --- NEW: Save Data as LaTeX Table ---
+#             # We filter for only the columns we want to present
+#             table_cols = ["display_name", "posthoc_or_posttrain"] + [m for m in metrics if m in g_dataset.columns]
+#             table_df = g_dataset[table_cols].copy()
+            
+#             # Rename columns using the metric_titles dictionary for professional headers
+#             rename_map = {"display_name": "Model", "posthoc_or_posttrain": "Type"}
+#             rename_map.update(metric_titles)
+#             table_df.rename(columns=rename_map, inplace=True)
+            
+#             tex_filename = f"{architecture}_{dataset}_table.tex".replace(" ", "_")
+            
+#             # Generate LaTeX with basic formatting
+#             table_df.to_latex(
+#                 out_dir / tex_filename,
+#                 index=False,
+#                 float_format="%.2f", # Formats floats to 2 decimal places
+#                 caption=f"Performance metrics for {architecture} on {dataset}.",
+#                 label=f"tab:{architecture}_{dataset}",
+#                 escape=True # Escapes special characters like % or _
+#             )
+#             print(f"[Table] Saved {tex_filename}")
+#             # -------------------------------------
+
+#             for metric in metrics:
+#                 if metric not in g_dataset.columns:
+#                     continue
+
+#                 fig, ax = plt.subplots(figsize=(12, 6))
+
+#                 sns.barplot(
+#                     data=g_dataset,
+#                     x="display_name",
+#                     y=metric,
+#                     hue="posthoc_or_posttrain",
+#                     order=sort_order,
+#                     palette=palette,
+#                     edgecolor="black",
+#                     linewidth=1.0,
+#                     ax=ax,
+#                     errorbar=None 
+#                 )
+
+#                 # Hatching Logic: check x-tick labels
+#                 locs = ax.get_xticks()
+#                 labels = [l.get_text() for l in ax.get_xticklabels()]
+                
+#                 for patch in ax.patches:
+#                     x_center = patch.get_x() + patch.get_width() / 2
+                    
+#                     # Find closest tick index
+#                     if len(locs) > 0:
+#                         closest_idx = min(range(len(locs)), key=lambda i: abs(locs[i] - x_center))
+#                         lbl = labels[closest_idx]
+                        
+#                         if "(Quant)" in lbl:
+#                             patch.set_hatch("///")
+#                             patch.set_edgecolor("black")
+#                             patch.set_linewidth(1.0)
+
+#                 ax.set_ylabel(metric_titles.get(metric, metric), fontsize=12, fontweight='bold')
+#                 ax.set_xlabel("")
+#                 ax.set_title(f"{architecture} - {dataset} ({metric})", fontsize=14, fontweight='bold')
+                
+#                 ax.legend(title="Method", loc='upper left', bbox_to_anchor=(1, 1), frameon=True)
+                
+#                 plt.xticks(rotation=45, ha="right")
+#                 plt.grid(True, axis="y", linestyle="--", alpha=0.3)
+#                 plt.tight_layout()
+                
+#                 filename = f"{architecture}_{dataset}_{metric}.png".replace(" ", "_")
+#                 plt.savefig(out_dir / filename, bbox_inches='tight')
+#                 plt.close()
+#                 print(f"[Plot] Saved {filename}")
+
 # =========================
 # Figure 10: PWCCA
 # =========================
