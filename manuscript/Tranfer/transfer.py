@@ -933,240 +933,400 @@ import os
         
 #     return df
 
+
 def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
     """
-    Analyzes Conv2d and Linear layers, calculates Taylor First-Order Gradient Sensitivity,
-    generates LaTeX tables, and plots readable metrics relative to a 1.0x baseline.
+    Analyzes Virtual Bypass Prediction Shift (KL Divergence).
+    Dynamically routes inputs around target blocks and measures the damage 
+    to the final network prediction to accurately forecast collapse safety.
     """
-    print(f"[•] Running Gradient-Based Sensitivity Analysis for {model_name} on {dataset_name}...")
+    print(f"[•] Running Zero-Shot Virtual Bypass Analysis for {model_name} on {dataset_name}...")
     
-    # Must be in train mode (or at least require grad) to backpropagate
-    model.eval() 
+    model.eval()
     if len(input_tensor.shape) == 3:
         input_tensor = input_tensor.unsqueeze(0)
-    input_tensor.requires_grad_(True)
 
-    # 1. Get FLOPs
-    flops_dict = {}
-    try:
-        from fvcore.nn import FlopCountAnalysis
-        flops_counter = FlopCountAnalysis(model, input_tensor)
-        flops_dict = flops_counter.by_module()
-    except Exception as e:
-        print(f"[!] FLOPs count failed: {e}")
+    module_dict = dict(model.named_modules())
+    layer_names = list(module_dict.keys())
 
-    layer_stats = {}
-    activations = {}
+    # 1. Baseline Prediction (Unbroken Network)
+    with torch.no_grad():
+        baseline_logits = model(input_tensor)
+        baseline_probs = F.softmax(baseline_logits, dim=1)
 
-    # 2. Hooks for Taylor First-Order Sensitivity (|Activation * Gradient|)
-    def fwd_hook(name, layer_type, module):
-        def fn(module, inp, out):
-            if isinstance(out, torch.Tensor):
-                activations[name] = out
-                
-                # Pre-calculate memory bytes while we are here
-                x = inp[0]
-                dtype_size = x.element_size()
-                weight_bytes = sum(p.numel() * p.element_size() for p in module.parameters())
-                total_bytes = (x.numel() * dtype_size) + (out.numel() * dtype_size) + weight_bytes
-                
-                layer_stats[name] = {
-                    "layer_type": layer_type,
-                    "memory_bytes": total_bytes,
-                    "sensitivity": 0.0 # Placeholder until backward pass
-                }
-        return fn
-
-    def bwd_hook(name):
-        def fn(module, grad_inp, grad_out):
-            if name in activations and grad_out[0] is not None:
-                act = activations[name].detach()
-                grad = grad_out[0].detach()
-                
-                # Taylor First-Order Expansion: | A * dL/dA |
-                # Taking the mean computes the average structural importance of the layer's features
-                sensitivity = (act * grad).abs().mean().item()
-                
-                if name in layer_stats:
-                    layer_stats[name]["sensitivity"] = sensitivity
-        return fn
-
-    # Register hooks
-    fwd_hooks = []
-    bwd_hooks = []
-    for name, module in model.named_modules():
-        if isinstance(module, (nn.Conv2d, nn.Linear)):
-            fwd_hooks.append(module.register_forward_hook(fwd_hook(name, type(module).__name__, module)))
-            bwd_hooks.append(module.register_full_backward_hook(bwd_hook(name)))
-
-    # 3. Run Forward and Backward Pass
-    model.zero_grad()
-    outputs = model(input_tensor)
-    
-    # We use the mean of the outputs as a pseudo-loss to flow gradients evenly 
-    # through the entire network without needing actual labels.
-    pseudo_loss = outputs.mean()
-    pseudo_loss.backward()
-
-    # Clean up hooks
-    for h in fwd_hooks + bwd_hooks: 
-        h.remove()
-    model.zero_grad()
-
-    # 4. Aggregate Data
-    results = []
-    layer_names = []
-    for name, stats in layer_stats.items():
-        layer_names.append(name)
-        flops_val = flops_dict.get(name, 0)
-        mem_bytes = stats["memory_bytes"]
-        ai = flops_val / mem_bytes if mem_bytes > 0 else 0.0
-        
-        results.append({
-            "layer": name,
-            "layer_type": stats["layer_type"],
-            "arithmetic_intensity": ai,
-            "sensitivity": stats["sensitivity"],
-            "flops": flops_val
-        })
-
-    df = pd.DataFrame(results)
-    
-    if df.empty:
-        print("[WARN] No layers found for analysis.")
-        return df
-
-    # --- STEP 5: Save Raw Heuristics ---
-    csv_name = f"{model_name}_{dataset_name}_heuristics.csv"
-    df.to_csv(os.path.join(save_root_dir, csv_name), index=False)
-
-    # Compute Global Baseline for Normalization
-    global_median_sens = float(df['sensitivity'].median())
-
-    # --- STEP 6: Aggregate Experiment Data (Relative Sensitivity) ---
-    plot_data = [] 
+    plot_data = []
+    summary_data_latex = []
 
     try:
         exp_config = get_experiment_config(model_name)
-        
-        if exp_config:
-            summary_data_latex = []
+        if not exp_config:
+            print("[WARN] No experiment config found.")
+            return pd.DataFrame()
+
+        for exp_name, layer_range in exp_config.items():
+            # Handle Original Model
+            if layer_range is None:
+                plot_data.append({"Experiment": exp_name.replace("_", " "), "Prediction Shift (KL)": 0.0})
+                summary_data_latex.append({
+                    "Experiment Name": exp_name.replace("_", "\\_"), 
+                    "Layer Range": "Original (Baseline)", 
+                    "Prediction Shift": "0.00"
+                })
+                continue
+
+            ranges = layer_range if isinstance(layer_range, list) else [layer_range]
+            handles = []
+            bypass_cache = {}
+
+            # Hooks to dynamically unplug the block and bridge the gap
+            def get_start_hook(idx):
+                def hook(module, inp, out):
+                    bypass_cache[idx] = inp[0] # Save the input going INTO the block
+                return hook
+
+            def get_end_hook(idx):
+                def hook(module, inp, out):
+                    if idx in bypass_cache:
+                        cached_inp = bypass_cache[idx]
+                        # If shapes match, perform identity bypass
+                        if cached_inp.shape == out.shape:
+                            return cached_inp
+                        else:
+                            # Shape mismatch ruins the structural pipeline
+                            return torch.zeros_like(out) 
+                    return out
+                return hook
+
+            valid_bypass = True
+
+            # Register the bypass hooks for the target experiment
+            for idx, (start_layer, end_layer) in enumerate(ranges):
+                start_name = next((name for name in layer_names if start_layer in name), None)
+                end_name = next((name for name in reversed(layer_names) if end_layer in name), None)
+
+                if start_name and end_name:
+                    start_mod = module_dict[start_name]
+                    end_mod = module_dict[end_name]
+                    handles.append(start_mod.register_forward_hook(get_start_hook(idx)))
+                    handles.append(end_mod.register_forward_hook(get_end_hook(idx)))
+                else:
+                    valid_bypass = False
+
+            # 2. Run the Bypassed Prediction
+            if not valid_bypass:
+                kl_div = float('inf')
+            else:
+                try:
+                    with torch.no_grad():
+                        bypass_logits = model(input_tensor)
+                        bypass_log_probs = F.log_softmax(bypass_logits, dim=1)
+                    # Measure the downstream structural damage
+                    kl_div = F.kl_div(bypass_log_probs, baseline_probs, reduction='batchmean').item()
+                except Exception as e:
+                    kl_div = float('inf') # Forward pass crashed due to downstream dimension errors
+
+            # Cleanup Hooks for the next experiment
+            for h in handles:
+                h.remove()
+            bypass_cache.clear()
+
+            # Cap massive failures for readable plotting
+            display_kl = kl_div if kl_div < 50.0 else 50.0
+
+            plot_data.append({
+                "Experiment": exp_name.replace("_", " "), 
+                "Prediction Shift (KL)": display_kl
+            })
+
+            range_str = "Multiple Ranges" if isinstance(layer_range, list) else f"{layer_range[0]} $\\to$ {layer_range[1]}".replace("_", "\\_")
+            summary_data_latex.append({
+                "Experiment Name": exp_name.replace("_", "\\_"),
+                "Layer Range": range_str,
+                "Prediction Shift": f"{display_kl:.4f}" if display_kl < 50.0 else "FAIL (Shape Error)"
+            })
+
+        # Save Summary LaTeX Table
+        if summary_data_latex:
+            summary_df = pd.DataFrame(summary_data_latex)
+            tex_filename = f"{model_name}_{dataset_name}_experiment_summary.tex"
+            save_path = os.path.join(save_root_dir, tex_filename)
+            summary_df.to_latex(
+                buf=save_path, index=False, escape=False, 
+                column_format="llc",
+                caption=f"Zero-Shot Virtual Bypass Prediction Shift for {model_name}. Higher KL Divergence indicates a catastrophic accuracy drop.",
+                label=f"tab:bypass_summary_{model_name.lower()}",
+                position="h", header=True
+            )
+            print(f"[Saved] Experiment Summary Table -> {tex_filename}")
+
+        # --- Generate Experiment-Wise Plots ---
+        if plot_data:
+            exp_df = pd.DataFrame(plot_data)
             
-            for exp_name, layer_range in exp_config.items():
-                # 1. Handle Original Model (Global Baseline)
-                if layer_range is None: 
-                    plot_data.append({
-                        "Experiment": exp_name.replace("_", " "), 
-                        "Relative Sensitivity": 1.0 # Baseline is strictly 1.0x
-                    })
-                    
-                    summary_data_latex.append({
-                        "Experiment Name": exp_name.replace("_", "\\_"),
-                        "Layer Range": "All Layers (Global Baseline)",
-                        "Relative Sensitivity": "1.00x"
-                    })
-                    continue
-                    
-                # 2. Handle both single tuple and list of tuples for collapsed ranges
-                ranges = layer_range if isinstance(layer_range, list) else [layer_range]
-                subset_indices = []
+            # Save CSV
+            var_csv_path = os.path.join(save_root_dir, f"{model_name}_{dataset_name}_prediction_shift.csv")
+            exp_df.to_csv(var_csv_path, index=False)
 
-                for start_layer, end_layer in ranges:
-                    start_idx = -1
-                    end_idx = -1
-                    
-                    for i, lname in enumerate(layer_names):
-                        if start_layer in lname: start_idx = i
-                        if end_layer in lname: end_idx = i
-                    
-                    if start_idx != -1 and end_idx != -1:
-                        if start_idx > end_idx: start_idx, end_idx = end_idx, start_idx
-                        subset_indices.extend(range(start_idx, end_idx + 1))
-                
-                # 3. Calculate Relative Sensitivity
-                if subset_indices:
-                    subset_indices = list(set(subset_indices)) 
-                    subset = df.iloc[subset_indices]
-                    
-                    # Median sensitivity of the block divided by the global median
-                    median_sens = float(subset['sensitivity'].median())
-                    relative_sens = median_sens / global_median_sens if global_median_sens > 0 else 1.0
-                    
-                    plot_data.append({
-                        "Experiment": exp_name.replace("_", " "), 
-                        "Relative Sensitivity": relative_sens
-                    })
+            # Plot
+            plt.figure(figsize=(12, 7))
+            
+            colors = ['crimson' if exp == 'Original Model' else 'teal' for exp in exp_df['Experiment']]
+            ax = sns.barplot(x="Experiment", y="Prediction Shift (KL)", data=exp_df, palette=colors)
+            
+            # Visual zones for clarity
+            plt.axhspan(0.0, 1.0, color='green', alpha=0.05, label='Safe to Prune (Low Output Shift)')
+            plt.axhspan(1.0, exp_df['Prediction Shift (KL)'].max() * 1.05, color='red', alpha=0.05, label='Dangerous (Classifier Output Destroyed)')
 
-                    if isinstance(layer_range, list):
-                        range_str = "Multiple Ranges"
-                    else:
-                        range_str = f"{layer_range[0]} $\\to$ {layer_range[1]}".replace("_", "\\_")
-                        
-                    exp_str = exp_name.replace("_", "\\_")
-                    
-                    summary_data_latex.append({
-                        "Experiment Name": exp_str,
-                        "Layer Range": range_str,
-                        "Relative Sensitivity": f"{relative_sens:.2f}x"
-                    })
-
-            # Save Summary LaTeX Table
-            if summary_data_latex:
-                summary_df = pd.DataFrame(summary_data_latex)
-                tex_filename = f"{model_name}_{dataset_name}_experiment_summary.tex"
-                save_path = os.path.join(save_root_dir, tex_filename)
-                summary_df.to_latex(
-                    buf=save_path, index=False, escape=False, 
-                    column_format="llc",
-                    caption=f"Predicted Block Sensitivity Summary for {model_name}. 1.00x represents the global network median.",
-                    label=f"tab:rel_sens_summary_{model_name.lower()}",
-                    position="h", header=True
-                )
-                print(f"[Saved] Experiment Summary Table -> {tex_filename}")
+            plt.title(f"Virtual Bypass Prediction Damage (KL Divergence)\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold')
+            plt.ylabel("Prediction Shift (KL Divergence)\n(0.0 = Safe | >1.0 = Critical | 50.0 = Failed)", fontsize=12)
+            plt.xticks(rotation=45, ha='right')
+            
+            plt.legend(loc='upper right')
+            plt.grid(axis='y', linestyle='--', alpha=0.4)
+            plt.tight_layout()
+            plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_PredictionShift.png"), dpi=300)
+            plt.close()
 
     except Exception as e:
         print(f"[!] Failed to process experiments: {e}")
 
-    # --- STEP 7: Generate Experiment-Wise Plots ---
-    if plot_data:
-        exp_df = pd.DataFrame(plot_data)
-        
-        plot_data_tex = f"{model_name}_{dataset_name}_experiment_plot_data.tex"
-        exp_df.to_latex(
-            os.path.join(save_root_dir, plot_data_tex),
-            index=False,
-            float_format="%.2f",
-            caption=f"Aggregated Experiment Metrics for {model_name} Plots",
-            label=f"tab:exp_plot_data_{model_name.lower()}"
-        )
+    # Return empty DataFrame as we are evaluating blocks directly now, not single layers
+    return pd.DataFrame()
+    
+# def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
+#     """
+#     Analyzes Conv2d and Linear layers, calculates Taylor First-Order Gradient Sensitivity,
+#     generates LaTeX tables, and plots readable metrics relative to a 1.0x baseline.
+#     """
+#     print(f"[•] Running Gradient-Based Sensitivity Analysis for {model_name} on {dataset_name}...")
+    
+#     # Must be in train mode (or at least require grad) to backpropagate
+#     model.eval() 
+#     if len(input_tensor.shape) == 3:
+#         input_tensor = input_tensor.unsqueeze(0)
+#     input_tensor.requires_grad_(True)
 
-        var_csv_path = os.path.join(save_root_dir, f"{model_name}_{dataset_name}_experiment_rel_sensitivity.csv")
-        exp_df.to_csv(var_csv_path, index=False)
+#     # 1. Get FLOPs
+#     flops_dict = {}
+#     try:
+#         from fvcore.nn import FlopCountAnalysis
+#         flops_counter = FlopCountAnalysis(model, input_tensor)
+#         flops_dict = flops_counter.by_module()
+#     except Exception as e:
+#         print(f"[!] FLOPs count failed: {e}")
 
-        # Plot: Relative Sensitivity per Experiment
-        plt.figure(figsize=(12, 7))
-        
-        colors = ['crimson' if exp == 'Original Model' else 'rebeccapurple' for exp in exp_df['Experiment']]
-        ax = sns.barplot(x="Experiment", y="Relative Sensitivity", data=exp_df, palette=colors)
-        
-        # Add visual interpretation baseline
-        plt.axhline(1.0, color='crimson', linestyle='--', linewidth=2, label="1.0x Baseline (Network Average)")
-        
-        # Add visual zones (Lower sensitivity = safer to prune)
-        plt.axhspan(0.0, 1.0, color='green', alpha=0.05, label='Safe to Collapse (Low Sensitivity)')
-        plt.axhspan(1.0, exp_df['Relative Sensitivity'].max() * 1.05, color='red', alpha=0.05, label='Dangerous (High Sensitivity)')
+#     layer_stats = {}
+#     activations = {}
 
-        plt.title(f"Gradient-Based Sensitivity of Collapsed Blocks\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold')
-        plt.ylabel("Relative Sensitivity (Taylor First-Order)\n(<1.0x = Safe | >1.0x = Critical)", fontsize=12)
-        plt.xticks(rotation=45, ha='right')
-        
-        plt.legend(loc='upper right')
-        plt.grid(axis='y', linestyle='--', alpha=0.4)
-        plt.tight_layout()
-        plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_Sensitivity.png"), dpi=300)
-        plt.close()
+#     # 2. Hooks for Taylor First-Order Sensitivity (|Activation * Gradient|)
+#     def fwd_hook(name, layer_type, module):
+#         def fn(module, inp, out):
+#             if isinstance(out, torch.Tensor):
+#                 activations[name] = out
+                
+#                 # Pre-calculate memory bytes while we are here
+#                 x = inp[0]
+#                 dtype_size = x.element_size()
+#                 weight_bytes = sum(p.numel() * p.element_size() for p in module.parameters())
+#                 total_bytes = (x.numel() * dtype_size) + (out.numel() * dtype_size) + weight_bytes
+                
+#                 layer_stats[name] = {
+#                     "layer_type": layer_type,
+#                     "memory_bytes": total_bytes,
+#                     "sensitivity": 0.0 # Placeholder until backward pass
+#                 }
+#         return fn
 
-    return df
+#     def bwd_hook(name):
+#         def fn(module, grad_inp, grad_out):
+#             if name in activations and grad_out[0] is not None:
+#                 act = activations[name].detach()
+#                 grad = grad_out[0].detach()
+                
+#                 # Taylor First-Order Expansion: | A * dL/dA |
+#                 # Taking the mean computes the average structural importance of the layer's features
+#                 sensitivity = (act * grad).abs().mean().item()
+                
+#                 if name in layer_stats:
+#                     layer_stats[name]["sensitivity"] = sensitivity
+#         return fn
+
+#     # Register hooks
+#     fwd_hooks = []
+#     bwd_hooks = []
+#     for name, module in model.named_modules():
+#         if isinstance(module, (nn.Conv2d, nn.Linear)):
+#             fwd_hooks.append(module.register_forward_hook(fwd_hook(name, type(module).__name__, module)))
+#             bwd_hooks.append(module.register_full_backward_hook(bwd_hook(name)))
+
+#     # 3. Run Forward and Backward Pass
+#     model.zero_grad()
+#     outputs = model(input_tensor)
+    
+#     # We use the mean of the outputs as a pseudo-loss to flow gradients evenly 
+#     # through the entire network without needing actual labels.
+#     pseudo_loss = outputs.mean()
+#     pseudo_loss.backward()
+
+#     # Clean up hooks
+#     for h in fwd_hooks + bwd_hooks: 
+#         h.remove()
+#     model.zero_grad()
+
+#     # 4. Aggregate Data
+#     results = []
+#     layer_names = []
+#     for name, stats in layer_stats.items():
+#         layer_names.append(name)
+#         flops_val = flops_dict.get(name, 0)
+#         mem_bytes = stats["memory_bytes"]
+#         ai = flops_val / mem_bytes if mem_bytes > 0 else 0.0
+        
+#         results.append({
+#             "layer": name,
+#             "layer_type": stats["layer_type"],
+#             "arithmetic_intensity": ai,
+#             "sensitivity": stats["sensitivity"],
+#             "flops": flops_val
+#         })
+
+#     df = pd.DataFrame(results)
+    
+#     if df.empty:
+#         print("[WARN] No layers found for analysis.")
+#         return df
+
+#     # --- STEP 5: Save Raw Heuristics ---
+#     csv_name = f"{model_name}_{dataset_name}_heuristics.csv"
+#     df.to_csv(os.path.join(save_root_dir, csv_name), index=False)
+
+#     # Compute Global Baseline for Normalization
+#     global_median_sens = float(df['sensitivity'].median())
+
+#     # --- STEP 6: Aggregate Experiment Data (Relative Sensitivity) ---
+#     plot_data = [] 
+
+#     try:
+#         exp_config = get_experiment_config(model_name)
+        
+#         if exp_config:
+#             summary_data_latex = []
+            
+#             for exp_name, layer_range in exp_config.items():
+#                 # 1. Handle Original Model (Global Baseline)
+#                 if layer_range is None: 
+#                     plot_data.append({
+#                         "Experiment": exp_name.replace("_", " "), 
+#                         "Relative Sensitivity": 1.0 # Baseline is strictly 1.0x
+#                     })
+                    
+#                     summary_data_latex.append({
+#                         "Experiment Name": exp_name.replace("_", "\\_"),
+#                         "Layer Range": "All Layers (Global Baseline)",
+#                         "Relative Sensitivity": "1.00x"
+#                     })
+#                     continue
+                    
+#                 # 2. Handle both single tuple and list of tuples for collapsed ranges
+#                 ranges = layer_range if isinstance(layer_range, list) else [layer_range]
+#                 subset_indices = []
+
+#                 for start_layer, end_layer in ranges:
+#                     start_idx = -1
+#                     end_idx = -1
+                    
+#                     for i, lname in enumerate(layer_names):
+#                         if start_layer in lname: start_idx = i
+#                         if end_layer in lname: end_idx = i
+                    
+#                     if start_idx != -1 and end_idx != -1:
+#                         if start_idx > end_idx: start_idx, end_idx = end_idx, start_idx
+#                         subset_indices.extend(range(start_idx, end_idx + 1))
+                
+#                 # 3. Calculate Relative Sensitivity
+#                 if subset_indices:
+#                     subset_indices = list(set(subset_indices)) 
+#                     subset = df.iloc[subset_indices]
+                    
+#                     # Median sensitivity of the block divided by the global median
+#                     median_sens = float(subset['sensitivity'].median())
+#                     relative_sens = median_sens / global_median_sens if global_median_sens > 0 else 1.0
+                    
+#                     plot_data.append({
+#                         "Experiment": exp_name.replace("_", " "), 
+#                         "Relative Sensitivity": relative_sens
+#                     })
+
+#                     if isinstance(layer_range, list):
+#                         range_str = "Multiple Ranges"
+#                     else:
+#                         range_str = f"{layer_range[0]} $\\to$ {layer_range[1]}".replace("_", "\\_")
+                        
+#                     exp_str = exp_name.replace("_", "\\_")
+                    
+#                     summary_data_latex.append({
+#                         "Experiment Name": exp_str,
+#                         "Layer Range": range_str,
+#                         "Relative Sensitivity": f"{relative_sens:.2f}x"
+#                     })
+
+#             # Save Summary LaTeX Table
+#             if summary_data_latex:
+#                 summary_df = pd.DataFrame(summary_data_latex)
+#                 tex_filename = f"{model_name}_{dataset_name}_experiment_summary.tex"
+#                 save_path = os.path.join(save_root_dir, tex_filename)
+#                 summary_df.to_latex(
+#                     buf=save_path, index=False, escape=False, 
+#                     column_format="llc",
+#                     caption=f"Predicted Block Sensitivity Summary for {model_name}. 1.00x represents the global network median.",
+#                     label=f"tab:rel_sens_summary_{model_name.lower()}",
+#                     position="h", header=True
+#                 )
+#                 print(f"[Saved] Experiment Summary Table -> {tex_filename}")
+
+#     except Exception as e:
+#         print(f"[!] Failed to process experiments: {e}")
+
+#     # --- STEP 7: Generate Experiment-Wise Plots ---
+#     if plot_data:
+#         exp_df = pd.DataFrame(plot_data)
+        
+#         plot_data_tex = f"{model_name}_{dataset_name}_experiment_plot_data.tex"
+#         exp_df.to_latex(
+#             os.path.join(save_root_dir, plot_data_tex),
+#             index=False,
+#             float_format="%.2f",
+#             caption=f"Aggregated Experiment Metrics for {model_name} Plots",
+#             label=f"tab:exp_plot_data_{model_name.lower()}"
+#         )
+
+#         var_csv_path = os.path.join(save_root_dir, f"{model_name}_{dataset_name}_experiment_rel_sensitivity.csv")
+#         exp_df.to_csv(var_csv_path, index=False)
+
+#         # Plot: Relative Sensitivity per Experiment
+#         plt.figure(figsize=(12, 7))
+        
+#         colors = ['crimson' if exp == 'Original Model' else 'rebeccapurple' for exp in exp_df['Experiment']]
+#         ax = sns.barplot(x="Experiment", y="Relative Sensitivity", data=exp_df, palette=colors)
+        
+#         # Add visual interpretation baseline
+#         plt.axhline(1.0, color='crimson', linestyle='--', linewidth=2, label="1.0x Baseline (Network Average)")
+        
+#         # Add visual zones (Lower sensitivity = safer to prune)
+#         plt.axhspan(0.0, 1.0, color='green', alpha=0.05, label='Safe to Collapse (Low Sensitivity)')
+#         plt.axhspan(1.0, exp_df['Relative Sensitivity'].max() * 1.05, color='red', alpha=0.05, label='Dangerous (High Sensitivity)')
+
+#         plt.title(f"Gradient-Based Sensitivity of Collapsed Blocks\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold')
+#         plt.ylabel("Relative Sensitivity (Taylor First-Order)\n(<1.0x = Safe | >1.0x = Critical)", fontsize=12)
+#         plt.xticks(rotation=45, ha='right')
+        
+#         plt.legend(loc='upper right')
+#         plt.grid(axis='y', linestyle='--', alpha=0.4)
+#         plt.tight_layout()
+#         plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_Sensitivity.png"), dpi=300)
+#         plt.close()
+
+#     return df
 
 def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
     """Runs the appropriate experiment based on the arguments (JF or Kevin)."""
