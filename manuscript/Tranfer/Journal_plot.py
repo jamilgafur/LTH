@@ -139,9 +139,22 @@ def find_baseline(df: pd.DataFrame):
     return None if m.empty else m.iloc[0]
 
 def load_results() -> pd.DataFrame:
+    # 1. Pre-load heuristic CSVs to map ACS scores
+    heuristic_files = list(RESULTS_DIR.rglob("*_heuristics.csv"))
+    acs_data = {}
+    for hf in heuristic_files:
+        # Rely on your existing inference functions to group them
+        arch = infer_architecture_from_path(hf)
+        ds = infer_dataset_from_path(hf)
+        try:
+            df_h = pd.read_csv(hf)
+            acs_data[(arch, ds)] = df_h
+        except Exception as e:
+            print(f"Skipping heuristics {hf}: {e}")
+
+    # 2. Load merged metrics JSONs
     files = list(RESULTS_DIR.rglob("*merged_metrics.json"))
     if not files:
-        # Fallback if no subdirectories found (e.g. flat file)
         if (RESULTS_DIR / "merged_metrics.json").exists():
             files = [RESULTS_DIR / "merged_metrics.json"]
         else:
@@ -152,6 +165,9 @@ def load_results() -> pd.DataFrame:
     for p in files:
         dataset = infer_dataset_from_path(p)
         arch = infer_architecture_from_path(p)
+        
+        # Retrieve the matching heuristic dataframe for this architecture/dataset
+        h_df = acs_data.get((arch, dataset), None)
         
         try:
             with open(p) as f:
@@ -169,6 +185,37 @@ def load_results() -> pd.DataFrame:
             base_name = clean_exp_name(exp_name)
             display_name = f"{base_name}\n(Quant)" if is_quant else base_name
 
+            # ---------------------------------------------------------
+            # NEW: Map the Adaptive Collapse Score (ACS) to the Experiment
+            # ---------------------------------------------------------
+            avg_acs = None
+            if h_df is not None and not h_df.empty:
+                # Use your existing function to get the target layer tuples
+                collapse_range = get_collapse_range(arch, exp_name)
+                
+                if collapse_range:
+                    scores = []
+                    layer_names = h_df['layer'].tolist()
+                    
+                    # collapse_range is a list of tuples: [('start_layer', 'end_layer')]
+                    for start_layer, end_layer in collapse_range:
+                        start_idx, end_idx = -1, -1
+                        
+                        # Fuzzy match layer names to find start/end indices in the CSV
+                        for i, lname in enumerate(layer_names):
+                            if start_layer in lname: start_idx = i
+                            if end_layer in lname: end_idx = i
+                            
+                        if start_idx != -1 and end_idx != -1:
+                            if start_idx > end_idx: start_idx, end_idx = end_idx, start_idx
+                            
+                            # Slice the heuristics dataframe and get the mean ACS score
+                            subset = h_df.iloc[start_idx : end_idx + 1]
+                            scores.append(subset['collapse_score'].mean())
+                            
+                    if scores:
+                        avg_acs = np.mean(scores)
+
             rows.append(
                 {
                     "dataset": dataset,
@@ -185,6 +232,9 @@ def load_results() -> pd.DataFrame:
                     "params": metrics.get("param_count"),
                     "flops": metrics.get("flops"),
                     "memory": metrics.get("total_size_mb"),
+                    
+                    # NEW: Add ACS Score
+                    "acs_score": avg_acs,
                 }
             )
 
@@ -594,28 +644,28 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
-
 def fig8(
     df: pd.DataFrame,
-    metrics: list[str] = ["accuracy", "params", "flops", "memory"],
+    metrics: list[str] = ["accuracy", "params", "flops", "memory", "acs_score"], # <-- NEW: Added acs_score
     out_dir: Path = Path("./figures/individual_plots"),
 ):
     """
     Generates improved INDIVIDUAL plot files AND LaTeX tables.
     - Converts Params to Millions (M) and FLOPs to GFLOPs (G).
     - Removes duplicate rows for cleaner tables.
-    - Saves a LaTeX table summary for each Architecture/Dataset group.
+    - Saves a LaTeX table summary including ACS scores.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     df = df.copy()
 
-    # Updated titles to reflect new units
+    # Updated titles to reflect new units and ACS
     metric_titles = {
         "accuracy": "Accuracy (%)",
         "params": "Params (M)",
         "flops": "GFLOPs",
-        "memory": "Memory (MB)"
+        "memory": "Memory (MB)",
+        "acs_score": "Collapse Score (ACS)" # <-- NEW
     }
     
     palette = {
@@ -644,7 +694,7 @@ def fig8(
             
             sort_order = g_dataset["display_name"].unique().tolist()
 
-            # --- UPDATED: Save Data as LaTeX Table ---
+            # --- Save Data as LaTeX Table ---
             table_cols = ["display_name", "posthoc_or_posttrain"] + [m for m in metrics if m in g_dataset.columns]
             table_df = g_dataset[table_cols].copy()
             
@@ -655,7 +705,7 @@ def fig8(
                 table_df["flops"] = table_df["flops"] / 1e9
 
             # 2. Drop duplicates (cleaning up repeated entries)
-            table_df = table_df.drop_duplicates()
+            table_df = table_df.drop_duplicates(subset=["display_name", "posthoc_or_posttrain"])
 
             # 3. Rename columns using the metric_titles dictionary
             rename_map = {"display_name": "Model", "posthoc_or_posttrain": "Type"}
@@ -663,13 +713,13 @@ def fig8(
             table_df.rename(columns=rename_map, inplace=True)
             
             tex_filename = f"{architecture}_{dataset}_table.tex".replace(" ", "_")
-            # remove duplicates from the LaTeX table as well
-            table_df = table_df.drop_duplicates(subset=["Model", "Type"])
+            
+            # 4. Export to LaTeX (Formats floats dynamically)
             table_df.to_latex(
                 out_dir / tex_filename,
                 index=False,
-                float_format="%.2f",
-                caption=f"Performance metrics for {architecture} on {dataset}.",
+                float_format=lambda x: "%.4f" % x if x < 10 else "%.2f" % x, # High precision for ACS
+                caption=f"Performance metrics and ACS for {architecture} on {dataset}.",
                 label=f"tab:{architecture}_{dataset}",
                 escape=True
             )
@@ -677,12 +727,11 @@ def fig8(
             # -------------------------------------
 
             for metric in metrics:
-                if metric not in g_dataset.columns:
+                if metric not in g_dataset.columns or g_dataset[metric].isnull().all():
                     continue
 
                 fig, ax = plt.subplots(figsize=(12, 6))
 
-                # Note: Plotting still uses original g_dataset units unless you want plots scaled too
                 sns.barplot(
                     data=g_dataset,
                     x="display_name",
@@ -711,7 +760,11 @@ def fig8(
 
                 ax.set_ylabel(metric_titles.get(metric, metric), fontsize=12, fontweight='bold')
                 ax.set_xlabel("")
-                ax.set_title(f"{architecture} - {dataset} ({metric})", fontsize=14, fontweight='bold')
+                ax.set_title(f"{architecture} - {dataset} ({metric_titles.get(metric, metric)})", fontsize=14, fontweight='bold')
+                
+                # Dynamic Y-Limit for ACS Score to ensure 0-1 scale is visible
+                if metric == "acs_score":
+                    ax.set_ylim(0, 1.1)
                 
                 ax.legend(title="Method", loc='upper left', bbox_to_anchor=(1, 1), frameon=True)
                 
@@ -724,11 +777,6 @@ def fig8(
                 plt.close()
                 print(f"[Plot] Saved {filename}")
 
-# import pandas as pd
-# import matplotlib.pyplot as plt
-# import seaborn as sns
-# from pathlib import Path
-
 # def fig8(
 #     df: pd.DataFrame,
 #     metrics: list[str] = ["accuracy", "params", "flops", "memory"],
@@ -736,16 +784,15 @@ def fig8(
 # ):
 #     """
 #     Generates improved INDIVIDUAL plot files AND LaTeX tables.
-#     - Separates Quantized vs FP32 on X-axis.
-#     - Groups "Collapsed" models.
-#     - Applies robust hatching for Quantization.
+#     - Converts Params to Millions (M) and FLOPs to GFLOPs (G).
+#     - Removes duplicate rows for cleaner tables.
 #     - Saves a LaTeX table summary for each Architecture/Dataset group.
 #     """
 #     out_dir = Path(out_dir)
 #     out_dir.mkdir(parents=True, exist_ok=True)
 #     df = df.copy()
 
-#     # 1. Updated Titles for clarity
+#     # Updated titles to reflect new units
 #     metric_titles = {
 #         "accuracy": "Accuracy (%)",
 #         "params": "Params (M)",
@@ -766,8 +813,7 @@ def fig8(
 
 #             if g_dataset.empty: continue
 
-#             # Determine Sort Order: Rank by non-quantized performance (or params) first
-#             # 1. Calculate rank based on 'params' (or fallback to accuracy) of base_name
+#             # Determine Sort Order
 #             if "params" in g_dataset.columns:
 #                 base_name_rank = g_dataset.groupby("base_name")["params"].max().sort_values(ascending=False)
 #             else:
@@ -775,32 +821,39 @@ def fig8(
             
 #             rank_map = {name: i for i, name in enumerate(base_name_rank.index)}
             
-#             # 2. Assign rank and sort (primary: rank, secondary: is_quantized)
 #             g_dataset["rank"] = g_dataset["base_name"].map(rank_map)
 #             g_dataset.sort_values(["rank", "is_quantized"], ascending=[True, True], inplace=True)
             
 #             sort_order = g_dataset["display_name"].unique().tolist()
 
-#             # --- NEW: Save Data as LaTeX Table ---
-#             # We filter for only the columns we want to present
+#             # --- UPDATED: Save Data as LaTeX Table ---
 #             table_cols = ["display_name", "posthoc_or_posttrain"] + [m for m in metrics if m in g_dataset.columns]
 #             table_df = g_dataset[table_cols].copy()
             
-#             # Rename columns using the metric_titles dictionary for professional headers
+#             # 1. Scale metrics for better readability
+#             if "params" in table_df.columns:
+#                 table_df["params"] = table_df["params"] / 1e6
+#             if "flops" in table_df.columns:
+#                 table_df["flops"] = table_df["flops"] / 1e9
+
+#             # 2. Drop duplicates (cleaning up repeated entries)
+#             table_df = table_df.drop_duplicates()
+
+#             # 3. Rename columns using the metric_titles dictionary
 #             rename_map = {"display_name": "Model", "posthoc_or_posttrain": "Type"}
 #             rename_map.update(metric_titles)
 #             table_df.rename(columns=rename_map, inplace=True)
             
 #             tex_filename = f"{architecture}_{dataset}_table.tex".replace(" ", "_")
-            
-#             # Generate LaTeX with basic formatting
+#             # remove duplicates from the LaTeX table as well
+#             table_df = table_df.drop_duplicates(subset=["Model", "Type"])
 #             table_df.to_latex(
 #                 out_dir / tex_filename,
 #                 index=False,
-#                 float_format="%.2f", # Formats floats to 2 decimal places
+#                 float_format="%.2f",
 #                 caption=f"Performance metrics for {architecture} on {dataset}.",
 #                 label=f"tab:{architecture}_{dataset}",
-#                 escape=True # Escapes special characters like % or _
+#                 escape=True
 #             )
 #             print(f"[Table] Saved {tex_filename}")
 #             # -------------------------------------
@@ -811,6 +864,7 @@ def fig8(
 
 #                 fig, ax = plt.subplots(figsize=(12, 6))
 
+#                 # Note: Plotting still uses original g_dataset units unless you want plots scaled too
 #                 sns.barplot(
 #                     data=g_dataset,
 #                     x="display_name",
@@ -824,18 +878,14 @@ def fig8(
 #                     errorbar=None 
 #                 )
 
-#                 # Hatching Logic: check x-tick labels
 #                 locs = ax.get_xticks()
 #                 labels = [l.get_text() for l in ax.get_xticklabels()]
                 
 #                 for patch in ax.patches:
 #                     x_center = patch.get_x() + patch.get_width() / 2
-                    
-#                     # Find closest tick index
 #                     if len(locs) > 0:
 #                         closest_idx = min(range(len(locs)), key=lambda i: abs(locs[i] - x_center))
 #                         lbl = labels[closest_idx]
-                        
 #                         if "(Quant)" in lbl:
 #                             patch.set_hatch("///")
 #                             patch.set_edgecolor("black")
