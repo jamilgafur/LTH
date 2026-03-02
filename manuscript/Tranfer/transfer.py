@@ -866,7 +866,8 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         plt.tight_layout()
         plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_Variance.png"), dpi=300)
         plt.close()
-        
+        var_csv_path = os.path.join(save_root_dir, f"{model_name}_{dataset_name}_experiment_variance.csv")
+        exp_df.to_csv(var_csv_path, index=False)
     else:
         print("[WARN] No experiment data available for plotting.")
 
