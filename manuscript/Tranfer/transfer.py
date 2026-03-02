@@ -935,14 +935,16 @@ import os
 
 def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
     """
-    Analyzes Conv2d and Linear layers, calculates Relative Activation Variance,
+    Analyzes Conv2d and Linear layers, calculates Taylor First-Order Gradient Sensitivity,
     generates LaTeX tables, and plots readable metrics relative to a 1.0x baseline.
     """
-    print(f"[•] Running Extended Collapse Heuristics for {model_name} on {dataset_name}...")
+    print(f"[•] Running Gradient-Based Sensitivity Analysis for {model_name} on {dataset_name}...")
     
-    model.eval()
+    # Must be in train mode (or at least require grad) to backpropagate
+    model.eval() 
     if len(input_tensor.shape) == 3:
         input_tensor = input_tensor.unsqueeze(0)
+    input_tensor.requires_grad_(True)
 
     # 1. Get FLOPs
     flops_dict = {}
@@ -954,47 +956,64 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         print(f"[!] FLOPs count failed: {e}")
 
     layer_stats = {}
+    activations = {}
 
-    # 2. Hook for metrics
-    def heuristic_hook(name, layer_type):
+    # 2. Hooks for Taylor First-Order Sensitivity (|Activation * Gradient|)
+    def fwd_hook(name, layer_type, module):
         def fn(module, inp, out):
-            if not isinstance(out, torch.Tensor) or not isinstance(inp[0], torch.Tensor):
-                return
-            
-            x = inp[0].detach()
-            y = out.detach()
-            
-            # Metric: Memory & Bytes
-            dtype_size = x.element_size()
-            weight_bytes = sum(p.numel() * p.element_size() for p in module.parameters())
-            total_bytes = (x.numel() * dtype_size) + (y.numel() * dtype_size) + weight_bytes
+            if isinstance(out, torch.Tensor):
+                activations[name] = out
+                
+                # Pre-calculate memory bytes while we are here
+                x = inp[0]
+                dtype_size = x.element_size()
+                weight_bytes = sum(p.numel() * p.element_size() for p in module.parameters())
+                total_bytes = (x.numel() * dtype_size) + (out.numel() * dtype_size) + weight_bytes
+                
+                layer_stats[name] = {
+                    "layer_type": layer_type,
+                    "memory_bytes": total_bytes,
+                    "sensitivity": 0.0 # Placeholder until backward pass
+                }
+        return fn
 
-            # Metric: Activation Variance
-            if y.ndim == 4:
-                act_var = y.var(dim=[2, 3]).mean().item()
-            else:
-                act_var = y.var().item()
-            
-            layer_stats[name] = {
-                "layer_type": layer_type,
-                "memory_bytes": total_bytes,
-                "act_var": act_var
-            }
+    def bwd_hook(name):
+        def fn(module, grad_inp, grad_out):
+            if name in activations and grad_out[0] is not None:
+                act = activations[name].detach()
+                grad = grad_out[0].detach()
+                
+                # Taylor First-Order Expansion: | A * dL/dA |
+                # Taking the mean computes the average structural importance of the layer's features
+                sensitivity = (act * grad).abs().mean().item()
+                
+                if name in layer_stats:
+                    layer_stats[name]["sensitivity"] = sensitivity
         return fn
 
     # Register hooks
-    hooks = []
+    fwd_hooks = []
+    bwd_hooks = []
     for name, module in model.named_modules():
         if isinstance(module, (nn.Conv2d, nn.Linear)):
-            hooks.append(module.register_forward_hook(heuristic_hook(name, type(module).__name__)))
+            fwd_hooks.append(module.register_forward_hook(fwd_hook(name, type(module).__name__, module)))
+            bwd_hooks.append(module.register_full_backward_hook(bwd_hook(name)))
 
-    # Run forward pass
-    with torch.no_grad():
-        model(input_tensor)
+    # 3. Run Forward and Backward Pass
+    model.zero_grad()
+    outputs = model(input_tensor)
+    
+    # We use the mean of the outputs as a pseudo-loss to flow gradients evenly 
+    # through the entire network without needing actual labels.
+    pseudo_loss = outputs.mean()
+    pseudo_loss.backward()
 
-    for h in hooks: h.remove()
+    # Clean up hooks
+    for h in fwd_hooks + bwd_hooks: 
+        h.remove()
+    model.zero_grad()
 
-    # 3. Aggregate Data
+    # 4. Aggregate Data
     results = []
     layer_names = []
     for name, stats in layer_stats.items():
@@ -1007,7 +1026,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
             "layer": name,
             "layer_type": stats["layer_type"],
             "arithmetic_intensity": ai,
-            "act_var": stats["act_var"],
+            "sensitivity": stats["sensitivity"],
             "flops": flops_val
         })
 
@@ -1017,14 +1036,14 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         print("[WARN] No layers found for analysis.")
         return df
 
-    # --- STEP 4: Save Raw Heuristics ---
+    # --- STEP 5: Save Raw Heuristics ---
     csv_name = f"{model_name}_{dataset_name}_heuristics.csv"
     df.to_csv(os.path.join(save_root_dir, csv_name), index=False)
 
     # Compute Global Baseline for Normalization
-    global_median_var = float(df['act_var'].median())
+    global_median_sens = float(df['sensitivity'].median())
 
-    # --- STEP 4.5: Aggregate Experiment Data (Relative Variance) ---
+    # --- STEP 6: Aggregate Experiment Data (Relative Sensitivity) ---
     plot_data = [] 
 
     try:
@@ -1038,13 +1057,13 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                 if layer_range is None: 
                     plot_data.append({
                         "Experiment": exp_name.replace("_", " "), 
-                        "Relative Variance": 1.0 # Baseline is strictly 1.0x
+                        "Relative Sensitivity": 1.0 # Baseline is strictly 1.0x
                     })
                     
                     summary_data_latex.append({
                         "Experiment Name": exp_name.replace("_", "\\_"),
                         "Layer Range": "All Layers (Global Baseline)",
-                        "Relative Variance": "1.00x"
+                        "Relative Sensitivity": "1.00x"
                     })
                     continue
                     
@@ -1064,18 +1083,18 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                         if start_idx > end_idx: start_idx, end_idx = end_idx, start_idx
                         subset_indices.extend(range(start_idx, end_idx + 1))
                 
-                # 3. Calculate Relative Variance
+                # 3. Calculate Relative Sensitivity
                 if subset_indices:
                     subset_indices = list(set(subset_indices)) 
                     subset = df.iloc[subset_indices]
                     
-                    # Median variance of the block divided by the global median
-                    median_var = float(subset['act_var'].median())
-                    relative_var = median_var / global_median_var if global_median_var > 0 else 1.0
+                    # Median sensitivity of the block divided by the global median
+                    median_sens = float(subset['sensitivity'].median())
+                    relative_sens = median_sens / global_median_sens if global_median_sens > 0 else 1.0
                     
                     plot_data.append({
                         "Experiment": exp_name.replace("_", " "), 
-                        "Relative Variance": relative_var
+                        "Relative Sensitivity": relative_sens
                     })
 
                     if isinstance(layer_range, list):
@@ -1088,7 +1107,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                     summary_data_latex.append({
                         "Experiment Name": exp_str,
                         "Layer Range": range_str,
-                        "Relative Variance": f"{relative_var:.2f}x"
+                        "Relative Sensitivity": f"{relative_sens:.2f}x"
                     })
 
             # Save Summary LaTeX Table
@@ -1099,8 +1118,8 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                 summary_df.to_latex(
                     buf=save_path, index=False, escape=False, 
                     column_format="llc",
-                    caption=f"Predicted Relative Variance Summary for {model_name}. 1.00x represents the global network median.",
-                    label=f"tab:rel_var_summary_{model_name.lower()}",
+                    caption=f"Predicted Block Sensitivity Summary for {model_name}. 1.00x represents the global network median.",
+                    label=f"tab:rel_sens_summary_{model_name.lower()}",
                     position="h", header=True
                 )
                 print(f"[Saved] Experiment Summary Table -> {tex_filename}")
@@ -1108,7 +1127,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     except Exception as e:
         print(f"[!] Failed to process experiments: {e}")
 
-    # --- STEP 5: Generate Experiment-Wise Plots ---
+    # --- STEP 7: Generate Experiment-Wise Plots ---
     if plot_data:
         exp_df = pd.DataFrame(plot_data)
         
@@ -1121,30 +1140,30 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
             label=f"tab:exp_plot_data_{model_name.lower()}"
         )
 
-        var_csv_path = os.path.join(save_root_dir, f"{model_name}_{dataset_name}_experiment_rel_variance.csv")
+        var_csv_path = os.path.join(save_root_dir, f"{model_name}_{dataset_name}_experiment_rel_sensitivity.csv")
         exp_df.to_csv(var_csv_path, index=False)
 
-        # Plot: Relative Variance per Experiment
+        # Plot: Relative Sensitivity per Experiment
         plt.figure(figsize=(12, 7))
         
-        colors = ['crimson' if exp == 'Original Model' else 'steelblue' for exp in exp_df['Experiment']]
-        ax = sns.barplot(x="Experiment", y="Relative Variance", data=exp_df, palette=colors)
+        colors = ['crimson' if exp == 'Original Model' else 'rebeccapurple' for exp in exp_df['Experiment']]
+        ax = sns.barplot(x="Experiment", y="Relative Sensitivity", data=exp_df, palette=colors)
         
         # Add visual interpretation baseline
         plt.axhline(1.0, color='crimson', linestyle='--', linewidth=2, label="1.0x Baseline (Network Average)")
         
-        # Add visual zones (Linear scale makes this super clear now)
-        plt.axhspan(0.0, 1.0, color='green', alpha=0.05, label='Safe to Collapse (Low Variance)')
-        plt.axhspan(1.0, exp_df['Relative Variance'].max() * 1.05, color='red', alpha=0.05, label='Dangerous (High Variance)')
+        # Add visual zones (Lower sensitivity = safer to prune)
+        plt.axhspan(0.0, 1.0, color='green', alpha=0.05, label='Safe to Collapse (Low Sensitivity)')
+        plt.axhspan(1.0, exp_df['Relative Sensitivity'].max() * 1.05, color='red', alpha=0.05, label='Dangerous (High Sensitivity)')
 
-        plt.title(f"Relative Activation Variance of Collapsed Blocks\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold')
-        plt.ylabel("Relative Variance (Multiplier)\n(<1.0x = Safe | >1.0x = Critical)", fontsize=12)
+        plt.title(f"Gradient-Based Sensitivity of Collapsed Blocks\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold')
+        plt.ylabel("Relative Sensitivity (Taylor First-Order)\n(<1.0x = Safe | >1.0x = Critical)", fontsize=12)
         plt.xticks(rotation=45, ha='right')
         
         plt.legend(loc='upper right')
         plt.grid(axis='y', linestyle='--', alpha=0.4)
         plt.tight_layout()
-        plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_Variance.png"), dpi=300)
+        plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_Sensitivity.png"), dpi=300)
         plt.close()
 
     return df
