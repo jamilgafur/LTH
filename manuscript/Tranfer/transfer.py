@@ -744,11 +744,9 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         print("[WARN] No layers found for analysis.")
         return df
 
-    # --- STEP 4: Calculate Adaptive Collapse Score ---
-    print("[•] Calculating ACS (Variance-based)...")
-    lambda_val = 1.0
-    df['collapse_score'] = df['act_var'].apply(lambda v: torch.exp(torch.tensor(-lambda_val * v)).item())
-
+    # --- STEP 4: Save Raw Heuristics (ACS Dropped) ---
+    print("[•] Saving raw heuristics...")
+    
     # Save Enhanced CSV
     csv_name = f"{model_name}_{dataset_name}_heuristics.csv"
     df.to_csv(os.path.join(save_root_dir, csv_name), index=False)
@@ -765,17 +763,16 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
             
             for exp_name, layer_range in exp_config.items():
                 # 1. Handle Original Model (No layers removed)
+                # Setting to 1.0 serves as a baseline that won't break log-scale plots (10^0 = 1)
                 if layer_range is None: 
                     plot_data.append({
                         "Experiment": exp_name.replace("_", " "), 
-                        "Median Variance": 0.0,
-                        "Median ACS": 1.0  # exp(-0) = 1.0
+                        "Median Variance": 1.0
                     })
                     summary_data_latex.append({
                         "Experiment Name": exp_name.replace("_", "\\_"),
                         "Layer Range": "None",
-                        "Median Var ($\\sigma^2$)": "0.0000",
-                        "Median ACS": "\\textbf{1.0000}"
+                        "Median Var ($\\sigma^2$)": "1.0000"
                     })
                     continue
                     
@@ -800,14 +797,12 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                     subset_indices = list(set(subset_indices)) # Remove duplicates if ranges overlap
                     subset = df.iloc[subset_indices]
                     
-                    median_var = subset['act_var'].median()
-                    median_acs = subset['collapse_score'].median()
+                    median_var = float(subset['act_var'].median())
                     
                     # Collect Raw Data for Plotting
                     plot_data.append({
                         "Experiment": exp_name.replace("_", " "), 
-                        "Median Variance": median_var,
-                        "Median ACS": median_acs
+                        "Median Variance": median_var
                     })
 
                     # Collect Formatted Data for Summary Table
@@ -818,13 +813,11 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                         
                     exp_str = exp_name.replace("_", "\\_")
                     var_str = f"{median_var:.2e}" if (median_var < 0.01 or median_var > 1000) else f"{median_var:.4f}"
-                    acs_str = f"\\textbf{{{median_acs:.4f}}}"
                     
                     summary_data_latex.append({
                         "Experiment Name": exp_str,
                         "Layer Range": range_str,
-                        "Median Var ($\\sigma^2$)": var_str,
-                        "Median ACS": acs_str
+                        "Median Var ($\\sigma^2$)": var_str
                     })
 
             # Save Summary LaTeX Table
@@ -834,9 +827,9 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                 save_path = os.path.join(save_root_dir, tex_filename)
                 summary_df.to_latex(
                     buf=save_path, index=False, escape=False, 
-                    column_format="llcc",
-                    caption=f"Predicted Collapse Scores Summary for {model_name}",
-                    label=f"tab:acs_summary_{model_name.lower()}",
+                    column_format="llc",
+                    caption=f"Predicted Collapse Variance Summary for {model_name}",
+                    label=f"tab:var_summary_{model_name.lower()}",
                     position="h", header=True
                 )
                 print(f"[Saved] Experiment Summary Table -> {tex_filename}")
@@ -859,30 +852,15 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         )
         print(f"[Saved] Experiment Plot Data (TeX) -> {plot_data_tex}")
 
-        # Plot A: Median ACS per Experiment
-        plt.figure(figsize=(10, 6))
-        ax = sns.barplot(x="Experiment", y="Median ACS", data=exp_df, palette="magma")
-        plt.title(f"Median Adaptive Collapse Score by Experiment\n{model_name} | {dataset_name}", fontsize=14)
-        plt.ylabel("Median ACS (Lower is Better/Less Collapse)", fontsize=12)
-        plt.xticks(rotation=45, ha='right')
-        plt.grid(axis='y', linestyle='--', alpha=0.3)
-        plt.ylim(0, 1.1) 
-        for container in ax.containers:
-            ax.bar_label(container, fmt='%.3f', padding=3)
-        plt.tight_layout()
-        plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_ACS.png"), dpi=300)
-        plt.close()
-
-        # Plot B: Median Variance per Experiment
+        # Plot: Median Variance per Experiment
         plt.figure(figsize=(10, 6))
         ax = sns.barplot(x="Experiment", y="Median Variance", data=exp_df, palette="viridis")
         plt.title(f"Median Activation Variance of Collapsed Blocks\n{model_name} | {dataset_name}", fontsize=14)
         plt.ylabel("Median Variance", fontsize=12)
         plt.xticks(rotation=45, ha='right')
         
-        # Disable log scale if plotting exactly 0 for Original Model to avoid math domain errors
-        if exp_df["Median Variance"].min() > 0:
-            plt.yscale("log")
+        # We can now safely use log scale unconditionally because Original Model is 1.0
+        plt.yscale("log")
             
         plt.grid(axis='y', linestyle='--', alpha=0.3, which='both')
         plt.tight_layout()
@@ -891,14 +869,14 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         
     else:
         print("[WARN] No experiment data available for plotting.")
+
     # --- STEP 6: Generate Original Layer-wise Plots & Save Data ---
     metrics_config = [
         {"col": "identity_score", "title": "Identity Score (High = Redundant)", "folder": "identity_score", "color": "mediumpurple", "log_scale": False},
-        {"col": "act_var", "title": "Activation Variance", "folder": "activation_variance", "color": "goldenrod", "log_scale": True},
-        {"col": "collapse_score", "title": "Adaptive Collapse Score (ACS)", "folder": "acs_score", "color": "crimson", "log_scale": False}
+        {"col": "act_var", "title": "Activation Variance", "folder": "activation_variance", "color": "goldenrod", "log_scale": True}
     ]
 
-    # [NEW] Save Layer-wise Plot Data to LaTeX (Long Table)
+    # Save Layer-wise Plot Data to LaTeX (Long Table)
     layer_tex_name = f"{model_name}_{dataset_name}_layerwise_plot_data.tex"
     plot_cols = ["layer"] + [c["col"] for c in metrics_config]
     
