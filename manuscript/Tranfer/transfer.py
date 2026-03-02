@@ -763,16 +763,19 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
             
             for exp_name, layer_range in exp_config.items():
                 # 1. Handle Original Model (No layers removed)
-                # Setting to 1.0 serves as a baseline that won't break log-scale plots (10^0 = 1)
+                # Compute the median variance across the ENTIRE network as a baseline.
                 if layer_range is None: 
+                    global_median_var = float(df['act_var'].median())
                     plot_data.append({
                         "Experiment": exp_name.replace("_", " "), 
-                        "Median Variance": 1.0
+                        "Median Variance": global_median_var
                     })
+                    
+                    var_str = f"{global_median_var:.2e}" if (global_median_var < 0.01 or global_median_var > 1000) else f"{global_median_var:.4f}"
                     summary_data_latex.append({
                         "Experiment Name": exp_name.replace("_", "\\_"),
-                        "Layer Range": "None",
-                        "Median Var ($\\sigma^2$)": "1.0000"
+                        "Layer Range": "All Layers (Global Baseline)",
+                        "Median Var ($\\sigma^2$)": var_str
                     })
                     continue
                     
@@ -828,7 +831,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                 summary_df.to_latex(
                     buf=save_path, index=False, escape=False, 
                     column_format="llc",
-                    caption=f"Predicted Collapse Variance Summary for {model_name}",
+                    caption=f"Predicted Collapse Variance Summary for {model_name}. Original Model represents the global network median.",
                     label=f"tab:var_summary_{model_name.lower()}",
                     position="h", header=True
                 )
@@ -852,22 +855,34 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         )
         print(f"[Saved] Experiment Plot Data (TeX) -> {plot_data_tex}")
 
+        # [NEW] Save Variance Data to CSV for the Scatter Plot later
+        var_csv_path = os.path.join(save_root_dir, f"{model_name}_{dataset_name}_experiment_variance.csv")
+        exp_df.to_csv(var_csv_path, index=False)
+
         # Plot: Median Variance per Experiment
         plt.figure(figsize=(10, 6))
-        ax = sns.barplot(x="Experiment", y="Median Variance", data=exp_df, palette="viridis")
+        
+        # Highlight Original Model with a different color
+        colors = ['crimson' if exp == 'Original Model' else 'steelblue' for exp in exp_df['Experiment']]
+        
+        ax = sns.barplot(x="Experiment", y="Median Variance", data=exp_df, palette=colors)
+        
+        # Add a horizontal dashed line across the chart at the Original Model's baseline
+        global_median = exp_df[exp_df['Experiment'] == 'Original Model']['Median Variance'].values[0]
+        plt.axhline(global_median, color='crimson', linestyle='--', alpha=0.7, label="Network Global Median")
+        
         plt.title(f"Median Activation Variance of Collapsed Blocks\n{model_name} | {dataset_name}", fontsize=14)
         plt.ylabel("Median Variance", fontsize=12)
         plt.xticks(rotation=45, ha='right')
         
-        # We can now safely use log scale unconditionally because Original Model is 1.0
         plt.yscale("log")
+        plt.legend()
             
         plt.grid(axis='y', linestyle='--', alpha=0.3, which='both')
         plt.tight_layout()
         plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_Variance.png"), dpi=300)
         plt.close()
-        var_csv_path = os.path.join(save_root_dir, f"{model_name}_{dataset_name}_experiment_variance.csv")
-        exp_df.to_csv(var_csv_path, index=False)
+        
     else:
         print("[WARN] No experiment data available for plotting.")
 
