@@ -643,9 +643,299 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
+# def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
+#     """
+#     Analyzes Conv2d and Linear layers, calculates Adaptive Collapse Scores (ACS),
+#     generates LaTeX tables, and plots scores PER EXPERIMENT (aggregated layers).
+#     """
+#     print(f"[•] Running Extended Collapse Heuristics for {model_name} on {dataset_name}...")
+    
+#     model.eval()
+#     if len(input_tensor.shape) == 3:
+#         input_tensor = input_tensor.unsqueeze(0)
+
+#     # 1. Get FLOPs
+#     flops_dict = {}
+#     try:
+#         from fvcore.nn import FlopCountAnalysis
+#         flops_counter = FlopCountAnalysis(model, input_tensor)
+#         flops_dict = flops_counter.by_module()
+#     except Exception as e:
+#         print(f"[!] FLOPs count failed: {e}")
+
+#     layer_stats = {}
+
+#     # 2. Hook for metrics
+#     def heuristic_hook(name, layer_type):
+#         def fn(module, inp, out):
+#             if not isinstance(out, torch.Tensor) or not isinstance(inp[0], torch.Tensor):
+#                 return
+            
+#             x = inp[0].detach()
+#             y = out.detach()
+            
+#             # Metric A: Identity Score
+#             identity_score = 0.0
+#             if x.shape == y.shape:
+#                 x_flat = x.flatten(start_dim=1)
+#                 y_flat = y.flatten(start_dim=1)
+#                 try:
+#                     identity_score = F.cosine_similarity(x_flat, y_flat, dim=1).mean().item()
+#                 except:
+#                     identity_score = 0.0
+            
+#             # Metric B: Memory & Bytes
+#             dtype_size = x.element_size()
+#             weight_bytes = sum(p.numel() * p.element_size() for p in module.parameters())
+#             total_bytes = (x.numel() * dtype_size) + (y.numel() * dtype_size) + weight_bytes
+
+#             # Metric C: Weight Magnitude
+#             weight_l1 = 0.0
+#             if hasattr(module, 'weight') and module.weight is not None:
+#                 weight_l1 = module.weight.norm(p=1).item() / module.weight.numel()
+
+#             # Metric D: Activation Variance
+#             if y.ndim == 4:
+#                 act_var = y.var(dim=[2, 3]).mean().item()
+#             else:
+#                 act_var = y.var().item()
+            
+#             layer_stats[name] = {
+#                 "layer_type": layer_type,
+#                 "identity_score": identity_score,
+#                 "memory_bytes": total_bytes,
+#                 "weight_l1": weight_l1,
+#                 "act_var": act_var
+#             }
+#         return fn
+
+#     # Register hooks
+#     hooks = []
+#     for name, module in model.named_modules():
+#         if isinstance(module, (nn.Conv2d, nn.Linear)):
+#             hooks.append(module.register_forward_hook(heuristic_hook(name, type(module).__name__)))
+
+#     # Run forward pass
+#     with torch.no_grad():
+#         model(input_tensor)
+
+#     for h in hooks: h.remove()
+
+#     # 3. Aggregate Data
+#     results = []
+#     for name, stats in layer_stats.items():
+#         flops_val = flops_dict.get(name, 0)
+#         mem_bytes = stats["memory_bytes"]
+#         ai = flops_val / mem_bytes if mem_bytes > 0 else 0.0
+        
+#         results.append({
+#             "layer": name,
+#             "layer_type": stats["layer_type"],
+#             "identity_score": stats["identity_score"],
+#             "arithmetic_intensity": ai,
+#             "weight_l1": stats["weight_l1"],
+#             "act_var": stats["act_var"],
+#             "flops": flops_val
+#         })
+
+#     df = pd.DataFrame(results)
+    
+#     if df.empty:
+#         print("[WARN] No layers found for analysis.")
+#         return df
+
+#     # --- STEP 4: Save Raw Heuristics (ACS Dropped) ---
+#     print("[•] Saving raw heuristics...")
+    
+#     # Save Enhanced CSV
+#     csv_name = f"{model_name}_{dataset_name}_heuristics.csv"
+#     df.to_csv(os.path.join(save_root_dir, csv_name), index=False)
+
+#     # --- STEP 4.5: Aggregate Experiment Data (Median of Collapsed Blocks) ---
+#     plot_data = [] 
+
+#     try:
+#         exp_config = get_experiment_config(model_name)
+        
+#         if exp_config:
+#             summary_data_latex = []
+#             layer_names = df['layer'].tolist()
+            
+#             for exp_name, layer_range in exp_config.items():
+#                 # 1. Handle Original Model (No layers removed)
+#                 # Compute the median variance across the ENTIRE network as a baseline.
+#                 if layer_range is None: 
+#                     global_median_var = float(df['act_var'].median())
+#                     plot_data.append({
+#                         "Experiment": exp_name.replace("_", " "), 
+#                         "Median Variance": global_median_var
+#                     })
+                    
+#                     var_str = f"{global_median_var:.2e}" if (global_median_var < 0.01 or global_median_var > 1000) else f"{global_median_var:.4f}"
+#                     summary_data_latex.append({
+#                         "Experiment Name": exp_name.replace("_", "\\_"),
+#                         "Layer Range": "All Layers (Global Baseline)",
+#                         "Median Var ($\\sigma^2$)": var_str
+#                     })
+#                     continue
+                    
+#                 # 2. Handle both single tuple and list of tuples for collapsed ranges
+#                 ranges = layer_range if isinstance(layer_range, list) else [layer_range]
+#                 subset_indices = []
+
+#                 for start_layer, end_layer in ranges:
+#                     start_idx = -1
+#                     end_idx = -1
+                    
+#                     for i, lname in enumerate(layer_names):
+#                         if start_layer in lname: start_idx = i
+#                         if end_layer in lname: end_idx = i
+                    
+#                     if start_idx != -1 and end_idx != -1:
+#                         if start_idx > end_idx: start_idx, end_idx = end_idx, start_idx
+#                         subset_indices.extend(range(start_idx, end_idx + 1))
+                
+#                 # 3. Calculate median across all collapsed layers
+#                 if subset_indices:
+#                     subset_indices = list(set(subset_indices)) # Remove duplicates if ranges overlap
+#                     subset = df.iloc[subset_indices]
+                    
+#                     median_var = float(subset['act_var'].median())
+                    
+#                     # Collect Raw Data for Plotting
+#                     plot_data.append({
+#                         "Experiment": exp_name.replace("_", " "), 
+#                         "Median Variance": median_var
+#                     })
+
+#                     # Collect Formatted Data for Summary Table
+#                     if isinstance(layer_range, list):
+#                         range_str = "Multiple Ranges"
+#                     else:
+#                         range_str = f"{layer_range[0]} $\\to$ {layer_range[1]}".replace("_", "\\_")
+                        
+#                     exp_str = exp_name.replace("_", "\\_")
+#                     var_str = f"{median_var:.2e}" if (median_var < 0.01 or median_var > 1000) else f"{median_var:.4f}"
+                    
+#                     summary_data_latex.append({
+#                         "Experiment Name": exp_str,
+#                         "Layer Range": range_str,
+#                         "Median Var ($\\sigma^2$)": var_str
+#                     })
+
+#             # Save Summary LaTeX Table
+#             if summary_data_latex:
+#                 summary_df = pd.DataFrame(summary_data_latex)
+#                 tex_filename = f"{model_name}_{dataset_name}_experiment_summary.tex"
+#                 save_path = os.path.join(save_root_dir, tex_filename)
+#                 summary_df.to_latex(
+#                     buf=save_path, index=False, escape=False, 
+#                     column_format="llc",
+#                     caption=f"Predicted Collapse Variance Summary for {model_name}. Original Model represents the global network median.",
+#                     label=f"tab:var_summary_{model_name.lower()}",
+#                     position="h", header=True
+#                 )
+#                 print(f"[Saved] Experiment Summary Table -> {tex_filename}")
+
+#     except Exception as e:
+#         print(f"[!] Failed to process experiments: {e}")
+
+#     # --- STEP 5: Generate Experiment-Wise Plots & Save Data ---
+#     if plot_data:
+#         exp_df = pd.DataFrame(plot_data)
+        
+#         # Save the Raw Plot Data to LaTeX
+#         plot_data_tex = f"{model_name}_{dataset_name}_experiment_plot_data.tex"
+#         exp_df.to_latex(
+#             os.path.join(save_root_dir, plot_data_tex),
+#             index=False,
+#             float_format="%.4f",
+#             caption=f"Aggregated Experiment Metrics for {model_name} Plots",
+#             label=f"tab:exp_plot_data_{model_name.lower()}"
+#         )
+#         print(f"[Saved] Experiment Plot Data (TeX) -> {plot_data_tex}")
+
+#         # [NEW] Save Variance Data to CSV for the Scatter Plot later
+#         var_csv_path = os.path.join(save_root_dir, f"{model_name}_{dataset_name}_experiment_variance.csv")
+#         exp_df.to_csv(var_csv_path, index=False)
+
+#         # Plot: Median Variance per Experiment
+#         plt.figure(figsize=(10, 6))
+        
+#         # Highlight Original Model with a different color
+#         colors = ['crimson' if exp == 'Original Model' else 'steelblue' for exp in exp_df['Experiment']]
+        
+#         ax = sns.barplot(x="Experiment", y="Median Variance", data=exp_df, palette=colors)
+        
+#         # Add a horizontal dashed line across the chart at the Original Model's baseline
+#         global_median = exp_df[exp_df['Experiment'] == 'Original Model']['Median Variance'].values[0]
+#         plt.axhline(global_median, color='crimson', linestyle='--', alpha=0.7, label="Network Global Median")
+        
+#         plt.title(f"Median Activation Variance of Collapsed Blocks\n{model_name} | {dataset_name}", fontsize=14)
+#         plt.ylabel("Median Variance", fontsize=12)
+#         plt.xticks(rotation=45, ha='right')
+        
+#         plt.yscale("log")
+#         plt.legend()
+            
+#         plt.grid(axis='y', linestyle='--', alpha=0.3, which='both')
+#         plt.tight_layout()
+#         plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_Variance.png"), dpi=300)
+#         plt.close()
+        
+#     else:
+#         print("[WARN] No experiment data available for plotting.")
+
+#     # --- STEP 6: Generate Original Layer-wise Plots & Save Data ---
+#     metrics_config = [
+#         {"col": "identity_score", "title": "Identity Score (High = Redundant)", "folder": "identity_score", "color": "mediumpurple", "log_scale": False},
+#         {"col": "act_var", "title": "Activation Variance", "folder": "activation_variance", "color": "goldenrod", "log_scale": True}
+#     ]
+
+#     # Save Layer-wise Plot Data to LaTeX (Long Table)
+#     layer_tex_name = f"{model_name}_{dataset_name}_layerwise_plot_data.tex"
+#     plot_cols = ["layer"] + [c["col"] for c in metrics_config]
+    
+#     # We use a subset of the main df for this export
+#     df[plot_cols].to_latex(
+#         os.path.join(save_root_dir, layer_tex_name),
+#         index=False,
+#         float_format="%.2e", # Scientific notation for compactness
+#         longtable=True,      # Important for layer-wise tables
+#         caption=f"Detailed Layer-wise Metrics for {model_name}",
+#         label=f"tab:layer_metrics_{model_name.lower()}"
+#     )
+#     print(f"[Saved] Layer-wise Plot Data (TeX) -> {layer_tex_name}")
+
+#     for config in metrics_config:
+#         metric_dir = os.path.join(save_root_dir, config["folder"])
+#         os.makedirs(metric_dir, exist_ok=True)
+        
+#         plt.figure(figsize=(max(12, len(df)*0.25), 6))
+#         ax = sns.barplot(x="layer", y=config["col"], data=df, color=config["color"])
+        
+#         full_title = f"{config['title']}\nModel: {model_name} | Dataset: {dataset_name}"
+#         ax.set_title(full_title, fontsize=12, fontweight='bold')
+#         ax.grid(axis='y', linestyle='--', alpha=0.5)
+        
+#         if config["log_scale"]:
+#             ax.set_yscale("log")
+            
+#         ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=8)
+#         ax.set_xlabel("Layer Name", fontsize=10)
+#         ax.set_ylabel(config["col"], fontsize=10)
+
+#         plt.tight_layout()
+#         filename = f"{model_name}_{dataset_name}.png"
+#         save_path = os.path.join(metric_dir, filename)
+#         plt.savefig(save_path, dpi=150)
+#         plt.close()
+        
+#     return df
+
 def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
     """
-    Analyzes Conv2d and Linear layers, calculates Adaptive Collapse Scores (ACS),
+    Analyzes Conv2d and Linear layers, calculates Feature Redundancy (Identity Score),
     generates LaTeX tables, and plots scores PER EXPERIMENT (aggregated layers).
     """
     print(f"[•] Running Extended Collapse Heuristics for {model_name} on {dataset_name}...")
@@ -674,7 +964,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
             x = inp[0].detach()
             y = out.detach()
             
-            # Metric A: Identity Score
+            # Metric A: Identity Score (Feature Redundancy)
             identity_score = 0.0
             if x.shape == y.shape:
                 x_flat = x.flatten(start_dim=1)
@@ -694,7 +984,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
             if hasattr(module, 'weight') and module.weight is not None:
                 weight_l1 = module.weight.norm(p=1).item() / module.weight.numel()
 
-            # Metric D: Activation Variance
+            # Metric D: Activation Variance (Kept for raw data, but removed from plot)
             if y.ndim == 4:
                 act_var = y.var(dim=[2, 3]).mean().item()
             else:
@@ -744,14 +1034,12 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         print("[WARN] No layers found for analysis.")
         return df
 
-    # --- STEP 4: Save Raw Heuristics (ACS Dropped) ---
+    # --- STEP 4: Save Raw Heuristics ---
     print("[•] Saving raw heuristics...")
-    
-    # Save Enhanced CSV
     csv_name = f"{model_name}_{dataset_name}_heuristics.csv"
     df.to_csv(os.path.join(save_root_dir, csv_name), index=False)
 
-    # --- STEP 4.5: Aggregate Experiment Data (Median of Collapsed Blocks) ---
+    # --- STEP 4.5: Aggregate Experiment Data (Median of Feature Redundancy) ---
     plot_data = [] 
 
     try:
@@ -763,19 +1051,19 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
             
             for exp_name, layer_range in exp_config.items():
                 # 1. Handle Original Model (No layers removed)
-                # Compute the median variance across the ENTIRE network as a baseline.
                 if layer_range is None: 
-                    global_median_var = float(df['act_var'].median())
+                    # Swapped act_var for identity_score
+                    global_median_redundancy = float(df['identity_score'].median())
                     plot_data.append({
                         "Experiment": exp_name.replace("_", " "), 
-                        "Median Variance": global_median_var
+                        "Median Redundancy": global_median_redundancy
                     })
                     
-                    var_str = f"{global_median_var:.2e}" if (global_median_var < 0.01 or global_median_var > 1000) else f"{global_median_var:.4f}"
+                    var_str = f"{global_median_redundancy:.4f}"
                     summary_data_latex.append({
                         "Experiment Name": exp_name.replace("_", "\\_"),
                         "Layer Range": "All Layers (Global Baseline)",
-                        "Median Var ($\\sigma^2$)": var_str
+                        "Median Redundancy (Cosine Sim)": var_str
                     })
                     continue
                     
@@ -797,30 +1085,29 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                 
                 # 3. Calculate median across all collapsed layers
                 if subset_indices:
-                    subset_indices = list(set(subset_indices)) # Remove duplicates if ranges overlap
+                    subset_indices = list(set(subset_indices)) 
                     subset = df.iloc[subset_indices]
                     
-                    median_var = float(subset['act_var'].median())
+                    # Compute Median Redundancy instead of Variance
+                    median_redundancy = float(subset['identity_score'].median())
                     
-                    # Collect Raw Data for Plotting
                     plot_data.append({
                         "Experiment": exp_name.replace("_", " "), 
-                        "Median Variance": median_var
+                        "Median Redundancy": median_redundancy
                     })
 
-                    # Collect Formatted Data for Summary Table
                     if isinstance(layer_range, list):
                         range_str = "Multiple Ranges"
                     else:
                         range_str = f"{layer_range[0]} $\\to$ {layer_range[1]}".replace("_", "\\_")
                         
                     exp_str = exp_name.replace("_", "\\_")
-                    var_str = f"{median_var:.2e}" if (median_var < 0.01 or median_var > 1000) else f"{median_var:.4f}"
+                    var_str = f"{median_redundancy:.4f}"
                     
                     summary_data_latex.append({
                         "Experiment Name": exp_str,
                         "Layer Range": range_str,
-                        "Median Var ($\\sigma^2$)": var_str
+                        "Median Redundancy (Cosine Sim)": var_str
                     })
 
             # Save Summary LaTeX Table
@@ -831,8 +1118,8 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
                 summary_df.to_latex(
                     buf=save_path, index=False, escape=False, 
                     column_format="llc",
-                    caption=f"Predicted Collapse Variance Summary for {model_name}. Original Model represents the global network median.",
-                    label=f"tab:var_summary_{model_name.lower()}",
+                    caption=f"Predicted Collapse Redundancy Summary for {model_name}. Original Model represents the global network median.",
+                    label=f"tab:redundancy_summary_{model_name.lower()}",
                     position="h", header=True
                 )
                 print(f"[Saved] Experiment Summary Table -> {tex_filename}")
@@ -844,7 +1131,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     if plot_data:
         exp_df = pd.DataFrame(plot_data)
         
-        # Save the Raw Plot Data to LaTeX
         plot_data_tex = f"{model_name}_{dataset_name}_experiment_plot_data.tex"
         exp_df.to_latex(
             os.path.join(save_root_dir, plot_data_tex),
@@ -853,34 +1139,34 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
             caption=f"Aggregated Experiment Metrics for {model_name} Plots",
             label=f"tab:exp_plot_data_{model_name.lower()}"
         )
-        print(f"[Saved] Experiment Plot Data (TeX) -> {plot_data_tex}")
 
-        # [NEW] Save Variance Data to CSV for the Scatter Plot later
-        var_csv_path = os.path.join(save_root_dir, f"{model_name}_{dataset_name}_experiment_variance.csv")
+        var_csv_path = os.path.join(save_root_dir, f"{model_name}_{dataset_name}_experiment_redundancy.csv")
         exp_df.to_csv(var_csv_path, index=False)
 
-        # Plot: Median Variance per Experiment
-        plt.figure(figsize=(10, 6))
+        # Plot: Median Redundancy per Experiment
+        plt.figure(figsize=(12, 7))
         
-        # Highlight Original Model with a different color
         colors = ['crimson' if exp == 'Original Model' else 'steelblue' for exp in exp_df['Experiment']]
+        ax = sns.barplot(x="Experiment", y="Median Redundancy", data=exp_df, palette=colors)
         
-        ax = sns.barplot(x="Experiment", y="Median Variance", data=exp_df, palette=colors)
+        global_median = exp_df[exp_df['Experiment'] == 'Original Model']['Median Redundancy'].values[0]
+        plt.axhline(global_median, color='crimson', linestyle='--', alpha=0.7, label="Network Global Average Redundancy")
         
-        # Add a horizontal dashed line across the chart at the Original Model's baseline
-        global_median = exp_df[exp_df['Experiment'] == 'Original Model']['Median Variance'].values[0]
-        plt.axhline(global_median, color='crimson', linestyle='--', alpha=0.7, label="Network Global Median")
-        
-        plt.title(f"Median Activation Variance of Collapsed Blocks\n{model_name} | {dataset_name}", fontsize=14)
-        plt.ylabel("Median Variance", fontsize=12)
+        # Add visual interpretation zones
+        plt.axhspan(global_median, 1.0, color='green', alpha=0.05, label='Safe to Collapse (High Redundancy)')
+        plt.axhspan(0.0, global_median, color='red', alpha=0.05, label='Dangerous to Collapse (Critical Layers)')
+
+        plt.title(f"Block Redundancy (Cosine Similarity)\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold')
+        plt.ylabel("Median Feature Redundancy\n(1.0 = Identity Function / 0.0 = High Transformation)", fontsize=12)
         plt.xticks(rotation=45, ha='right')
         
-        plt.yscale("log")
-        plt.legend()
-            
-        plt.grid(axis='y', linestyle='--', alpha=0.3, which='both')
+        # Linear scale is much easier to read for bounded metrics
+        plt.ylim(0, 1.05) 
+        
+        plt.legend(loc='upper right')
+        plt.grid(axis='y', linestyle='--', alpha=0.4)
         plt.tight_layout()
-        plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_Variance.png"), dpi=300)
+        plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_Redundancy.png"), dpi=300)
         plt.close()
         
     else:
@@ -888,24 +1174,21 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
 
     # --- STEP 6: Generate Original Layer-wise Plots & Save Data ---
     metrics_config = [
-        {"col": "identity_score", "title": "Identity Score (High = Redundant)", "folder": "identity_score", "color": "mediumpurple", "log_scale": False},
+        {"col": "identity_score", "title": "Layer Redundancy (Cosine Similarity)", "folder": "redundancy_score", "color": "mediumseagreen", "log_scale": False},
         {"col": "act_var", "title": "Activation Variance", "folder": "activation_variance", "color": "goldenrod", "log_scale": True}
     ]
 
-    # Save Layer-wise Plot Data to LaTeX (Long Table)
     layer_tex_name = f"{model_name}_{dataset_name}_layerwise_plot_data.tex"
     plot_cols = ["layer"] + [c["col"] for c in metrics_config]
     
-    # We use a subset of the main df for this export
     df[plot_cols].to_latex(
         os.path.join(save_root_dir, layer_tex_name),
         index=False,
-        float_format="%.2e", # Scientific notation for compactness
-        longtable=True,      # Important for layer-wise tables
+        float_format="%.4f", 
+        longtable=True,     
         caption=f"Detailed Layer-wise Metrics for {model_name}",
         label=f"tab:layer_metrics_{model_name.lower()}"
     )
-    print(f"[Saved] Layer-wise Plot Data (TeX) -> {layer_tex_name}")
 
     for config in metrics_config:
         metric_dir = os.path.join(save_root_dir, config["folder"])
@@ -920,6 +1203,8 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         
         if config["log_scale"]:
             ax.set_yscale("log")
+        elif config["col"] == "identity_score":
+            ax.set_ylim(0, 1.05)
             
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=8)
         ax.set_xlabel("Layer Name", fontsize=10)
@@ -932,7 +1217,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         plt.close()
         
     return df
-
 
 def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
     """Runs the appropriate experiment based on the arguments (JF or Kevin)."""
