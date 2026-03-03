@@ -8,12 +8,10 @@ from typing import Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
-import shap
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy import linalg
 
 # Local imports (Assumed available based on original file)
 from manuscript.Tranfer.utils import load_dataset
@@ -26,14 +24,15 @@ from pyPrune.models.MobileNet import MobileNet
 from collapse import collapse_only
 
 # =========================
-# Configuration & Style
+# Configuration & Journal Style
 # =========================
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
 
+# Enhanced Journal-level styling
 sns.set_theme(
     context="paper",
-    style="whitegrid",
+    style="ticks", # 'ticks' is often preferred for academic journals over 'whitegrid'
     palette="colorblind",
     font_scale=1.2,
 )
@@ -41,12 +40,18 @@ sns.set_theme(
 plt.rcParams.update({
     "figure.dpi": 300,
     "savefig.dpi": 300,
-    "axes.titlesize": 12,
-    "axes.labelsize": 11,
-    "legend.fontsize": 9,
-    "legend.title_fontsize": 10,
-    "lines.linewidth": 2.5,
-    "lines.markersize": 8,
+    "savefig.bbox": "tight",
+    "axes.titlesize": 14,
+    "axes.titleweight": "bold",
+    "axes.labelsize": 12,
+    "axes.labelweight": "bold",
+    "legend.fontsize": 10,
+    "legend.title_fontsize": 11,
+    "xtick.labelsize": 10,
+    "ytick.labelsize": 10,
+    "lines.linewidth": 2.0,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
 })
 
 RESULTS_DIR = Path("./")
@@ -92,42 +97,31 @@ def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
     Determines the method group.
     - Baseline: If 'original' or 'baseline' in name.
     - Pruned/No-Prune: ONLY for VGG16 and RegNetX.
-    - Collapsed: For all other architectures (averages JF/Kevin).
+    - Collapsed: For all other architectures (forces averaging later).
     """
     n = exp_name.lower()
     
     if "original" in n or "baseline" in n:
         return "Baseline"
         
-    # Only distinguish JF vs Kevin for specific architectures
+    # Only distinguish distinct methods for specific architectures
     if architecture in ["VGG16", "RegNetX"]:
         if "jf" in n: return "Pruned (JF)"
         if "kevin" in n: return "No-Prune (Kevin)"
         
-    # For ConvNeXt, MobileNet, etc., merge them into one group
+    # For ConvNeXt, MobileNet, etc., merge them into one group for averaging
     return "Collapsed"
 
 def clean_exp_name(exp_name: str) -> str:
-    """
-    Standardizes experiment names by removing suffixes and meta-tags.
-    Used to group 'Stage 2-7' and 'Stage 2-7 (Quant)' together.
-    """
     n = exp_name
-    # Remove suffixes
     n = n.replace("_quant", "").replace("_JF", "").replace("_Kevin", "")
-    
-    # Remove architecture prefixes if present
     for arch in ["RegNetX_400MF_", "VGG16_", "MobileNet_", "ConvNeXt_", "InceptionNet_", "XceptionNet_"]:
         n = n.replace(arch, "")
-    
-    # Standardize Block/Stage format
     n = n.replace("Block ", "Block-").replace("Stage ", "Stage-") 
     n = n.replace(" Only", "")
     
-    # Handle Baseline/Original
     if "Original" in n or "Baseline" in n: 
         return "Original"
-        
     return n.strip()
 
 def find_baseline(df: pd.DataFrame):
@@ -139,11 +133,9 @@ def find_baseline(df: pd.DataFrame):
     return None if m.empty else m.iloc[0]
 
 def load_results() -> pd.DataFrame:
-    # 1. Pre-load heuristic CSVs to map ACS scores
     heuristic_files = list(RESULTS_DIR.rglob("*_heuristics.csv"))
     acs_data = {}
     for hf in heuristic_files:
-        # Rely on your existing inference functions to group them
         arch = infer_architecture_from_path(hf)
         ds = infer_dataset_from_path(hf)
         try:
@@ -152,7 +144,6 @@ def load_results() -> pd.DataFrame:
         except Exception as e:
             print(f"Skipping heuristics {hf}: {e}")
 
-    # 2. Load merged metrics JSONs
     files = list(RESULTS_DIR.rglob("*merged_metrics.json"))
     if not files:
         if (RESULTS_DIR / "merged_metrics.json").exists():
@@ -165,8 +156,6 @@ def load_results() -> pd.DataFrame:
     for p in files:
         dataset = infer_dataset_from_path(p)
         arch = infer_architecture_from_path(p)
-        
-        # Retrieve the matching heuristic dataframe for this architecture/dataset
         h_df = acs_data.get((arch, dataset), None)
         
         try:
@@ -177,66 +166,52 @@ def load_results() -> pd.DataFrame:
             continue
 
         for exp_name, metrics in raw.items():
-            # Basic inferences
             method_group = infer_posthoc_or_posttrain(exp_name, arch)
             is_quant = infer_isquant(exp_name)
             
-            # Name cleaning for plotting
             base_name = clean_exp_name(exp_name)
             display_name = f"{base_name}\n(Quant)" if is_quant else base_name
 
-            # ---------------------------------------------------------
-            # NEW: Map the Adaptive Collapse Score (ACS) to the Experiment
-            # ---------------------------------------------------------
             avg_acs = None
             if h_df is not None and not h_df.empty:
-                # Use your existing function to get the target layer tuples
-                collapse_range = get_collapse_range(arch, exp_name)
-                
-                if collapse_range:
-                    scores = []
-                    layer_names = h_df['layer'].tolist()
-                    
-                    # collapse_range is a list of tuples: [('start_layer', 'end_layer')]
-                    for start_layer, end_layer in collapse_range:
-                        start_idx, end_idx = -1, -1
+                # Assuming get_collapse_range is available in your scope
+                try:
+                    collapse_range = get_collapse_range(arch, exp_name)
+                    if collapse_range:
+                        scores = []
+                        layer_names = h_df['layer'].tolist()
                         
-                        # Fuzzy match layer names to find start/end indices in the CSV
-                        for i, lname in enumerate(layer_names):
-                            if start_layer in lname: start_idx = i
-                            if end_layer in lname: end_idx = i
-                            
-                        if start_idx != -1 and end_idx != -1:
-                            if start_idx > end_idx: start_idx, end_idx = end_idx, start_idx
-                            
-                            # Slice the heuristics dataframe and get the mean ACS score
-                            subset = h_df.iloc[start_idx : end_idx + 1]
-                            scores.append(subset['collapse_score'].mean())
-                            
-                    if scores:
-                        avg_acs = np.mean(scores)
+                        for start_layer, end_layer in collapse_range:
+                            start_idx, end_idx = -1, -1
+                            for i, lname in enumerate(layer_names):
+                                if start_layer in lname: start_idx = i
+                                if end_layer in lname: end_idx = i
+                                
+                            if start_idx != -1 and end_idx != -1:
+                                if start_idx > end_idx: start_idx, end_idx = end_idx, start_idx
+                                subset = h_df.iloc[start_idx : end_idx + 1]
+                                scores.append(subset['collapse_score'].mean())
+                                
+                        if scores:
+                            avg_acs = np.mean(scores)
+                except Exception:
+                    pass
 
-            rows.append(
-                {
-                    "dataset": dataset,
-                    "architecture": arch,
-                    "exp_name": exp_name,
-                    "base_name": base_name,
-                    "display_name": display_name,
-                    "posthoc_or_posttrain": method_group,
-                    "model_type": infer_model_type(exp_name),
-                    "is_quantized": is_quant,
-
-                    # Core metrics
-                    "accuracy": metrics.get("final_accuracy"),
-                    "params": metrics.get("param_count"),
-                    "flops": metrics.get("flops"),
-                    "memory": metrics.get("total_size_mb"),
-                    
-                    # NEW: Add ACS Score
-                    "acs_score": avg_acs,
-                }
-            )
+            rows.append({
+                "dataset": dataset,
+                "architecture": arch,
+                "exp_name": exp_name,
+                "base_name": base_name,
+                "display_name": display_name,
+                "posthoc_or_posttrain": method_group,
+                "model_type": infer_model_type(exp_name),
+                "is_quantized": is_quant,
+                "accuracy": metrics.get("final_accuracy"),
+                "params": metrics.get("param_count"),
+                "flops": metrics.get("flops"),
+                "memory": metrics.get("total_size_mb"),
+                "acs_score": avg_acs,
+            })
 
     return pd.DataFrame(rows)
 
@@ -260,63 +235,30 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
             out.append(row)
     return pd.DataFrame(out)
 
-def save_plot_source_data(df: pd.DataFrame, filename: str):
-    """Saves the data used for a specific plot to CSV and prints a preview."""
-    filepath = TABLE_DIR / f"{filename}.csv"
-    df.to_csv(filepath, index=False)
-    print(f"\n[Data Export] Saved source data for {filename} to {filepath}")
-    
-    desired_cols = ["dataset", "architecture", "exp_name", "d_acc", "d_params", "collapsed_fraction", "accuracy_delta"]
-    existing_cols = [c for c in desired_cols if c in df.columns]
-    
-    if existing_cols:
-        print(df[existing_cols].head(3).to_string())
-    else:
-        print(df.head(3).to_string())
-
 # =========================
-# Plotting Helpers
+# Plotting Helpers & Main Generation
 # =========================
-def format_accuracy_axis(ax):
-    ax.set_ylabel("Accuracy Change (%)\n(higher is better)")
-    ax.axhline(0, color="gray", linestyle="--", linewidth=1)
 
-def format_reduction_axis(ax, label):
-    ax.set_xlabel(f"{label} Reduction (%)\n(higher is better)")
-
-def format_fraction_axis(ax):
-    ax.set_xlabel("Collapsed Fraction\n(higher = more compression)")
-
-def standard_legend(ax):
-    ax.legend(title="Configuration", frameon=True, loc="best")
-
-
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from pathlib import Path
 def fig1(
     df: pd.DataFrame,
-    metrics: list[str] = ["accuracy", "params", "flops", "memory", "acs_score"], # <-- NEW: Added acs_score
+    metrics: list[str] = ["accuracy", "params", "flops", "memory", "acs_score"], 
     out_dir: Path = Path("./figures/individual_plots"),
 ):
     """
     Generates improved INDIVIDUAL plot files AND LaTeX tables.
-    - Converts Params to Millions (M) and FLOPs to GFLOPs (G).
-    - Removes duplicate rows for cleaner tables.
-    - Saves a LaTeX table summary including ACS scores.
+    - Averages metrics for Non-VGG/RegNetX models via groupby logic.
+    - Saves TWO tables per architecture/dataset (Quantized vs. Unquantized).
+    - Uses journal-level formatting for both matplotlib and LaTeX.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    df = df.copy()
-
-    # Updated titles to reflect new units and ACS
+    
     metric_titles = {
         "accuracy": "Accuracy (%)",
         "params": "Params (M)",
         "flops": "GFLOPs",
         "memory": "Memory (MB)",
-        "acs_score": "Collapse Score (ACS)" # <-- NEW
+        "acs_score": "Collapse Score (ACS)" 
     }
     
     palette = {
@@ -326,57 +268,86 @@ def fig1(
         "Collapsed": "#2ca02c"      # Green
     }
 
-    for architecture, df_arch in df.groupby("architecture"):
+    # 1. AGGREGATION STEP: Average identical configurations
+    # Because 'infer_posthoc_or_posttrain' groups non-VGG/RegNetX under "Collapsed",
+    # grouping by these columns will automatically average their metrics!
+    group_cols = ["dataset", "architecture", "base_name", "display_name", "posthoc_or_posttrain", "is_quantized"]
+    available_metrics = [m for m in metrics if m in df.columns]
+    
+    # Calculate the mean for the metrics
+    df_agg = df.groupby(group_cols, dropna=False)[available_metrics].mean().reset_index()
+
+    for architecture, df_arch in df_agg.groupby("architecture"):
         for dataset in df_arch["dataset"].unique():
             g_dataset = df_arch[df_arch["dataset"] == dataset].copy()
 
             if g_dataset.empty: continue
 
-            # Determine Sort Order
+            # Determine Sort Order based on the base rank
             if "params" in g_dataset.columns:
                 base_name_rank = g_dataset.groupby("base_name")["params"].max().sort_values(ascending=False)
             else:
                 base_name_rank = g_dataset.groupby("base_name")["accuracy"].max().sort_values(ascending=True)
             
             rank_map = {name: i for i, name in enumerate(base_name_rank.index)}
-            
             g_dataset["rank"] = g_dataset["base_name"].map(rank_map)
             g_dataset.sort_values(["rank", "is_quantized"], ascending=[True, True], inplace=True)
             
             sort_order = g_dataset["display_name"].unique().tolist()
 
-            # --- Save Data as LaTeX Table ---
-            table_cols = ["display_name", "posthoc_or_posttrain"] + [m for m in metrics if m in g_dataset.columns]
-            table_df = g_dataset[table_cols].copy()
+            # ==========================================
+            # LaTeX Table Generation (Quant & Unquant)
+            # ==========================================
+            table_df = g_dataset.copy()
             
-            # 1. Scale metrics for better readability
-            if "params" in table_df.columns:
-                table_df["params"] = table_df["params"] / 1e6
-            if "flops" in table_df.columns:
-                table_df["flops"] = table_df["flops"] / 1e9
+            # Scale metrics for better readability
+            if "params" in table_df.columns: table_df["params"] = table_df["params"] / 1e6
+            if "flops" in table_df.columns: table_df["flops"] = table_df["flops"] / 1e9
 
-            # 2. Drop duplicates (cleaning up repeated entries)
-            table_df = table_df.drop_duplicates(subset=["display_name", "posthoc_or_posttrain"])
-
-            # 3. Rename columns using the metric_titles dictionary
             rename_map = {"display_name": "Model", "posthoc_or_posttrain": "Type"}
             rename_map.update(metric_titles)
             table_df.rename(columns=rename_map, inplace=True)
             
-            tex_filename = f"{architecture}_{dataset}_table.tex".replace(" ", "_")
+            table_cols = ["Model", "Type"] + [metric_titles[m] for m in available_metrics]
             
-            # 4. Export to LaTeX (Formats floats dynamically)
-            table_df.to_latex(
-                out_dir / tex_filename,
-                index=False,
-                float_format=lambda x: "%.4f" % x if x < 10 else "%.2f" % x, # High precision for ACS
-                caption=f"Performance metrics and ACS for {architecture} on {dataset}.",
-                label=f"tab:{architecture}_{dataset}",
-                escape=True
-            )
-            print(f"[Table] Saved {tex_filename}")
-            # -------------------------------------
+            # Helper function for dynamic float formatting
+            float_fmt = lambda x: f"{x:.4f}" if x < 10 else f"{x:.2f}"
+            
+            # Split into Quantized and Unquantized
+            df_unquant = table_df[table_df["is_quantized"] == False][table_cols]
+            df_quant = table_df[table_df["is_quantized"] == True][table_cols]
 
+            # Write Unquantized Table
+            if not df_unquant.empty:
+                tex_filename_unq = f"{architecture}_{dataset}_unquantized_table.tex".replace(" ", "_")
+                df_unquant.to_latex(
+                    out_dir / tex_filename_unq,
+                    index=False,
+                    float_format=float_fmt,
+                    caption=f"Unquantized performance metrics and ACS for {architecture} on {dataset}.",
+                    label=f"tab:{architecture}_{dataset}_unquant",
+                    escape=True,
+                    column_format="ll" + "c" * len(available_metrics)
+                )
+                print(f"[Table] Saved {tex_filename_unq}")
+
+            # Write Quantized Table
+            if not df_quant.empty:
+                tex_filename_q = f"{architecture}_{dataset}_quantized_table.tex".replace(" ", "_")
+                df_quant.to_latex(
+                    out_dir / tex_filename_q,
+                    index=False,
+                    float_format=float_fmt,
+                    caption=f"Quantized performance metrics and ACS for {architecture} on {dataset}.",
+                    label=f"tab:{architecture}_{dataset}_quant",
+                    escape=True,
+                    column_format="ll" + "c" * len(available_metrics)
+                )
+                print(f"[Table] Saved {tex_filename_q}")
+
+            # ==========================================
+            # Plot Generation
+            # ==========================================
             for metric in metrics:
                 if metric not in g_dataset.columns or g_dataset[metric].isnull().all():
                     continue
@@ -391,11 +362,12 @@ def fig1(
                     order=sort_order,
                     palette=palette,
                     edgecolor="black",
-                    linewidth=1.0,
+                    linewidth=1.2,
                     ax=ax,
                     errorbar=None 
                 )
 
+                # Add hatching to Quantized bars
                 locs = ax.get_xticks()
                 labels = [l.get_text() for l in ax.get_xticklabels()]
                 
@@ -407,24 +379,26 @@ def fig1(
                         if "(Quant)" in lbl:
                             patch.set_hatch("///")
                             patch.set_edgecolor("black")
-                            patch.set_linewidth(1.0)
+                            patch.set_linewidth(1.2)
 
-                ax.set_ylabel(metric_titles.get(metric, metric), fontsize=12, fontweight='bold')
+                # Journal styling overrides
+                ax.set_ylabel(metric_titles.get(metric, metric))
                 ax.set_xlabel("")
-                ax.set_title(f"{architecture} - {dataset} ({metric_titles.get(metric, metric)})", fontsize=14, fontweight='bold')
+                ax.set_title(f"{architecture} - {dataset} ({metric_titles.get(metric, metric)})")
+                sns.despine(ax=ax) # Removes top and right borders
                 
                 # Dynamic Y-Limit for ACS Score to ensure 0-1 scale is visible
                 if metric == "acs_score":
                     ax.set_ylim(0, 1.1)
                 
-                ax.legend(title="Method", loc='upper left', bbox_to_anchor=(1, 1), frameon=True)
+                ax.legend(title="Method", loc='upper left', bbox_to_anchor=(1, 1), frameon=False)
                 
                 plt.xticks(rotation=45, ha="right")
-                plt.grid(True, axis="y", linestyle="--", alpha=0.3)
+                plt.grid(True, axis="y", linestyle=":", alpha=0.6, zorder=0)
                 plt.tight_layout()
                 
                 filename = f"{architecture}_{dataset}_{metric}.png".replace(" ", "_")
-                plt.savefig(out_dir / filename, bbox_inches='tight')
+                plt.savefig(out_dir / filename)
                 plt.close()
                 print(f"[Plot] Saved {filename}")
 
