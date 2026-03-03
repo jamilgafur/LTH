@@ -627,14 +627,15 @@ def get_experiment_config(model_name):
     if "convnext" in mn: return ConvNeXt_common
     return {}
 
+
 import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
     """
@@ -643,7 +644,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     2. End-to-End Feature Redundancy (Cosine Similarity)
     3. Virtual Bypass Prediction Shift (KL Divergence)
     4. Composite Activational Collapse Score
-    Saves outputs (CSV, TeX, PNG) into separate folders.
+    Saves outputs (CSV, TeX, PNG) into separate folders with publication-ready styling.
     """
     print(f"[•] Running Comprehensive Heuristic Analysis for {model_name} on {dataset_name}...")
     
@@ -659,6 +660,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     dir_sim = os.path.join(save_root_dir, "Heuristic_Redundancy")
     dir_kl = os.path.join(save_root_dir, "Heuristic_Bypass_KL")
     dir_cscore = os.path.join(save_root_dir, "Heuristic_Collapse_Score")
+    
     for d in [dir_var, dir_sim, dir_kl, dir_cscore]:
         os.makedirs(d, exist_ok=True)
 
@@ -848,38 +850,85 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         print(f"[!] Failed to process experiments: {e}")
 
     # =========================================================================
-    # PHASE 3: PLOT AND SAVE DATA
+    # PHASE 3: PUBLICATION-READY PLOTTING
     # =========================================================================
     def save_and_plot(data, y_col, directory, title_prefix, ylabel, hline_val, hline_label, color_base, color_alt, invert_safe_zone=False):
         if not data: return
         df = pd.DataFrame(data)
         
+        # Save raw data
         df.to_csv(os.path.join(directory, f"{model_name}_{dataset_name}_{y_col.replace(' ', '_')}.csv"), index=False)
         df.to_latex(os.path.join(directory, f"{model_name}_{dataset_name}.tex"), index=False, float_format="%.4f")
 
-        plt.figure(figsize=(12, 7))
-        colors = [color_base if exp == 'Original Model' else color_alt for exp in df['Experiment']]
-        sns.barplot(x="Experiment", y=y_col, data=df, palette=colors)
-        
-        plt.axhline(hline_val, color='crimson', linestyle='--', linewidth=2, label=hline_label)
-        
-        max_y = df[y_col].max() * 1.05 if df[y_col].max() > hline_val else hline_val * 1.5
-        min_y = df[y_col].min() * 1.05 if df[y_col].min() < 0 else 0.0
-        
-        if invert_safe_zone:
-            plt.axhspan(hline_val, max_y, color='green', alpha=0.05, label='Safe (High Redundancy)')
-            plt.axhspan(min_y, hline_val, color='red', alpha=0.05, label='Dangerous')
-        else:
-            plt.axhspan(0.0, hline_val, color='green', alpha=0.05, label='Safe')
-            plt.axhspan(hline_val, max_y, color='red', alpha=0.05, label='Dangerous')
+        # 1. Modern Seaborn Style Context
+        sns.set_theme(style="white", context="paper", font_scale=1.2)
+        fig, ax = plt.subplots(figsize=(14, 7))
 
-        plt.title(f"{title_prefix}\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold')
-        plt.ylabel(ylabel, fontsize=12)
-        plt.xticks(rotation=45, ha='right')
-        plt.legend(loc='upper right')
-        plt.grid(axis='y', linestyle='--', alpha=0.4)
+        # 2. Color Mapping
+        df['Color_Group'] = ['Baseline' if exp == 'Original Model' else 'Experiment' for exp in df['Experiment']]
+        palette = {'Baseline': color_base, 'Experiment': color_alt}
+
+        # 3. Bar Plotting with Z-Order (Forces bars in front of grids)
+        sns.barplot(
+            data=df, 
+            x="Experiment", 
+            y=y_col, 
+            hue="Color_Group", 
+            palette=palette,
+            dodge=False,
+            edgecolor="black", 
+            linewidth=0.8,
+            zorder=3,
+            ax=ax
+        )
+        
+        # Remove the auto-generated legend from the hue mapping
+        ax.legend_.remove()
+
+        # 4. Dynamic Limits (Fixing the Floating Gap)
+        ymin, ymax = ax.get_ylim()
+        
+        # Strip the default padding so positive bars touch the bottom axis
+        if df[y_col].min() >= 0:
+            ymin = 0.0  
+        else:
+            ymin = min(df[y_col].min() * 1.05, ymin)
+            
+        if hline_val > ymax:
+            ymax = hline_val * 1.15
+            
+        ax.set_ylim(ymin, ymax)
+
+        # 5. Visual Anchors and Thresholds
+        ax.axhline(0, color='black', linewidth=1.5, zorder=4) 
+        ax.axhline(hline_val, color='crimson', linestyle='--', linewidth=2.5, zorder=4, label=hline_label)
+
+        # 6. Logical Background Spans (Safe vs Dangerous)
+        if invert_safe_zone:
+            ax.axhspan(hline_val, ymax, color='#e6f4ea', alpha=0.6, zorder=1, label='Safe (High Redundancy)')
+            ax.axhspan(ymin, hline_val, color='#fce8e6', alpha=0.6, zorder=1, label='Dangerous')
+        else:
+            ax.axhspan(ymin, hline_val, color='#e6f4ea', alpha=0.6, zorder=1, label='Safe')
+            ax.axhspan(hline_val, ymax, color='#fce8e6', alpha=0.6, zorder=1, label='Dangerous')
+
+        # 7. Formatting and Typography
+        ax.set_title(f"{title_prefix}\n{model_name} | {dataset_name}", fontsize=18, fontweight='bold', pad=15)
+        ax.set_ylabel(ylabel, fontsize=14, fontweight='bold', labelpad=10)
+        ax.set_xlabel("Structural Modification", fontsize=14, fontweight='bold', labelpad=10)
+        
+        plt.xticks(rotation=45, ha='right', fontsize=11)
+        
+        # 8. Background Grid
+        ax.grid(axis='y', linestyle='-', alpha=0.3, color='gray', zorder=0)
+
+        # 9. Legend Optimization
+        ax.legend(loc='upper right', framealpha=0.9, edgecolor='gray', fontsize=12)
+
+        # 10. Despine (Removes upper and right borders)
+        sns.despine(bottom=False, left=False)
+
         plt.tight_layout()
-        plt.savefig(os.path.join(directory, f"{model_name}_experiment_{y_col.split(' ')[0]}.png"), dpi=300)
+        plt.savefig(os.path.join(directory, f"{model_name}_experiment_{y_col.split(' ')[0]}.png"), dpi=300, bbox_inches='tight')
         plt.close()
 
     # 1. Variance
@@ -909,6 +958,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     )
 
     return pd.DataFrame(plot_data_cscore)
+
 
 def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
     """Runs the appropriate experiment based on the arguments (JF or Kevin)."""
