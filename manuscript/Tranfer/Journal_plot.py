@@ -106,8 +106,8 @@ def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
         
     # Only distinguish distinct methods for specific architectures
     if architecture in ["VGG16", "RegNetX"]:
-        if "jf" in n: return "Pruned (JF)"
-        if "kevin" in n: return "No-Prune (Kevin)"
+        if "jf" in n: return "Pruned"
+        if "kevin" in n: return "Not-Pruned"
         
     # For ConvNeXt, MobileNet, etc., merge them into one group for averaging
     return "Collapsed"
@@ -264,7 +264,7 @@ def fig1(
     palette = {
         "Baseline": "#333333",      # Dark Grey
         "Pruned (JF)": "#1f77b4",   # Blue
-        "No-Prune (Kevin)": "#ff7f0e", # Orange
+        "No-Prune": "#ff7f0e", # Orange
         "Collapsed": "#2ca02c"      # Green
     }
 
@@ -316,7 +316,12 @@ def fig1(
             # Split into Quantized and Unquantized
             df_unquant = table_df[table_df["is_quantized"] == False][table_cols]
             df_quant = table_df[table_df["is_quantized"] == True][table_cols]
-
+            # drop ACS column
+            if "Collapse Score (ACS)" in df_unquant.columns:
+                df_unquant.drop(columns=["Collapse Score (ACS)"], inplace=True)
+            if "Collapse Score (ACS)" in df_quant.columns:
+                df_quant.drop(columns=["Collapse Score (ACS)"], inplace=True)
+                
             # Write Unquantized Table
             if not df_unquant.empty:
                 tex_filename_unq = f"{architecture}_{dataset}_unquantized_table.tex".replace(" ", "_")
