@@ -933,14 +933,24 @@ import os
         
 #     return df
 
+import os
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
     """
-    Analyzes Virtual Bypass Prediction Shift (KL Divergence).
-    Dynamically routes inputs around target blocks and measures the damage 
-    to the final network prediction to accurately forecast collapse safety.
+    Computes all three major pruning heuristics:
+    1. Relative Activation Variance
+    2. End-to-End Feature Redundancy (Cosine Similarity)
+    3. Virtual Bypass Prediction Shift (KL Divergence)
+    Saves outputs (CSV, TeX, PNG) into separate folders.
     """
-    print(f"[•] Running Zero-Shot Virtual Bypass Analysis for {model_name} on {dataset_name}...")
+    print(f"[•] Running Comprehensive Heuristic Analysis for {model_name} on {dataset_name}...")
     
     model.eval()
     if len(input_tensor.shape) == 3:
@@ -949,13 +959,62 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     module_dict = dict(model.named_modules())
     layer_names = list(module_dict.keys())
 
-    # 1. Baseline Prediction (Unbroken Network)
+    # Create subdirectories for each heuristic
+    dir_var = os.path.join(save_root_dir, "Heuristic_Variance")
+    dir_sim = os.path.join(save_root_dir, "Heuristic_Redundancy")
+    dir_kl = os.path.join(save_root_dir, "Heuristic_Bypass_KL")
+    for d in [dir_var, dir_sim, dir_kl]:
+        os.makedirs(d, exist_ok=True)
+
+    # =========================================================================
+    # PHASE 1: UNBROKEN NETWORK PASS (Variance & Cosine Similarity)
+    # =========================================================================
+    saved_tensors = {}
+    layer_variances = {}
+
+    def unbroken_hook(name):
+        def fn(module, inp, out):
+            if not isinstance(out, torch.Tensor) or not isinstance(inp[0], torch.Tensor):
+                return
+            x = inp[0].detach().cpu()
+            y = out.detach().cpu()
+            
+            # Save for block-level Cosine Similarity
+            saved_tensors[name] = {"in": x, "out": y}
+            
+            # Save for layer-level Variance
+            if y.ndim == 4:
+                act_var = y.var(dim=[2, 3]).mean().item()
+            else:
+                act_var = y.var().item()
+            layer_variances[name] = act_var
+        return fn
+
+    hooks = []
+    for name, module in model.named_modules():
+        if isinstance(module, (nn.Conv2d, nn.Linear)):
+            hooks.append(module.register_forward_hook(unbroken_hook(name)))
+
+    # Run unbroken forward pass
     with torch.no_grad():
         baseline_logits = model(input_tensor)
         baseline_probs = F.softmax(baseline_logits, dim=1)
 
-    plot_data = []
-    summary_data_latex = []
+    for h in hooks:
+        h.remove()
+
+    # Calculate Global Baseline Variance
+    if layer_variances:
+        global_median_var = float(np.median(list(layer_variances.values())))
+    else:
+        global_median_var = 1.0
+
+    # =========================================================================
+    # PHASE 2: ITERATE EXPERIMENTS & CALCULATE METRICS
+    # =========================================================================
+    plot_data_var = []
+    plot_data_sim = []
+    plot_data_kl = []
 
     try:
         exp_config = get_experiment_config(model_name)
@@ -964,135 +1023,182 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
             return pd.DataFrame()
 
         for exp_name, layer_range in exp_config.items():
-            # Handle Original Model
+            exp_display = exp_name.replace("_", " ")
+
+            # --- Handle Original Model (Baselines) ---
             if layer_range is None:
-                plot_data.append({"Experiment": exp_name.replace("_", " "), "Prediction Shift (KL)": 0.0})
-                summary_data_latex.append({
-                    "Experiment Name": exp_name.replace("_", "\\_"), 
-                    "Layer Range": "Original (Baseline)", 
-                    "Prediction Shift": "0.00"
-                })
+                # Variance (Baseline is 1.0x)
+                plot_data_var.append({"Experiment": exp_display, "Relative Variance": 1.0})
+                
+                # Cosine Similarity (Global Median Redundancy of all layers)
+                sim_scores = []
+                for t_data in saved_tensors.values():
+                    t_in, t_out = t_data["in"], t_data["out"]
+                    if t_in.shape == t_out.shape:
+                        in_flat, out_flat = t_in.flatten(start_dim=1), t_out.flatten(start_dim=1)
+                        try:
+                            sim_scores.append(F.cosine_similarity(in_flat, out_flat, dim=1).mean().item())
+                        except: pass
+                global_sim = float(np.median(sim_scores)) if sim_scores else 0.0
+                plot_data_sim.append({"Experiment": exp_display, "Block Redundancy": global_sim})
+                
+                # KL Divergence (Baseline is 0.0)
+                plot_data_kl.append({"Experiment": exp_display, "Prediction Shift (KL)": 0.0})
                 continue
 
             ranges = layer_range if isinstance(layer_range, list) else [layer_range]
-            handles = []
+            
+            # Variables for aggregation
+            block_vars = []
+            block_sims = []
+            
+            # Variables for Virtual Bypass
+            bypass_handles = []
             bypass_cache = {}
+            valid_bypass = True
 
-            # Hooks to dynamically unplug the block and bridge the gap
+            # Hook factories for Virtual Bypass
             def get_start_hook(idx):
                 def hook(module, inp, out):
-                    bypass_cache[idx] = inp[0] # Save the input going INTO the block
+                    bypass_cache[idx] = inp[0]
                 return hook
 
             def get_end_hook(idx):
                 def hook(module, inp, out):
                     if idx in bypass_cache:
                         cached_inp = bypass_cache[idx]
-                        # If shapes match, perform identity bypass
                         if cached_inp.shape == out.shape:
                             return cached_inp
                         else:
-                            # Shape mismatch ruins the structural pipeline
-                            return torch.zeros_like(out) 
+                            return torch.zeros_like(out)
                     return out
                 return hook
 
-            valid_bypass = True
-
-            # Register the bypass hooks for the target experiment
+            # Process each range in the experiment
             for idx, (start_layer, end_layer) in enumerate(ranges):
-                start_name = next((name for name in layer_names if start_layer in name), None)
-                end_name = next((name for name in reversed(layer_names) if end_layer in name), None)
+                start_name = next((n for n in layer_names if start_layer in n), None)
+                end_name = next((n for n in reversed(layer_names) if end_layer in n), None)
 
+                # --- 1. Variance & Cosine Similarity Calculations ---
                 if start_name and end_name:
+                    # Collect variances for all layers in this range
+                    in_range = False
+                    for name in layer_names:
+                        if name == start_name: in_range = True
+                        if in_range and name in layer_variances:
+                            block_vars.append(layer_variances[name])
+                        if name == end_name: break
+                    
+                    # Calculate Block Cosine Similarity
+                    if start_name in saved_tensors and end_name in saved_tensors:
+                        block_in = saved_tensors[start_name]["in"]
+                        block_out = saved_tensors[end_name]["out"]
+                        
+                        if block_in.shape == block_out.shape:
+                            in_flat = block_in.flatten(start_dim=1)
+                            out_flat = block_out.flatten(start_dim=1)
+                            try:
+                                sim = F.cosine_similarity(in_flat, out_flat, dim=1).mean().item()
+                            except:
+                                sim = 0.0
+                        else:
+                            sim = 0.0 # Shape mismatch = not an identity
+                        block_sims.append(sim)
+
+                    # --- 2. Setup Virtual Bypass Hooks ---
                     start_mod = module_dict[start_name]
                     end_mod = module_dict[end_name]
-                    handles.append(start_mod.register_forward_hook(get_start_hook(idx)))
-                    handles.append(end_mod.register_forward_hook(get_end_hook(idx)))
+                    bypass_handles.append(start_mod.register_forward_hook(get_start_hook(idx)))
+                    bypass_handles.append(end_mod.register_forward_hook(get_end_hook(idx)))
                 else:
                     valid_bypass = False
 
-            # 2. Run the Bypassed Prediction
+            # --- Aggregate Variance & Sim for the Experiment ---
+            exp_rel_var = (float(np.median(block_vars)) / global_median_var) if block_vars and global_median_var > 0 else 1.0
+            plot_data_var.append({"Experiment": exp_display, "Relative Variance": exp_rel_var})
+
+            exp_sim = float(np.median(block_sims)) if block_sims else 0.0
+            plot_data_sim.append({"Experiment": exp_display, "Block Redundancy": exp_sim})
+
+            # --- Execute Virtual Bypass for the Experiment ---
             if not valid_bypass:
-                kl_div = float('inf')
+                kl_div = 50.0 # Cap failure
             else:
                 try:
                     with torch.no_grad():
                         bypass_logits = model(input_tensor)
                         bypass_log_probs = F.log_softmax(bypass_logits, dim=1)
-                    # Measure the downstream structural damage
                     kl_div = F.kl_div(bypass_log_probs, baseline_probs, reduction='batchmean').item()
-                except Exception as e:
-                    kl_div = float('inf') # Forward pass crashed due to downstream dimension errors
-
-            # Cleanup Hooks for the next experiment
-            for h in handles:
-                h.remove()
+                except Exception:
+                    kl_div = 50.0 # Cap failure
+            
+            # Cleanup bypass hooks
+            for h in bypass_handles: h.remove()
             bypass_cache.clear()
 
-            # Cap massive failures for readable plotting
             display_kl = kl_div if kl_div < 50.0 else 50.0
-
-            plot_data.append({
-                "Experiment": exp_name.replace("_", " "), 
-                "Prediction Shift (KL)": display_kl
-            })
-
-            range_str = "Multiple Ranges" if isinstance(layer_range, list) else f"{layer_range[0]} $\\to$ {layer_range[1]}".replace("_", "\\_")
-            summary_data_latex.append({
-                "Experiment Name": exp_name.replace("_", "\\_"),
-                "Layer Range": range_str,
-                "Prediction Shift": f"{display_kl:.4f}" if display_kl < 50.0 else "FAIL (Shape Error)"
-            })
-
-        # Save Summary LaTeX Table
-        if summary_data_latex:
-            summary_df = pd.DataFrame(summary_data_latex)
-            tex_filename = f"{model_name}_{dataset_name}_experiment_summary.tex"
-            save_path = os.path.join(save_root_dir, tex_filename)
-            summary_df.to_latex(
-                buf=save_path, index=False, escape=False, 
-                column_format="llc",
-                caption=f"Zero-Shot Virtual Bypass Prediction Shift for {model_name}. Higher KL Divergence indicates a catastrophic accuracy drop.",
-                label=f"tab:bypass_summary_{model_name.lower()}",
-                position="h", header=True
-            )
-            print(f"[Saved] Experiment Summary Table -> {tex_filename}")
-
-        # --- Generate Experiment-Wise Plots ---
-        if plot_data:
-            exp_df = pd.DataFrame(plot_data)
-            
-            # Save CSV
-            var_csv_path = os.path.join(save_root_dir, f"{model_name}_{dataset_name}_prediction_shift.csv")
-            exp_df.to_csv(var_csv_path, index=False)
-
-            # Plot
-            plt.figure(figsize=(12, 7))
-            
-            colors = ['crimson' if exp == 'Original Model' else 'teal' for exp in exp_df['Experiment']]
-            ax = sns.barplot(x="Experiment", y="Prediction Shift (KL)", data=exp_df, palette=colors)
-            
-            # Visual zones for clarity
-            plt.axhspan(0.0, 1.0, color='green', alpha=0.05, label='Safe to Prune (Low Output Shift)')
-            plt.axhspan(1.0, exp_df['Prediction Shift (KL)'].max() * 1.05, color='red', alpha=0.05, label='Dangerous (Classifier Output Destroyed)')
-
-            plt.title(f"Virtual Bypass Prediction Damage (KL Divergence)\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold')
-            plt.ylabel("Prediction Shift (KL Divergence)\n(0.0 = Safe | >1.0 = Critical | 50.0 = Failed)", fontsize=12)
-            plt.xticks(rotation=45, ha='right')
-            
-            plt.legend(loc='upper right')
-            plt.grid(axis='y', linestyle='--', alpha=0.4)
-            plt.tight_layout()
-            plt.savefig(os.path.join(save_root_dir, f"{model_name}_experiment_PredictionShift.png"), dpi=300)
-            plt.close()
+            plot_data_kl.append({"Experiment": exp_display, "Prediction Shift (KL)": display_kl})
 
     except Exception as e:
         print(f"[!] Failed to process experiments: {e}")
 
-    # Return empty DataFrame as we are evaluating blocks directly now, not single layers
+    # =========================================================================
+    # PHASE 3: PLOT AND SAVE DATA
+    # =========================================================================
+    def save_and_plot(data, y_col, directory, title_prefix, ylabel, hline_val, hline_label, color_base, color_alt, invert_safe_zone=False):
+        if not data: return
+        df = pd.DataFrame(data)
+        
+        # Save Data
+        df.to_csv(os.path.join(directory, f"{model_name}_{dataset_name}_{y_col.replace(' ', '_')}.csv"), index=False)
+        df.to_latex(os.path.join(directory, f"{model_name}_{dataset_name}.tex"), index=False, float_format="%.4f")
+
+        # Plot
+        plt.figure(figsize=(12, 7))
+        colors = [color_base if exp == 'Original Model' else color_alt for exp in df['Experiment']]
+        sns.barplot(x="Experiment", y=y_col, data=df, palette=colors)
+        
+        plt.axhline(hline_val, color='crimson', linestyle='--', linewidth=2, label=hline_label)
+        
+        max_y = df[y_col].max() * 1.05 if df[y_col].max() > hline_val else hline_val * 1.5
+        
+        if invert_safe_zone:
+            plt.axhspan(hline_val, max_y, color='green', alpha=0.05, label='Safe (High Redundancy)')
+            plt.axhspan(0.0, hline_val, color='red', alpha=0.05, label='Dangerous')
+        else:
+            plt.axhspan(0.0, hline_val, color='green', alpha=0.05, label='Safe')
+            plt.axhspan(hline_val, max_y, color='red', alpha=0.05, label='Dangerous')
+
+        plt.title(f"{title_prefix}\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold')
+        plt.ylabel(ylabel, fontsize=12)
+        plt.xticks(rotation=45, ha='right')
+        plt.legend(loc='upper right')
+        plt.grid(axis='y', linestyle='--', alpha=0.4)
+        plt.tight_layout()
+        plt.savefig(os.path.join(directory, f"{model_name}_experiment_{y_col.split(' ')[0]}.png"), dpi=300)
+        plt.close()
+
+    # 1. Variance
+    save_and_plot(
+        plot_data_var, "Relative Variance", dir_var, 
+        "Relative Activation Variance", "Relative Variance (Multiplier)", 1.0, "1.0x Baseline", 'crimson', 'steelblue'
+    )
+
+    # 2. Cosine Similarity
+    global_sim_val = plot_data_sim[0]["Block Redundancy"] if plot_data_sim else 0.0
+    save_and_plot(
+        plot_data_sim, "Block Redundancy", dir_sim, 
+        "Feature Redundancy (Cosine Similarity)", "Cosine Similarity (1.0 = Identity)", global_sim_val, "Global Median", 'crimson', 'mediumseagreen', invert_safe_zone=True
+    )
+
+    # 3. KL Divergence
+    save_and_plot(
+        plot_data_kl, "Prediction Shift (KL)", dir_kl, 
+        "Virtual Bypass Prediction Damage", "KL Divergence (0.0 = Safe | 50.0 = Failed)", 1.0, "Critical Threshold (Approx)", 'crimson', 'teal'
+    )
+
     return pd.DataFrame()
-    
+
 # def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
 #     """
 #     Analyzes Conv2d and Linear layers, calculates Taylor First-Order Gradient Sensitivity,
