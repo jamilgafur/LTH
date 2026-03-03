@@ -3,6 +3,7 @@ from __future__ import annotations
 import glob
 import json
 import warnings
+import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -96,7 +97,7 @@ def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
     """
     Determines the method group.
     - Baseline: If 'original' or 'baseline' in name.
-    - Pruned/No-Prune: ONLY for VGG16 and RegNetX.
+    - Pruned/Not Pruned: ONLY for VGG16 and RegNetX.
     - Collapsed: For all other architectures (forces averaging later).
     """
     n = exp_name.lower()
@@ -106,19 +107,28 @@ def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
         
     # Only distinguish distinct methods for specific architectures
     if architecture in ["VGG16", "RegNetX"]:
-        if "jf" in n: return "Pruned"
-        if "kevin" in n: return "Not-Pruned"
+        if "jf" in n or ("pruned" in n and "no" not in n and "not" not in n): 
+            return "Pruned"
+        if "kevin" in n or "no-prune" in n or "not pruned" in n: 
+            return "Not Pruned"
         
     # For ConvNeXt, MobileNet, etc., merge them into one group for averaging
     return "Collapsed"
 
 def clean_exp_name(exp_name: str) -> str:
     n = exp_name
-    n = n.replace("_quant", "").replace("_JF", "").replace("_Kevin", "")
+    
+    # Strip JF/Kevin and Quant text rigorously so that non-VGG/RegNetX models map 
+    # to the exact same base_name to be averaged properly.
+    n = re.sub(r'(?i)[_-]?quant|\(quant\)', '', n)
+    n = re.sub(r'(?i)[_-]?jf|\(jf\)|[_-]?kevin|\(kevin\)|no-prune|not pruned|pruned', '', n)
+    
     for arch in ["RegNetX_400MF_", "VGG16_", "MobileNet_", "ConvNeXt_", "InceptionNet_", "XceptionNet_"]:
         n = n.replace(arch, "")
+        
     n = n.replace("Block ", "Block-").replace("Stage ", "Stage-") 
     n = n.replace(" Only", "")
+    n = n.strip(" -_()")
     
     if "Original" in n or "Baseline" in n: 
         return "Original"
@@ -133,17 +143,6 @@ def find_baseline(df: pd.DataFrame):
     return None if m.empty else m.iloc[0]
 
 def load_results() -> pd.DataFrame:
-    heuristic_files = list(RESULTS_DIR.rglob("*_heuristics.csv"))
-    acs_data = {}
-    for hf in heuristic_files:
-        arch = infer_architecture_from_path(hf)
-        ds = infer_dataset_from_path(hf)
-        try:
-            df_h = pd.read_csv(hf)
-            acs_data[(arch, ds)] = df_h
-        except Exception as e:
-            print(f"Skipping heuristics {hf}: {e}")
-
     files = list(RESULTS_DIR.rglob("*merged_metrics.json"))
     if not files:
         if (RESULTS_DIR / "merged_metrics.json").exists():
@@ -156,7 +155,6 @@ def load_results() -> pd.DataFrame:
     for p in files:
         dataset = infer_dataset_from_path(p)
         arch = infer_architecture_from_path(p)
-        h_df = acs_data.get((arch, dataset), None)
         
         try:
             with open(p) as f:
@@ -172,31 +170,6 @@ def load_results() -> pd.DataFrame:
             base_name = clean_exp_name(exp_name)
             display_name = f"{base_name}\n(Quant)" if is_quant else base_name
 
-            avg_acs = None
-            if h_df is not None and not h_df.empty:
-                # Assuming get_collapse_range is available in your scope
-                try:
-                    collapse_range = get_collapse_range(arch, exp_name)
-                    if collapse_range:
-                        scores = []
-                        layer_names = h_df['layer'].tolist()
-                        
-                        for start_layer, end_layer in collapse_range:
-                            start_idx, end_idx = -1, -1
-                            for i, lname in enumerate(layer_names):
-                                if start_layer in lname: start_idx = i
-                                if end_layer in lname: end_idx = i
-                                
-                            if start_idx != -1 and end_idx != -1:
-                                if start_idx > end_idx: start_idx, end_idx = end_idx, start_idx
-                                subset = h_df.iloc[start_idx : end_idx + 1]
-                                scores.append(subset['collapse_score'].mean())
-                                
-                        if scores:
-                            avg_acs = np.mean(scores)
-                except Exception:
-                    pass
-
             rows.append({
                 "dataset": dataset,
                 "architecture": arch,
@@ -210,7 +183,6 @@ def load_results() -> pd.DataFrame:
                 "params": metrics.get("param_count"),
                 "flops": metrics.get("flops"),
                 "memory": metrics.get("total_size_mb"),
-                "acs_score": avg_acs,
             })
 
     return pd.DataFrame(rows)
@@ -241,7 +213,7 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
 
 def fig1(
     df: pd.DataFrame,
-    metrics: list[str] = ["accuracy", "params", "flops", "memory", "acs_score"], 
+    metrics: list[str] = ["accuracy", "params", "flops", "memory"], 
     out_dir: Path = Path("./figures/individual_plots"),
 ):
     """
@@ -258,19 +230,16 @@ def fig1(
         "params": "Params (M)",
         "flops": "GFLOPs",
         "memory": "Memory (MB)",
-        "acs_score": "Collapse Score (ACS)" 
     }
     
     palette = {
         "Baseline": "#333333",      # Dark Grey
-        "Pruned (JF)": "#1f77b4",   # Blue
-        "No-Prune": "#ff7f0e", # Orange
+        "Pruned": "#1f77b4",        # Blue
+        "Not Pruned": "#ff7f0e",    # Orange
         "Collapsed": "#2ca02c"      # Green
     }
 
     # 1. AGGREGATION STEP: Average identical configurations
-    # Because 'infer_posthoc_or_posttrain' groups non-VGG/RegNetX under "Collapsed",
-    # grouping by these columns will automatically average their metrics!
     group_cols = ["dataset", "architecture", "base_name", "display_name", "posthoc_or_posttrain", "is_quantized"]
     available_metrics = [m for m in metrics if m in df.columns]
     
@@ -316,12 +285,7 @@ def fig1(
             # Split into Quantized and Unquantized
             df_unquant = table_df[table_df["is_quantized"] == False][table_cols]
             df_quant = table_df[table_df["is_quantized"] == True][table_cols]
-            # drop ACS column
-            if "Collapse Score (ACS)" in df_unquant.columns:
-                df_unquant.drop(columns=["Collapse Score (ACS)"], inplace=True)
-            if "Collapse Score (ACS)" in df_quant.columns:
-                df_quant.drop(columns=["Collapse Score (ACS)"], inplace=True)
-                
+
             # Write Unquantized Table
             if not df_unquant.empty:
                 tex_filename_unq = f"{architecture}_{dataset}_unquantized_table.tex".replace(" ", "_")
@@ -329,7 +293,7 @@ def fig1(
                     out_dir / tex_filename_unq,
                     index=False,
                     float_format=float_fmt,
-                    caption=f"Unquantized performance metrics and ACS for {architecture} on {dataset}.",
+                    caption=f"Unquantized performance metrics for {architecture} on {dataset}.",
                     label=f"tab:{architecture}_{dataset}_unquant",
                     escape=True,
                     column_format="ll" + "c" * len(available_metrics)
@@ -343,7 +307,7 @@ def fig1(
                     out_dir / tex_filename_q,
                     index=False,
                     float_format=float_fmt,
-                    caption=f"Quantized performance metrics and ACS for {architecture} on {dataset}.",
+                    caption=f"Quantized performance metrics for {architecture} on {dataset}.",
                     label=f"tab:{architecture}_{dataset}_quant",
                     escape=True,
                     column_format="ll" + "c" * len(available_metrics)
@@ -391,10 +355,6 @@ def fig1(
                 ax.set_xlabel("")
                 ax.set_title(f"{architecture} - {dataset} ({metric_titles.get(metric, metric)})")
                 sns.despine(ax=ax) # Removes top and right borders
-                
-                # Dynamic Y-Limit for ACS Score to ensure 0-1 scale is visible
-                if metric == "acs_score":
-                    ax.set_ylim(0, 1.1)
                 
                 ax.legend(title="Method", loc='upper left', bbox_to_anchor=(1, 1), frameon=False)
                 
