@@ -621,6 +621,7 @@ def get_experiment_config(model_name):
     """Matches model string to experiment config."""
     mn = model_name.lower()
     if "vgg" in mn: return Vgg_common
+    if "inception" in mn: return InceptionNet_common
     if "regnet" in mn: return RegNetX_common
     if "mobile" in mn: return mobileNet_common
     if "xception" in mn: return XceptionNet_common
