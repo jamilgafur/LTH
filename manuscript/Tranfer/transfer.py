@@ -630,15 +630,6 @@ def get_experiment_config(model_name):
 
 
 import os
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -654,7 +645,7 @@ def setup_directories(save_root_dir):
         "sim": os.path.join(save_root_dir, "Heuristic_Redundancy"),
         "kl": os.path.join(save_root_dir, "Heuristic_Bypass_KL"),
         "cscore": os.path.join(save_root_dir, "Heuristic_Collapse_Score"),
-        "layer_stats": os.path.join(save_root_dir, "Layer_Statistics") # NEW: Directory for layer-wise plots
+        "layer_stats": os.path.join(save_root_dir, "Layer_Statistics")
     }
     for d in dirs.values():
         os.makedirs(d, exist_ok=True)
@@ -664,7 +655,7 @@ def run_baseline_pass(model, input_tensor):
     """Executes the unbroken network pass to gather baseline variances, activations, and saved tensors."""
     saved_tensors = {}
     layer_variances = {}
-    layer_activations = {} # NEW: Keep track of mean activations
+    layer_activations = {}
 
     def unbroken_hook(name):
         def fn(module, inp, out):
@@ -679,13 +670,13 @@ def run_baseline_pass(model, input_tensor):
             # Save for layer-level Variance and Activation
             if y.ndim == 4:
                 act_var = y.var(dim=[2, 3]).mean().item()
-                act_mean = y.mean(dim=[2, 3]).mean().item() # NEW: Calculate mean activation
+                act_mean = y.mean(dim=[2, 3]).mean().item()
             else:
                 act_var = y.var().item()
-                act_mean = y.mean().item() # NEW: Calculate mean activation
+                act_mean = y.mean().item()
                 
             layer_variances[name] = act_var
-            layer_activations[name] = act_mean # NEW: Store activation
+            layer_activations[name] = act_mean
         return fn
 
     hooks = []
@@ -704,11 +695,10 @@ def run_baseline_pass(model, input_tensor):
     # Calculate Global Baseline Variance
     global_median_var = float(np.median(list(layer_variances.values()))) if layer_variances else 1.0
 
-    # NEW: Return layer_activations as well
     return saved_tensors, layer_variances, layer_activations, global_median_var, baseline_probs
 
 def plot_individual_layers(layer_activations, layer_variances, directory, model_name, dataset_name):
-    """NEW: Plots the individual mean activation and variance for each tracked layer."""
+    """Plots the raw individual mean activation and variance for each tracked layer."""
     if not layer_activations: return
     
     layers = list(layer_activations.keys())
@@ -752,6 +742,62 @@ def plot_individual_layers(layer_activations, layer_variances, directory, model_
     
     plt.tight_layout()
     plt.savefig(os.path.join(directory, f"{model_name}_layer_stats.png"), dpi=300, bbox_inches='tight')
+    plt.close()
+
+def plot_normalized_metrics(layer_activations, layer_variances, directory, model_name, dataset_name):
+    """NEW: Plots Normalized Variance and Normalized CV across layers."""
+    if not layer_activations: return
+    
+    layers = list(layer_activations.keys())
+    means = np.array(list(layer_activations.values()))
+    vars_arr = np.array(list(layer_variances.values()))
+    
+    # 1. Normalized Variance
+    avg_var = np.mean(vars_arr)
+    norm_vars = vars_arr / (avg_var + 1e-12)
+    
+    # 2. Normalized CV (defined per Kevin's notes: Variance / Mean)
+    # Using 1e-12 epsilon to prevent division by zero for dead layers
+    cvs = vars_arr / (np.abs(means) + 1e-12) 
+    avg_cv = np.mean(cvs)
+    norm_cvs = cvs / (avg_cv + 1e-12)
+    
+    df = pd.DataFrame({
+        "Layer": layers,
+        "Normalized Variance": norm_vars,
+        "Normalized CV": norm_cvs
+    })
+    
+    df.to_csv(os.path.join(directory, f"{model_name}_{dataset_name}_normalized_layer_stats.csv"), index=False)
+    
+    sns.set_theme(style="whitegrid", context="paper", font_scale=1.1)
+    
+    # --- Plot 1: Normalized Variance ---
+    fig, ax = plt.subplots(figsize=(14, 6))
+    sns.barplot(data=df, x="Layer", y="Normalized Variance", color="coral", ax=ax)
+    ax.axhline(1.0, color='black', linestyle='--', linewidth=2, label="Average Layer-Variance (1.0)")
+    ax.set_title(f"Normalized Layer Variance\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold', pad=15)
+    ax.set_ylabel("Variance / Avg Variance", fontweight='bold')
+    ax.set_xlabel("Network Layer", fontweight='bold')
+    ax.set_xticks(range(len(layers)))
+    ax.set_xticklabels(layers, rotation=90, fontsize=9)
+    ax.legend(loc='upper right')
+    plt.tight_layout()
+    plt.savefig(os.path.join(directory, f"{model_name}_normalized_variance.png"), dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    # --- Plot 2: Normalized CV ---
+    fig, ax = plt.subplots(figsize=(14, 6))
+    sns.barplot(data=df, x="Layer", y="Normalized CV", color="mediumpurple", ax=ax)
+    ax.axhline(1.0, color='black', linestyle='--', linewidth=2, label="Average Layer-CV (1.0)")
+    ax.set_title(f"Normalized Coefficient of Variation (CV)\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold', pad=15)
+    ax.set_ylabel("Layer CV / Avg CV", fontweight='bold')
+    ax.set_xlabel("Network Layer", fontweight='bold')
+    ax.set_xticks(range(len(layers)))
+    ax.set_xticklabels(layers, rotation=90, fontsize=9)
+    ax.legend(loc='upper right')
+    plt.tight_layout()
+    plt.savefig(os.path.join(directory, f"{model_name}_normalized_cv.png"), dpi=300, bbox_inches='tight')
     plt.close()
 
 def evaluate_experiments(model, input_tensor, exp_config, layer_names, module_dict, saved_tensors, layer_variances, global_median_var, baseline_probs):
@@ -945,13 +991,15 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     dirs = setup_directories(save_root_dir)
 
     # 2. Baseline Pass
-    # NEW: Now unpacks 5 items including layer_activations
     saved_tensors, layer_variances, layer_activations, global_median_var, baseline_probs = run_baseline_pass(model, input_tensor)
 
-    # NEW: Plot the raw individual layer stats right after the baseline pass
+    # 3. Plot Individual & Normalized Layer Stats
     plot_individual_layers(layer_activations, layer_variances, dirs["layer_stats"], model_name, dataset_name)
+    
+    # NEW: Call the normalized plots
+    plot_normalized_metrics(layer_activations, layer_variances, dirs["layer_stats"], model_name, dataset_name)
 
-    # 3. Process Experiments
+    # 4. Process Experiments
     try:
         exp_config = get_experiment_config(model_name)
         if not exp_config:
@@ -966,7 +1014,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         print(f"[!] Failed to process experiments: {e}")
         return pd.DataFrame()
 
-    # 4. Save and Plot
+    # 5. Save and Plot Core Metrics
     save_and_plot_metric(plot_data_var, "Relative Variance", dirs["var"], "Relative Activation Variance", "Relative Variance (Multiplier)", 1.0, "1.0x Baseline", 'crimson', 'steelblue', model_name, dataset_name)
     
     global_sim_val = plot_data_sim[0]["Block Redundancy"] if plot_data_sim else 0.0
@@ -979,7 +1027,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
 
     return pd.DataFrame(plot_data_cscore)
 
-    
+
 def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
     """Runs the appropriate experiment based on the arguments (JF or Kevin)."""
     model_class = eval(model_class)
