@@ -9,6 +9,7 @@ from datetime import datetime
 from copy import deepcopy
 from collections import OrderedDict
 import tempfile
+from collapse import collapse_only, _wrap_pools_safe
 
 # Third-party libraries
 import torch
@@ -433,7 +434,7 @@ def run_jf_experiment(
 
     # 2. Initialize the Base Architecture
     base_model = model_class(**model_kwargs)
-
+    _wrap_pools_safe(base_model)
     # 3. Handle Initialization vs. Resumption
     if not existing_ckpts:
         # FRESH START: Load initial pretrained weights if they exist
@@ -506,6 +507,7 @@ def run_kevin_experiment(
 
     # 2. Initialize
     base_model = model_class(**model_kwargs)
+    _wrap_pools_safe(base_model)
 
     # 3. Handle Initial Weights
     if not existing_ckpts:
