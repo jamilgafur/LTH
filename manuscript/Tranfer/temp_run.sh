@@ -51,10 +51,7 @@ MobileNet_experiments=(
 
 # XceptionNet: Control group for MobileNet behavior
 XceptionNet_experiments=(
-    "Original Model"
-    "Stage 5 (Full)" "Stage 4 (Full)" "Stage 3 (Full)" "Stage 2 (Full)" "Stage 1 (Full)"
-    "Block 5 Only" "Block 4 Only" "Block 3 Only" "Block 2 Only" "Block 1 Only"
-    "Stage 3-5" "Stage 2-5" "Stage 1-5"
+   "Original Model", "Entry Flow (Full)", "Middle Flow (Full)", "Exit Flow (Full)", "Block 1 Only", "Block 2 Only", "Block 3 Only", "Conv 3 and 4 Only", "Middle Flow Block 4 Only", "Middle Flow Block 7 Only", "Block 4 Only", "Entry and Middle Flow", "Middle and Exit Flow",   
 )
 
 # InceptionNet: Probing the Stage 3a "Trap"
