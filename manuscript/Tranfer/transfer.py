@@ -293,31 +293,26 @@ mobileNet_common = {
     "Original Model": None,
 
     # --- 1. Coarse-Grained Stage Collapses ---
-    "Stage 7": ("block7.depthwise", "block7.bn2"),
-    "Stage 6": ("block6.depthwise", "block7.depthwise"),
-    "Stage 5": ("block5.depthwise", "block6.depthwise"),
-    "Stage 4": ("block4.depthwise", "block5.depthwise"),
-    "Stage 3": ("block3.depthwise", "block4.depthwise"),
-    "Stage 2": ("block2.depthwise", "block3.depthwise"),
-    "Stage 1": ("block1.depthwise", "block2.depthwise"),
+    "Early Features (Full)": ("features.0.depthwise.0", "features.4.pointwise.0"),
+    "Middle Features (Full)": ("features.5.depthwise.0", "features.8.pointwise.0"),
+    "Late Features (Full)": ("features.9.depthwise.0", "features.12.pointwise.0"),
 
-    # --- 2. Granular Block Checks ---
-    "Block 7 Only": ("block7.depthwise", "block7.bn2"),
-    "Block 6 Only": ("block6.depthwise", "block6.pointwise"),
-    "Block 5 Only": ("block5.depthwise", "block5.pointwise"),
-    "Block 4 Only": ("block4.depthwise", "block4.pointwise"),
-    "Block 3 Only": ("block3.depthwise", "block3.pointwise"),
-    "Block 2 Only": ("block2.depthwise", "block2.pointwise"),
-    "Block 1 Only": ("block1.depthwise", "block1.pointwise"), # Lowest Variance
+    # --- 2. Granular Probes: The "Safe" Zones (Low Variance) ---
+    # These early blocks are relatively flat and should collapse easily
+    "Block 0 Only": ("features.0.depthwise.0", "features.0.pointwise.0"),
+    "Block 1 Only": ("features.1.depthwise.0", "features.1.pointwise.0"),
+    "Block 2 Only": ("features.2.depthwise.0", "features.2.pointwise.0"),
 
-    # --- 3. Multi-Stage Combinations ---
-    "Stage 5-7": ("block5.depthwise", "block7.depthwise"),
-    "Stage 4-7": ("block4.depthwise", "block7.depthwise"),
-    "Stage 6-7": ("block6.depthwise", "block7.depthwise"),
-    "Stage 3-7": ("block3.depthwise", "block7.depthwise"),
-    "Stage 2-7": ("block2.depthwise", "block7.depthwise"),
-    "Stage 1-7": ("block1.depthwise", "block7.depthwise"),
-    "Last 2": ("block6.depthwise", "block7.depthwise"),
+    # --- 3. Granular Probes: The "Danger" Zones (High Variance) ---
+    # We expect these to fail based on the massive pointwise variance spikes
+    "Block 8 Only": ("features.8.depthwise.0", "features.8.pointwise.0"),
+    "Block 10 Only": ("features.10.depthwise.0", "features.10.pointwise.0"),
+    "Block 11 Only": ("features.11.depthwise.0", "features.11.pointwise.0"), # The biggest spike
+
+    # --- 4. Multi-Stage Combinations ---
+    "Early and Middle": ("features.0.depthwise.0", "features.8.pointwise.0"),
+    "Middle and Late": ("features.5.depthwise.0", "features.12.pointwise.0"),
+    "Almost All (1-11)": ("features.1.depthwise.0", "features.11.pointwise.0"),
 }
 
 # ==============================================================================

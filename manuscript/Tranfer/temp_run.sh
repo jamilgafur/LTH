@@ -39,14 +39,13 @@ RegNetX_400MF_experiments=(
     "Stage 1 last 2 conv" "Stage 2 last 2 conv" "Stage 3 last 2 conv" "Stage 4 last 2 conv"
 )
 
-# MobileNet: Verifying "Isomorphic" safety everywhere
+# MobileNet: Probing Pointwise Variance Spikes vs Safe Early Blocks
 MobileNet_experiments=(
     "Original Model"
-    "Stage 7" "Stage 6" "Stage 5" "Stage 4" "Stage 3" "Stage 2" "Stage 1"
-    # Granular Checks
-    "Block 7 Only" "Block 6 Only" "Block 5 Only" "Block 4 Only" "Block 3 Only" "Block 2 Only" "Block 1 Only"
-    # Combinations
-    "Stage 5-7" "Stage 4-7" "Stage 6-7" "Stage 3-7" "Stage 2-7" "Stage 1-7" "Last 2"
+    "Early Features (Full)" "Middle Features (Full)" "Late Features (Full)"
+    "Block 0 Only" "Block 1 Only" "Block 2 Only"
+    "Block 8 Only" "Block 10 Only" "Block 11 Only"
+    "Early and Middle" "Middle and Late" "Almost All (1-11)"
 )
 
 # XceptionNet: Control group for MobileNet behavior
