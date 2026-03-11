@@ -89,7 +89,7 @@ for model in "${models[@]}"; do
                 # Running both pruning/collapse flags (JF = Post-Collapse, Kevin = No-Collapse Baseline)
                 for flag in "JF" "Kevin"; do
                     # only run the original model
-                    if [[ "$experiment" == "Original Model" ]]; then
+                    if [[ "$experiment" != "Original Model" ]]; then
                         continue
                     fi
                     # Submit job
