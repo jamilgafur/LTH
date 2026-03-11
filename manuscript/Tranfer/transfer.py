@@ -698,8 +698,9 @@ def run_baseline_pass(model, input_tensor):
     return saved_tensors, layer_variances, layer_activations, global_median_var, baseline_probs
 
 def plot_individual_layers(layer_activations, layer_variances, directory, model_name, dataset_name):
-    """Plots the raw individual mean activation and variance for each tracked layer."""
-    if not layer_activations: return
+    """Plots the raw individual mean activation and variance for each tracked layer on separate subplots."""
+    if not layer_activations:
+        return
     
     layers = list(layer_activations.keys())
     activations = list(layer_activations.values())
@@ -710,40 +711,66 @@ def plot_individual_layers(layer_activations, layer_variances, directory, model_
         "Mean Activation": activations,
         "Variance": variances
     })
-    
+
     # Save raw stats to CSV
     df.to_csv(os.path.join(directory, f"{model_name}_{dataset_name}_layer_stats.csv"), index=False)
 
     sns.set_theme(style="whitegrid", context="paper", font_scale=1.1)
-    fig, ax1 = plt.subplots(figsize=(14, 6))
 
-    # Plot Activations
-    sns.lineplot(data=df, x="Layer", y="Mean Activation", marker="o", color="steelblue", label="Mean Activation", ax=ax1, linewidth=2)
-    ax1.set_ylabel("Mean Activation", color="steelblue", fontweight='bold', labelpad=10)
-    ax1.tick_params(axis='y', labelcolor="steelblue")
-    ax1.set_xticks(range(len(layers)))
-    ax1.set_xticklabels(layers, rotation=90, fontsize=9)
-    ax1.set_xlabel("Network Layer", fontweight='bold', labelpad=10)
+    fig, (ax1, ax2) = plt.subplots(
+        2, 1,
+        figsize=(14, 10),
+        sharex=True
+    )
 
-    # Plot Variances on a twin axis
-    ax2 = ax1.twinx()
-    sns.lineplot(data=df, x="Layer", y="Variance", marker="s", color="crimson", label="Variance", ax=ax2, linewidth=2, linestyle="--")
-    ax2.set_ylabel("Variance", color="crimson", fontweight='bold', labelpad=10)
-    ax2.tick_params(axis='y', labelcolor="crimson")
+    # ---- Mean Activation Plot ----
+    sns.lineplot(
+        data=df,
+        x="Layer",
+        y="Mean Activation",
+        marker="o",
+        color="steelblue",
+        linewidth=2,
+        ax=ax1
+    )
 
-    # Combine legends
-    lines_1, labels_1 = ax1.get_legend_handles_labels()
-    lines_2, labels_2 = ax2.get_legend_handles_labels()
-    ax2.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper left', framealpha=0.9)
-    ax1.get_legend().remove()
+    ax1.set_ylabel("Mean Activation", fontweight='bold', labelpad=10)
+    ax1.set_title(
+        f"Layer-wise Activation\n{model_name} | {dataset_name}",
+        fontsize=14,
+        fontweight='bold',
+        pad=12
+    )
 
-    plt.title(f"Layer-wise Activation and Variance\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold', pad=15)
-    sns.despine(bottom=False, left=False, right=False)
-    
+    # ---- Variance Plot ----
+    sns.lineplot(
+        data=df,
+        x="Layer",
+        y="Variance",
+        marker="s",
+        color="crimson",
+        linewidth=2,
+        linestyle="--",
+        ax=ax2
+    )
+
+    ax2.set_ylabel("Variance", fontweight='bold', labelpad=10)
+    ax2.set_xlabel("Network Layer", fontweight='bold', labelpad=10)
+
+    # X ticks formatting
+    ax2.set_xticks(range(len(layers)))
+    ax2.set_xticklabels(layers, rotation=90, fontsize=9)
+
+    sns.despine()
+
     plt.tight_layout()
-    plt.savefig(os.path.join(directory, f"{model_name}_layer_stats.png"), dpi=300, bbox_inches='tight')
+    plt.savefig(
+        os.path.join(directory, f"{model_name}_{dataset_name}_layer_stats.png"),
+        dpi=300,
+        bbox_inches='tight'
+    )
     plt.close()
-
+    
 def plot_normalized_metrics(layer_activations, layer_variances, directory, model_name, dataset_name):
     """NEW: Plots Normalized Variance and Normalized CV across layers."""
     if not layer_activations: return
