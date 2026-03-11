@@ -90,8 +90,8 @@ CHECKPOINT_FILES = {
             "checkpoint_Original_0.000000.pth",
         ),
         "tinyimagenet": (
-            "checkpoint_Finetuned_0.000000.pth",
-            "checkpoint_Original_0.000000.pth",
+            "None",
+            "None",
         ),
     },
     "RegNetX_400MF": {
@@ -108,8 +108,8 @@ CHECKPOINT_FILES = {
             "checkpoint_Original_0.000000.pth",
         ),
         "tinyimagenet": (
-            "checkpoint_Finetuned_0.000000.pth",
-            "checkpoint_Original_0.000000.pth",
+            "None",
+            "None",
         ),
     },
     "InceptionNet": {
