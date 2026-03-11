@@ -388,21 +388,24 @@ ConvNeXt_common = {
     "Original Model": None,
 
     # --- 1. Coarse-Grained Stage Collapses ---
-    "Stage 4 (Full)": ("stage4.block4_1", "stage4.block4_2"),
-    "Stage 3 (Full)": ("stage3.block3_1", "stage3.block3_3"),
-    "Stage 2 (Full)": ("stage2.block2_1", "stage2.block2_2"),
-    "Stage 1 (Full)": ("stage1.block1_1", "stage1.block1_2"),
+    "Stage 1 (Full)": ("stages.0.0.dwconv", "stages.0.2.pwconv2"), # Highly redundant
+    "Stage 2 (Full)": ("stages.1.0.dwconv", "stages.1.2.pwconv2"),
+    "Stage 3 (Full)": ("stages.2.0.dwconv", "stages.2.8.pwconv2"),
+    "Stage 4 (Full)": ("stages.3.0.dwconv", "stages.3.2.pwconv2"), # Highly volatile
 
-    # --- 2. Granular Sensitivity Checks ---
-    "Stage 3 Block 1 Only": ("stage3.block3_1", "stage3.block3_1"),
-    "Stage 3 Block 2 Only": ("stage3.block3_2", "stage3.block3_2"), 
-    "Stage 3 Block 3 Only": ("stage3.block3_3", "stage3.block3_3"),
-    
-    # --- 3. Low Variance / Stem Probe ---
-    "Stage 1 Block 1 Only": ("stage1.block1_1", "stage1.block1_1"),
+    # --- 2. Granular Probes: The "Safe" Zones (Low Variance) ---
+    "Stage 1 Block 0 Only": ("stages.0.0.dwconv", "stages.0.0.pwconv2"),
+    "Stage 1 Block 2 Only": ("stages.0.2.dwconv", "stages.0.2.pwconv2"),
 
-    # --- 4. Aggressive "Inner" Collapse ---
-    "Stage 3 Inner (Block 2)": ("stage3.block3_2", "stage3.block3_2"), 
+    # --- 3. Granular Probes: The "Danger" Zones (High Variance) ---
+    # We expect these to fail catastrophically based on the massive variance spikes
+    "Stage 3 Block 8 Only": ("stages.2.8.dwconv", "stages.2.8.pwconv2"), # Peak of stage 3
+    "Stage 4 Block 0 Only": ("stages.3.0.dwconv", "stages.3.0.pwconv2"), # Absolute highest spike
+    "Stage 4 Block 2 Only": ("stages.3.2.dwconv", "stages.3.2.pwconv2"),
+
+    # --- 4. Multi-Stage Combinations ---
+    "Stages 1 and 2": ("stages.0.0.dwconv", "stages.1.2.pwconv2"),
+    "Stages 3 and 4": ("stages.2.0.dwconv", "stages.3.2.pwconv2"),
 }
 
 EXPERIMENTS = {

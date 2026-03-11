@@ -61,13 +61,13 @@ InceptionNet_experiments=(
     "Stage 2-5" "Stage 3-5" "Stage 4-5" "Last 2"
 )
 
-# ConvNeXt: Probing redundant depth vs interface
+# ConvNeXt: Probing redundant early stages vs high-variance deep stages
 ConvNeXt_experiments=(
     "Original Model"
-    "Stage 4 (Full)" "Stage 3 (Full)" "Stage 2 (Full)" "Stage 1 (Full)"
-    "Stage 3 Block 1 Only" "Stage 3 Block 2 Only" "Stage 3 Block 3 Only"
-    "Stage 1 Block 1 Only"
-    "Stage 3 Inner (Block 2)"
+    "Stage 1 (Full)" "Stage 2 (Full)" "Stage 3 (Full)" "Stage 4 (Full)"
+    "Stage 1 Block 0 Only" "Stage 1 Block 2 Only"
+    "Stage 3 Block 8 Only" "Stage 4 Block 0 Only" "Stage 4 Block 2 Only"
+    "Stages 1 and 2" "Stages 3 and 4"
 )
 
 # 4. Main Execution Loop
