@@ -326,21 +326,26 @@ mobileNet_common = {
 XceptionNet_common = {
     "Original Model": None,
 
-    "Stage 5 (Full)": ("block5.depthwise", "block5.bn2"),
-    "Stage 4 (Full)": ("block4.depthwise", "block5.depthwise"),
-    "Stage 3 (Full)": ("block3.depthwise", "block4.depthwise"),
-    "Stage 2 (Full)": ("block2.depthwise", "block3.depthwise"),
-    "Stage 1 (Full)": ("block1.depthwise", "block2.depthwise"),
+    # --- 1. Coarse-Grained Flow Collapses ---
+    "Entry Flow (Full)": ("block1.rep.0.depthwise", "block3.rep.4.pointwise"),
+    "Middle Flow (Full)": ("middle_flow.0.rep.1.depthwise", "middle_flow.7.rep.7.pointwise"),
+    "Exit Flow (Full)": ("block4.rep.1.depthwise", "conv4.pointwise"),
 
-    "Block 5 Only": ("block5.depthwise", "block5.bn2"),
-    "Block 4 Only": ("block4.depthwise", "block4.pointwise"),
-    "Block 3 Only": ("block3.depthwise", "block3.pointwise"),
-    "Block 2 Only": ("block2.depthwise", "block2.pointwise"),
-    "Block 1 Only": ("block1.depthwise", "block1.pointwise"),
+    # --- 2. Granular Probes: The "Safe" Zones (Low Variance) ---
+    "Block 1 Only": ("block1.rep.0.depthwise", "block1.rep.3.pointwise"),
+    "Block 2 Only": ("block2.rep.1.depthwise", "block2.rep.4.pointwise"),
+    "Block 3 Only": ("block3.rep.1.depthwise", "block3.rep.4.pointwise"),
+    "Conv 3 and 4 Only": ("conv3.depthwise", "conv4.pointwise"),
 
-    "Stage 3-5": ("block3.depthwise", "block5.depthwise"),
-    "Stage 2-5": ("block2.depthwise", "block5.depthwise"),
-    "Stage 1-5": ("block1.depthwise", "block5.bn2"), 
+    # --- 3. Granular Probes: The "Danger" Zones (High Variance) ---
+    # We expect these to crash the model based on the massive variance spikes
+    "Middle Flow Block 4 Only": ("middle_flow.4.rep.1.depthwise", "middle_flow.4.rep.7.pointwise"),
+    "Middle Flow Block 7 Only": ("middle_flow.7.rep.1.depthwise", "middle_flow.7.rep.7.pointwise"),
+    "Block 4 Only": ("block4.rep.1.depthwise", "block4.rep.4.pointwise"),
+
+    # --- 4. Multi-Stage Combinations ---
+    "Entry and Middle Flow": ("block1.rep.0.depthwise", "middle_flow.7.rep.7.pointwise"),
+    "Middle and Exit Flow": ("middle_flow.0.rep.1.depthwise", "conv4.pointwise"),
 }
 
 # ==============================================================================
