@@ -12,13 +12,13 @@ quant=("True" "False")
 # 3. Define Experiment Configurations
 # ==============================================================================
 
-# VGG16: Testing the "Stage 3 Crash" vs "Stage 1 Safety"
+# VGG16: Probing Safe Early Stages vs High Variance Deep Stages
 VGG16_experiments=(
     "Original Model"
-    "Stage 5 (Full)" "Stage 4 (Full)" "Stage 3 (Full)" "Stage 2 (Full)" "Stage 1 (Full)"
-    "Stage 3 Conv 1 Only" "Stage 3 Conv 2 Only" "Stage 3 Conv 3 Only"
-    "Stage 1 Conv 1 Only" "Stage 1 Conv 2 Only"
-    "Last 2" "Stage 4-5" "Stage 3-5" "Stage 2-5" "Stage 1-5"
+    "Stage 1 (Full)" "Stage 2 (Full)" "Stage 3 (Full)" "Stage 4 (Full)" "Stage 5 (Full)"
+    "Conv 1 Only" "Conv 2 Only" "Conv 3 Only"
+    "Conv 9 Only" "Conv 10 Only" "Conv 13 Only"
+    "Stages 1 and 2" "Stages 3 and 4" "Stages 4 and 5"
 )
 
 # RegNetX: Massive granular search (Efficiency Wall)

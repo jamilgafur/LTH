@@ -196,31 +196,28 @@ Vgg_common = {
     "Original Model": None,
 
     # --- 1. Coarse-Grained Stage Collapses ---
-    "Stage 5 (Full)": ("features.conv_11", "features.conv_13"),
-    "Stage 4 (Full)": ("features.conv_8", "features.conv_10"),
-    "Stage 3 (Full)": ("features.conv_5", "features.conv_7"), # High Variance (Crash Site)
-    "Stage 2 (Full)": ("features.conv_3", "features.conv_4"),
-    "Stage 1 (Full)": ("features.conv_1", "features.conv_2"), # Low Variance (Safety Check)
-    
-    # --- 2. Granular Sensitivity Checks (High Variance Probes) ---
-    # Isolating the Stage 3 crash
-    "Stage 3 Conv 1 Only": ("features.conv_5", "features.conv_5"),
-    "Stage 3 Conv 2 Only": ("features.conv_6", "features.conv_6"),
-    "Stage 3 Conv 3 Only": ("features.conv_7", "features.conv_7"),
+    "Stage 1 (Full)": ("features.conv_1", "features.conv_2"), # Low Variance (Safe)
+    "Stage 2 (Full)": ("features.conv_3", "features.conv_4"), # Low Variance (Safe)
+    "Stage 3 (Full)": ("features.conv_5", "features.conv_7"), # Moderate Transition
+    "Stage 4 (Full)": ("features.conv_8", "features.conv_10"), # High Variance (Danger)
+    "Stage 5 (Full)": ("features.conv_11", "features.conv_13"), # Extreme Variance Peak
 
-    # --- 3. Granular Sensitivity Checks (Low Variance Probes) ---
-    # These layers have minimal variance; collapsing them should be safe.
-    "Stage 1 Conv 1 Only": ("features.conv_1", "features.conv_1"),
-    "Stage 1 Conv 2 Only": ("features.conv_2", "features.conv_2"),
+    # --- 2. Granular Probes: The "Safe" Zones (Low Variance) ---
+    "Conv 1 Only": ("features.conv_1", "features.conv_1"), # Lowest variance in the network
+    "Conv 2 Only": ("features.conv_2", "features.conv_2"),
+    "Conv 3 Only": ("features.conv_3", "features.conv_3"),
+
+    # --- 3. Granular Probes: The "Danger" Zones (High Variance Spikes) ---
+    # We expect these to fail catastrophically based on the massive variance spikes
+    "Conv 9 Only": ("features.conv_9", "features.conv_9"), # 13k variance spike
+    "Conv 10 Only": ("features.conv_10", "features.conv_10"), # 16k variance spike
+    "Conv 13 Only": ("features.conv_13", "features.conv_13"), # 6M peak before FC
 
     # --- 4. Multi-Stage Combinations ---
-    "Last 2": ("features.conv_12", "features.conv_13"),
-    "Stage 4-5": ("features.conv_8", "features.conv_13"),
-    "Stage 3-5": ("features.conv_5", "features.conv_13"),
-    "Stage 2-5": ("features.conv_3", "features.conv_13"),
-    "Stage 1-5": ("features.conv_1", "features.conv_13"), # Aggressive full-network collapse
+    "Stages 1 and 2": ("features.conv_1", "features.conv_4"),
+    "Stages 3 and 4": ("features.conv_5", "features.conv_10"),
+    "Stages 4 and 5": ("features.conv_8", "features.conv_13"),
 }
-
 # ==============================================================================
 # 2. RegNetX Common (The "Efficiency Wall")
 # Updated Strategy:
