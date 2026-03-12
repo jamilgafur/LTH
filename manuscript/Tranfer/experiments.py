@@ -37,61 +37,11 @@ import tqdm
 import torch.nn as nn
 import torch.optim as optim
 
+from trainer import train_one_epoch
 
 def ensure_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory, exist_ok=True)
-
-def train_one_epoch(model, train_loader, optimizer, device, scaler=None, use_autocast=False):
-    """
-    Performs one epoch of training.
-    Supports standard FP32 training or Mixed Precision (quant) training via scaler.
-    """
-    model.train()
-    loss_fn = nn.CrossEntropyLoss()
-    
-    total_loss = 0
-    correct = 0
-    total = 0
-
-    # Using tqdm for a progress bar that cleans up after itself
-    pbar = tqdm.tqdm(train_loader, desc="Training", leave=False)
-    
-    for xb, yb in pbar:
-        xb, yb = xb.to(device), yb.to(device)
-        optimizer.zero_grad()
-
-        # Mixed Precision Path
-        if use_autocast and scaler is not None:
-            with torch.cuda.amp.autocast():
-                preds = model(xb)
-                loss = loss_fn(preds, yb)
-            
-            # Scales loss, calls backward, then unscales and steps optimizer
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
-        
-        # Standard FP32 Path
-        else:
-            preds = model(xb)
-            loss = loss_fn(preds, yb)
-            loss.backward()
-            optimizer.step()
-
-        # Metrics tracking
-        total_loss += loss.item() * xb.size(0)
-        _, predicted = preds.max(1)
-        correct += (predicted == yb).sum().item()
-        total += yb.size(0)
-        
-        # Update progress bar description
-        pbar.set_postfix({"loss": f"{loss.item():.4f}"})
-
-    avg_loss = total_loss / total
-    avg_acc = 100.0 * correct / total
-    
-    return avg_loss, avg_acc
 
 # -------------------------
 # Safe JSON Write (Per-job unique, no lock, no SLURM ID)
