@@ -700,7 +700,7 @@ def run_baseline_pass(model, input_tensor):
 
 def plot_individual_layers(layer_activations, layer_variances, directory, model_name, dataset_name, exp_config=None):
     """Plots the raw individual mean activation and variance for each tracked layer, 
-    with shaded background regions indicating architectural stages."""
+    AND generates a second figure aggregating these metrics per experiment block."""
     if not layer_activations:
         return
     
@@ -717,44 +717,32 @@ def plot_individual_layers(layer_activations, layer_variances, directory, model_
     # Save raw stats to CSV
     df.to_csv(os.path.join(directory, f"{model_name}_{dataset_name}_layer_stats.csv"), index=False)
 
+    # =========================================================================
+    # FIGURE 1: INDIVIDUAL LAYER STATS (Annotated)
+    # =========================================================================
     sns.set_theme(style="whitegrid", context="paper", font_scale=1.1)
-
-    fig, (ax1, ax2) = plt.subplots(
-        2, 1,
-        figsize=(14, 10),
-        sharex=True
-    )
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
 
     # ---- Determine Stage Boundaries for Shading ----
     regions = {}
     if exp_config:
-        # We look for keys ending in "(Full)" because that is the naming convention 
-        # you used across all dictionaries for the coarse-grained stages!
         for key, val in exp_config.items():
             if "(Full)" in key and isinstance(val, tuple):
                 start_layer, end_layer = val
-                
-                # Match the dictionary string to the actual tracked layer index
                 start_idx = next((i for i, n in enumerate(layers) if start_layer in n), None)
                 end_idx = next((i for i, n in reversed(list(enumerate(layers))) if end_layer in n), None)
                 
                 if start_idx is not None and end_idx is not None:
-                    # Clean up the name for the label (e.g. "Stage 1")
                     clean_name = key.replace(" (Full)", "")
                     regions[clean_name] = (start_idx, end_idx)
 
     # ---- Draw Shaded Regions & Labels ----
-    # Alternating gentle background colors to visually separate the stages
     bg_colors = ['#eaf2f8', '#fdf2e9', '#e8f8f5', '#f5eef8', '#f4f6f7']
-    
     for i, (region_name, (start, end)) in enumerate(regions.items()):
         color = bg_colors[i % len(bg_colors)]
-        
-        # Shade both the Activation (ax1) and Variance (ax2) subplots
         ax1.axvspan(start, end, color=color, alpha=0.6, zorder=0)
         ax2.axvspan(start, end, color=color, alpha=0.6, zorder=0)
         
-        # Add the Stage Name as text at the top of the Variance plot
         y_max = max(variances) if variances else 1
         ax2.text(
             (start + end) / 2, y_max * 0.95, region_name, 
@@ -764,35 +752,91 @@ def plot_individual_layers(layer_activations, layer_variances, directory, model_
         )
 
     # ---- Mean Activation Plot ----
-    sns.lineplot(
-        data=df, x="Layer", y="Mean Activation",
-        marker="o", color="steelblue", linewidth=2, ax=ax1, zorder=3
-    )
+    sns.lineplot(data=df, x="Layer", y="Mean Activation", marker="o", color="steelblue", linewidth=2, ax=ax1, zorder=3)
     ax1.set_ylabel("Mean Activation", fontweight='bold', labelpad=10)
-    ax1.set_title(
-        f"Layer-wise Activation & Structural Stages\n{model_name} | {dataset_name}",
-        fontsize=16, fontweight='bold', pad=12
-    )
+    ax1.set_title(f"Layer-wise Activation & Structural Stages\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold', pad=12)
 
     # ---- Variance Plot ----
-    sns.lineplot(
-        data=df, x="Layer", y="Variance",
-        marker="s", color="crimson", linewidth=2, linestyle="--", ax=ax2, zorder=3
-    )
+    sns.lineplot(data=df, x="Layer", y="Variance", marker="s", color="crimson", linewidth=2, linestyle="--", ax=ax2, zorder=3)
     ax2.set_ylabel("Variance", fontweight='bold', labelpad=10)
     ax2.set_xlabel("Network Layer", fontweight='bold', labelpad=10)
-
-    # X ticks formatting
     ax2.set_xticks(range(len(layers)))
     ax2.set_xticklabels(layers, rotation=90, fontsize=9)
-
     sns.despine()
+    plt.tight_layout()
+    plt.savefig(os.path.join(directory, f"{model_name}_{dataset_name}_layer_stats_annotated.png"), dpi=300, bbox_inches='tight')
+    plt.close()
 
+    # =========================================================================
+    # FIGURE 2: AGGREGATED EXPERIMENT BLOCK STATS
+    # =========================================================================
+    if not exp_config:
+        return
+        
+    exp_names, exp_vars, exp_acts = [], [], []
+    
+    # Calculate the block-level stats for each experiment
+    for exp_name, layer_range in exp_config.items():
+        if layer_range is None: # Skip the "Original Model" baseline
+            continue
+            
+        ranges = layer_range if isinstance(layer_range, list) else [layer_range]
+        block_vars, block_acts = [], []
+        
+        for start_layer, end_layer in ranges:
+            start_name = next((n for n in layers if start_layer in n), None)
+            end_name = next((n for n in reversed(layers) if end_layer in n), None)
+            
+            if start_name and end_name:
+                in_range = False
+                for name in layers:
+                    if name == start_name: in_range = True
+                    if in_range:
+                        if name in layer_variances: block_vars.append(layer_variances[name])
+                        if name in layer_activations: block_acts.append(layer_activations[name])
+                    if name == end_name: break
+                    
+        # If we successfully captured data for this experiment block
+        if block_vars and block_acts:
+            exp_names.append(exp_name)
+            exp_vars.append(float(np.median(block_vars))) # Median variance representing the block
+            exp_acts.append(float(np.mean(block_acts)))   # Mean activation of the block
+            
+    if not exp_names:
+        return
+        
+    df_exp = pd.DataFrame({
+        "Experiment": exp_names,
+        "Median Variance": exp_vars,
+        "Mean Activation": exp_acts
+    })
+    
+    # Save experiment stats to CSV
+    df_exp.to_csv(os.path.join(directory, f"{model_name}_{dataset_name}_experiment_block_stats.csv"), index=False)
+    
+    # Plotting
+    fig2, (ax3, ax4) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+    
+    # Mean Activation Barplot
+    sns.barplot(data=df_exp, x="Experiment", y="Mean Activation", color="steelblue", ax=ax3, edgecolor="black")
+    ax3.set_ylabel("Block Mean Activation", fontweight='bold', labelpad=10)
+    ax3.set_title(f"Aggregated Heuristics per Target Experiment\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold', pad=12)
+    ax3.axhline(0, color='black', linewidth=1)
+    
+    # Median Variance Barplot
+    sns.barplot(data=df_exp, x="Experiment", y="Median Variance", color="crimson", ax=ax4, edgecolor="black")
+    ax4.set_ylabel("Block Median Variance", fontweight='bold', labelpad=10)
+    ax4.set_xlabel("Experiment Target", fontweight='bold', labelpad=10)
+    ax4.axhline(0, color='black', linewidth=1)
+    
+    # Format X-axis
+    ax4.set_xticklabels(ax4.get_xticklabels(), rotation=45, ha='right', fontsize=11)
+    
+    sns.despine()
     plt.tight_layout()
     plt.savefig(
-        os.path.join(directory, f"{model_name}_{dataset_name}_layer_stats_annotated.png"),
-        dpi=300,
-        bbox_inches='tight'
+        os.path.join(directory, f"{model_name}_{dataset_name}_experiment_block_stats.png"), 
+        dpi=300, bbox_inches='tight'
     )
     plt.close()
 
