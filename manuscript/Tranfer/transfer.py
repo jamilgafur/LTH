@@ -698,8 +698,9 @@ def run_baseline_pass(model, input_tensor):
 
     return saved_tensors, layer_variances, layer_activations, global_median_var, baseline_probs
 
-def plot_individual_layers(layer_activations, layer_variances, directory, model_name, dataset_name):
-    """Plots the raw individual mean activation and variance for each tracked layer on separate subplots."""
+def plot_individual_layers(layer_activations, layer_variances, directory, model_name, dataset_name, exp_config=None):
+    """Plots the raw individual mean activation and variance for each tracked layer, 
+    with shaded background regions indicating architectural stages."""
     if not layer_activations:
         return
     
@@ -724,37 +725,60 @@ def plot_individual_layers(layer_activations, layer_variances, directory, model_
         sharex=True
     )
 
+    # ---- Determine Stage Boundaries for Shading ----
+    regions = {}
+    if exp_config:
+        # We look for keys ending in "(Full)" because that is the naming convention 
+        # you used across all dictionaries for the coarse-grained stages!
+        for key, val in exp_config.items():
+            if "(Full)" in key and isinstance(val, tuple):
+                start_layer, end_layer = val
+                
+                # Match the dictionary string to the actual tracked layer index
+                start_idx = next((i for i, n in enumerate(layers) if start_layer in n), None)
+                end_idx = next((i for i, n in reversed(list(enumerate(layers))) if end_layer in n), None)
+                
+                if start_idx is not None and end_idx is not None:
+                    # Clean up the name for the label (e.g. "Stage 1")
+                    clean_name = key.replace(" (Full)", "")
+                    regions[clean_name] = (start_idx, end_idx)
+
+    # ---- Draw Shaded Regions & Labels ----
+    # Alternating gentle background colors to visually separate the stages
+    bg_colors = ['#eaf2f8', '#fdf2e9', '#e8f8f5', '#f5eef8', '#f4f6f7']
+    
+    for i, (region_name, (start, end)) in enumerate(regions.items()):
+        color = bg_colors[i % len(bg_colors)]
+        
+        # Shade both the Activation (ax1) and Variance (ax2) subplots
+        ax1.axvspan(start, end, color=color, alpha=0.6, zorder=0)
+        ax2.axvspan(start, end, color=color, alpha=0.6, zorder=0)
+        
+        # Add the Stage Name as text at the top of the Variance plot
+        y_max = max(variances) if variances else 1
+        ax2.text(
+            (start + end) / 2, y_max * 0.95, region_name, 
+            ha='center', va='top', fontsize=11, fontweight='bold', 
+            color='#555555', alpha=0.8,
+            bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.2')
+        )
+
     # ---- Mean Activation Plot ----
     sns.lineplot(
-        data=df,
-        x="Layer",
-        y="Mean Activation",
-        marker="o",
-        color="steelblue",
-        linewidth=2,
-        ax=ax1
+        data=df, x="Layer", y="Mean Activation",
+        marker="o", color="steelblue", linewidth=2, ax=ax1, zorder=3
     )
-
     ax1.set_ylabel("Mean Activation", fontweight='bold', labelpad=10)
     ax1.set_title(
-        f"Layer-wise Activation\n{model_name} | {dataset_name}",
-        fontsize=14,
-        fontweight='bold',
-        pad=12
+        f"Layer-wise Activation & Structural Stages\n{model_name} | {dataset_name}",
+        fontsize=16, fontweight='bold', pad=12
     )
 
     # ---- Variance Plot ----
     sns.lineplot(
-        data=df,
-        x="Layer",
-        y="Variance",
-        marker="s",
-        color="crimson",
-        linewidth=2,
-        linestyle="--",
-        ax=ax2
+        data=df, x="Layer", y="Variance",
+        marker="s", color="crimson", linewidth=2, linestyle="--", ax=ax2, zorder=3
     )
-
     ax2.set_ylabel("Variance", fontweight='bold', labelpad=10)
     ax2.set_xlabel("Network Layer", fontweight='bold', labelpad=10)
 
@@ -766,12 +790,12 @@ def plot_individual_layers(layer_activations, layer_variances, directory, model_
 
     plt.tight_layout()
     plt.savefig(
-        os.path.join(directory, f"{model_name}_{dataset_name}_layer_stats.png"),
+        os.path.join(directory, f"{model_name}_{dataset_name}_layer_stats_annotated.png"),
         dpi=300,
         bbox_inches='tight'
     )
     plt.close()
-    
+
 def plot_normalized_metrics(layer_activations, layer_variances, directory, model_name, dataset_name):
     """NEW: Plots Normalized Variance and Normalized CV across layers."""
     if not layer_activations: return
@@ -1002,6 +1026,59 @@ def save_and_plot_metric(data, y_col, directory, title_prefix, ylabel, hline_val
     plt.savefig(os.path.join(directory, f"{model_name}_experiment_{y_col.split(' ')[0]}.png"), dpi=300, bbox_inches='tight')
     plt.close()
 
+# def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
+#     """
+#     Main orchestrator: Computes all four heuristic targets and saves outputs.
+#     """
+#     print(f"[•] Running Comprehensive Heuristic Analysis for {model_name} on {dataset_name}...")
+    
+#     model.eval()
+#     if len(input_tensor.shape) == 3:
+#         input_tensor = input_tensor.unsqueeze(0)
+
+#     module_dict = dict(model.named_modules())
+#     layer_names = list(module_dict.keys())
+
+#     # 1. Setup
+#     dirs = setup_directories(save_root_dir)
+
+#     # 2. Baseline Pass
+#     saved_tensors, layer_variances, layer_activations, global_median_var, baseline_probs = run_baseline_pass(model, input_tensor)
+
+#     # 3. Plot Individual & Normalized Layer Stats
+#     plot_individual_layers(layer_activations, layer_variances, dirs["layer_stats"], model_name, dataset_name)
+    
+#     # NEW: Call the normalized plots
+#     plot_normalized_metrics(layer_activations, layer_variances, dirs["layer_stats"], model_name, dataset_name)
+
+#     # 4. Process Experiments
+#     try:
+#         exp_config = get_experiment_config(model_name)
+#         if not exp_config:
+#             print("[WARN] No experiment config found.")
+#             return pd.DataFrame()
+
+#         plot_data_var, plot_data_sim, plot_data_kl, plot_data_cscore = evaluate_experiments(
+#             model, input_tensor, exp_config, layer_names, module_dict, 
+#             saved_tensors, layer_variances, global_median_var, baseline_probs
+#         )
+#     except Exception as e:
+#         print(f"[!] Failed to process experiments: {e}")
+#         return pd.DataFrame()
+
+#     # 5. Save and Plot Core Metrics
+#     save_and_plot_metric(plot_data_var, "Relative Variance", dirs["var"], "Relative Activation Variance", "Relative Variance (Multiplier)", 1.0, "1.0x Baseline", 'crimson', 'steelblue', model_name, dataset_name)
+    
+#     global_sim_val = plot_data_sim[0]["Block Redundancy"] if plot_data_sim else 0.0
+#     save_and_plot_metric(plot_data_sim, "Block Redundancy", dirs["sim"], "Feature Redundancy (Cosine Similarity)", "Cosine Similarity (1.0 = Identity)", global_sim_val, "Global Median", 'crimson', 'mediumseagreen', model_name, dataset_name, invert_safe_zone=True)
+
+#     save_and_plot_metric(plot_data_kl, "Prediction Shift (KL)", dirs["kl"], "Virtual Bypass Prediction Damage", "KL Divergence (0.0 = Safe | 50.0 = Failed)", 1.0, "Critical Threshold (Approx)", 'crimson', 'teal', model_name, dataset_name)
+
+#     global_cscore_val = plot_data_cscore[0]["Collapse Score"] if plot_data_cscore else 1.0
+#     save_and_plot_metric(plot_data_cscore, "Collapse Score", dirs["cscore"], "Composite Activational Collapse Score", "C_Score (Higher = Safer to Collapse)", global_cscore_val, "Baseline Architecture Score", 'crimson', 'purple', model_name, dataset_name, invert_safe_zone=True)
+
+#     return pd.DataFrame(plot_data_cscore)
+
 def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
     """
     Main orchestrator: Computes all four heuristic targets and saves outputs.
@@ -1021,19 +1098,21 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     # 2. Baseline Pass
     saved_tensors, layer_variances, layer_activations, global_median_var, baseline_probs = run_baseline_pass(model, input_tensor)
 
-    # 3. Plot Individual & Normalized Layer Stats
-    plot_individual_layers(layer_activations, layer_variances, dirs["layer_stats"], model_name, dataset_name)
+    # 3. Fetch Experiment Config EARLY so the plotter can use it
+    exp_config = get_experiment_config(model_name)
+    if not exp_config:
+        print("[WARN] No experiment config found.")
+        # Proceed with empty config so it at least plots the raw data
+        exp_config = {}
+
+    # 4. Plot Individual & Normalized Layer Stats (Now passing exp_config!)
+    plot_individual_layers(layer_activations, layer_variances, dirs["layer_stats"], model_name, dataset_name, exp_config)
     
     # NEW: Call the normalized plots
     plot_normalized_metrics(layer_activations, layer_variances, dirs["layer_stats"], model_name, dataset_name)
 
-    # 4. Process Experiments
+    # 5. Process Experiments
     try:
-        exp_config = get_experiment_config(model_name)
-        if not exp_config:
-            print("[WARN] No experiment config found.")
-            return pd.DataFrame()
-
         plot_data_var, plot_data_sim, plot_data_kl, plot_data_cscore = evaluate_experiments(
             model, input_tensor, exp_config, layer_names, module_dict, 
             saved_tensors, layer_variances, global_median_var, baseline_probs
@@ -1042,7 +1121,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         print(f"[!] Failed to process experiments: {e}")
         return pd.DataFrame()
 
-    # 5. Save and Plot Core Metrics
+    # 6. Save and Plot Core Metrics
     save_and_plot_metric(plot_data_var, "Relative Variance", dirs["var"], "Relative Activation Variance", "Relative Variance (Multiplier)", 1.0, "1.0x Baseline", 'crimson', 'steelblue', model_name, dataset_name)
     
     global_sim_val = plot_data_sim[0]["Block Redundancy"] if plot_data_sim else 0.0
@@ -1054,7 +1133,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     save_and_plot_metric(plot_data_cscore, "Collapse Score", dirs["cscore"], "Composite Activational Collapse Score", "C_Score (Higher = Safer to Collapse)", global_cscore_val, "Baseline Architecture Score", 'crimson', 'purple', model_name, dataset_name, invert_safe_zone=True)
 
     return pd.DataFrame(plot_data_cscore)
-
 
 def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
     """Runs the appropriate experiment based on the arguments (JF or Kevin)."""
