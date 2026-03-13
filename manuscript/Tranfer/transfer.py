@@ -13,6 +13,7 @@ from experiments import *
 from utils import *
 from plots import *
 from pyPrune.utils import *
+from trainer import train_one_epoch
 from torch.backends import cudnn
 import random
 import numpy as np
