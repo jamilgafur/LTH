@@ -53,12 +53,13 @@ XceptionNet_experiments=(
    "Original Model", "Entry Flow (Full)", "Middle Flow (Full)", "Exit Flow (Full)", "Block 1 Only", "Block 2 Only", "Block 3 Only", "Conv 3 and 4 Only", "Middle Flow Block 4 Only", "Middle Flow Block 7 Only", "Block 4 Only", "Entry and Middle Flow", "Middle and Exit Flow",   
 )
 
-# InceptionNet: Probing the Stage 3a "Trap"
+# InceptionNet: Probing flat early stages vs massive Stage 5 spikes
 InceptionNet_experiments=(
     "Original Model"
-    "Stage 5 (Full)" "Stage 4 (Full)" "Stage 3 (Full)" "Stage 2 (Full)"
-
-    "Stage 2-5" "Stage 3-5" "Stage 4-5" "Last 2"
+    "Stage 2 (Full)" "Stage 3 (Full)" "Stage 4 (Full)" "Stage 5 (Full)"
+    "Stage 3a Only" "Stage 4a Only"
+    "Stage 5a Only" "Stage 5b Only"
+    "Stages 2 and 3" "Stages 3 and 4"
 )
 
 # ConvNeXt: Probing redundant early stages vs high-variance deep stages
