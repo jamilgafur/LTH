@@ -351,24 +351,24 @@ InceptionNet_common = {
     "Original Model": None,
 
     # --- 1. Coarse-Grained Stage Collapses ---
-    "Stage 2 (Full)": ("stage2", "stage2"), # Flatline (Safe)
-    "Stage 3 (Full)": ("stage3a", "stage3b"), # Flatline (Safe)
-    "Stage 4 (Full)": ("stage4a", "stage4e"), # Flatline (Safe)
-    "Stage 5 (Full)": ("stage5a", "stage5b"), # Extreme Variance Peak (Danger)
+    "Stage 2 (Full)": ("stage2.conv2", "stage2.conv3"),
+    "Stage 3 (Full)": ("stage3.inception_3a", "stage3.inception_3b"),
+    "Stage 4 (Full)": ("stage4.inception_4a", "stage4.inception_4e"),
+    "Stage 5 (Full)": ("stage5.inception_5a", "stage5.inception_5b"),
 
     # --- 2. Granular Probes: The "Safe" Zones (Low Variance) ---
-    "Stage 3a Only": ("stage3a", "stage3a"),
-    "Stage 4a Only": ("stage4a", "stage4a"),
+    "Stage 3a Only": ("stage3.inception_3a", "stage3.inception_3a"),
+    "Stage 4a Only": ("stage4.inception_4a", "stage4.inception_4a"),
 
     # --- 3. Granular Probes: The "Danger" Zones (High Variance Spikes) ---
-    # We expect these to fail catastrophically based on the massive variance spikes
-    "Stage 5a Only": ("stage5a", "stage5a"), # 20k variance spike
-    "Stage 5b Only": ("stage5b", "stage5b"), # 40k+ variance spike (Peak)
+    "Stage 5a Only": ("stage5.inception_5a", "stage5.inception_5a"),
+    "Stage 5b Only": ("stage5.inception_5b", "stage5.inception_5b"),
 
     # --- 4. Multi-Stage Combinations ---
-    "Stages 2 and 3": ("stage2", "stage3b"),
-    "Stages 3 and 4": ("stage3a", "stage4e"),
+    "Stages 2 and 3": ("stage2.conv2", "stage3.inception_3b"),
+    "Stages 3 and 4": ("stage3.inception_3a", "stage4.inception_4e"),
 }
+
 # ==============================================================================
 # 6. ConvNeXt Common (The "Deep" Probe)
 # Updated Strategy: 
