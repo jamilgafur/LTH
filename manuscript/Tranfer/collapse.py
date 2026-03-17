@@ -17,12 +17,17 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
     start_parts = start_layer_name.split('.') if start_layer_name else []
     end_parts = end_layer_name.split('.') if end_layer_name else []
     common_parts = []
-    for a, b in zip(start_parts, end_parts):
-        if a == b:
-            common_parts.append(a)
-        else:
-            break
-    lca_path = '.'.join(common_parts)
+    
+    # NEW FIX: If start and end are identical, the LCA is their parent!
+    if start_layer_name == end_layer_name and len(start_parts) > 0:
+        lca_path = '.'.join(start_parts[:-1])
+    else:
+        for a, b in zip(start_parts, end_parts):
+            if a == b:
+                common_parts.append(a)
+            else:
+                break
+        lca_path = '.'.join(common_parts)
 
     # FIX 1: Allow root to be the container
     if lca_path == "":
@@ -361,32 +366,30 @@ def _simulate_input_hook(model: nn.Module, target_layer_path: str, input_shape: 
         raise RuntimeError(f"Failed to capture activation at {target_layer_path}.")
     return dummy_input, captured['in']
 
+class SmartIdentity(nn.Module):
+    """A robust Identity replacement that safely absorbs nested attribute calls."""
+    def forward(self, x, *args, **kwargs):
+        return x
+    def __getattr__(self, name):
+        # Prevent intercepting PyTorch internal methods
+        if name.startswith('_'):
+            return super().__getattr__(name)
+        return self # Return self to absorb chained calls like .inception_4a(x)
+
 def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=None, end_name=None):
-    """
-    Replace a slice of layers. 
-    
-    CRITICAL CHANGE: 
-    Preserves the name of the 'start' layer and replaces subsequent layers 
-    in the range with Identity(). This ensures models with hardcoded 
-    forward methods (e.g., 'x = self.block4(x); x = self.block5(x)') 
-    do not crash with AttributeError.
-    """
+    """Replace a slice of layers, using SmartIdentity for subsumed layers."""
     new_layers = OrderedDict()
 
     for i, (name, mod) in enumerate(named_layers):
         if i < start_idx or i > end_idx:
             new_layers[name] = mod
         elif i == start_idx:
-            # FIX: Use the ORIGINAL name (e.g., 'block4') for the replacement.
-            # This ensures 'self.block4(x)' finds the new collapsed block.
             new_layers[name] = replacement
         else:
-            # FIX: Replace subsumed layers (e.g., 'block5') with Identity 
-            # instead of deleting them. 'self.block5(x)' becomes a no-op.
-            new_layers[name] = nn.Identity()
+            # FIX: Use SmartIdentity so hardcoded forward passes don't crash
+            new_layers[name] = SmartIdentity()
 
     return nn.Sequential(new_layers)
-
 def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
     """
     Insert AdaptiveAvgPool2d only when a true spatial -> flattened mismatch exists.
