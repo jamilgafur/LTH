@@ -455,15 +455,17 @@ def initialize_model_and_data(args):
     dataset = args.dataset
     model_kwargs = {}
 
-    if model_class == InceptionNet and args.JF:
-        raise ValueError("JF experiments are not supported for InceptionNet.")
+    # Removed the old JF/InceptionNet ValueError block since you are safely running them now!
     
     train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, model_class)
     model_kwargs["num_classes"] = num_classes
     model_kwargs["one_batch"] = next(iter(load_dataset(dataset, model_class)[0]))[0]
     
+    # FIX: Disable aux logits for InceptionNet during structural manipulation
+    if args.model == "InceptionNet":
+        model_kwargs["aux_logits"] = False
+        
     return train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes
-
 
 # -------------------------------------------------------------
 # HPC Safe Heuristic Profiling (Single Job Only)
