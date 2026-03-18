@@ -442,7 +442,7 @@ def fig2_correlation_and_pareto(
         ax.set_title(f"Efficiency Frontier: Compression vs Accuracy\n{arch} | {dataset}", fontweight='bold', pad=15)
         ax.set_ylabel("Final Accuracy (%)", fontweight='bold')
         ax.set_xlabel("Parameters Removed (%) -> Higher is Better", fontweight='bold')
-        ax.legend(loc='lower left')
+        # ax.legend(loc='lower left')
         
         ax.axhline(baseline_acc, color='black', linestyle='-', alpha=0.5)
         ax.axhline(baseline_acc - 2.0, color='red', linestyle='--', alpha=0.5, label="2% Degradation Limit")
