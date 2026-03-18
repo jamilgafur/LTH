@@ -3,46 +3,40 @@ import torch.nn as nn
 from collections import OrderedDict
 
 # -------------------------
+# Basic Conv Block
+# -------------------------
+class BasicConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels, **kwargs):
+        super(BasicConv2d, self).__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        return self.relu(self.bn(self.conv(x)))
+
+# -------------------------
 # Inception Block
 # -------------------------
 class InceptionBlock(nn.Module):
     def __init__(self, in_channels, ch1x1, ch3x3_reduce, ch3x3, ch5x5_reduce, ch5x5, pool_proj):
         super(InceptionBlock, self).__init__()
-
-        # 1x1 conv
-        self.branch1 = nn.Sequential(OrderedDict([
-            ('conv1', nn.Conv2d(in_channels, ch1x1, kernel_size=1, bias=False)),
-            ('bn1', nn.BatchNorm2d(ch1x1)),
-            ('relu1', nn.ReLU(inplace=True))
-        ]))
-
-        # 1x1 → 3x3 conv
-        self.branch2 = nn.Sequential(OrderedDict([
-            ('conv1', nn.Conv2d(in_channels, ch3x3_reduce, kernel_size=1, bias=False)),
-            ('bn1', nn.BatchNorm2d(ch3x3_reduce)),
-            ('relu1', nn.ReLU(inplace=True)),
-            ('conv2', nn.Conv2d(ch3x3_reduce, ch3x3, kernel_size=3, padding=1, bias=False)),
-            ('bn2', nn.BatchNorm2d(ch3x3)),
-            ('relu2', nn.ReLU(inplace=True))
-        ]))
-
-        # 1x1 → 5x5 conv
-        self.branch3 = nn.Sequential(OrderedDict([
-            ('conv1', nn.Conv2d(in_channels, ch5x5_reduce, kernel_size=1, bias=False)),
-            ('bn1', nn.BatchNorm2d(ch5x5_reduce)),
-            ('relu1', nn.ReLU(inplace=True)),
-            ('conv2', nn.Conv2d(ch5x5_reduce, ch5x5, kernel_size=5, padding=2, bias=False)),
-            ('bn2', nn.BatchNorm2d(ch5x5)),
-            ('relu2', nn.ReLU(inplace=True))
-        ]))
-
-        # 3x3 pool → 1x1 conv
-        self.branch4 = nn.Sequential(OrderedDict([
-            ('pool', nn.MaxPool2d(kernel_size=3, stride=1, padding=1)),
-            ('conv', nn.Conv2d(in_channels, pool_proj, kernel_size=1, bias=False)),
-            ('bn', nn.BatchNorm2d(pool_proj)),
-            ('relu', nn.ReLU(inplace=True))
-        ]))
+        self.branch1 = BasicConv2d(in_channels, ch1x1, kernel_size=1)
+        
+        self.branch2 = nn.Sequential(
+            BasicConv2d(in_channels, ch3x3_reduce, kernel_size=1),
+            BasicConv2d(ch3x3_reduce, ch3x3, kernel_size=3, padding=1)
+        )
+        
+        self.branch3 = nn.Sequential(
+            BasicConv2d(in_channels, ch5x5_reduce, kernel_size=1),
+            BasicConv2d(ch5x5_reduce, ch5x5, kernel_size=5, padding=2) 
+        )
+        
+        self.branch4 = nn.Sequential(
+            nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
+            BasicConv2d(in_channels, pool_proj, kernel_size=1)
+        )
 
     def forward(self, x):
         out1 = self.branch1(x)
@@ -52,13 +46,38 @@ class InceptionBlock(nn.Module):
         return torch.cat([out1, out2, out3, out4], dim=1)
 
 # -------------------------
-# InceptionNet (GoogLeNet style)
+# Auxiliary Classifier
+# -------------------------
+class InceptionAux(nn.Module):
+    def __init__(self, in_channels, num_classes):
+        super(InceptionAux, self).__init__()
+        # Adaptive pooling ensures compatibility with smaller datasets (e.g., CIFAR)
+        self.pool = nn.AdaptiveAvgPool2d((4, 4))
+        self.conv = BasicConv2d(in_channels, 128, kernel_size=1)
+        
+        self.fc1 = nn.Linear(128 * 4 * 4, 1024)
+        self.relu = nn.ReLU(inplace=True)
+        self.dropout = nn.Dropout(p=0.7)
+        self.fc2 = nn.Linear(1024, num_classes)
+
+    def forward(self, x):
+        x = self.pool(x)
+        x = self.conv(x)
+        x = torch.flatten(x, 1)
+        x = self.relu(self.fc1(x))
+        x = self.dropout(x)
+        x = self.fc2(x)
+        return x
+
+# -------------------------
+# GoogLeNet (Inception v1)
 # -------------------------
 class InceptionNet(nn.Module):
-    def __init__(self, one_batch=None, num_classes=1000):
+    def __init__(self, one_batch=None, num_classes=1000, aux_logits=True):
         super(InceptionNet, self).__init__()
+        self.aux_logits = aux_logits
 
-        # Infer input channels dynamically if given a batch
+        # Handle dynamic input sizes
         if one_batch is not None:
             _, in_channels, H, W = one_batch.shape
             self.input_channels = in_channels
@@ -68,29 +87,23 @@ class InceptionNet(nn.Module):
             self.input_size = (3, 224, 224)
 
         # -------------------------
-        # Stem
+        # Automated Architecture Stages
         # -------------------------
-        self.stem = nn.Sequential(OrderedDict([
-            ('conv1', nn.Conv2d(self.input_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)),
-            ('bn1', nn.BatchNorm2d(64)),
-            ('relu1', nn.ReLU(inplace=True)),
-            ('pool1', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
-            ('conv2', nn.Conv2d(64, 64, kernel_size=1, bias=False)),
-            ('bn2', nn.BatchNorm2d(64)),
-            ('relu2', nn.ReLU(inplace=True)),
-            ('conv3', nn.Conv2d(64, 192, kernel_size=3, padding=1, bias=False)),
-            ('bn3', nn.BatchNorm2d(192)),
-            ('relu3', nn.ReLU(inplace=True)),
-            ('pool2', nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
+        self.stage1 = nn.Sequential(OrderedDict([
+            ('conv1', BasicConv2d(self.input_channels, 64, kernel_size=7, stride=2, padding=3)),
+            ('maxpool1', nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
         ]))
 
-        # -------------------------
-        # Inception Stages
-        # -------------------------
+        self.stage2 = nn.Sequential(OrderedDict([
+            ('conv2', BasicConv2d(64, 64, kernel_size=1)),
+            ('conv3', BasicConv2d(64, 192, kernel_size=3, padding=1)),
+            ('maxpool2', nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
+        ]))
+
         self.stage3 = nn.Sequential(OrderedDict([
             ('inception_3a', InceptionBlock(192, 64, 96, 128, 16, 32, 32)),
             ('inception_3b', InceptionBlock(256, 128, 128, 192, 32, 96, 64)),
-            ('pool3', nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
+            ('maxpool3', nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
         ]))
 
         self.stage4 = nn.Sequential(OrderedDict([
@@ -99,7 +112,7 @@ class InceptionNet(nn.Module):
             ('inception_4c', InceptionBlock(512, 128, 128, 256, 24, 64, 64)),
             ('inception_4d', InceptionBlock(512, 112, 144, 288, 32, 64, 64)),
             ('inception_4e', InceptionBlock(528, 256, 160, 320, 32, 128, 128)),
-            ('pool4', nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
+            ('maxpool4', nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
         ]))
 
         self.stage5 = nn.Sequential(OrderedDict([
@@ -108,10 +121,15 @@ class InceptionNet(nn.Module):
         ]))
 
         # -------------------------
-        # Classifier
+        # Auxiliary & Final Classifiers
         # -------------------------
-        self.pool = nn.AdaptiveAvgPool2d(1)
+        if self.aux_logits:
+            self.aux1 = InceptionAux(512, num_classes) # Attached after 4a
+            self.aux2 = InceptionAux(528, num_classes) # Attached after 4d
 
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.dropout = nn.Dropout(p=0.4) 
+        
         self.fc_input_features = self._get_flattened_feature_size(one_batch)
         self.fc = nn.Linear(self.fc_input_features, num_classes)
 
@@ -121,7 +139,7 @@ class InceptionNet(nn.Module):
     def _get_flattened_feature_size(self, one_batch):
         was_training = self.training
         self.eval()  
-
+        
         with torch.no_grad():
             if one_batch is None:
                 dummy = torch.zeros(1, *self.input_size)
@@ -129,29 +147,61 @@ class InceptionNet(nn.Module):
                 _, C, H, W = one_batch.shape
                 dummy = torch.zeros(1, C, H, W)
 
-            x = self.stem(dummy)
+            x = self.stage1(dummy)
+            x = self.stage2(x)
             x = self.stage3(x)
             x = self.stage4(x)
             x = self.stage5(x)
             x = self.pool(x)
             out_features = x.view(1, -1).size(1)
-
-        # Restore original train/eval state
-        if was_training:
+            
+        if was_training: 
             self.train()
-
+            
         return out_features
 
-
     # -------------------------
-    # Forward
+    # Forward Pass
     # -------------------------
     def forward(self, x):
-        x = self.stem(x)
+        x = self.stage1(x)
+        x = self.stage2(x)
         x = self.stage3(x)
-        x = self.stage4(x)
+        
+        # Manually step through stage4 to cleanly pull the auxiliary branches
+        x = self.stage4.inception_4a(x)
+        aux1 = self.aux1(x) if self.aux_logits and self.training else None
+        
+        x = self.stage4.inception_4b(x)
+        x = self.stage4.inception_4c(x)
+        x = self.stage4.inception_4d(x)
+        aux2 = self.aux2(x) if self.aux_logits and self.training else None
+        
+        x = self.stage4.inception_4e(x)
+        x = self.stage4.maxpool4(x)
+
         x = self.stage5(x)
+        
         x = self.pool(x)
         x = torch.flatten(x, 1)
-        x = self.fc(x)
-        return x
+        x = self.dropout(x)
+        main_out = self.fc(x)
+
+        if self.aux_logits and self.training:
+            return main_out, aux2, aux1
+            
+        return main_out
+
+    # -------------------------
+    # Loss Calculator
+    # -------------------------
+    def compute_loss(self, outputs, targets, criterion):
+        """Calculates loss safely whether returning a tuple or single tensor."""
+        if isinstance(outputs, tuple):
+            main_out, aux2_out, aux1_out = outputs
+            loss_main = criterion(main_out, targets)
+            loss_aux2 = criterion(aux2_out, targets)
+            loss_aux1 = criterion(aux1_out, targets)
+            return loss_main + 0.3 * loss_aux2 + 0.3 * loss_aux1
+        else:
+            return criterion(outputs, targets)

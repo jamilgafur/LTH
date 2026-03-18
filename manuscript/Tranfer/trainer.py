@@ -2,131 +2,165 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import tqdm
+import os
+import glob
 
 # -------------------------
 # Training and Evaluation
 # -------------------------
 
-def train_and_evaluate(model, train_loader, test_loader, device=None, epochs=10, post_compress_epochs=False, quant=False):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"[Start training] device: {device}")
-    
-    if epochs <= 0:
-        print("[Warning] Number of training epochs is zero or negative!")
-        final_acc = evaluate(model, test_loader, device, quant)
-        print(f"Final Test Accuracy (no training): {final_acc:.2f}%")
-        return {
-            "accuracies": [],
-            "final_accuracy": final_acc,
-            "losses": [],
-            "total_epochs_trained": 0,
-        }
-
-    print("[INFO] Training started...")
-    model.to(device)
-    print(f"model on device: {next(model.parameters()).device}")
-
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+def train_one_epoch(model, train_loader, optimizer, device, scaler=None, use_autocast=False):
+    """
+    Performs one epoch of training.
+    Supports standard FP32 training or Mixed Precision (quant) training via scaler.
+    Safely handles tuple outputs from models like InceptionNet.
+    """
+    model.train()
     loss_fn = nn.CrossEntropyLoss()
-
-    accuracies, losses = [], []
-    total_epochs_trained = 0
-
-    max_epochs = epochs
-    patience = 5
-    threshold = 0.05  # 0.05% improvement threshold
-
-    epochs_no_improve = 0
-    best_acc = 0
-    epoch = 0
-
-    # Use mixed precision context if quant flag is True and device is CUDA
-    use_autocast = quant and device.type == 'cuda'
     
-    while True:
-        # Train one epoch
-        print(f"[INFO] Starting Epoch {epoch + 1} of training...")
-        model.train()
-        total_loss = correct = total = 0
+    total_loss = 0
+    correct = 0
+    total = 0
 
-        for xb, yb in tqdm.tqdm(train_loader):
-            xb, yb = xb.to(device), yb.to(device)
-            optimizer.zero_grad()
+    # Using tqdm for a progress bar that cleans up after itself
+    pbar = tqdm.tqdm(train_loader, desc="Training", leave=False)
+    
+    for xb, yb in pbar:
+        xb, yb = xb.to(device), yb.to(device)
+        optimizer.zero_grad()
 
-            if use_autocast:
-                with torch.cuda.amp.autocast():
-                    preds = model(xb)
-                    loss = loss_fn(preds, yb)
-            else:
+        # Mixed Precision Path
+        if use_autocast and scaler is not None:
+            # Fixed deprecation warning for autocast
+            with torch.amp.autocast('cuda'):
                 preds = model(xb)
+                
+                # SMART LOSS DELEGATION
+                if hasattr(model, 'compute_loss'):
+                    loss = model.compute_loss(preds, yb, loss_fn)
+                else:
+                    loss = loss_fn(preds, yb)
+            
+            # Scales loss, calls backward, then unscales and steps optimizer
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        
+        # Standard FP32 Path
+        else:
+            preds = model(xb)
+            
+            # SMART LOSS DELEGATION
+            if hasattr(model, 'compute_loss'):
+                loss = model.compute_loss(preds, yb, loss_fn)
+            else:
                 loss = loss_fn(preds, yb)
-
+                
             loss.backward()
             optimizer.step()
 
-            total_loss += loss.item() * xb.size(0)
-            _, predicted = preds.max(1)
-            correct += (predicted == yb).sum().item()
-            total += yb.size(0)
+        # Metrics tracking
+        # TUPLE EXTRACTION: Safely grab the main predictions if the model returns a tuple
+        main_preds = preds[0] if isinstance(preds, tuple) else preds
 
-        avg_loss = total_loss / total
-        acc = 100 * correct / total
+        total_loss += loss.item() * xb.size(0)
+        _, predicted = main_preds.max(1)
+        correct += (predicted == yb).sum().item()
+        total += yb.size(0)
+        
+        # Update progress bar description
+        pbar.set_postfix({"loss": f"{loss.item():.4f}"})
 
-        phase = "Post-compress" if (post_compress_epochs and epoch >= epochs) else "Epoch"
-        print(f"{phase} {epoch + 1}: Loss={avg_loss:.4f}, Acc={acc:.2f}%")
-
-        accuracies.append(acc)
-        losses.append(avg_loss)
-        total_epochs_trained += 1
-        epoch += 1
-
-        if post_compress_epochs and epoch > epochs:
-            print(f"[INFO] Post-compression phase, epoch {epoch}...")
-            if acc - best_acc > threshold:
-                print(f"[INFO] Improvement detected: {acc - best_acc:.4f} increase in accuracy.")
-                best_acc = acc
-                epochs_no_improve = 0
-            else:
-                print(f"[INFO] No significant improvement. Accuracy change: {acc - best_acc:.4f}")
-                epochs_no_improve += 1
-
-            if epochs_no_improve >= patience or epoch >= epochs + 100:
-                print(f"[INFO] Stopping early after {epoch - epochs} post-compression epochs due to no significant improvement.")
-                break
-        else:
-            if acc > best_acc:
-                print(f"[INFO] New best accuracy: {acc:.2f}% (previous best was {best_acc:.2f}%)")
-                best_acc = acc
-
-            if epoch >= epochs and not post_compress_epochs:
-                print(f"[INFO] Training complete after {epochs} epochs.")
-                break
-
-    print("[INFO] Evaluating model on the test set...")
-    final_acc = evaluate(model, test_loader, device, quant)
-    print(f"Final Test Accuracy: {final_acc:.2f}%")
-
-    return {
-        "accuracies": accuracies,
-        "final_accuracy": final_acc,
-        "losses": losses,
-        "total_epochs_trained": total_epochs_trained,
-    }
-
-def evaluate(model, loader, device, quant=False):
-    model.eval()
-    correct = total = 0
-    use_autocast = quant and device.type == 'cuda'
+    avg_loss = total_loss / total
+    avg_acc = 100.0 * correct / total
     
-    with torch.no_grad():
-        for xb, yb in loader:
-            xb, yb = xb.to(device), yb.to(device)
-            if use_autocast:
-                with torch.cuda.amp.autocast():
-                    preds = model(xb)
+    return avg_loss, avg_acc
+# def train_one_epoch(model, train_loader, optimizer, device, scaler=None, use_autocast=False):
+#     """
+#     Performs one epoch of training.
+#     Supports standard FP32 training or Mixed Precision (quant) training via scaler.
+#     Safely handles tuple outputs from models like InceptionNet.
+#     """
+#     model.train()
+#     loss_fn = nn.CrossEntropyLoss()
+    
+#     total_loss = 0
+#     correct = 0
+#     total = 0
+
+#     # Using tqdm for a progress bar that cleans up after itself
+#     pbar = tqdm.tqdm(train_loader, desc="Training", leave=False)
+    
+#     for xb, yb in pbar:
+#         xb, yb = xb.to(device), yb.to(device)
+#         optimizer.zero_grad()
+
+#         # Mixed Precision Path
+#         if use_autocast and scaler is not None:
+#             # Fixed deprecation warning for autocast
+#             with torch.amp.autocast('cuda'):
+#                 preds = model(xb)
+                
+#                 # SMART LOSS DELEGATION
+#                 if hasattr(model, 'compute_loss'):
+#                     loss = model.compute_loss(preds, yb, loss_fn)
+#                 else:
+#                     loss = loss_fn(preds, yb)
+            
+#             # Scales loss, calls backward, then unscales and steps optimizer
+#             scaler.scale(loss).backward()
+#             scaler.step(optimizer)
+#             scaler.update()
+        
+#         # Standard FP32 Path
+#         else:
+#             preds = model(xb)
+            
+#             # SMART LOSS DELEGATION
+#             if hasattr(model, 'compute_loss'):
+#                 loss = model.compute_loss(preds, yb, loss_fn)
+#             else:
+#                 loss = loss_fn(preds, yb)
+                
+#             loss.backward()
+#             optimizer.step()
+
+#         # Metrics tracking
+#         # TUPLE EXTRACTION: Safely grab the main predictions if the model returns a tuple
+#         main_preds = preds[0] if isinstance(preds, tuple) else preds
+
+#         total_loss += loss.item() * xb.size(0)
+#         _, predicted = main_preds.max(1)
+#         correct += (predicted == yb).sum().item()
+#         total += yb.size(0)
+        
+#         # Update progress bar description
+#         pbar.set_postfix({"loss": f"{loss.item():.4f}"})
+
+#     avg_loss = total_loss / total
+#     avg_acc = 100.0 * correct / total
+    
+#     return avg_loss, avg_acc
+   
+def evaluate(model, loader, device, quant=False): #
+    model.eval() #
+    correct = total = 0 #
+    use_autocast = quant and device.type == 'cuda' #
+    
+    with torch.no_grad(): #
+        for xb, yb in loader: #
+            xb, yb = xb.to(device), yb.to(device) #
+            if use_autocast: #
+                with torch.cuda.amp.autocast(): #
+                    preds = model(xb) #
             else:
-                preds = model(xb)
-            _, predicted = preds.max(1)
-            correct += (predicted == yb).sum().item()
-            total += yb.size(0)
-    return 100 * correct / total
+                preds = model(xb) #
+                
+            # Even in eval mode, it's good practice to ensure we have the main predictions
+            main_preds = preds[0] if isinstance(preds, tuple) else preds
+            
+            _, predicted = main_preds.max(1) #
+            correct += (predicted == yb).sum().item() #
+            total += yb.size(0) #
+            
+    return 100 * correct / total #

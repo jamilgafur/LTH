@@ -31,44 +31,23 @@ import torch, psutil, os, gc
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-
+from captum.attr import Saliency, IntegratedGradients, GradientShap
+from captum.attr import visualization as viz
 # -------------------------
 # Diagnostics (robust)
 # -------------------------
-def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, collapse_range=None, device="cuda", quant=False):
+def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, test_dataloader, collapse_range=None, device="cuda", quant=False):
     """
-    Run a complete diagnostic suite on a PyTorch model.
-    
-    Supports:
-        - GPU-safe quantization (FP16/FP8/INT8)
-        - Per-layer FLOPs and params
-        - Activation size analysis
-        - Memory decomposition (CPU/GPU)
-        - Optional collapse analysis
-
-    Args:
-        model: PyTorch model
-        input_shape: tuple or list, model input shape (C,H,W) or (N,C,H,W)
-        metrics_dict: dict, to store evaluation metrics
-        save_dir: str, path to save CSVs/plots
-        exp_name: str, experiment name
-        collapse_range: tuple, optional layer collapse stages
-        device: str, "cuda" or "cpu"
-        quant: bool, whether to use quantization (FP16/INT8/QAT)
-    Returns:
-        diagnostics dict
+    Run a complete diagnostic suite and return results in a dictionary.
     """
     print(f"[•] Running diagnostics for {exp_name}...")
     ensure_dir(save_dir)
     
-    # Device setup
     device = torch.device(device if torch.cuda.is_available() else "cpu")
     model.to(device)
     model.eval()
 
-    # -----------------------------
-    # Prepare input tensor safely
-    # -----------------------------
+    # Prepare input tensor
     if len(input_shape) == 2:
         input_tensor = torch.randn((1, 3, *input_shape), device=device)
     elif len(input_shape) == 3:
@@ -76,63 +55,50 @@ def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, c
     else:
         input_tensor = torch.randn(input_shape, device=device)
 
-    # -----------------------------
     # Quantization handling
-    # -----------------------------
     if quant:
         try:
-            # GPU-safe mixed precision
             if device.type == "cuda":
-                if torch.cuda.is_bf16_supported():
-                    model = model.to(dtype=torch.bfloat16)
-                    input_tensor = input_tensor.to(dtype=torch.bfloat16)
-                else:
-                    model = model.half()
-                    input_tensor = input_tensor.half()
-            else:
-                model = model.float()  # CPU does not support FP16 well
-                input_tensor = input_tensor.float()
-            print(f"[•] Quantization enabled: model dtype {next(model.parameters()).dtype}")
+                dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.half
+                model = model.to(dtype=dtype)
+                input_tensor = input_tensor.to(dtype=dtype)
+            print(f"[•] Quantization enabled: {next(model.parameters()).dtype}")
         except Exception as e:
-            print(f"[!] Quantization conversion failed: {e}. Falling back to FP32.")
+            print(f"[!] Quantization failed: {e}. Falling back to FP32.")
             model = model.float()
             input_tensor = input_tensor.float()
 
     diagnostics = {}
 
-    # -----------------------------
-    # Per-layer params/FLOPs
-    # -----------------------------
+    # 1. Per-layer params/FLOPs
     try:
         df_params = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
         diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records")
     except Exception as e:
-        print(f"[!] Per-layer params/FLOPs analysis failed: {e}")
         diagnostics["per_layer_params_flops"] = []
 
-    # -----------------------------
-    # Activation sizes
-    # -----------------------------
+    # 2. Activation sizes
     try:
         df_act = analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
         diagnostics["activation_sizes"] = df_act.to_dict(orient="records")
     except Exception as e:
-        print(f"[!] Activation size analysis failed: {e}")
         diagnostics["activation_sizes"] = []
 
-    # -----------------------------
-    # Memory decomposition
-    # -----------------------------
+    # 3. Memory decomposition
     try:
-        mem = memory_decomposition(model, input_tensor, save_dir, exp_name)
-        diagnostics["memory_decomposition"] = mem
+        diagnostics["memory_decomposition"] = memory_decomposition(model, input_tensor, save_dir, exp_name)
     except Exception as e:
-        print(f"[!] Memory decomposition failed: {e}")
         diagnostics["memory_decomposition"] = {}
 
-    # -----------------------------
-    # Optional collapse analysis
-    # -----------------------------
+    # 4. Explainability Data (Updated to save to dictionary)
+    if test_dataloader is not None:
+        try:
+             plot_explainability_maps(model, test_dataloader, device, exp_name=exp_name,save_path=os.path.join(save_dir, f"{exp_name}_explainability.svg"))
+        except Exception as e:
+            print(f"[!] Explainability analysis failed: {e}")
+            diagnostics["explainability_reports"] = []
+
+    # 5. Optional collapse analysis
     if collapse_range:
         try:
             analyze_collapse_effects(model, collapse_range, save_dir, exp_name)
@@ -920,3 +886,275 @@ def plot_results(params, accs, names, title, filename, dataset=None, infer_times
     plt.savefig(filename, format='svg')
     plt.show()
     print(f"[✓] Saved plot: {filename}")
+
+def plot_weight_distributions(model, save_dir, exp_name):
+    """
+    Creates a grid of histograms showing the distribution of weights for each layer.
+    """
+    print(f"[•] Plotting weight distributions for {exp_name}...")
+    
+    # Filter for layers that actually have weights (Conv, Linear)
+    weight_params = [(n, p) for n, p in model.named_parameters() if "weight" in n and p.dim() > 1]
+    
+    if not weight_params:
+        print("[!] No weights found to plot.")
+        return
+
+    num_layers = len(weight_params)
+    cols = 4
+    rows = (num_layers + cols - 1) // cols
+    
+    fig, axes = plt.subplots(rows, cols, figsize=(cols * 4, rows * 3))
+    axes = axes.flatten()
+
+    for i, (name, param) in enumerate(weight_params):
+        weights = param.detach().cpu().numpy().flatten()
+        sns.histplot(weights, bins=50, kde=True, ax=axes[i], color="purple")
+        axes[i].set_title(f"{name}\n(Mean: {weights.mean():.4f}, Std: {weights.std():.4f})", fontsize=10)
+        axes[i].set_xlabel("Weight Value")
+
+    # Hide unused axes
+    for j in range(i + 1, len(axes)):
+        axes[j].axis('off')
+
+    plt.tight_layout()
+    save_path = os.path.join(save_dir, f"{exp_name}_weight_distributions.svg")
+    plt.savefig(save_path)
+    plt.close()
+    print(f"[✓] Weight distributions saved to {save_path}")
+import os
+import numpy as np
+import torch
+import matplotlib.pyplot as plt
+
+def _plot_explainability_grid(
+    inputs_np,
+    attributions_np,
+    exp_name,
+    save_path,
+):
+    """
+    Grid layout:
+      rows = [Original, Saliency, Integrated Gradients, Gradient SHAP]
+      columns = classes
+    """
+
+    class_labels = sorted(inputs_np.keys())
+    method_names = list(attributions_np.keys())
+
+    n_rows = 1 + len(method_names)
+    n_cols = len(class_labels)
+
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(3 * n_cols, 3 * n_rows),
+        squeeze=False,
+    )
+
+    # --- First row: Original inputs ---
+    for col, label in enumerate(class_labels):
+        img = inputs_np[label][0]
+
+        if img.ndim == 3 and img.shape[0] == 3:  # RGB CHW → HWC
+            img = np.transpose(img, (1, 2, 0))
+            axes[0, col].imshow(img)
+        elif img.ndim == 3 and img.shape[0] == 1:  # grayscale CHW
+            img = img[0]
+            axes[0, col].imshow(img, cmap="gray")
+        else:  # already HW
+            axes[0, col].imshow(img, cmap="gray")
+
+
+        axes[0, col].imshow(img, cmap="gray")
+        axes[0, col].set_title(f"Class {label}")
+        axes[0, col].axis("off")
+
+    axes[0, 0].set_ylabel("Original", fontsize=12)
+
+    # --- Explainability rows ---
+    for row, method_name in enumerate(method_names, start=1):
+        for col, label in enumerate(class_labels):
+            attr = attributions_np[method_name][label][0]
+
+            # aggregate channels if needed
+            if attr.ndim == 3:
+                attr = np.mean(np.abs(attr), axis=0)
+
+            axes[row, col].imshow(attr, cmap="hot")
+            axes[row, col].axis("off")
+
+        axes[row, 0].set_ylabel(method_name, fontsize=12)
+
+    plt.suptitle(exp_name, fontsize=14)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+
+def plot_weight_magnitude_distributions(
+    model,
+    save_path="weight_distributions.svg",
+    bins=50,
+):
+    """
+    Plots distribution of absolute weight magnitudes per layer using subplots.
+    """
+
+    # Collect weights
+    layer_weights = []
+    layer_names = []
+
+    for name, param in model.named_parameters():
+        if param.requires_grad and param.dim() > 1:  # skip biases / scalars
+            weights = param.detach().cpu().numpy().ravel()
+            layer_weights.append(np.abs(weights))
+            layer_names.append(name)
+
+    num_layers = len(layer_weights)
+    cols = 3
+    rows = math.ceil(num_layers / cols)
+
+    fig, axes = plt.subplots(rows, cols, figsize=(cols * 5, rows * 4))
+    axes = axes.flatten()
+
+    for idx, (weights, name) in enumerate(zip(layer_weights, layer_names)):
+        axes[idx].hist(weights, bins=bins, log=True)
+        axes[idx].set_title(name)
+        axes[idx].set_xlabel("|Weight|")
+        axes[idx].set_ylabel("Count (log)")
+
+    # Remove empty subplots
+    for ax in axes[num_layers:]:
+        ax.axis("off")
+
+    fig.suptitle("Weight Magnitude Distributions per Layer", fontsize=16)
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    fig.savefig(save_path)
+    plt.close(fig)
+
+    print(f"[✓] Weight distribution figure saved to {save_path}")
+
+
+def plot_explainability_maps(
+    model,
+    dataloader,
+    device,
+    exp_name,
+    save_path="explainability_maps.svg",
+):
+    """
+    Generates explainability maps and saves:
+      - input images
+      - explainability maps
+      - model outputs
+    """
+    save_numpy_path = save_path.replace(".svg", ".npz")
+    print(f"[•] Extracting explainability data for {exp_name}...")
+
+    model = model.to(device).float()
+    model.eval()
+    weight_plot_path = save_path.replace(
+        ".svg", "_weight_distributions.svg"
+    )
+
+    plot_weight_magnitude_distributions(
+        model,
+        save_path=weight_plot_path,
+    )
+    unique_samples = {}
+
+    # --- Get one sample per class ---
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs = inputs.to(device).float()
+
+            for i in range(len(labels)):
+                label = labels[i].item()
+                if label not in unique_samples:
+                    unique_samples[label] = inputs[i : i + 1]
+
+            num_classes = (
+                len(dataloader.dataset.classes)
+                if hasattr(dataloader.dataset, "classes")
+                else len(unique_samples)
+            )
+            if len(unique_samples) >= num_classes:
+                break
+
+    try:
+        from captum.attr import Saliency, IntegratedGradients, GradientShap
+
+        methods = {
+            "Saliency": Saliency(model),
+            "Integrated Gradients": IntegratedGradients(model),
+            "Gradient SHAP": GradientShap(model),
+        }
+
+        dist_images = next(iter(dataloader))[0][:5].to(device).float()
+
+    except ImportError as e:
+        print(f"[!] Captum init failed: {e}")
+        return
+
+    # --- Storage ---
+    inputs_np = {}
+    outputs_np = {}
+    attributions_np = {m: {} for m in methods}
+
+    # --- Compute attributions ---
+    for label, input_tensor in unique_samples.items():
+        input_tensor = input_tensor.clone().detach().requires_grad_(True)
+
+        # model output
+        with torch.no_grad():
+            output = model(input_tensor)
+
+        inputs_np[label] = input_tensor.detach().cpu().numpy()
+        outputs_np[label] = output.detach().cpu().numpy()
+
+        for method_name, algo in methods.items():
+            try:
+                if method_name == "Gradient SHAP":
+                    attr = algo.attribute(
+                        input_tensor,
+                        baselines=dist_images,
+                        target=label,
+                    )
+                elif method_name == "Integrated Gradients":
+                    attr = algo.attribute(
+                        input_tensor,
+                        target=label,
+                        n_steps=50,
+                    )
+                else:
+                    attr = algo.attribute(
+                        input_tensor,
+                        target=label,
+                    )
+
+                attributions_np[method_name][label] = (
+                    attr.detach().cpu().numpy()
+                )
+
+            except Exception as e:
+                print(f"[!] Failed {method_name} for class {label}: {e}")
+
+    # --- Save numpy arrays ---
+    np.savez(
+        save_numpy_path,
+        inputs=inputs_np,
+        outputs=outputs_np,
+        **{f"attr_{k}": v for k, v in attributions_np.items()},
+    )
+
+    print(f"[✓] Saved explainability arrays to {save_numpy_path}")
+
+    # --- Plot ---
+    _plot_explainability_grid(
+        inputs_np,
+        attributions_np,
+        exp_name,
+        save_path,
+    )
+
+    print(f"[✓] Explainability figure saved to {save_path}")
