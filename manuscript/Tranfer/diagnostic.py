@@ -6,7 +6,14 @@ import glob
 import json
 import os
 from collections import defaultdict
-
+import os
+import gc
+import psutil
+import torch
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -14,57 +21,89 @@ import seaborn as sns
 import torch
 import torch.nn as nn
 from fvcore.nn import FlopCountAnalysis
+import psutil
 
 # =====================================
 # Utility Imports (Project-specific)
 # =====================================
-# These should exist elsewhere in your repo
-# If not, replace with local equivalents or implement them
 from utils import   ensure_dir, is_dict_like, normalize_metrics,    count_trainable_params
-
-
+import torch, psutil, os, gc
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+from captum.attr import Saliency, IntegratedGradients, GradientShap
+from captum.attr import visualization as viz
 # -------------------------
 # Diagnostics (robust)
 # -------------------------
-def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, collapse_range=None, device="cuda"):
+def run_full_diagnostics(model, input_shape, metrics_dict, save_dir, exp_name, test_dataloader, collapse_range=None, device="cuda", quant=False):
+    """
+    Run a complete diagnostic suite and return results in a dictionary.
+    """
     print(f"[•] Running diagnostics for {exp_name}...")
     ensure_dir(save_dir)
+    
+    device = torch.device(device if torch.cuda.is_available() else "cpu")
     model.to(device)
     model.eval()
 
-    # Prepare input tensor (4D)
+    # Prepare input tensor
     if len(input_shape) == 2:
         input_tensor = torch.randn((1, 3, *input_shape), device=device)
     elif len(input_shape) == 3:
         input_tensor = torch.randn((1, *input_shape), device=device)
     else:
         input_tensor = torch.randn(input_shape, device=device)
-    
+
+    # Quantization handling
+    if quant:
+        try:
+            if device.type == "cuda":
+                dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.half
+                model = model.to(dtype=dtype)
+                input_tensor = input_tensor.to(dtype=dtype)
+            print(f"[•] Quantization enabled: {next(model.parameters()).dtype}")
+        except Exception as e:
+            print(f"[!] Quantization failed: {e}. Falling back to FP32.")
+            model = model.float()
+            input_tensor = input_tensor.float()
+
     diagnostics = {}
 
-    # Per-layer params/FLOPs (returns DataFrame or [] on error)
+    # 1. Per-layer params/FLOPs
     try:
         df_params = analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name)
-        diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records") if hasattr(df_params, "to_dict") else []
+        diagnostics["per_layer_params_flops"] = df_params.to_dict(orient="records")
     except Exception as e:
-        print(f"[!] Params/FLOPs analysis error: {e}")
         diagnostics["per_layer_params_flops"] = []
 
-    # Activation sizes
+    # 2. Activation sizes
     try:
         df_act = analyze_activation_sizes(model, input_tensor, save_dir, exp_name)
-        diagnostics["activation_sizes"] = df_act.to_dict(orient="records") if hasattr(df_act, "to_dict") else []
+        diagnostics["activation_sizes"] = df_act.to_dict(orient="records")
     except Exception as e:
-        print(f"[!] Activation analysis error: {e}")
         diagnostics["activation_sizes"] = []
 
-    # Memory decomposition
+    # 3. Memory decomposition
     try:
-        mem = memory_decomposition(model, input_tensor, save_dir, exp_name)
-        diagnostics["memory_decomposition"] = mem if isinstance(mem, dict) else {}
+        diagnostics["memory_decomposition"] = memory_decomposition(model, input_tensor, save_dir, exp_name)
     except Exception as e:
-        print(f"[!] Memory decomposition error: {e}")
         diagnostics["memory_decomposition"] = {}
+
+    # 4. Explainability Data (Updated to save to dictionary)
+    if test_dataloader is not None:
+        try:
+             plot_explainability_maps(model, test_dataloader, device, exp_name=exp_name,save_path=os.path.join(save_dir, f"{exp_name}_explainability.svg"))
+        except Exception as e:
+            print(f"[!] Explainability analysis failed: {e}")
+            diagnostics["explainability_reports"] = []
+
+    # 5. Optional collapse analysis
+    if collapse_range:
+        try:
+            analyze_collapse_effects(model, collapse_range, save_dir, exp_name)
+        except Exception as e:
+            print(f"[!] Collapse analysis failed: {e}")
 
     print(f"[✓] Diagnostics complete for {exp_name}")
     return diagnostics
@@ -117,6 +156,7 @@ def analyze_per_layer_params_flops(model, input_tensor, save_dir, exp_name):
 
     plt.tight_layout()
     svg_path = os.path.join(save_dir, f"{exp_name}_params_flops_layers.svg")
+    df.to_csv(os.path.join(save_dir, f"{exp_name}_params_flops_layers.csv"), index=False)
     plt.savefig(svg_path)
     plt.close(fig)
     return df
@@ -164,13 +204,13 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
     if len(df) > 30:
         pivot = df.set_index("layer").T
         sns.heatmap(pivot, cmap="viridis", annot=False, cbar_kws={"label": "Activation Elements"})
-        plt.title("Activation Elements per Layer (Heatmap)")
+        plt.title(f"Activation Elements per Layer (Heatmap) for {exp_name}")
     else:
         sns.barplot(x="layer", y="activation_elements",
                     data=df.sort_values("activation_elements", ascending=False),
                     color="lightgreen")
         plt.xticks(rotation=90)
-        plt.title("Activation Size per Layer (# elements)")
+        plt.title(f"Activation Elements per Layer for {exp_name}")
         for i, v in enumerate(df["activation_elements"]):
             plt.text(i, v, f"{int(v):,}", ha='center', va='bottom', fontsize=8)
 
@@ -180,38 +220,228 @@ def analyze_activation_sizes(model, input_tensor, save_dir, exp_name):
     plt.close()
     return df
 
-def memory_decomposition(model, input_tensor, save_dir, exp_name):
+# --------------------------
+# Memory Measurement Functions
+# --------------------------
+
+def get_process_cpu_memory_MB():
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss / 1e6   # MB
+
+
+def get_model_params_memory_MB(model):
+    """Accurate parameter memory using true element sizes."""
+    total_bytes = 0
+    for p in model.parameters():
+        total_bytes += p.nelement() * p.element_size()
+    return total_bytes / 1e6  # MB
+
+
+def warmup_gpu(model, input_tensor, steps=3):
+    """Warm up GPU to ensure kernels and cuDNN workspace are initialized."""
+    if not torch.cuda.is_available():
+        return
+    model.eval()
+    with torch.no_grad():
+        for _ in range(steps):
+            _ = model(input_tensor)
+        torch.cuda.synchronize()
+
+
+def measure_gpu_memory(model, input_tensor):
+    """
+    Correct way to measure GPU memory:
+        - reset peak stats
+        - forward pass
+        - read allocated, reserved, peak
+    """
+    if not torch.cuda.is_available():
+        return dict(
+            allocated_MB=0.0,
+            reserved_MB=0.0,
+            peak_MB=0.0,
+        )
+
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats()
+
+    model.eval()
+    with torch.no_grad():
+        _ = model(input_tensor)
+    torch.cuda.synchronize()
+
+    allocated = torch.cuda.memory_allocated() / 1e6
+    reserved = torch.cuda.memory_reserved() / 1e6
+    peak = torch.cuda.max_memory_allocated() / 1e6
+
+    return dict(
+        allocated_MB=allocated,
+        reserved_MB=reserved,
+        peak_MB=peak,
+    )
+
+
+# --------------------------------------------------
+# Main profiling function
+# --------------------------------------------------
+def profile_model_memory(model, input_tensor, device_label="cpu"):
+
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize()
+
+    # Move to device
+    device = torch.device("cuda" if "cuda" in device_label else "cpu")
+    model = model.to(device)
+    input_tensor = input_tensor.to(device)
+
+    # Warm-up if using GPU
+    if "cuda" in device_label and torch.cuda.is_available():
+        warmup_gpu(model, input_tensor)
+
+    # CPU before
+    cpu_before = get_process_cpu_memory_MB()
+
+    # Parameter memory (MB)
+    params_MB = get_model_params_memory_MB(model)
+    params_CPU = params_MB if "cpu" in device_label else 0.0
+    params_GPU = params_MB if "cuda" in device_label else 0.0
+
+    # Perform forward and measure GPU memory
+    gpu_stats = measure_gpu_memory(model, input_tensor)
+
+    # CPU after
+    cpu_after = get_process_cpu_memory_MB()
+    cpu_used = cpu_after - cpu_before
+    cpu_total = cpu_after + params_CPU
+
+    # Activation memory: peak - parameters
+    activation_MB_gpu = (
+        max(gpu_stats["peak_MB"] - params_GPU, 0.0)
+        if "cuda" in device_label
+        else 0.0
+    )
+
+    # GPU workspace/other: allocated - (params + activations)
+    other_gpu_MB = (
+        max(gpu_stats["allocated_MB"] - params_GPU - activation_MB_gpu, 0.0)
+        if "cuda" in device_label
+        else 0.0
+    )
+
+    return {
+        "device": device_label,
+        "Params_MB_CPU": params_CPU,
+        "Params_MB_GPU": params_GPU,
+        "Activation_MB_GPU": activation_MB_gpu,
+        "Other_GPU_MB": other_gpu_MB,
+        "Peak_GPU_MB": gpu_stats["peak_MB"],
+        "Allocated_GPU_MB": gpu_stats["allocated_MB"],
+        "Reserved_GPU_MB": gpu_stats["reserved_MB"],
+        "CPU_Process_MB": cpu_after,
+        "CPU_Used_MB": cpu_used,
+        "CPU_Total_MB": cpu_total,
+    }
+
+
+def memory_decomposition(model, input_tensor, save_dir=".", exp_name="experiment"):
     if len(input_tensor.shape) == 3:
         input_tensor = input_tensor.unsqueeze(0)
 
-    param_mem = sum(p.numel() for p in model.parameters()) * 4 / 1e6  # MB
+    results = []
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-    input_tensor = input_tensor.to(device)
-    model.eval()
-    with torch.no_grad():
-        try:
-            _ = model(input_tensor)
-        except Exception:
-            pass
+    # CPU
+    results.append(profile_model_memory(model, input_tensor, "cpu"))
 
-    peak_mem = torch.cuda.max_memory_allocated() / 1e6 if torch.cuda.is_available() else None
-    activation_mem = max(peak_mem - param_mem, 0) if peak_mem is not None else 0.0
-    parts = {"Params_MB": float(param_mem), "Activations_MB": float(activation_mem),
-             "Peak_GPU_MB": float(peak_mem) if peak_mem else 0.0}
+    # TODO uncomment when torch.compile is stable
+    # # CPU compiled
+    # compiled_cpu = torch.compile(model)
+    # results.append(profile_model_memory(compiled_cpu, input_tensor, "cpu_compiled"))
 
-    plt.figure(figsize=(6, 6))
-    sns.barplot(x=list(parts.keys()), y=list(parts.values()), palette=["steelblue", "salmon", "gold"])
-    for i, v in enumerate(parts.values()):
-        plt.text(i, v, f"{v:.1f}", ha='center', va='bottom', fontsize=10)
-    plt.ylabel("Memory (MB)")
-    plt.title(f"GPU Memory Breakdown — {exp_name}")
+    # GPU (if available)
+    if torch.cuda.is_available():
+        results.append(profile_model_memory(model, input_tensor, "cuda"))
+
+        # compiled_gpu = torch.compile(model)
+        # results.append(profile_model_memory(compiled_gpu, input_tensor, "cuda_compiled"))
+
+    # Save results CSV
+    os.makedirs(save_dir, exist_ok=True)
+    df = pd.DataFrame(results)
+    csv_path = os.path.join(save_dir, f"{exp_name}_memory.csv")
+    df.to_csv(csv_path, index=False)
+
+    # --------------------------------------------------
+    # PLOTTING
+    # --------------------------------------------------
+    sns.set_theme(style="whitegrid")
+
+    devices = df["device"]
+    params_gpu = df["Params_MB_GPU"]
+    activ_gpu = df["Activation_MB_GPU"]
+    other_gpu = df["Other_GPU_MB"]
+    peak_gpu = df["Peak_GPU_MB"]
+
+    cpu_process = df["CPU_Process_MB"]
+    cpu_params = df["Params_MB_CPU"]
+
+    fig, axes = plt.subplots(2, 1, figsize=(10, 12))
+    # ---------- GPU Memory Plot ----------
+
+    # Base bars: parameters
+    axes[0].bar(devices, params_gpu, label="Parameters (GPU)", 
+                color="#1f77b4", edgecolor="black", linewidth=0.4)
+
+    # Activations on top
+    axes[0].bar(devices, activ_gpu, bottom=params_gpu,
+                label="Activations (GPU)", color="#ff7f0e", alpha=0.9)
+
+    # Plot peak lines and annotations
+    max_peak = 0
+    for i, peak in enumerate(peak_gpu):
+        if peak > 0:
+            axes[0].plot([i - 0.3, i + 0.3], [peak, peak], 
+                        linestyle="--", color="grey")
+            axes[0].text(i, peak + 5, f"{peak:.1f} MB", ha="center")
+            max_peak = max(max_peak, peak)
+
+    axes[0].set_ylim(0, max_peak * 1.18)
+    axes[0].set_ylabel("GPU Memory (MB)")
+    axes[0].set_title(f"GPU Memory Breakdown — {exp_name}")
+    axes[0].legend()
+    axes[0].grid(True, axis="y", linestyle="--", alpha=0.6)
+
+
+
+    # ---------- CPU Memory Plot ----------
+    cpu_overhead = np.array(cpu_process) - np.array(cpu_params)
+
+    axes[1].bar(devices, cpu_params, label="Parameters (CPU)", 
+                color="#8c564b", edgecolor="black", linewidth=0.4)
+
+    axes[1].bar(devices, cpu_overhead, bottom=cpu_params,
+                label="Overhead (Process RAM)", color="#9467bd", alpha=0.9)
+
+    # Annotate
+    for i, v in enumerate(cpu_process):
+        axes[1].text(i, v + 10, f"{v:.1f}", ha="center")
+
+    axes[1].set_ylabel("CPU Memory (MB)")
+    axes[1].set_xlabel("Device / Compilation")
+    axes[1].set_title(f"CPU Memory Breakdown — {exp_name}")
+    axes[1].legend()
+    axes[1].grid(True, axis="y", linestyle="--", alpha=0.6)
+
+
     plt.tight_layout()
-    svg_path = os.path.join(save_dir, f"{exp_name}_memory_breakdown.svg")
+    svg_path = os.path.join(save_dir, f"{exp_name}_memory.svg")
     plt.savefig(svg_path)
     plt.close()
-    return parts
+
+    print(f"Saved memory CSV to {csv_path}")
+    print(f"Saved memory plot to {svg_path}")
+    return results
 # -------------------------
 # Collapse analysis (unchanged but robust)
 # -------------------------
@@ -256,7 +486,6 @@ def analyze_collapse_effects(model, collapse_range, save_dir, exp_name):
 # -------------------------
 # Cross-experiment per-layer aggregation (robust + readable)
 # -------------------------
-
 def debug_tensor_shape(tensor, description="Tensor"):
     """ Helper function to debug tensor shapes. """
     if tensor is not None:
@@ -264,72 +493,9 @@ def debug_tensor_shape(tensor, description="Tensor"):
     else:
         print(f"{description} is None!")
 
-
-import numpy as np
-
-# -------------------------
-# Unified metrics plots (wrap non-dict metrics, average lists)
-# -------------------------
-def plot_unified_metrics(metrics_dir, save_dir, workflow):
-    import glob, json, numpy as np
-    from utils import ensure_dir, is_dict_like, normalize_metrics
-    ensure_dir(save_dir)
-    json_paths = glob.glob(os.path.join(metrics_dir, "*metrics.json"))
-    all_data = []
-
-    for path in json_paths:
-        with open(path, "r") as f:
-            content = json.load(f)
-        for exp_group_name, exp_group in content.items():
-            for name, m in exp_group.items():
-                if not is_dict_like(m):
-                    m = {name: m}
-                def safe_float(x):
-                    try:
-                        return float(np.mean(x)) if isinstance(x, list) else float(x)
-                    except Exception:
-                        return 0.0
-                all_data.append({
-                    "Experiment": name,
-                    "Params": safe_float(m.get("param_count", 0)),
-                    "Accuracy": safe_float(m.get("final_accuracy", m.get("accuracies", 0))),
-                    "FLOPs": safe_float(m.get("flops", 0)),
-                    "Inference Time": safe_float(m.get("inference_time", 0)),
-                    "Memory": safe_float(m.get("total_size_mb", 0))
-                })
-
-    df = pd.DataFrame(all_data)
-    if df.empty:
-        return
-
-    # Accuracy vs Parameters
-    plt.figure(figsize=(9, 6))
-    ax = sns.scatterplot(data=df, x="Params", y="Accuracy", hue="Experiment", s=120)
-    for i, row in df.iterrows():
-        ax.text(row["Params"], row["Accuracy"], row["Experiment"], fontsize=8, ha='right')
-    ax.set_xscale("log")
-    plt.grid(alpha=0.3)
-    plt.title(f"Accuracy vs Parameters — {workflow}")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{workflow}_accuracy_vs_params.svg"))
-    plt.close()
-
-    # FLOPs vs Memory
-    plt.figure(figsize=(9, 6))
-    ax = sns.scatterplot(data=df, x="FLOPs", y="Memory", hue="Experiment", s=120)
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    plt.grid(alpha=0.3)
-    plt.title(f"FLOPs vs Memory — {workflow}")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{workflow}_flops_vs_memory.svg"))
-    plt.close()
-    df.to_csv(os.path.join(save_dir, f"{workflow}_unified_metrics.csv"), index=False)
-
 # -------------------------
 # Robust plotting helpers
 # -------------------------
-
 def plot_flops_vs_latency(metrics_dict, save_dir, exp_name):
     metrics = normalize_metrics(metrics_dict)
     if not metrics:
@@ -363,7 +529,7 @@ def plot_flops_vs_latency(metrics_dict, save_dir, exp_name):
     plt.ylabel("Inference Time (s)")
     plt.title(f"FLOPs vs Inference Time — {exp_name}")
     plt.grid(True, linestyle="--", alpha=0.6)
-    file_svg = os.path.join(save_dir, f"{exp_name}_flops_vs_latency.svg")
+    file_svg = os.path.join(save_dir, f"flops_vs_latency.svg")
     plt.tight_layout()
     plt.savefig(file_svg)
     df_flops_latency.to_csv(os.path.join(save_dir, f"{exp_name}_flops_vs_latency.csv"), index=False)
@@ -373,36 +539,46 @@ def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
     metrics = normalize_metrics(metrics_dict)
     if not metrics:
         return
-    try:
-        base = list(metrics.values())[0]
-        if not is_dict_like(base):
-            return
-        base_acc = base.get("final_accuracy", 0)
-        base_params = base.get("param_count", 1)
-    except Exception:
+
+    # --- Find the original model ---
+    base_key = next((k for k in metrics if k.startswith("Original Model_")), None)
+    if base_key is None:
+        print("[WARN] No base model found matching 'Original_model_*'. Using first entry as fallback.")
+        base_key = next(iter(metrics))
+
+    base = metrics[base_key]
+    if not is_dict_like(base):
         return
 
+    base_acc = base.get("final_accuracy", 0)
+    base_params = base.get("param_count", 1)
+
+    # --- Compute deltas ---
     deltas = []
     for name, data in metrics.items():
         if not is_dict_like(data):
             continue
         d_acc = float(data.get("final_accuracy", 0) - base_acc)
         try:
-            d_params = (float(data.get("param_count", 0)) - float(base_params)) / float(base_params) * 100 if float(base_params) != 0 else 0.0
+            if float(base_params) != 0:
+                d_params = (float(data.get("param_count", 0)) - float(base_params)) / float(base_params) * 100
+            else:
+                d_params = 0.0
         except Exception:
             d_params = 0.0
         deltas.append({"name": name, "ΔAcc": d_acc, "ΔParams(%)": d_params})
 
+    print(f"[DEBUG] Base model: {base_key}")
     print(f"[DEBUG] Delta Accuracy vs Params Data: {deltas}")
 
     if not deltas:
         return
-    df = pd.DataFrame(deltas)
 
-    # Save the data to CSV
+    df = pd.DataFrame(deltas)
+    ensure_dir(save_dir)
     df.to_csv(os.path.join(save_dir, f"{exp_name}_delta_acc_vs_params.csv"), index=False)
 
-    ensure_dir(save_dir)
+    # --- Plot ---
     plt.figure(figsize=(8, 6))
     sns.scatterplot(data=df, x="ΔParams(%)", y="ΔAcc")
     for _, r in df.iterrows():
@@ -413,8 +589,7 @@ def plot_delta_accuracy_vs_params(metrics_dict, save_dir, exp_name):
     plt.ylabel("Δ Accuracy")
     plt.title(f"Compression Efficiency — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_delta_acc_vs_params.svg"))
-    df.to_csv(os.path.join(save_dir, f"{exp_name}_delta_acc_vs_params.csv"), index=False)
+    plt.savefig(os.path.join(save_dir, f"delta_acc_vs_params.svg"))
     plt.close()
 
 def plot_flops_vs_memory(metrics_dict, save_dir, exp_name):
@@ -446,7 +621,7 @@ def plot_flops_vs_memory(metrics_dict, save_dir, exp_name):
     plt.ylabel("Total Memory (MB, log)")
     plt.title(f"FLOPs vs Memory — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_flops_vs_memory.svg"))
+    plt.savefig(os.path.join(save_dir, f"flops_vs_memory.svg"))
     df_flops_memory.to_csv(os.path.join(save_dir, f"{exp_name}_flops_vs_memory.csv"), index=False)
     plt.close()
 
@@ -477,7 +652,7 @@ def plot_accuracy_vs_memory(metrics_dict, save_dir, exp_name):
     plt.ylabel("Accuracy (%)")
     plt.title(f"Accuracy vs Memory — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_acc_vs_memory.svg"))
+    plt.savefig(os.path.join(save_dir, f"acc_vs_memory.svg"))
     df_acc_memory.to_csv(os.path.join(save_dir, f"{exp_name}_acc_vs_memory.csv"), index=False)
     plt.close()
 
@@ -514,43 +689,10 @@ def plot_heatmap(metrics_dict, save_dir, exp_name):
     sns.heatmap(df_norm, annot=True, cmap="coolwarm")
     plt.title(f"Normalized Metrics Heatmap — {exp_name}")
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_metrics_heatmap.svg"))
+    plt.savefig(os.path.join(save_dir, f"metrics_heatmap.svg"))
     df_norm.to_csv(os.path.join(save_dir, f"{exp_name}_metrics_heatmap.csv"))
     plt.close()
 
-def plot_stage_collapse_cost_curve(metrics_dict, save_dir, exp_name):
-    metrics = normalize_metrics(metrics_dict)
-    if not metrics:
-        return
-    rows = []
-    for name, v in metrics.items():
-        if not is_dict_like(v):
-            continue
-        rows.append({"Model": name, "Params": v.get("param_count", 0),
-                     "Time": v.get("inference_time", 0), "Accuracy": v.get("final_accuracy", 0)})
-    
-    print(f"[DEBUG] Collapse Curve Rows: {rows}")
-
-    if not rows:
-        return
-    df = pd.DataFrame(rows).sort_values("Model")
-
-    # Save the data to CSV
-    df.to_csv(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.csv"), index=False)
-
-    ensure_dir(save_dir)
-    plt.figure(figsize=(9, 6))
-    plt.plot(df["Model"], df["Params"], label="Parameters", marker="o")
-    plt.plot(df["Model"], df["Time"], label="Inference Time", marker="s")
-    plt.plot(df["Model"], df["Accuracy"], label="Accuracy", marker="^")
-    plt.xticks(rotation=45)
-    plt.legend()
-    plt.title(f"Stage Collapse Cost Curve — {exp_name}")
-    plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.svg"))
-    # save data
-    df.to_csv(os.path.join(save_dir, f"{exp_name}_collapse_cost_curve.csv"), index=False)
-    plt.close()
 def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name, dtype_bytes=4):
     import json
     from collections import defaultdict
@@ -604,3 +746,380 @@ def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name
     plt.savefig(outpath)
     plt.close()
     return outpath
+
+def plot_accuracy_loss_curve(acc_list, loss_list, workflow, experiment, save_dir="plots"):
+    sns.set(style="whitegrid", palette="muted", font_scale=1.2)
+
+    os.makedirs(save_dir, exist_ok=True)
+    
+    # Create subplots: 2 rows, 1 column
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+
+    # Plot accuracy
+    ax1.plot(acc_list, label='Accuracy', marker='o', linewidth=2, markersize=6, color='tab:blue')
+    ax1.set_title(f'{workflow} - {experiment} Accuracy', fontsize=16)
+    ax1.set_ylabel('Accuracy', fontsize=14)
+    ax1.grid(alpha=0.3)
+    ax1.legend(fontsize=12)
+
+    # Plot loss
+    ax2.plot(loss_list, label='Loss', marker='x', linewidth=2, markersize=6, color='tab:red')
+    ax2.set_title(f'{workflow} - {experiment} Loss', fontsize=16)
+    ax2.set_xlabel('Epoch', fontsize=14)
+    ax2.set_ylabel('Loss', fontsize=14)
+    ax2.grid(alpha=0.3)
+    ax2.legend(fontsize=12)
+    
+    # Set common x-axis labels
+    ax2.set_xticks(range(len(acc_list)))
+    
+    # Adjust layout and save the plot
+    plt.tight_layout()
+    filename = os.path.join(save_dir, f"{workflow}_{experiment.replace(' ', '_')}_metrics.svg")
+    plt.savefig(filename, format='svg')
+    plt.close()
+
+    print(f"[✓] Saved plot: {filename}")
+    
+def plot_results(params, accs, names, title, filename, dataset=None, infer_times=None, mem_usages=None, flops=None, total_sizes=None):
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import os
+
+    # Extract experiment from filename
+    experiment = ' '.join(filename.split('/')[-1].replace('.svg','').split('_')[:1])
+    sns.set(style="whitegrid", palette="Set2", font_scale=1.1)
+    
+    fig, axs = plt.subplots(3, 1, figsize=(18, 18))
+    
+    # --- Sort by parameter size, then alphabetically ---
+    sorted_data = sorted(
+        zip(params, accs, names, infer_times or [], mem_usages or [], flops or []),
+        key=lambda x: (x[0], x[2].lower())
+    )
+    params, accs, names, infer_times, mem_usages, flops = zip(*sorted_data)
+    
+    # --- Accuracy vs Parameters ---
+    sns.barplot(x=list(names), y=list(accs), ax=axs[0], palette="Blues_d")
+    axs[0].set_title(f"{dataset or ''} - {experiment} - {title} - Final Accuracy (%)", fontsize=16)
+    axs[0].set_ylabel("Accuracy (%)", fontsize=14)
+    axs[0].grid(alpha=0.3)
+    
+    # Annotate bars
+    for i, v in enumerate(accs):
+        axs[0].text(i, v + 0.5, f"{v:.1f}%", ha='center', fontsize=10)
+    
+    # Secondary axis for parameters
+    ax0_twin = axs[0].twinx()
+    ax0_twin.plot(range(len(params)), params, 'ro--', linewidth=2, markersize=6, label='Parameters')
+    ax0_twin.set_ylabel('Trainable Parameters', color='red', fontsize=14)
+    ax0_twin.set_yscale('linear')
+    
+    # Set zero at the smallest trainable parameter
+    min_param = min(params)
+    ax0_twin.set_ylim(bottom=min_param * 0.9, top=max(params) * 1.1)
+    ax0_twin.tick_params(axis='y', colors='red')
+    
+    # --- Inference Time ---
+    if infer_times:
+        sns.barplot(x=list(names), y=list(infer_times), ax=axs[1], palette="Oranges_d")
+        axs[1].set_title("Average Inference Time per Batch (s)", fontsize=16)
+        axs[1].set_ylabel("Time (s)", fontsize=14)
+        axs[1].grid(alpha=0.3)
+    
+    # --- Memory or FLOPs ---
+    if mem_usages:
+        mem_mb = [m / 1e6 for m in mem_usages]
+        sns.barplot(x=list(names), y=mem_mb, ax=axs[2], palette="Greens_d")
+        axs[2].set_title("Peak GPU Memory (MB)", fontsize=16)
+        axs[2].set_ylabel("Memory (MB)", fontsize=14)
+    elif flops:
+        flops_g = [f / 1e9 for f in flops]
+        sns.barplot(x=list(names), y=flops_g, ax=axs[2], palette="Greens_d")
+        axs[2].set_title("FLOPs (GFLOPs)", fontsize=16)
+        axs[2].set_ylabel("GFLOPs", fontsize=14)
+    else:
+        axs[2].axis('off')
+    
+    # Rotate x-ticks
+    for ax in axs:
+        ax.set_xticklabels(names, rotation=30, ha='right')
+    
+    plt.tight_layout()
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    plt.savefig(filename, format='svg')
+    plt.show()
+    print(f"[✓] Saved plot: {filename}")
+
+def plot_weight_distributions(model, save_dir, exp_name):
+    """
+    Creates a grid of histograms showing the distribution of weights for each layer.
+    """
+    print(f"[•] Plotting weight distributions for {exp_name}...")
+    
+    # Filter for layers that actually have weights (Conv, Linear)
+    weight_params = [(n, p) for n, p in model.named_parameters() if "weight" in n and p.dim() > 1]
+    
+    if not weight_params:
+        print("[!] No weights found to plot.")
+        return
+
+    num_layers = len(weight_params)
+    cols = 4
+    rows = (num_layers + cols - 1) // cols
+    
+    fig, axes = plt.subplots(rows, cols, figsize=(cols * 4, rows * 3))
+    axes = axes.flatten()
+
+    for i, (name, param) in enumerate(weight_params):
+        weights = param.detach().cpu().numpy().flatten()
+        sns.histplot(weights, bins=50, kde=True, ax=axes[i], color="purple")
+        axes[i].set_title(f"{name}\n(Mean: {weights.mean():.4f}, Std: {weights.std():.4f})", fontsize=10)
+        axes[i].set_xlabel("Weight Value")
+
+    # Hide unused axes
+    for j in range(i + 1, len(axes)):
+        axes[j].axis('off')
+
+    plt.tight_layout()
+    save_path = os.path.join(save_dir, f"{exp_name}_weight_distributions.svg")
+    plt.savefig(save_path)
+    plt.close()
+    print(f"[✓] Weight distributions saved to {save_path}")
+import os
+import numpy as np
+import torch
+import matplotlib.pyplot as plt
+
+def _plot_explainability_grid(
+    inputs_np,
+    attributions_np,
+    exp_name,
+    save_path,
+):
+    """
+    Grid layout:
+      rows = [Original, Saliency, Integrated Gradients, Gradient SHAP]
+      columns = classes
+    """
+
+    class_labels = sorted(inputs_np.keys())
+    method_names = list(attributions_np.keys())
+
+    n_rows = 1 + len(method_names)
+    n_cols = len(class_labels)
+
+    fig, axes = plt.subplots(
+        n_rows,
+        n_cols,
+        figsize=(3 * n_cols, 3 * n_rows),
+        squeeze=False,
+    )
+
+    # --- First row: Original inputs ---
+    for col, label in enumerate(class_labels):
+        img = inputs_np[label][0]
+
+        if img.ndim == 3 and img.shape[0] == 3:  # RGB CHW → HWC
+            img = np.transpose(img, (1, 2, 0))
+            axes[0, col].imshow(img)
+        elif img.ndim == 3 and img.shape[0] == 1:  # grayscale CHW
+            img = img[0]
+            axes[0, col].imshow(img, cmap="gray")
+        else:  # already HW
+            axes[0, col].imshow(img, cmap="gray")
+
+
+        axes[0, col].imshow(img, cmap="gray")
+        axes[0, col].set_title(f"Class {label}")
+        axes[0, col].axis("off")
+
+    axes[0, 0].set_ylabel("Original", fontsize=12)
+
+    # --- Explainability rows ---
+    for row, method_name in enumerate(method_names, start=1):
+        for col, label in enumerate(class_labels):
+            attr = attributions_np[method_name][label][0]
+
+            # aggregate channels if needed
+            if attr.ndim == 3:
+                attr = np.mean(np.abs(attr), axis=0)
+
+            axes[row, col].imshow(attr, cmap="hot")
+            axes[row, col].axis("off")
+
+        axes[row, 0].set_ylabel(method_name, fontsize=12)
+
+    plt.suptitle(exp_name, fontsize=14)
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300)
+    plt.close()
+
+def plot_weight_magnitude_distributions(
+    model,
+    save_path="weight_distributions.svg",
+    bins=50,
+):
+    """
+    Plots distribution of absolute weight magnitudes per layer using subplots.
+    """
+
+    # Collect weights
+    layer_weights = []
+    layer_names = []
+
+    for name, param in model.named_parameters():
+        if param.requires_grad and param.dim() > 1:  # skip biases / scalars
+            weights = param.detach().cpu().numpy().ravel()
+            layer_weights.append(np.abs(weights))
+            layer_names.append(name)
+
+    num_layers = len(layer_weights)
+    cols = 3
+    rows = math.ceil(num_layers / cols)
+
+    fig, axes = plt.subplots(rows, cols, figsize=(cols * 5, rows * 4))
+    axes = axes.flatten()
+
+    for idx, (weights, name) in enumerate(zip(layer_weights, layer_names)):
+        axes[idx].hist(weights, bins=bins, log=True)
+        axes[idx].set_title(name)
+        axes[idx].set_xlabel("|Weight|")
+        axes[idx].set_ylabel("Count (log)")
+
+    # Remove empty subplots
+    for ax in axes[num_layers:]:
+        ax.axis("off")
+
+    fig.suptitle("Weight Magnitude Distributions per Layer", fontsize=16)
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    fig.savefig(save_path)
+    plt.close(fig)
+
+    print(f"[✓] Weight distribution figure saved to {save_path}")
+
+
+def plot_explainability_maps(
+    model,
+    dataloader,
+    device,
+    exp_name,
+    save_path="explainability_maps.svg",
+):
+    """
+    Generates explainability maps and saves:
+      - input images
+      - explainability maps
+      - model outputs
+    """
+    save_numpy_path = save_path.replace(".svg", ".npz")
+    print(f"[•] Extracting explainability data for {exp_name}...")
+
+    model = model.to(device).float()
+    model.eval()
+    weight_plot_path = save_path.replace(
+        ".svg", "_weight_distributions.svg"
+    )
+
+    plot_weight_magnitude_distributions(
+        model,
+        save_path=weight_plot_path,
+    )
+    unique_samples = {}
+
+    # --- Get one sample per class ---
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs = inputs.to(device).float()
+
+            for i in range(len(labels)):
+                label = labels[i].item()
+                if label not in unique_samples:
+                    unique_samples[label] = inputs[i : i + 1]
+
+            num_classes = (
+                len(dataloader.dataset.classes)
+                if hasattr(dataloader.dataset, "classes")
+                else len(unique_samples)
+            )
+            if len(unique_samples) >= num_classes:
+                break
+
+    try:
+        from captum.attr import Saliency, IntegratedGradients, GradientShap
+
+        methods = {
+            "Saliency": Saliency(model),
+            "Integrated Gradients": IntegratedGradients(model),
+            "Gradient SHAP": GradientShap(model),
+        }
+
+        dist_images = next(iter(dataloader))[0][:5].to(device).float()
+
+    except ImportError as e:
+        print(f"[!] Captum init failed: {e}")
+        return
+
+    # --- Storage ---
+    inputs_np = {}
+    outputs_np = {}
+    attributions_np = {m: {} for m in methods}
+
+    # --- Compute attributions ---
+    for label, input_tensor in unique_samples.items():
+        input_tensor = input_tensor.clone().detach().requires_grad_(True)
+
+        # model output
+        with torch.no_grad():
+            output = model(input_tensor)
+
+        inputs_np[label] = input_tensor.detach().cpu().numpy()
+        outputs_np[label] = output.detach().cpu().numpy()
+
+        for method_name, algo in methods.items():
+            try:
+                if method_name == "Gradient SHAP":
+                    attr = algo.attribute(
+                        input_tensor,
+                        baselines=dist_images,
+                        target=label,
+                    )
+                elif method_name == "Integrated Gradients":
+                    attr = algo.attribute(
+                        input_tensor,
+                        target=label,
+                        n_steps=50,
+                    )
+                else:
+                    attr = algo.attribute(
+                        input_tensor,
+                        target=label,
+                    )
+
+                attributions_np[method_name][label] = (
+                    attr.detach().cpu().numpy()
+                )
+
+            except Exception as e:
+                print(f"[!] Failed {method_name} for class {label}: {e}")
+
+    # --- Save numpy arrays ---
+    np.savez(
+        save_numpy_path,
+        inputs=inputs_np,
+        outputs=outputs_np,
+        **{f"attr_{k}": v for k, v in attributions_np.items()},
+    )
+
+    print(f"[✓] Saved explainability arrays to {save_numpy_path}")
+
+    # --- Plot ---
+    _plot_explainability_grid(
+        inputs_np,
+        attributions_np,
+        exp_name,
+        save_path,
+    )
+
+    print(f"[✓] Explainability figure saved to {save_path}")
+
