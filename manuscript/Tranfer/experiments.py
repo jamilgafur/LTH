@@ -351,6 +351,7 @@ def run_experiment(
     print(f"[✓] Experiment '{exp_name}' completed.")
     return all_data
 
+
 # =====================================================
 # === Experiment Entry Points (JF & Kevin) ===
 # =====================================================
@@ -370,6 +371,7 @@ def run_jf_experiment(
     post_compress_epochs=False,
     quant=False
 ):
+
     model_kwargs = model_kwargs or {}
     print("\n=== Running JF experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
@@ -479,6 +481,7 @@ def run_kevin_experiment(
             debug=True,
             handle_skips=True
         )
+    print(f"[INFO] Collabsed Model: {describe_model(base_model, train_loader)}")
 
     # 5. Run
     data = run_experiment(
