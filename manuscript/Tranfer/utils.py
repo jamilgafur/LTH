@@ -86,59 +86,7 @@ def plot_experiment_heuristics(model_name, dataset_name, stats_csv_path):
     print(f"Saved runs/plots/{model_name}_heuristic_target_summary.png")
 
 
-def draw_collapse_visual(model_name="MobileNet", target_collapse="Block 11"):
-    fig, ax = plt.subplots(figsize=(15, 4))
-    
-    # 1. Define the abstract blocks of the network
-    blocks = ["Stem", "Block 0", "Block 1", "...", "Block 10", "Block 11", "Block 12", "Classifier"]
-    x_pos = 0
-    box_width = 1.2
-    box_height = 0.8
-    
-    # 2. Draw the "Features" Container background
-    feat_rect = patches.Rectangle((1.5, -0.6), 8.5, 2.0, linewidth=2, edgecolor='gray', facecolor='#f0f0f0', linestyle='--')
-    ax.add_patch(feat_rect)
-    ax.text(5.75, 1.6, "PyTorch 'features' Sequential Container\n(Contains Stages/Blocks)", ha='center', fontsize=11, fontweight='bold', color='gray')
 
-    # 3. Draw the Blocks
-    for i, name in enumerate(blocks):
-        # Determine color based on whether it is the collapsed target
-        is_collapsed = (name == target_collapse)
-        facecolor = '#fce8e6' if is_collapsed else '#eaf2f8'
-        edgecolor = '#c44e52' if is_collapsed else '#4c72b0'
-        
-        rect = patches.Rectangle((x_pos, 0), box_width, box_height, linewidth=2, edgecolor=edgecolor, facecolor=facecolor)
-        ax.add_patch(rect)
-        
-        # Block Text
-        ax.text(x_pos + box_width/2, box_height/2, name, ha='center', va='center', fontweight='bold', fontsize=10)
-        
-        # Draw Arrows between blocks
-        if i < len(blocks) - 1:
-            ax.annotate("", xy=(x_pos + box_width + 0.4, box_height/2), xytext=(x_pos + box_width, box_height/2),
-                        arrowprops=dict(arrowstyle="->", lw=2))
-        
-        # Draw the "Collapse" Bypass Arrow
-        if is_collapsed:
-            # Draw a big red X over the block
-            ax.plot([x_pos, x_pos + box_width], [0, box_height], color='red', lw=3)
-            ax.plot([x_pos, x_pos + box_width], [box_height, 0], color='red', lw=3)
-            
-            # Draw the bypass route (Identity)
-            ax.annotate("nn.Identity()\n(Bypass)", xy=(x_pos + box_width + 0.2, -0.2), xytext=(x_pos - 0.2, -0.2),
-                        arrowprops=dict(arrowstyle="->", lw=2, color='green', connectionstyle="arc3,rad=-0.5"),
-                        ha='center', va='top', color='green', fontweight='bold')
-            
-        x_pos += box_width + 0.5
-
-    ax.set_xlim(-0.5, x_pos)
-    ax.set_ylim(-1.5, 2.5)
-    ax.axis('off')
-    ax.set_title(f"Visualizing Structural Collapse: {model_name} (Target: {target_collapse})", fontsize=16, fontweight='bold')
-    
-    plt.tight_layout()
-    plt.savefig(f"runs/plots/architecture_collapse_diagram.png", dpi=300)
-    print("Saved runs/plots/architecture_collapse_diagram.png")
 # -------------------------
 # Helper utilities
 # -------------------------

@@ -1216,11 +1216,6 @@ def run_experiments_for_dataset(
         try:
             # 1. Generate the Bar Chart comparing total variance across experiments
             plot_experiment_heuristics(args.model, dataset, csv_path)
-            
-            # 2. Generate the Architecture diagram for the specific experiments being run
-            for exp_name in experiments.keys():
-                if exp_name != "Original Model":
-                    draw_collapse_visual(model_name=args.model, target_collapse=exp_name)
         except Exception as e:
             print(f"[WARN] Failed to generate visual plots: {e}")
     else:
