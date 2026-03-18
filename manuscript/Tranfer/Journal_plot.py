@@ -391,7 +391,8 @@ def fig2_correlation_and_pareto(
             hue="acc_drop", palette="coolwarm", size="d_params", sizes=(50, 300), 
             edgecolor="black", linewidth=1, ax=ax, legend="brief"
         )
-
+        # remove legend
+        ax.legend([], [], frameon=False)
         for i in range(df_merged.shape[0]):
             ax.text(
                 df_merged["Median Variance"].iloc[i], 
