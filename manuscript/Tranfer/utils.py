@@ -14,9 +14,124 @@ from torchinfo import summary
 import numpy as np
 from pyPrune.utils import load_cifar10, load_cifar100, load_tiny_imagenet, load_imagenet
 from copy import deepcopy
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from transfer import EXPERIMENTS # Imports your dictionaries
+
+def plot_experiment_heuristics(model_name, dataset_name, stats_csv_path):
+    # Load the raw layer stats
+    df_layers = pd.read_csv(stats_csv_path)
+    layer_names = df_layers['Layer'].tolist()
+    variances = dict(zip(df_layers['Layer'], df_layers['Variance']))
+    activations = dict(zip(df_layers['Layer'], df_layers['Mean Activation']))
+
+    exp_dict = EXPERIMENTS[model_name][dataset_name]
+    
+    exp_names, total_vars, avg_acts = [], [], []
+
+    # Calculate Total Variance and Average Activation per experiment
+    for exp_name, layer_range in exp_dict.items():
+        if layer_range is None or exp_name == "Original Model":
+            continue
+            
+        ranges = layer_range if isinstance(layer_range, list) else [layer_range]
+        b_vars, b_acts = [], []
+        
+        for start_layer, end_layer in ranges:
+            in_range = False
+            for name in layer_names:
+                if start_layer in name: in_range = True
+                if in_range:
+                    if name in variances: b_vars.append(variances[name])
+                    if name in activations: b_acts.append(activations[name])
+                if end_layer in name: break
+                
+        if b_vars and b_acts:
+            exp_names.append(exp_name)
+            total_vars.append(np.sum(b_vars)) # SUM of variance (Total Information)
+            avg_acts.append(np.mean(b_acts))  # MEAN of activation (Average Volume)
+
+    # Generate Plot
+    sns.set_theme(style="whitegrid", context="paper", font_scale=1.2)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
+
+    df_plot = pd.DataFrame({"Experiment": exp_names, "Total Variance": total_vars, "Mean Activation": avg_acts})
+
+    # Top Plot: Mean Activation
+    sns.barplot(data=df_plot, x="Experiment", y="Mean Activation", color="#4C72B0", edgecolor="black", ax=ax1)
+    ax1.set_title(f"Heuristic Profiling by Target Region: {model_name}", fontsize=16, fontweight='bold')
+    ax1.set_ylabel("Avg Mean Activation", fontweight='bold')
+    ax1.axhline(0, color='black', linewidth=1.5)
+
+    # Bottom Plot: Total Variance
+    sns.barplot(data=df_plot, x="Experiment", y="Total Variance", color="#C44E52", edgecolor="black", ax=ax2)
+    ax2.set_ylabel("Total Sum of Variance", fontweight='bold')
+    ax2.set_xlabel("Targeted Collapse Region", fontweight='bold')
+    
+    plt.xticks(rotation=45, ha='right')
+    sns.despine()
+    plt.tight_layout()
+    plt.savefig(f"{model_name}_heuristic_target_summary.png", dpi=300)
+    print(f"Saved {model_name}_heuristic_target_summary.png")
 
 
+def draw_collapse_visual(model_name="MobileNet", target_collapse="Block 11"):
+    fig, ax = plt.subplots(figsize=(15, 4))
+    
+    # 1. Define the abstract blocks of the network
+    blocks = ["Stem", "Block 0", "Block 1", "...", "Block 10", "Block 11", "Block 12", "Classifier"]
+    x_pos = 0
+    box_width = 1.2
+    box_height = 0.8
+    
+    # 2. Draw the "Features" Container background
+    feat_rect = patches.Rectangle((1.5, -0.6), 8.5, 2.0, linewidth=2, edgecolor='gray', facecolor='#f0f0f0', linestyle='--')
+    ax.add_patch(feat_rect)
+    ax.text(5.75, 1.6, "PyTorch 'features' Sequential Container\n(Contains Stages/Blocks)", ha='center', fontsize=11, fontweight='bold', color='gray')
 
+    # 3. Draw the Blocks
+    for i, name in enumerate(blocks):
+        # Determine color based on whether it is the collapsed target
+        is_collapsed = (name == target_collapse)
+        facecolor = '#fce8e6' if is_collapsed else '#eaf2f8'
+        edgecolor = '#c44e52' if is_collapsed else '#4c72b0'
+        
+        rect = patches.Rectangle((x_pos, 0), box_width, box_height, linewidth=2, edgecolor=edgecolor, facecolor=facecolor)
+        ax.add_patch(rect)
+        
+        # Block Text
+        ax.text(x_pos + box_width/2, box_height/2, name, ha='center', va='center', fontweight='bold', fontsize=10)
+        
+        # Draw Arrows between blocks
+        if i < len(blocks) - 1:
+            ax.annotate("", xy=(x_pos + box_width + 0.4, box_height/2), xytext=(x_pos + box_width, box_height/2),
+                        arrowprops=dict(arrowstyle="->", lw=2))
+        
+        # Draw the "Collapse" Bypass Arrow
+        if is_collapsed:
+            # Draw a big red X over the block
+            ax.plot([x_pos, x_pos + box_width], [0, box_height], color='red', lw=3)
+            ax.plot([x_pos, x_pos + box_width], [box_height, 0], color='red', lw=3)
+            
+            # Draw the bypass route (Identity)
+            ax.annotate("nn.Identity()\n(Bypass)", xy=(x_pos + box_width + 0.2, -0.2), xytext=(x_pos - 0.2, -0.2),
+                        arrowprops=dict(arrowstyle="->", lw=2, color='green', connectionstyle="arc3,rad=-0.5"),
+                        ha='center', va='top', color='green', fontweight='bold')
+            
+        x_pos += box_width + 0.5
+
+    ax.set_xlim(-0.5, x_pos)
+    ax.set_ylim(-1.5, 2.5)
+    ax.axis('off')
+    ax.set_title(f"Visualizing Structural Collapse: {model_name} (Target: {target_collapse})", fontsize=16, fontweight='bold')
+    
+    plt.tight_layout()
+    plt.savefig(f"architecture_collapse_diagram.png", dpi=300)
+    print("Saved architecture_collapse_diagram.png")
 # -------------------------
 # Helper utilities
 # -------------------------
