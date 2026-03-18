@@ -342,7 +342,7 @@ def fig1(
 
 def fig2_correlation_and_pareto(
     df: pd.DataFrame, 
-    stats_dir: Path = Path("./runs/Layer_Statistics"),
+    stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
     out_dir: Path = Path("./figures/correlation_plots")
 ):
     """
