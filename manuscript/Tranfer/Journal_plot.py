@@ -456,12 +456,31 @@ def fig2_correlation_and_pareto(
         print(f"[Plot] Saved Pareto Efficiency: {pareto_filename.name}")
 
 
+import argparse
+
 # =========================
 # Main
 # =========================
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Generate plots for specific models and datasets.")
+    parser.add_argument("--model", type=str, default=None, help="Target model architecture to plot (e.g., InceptionNet)")
+    parser.add_argument("--dataset", type=str, default=None, help="Target dataset to plot (e.g., tinyimagenet)")
+    args = parser.parse_args()
+
     try:
         raw = load_results()
+        
+        # --- NEW: Filter the data based on command line arguments ---
+        if args.model:
+            # We use str.contains or exact match based on your architecture naming
+            raw = raw[raw["architecture"] == args.model]
+        if args.dataset:
+            raw = raw[raw["dataset"] == args.dataset]
+            
+        if raw.empty:
+            print(f"[!] No data found matching Model='{args.model}' and Dataset='{args.dataset}'. Exiting plot generation.")
+            exit(0)
+            
         df = normalize(raw)
         
         print("\n==============================")
