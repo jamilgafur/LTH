@@ -75,8 +75,8 @@ def plot_experiment_heuristics(model_name, dataset_name, stats_csv_path):
     plt.xticks(rotation=45, ha='right')
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"{model_name}_heuristic_target_summary.png", dpi=300)
-    print(f"Saved {model_name}_heuristic_target_summary.png")
+    plt.savefig(f"runs/plots/{model_name}_heuristic_target_summary.png", dpi=300)
+    print(f"Saved runs/plots/{model_name}_heuristic_target_summary.png")
 
 
 def draw_collapse_visual(model_name="MobileNet", target_collapse="Block 11"):
@@ -130,8 +130,8 @@ def draw_collapse_visual(model_name="MobileNet", target_collapse="Block 11"):
     ax.set_title(f"Visualizing Structural Collapse: {model_name} (Target: {target_collapse})", fontsize=16, fontweight='bold')
     
     plt.tight_layout()
-    plt.savefig(f"architecture_collapse_diagram.png", dpi=300)
-    print("Saved architecture_collapse_diagram.png")
+    plt.savefig(f"runs/plots/architecture_collapse_diagram.png", dpi=300)
+    print("Saved runs/plots/architecture_collapse_diagram.png")
 # -------------------------
 # Helper utilities
 # -------------------------
