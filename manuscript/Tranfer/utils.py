@@ -20,9 +20,16 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from transfer import EXPERIMENTS # Imports your dictionaries
 
 def plot_experiment_heuristics(model_name, dataset_name, stats_csv_path):
+    import pandas as pd
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    
+    # [✓] MOVED HERE: This breaks the circular import!
+    from transfer import EXPERIMENTS 
+
     # Load the raw layer stats
     df_layers = pd.read_csv(stats_csv_path)
     layer_names = df_layers['Layer'].tolist()
