@@ -370,12 +370,18 @@ class SmartIdentity(nn.Module):
     """A robust Identity replacement that safely absorbs nested attribute calls."""
     def forward(self, x, *args, **kwargs):
         return x
+        
     def __getattr__(self, name):
         # Prevent intercepting PyTorch internal methods
         if name.startswith('_'):
             return super().__getattr__(name)
+            
+        # FIX: Stop falsely claiming architectural attributes used by patching logic
+        if name in ['shortcut', 'block']:
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+            
         return self # Return self to absorb chained calls like .inception_4a(x)
-
+    
 def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=None, end_name=None):
     """Replace a slice of layers, using SmartIdentity for subsumed layers."""
     new_layers = OrderedDict()
@@ -557,7 +563,6 @@ def _update_container(model: nn.Module, container_path: str, new_container: nn.M
 # -----------------------------------------------------------------------------
 # Skip connection patcher
 # -----------------------------------------------------------------------------
-
 def patch_skip_connections(model: nn.Module):
     """
     Patches module forwards to robustly handle residual connections.
@@ -567,13 +572,17 @@ def patch_skip_connections(model: nn.Module):
     model._bypassed_residuals = 0
 
     for name, module in model.named_modules():
+        # FIX: Explicitly ignore SmartIdentity to prevent false positive patches
+        if isinstance(module, SmartIdentity):
+            continue
+            
         # Look for ResNet/ConvNeXt style blocks with 'shortcut' and 'block'
         if hasattr(module, 'shortcut') and isinstance(module.shortcut, nn.Module) and hasattr(module, 'block'):
             
             # Save original forward if not already patched
             if not hasattr(module, '_orig_forward'):
                 module._orig_forward = getattr(module, 'forward')
-
+                
             def make_patched_forward(mod_name):
                 def new_forward(self, x):
                     # 1. Run the (potentially collapsed) main block
