@@ -4,6 +4,7 @@ import glob
 import json
 import warnings
 import re
+import os
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -15,7 +16,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Local imports (Assumed available based on original file)
-from manuscript.Tranfer.utils import load_dataset
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.models.RegNetX import RegNetX_400MF
 from pyPrune.models.ConvNetX import ConvNeXt
@@ -77,10 +77,10 @@ def infer_dataset_from_path(p: Path) -> str:
 
 def infer_architecture_from_path(p: Path) -> str:
     name = p.parent.parent.name.lower()
-    if "regnet" in name: return "RegNetX"
+    if "regnet" in name: return "RegNetX_400MF" # Match the exact names from transfer.py
     if "vgg" in name: return "VGG16"
     if "inception" in name: return "InceptionNet"
-    if "xception" in name: return "Xception"
+    if "xception" in name: return "XceptionNet"
     if "mobilenet" in name: return "MobileNet"
     if "convnext" in name: return "ConvNeXt"
     return "UnknownArch"
@@ -106,7 +106,7 @@ def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
         return "Baseline"
         
     # Only distinguish distinct methods for specific architectures
-    if architecture in ["VGG16", "RegNetX"]:
+    if "VGG16" in architecture or "RegNetX" in architecture:
         if "jf" in n or ("pruned" in n and "no" not in n and "not" not in n): 
             return "Pruned"
         if "kevin" in n or "no-prune" in n or "not pruned" in n: 
@@ -131,7 +131,7 @@ def clean_exp_name(exp_name: str) -> str:
     n = n.strip(" -_()")
     
     if "Original" in n or "Baseline" in n: 
-        return "Original"
+        return "Original Model" # Normalize baseline name
     return n.strip()
 
 def find_baseline(df: pd.DataFrame):
@@ -154,8 +154,14 @@ def load_results() -> pd.DataFrame:
 
     for p in files:
         dataset = infer_dataset_from_path(p)
+        if dataset == "unknown" and "tinyimagenet" in str(p).lower():
+            dataset = "tinyimagenet" # Fallback if folder structure is flat
+            
         arch = infer_architecture_from_path(p)
-        
+        if arch == "UnknownArch":
+            # Fallback extraction from filename if folder structure doesn't match
+            arch = infer_architecture_from_path(Path(p.name))
+            
         try:
             with open(p) as f:
                 raw = json.load(f)
@@ -199,11 +205,12 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
         for _, r in g.iterrows():
             row = r.copy()
             if baseline["params"]:
-                row["d_acc"] =  r["accuracy"] - baseline["accuracy"] 
+                row["d_acc"] = r["accuracy"] - baseline["accuracy"] 
+                row["acc_drop"] = baseline["accuracy"] - r["accuracy"] # Added explicitly for scatter plots
+                row["baseline_acc"] = baseline["accuracy"] # Added to plot pareto threshold
                 row["d_params"] = 100 * (1 - r["params"] / baseline["params"])
                 row["d_flops"] = 100 * (1 - r["flops"] / baseline["flops"])
                 row["d_memory"] = 100 * (1 - r["memory"] / baseline["memory"])
-                row["collapsed_fraction"] = row["d_params"] / 100.0
             out.append(row)
     return pd.DataFrame(out)
 
@@ -218,9 +225,6 @@ def fig1(
 ):
     """
     Generates improved INDIVIDUAL plot files AND LaTeX tables.
-    - Averages metrics for Non-VGG/RegNetX models via groupby logic.
-    - Saves TWO tables per architecture/dataset (Quantized vs. Unquantized).
-    - Uses journal-level formatting for both matplotlib and LaTeX.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -239,12 +243,10 @@ def fig1(
         "Collapsed": "#2ca02c"      # Green
     }
 
-    # 1. AGGREGATION STEP: Average identical configurations
     group_cols = ["dataset", "architecture", "base_name", "display_name", "posthoc_or_posttrain", "is_quantized"]
     available_metrics = [m for m in metrics if m in df.columns]
     
-    # Calculate the mean for the metrics
-    df_agg = df.groupby(group_cols, dropna=False)[available_metrics].mean().reset_index()
+    df_agg = df.groupby(group_cols, dropna=False)[available_metrics].mean(numeric_only=True).reset_index()
 
     for architecture, df_arch in df_agg.groupby("architecture"):
         for dataset in df_arch["dataset"].unique():
@@ -252,7 +254,6 @@ def fig1(
 
             if g_dataset.empty: continue
 
-            # Determine Sort Order based on the base rank
             if "params" in g_dataset.columns:
                 base_name_rank = g_dataset.groupby("base_name")["params"].max().sort_values(ascending=False)
             else:
@@ -264,12 +265,8 @@ def fig1(
             
             sort_order = g_dataset["display_name"].unique().tolist()
 
-            # ==========================================
-            # LaTeX Table Generation (Quant & Unquant)
-            # ==========================================
+            # --- LaTeX Table Generation ---
             table_df = g_dataset.copy()
-            
-            # Scale metrics for better readability
             if "params" in table_df.columns: table_df["params"] = table_df["params"] / 1e6
             if "flops" in table_df.columns: table_df["flops"] = table_df["flops"] / 1e9
 
@@ -278,45 +275,30 @@ def fig1(
             table_df.rename(columns=rename_map, inplace=True)
             
             table_cols = ["Model", "Type"] + [metric_titles[m] for m in available_metrics]
-            
-            # Helper function for dynamic float formatting
             float_fmt = lambda x: f"{x:.4f}" if x < 10 else f"{x:.2f}"
             
-            # Split into Quantized and Unquantized
             df_unquant = table_df[table_df["is_quantized"] == False][table_cols]
             df_quant = table_df[table_df["is_quantized"] == True][table_cols]
 
-            # Write Unquantized Table
             if not df_unquant.empty:
                 tex_filename_unq = f"{architecture}_{dataset}_unquantized_table.tex".replace(" ", "_")
                 df_unquant.to_latex(
-                    out_dir / tex_filename_unq,
-                    index=False,
-                    float_format=float_fmt,
+                    out_dir / tex_filename_unq, index=False, float_format=float_fmt,
                     caption=f"Unquantized performance metrics for {architecture} on {dataset}.",
-                    label=f"tab:{architecture}_{dataset}_unquant",
-                    escape=True,
+                    label=f"tab:{architecture}_{dataset}_unquant", escape=True,
                     column_format="ll" + "c" * len(available_metrics)
                 )
-                print(f"[Table] Saved {tex_filename_unq}")
 
-            # Write Quantized Table
             if not df_quant.empty:
                 tex_filename_q = f"{architecture}_{dataset}_quantized_table.tex".replace(" ", "_")
                 df_quant.to_latex(
-                    out_dir / tex_filename_q,
-                    index=False,
-                    float_format=float_fmt,
+                    out_dir / tex_filename_q, index=False, float_format=float_fmt,
                     caption=f"Quantized performance metrics for {architecture} on {dataset}.",
-                    label=f"tab:{architecture}_{dataset}_quant",
-                    escape=True,
+                    label=f"tab:{architecture}_{dataset}_quant", escape=True,
                     column_format="ll" + "c" * len(available_metrics)
                 )
-                print(f"[Table] Saved {tex_filename_q}")
 
-            # ==========================================
-            # Plot Generation
-            # ==========================================
+            # --- Plot Generation ---
             for metric in metrics:
                 if metric not in g_dataset.columns or g_dataset[metric].isnull().all():
                     continue
@@ -324,19 +306,10 @@ def fig1(
                 fig, ax = plt.subplots(figsize=(12, 6))
 
                 sns.barplot(
-                    data=g_dataset,
-                    x="display_name",
-                    y=metric,
-                    hue="posthoc_or_posttrain",
-                    order=sort_order,
-                    palette=palette,
-                    edgecolor="black",
-                    linewidth=1.2,
-                    ax=ax,
-                    errorbar=None 
+                    data=g_dataset, x="display_name", y=metric, hue="posthoc_or_posttrain",
+                    order=sort_order, palette=palette, edgecolor="black", linewidth=1.2, ax=ax, errorbar=None 
                 )
 
-                # Add hatching to Quantized bars
                 locs = ax.get_xticks()
                 labels = [l.get_text() for l in ax.get_xticklabels()]
                 
@@ -350,11 +323,10 @@ def fig1(
                             patch.set_edgecolor("black")
                             patch.set_linewidth(1.2)
 
-                # Journal styling overrides
                 ax.set_ylabel(metric_titles.get(metric, metric))
                 ax.set_xlabel("")
                 ax.set_title(f"{architecture} - {dataset} ({metric_titles.get(metric, metric)})")
-                sns.despine(ax=ax) # Removes top and right borders
+                sns.despine(ax=ax)
                 
                 ax.legend(title="Method", loc='upper left', bbox_to_anchor=(1, 1), frameon=False)
                 
@@ -366,6 +338,122 @@ def fig1(
                 plt.savefig(out_dir / filename)
                 plt.close()
                 print(f"[Plot] Saved {filename}")
+
+
+def fig2_correlation_and_pareto(
+    df: pd.DataFrame, 
+    stats_dir: Path = Path("./runs/Layer_Statistics"),
+    out_dir: Path = Path("./figures/correlation_plots")
+):
+    """
+    Merges normalized accuracy metrics with heuristic statistics (Median Variance) 
+    to generate the Scatter Proof Plot and the Pareto Efficiency Curve.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # We want to average the results (e.g., combining quant/non-quant drops) to get a clean scatter plot
+    df_agg = df.groupby(["dataset", "architecture", "base_name"]).mean(numeric_only=True).reset_index()
+
+    for (dataset, arch), g_metrics in df_agg.groupby(["dataset", "architecture"]):
+        
+        # Load the corresponding heuristic stats file generated by transfer.py
+        csv_filename = f"{arch}_{dataset}_experiment_block_stats.csv"
+        csv_path = stats_dir / csv_filename
+        
+        if not csv_path.exists():
+            print(f"[Skip] Heuristic stats not found for {arch} on {dataset} ({csv_path})")
+            continue
+            
+        try:
+            df_heuristics = pd.read_csv(csv_path)
+        except Exception as e:
+            print(f"[!] Failed to read {csv_path}: {e}")
+            continue
+            
+        # Merge metrics with heuristics
+        # CSV has "Experiment", df has "base_name"
+        df_merged = pd.merge(df_heuristics, g_metrics, left_on="Experiment", right_on="base_name", how="inner")
+        
+        if df_merged.empty:
+            print(f"[!] Merge failed for {arch} on {dataset}. Check naming alignments.")
+            continue
+            
+        # Optional: Grab baseline accuracy for thresholding
+        baseline_acc = g_metrics["baseline_acc"].max() if "baseline_acc" in g_metrics.columns else 100.0
+            
+        # =========================================================
+        # 1. The "Proof" Plot - Variance vs Accuracy Drop
+        # =========================================================
+        fig, ax = plt.subplots(figsize=(10, 7))
+
+        sns.scatterplot(
+            data=df_merged, x="Median Variance", y="acc_drop", 
+            hue="acc_drop", palette="coolwarm", size="d_params", sizes=(50, 300), 
+            edgecolor="black", linewidth=1, ax=ax, legend="brief"
+        )
+
+        for i in range(df_merged.shape[0]):
+            ax.text(
+                df_merged["Median Variance"].iloc[i], 
+                df_merged["acc_drop"].iloc[i] + 0.5, 
+                df_merged["Experiment"].iloc[i], 
+                horizontalalignment='center', size='small', color='black', alpha=0.7
+            )
+
+        ax.set_xscale('symlog', linthresh=10.0) 
+        ax.axhline(0, color='black', linestyle='--', linewidth=1)
+        
+        y_max = max(df_merged["acc_drop"].max() * 1.1, 10.0)
+        ax.axhspan(-5, 2, color='#e6f4ea', alpha=0.3, zorder=0) 
+        ax.axhspan(2, y_max, color='#fce8e6', alpha=0.3, zorder=0) 
+
+        ax.set_title(f"Heuristic Validation: Variance vs Network Failure\n{arch} | {dataset}", fontweight='bold', pad=15)
+        ax.set_ylabel("Accuracy Drop (%) -> Lower is Better", fontweight='bold')
+        ax.set_xlabel("Block Median Variance (SymLog Scale) -> Predicts Information Bottleneck", fontweight='bold')
+        sns.despine()
+        
+        plt.tight_layout()
+        proof_filename = out_dir / f"{arch}_{dataset}_heuristic_proof.png".replace(" ", "_")
+        plt.savefig(proof_filename, dpi=300)
+        plt.close()
+        print(f"[Plot] Saved Scatter Proof: {proof_filename.name}")
+
+        # =========================================================
+        # 2. The "Value" Plot - Pareto Efficiency Curve
+        # =========================================================
+        fig, ax = plt.subplots(figsize=(10, 7))
+
+        sns.scatterplot(
+            data=df_merged, x="d_params", y="accuracy", 
+            hue="Median Variance", palette="viridis", s=150, 
+            edgecolor="black", linewidth=1.5, ax=ax
+        )
+
+        ax.scatter([0], [baseline_acc], color="gold", marker="*", s=500, edgecolor="black", label="Baseline Model")
+
+        for i in range(df_merged.shape[0]):
+            ax.text(
+                df_merged["d_params"].iloc[i], 
+                df_merged["accuracy"].iloc[i] - 1.5, 
+                df_merged["Experiment"].iloc[i], 
+                horizontalalignment='center', size='small', color='black', alpha=0.7
+            )
+
+        ax.set_title(f"Efficiency Frontier: Compression vs Accuracy\n{arch} | {dataset}", fontweight='bold', pad=15)
+        ax.set_ylabel("Final Accuracy (%)", fontweight='bold')
+        ax.set_xlabel("Parameters Removed (%) -> Higher is Better", fontweight='bold')
+        ax.legend(loc='lower left')
+        
+        ax.axhline(baseline_acc, color='black', linestyle='-', alpha=0.5)
+        ax.axhline(baseline_acc - 2.0, color='red', linestyle='--', alpha=0.5, label="2% Degradation Limit")
+        
+        sns.despine()
+        plt.tight_layout()
+        pareto_filename = out_dir / f"{arch}_{dataset}_pareto_efficiency.png".replace(" ", "_")
+        plt.savefig(pareto_filename, dpi=300)
+        plt.close()
+        print(f"[Plot] Saved Pareto Efficiency: {pareto_filename.name}")
+
 
 # =========================
 # Main
@@ -379,7 +467,11 @@ if __name__ == "__main__":
         print(" GENERATING FIGURES & DATA ")
         print("==============================")
         
+        # 1. Generate Individual Bar Charts & Tables
         fig1(df)
+        
+        # 2. Generate Scatter Proof & Pareto Efficiency Curves
+        fig2_correlation_and_pareto(df)
                
     except FileNotFoundError as e:
         print(f"Error: {e}")
