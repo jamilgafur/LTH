@@ -5,6 +5,7 @@ import json
 import warnings
 import re
 import os
+import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -25,15 +26,22 @@ from pyPrune.models.MobileNet import MobileNet
 from collapse import collapse_only
 
 # =========================
-# Configuration & Journal Style
+# Configuration & Logging
 # =========================
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger = logging.getLogger(__name__)
+
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
 
 # Enhanced Journal-level styling
 sns.set_theme(
     context="paper",
-    style="ticks", # 'ticks' is often preferred for academic journals over 'whitegrid'
+    style="ticks",
     palette="colorblind",
     font_scale=1.2,
 )
@@ -77,7 +85,7 @@ def infer_dataset_from_path(p: Path) -> str:
 
 def infer_architecture_from_path(p: Path) -> str:
     name = p.parent.parent.name.lower()
-    if "regnet" in name: return "RegNetX_400MF" # Match the exact names from transfer.py
+    if "regnet" in name: return "RegNetX_400MF"
     if "vgg" in name: return "VGG16"
     if "inception" in name: return "InceptionNet"
     if "xception" in name: return "XceptionNet"
@@ -94,32 +102,18 @@ def infer_isquant(exp_name: str) -> bool:
     return "quant" in exp_name.lower()
 
 def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
-    """
-    Determines the method group.
-    - Baseline: If 'original' or 'baseline' in name.
-    - Pruned/Not Pruned: ONLY for VGG16 and RegNetX.
-    - Collapsed: For all other architectures (forces averaging later).
-    """
     n = exp_name.lower()
-    
     if "original" in n or "baseline" in n:
         return "Baseline"
-        
-    # Only distinguish distinct methods for specific architectures
     if "VGG16" in architecture or "RegNetX" in architecture:
         if "jf" in n or ("pruned" in n and "no" not in n and "not" not in n): 
             return "Pruned"
         if "kevin" in n or "no-prune" in n or "not pruned" in n: 
             return "Not Pruned"
-        
-    # For ConvNeXt, MobileNet, etc., merge them into one group for averaging
     return "Collapsed"
 
 def clean_exp_name(exp_name: str) -> str:
     n = exp_name
-    
-    # Strip JF/Kevin and Quant text rigorously so that non-VGG/RegNetX models map 
-    # to the exact same base_name to be averaged properly.
     n = re.sub(r'(?i)[_-]?quant|\(quant\)', '', n)
     n = re.sub(r'(?i)[_-]?jf|\(jf\)|[_-]?kevin|\(kevin\)|no-prune|not pruned|pruned', '', n)
     
@@ -131,7 +125,7 @@ def clean_exp_name(exp_name: str) -> str:
     n = n.strip(" -_()")
     
     if "Original" in n or "Baseline" in n: 
-        return "Original Model" # Normalize baseline name
+        return "Original Model"
     return n.strip()
 
 def find_baseline(df: pd.DataFrame):
@@ -143,30 +137,34 @@ def find_baseline(df: pd.DataFrame):
     return None if m.empty else m.iloc[0]
 
 def load_results() -> pd.DataFrame:
+    logger.info(f"Scanning for metrics files in {RESULTS_DIR.resolve()}")
     files = list(RESULTS_DIR.rglob("*merged_metrics.json"))
+    
     if not files:
         if (RESULTS_DIR / "merged_metrics.json").exists():
             files = [RESULTS_DIR / "merged_metrics.json"]
         else:
             raise FileNotFoundError("No merged_metrics.json files found")
 
+    logger.info(f"Found {len(files)} metrics file(s).")
     rows = []
 
     for p in files:
         dataset = infer_dataset_from_path(p)
         if dataset == "unknown" and "tinyimagenet" in str(p).lower():
-            dataset = "tinyimagenet" # Fallback if folder structure is flat
+            dataset = "tinyimagenet"
             
         arch = infer_architecture_from_path(p)
         if arch == "UnknownArch":
-            # Fallback extraction from filename if folder structure doesn't match
             arch = infer_architecture_from_path(Path(p.name))
             
+        logger.debug(f"Processing file: {p.name} | Inferred Arch: {arch} | Inferred Dataset: {dataset}")
+        
         try:
             with open(p) as f:
                 raw = json.load(f)
         except Exception as e:
-            print(f"Skipping {p}: {e}")
+            logger.error(f"Skipping {p} due to read error: {e}")
             continue
 
         for exp_name, metrics in raw.items():
@@ -191,27 +189,37 @@ def load_results() -> pd.DataFrame:
                 "memory": metrics.get("total_size_mb"),
             })
 
+    logger.info(f"Loaded {len(rows)} total experiment configurations.")
     return pd.DataFrame(rows)
 
 def normalize(df: pd.DataFrame) -> pd.DataFrame:
+    logger.info("Normalizing metrics against baselines...")
     out = []
+    
     for (ds, arch), g in df.groupby(["dataset", "architecture"]):
         baseline = find_baseline(g)
         if baseline is None:
-            warnings.warn(f"No baseline for {ds}-{arch}")
+            logger.warning(f"No baseline found for Architecture: {arch} on Dataset: {ds}. Metrics will not be normalized.")
             for _, r in g.iterrows(): out.append(r)
             continue
 
+        logger.debug(f"Found baseline for {arch} on {ds}: '{baseline['exp_name']}' with Acc: {baseline['accuracy']}")
+
         for _, r in g.iterrows():
             row = r.copy()
-            if baseline["params"]:
+            # Added pd.notnull and > 0 check to prevent division by zero or NaN propagation
+            if pd.notnull(baseline.get("params")) and baseline["params"] > 0:
                 row["d_acc"] = r["accuracy"] - baseline["accuracy"] 
-                row["acc_drop"] = baseline["accuracy"] - r["accuracy"] # Added explicitly for scatter plots
-                row["baseline_acc"] = baseline["accuracy"] # Added to plot pareto threshold
+                row["acc_drop"] = baseline["accuracy"] - r["accuracy"] 
+                row["baseline_acc"] = baseline["accuracy"] 
                 row["d_params"] = 100 * (1 - r["params"] / baseline["params"])
-                row["d_flops"] = 100 * (1 - r["flops"] / baseline["flops"])
-                row["d_memory"] = 100 * (1 - r["memory"] / baseline["memory"])
+                
+                if pd.notnull(baseline.get("flops")) and baseline["flops"] > 0:
+                    row["d_flops"] = 100 * (1 - r["flops"] / baseline["flops"])
+                if pd.notnull(baseline.get("memory")) and baseline["memory"] > 0:
+                    row["d_memory"] = 100 * (1 - r["memory"] / baseline["memory"])
             out.append(row)
+            
     return pd.DataFrame(out)
 
 # =========================
@@ -223,11 +231,9 @@ def fig1(
     metrics: list[str] = ["accuracy", "params", "flops", "memory"], 
     out_dir: Path = Path("./figures/individual_plots"),
 ):
-    """
-    Generates improved INDIVIDUAL plot files AND LaTeX tables.
-    """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Generating Individual Bar Plots & Tables in {out_dir}")
     
     metric_titles = {
         "accuracy": "Accuracy (%)",
@@ -237,10 +243,10 @@ def fig1(
     }
     
     palette = {
-        "Baseline": "#333333",      # Dark Grey
-        "Pruned": "#1f77b4",        # Blue
-        "Not Pruned": "#ff7f0e",    # Orange
-        "Collapsed": "#2ca02c"      # Green
+        "Baseline": "#333333",      
+        "Pruned": "#1f77b4",        
+        "Not Pruned": "#ff7f0e",    
+        "Collapsed": "#2ca02c"      
     }
 
     group_cols = ["dataset", "architecture", "base_name", "display_name", "posthoc_or_posttrain", "is_quantized"]
@@ -274,7 +280,7 @@ def fig1(
             rename_map.update(metric_titles)
             table_df.rename(columns=rename_map, inplace=True)
             
-            table_cols = ["Model", "Type"] + [metric_titles[m] for m in available_metrics]
+            table_cols = ["Model", "Type"] + [metric_titles.get(m, m) for m in available_metrics]
             float_fmt = lambda x: f"{x:.4f}" if x < 10 else f"{x:.2f}"
             
             df_unquant = table_df[table_df["is_quantized"] == False][table_cols]
@@ -288,6 +294,7 @@ def fig1(
                     label=f"tab:{architecture}_{dataset}_unquant", escape=True,
                     column_format="ll" + "c" * len(available_metrics)
                 )
+                logger.debug(f"Saved LaTeX Table: {tex_filename_unq}")
 
             if not df_quant.empty:
                 tex_filename_q = f"{architecture}_{dataset}_quantized_table.tex".replace(" ", "_")
@@ -297,10 +304,12 @@ def fig1(
                     label=f"tab:{architecture}_{dataset}_quant", escape=True,
                     column_format="ll" + "c" * len(available_metrics)
                 )
+                logger.debug(f"Saved LaTeX Table: {tex_filename_q}")
 
             # --- Plot Generation ---
             for metric in metrics:
                 if metric not in g_dataset.columns or g_dataset[metric].isnull().all():
+                    logger.debug(f"Skipping plot for {metric} (No data) for {architecture} on {dataset}")
                     continue
 
                 fig, ax = plt.subplots(figsize=(12, 6))
@@ -337,7 +346,7 @@ def fig1(
                 filename = f"{architecture}_{dataset}_{metric}.png".replace(" ", "_")
                 plt.savefig(out_dir / filename)
                 plt.close()
-                print(f"[Plot] Saved {filename}")
+                logger.info(f"Saved Bar Plot: {filename}")
 
 
 def fig2_correlation_and_pareto(
@@ -345,40 +354,37 @@ def fig2_correlation_and_pareto(
     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
     out_dir: Path = Path("./figures/correlation_plots")
 ):
-    """
-    Merges normalized accuracy metrics with heuristic statistics (Median Variance) 
-    to generate the Scatter Proof Plot and the Pareto Efficiency Curve.
-    """
     out_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Generating Correlation & Pareto Plots in {out_dir}")
 
-    # We want to average the results (e.g., combining quant/non-quant drops) to get a clean scatter plot
     df_agg = df.groupby(["dataset", "architecture", "base_name"]).mean(numeric_only=True).reset_index()
 
     for (dataset, arch), g_metrics in df_agg.groupby(["dataset", "architecture"]):
-        
-        # Load the corresponding heuristic stats file generated by transfer.py
         csv_filename = f"{arch}_{dataset}_experiment_block_stats.csv"
         csv_path = stats_dir / csv_filename
         
         if not csv_path.exists():
-            print(f"[Skip] Heuristic stats not found for {arch} on {dataset} ({csv_path})")
+            logger.warning(f"Heuristic stats missing for {arch} on {dataset}. Expected: {csv_path}")
             continue
             
         try:
             df_heuristics = pd.read_csv(csv_path)
+            logger.debug(f"Loaded {len(df_heuristics)} rows from {csv_filename}")
         except Exception as e:
-            print(f"[!] Failed to read {csv_path}: {e}")
+            logger.error(f"Failed to read {csv_path}: {e}")
             continue
             
         # Merge metrics with heuristics
-        # CSV has "Experiment", df has "base_name"
         df_merged = pd.merge(df_heuristics, g_metrics, left_on="Experiment", right_on="base_name", how="inner")
         
         if df_merged.empty:
-            print(f"[!] Merge failed for {arch} on {dataset}. Check naming alignments.")
+            logger.error(f"Merge failed for {arch} on {dataset}. CSV Exp vs JSON BaseName misalignment.")
+            logger.debug(f"CSV Experiments: {df_heuristics['Experiment'].unique().tolist()}")
+            logger.debug(f"JSON BaseNames: {g_metrics['base_name'].unique().tolist()}")
             continue
             
-        # Optional: Grab baseline accuracy for thresholding
+        logger.info(f"Successfully merged {len(df_merged)} stats for {arch} on {dataset}.")
+            
         baseline_acc = g_metrics["baseline_acc"].max() if "baseline_acc" in g_metrics.columns else 100.0
             
         # =========================================================
@@ -389,10 +395,9 @@ def fig2_correlation_and_pareto(
         sns.scatterplot(
             data=df_merged, x="Median Variance", y="acc_drop", 
             hue="acc_drop", palette="coolwarm", size="d_params", sizes=(50, 300), 
-            edgecolor="black", linewidth=1, ax=ax, legend="brief"
+            edgecolor="black", linewidth=1, ax=ax, legend=False
         )
-        # remove legend
-        ax.legend([], [], frameon=False)
+        
         for i in range(df_merged.shape[0]):
             ax.text(
                 df_merged["Median Variance"].iloc[i], 
@@ -417,7 +422,7 @@ def fig2_correlation_and_pareto(
         proof_filename = out_dir / f"{arch}_{dataset}_heuristic_proof.png".replace(" ", "_")
         plt.savefig(proof_filename, dpi=300)
         plt.close()
-        print(f"[Plot] Saved Scatter Proof: {proof_filename.name}")
+        logger.info(f"Saved Scatter Proof: {proof_filename.name}")
 
         # =========================================================
         # 2. The "Value" Plot - Pareto Efficiency Curve
@@ -427,7 +432,7 @@ def fig2_correlation_and_pareto(
         sns.scatterplot(
             data=df_merged, x="d_params", y="accuracy", 
             hue="Median Variance", palette="viridis", s=150, 
-            edgecolor="black", linewidth=1.5, ax=ax
+            edgecolor="black", linewidth=1.5, ax=ax, legend=False
         )
 
         ax.scatter([0], [baseline_acc], color="gold", marker="*", s=500, edgecolor="black", label="Baseline Model")
@@ -443,7 +448,6 @@ def fig2_correlation_and_pareto(
         ax.set_title(f"Efficiency Frontier: Compression vs Accuracy\n{arch} | {dataset}", fontweight='bold', pad=15)
         ax.set_ylabel("Final Accuracy (%)", fontweight='bold')
         ax.set_xlabel("Parameters Removed (%) -> Higher is Better", fontweight='bold')
-        # ax.legend(loc='lower left')
         
         ax.axhline(baseline_acc, color='black', linestyle='-', alpha=0.5)
         ax.axhline(baseline_acc - 2.0, color='red', linestyle='--', alpha=0.5, label="2% Degradation Limit")
@@ -453,7 +457,7 @@ def fig2_correlation_and_pareto(
         pareto_filename = out_dir / f"{arch}_{dataset}_pareto_efficiency.png".replace(" ", "_")
         plt.savefig(pareto_filename, dpi=300)
         plt.close()
-        print(f"[Plot] Saved Pareto Efficiency: {pareto_filename.name}")
+        logger.info(f"Saved Pareto Efficiency: {pareto_filename.name}")
 
 
 import argparse
@@ -470,32 +474,32 @@ if __name__ == "__main__":
     try:
         raw = load_results()
         
-        # --- NEW: Filter the data based on command line arguments ---
         if args.model:
-            # We use str.contains or exact match based on your architecture naming
+            logger.info(f"Filtering down to architecture: {args.model}")
             raw = raw[raw["architecture"] == args.model]
         if args.dataset:
+            logger.info(f"Filtering down to dataset: {args.dataset}")
             raw = raw[raw["dataset"] == args.dataset]
             
         if raw.empty:
-            print(f"[!] No data found matching Model='{args.model}' and Dataset='{args.dataset}'. Exiting plot generation.")
+            logger.error(f"No data found matching Model='{args.model}' and Dataset='{args.dataset}'. Exiting.")
             exit(0)
             
         df = normalize(raw)
         
-        print("\n==============================")
-        print(" GENERATING FIGURES & DATA ")
-        print("==============================")
+        logger.info("==============================")
+        logger.info(" GENERATING FIGURES & DATA ")
+        logger.info("==============================")
         
         # 1. Generate Individual Bar Charts & Tables
         fig1(df)
         
         # 2. Generate Scatter Proof & Pareto Efficiency Curves
         fig2_correlation_and_pareto(df)
+        
+        logger.info("Execution completed successfully.")
                
     except FileNotFoundError as e:
-        print(f"Error: {e}")
+        logger.error(f"File Error: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.critical(f"An unexpected error occurred: {e}", exc_info=True)
