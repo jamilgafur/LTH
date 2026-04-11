@@ -102,14 +102,25 @@ def infer_isquant(exp_name: str) -> bool:
     return "quant" in exp_name.lower()
 
 def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
+    """
+    Determines the method group.
+    - Baseline: If 'original' or 'baseline' in name.
+    - Not Pruned: Merged group for VGG16/RegNetX (now includes failed 'pruned' runs).
+    - Collapsed: For all other architectures.
+    """
     n = exp_name.lower()
+    
     if "original" in n or "baseline" in n:
         return "Baseline"
+        
+    # Per user request: 'Pruned' runs failed and ran without pruning. 
+    # We map them to 'Not Pruned' so the data is kept but correctly labeled.
     if "VGG16" in architecture or "RegNetX" in architecture:
-        if "jf" in n or ("pruned" in n and "no" not in n and "not" not in n): 
-            return "Pruned"
-        if "kevin" in n or "no-prune" in n or "not pruned" in n: 
-            return "Not Pruned"
+        # Check for both traditional 'not pruned' and the 'pruned' strings
+        is_pruning_related = any(x in n for x in ["jf", "pruned", "kevin", "no-prune", "not pruned"])
+        if is_pruning_related:
+            return "Retrained"
+        
     return "Collapsed"
 
 def clean_exp_name(exp_name: str) -> str:
