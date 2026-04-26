@@ -486,6 +486,87 @@ def fig2_correlation_and_pareto(
         plt.savefig(out_dir / f"{arch}_{dataset}_pareto_efficiency.pdf", dpi=300)
         plt.close()
 
+
+def fig3_v2t_heuristic_validation(
+    df: pd.DataFrame, 
+    stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
+    out_dir: Path = Path("./figures/heuristic_validation")
+):
+    """
+    Creates a high-level scientific plot proving the V2T Heuristic.
+    X-axis: Median Variance of the collapsed block.
+    Y-axis: Accuracy Drop (0 = no drop, higher = worse).
+    Color: Topology Type (Single-Path vs Multi-Path).
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Generating V2T Heuristic Validation Map in {out_dir}")
+
+    # 1. Define Topologies for categorization
+    multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
+    single_path_archs = ["VGG16", "MobileNet"]
+
+    # 2. Prepare aggregated data
+    df_agg = df.groupby(["dataset", "architecture", "base_name"]).mean(numeric_only=True).reset_index()
+    all_merged_data = []
+
+    for (dataset, arch), g_metrics in df_agg.groupby(["dataset", "architecture"]):
+        csv_filename = f"{arch}_{dataset}_experiment_block_stats.csv"
+        csv_path = stats_dir / csv_filename
+        
+        if csv_path.exists():
+            df_heuristics = pd.read_csv(csv_path)
+            merged = pd.merge(df_heuristics, g_metrics, left_on="Experiment", right_on="base_name")
+            merged["Topology"] = "Multi-Path" if arch in multi_path_archs else "Single-Path"
+            all_merged_data.append(merged)
+
+    if not all_merged_data:
+        logger.warning("No heuristic stats found. Skipping Fig 3.")
+        return
+
+    full_df = pd.concat(all_merged_data)
+
+    # 3. Create the Visualization
+    fig, ax = plt.subplots(figsize=(10, 7))
+    
+    # We use a custom 'Performance Impact' metric for the Y-axis
+    # (Accuracy Drop / Parameters Removed) to show "Value per Param"
+    full_df['efficiency'] = full_df['acc_drop'] / (full_df['d_params'] + 1e-6)
+
+    sns.scatterplot(
+        data=full_df, 
+        x="Median Variance", 
+        y="acc_drop", 
+        hue="Topology", 
+        style="architecture",
+        size="d_params", 
+        sizes=(50, 400),
+        alpha=0.7, 
+        edgecolor="black", 
+        linewidth=1, 
+        ax=ax
+    )
+
+    # 4. Annotate the "Safe Zones" defined in your Method.tex
+    # Single-Path Safe Zone: Low Variance
+    ax.axvspan(0.1, 10, color='green', alpha=0.1, label="Single-Path Safe Zone")
+    # Multi-Path Safe Zone: High Variance Spikes
+    ax.axvspan(100, full_df["Median Variance"].max(), color='orange', alpha=0.1, label="Multi-Path Safe Zone")
+
+    # Formatting
+    ax.set_xscale('log')
+    ax.axhline(0, color='black', linestyle='--', linewidth=1.5)
+    ax.set_title("V2T Heuristic Validation: Variance vs. Stability", fontsize=16)
+    ax.set_xlabel("Median Activation Variance (Log Scale)", fontweight='bold')
+    ax.set_ylabel(r"Accuracy Drop ($\Delta\%$) $\rightarrow$ Lower is Better", fontweight='bold')
+    
+    # Move legend outside
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True, edgecolor='black')
+    
+    sns.despine()
+    plt.tight_layout()
+    plt.savefig(out_dir / "V2T_heuristic_validation_map.pdf", dpi=300)
+    plt.close()
+
 import argparse
 
 # =========================
@@ -522,6 +603,7 @@ if __name__ == "__main__":
         
         # 2. Generate Scatter Proof & Pareto Efficiency Curves
         fig2_correlation_and_pareto(df)
+        fig3_v2t_heuristic_validation(df)
         
         logger.info("Execution completed successfully.")
                
