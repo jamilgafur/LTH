@@ -428,7 +428,7 @@ def fig2_correlation_and_pareto(
         ax.grid(True, linestyle=":", alpha=0.5)
         
         plt.tight_layout()
-        plt.savefig(out_dir / f"{arch}_{dataset}_heuristic_proof.pdf", dpi=300) # Save as PDF for vector scaling
+        plt.savefig(out_dir / f"{arch}_{dataset}_heuristic_proof.png", dpi=300) # Save as png for vector scaling
         plt.close()
 
         # =========================================================
@@ -484,7 +484,7 @@ def fig2_correlation_and_pareto(
         ax.grid(True, linestyle=":", alpha=0.5)
         
         plt.tight_layout()
-        plt.savefig(out_dir / f"{arch}_{dataset}_pareto_efficiency.pdf", dpi=300)
+        plt.savefig(out_dir / f"{arch}_{dataset}_pareto_efficiency.png", dpi=300)
         plt.close()
 
 
@@ -645,7 +645,7 @@ def fig4_heuristic_search_space_map(
         ax1.set_title(f"Heuristic Search Space Map: {arch}\n{title_type}", fontsize=16, fontweight='bold')
 
         plt.tight_layout()
-        plt.savefig(out_dir / f"{arch}_{dataset}_search_space_ladder.pdf")
+        plt.savefig(out_dir / f"{arch}_{dataset}_search_space_ladder.png")
         plt.close()
 
 import argparse
