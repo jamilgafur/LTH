@@ -253,12 +253,13 @@ def fig1(
         "memory": "Memory (MB)",
     }
     
+    # Inside fig1 function in Journal_plot.py
     palette = {
-        "Baseline": "#333333",      
-        "Pruned": "#1f77b4",        
-        "Not Pruned": "#ff7f0e",    
-        "Collapsed": "#2ca02c"      
-    }
+    "Baseline": "#333333",      
+    "Retrained": "#ff7f0e",  # Mapping legacy 'pruned' runs to Retrained color
+    "Not Pruned": "#ff7f0e",    
+    "Collapsed": "#2ca02c"      
+}
 
     group_cols = ["dataset", "architecture", "base_name", "display_name", "posthoc_or_posttrain", "is_quantized"]
     available_metrics = [m for m in metrics if m in df.columns]
