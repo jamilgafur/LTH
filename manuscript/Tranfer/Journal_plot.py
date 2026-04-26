@@ -114,11 +114,15 @@ def clean_exp_name(exp_name: str) -> str:
     return n.strip()
 
 def find_baseline(df: pd.DataFrame):
+    """
+    CRITICAL FIX: Averages all valid, unquantized baselines to ensure 
+    the d_acc math perfectly matches the bar charts.
+    """
     mask = (df["exp_name"].str.lower().str.contains("original") | df["exp_name"].str.lower().str.contains("baseline"))
-    # Ensure we grab the unquantized baseline if multiple exist
-    m = df[mask & (df["is_quantized"] == False)].sort_values("exp_name")
-    if m.empty: m = df[mask].sort_values("exp_name")
-    return None if m.empty else m.iloc[0]
+    b_df = df[mask & (df["is_quantized"] == False)]
+    if b_df.empty: b_df = df[mask]
+    if b_df.empty: return None
+    return b_df.mean(numeric_only=True)
 
 def load_results() -> pd.DataFrame:
     logger.info(f"Scanning for metrics files in {RESULTS_DIR.resolve()}")
@@ -160,7 +164,6 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
             row = r.copy()
             if pd.notnull(baseline.get("params")) and baseline["params"] > 0:
                 row["d_acc"] = r["accuracy"] - baseline["accuracy"] 
-                row["acc_drop"] = baseline["accuracy"] - r["accuracy"] 
                 row["baseline_acc"] = baseline["accuracy"] 
                 row["d_params"] = 100 * (1 - r["params"] / baseline["params"])
                 if pd.notnull(baseline.get("flops")) and baseline["flops"] > 0:
@@ -226,14 +229,14 @@ def fig2_correlation_and_pareto(df: pd.DataFrame, stats_dir: Path = Path("./runs
 def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/heuristic_validation")):
     """
     Split-Panel Validation Map: 
-    Directly proves the 'Inverted Heuristic' logic by separating Single-Path and Multi-Path models.
+    Directly proves the V2T Heuristic.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
     all_merged_data = []
     
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        # CRITICAL FIX: Only look at pure Collapsed, unquantized models to eliminate noise
+        # Only evaluate unquantized, purely collapsed architectures
         clean_metrics = g_metrics[(g_metrics['is_quantized'] == False) & (g_metrics['posthoc_or_posttrain'] == 'Collapsed')]
         if clean_metrics.empty: continue
             
@@ -247,63 +250,74 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
     if not all_merged_data: return
     full_df = pd.concat(all_merged_data)
     
-    fig, axes = plt.subplots(1, 2, figsize=(15, 6), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(16, 7), sharey=True)
+    plt.subplots_adjust(wspace=0.05)
+    
+    # Shared Y-axis baseline
+    for ax in axes:
+        ax.axhline(0, color='black', linestyle='--', linewidth=2, zorder=1)
+        ax.axhspan(0, 100, color='#2ca02c', alpha=0.05, zorder=0, label="Accuracy Improved")
+        ax.axhspan(-2.0, 0, color='#ff7f0e', alpha=0.05, zorder=0, label="Minor Degradation (<2%)")
+        ax.axhspan(-100, -2.0, color='#d62728', alpha=0.05, zorder=0, label="Severe Degradation")
+        ax.set_ylim(full_df['d_acc'].min() - 2, max(full_df['d_acc'].max() + 2, 5))
     
     # --- Panel 1: Single-Path ---
     sp_df = full_df[full_df['Topology'] == 'Single-Path']
     if not sp_df.empty:
         sns.scatterplot(data=sp_df, x="Median Variance", y="d_acc", style="architecture", 
-                        s=200, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[0])
-        axes[0].axhline(0, color='black', linestyle='--')
-        med_var = sp_df["Median Variance"].median()
-        axes[0].axvspan(1e-3, med_var, color='#2ca02c', alpha=0.1, label=f"Target: Low Variance (<{med_var:.1f})")
-        axes[0].set_xscale('log')
-        axes[0].set_title("Single-Path: Flat is Safe", fontsize=14, fontweight='bold')
-        axes[0].set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better")
-        axes[0].set_xlabel("Median Activation Variance (Log Scale)")
-        axes[0].legend(loc="lower left")
+                        s=250, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[0], zorder=3)
+        
+        q1 = sp_df["Median Variance"].quantile(0.3)
+        axes[0].axvspan(1e-4, q1, color='#2ca02c', alpha=0.15, zorder=0, label=f"V2T Target: Flat Flow (<{q1:.1f})")
+        
+        axes[0].set_xscale('symlog', linthresh=1e-2)
+        axes[0].set_title("Single-Path: Target Flat Representation", fontsize=16, fontweight='bold', pad=15)
+        axes[0].set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better", fontsize=14, fontweight='bold')
+        axes[0].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
+        axes[0].legend(loc="lower left", framealpha=0.9)
         
     # --- Panel 2: Multi-Path ---
     mp_df = full_df[full_df['Topology'] == 'Multi-Path']
     if not mp_df.empty:
         sns.scatterplot(data=mp_df, x="Median Variance", y="d_acc", style="architecture", 
-                        s=200, alpha=0.9, edgecolor="black", color="#d62728", ax=axes[1])
-        axes[1].axhline(0, color='black', linestyle='--')
-        med_var = mp_df["Median Variance"].median()
-        max_var = mp_df["Median Variance"].max()
-        axes[1].axvspan(med_var, max_var*2, color='#d62728', alpha=0.1, label=f"Target: High Spikes (>{med_var:.1f})")
-        axes[1].set_xscale('log')
-        axes[1].set_title("Multi-Path: Spikes are Safe", fontsize=14, fontweight='bold')
-        axes[1].set_xlabel("Median Activation Variance (Log Scale)")
-        axes[1].legend(loc="lower left")
+                        s=250, alpha=0.9, edgecolor="black", color="#d62728", ax=axes[1], zorder=3)
+        
+        q3 = mp_df["Median Variance"].quantile(0.6)
+        axes[1].axvspan(q3, mp_df["Median Variance"].max() * 5, color='#d62728', alpha=0.15, zorder=0, label=f"V2T Target: High Spikes (>{q3:.1f})")
+        
+        axes[1].set_xscale('symlog', linthresh=1e-2)
+        axes[1].set_title("Multi-Path: Target Overfitting Spikes", fontsize=16, fontweight='bold', pad=15)
+        axes[1].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
+        axes[1].legend(loc="lower right", framealpha=0.9)
 
     sns.despine()
-    plt.tight_layout()
     plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
     plt.close()
     logger.info("Generated Split-Panel Heuristic Validation Map.")
 
 def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/search_space")):
     """
-    Ladder Plot: Now accurately targets Topology-specific safe zones and filters out retrained/quantized runs.
+    Ladder Plot: Prevents 'N/A' by strictly matching experiment strings and filtering quant noise.
+    Prevents log-scale crashing by applying safe bounds to the variance data.
     """
     from transfer import EXPERIMENTS 
     out_dir.mkdir(parents=True, exist_ok=True)
     
     def get_acc_color(d_acc):
-        if d_acc >= -3.0: return "#2ca02c" # Green: Excellent (Drop <= 3%)
-        if d_acc >= -8.0: return "#ff7f0e" # Orange: Moderate (Drop 3-8%)
-        return "#d62728"                   # Red: Poor (Drop > 8%)
+        if d_acc >= -2.0: return "#2ca02c" # Green: Excellent (Within 2% of baseline)
+        if d_acc >= -6.0: return "#ff7f0e" # Orange: Moderate
+        return "#d62728"                   # Red: Poor
 
     def robust_match(target_name, g_df):
-        """CRITICAL FIX: Enforce non-quantized, purely collapsed lookup."""
+        # Enforce non-quantized, purely collapsed lookup
         sub_df = g_df[(g_df['is_quantized'] == False) & (g_df['posthoc_or_posttrain'] == 'Collapsed')]
-        if sub_df.empty: sub_df = g_df[(g_df['is_quantized'] == False)] # Fallback
+        if sub_df.empty: sub_df = g_df[(g_df['is_quantized'] == False)]
         if sub_df.empty: sub_df = g_df
 
         m = sub_df[sub_df['base_name'] == target_name]
         if not m.empty: return m
         
+        # Fuzzy fallback
         def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
         st = squash(target_name)
         for _, row in sub_df.iterrows():
@@ -319,7 +333,9 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
             
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
-        variances = layer_df['Variance'].values
+        
+        # CRITICAL FIX: Prevent log-scale crash by replacing 0.0 with a tiny epsilon
+        variances = np.maximum(layer_df['Variance'].values, 1e-6)
         
         model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
         if not model_exps: continue
@@ -331,18 +347,22 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         ax_var.plot(range(len(layers)), variances, color='#555555', linewidth=1.5, alpha=0.8, label="Activation Variance")
         ax_var.set_yscale('log')
         ax_var.set_ylabel("Variance ($\sigma^2$)")
-        ax_var.set_title(f"Heuristic Selection Guide: {arch} on {dataset}", loc='left', pad=20)
+        ax_var.set_title(f"Heuristic Search Space Guide: {arch} on {dataset}", loc='left', pad=20, fontsize=16, fontweight='bold')
+        
+        # Determine Safe Y-limits
+        y_min = max(1e-4, min(variances) * 0.5)
+        y_max = max(variances) * 2.0
+        ax_var.set_ylim(y_min, y_max)
         
         is_multi = arch in multi_path_archs
         if is_multi:
             var_thresh = np.percentile(variances, 60)
-            ax_var.axhline(y=var_thresh, color='#d62728', linestyle='--', alpha=0.5, label="Multi-Path Safe Threshold")
-            ax_var.fill_between(range(len(layers)), var_thresh, max(variances)*2, where=(variances > var_thresh), color='#d62728', alpha=0.15, label="Target Safe Zone (Spikes)")
-            ax_var.set_ylim(min(variances)*0.5, max(variances)*2)
+            ax_var.axhline(y=var_thresh, color='#d62728', linestyle='--', alpha=0.5, label="Multi-Path Threshold (Spikes)")
+            ax_var.fill_between(range(len(layers)), var_thresh, y_max, where=(variances >= var_thresh), color='#d62728', alpha=0.15)
         else:
-            var_thresh = np.percentile(variances, 40)
-            ax_var.axhline(y=var_thresh, color='#2ca02c', linestyle='--', alpha=0.5, label="Single-Path Safe Threshold")
-            ax_var.fill_between(range(len(layers)), 0, var_thresh, where=(variances < var_thresh), color='#2ca02c', alpha=0.15, label="Target Safe Zone (Flat)")
+            var_thresh = np.percentile(variances, 30)
+            ax_var.axhline(y=var_thresh, color='#2ca02c', linestyle='--', alpha=0.5, label="Single-Path Threshold (Flat)")
+            ax_var.fill_between(range(len(layers)), y_min, var_thresh, where=(variances <= var_thresh), color='#2ca02c', alpha=0.15)
 
         ax_var.legend(loc='upper right', frameon=True, fontsize=10)
 
@@ -368,7 +388,7 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
                 d_acc = exp_results['d_acc'].iloc[0]
                 final_acc = exp_results['accuracy'].iloc[0]
                 color = get_acc_color(d_acc)
-                label_text = f"{final_acc:.1f}% ({d_acc:+.1f}%)"
+                label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
             else:
                 color = 'gray'
                 label_text = "N/A"
@@ -384,7 +404,7 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         ax_heur.set_yticks(range(len(exp_list)))
         ax_heur.set_yticklabels([clean_exp_name(e) for e in exp_list], fontsize=10)
         ax_heur.set_xlabel("Network Depth (Layer Index)")
-        ax_heur.set_ylabel("Collapsed Layer Heuristics")
+        ax_heur.set_ylabel("Collapsed Layer Candidates")
         
         sns.despine(ax=ax_var)
         sns.despine(ax=ax_heur)
