@@ -360,6 +360,8 @@ def fig1(
                 logger.info(f"Saved Bar Plot: {filename}")
 
 
+from adjustText import adjust_text
+
 def fig2_correlation_and_pareto(
     df: pd.DataFrame, 
     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
@@ -375,101 +377,114 @@ def fig2_correlation_and_pareto(
         csv_path = stats_dir / csv_filename
         
         if not csv_path.exists():
-            logger.warning(f"Heuristic stats missing for {arch} on {dataset}. Expected: {csv_path}")
             continue
             
-        try:
-            df_heuristics = pd.read_csv(csv_path)
-            logger.debug(f"Loaded {len(df_heuristics)} rows from {csv_filename}")
-        except Exception as e:
-            logger.error(f"Failed to read {csv_path}: {e}")
-            continue
-            
-        # Merge metrics with heuristics
+        df_heuristics = pd.read_csv(csv_path)
         df_merged = pd.merge(df_heuristics, g_metrics, left_on="Experiment", right_on="base_name", how="inner")
         
-        if df_merged.empty:
-            logger.error(f"Merge failed for {arch} on {dataset}. CSV Exp vs JSON BaseName misalignment.")
-            logger.debug(f"CSV Experiments: {df_heuristics['Experiment'].unique().tolist()}")
-            logger.debug(f"JSON BaseNames: {g_metrics['base_name'].unique().tolist()}")
-            continue
-            
-        logger.info(f"Successfully merged {len(df_merged)} stats for {arch} on {dataset}.")
+        if df_merged.empty: continue
             
         baseline_acc = g_metrics["baseline_acc"].max() if "baseline_acc" in g_metrics.columns else 100.0
             
         # =========================================================
         # 1. The "Proof" Plot - Variance vs Accuracy Drop
         # =========================================================
-        fig, ax = plt.subplots(figsize=(10, 7))
+        fig, ax = plt.subplots(figsize=(8, 6)) # Standardized size for IEEE/ACM double-column
+
+        # Use distinct markers based on whether accuracy dropped or improved
+        df_merged['acc_improved'] = df_merged['acc_drop'] < 0
+        markers = {True: '^', False: 'o'} # Triangles for improvement, circles for degradation
 
         sns.scatterplot(
             data=df_merged, x="Median Variance", y="acc_drop", 
-            hue="acc_drop", palette="coolwarm", size="d_params", sizes=(50, 300), 
-            edgecolor="black", linewidth=1, ax=ax, legend=False
+            hue="acc_drop", palette="coolwarm", size="d_params", sizes=(60, 250), 
+            style="acc_improved", markers=markers, edgecolor="black", linewidth=1, ax=ax, legend=False
         )
         
+        # Smart text adjustment to prevent overlapping
+        texts = []
         for i in range(df_merged.shape[0]):
-            ax.text(
+            texts.append(ax.text(
                 df_merged["Median Variance"].iloc[i], 
-                df_merged["acc_drop"].iloc[i] + 0.5, 
+                df_merged["acc_drop"].iloc[i], 
                 df_merged["Experiment"].iloc[i], 
-                horizontalalignment='center', size='small', color='black', alpha=0.7
-            )
+                size=9, color='black', zorder=10
+            ))
+        
+        adjust_text(texts, arrowprops=dict(arrowstyle="-", color='gray', lw=0.8, alpha=0.7), ax=ax)
 
         ax.set_xscale('symlog', linthresh=10.0) 
-        ax.axhline(0, color='black', linestyle='--', linewidth=1)
+        ax.axhline(0, color='black', linestyle='--', linewidth=1.5)
         
         y_max = max(df_merged["acc_drop"].max() * 1.1, 10.0)
-        ax.axhspan(-5, 2, color='#e6f4ea', alpha=0.3, zorder=0) 
-        ax.axhspan(2, y_max, color='#fce8e6', alpha=0.3, zorder=0) 
+        ax.axhspan(-5, 0, color='#e6f4ea', alpha=0.4, zorder=0) # Green safe zone
+        ax.axhspan(0, y_max, color='#fce8e6', alpha=0.4, zorder=0) # Red danger zone
 
-        ax.set_title(f"Heuristic Validation: Variance vs Network Failure\n{arch} | {dataset}", fontweight='bold', pad=15)
-        ax.set_ylabel("Accuracy Drop (%) -> Lower is Better", fontweight='bold')
-        ax.set_xlabel("Block Median Variance (SymLog Scale) -> Predicts Information Bottleneck", fontweight='bold')
+        ax.set_title(f"Heuristic Validation: {arch} on {dataset}", fontweight='bold')
+        ax.set_ylabel(r"$\Delta$ Accuracy (\%) $\rightarrow$ Lower is Better", fontweight='bold')
+        ax.set_xlabel("Block Median Variance (SymLog) $\rightarrow$ Represents Info Bottleneck", fontweight='bold')
         sns.despine()
+        ax.grid(True, linestyle=":", alpha=0.5)
         
         plt.tight_layout()
-        proof_filename = out_dir / f"{arch}_{dataset}_heuristic_proof.png".replace(" ", "_")
-        plt.savefig(proof_filename, dpi=300)
+        plt.savefig(out_dir / f"{arch}_{dataset}_heuristic_proof.pdf", dpi=300) # Save as PDF for vector scaling
         plt.close()
-        logger.info(f"Saved Scatter Proof: {proof_filename.name}")
 
         # =========================================================
         # 2. The "Value" Plot - Pareto Efficiency Curve
         # =========================================================
-        fig, ax = plt.subplots(figsize=(10, 7))
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        # Calculate mathematical Pareto Frontier
+        # Sort by parameters removed (descending), keep tracking the max accuracy
+        pareto_df = df_merged.sort_values("d_params", ascending=False)
+        pareto_front_x, pareto_front_y = [0], [baseline_acc] # Baseline starts the frontier
+        max_acc_seen = -float('inf')
+
+        for _, row in pareto_df.iterrows():
+            if row["accuracy"] >= max_acc_seen:
+                pareto_front_x.append(row["d_params"])
+                pareto_front_y.append(row["accuracy"])
+                max_acc_seen = row["accuracy"]
+
+        # Draw the Pareto curve (Step line)
+        ax.step(pareto_front_x, pareto_front_y, where='pre', color='darkorange', 
+                linestyle='-', linewidth=2, zorder=1, label="Pareto Frontier")
 
         sns.scatterplot(
             data=df_merged, x="d_params", y="accuracy", 
-            hue="Median Variance", palette="viridis", s=150, 
-            edgecolor="black", linewidth=1.5, ax=ax, legend=False
+            hue="Median Variance", palette="viridis", s=120, 
+            edgecolor="black", linewidth=1, ax=ax, legend=False, zorder=5
         )
 
-        ax.scatter([0], [baseline_acc], color="gold", marker="*", s=500, edgecolor="black", label="Baseline Model")
+        ax.scatter([0], [baseline_acc], color="gold", marker="*", s=400, 
+                   edgecolor="black", linewidth=1.5, label="Baseline Model", zorder=6)
 
+        texts = []
         for i in range(df_merged.shape[0]):
-            ax.text(
+            texts.append(ax.text(
                 df_merged["d_params"].iloc[i], 
-                df_merged["accuracy"].iloc[i] - 1.5, 
+                df_merged["accuracy"].iloc[i], 
                 df_merged["Experiment"].iloc[i], 
-                horizontalalignment='center', size='small', color='black', alpha=0.7
-            )
-
-        ax.set_title(f"Efficiency Frontier: Compression vs Accuracy\n{arch} | {dataset}", fontweight='bold', pad=15)
-        ax.set_ylabel("Final Accuracy (%)", fontweight='bold')
-        ax.set_xlabel("Parameters Removed (%) -> Higher is Better", fontweight='bold')
+                size=9, color='black', zorder=10
+            ))
         
-        ax.axhline(baseline_acc, color='black', linestyle='-', alpha=0.5)
+        adjust_text(texts, arrowprops=dict(arrowstyle="-", color='gray', lw=0.8, alpha=0.7), ax=ax)
+
+        ax.set_title(f"Efficiency Frontier: {arch} on {dataset}", fontweight='bold')
+        ax.set_ylabel("Final Accuracy (\%)", fontweight='bold')
+        ax.set_xlabel("Parameters Removed (\%) $\rightarrow$ Higher is Better", fontweight='bold')
+        
+        ax.axhline(baseline_acc, color='black', linestyle=':', alpha=0.7)
         ax.axhline(baseline_acc - 2.0, color='red', linestyle='--', alpha=0.5, label="2% Degradation Limit")
         
+        ax.legend(loc="lower left", frameon=True, fancybox=True, shadow=False, edgecolor='black')
         sns.despine()
+        ax.grid(True, linestyle=":", alpha=0.5)
+        
         plt.tight_layout()
-        pareto_filename = out_dir / f"{arch}_{dataset}_pareto_efficiency.png".replace(" ", "_")
-        plt.savefig(pareto_filename, dpi=300)
+        plt.savefig(out_dir / f"{arch}_{dataset}_pareto_efficiency.pdf", dpi=300)
         plt.close()
-        logger.info(f"Saved Pareto Efficiency: {pareto_filename.name}")
-
 
 import argparse
 
