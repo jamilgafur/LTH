@@ -578,36 +578,30 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", type=str, default=None, help="Target dataset to plot (e.g., tinyimagenet)")
     args = parser.parse_args()
 
-    try:
-        raw = load_results()
+    raw = load_results()
+    
+    if args.model:
+        logger.info(f"Filtering down to architecture: {args.model}")
+        raw = raw[raw["architecture"] == args.model]
+    if args.dataset:
+        logger.info(f"Filtering down to dataset: {args.dataset}")
+        raw = raw[raw["dataset"] == args.dataset]
         
-        if args.model:
-            logger.info(f"Filtering down to architecture: {args.model}")
-            raw = raw[raw["architecture"] == args.model]
-        if args.dataset:
-            logger.info(f"Filtering down to dataset: {args.dataset}")
-            raw = raw[raw["dataset"] == args.dataset]
-            
-        if raw.empty:
-            logger.error(f"No data found matching Model='{args.model}' and Dataset='{args.dataset}'. Exiting.")
-            exit(0)
-            
-        df = normalize(raw)
+    if raw.empty:
+        logger.error(f"No data found matching Model='{args.model}' and Dataset='{args.dataset}'. Exiting.")
+        exit(0)
         
-        logger.info("==============================")
-        logger.info(" GENERATING FIGURES & DATA ")
-        logger.info("==============================")
-        
-        # 1. Generate Individual Bar Charts & Tables
-        fig1(df)
-        
-        # 2. Generate Scatter Proof & Pareto Efficiency Curves
-        fig2_correlation_and_pareto(df)
-        fig3_v2t_heuristic_validation(df)
-        
-        logger.info("Execution completed successfully.")
-               
-    except FileNotFoundError as e:
-        logger.error(f"File Error: {e}")
-    except Exception as e:
-        logger.critical(f"An unexpected error occurred: {e}", exc_info=True)
+    df = normalize(raw)
+    
+    logger.info("==============================")
+    logger.info(" GENERATING FIGURES & DATA ")
+    logger.info("==============================")
+    
+    # 1. Generate Individual Bar Charts & Tables
+    fig1(df)
+    
+    # 2. Generate Scatter Proof & Pareto Efficiency Curves
+    fig2_correlation_and_pareto(df)
+    fig3_v2t_heuristic_validation(df)
+    
+    logger.info("Execution completed successfully.")
