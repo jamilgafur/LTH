@@ -16,8 +16,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Removed adjustText import
-
 # =========================
 # Configuration & Logging
 # =========================
@@ -172,7 +170,7 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(out)
 
 # =========================
-# Figure Generations (Updated to PNG and no adjustText)
+# Figure Generations
 # =========================
 
 def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", "memory"], out_dir: Path = Path("./figures/individual_plots")):
@@ -190,7 +188,7 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
                 fig, ax = plt.subplots(figsize=(12, 6))
                 sns.barplot(data=g_dataset, x="display_name", y=metric, hue="posthoc_or_posttrain", palette=palette, edgecolor="black", ax=ax)
                 plt.xticks(rotation=45, ha="right")
-                plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.png") # Changed to .png
+                plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.png")
                 plt.close()
 
 def fig2_correlation_and_pareto(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/correlation_plots")):
@@ -217,18 +215,19 @@ def fig2_correlation_and_pareto(df: pd.DataFrame, stats_dir: Path = Path("./runs
         ax.step(pareto_front_x, pareto_front_y, where='pre', color='darkorange', linewidth=2, label="Pareto Frontier")
         sns.scatterplot(data=df_merged, x="d_params", y="accuracy", hue="Median Variance", palette="viridis", s=120, ax=ax)
         
-        # Standard annotation without adjustText
         for _, row in df_merged.iterrows():
             ax.text(row["d_params"], row["accuracy"], row["Experiment"], size=8, alpha=0.8)
 
         ax.set_title(f"Efficiency Frontier: {arch}")
-        plt.savefig(out_dir / f"{arch}_{dataset}_pareto_efficiency.png") # Changed to .png
+        plt.savefig(out_dir / f"{arch}_{dataset}_pareto_efficiency.png")
         plt.close()
 
 def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/heuristic_validation")):
+    """Improved Validation Plot: Replaced blobs with clean markers and inverted Y-axis for clarity."""
     out_dir.mkdir(parents=True, exist_ok=True)
     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
     all_merged_data = []
+    
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         csv_path = stats_dir / f"{arch}_{dataset}_experiment_block_stats.csv"
         if csv_path.exists():
@@ -236,25 +235,45 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
             merged = pd.merge(df_h, g_metrics, left_on="Experiment", right_on="base_name")
             merged["Topology"] = "Multi-Path" if arch in multi_path_archs else "Single-Path"
             all_merged_data.append(merged)
+            
     if not all_merged_data: return
     full_df = pd.concat(all_merged_data)
+    
     fig, ax = plt.subplots(figsize=(10, 7))
-    sns.scatterplot(data=full_df, x="Median Variance", y="acc_drop", hue="Topology", style="architecture", size="d_params", ax=ax)
-    ax.axvspan(0.1, 10, color='green', alpha=0.1, label="Single-Path Safe Zone")
-    ax.axvspan(100, full_df["Median Variance"].max(), color='orange', alpha=0.1, label="Multi-Path Safe Zone")
+    
+    # Use d_acc (positive is better) and uniform marker size for cleaner aesthetics
+    sns.scatterplot(
+        data=full_df, x="Median Variance", y="d_acc", 
+        hue="Topology", style="architecture", 
+        s=120, alpha=0.85, edgecolor="black", linewidth=1, ax=ax
+    )
+    
+    ax.axhline(0, color='black', linestyle='--', linewidth=1.5, label="Baseline Accuracy")
+    
+    # Safe zones shading
+    ax.axvspan(1e-2, 10, color='#2ca02c', alpha=0.08, label="Single-Path Safe Zone")
+    max_var = full_df["Median Variance"].max()
+    ax.axvspan(100, max_var * 2 if max_var > 0 else 1000, color='#1f77b4', alpha=0.08, label="Multi-Path Safe Zone")
+    
     ax.set_xscale('log')
-    plt.savefig(out_dir / "V2T_heuristic_validation_map.png") # Changed to .png
+    ax.set_title("V2T Heuristic Validation: Variance vs. Accuracy Impact")
+    ax.set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better")
+    ax.set_xlabel("Median Activation Variance (Log Scale)")
+    
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True)
+    sns.despine()
+    
+    plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
     plt.close()
 
 def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/search_space")):
     """
-    Enhanced Journal Plot: Synchronized Variance Profile and Heuristic Accuracy Map.
-    Directly answers: 'Where is variance low, and how did that choice impact accuracy?'
+    Ladder Plot: Sorts experiments by network depth to visualize the search space.
+    Resolves the text matching bug so accuracy values render properly.
     """
     from transfer import EXPERIMENTS 
     out_dir.mkdir(parents=True, exist_ok=True)
     
-    # Define a color mapping for accuracy impact
     def get_acc_color(drop):
         if drop < 1.5: return "#2ca02c" # Green: Safe/Excellent
         if drop < 5.0: return "#ff7f0e" # Orange: Moderate
@@ -262,9 +281,7 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
-        if not csv_path.exists(): 
-            logger.warning(f"Skipping {arch}_{dataset}: No layer stats found.")
-            continue
+        if not csv_path.exists(): continue
             
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
@@ -273,32 +290,41 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
         if not model_exps: continue
         
-        # Create a two-panel synchronized figure
-        fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, 10), sharex=True, 
-                                             gridspec_kw={'height_ratios': [1, 2]})
+        fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, 10), sharex=True, gridspec_kw={'height_ratios': [1, 2]})
         plt.subplots_adjust(hspace=0.08)
 
-        # --- TOP PANEL: Activation Variance (The Heuristic Input) ---
+        # --- TOP PANEL: Activation Variance ---
         ax_var.plot(range(len(layers)), variances, color='#555555', linewidth=1.5, alpha=0.8, label="Activation Variance")
         ax_var.fill_between(range(len(layers)), variances, color='gray', alpha=0.1)
         ax_var.set_yscale('log')
         ax_var.set_ylabel("Variance ($\sigma^2$)")
         ax_var.set_title(f"Heuristic Selection Guide: {arch} on {dataset}", loc='left', pad=20)
         
-        # Highlight "Safe Zones" (Heuristic logic: low variance = low redundancy)
         variance_threshold = np.percentile(variances, 25)
         ax_var.axhline(y=variance_threshold, color='green', linestyle='--', alpha=0.3, label="Low Variance Threshold")
         ax_var.legend(loc='upper right', frameon=False)
 
-        # --- BOTTOM PANEL: Heuristic Decisions & Outcomes ---
+        # --- BOTTOM PANEL: Heuristic Decisions ---
         exp_list = [n for n, r in model_exps.items() if r is not None]
+        
+        # Sort experiments by depth (start_layer index) to create the ladder effect
+        def get_start_idx(exp_key):
+            ranges = model_exps[exp_key]
+            r = ranges[0] if isinstance(ranges, list) else ranges
+            try:
+                return next(idx for idx, n in enumerate(layers) if r[0] in n)
+            except StopIteration:
+                return 0
+                
+        exp_list = sorted(exp_list, key=get_start_idx, reverse=True)
         
         for i, exp_name in enumerate(exp_list):
             ranges = model_exps[exp_name]
             ranges = ranges if isinstance(ranges, list) else [ranges]
             
-            # Fetch accuracy data for this specific experiment
-            exp_results = g_metrics[g_metrics['base_name'] == exp_name]
+            # FIX: Clean the experiment name to match the dataframe's base_name
+            cleaned_name = clean_exp_name(exp_name)
+            exp_results = g_metrics[g_metrics['base_name'] == cleaned_name]
             
             if not exp_results.empty:
                 acc_drop = exp_results['acc_drop'].iloc[0]
@@ -309,16 +335,12 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
                 color = 'gray'
                 label_text = "N/A"
 
-            # Draw the horizontal collapse range
             for start_layer, end_layer in ranges:
                 try:
                     s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
                     e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
                     
-                    # Plot the bar
                     line = ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=12, color=color, alpha=0.9)
-                    
-                    # Add accuracy label at the end of the bar
                     ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=9, fontweight='bold', color=color)
                 except StopIteration:
                     continue
@@ -328,7 +350,6 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         ax_heur.set_xlabel("Network Depth (Layer Index)")
         ax_heur.set_ylabel("Collapsed Layer Heuristics")
         
-        # Clean up aesthetics
         sns.despine(ax=ax_var)
         sns.despine(ax=ax_heur)
         ax_heur.grid(axis='x', alpha=0.2)
