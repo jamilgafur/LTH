@@ -247,36 +247,98 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
     plt.close()
 
 def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/search_space")):
-    # Import locally to avoid potential circular dependencies if files are modified
+    """
+    Enhanced Journal Plot: Synchronized Variance Profile and Heuristic Accuracy Map.
+    Directly answers: 'Where is variance low, and how did that choice impact accuracy?'
+    """
     from transfer import EXPERIMENTS 
     out_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Define a color mapping for accuracy impact
+    def get_acc_color(drop):
+        if drop < 1.5: return "#2ca02c" # Green: Safe/Excellent
+        if drop < 5.0: return "#ff7f0e" # Orange: Moderate
+        return "#d62728"                # Red: Collapse/Poor
+
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
-        if not csv_path.exists(): continue
+        if not csv_path.exists(): 
+            logger.warning(f"Skipping {arch}_{dataset}: No layer stats found.")
+            continue
+            
         layer_df = pd.read_csv(csv_path)
-        layers, variances = layer_df['Layer'].tolist(), layer_df['Variance'].values
+        layers = layer_df['Layer'].tolist()
+        variances = layer_df['Variance'].values
+        
         model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
         if not model_exps: continue
-        fig, ax1 = plt.subplots(figsize=(14, 8))
-        ax1.plot(range(len(layers)), variances, color='gray', alpha=0.3)
-        ax1.set_yscale('symlog')
-        ax2 = ax1.twinx()
+        
+        # Create a two-panel synchronized figure
+        fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, 10), sharex=True, 
+                                             gridspec_kw={'height_ratios': [1, 2]})
+        plt.subplots_adjust(hspace=0.08)
+
+        # --- TOP PANEL: Activation Variance (The Heuristic Input) ---
+        ax_var.plot(range(len(layers)), variances, color='#555555', linewidth=1.5, alpha=0.8, label="Activation Variance")
+        ax_var.fill_between(range(len(layers)), variances, color='gray', alpha=0.1)
+        ax_var.set_yscale('log')
+        ax_var.set_ylabel("Variance ($\sigma^2$)")
+        ax_var.set_title(f"Heuristic Selection Guide: {arch} on {dataset}", loc='left', pad=20)
+        
+        # Highlight "Safe Zones" (Heuristic logic: low variance = low redundancy)
+        variance_threshold = np.percentile(variances, 25)
+        ax_var.axhline(y=variance_threshold, color='green', linestyle='--', alpha=0.3, label="Low Variance Threshold")
+        ax_var.legend(loc='upper right', frameon=False)
+
+        # --- BOTTOM PANEL: Heuristic Decisions & Outcomes ---
         exp_list = [n for n, r in model_exps.items() if r is not None]
+        
         for i, exp_name in enumerate(exp_list):
             ranges = model_exps[exp_name]
             ranges = ranges if isinstance(ranges, list) else [ranges]
+            
+            # Fetch accuracy data for this specific experiment
+            exp_results = g_metrics[g_metrics['base_name'] == exp_name]
+            
+            if not exp_results.empty:
+                acc_drop = exp_results['acc_drop'].iloc[0]
+                final_acc = exp_results['accuracy'].iloc[0]
+                color = get_acc_color(acc_drop)
+                label_text = f"{final_acc:.1f}% (-{acc_drop:.1f}%)"
+            else:
+                color = 'gray'
+                label_text = "N/A"
+
+            # Draw the horizontal collapse range
             for start_layer, end_layer in ranges:
                 try:
                     s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
                     e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
-                    drop = g_metrics[g_metrics['base_name'] == exp_name]['acc_drop'].iloc[0] if exp_name in g_metrics['base_name'].values else 0
-                    color = 'green' if drop < 2 else 'orange' if drop < 10 else 'red'
-                    ax2.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=6, color=color, alpha=0.8)
-                except StopIteration: continue
-        ax2.set_yticks(range(len(exp_list))); ax2.set_yticklabels(exp_list, fontsize=9)
-        plt.savefig(out_dir / f"{arch}_{dataset}_search_space_ladder.png") # Changed to .png
-        plt.close()
+                    
+                    # Plot the bar
+                    line = ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=12, color=color, alpha=0.9)
+                    
+                    # Add accuracy label at the end of the bar
+                    ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=9, fontweight='bold', color=color)
+                except StopIteration:
+                    continue
+        
+        ax_heur.set_yticks(range(len(exp_list)))
+        ax_heur.set_yticklabels([clean_exp_name(e) for e in exp_list], fontsize=10)
+        ax_heur.set_xlabel("Network Depth (Layer Index)")
+        ax_heur.set_ylabel("Collapsed Layer Heuristics")
+        
+        # Clean up aesthetics
+        sns.despine(ax=ax_var)
+        sns.despine(ax=ax_heur)
+        ax_heur.grid(axis='x', alpha=0.2)
 
+        save_path = out_dir / f"{arch}_{dataset}_decision_map.png"
+        plt.savefig(save_path, bbox_inches='tight')
+        plt.close()
+        logger.info(f"Generated unified decision map: {save_path}")
+
+        
 if __name__ == "__main__":
     try:
         raw = load_results()
