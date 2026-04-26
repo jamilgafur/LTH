@@ -19,9 +19,8 @@ import seaborn as sns
 # =========================
 # Configuration & Logging
 # =========================
-# Set to DEBUG to print extensive string-matching info
 logging.basicConfig(
-    level=logging.DEBUG, 
+    level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
@@ -30,7 +29,6 @@ logger = logging.getLogger(__name__)
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
 
-# Enhanced Journal-level styling
 sns.set_theme(
     context="paper",
     style="ticks",
@@ -117,7 +115,9 @@ def clean_exp_name(exp_name: str) -> str:
 
 def find_baseline(df: pd.DataFrame):
     mask = (df["exp_name"].str.lower().str.contains("original") | df["exp_name"].str.lower().str.contains("baseline"))
-    m = df[mask].sort_values("exp_name")
+    # Ensure we grab the unquantized baseline if multiple exist
+    m = df[mask & (df["is_quantized"] == False)].sort_values("exp_name")
+    if m.empty: m = df[mask].sort_values("exp_name")
     return None if m.empty else m.iloc[0]
 
 def load_results() -> pd.DataFrame:
@@ -224,96 +224,98 @@ def fig2_correlation_and_pareto(df: pd.DataFrame, stats_dir: Path = Path("./runs
         plt.close()
 
 def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/heuristic_validation")):
-    """Improved Validation Plot: Super clean, large markers, clear safe zones."""
+    """
+    Split-Panel Validation Map: 
+    Directly proves the 'Inverted Heuristic' logic by separating Single-Path and Multi-Path models.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
     all_merged_data = []
     
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        # CRITICAL FIX: Only look at pure Collapsed, unquantized models to eliminate noise
+        clean_metrics = g_metrics[(g_metrics['is_quantized'] == False) & (g_metrics['posthoc_or_posttrain'] == 'Collapsed')]
+        if clean_metrics.empty: continue
+            
         csv_path = stats_dir / f"{arch}_{dataset}_experiment_block_stats.csv"
         if csv_path.exists():
             df_h = pd.read_csv(csv_path)
-            merged = pd.merge(df_h, g_metrics, left_on="Experiment", right_on="base_name")
+            merged = pd.merge(df_h, clean_metrics, left_on="Experiment", right_on="base_name")
             merged["Topology"] = "Multi-Path" if arch in multi_path_archs else "Single-Path"
             all_merged_data.append(merged)
             
     if not all_merged_data: return
     full_df = pd.concat(all_merged_data)
     
-    fig, ax = plt.subplots(figsize=(11, 7))
+    fig, axes = plt.subplots(1, 2, figsize=(15, 6), sharey=True)
     
-    # Clean, large markers
-    sns.scatterplot(
-        data=full_df, x="Median Variance", y="d_acc", 
-        hue="Topology", style="architecture", 
-        s=200, alpha=0.9, edgecolor="black", linewidth=1.2, ax=ax
-    )
-    
-    ax.axhline(0, color='black', linestyle='--', linewidth=2, label="Baseline Accuracy")
-    
-    # Much cleaner safe zones
-    ax.axvspan(1e-2, 10, color='#2ca02c', alpha=0.1, label="Single-Path Safe Zone")
-    max_var = full_df["Median Variance"].max()
-    ax.axvspan(100, max_var * 2 if max_var > 0 else 1000, color='#1f77b4', alpha=0.1, label="Multi-Path Safe Zone")
-    
-    ax.set_xscale('log')
-    ax.set_title("V2T Heuristic Validation: Variance vs. Accuracy Impact", fontsize=16)
-    ax.set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better", fontsize=14)
-    ax.set_xlabel("Median Activation Variance (Log Scale)", fontsize=14)
-    
-    ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', frameon=True, fontsize=11)
+    # --- Panel 1: Single-Path ---
+    sp_df = full_df[full_df['Topology'] == 'Single-Path']
+    if not sp_df.empty:
+        sns.scatterplot(data=sp_df, x="Median Variance", y="d_acc", style="architecture", 
+                        s=200, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[0])
+        axes[0].axhline(0, color='black', linestyle='--')
+        med_var = sp_df["Median Variance"].median()
+        axes[0].axvspan(1e-3, med_var, color='#2ca02c', alpha=0.1, label=f"Target: Low Variance (<{med_var:.1f})")
+        axes[0].set_xscale('log')
+        axes[0].set_title("Single-Path: Flat is Safe", fontsize=14, fontweight='bold')
+        axes[0].set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better")
+        axes[0].set_xlabel("Median Activation Variance (Log Scale)")
+        axes[0].legend(loc="lower left")
+        
+    # --- Panel 2: Multi-Path ---
+    mp_df = full_df[full_df['Topology'] == 'Multi-Path']
+    if not mp_df.empty:
+        sns.scatterplot(data=mp_df, x="Median Variance", y="d_acc", style="architecture", 
+                        s=200, alpha=0.9, edgecolor="black", color="#d62728", ax=axes[1])
+        axes[1].axhline(0, color='black', linestyle='--')
+        med_var = mp_df["Median Variance"].median()
+        max_var = mp_df["Median Variance"].max()
+        axes[1].axvspan(med_var, max_var*2, color='#d62728', alpha=0.1, label=f"Target: High Spikes (>{med_var:.1f})")
+        axes[1].set_xscale('log')
+        axes[1].set_title("Multi-Path: Spikes are Safe", fontsize=14, fontweight='bold')
+        axes[1].set_xlabel("Median Activation Variance (Log Scale)")
+        axes[1].legend(loc="lower left")
+
     sns.despine()
-    ax.grid(True, linestyle=":", alpha=0.6)
-    
+    plt.tight_layout()
     plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
     plt.close()
-    logger.info("Saved improved Heuristic Validation Map.")
+    logger.info("Generated Split-Panel Heuristic Validation Map.")
 
 def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/search_space")):
     """
-    Ladder Plot: Includes heavy debugging and a fuzzy matching fallback 
-    to guarantee strings match and accuracy renders instead of 'N/A'.
+    Ladder Plot: Now accurately targets Topology-specific safe zones and filters out retrained/quantized runs.
     """
     from transfer import EXPERIMENTS 
     out_dir.mkdir(parents=True, exist_ok=True)
     
-    def get_acc_color(drop):
-        if drop < 1.5: return "#2ca02c" # Green: Safe/Excellent
-        if drop < 5.0: return "#ff7f0e" # Orange: Moderate
-        return "#d62728"                # Red: Collapse/Poor
+    def get_acc_color(d_acc):
+        if d_acc >= -3.0: return "#2ca02c" # Green: Excellent (Drop <= 3%)
+        if d_acc >= -8.0: return "#ff7f0e" # Orange: Moderate (Drop 3-8%)
+        return "#d62728"                   # Red: Poor (Drop > 8%)
 
-    # --- FUZZY STRING MATCHER ---
     def robust_match(target_name, g_df):
-        """Attempts multiple strategies to find the experiment name in the dataframe."""
-        # 1. Exact Match
-        m = g_df[g_df['base_name'] == target_name]
+        """CRITICAL FIX: Enforce non-quantized, purely collapsed lookup."""
+        sub_df = g_df[(g_df['is_quantized'] == False) & (g_df['posthoc_or_posttrain'] == 'Collapsed')]
+        if sub_df.empty: sub_df = g_df[(g_df['is_quantized'] == False)] # Fallback
+        if sub_df.empty: sub_df = g_df
+
+        m = sub_df[sub_df['base_name'] == target_name]
         if not m.empty: return m
         
-        # 2. Case Insensitive
-        m = g_df[g_df['base_name'].str.lower() == target_name.lower()]
-        if not m.empty: return m
-        
-        # 3. Squashed Match (No spaces, no dashes)
         def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
-        squashed_target = squash(target_name)
-        
-        for _, row in g_df.iterrows():
-            if squash(row['base_name']) == squashed_target:
+        st = squash(target_name)
+        for _, row in sub_df.iterrows():
+            if squash(row['base_name']) == st:
                 return pd.DataFrame([row])
-                
-        return pd.DataFrame() # Return empty if absolutely nothing matches
+        return pd.DataFrame()
+
+    multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        logger.info(f"\n[DEBUG] Generating Decision Map for {arch} | {dataset}")
-        
-        # Print available keys to console for deep debugging
-        available_keys = g_metrics['base_name'].unique().tolist()
-        logger.debug(f"[DEBUG] Available cleaned base_names in DataFrame: {available_keys}")
-        
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
-        if not csv_path.exists(): 
-            logger.warning(f"Skipping {arch}_{dataset}: No layer stats found.")
-            continue
+        if not csv_path.exists(): continue
             
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
@@ -325,28 +327,33 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, 10), sharex=True, gridspec_kw={'height_ratios': [1, 2]})
         plt.subplots_adjust(hspace=0.08)
 
-        # --- TOP PANEL: Activation Variance ---
+        # --- TOP PANEL: Activation Variance & Topology Thresholds ---
         ax_var.plot(range(len(layers)), variances, color='#555555', linewidth=1.5, alpha=0.8, label="Activation Variance")
-        ax_var.fill_between(range(len(layers)), variances, color='gray', alpha=0.1)
         ax_var.set_yscale('log')
         ax_var.set_ylabel("Variance ($\sigma^2$)")
         ax_var.set_title(f"Heuristic Selection Guide: {arch} on {dataset}", loc='left', pad=20)
         
-        variance_threshold = np.percentile(variances, 25)
-        ax_var.axhline(y=variance_threshold, color='green', linestyle='--', alpha=0.3, label="Low Variance Threshold")
-        ax_var.legend(loc='upper right', frameon=False)
+        is_multi = arch in multi_path_archs
+        if is_multi:
+            var_thresh = np.percentile(variances, 60)
+            ax_var.axhline(y=var_thresh, color='#d62728', linestyle='--', alpha=0.5, label="Multi-Path Safe Threshold")
+            ax_var.fill_between(range(len(layers)), var_thresh, max(variances)*2, where=(variances > var_thresh), color='#d62728', alpha=0.15, label="Target Safe Zone (Spikes)")
+            ax_var.set_ylim(min(variances)*0.5, max(variances)*2)
+        else:
+            var_thresh = np.percentile(variances, 40)
+            ax_var.axhline(y=var_thresh, color='#2ca02c', linestyle='--', alpha=0.5, label="Single-Path Safe Threshold")
+            ax_var.fill_between(range(len(layers)), 0, var_thresh, where=(variances < var_thresh), color='#2ca02c', alpha=0.15, label="Target Safe Zone (Flat)")
+
+        ax_var.legend(loc='upper right', frameon=True, fontsize=10)
 
         # --- BOTTOM PANEL: Heuristic Decisions ---
         exp_list = [n for n, r in model_exps.items() if r is not None]
         
-        # Sort experiments by depth to create the ladder effect
         def get_start_idx(exp_key):
             ranges = model_exps[exp_key]
             r = ranges[0] if isinstance(ranges, list) else ranges
-            try:
-                return next(idx for idx, n in enumerate(layers) if r[0] in n)
-            except StopIteration:
-                return 0
+            try: return next(idx for idx, n in enumerate(layers) if r[0] in n)
+            except StopIteration: return 0
                 
         exp_list = sorted(exp_list, key=get_start_idx, reverse=True)
         
@@ -355,30 +362,24 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
             ranges = ranges if isinstance(ranges, list) else [ranges]
             
             cleaned_name = clean_exp_name(exp_name)
-            
-            # Using the new robust matcher
             exp_results = robust_match(cleaned_name, g_metrics)
             
             if not exp_results.empty:
-                acc_drop = exp_results['acc_drop'].iloc[0]
+                d_acc = exp_results['d_acc'].iloc[0]
                 final_acc = exp_results['accuracy'].iloc[0]
-                color = get_acc_color(acc_drop)
-                label_text = f"{final_acc:.1f}% (-{acc_drop:.1f}%)"
-                logger.debug(f"[SUCCESS] Matched '{exp_name}' -> Acc: {final_acc}%")
+                color = get_acc_color(d_acc)
+                label_text = f"{final_acc:.1f}% ({d_acc:+.1f}%)"
             else:
                 color = 'gray'
                 label_text = "N/A"
-                logger.warning(f"[FAIL] Could not match '{exp_name}' (Cleaned: '{cleaned_name}') in DataFrame.")
 
             for start_layer, end_layer in ranges:
                 try:
                     s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
                     e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
-                    
                     ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=12, color=color, alpha=0.9)
                     ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=9, fontweight='bold', color=color)
-                except StopIteration:
-                    continue
+                except StopIteration: continue
         
         ax_heur.set_yticks(range(len(exp_list)))
         ax_heur.set_yticklabels([clean_exp_name(e) for e in exp_list], fontsize=10)
@@ -392,7 +393,6 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         save_path = out_dir / f"{arch}_{dataset}_decision_map.png"
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
-        logger.info(f"Generated unified decision map: {save_path}")
 
 if __name__ == "__main__":
     try:
