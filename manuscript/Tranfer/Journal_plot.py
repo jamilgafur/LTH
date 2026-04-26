@@ -564,8 +564,88 @@ def fig3_v2t_heuristic_validation(
     
     sns.despine()
     plt.tight_layout()
-    plt.savefig(out_dir / "V2T_heuristic_validation_map.pdf", dpi=300)
+    plt.savefig(out_dir / "V2T_heuristic_validation_map.png", dpi=300)
     plt.close()
+
+
+def fig4_heuristic_search_space_map(
+    df: pd.DataFrame, 
+    stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
+    out_dir: Path = Path("./figures/search_space")
+):
+    """
+    Generates a 'Ladder Plot' showing sequential collapse candidates over layer depth.
+    - X-axis: Sequential Layer Index.
+    - Y-axis: Specific Experiment (Collapse Range).
+    - Background: Normalized Variance Heatmap/Line.
+    """
+    from transfer import EXPERIMENTS # Assumes transfer.py is in the same path
+    out_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f"Generating Heuristic Search Space Maps in {out_dir}")
+
+    for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
+        if not csv_path.exists(): continue
+        
+        # 1. Load Layer Data
+        layer_df = pd.read_csv(csv_path)
+        layers = layer_df['Layer'].tolist()
+        variances = layer_df['Variance'].values
+        
+        # 2. Get Experiment Ranges for this model
+        model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
+        if not model_exps: continue
+
+        fig, ax1 = plt.subplots(figsize=(14, 8))
+        
+        # 3. Plot Variance Landscape (Background)
+        ax1.plot(range(len(layers)), variances, color='gray', alpha=0.3, label='Layer Variance')
+        ax1.fill_between(range(len(layers)), 0, variances, color='gray', alpha=0.1)
+        ax1.set_yscale('symlog')
+        ax1.set_ylabel("Activation Variance (log)", fontweight='bold')
+        ax1.set_xlabel("Sequential Layer Depth", fontweight='bold')
+
+        # 4. Plot 'Ladder' Lines for Collapse Ranges
+        # Secondary axis for stacking experiments
+        ax2 = ax1.twinx()
+        exp_list = [name for name, range_val in model_exps.items() if range_val is not None]
+        
+        for i, exp_name in enumerate(exp_list):
+            layer_range = model_exps[exp_name]
+            # Handle list of ranges or single tuple
+            ranges = layer_range if isinstance(layer_range, list) else [layer_range]
+            
+            for start_layer, end_layer in ranges:
+                # Find indices in the CSV
+                try:
+                    start_idx = next(i for i, n in enumerate(layers) if start_layer in n)
+                    end_idx = next(i for i, n in reversed(list(enumerate(layers))) if end_layer in n)
+                    
+                    # Color line based on accuracy drop from g_metrics
+                    match = g_metrics[g_metrics['base_name'] == exp_name]
+                    drop = match['acc_drop'].iloc[0] if not match.empty else 0
+                    color = 'green' if drop < 2 else 'orange' if drop < 10 else 'red'
+                    
+                    # Draw horizontal line for the block
+                    ax2.hlines(y=i, xmin=start_idx, xmax=end_idx, linewidth=6, color=color, alpha=0.8)
+                    ax2.plot(start_idx, i, marker='|', color='black', markersize=10) # Start cap
+                    ax2.plot(end_idx, i, marker='|', color='black', markersize=10)   # End cap
+                except (StopIteration, ValueError):
+                    continue
+
+        ax2.set_yticks(range(len(exp_list)))
+        ax2.set_yticklabels(exp_list, fontsize=9)
+        ax2.set_ylabel("Collapse Candidates (Ladder)", fontweight='bold')
+        ax2.set_ylim(-1, len(exp_list))
+        
+        # 5. Heuristic Annotations
+        is_multi = arch in ["RegNetX_400MF", "ConvNeXt", "InceptionNet", "XceptionNet"]
+        title_type = "Multi-Path: Targeting High Spikes" if is_multi else "Single-Path: Targeting Low Stability"
+        ax1.set_title(f"Heuristic Search Space Map: {arch}\n{title_type}", fontsize=16, fontweight='bold')
+
+        plt.tight_layout()
+        plt.savefig(out_dir / f"{arch}_{dataset}_search_space_ladder.pdf")
+        plt.close()
 
 import argparse
 
@@ -603,5 +683,6 @@ if __name__ == "__main__":
     # 2. Generate Scatter Proof & Pareto Efficiency Curves
     fig2_correlation_and_pareto(df)
     fig3_v2t_heuristic_validation(df)
+    fig4_heuristic_search_space_map(df)
     
     logger.info("Execution completed successfully.")
