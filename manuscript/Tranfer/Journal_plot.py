@@ -19,8 +19,9 @@ import seaborn as sns
 # =========================
 # Configuration & Logging
 # =========================
+# Set to DEBUG to print extensive string-matching info
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG, 
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
@@ -223,7 +224,7 @@ def fig2_correlation_and_pareto(df: pd.DataFrame, stats_dir: Path = Path("./runs
         plt.close()
 
 def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/heuristic_validation")):
-    """Improved Validation Plot: Replaced blobs with clean markers and inverted Y-axis for clarity."""
+    """Improved Validation Plot: Super clean, large markers, clear safe zones."""
     out_dir.mkdir(parents=True, exist_ok=True)
     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
     all_merged_data = []
@@ -239,37 +240,39 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
     if not all_merged_data: return
     full_df = pd.concat(all_merged_data)
     
-    fig, ax = plt.subplots(figsize=(10, 7))
+    fig, ax = plt.subplots(figsize=(11, 7))
     
-    # Use d_acc (positive is better) and uniform marker size for cleaner aesthetics
+    # Clean, large markers
     sns.scatterplot(
         data=full_df, x="Median Variance", y="d_acc", 
         hue="Topology", style="architecture", 
-        s=120, alpha=0.85, edgecolor="black", linewidth=1, ax=ax
+        s=200, alpha=0.9, edgecolor="black", linewidth=1.2, ax=ax
     )
     
-    ax.axhline(0, color='black', linestyle='--', linewidth=1.5, label="Baseline Accuracy")
+    ax.axhline(0, color='black', linestyle='--', linewidth=2, label="Baseline Accuracy")
     
-    # Safe zones shading
-    ax.axvspan(1e-2, 10, color='#2ca02c', alpha=0.08, label="Single-Path Safe Zone")
+    # Much cleaner safe zones
+    ax.axvspan(1e-2, 10, color='#2ca02c', alpha=0.1, label="Single-Path Safe Zone")
     max_var = full_df["Median Variance"].max()
-    ax.axvspan(100, max_var * 2 if max_var > 0 else 1000, color='#1f77b4', alpha=0.08, label="Multi-Path Safe Zone")
+    ax.axvspan(100, max_var * 2 if max_var > 0 else 1000, color='#1f77b4', alpha=0.1, label="Multi-Path Safe Zone")
     
     ax.set_xscale('log')
-    ax.set_title("V2T Heuristic Validation: Variance vs. Accuracy Impact")
-    ax.set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better")
-    ax.set_xlabel("Median Activation Variance (Log Scale)")
+    ax.set_title("V2T Heuristic Validation: Variance vs. Accuracy Impact", fontsize=16)
+    ax.set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better", fontsize=14)
+    ax.set_xlabel("Median Activation Variance (Log Scale)", fontsize=14)
     
-    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', frameon=True)
+    ax.legend(bbox_to_anchor=(1.02, 1), loc='upper left', frameon=True, fontsize=11)
     sns.despine()
+    ax.grid(True, linestyle=":", alpha=0.6)
     
     plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
     plt.close()
+    logger.info("Saved improved Heuristic Validation Map.")
 
 def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/search_space")):
     """
-    Ladder Plot: Sorts experiments by network depth to visualize the search space.
-    Resolves the text matching bug so accuracy values render properly.
+    Ladder Plot: Includes heavy debugging and a fuzzy matching fallback 
+    to guarantee strings match and accuracy renders instead of 'N/A'.
     """
     from transfer import EXPERIMENTS 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -279,9 +282,38 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         if drop < 5.0: return "#ff7f0e" # Orange: Moderate
         return "#d62728"                # Red: Collapse/Poor
 
+    # --- FUZZY STRING MATCHER ---
+    def robust_match(target_name, g_df):
+        """Attempts multiple strategies to find the experiment name in the dataframe."""
+        # 1. Exact Match
+        m = g_df[g_df['base_name'] == target_name]
+        if not m.empty: return m
+        
+        # 2. Case Insensitive
+        m = g_df[g_df['base_name'].str.lower() == target_name.lower()]
+        if not m.empty: return m
+        
+        # 3. Squashed Match (No spaces, no dashes)
+        def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
+        squashed_target = squash(target_name)
+        
+        for _, row in g_df.iterrows():
+            if squash(row['base_name']) == squashed_target:
+                return pd.DataFrame([row])
+                
+        return pd.DataFrame() # Return empty if absolutely nothing matches
+
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        logger.info(f"\n[DEBUG] Generating Decision Map for {arch} | {dataset}")
+        
+        # Print available keys to console for deep debugging
+        available_keys = g_metrics['base_name'].unique().tolist()
+        logger.debug(f"[DEBUG] Available cleaned base_names in DataFrame: {available_keys}")
+        
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
-        if not csv_path.exists(): continue
+        if not csv_path.exists(): 
+            logger.warning(f"Skipping {arch}_{dataset}: No layer stats found.")
+            continue
             
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
@@ -307,7 +339,7 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         # --- BOTTOM PANEL: Heuristic Decisions ---
         exp_list = [n for n, r in model_exps.items() if r is not None]
         
-        # Sort experiments by depth (start_layer index) to create the ladder effect
+        # Sort experiments by depth to create the ladder effect
         def get_start_idx(exp_key):
             ranges = model_exps[exp_key]
             r = ranges[0] if isinstance(ranges, list) else ranges
@@ -322,25 +354,28 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
             ranges = model_exps[exp_name]
             ranges = ranges if isinstance(ranges, list) else [ranges]
             
-            # FIX: Clean the experiment name to match the dataframe's base_name
             cleaned_name = clean_exp_name(exp_name)
-            exp_results = g_metrics[g_metrics['base_name'] == cleaned_name]
+            
+            # Using the new robust matcher
+            exp_results = robust_match(cleaned_name, g_metrics)
             
             if not exp_results.empty:
                 acc_drop = exp_results['acc_drop'].iloc[0]
                 final_acc = exp_results['accuracy'].iloc[0]
                 color = get_acc_color(acc_drop)
                 label_text = f"{final_acc:.1f}% (-{acc_drop:.1f}%)"
+                logger.debug(f"[SUCCESS] Matched '{exp_name}' -> Acc: {final_acc}%")
             else:
                 color = 'gray'
                 label_text = "N/A"
+                logger.warning(f"[FAIL] Could not match '{exp_name}' (Cleaned: '{cleaned_name}') in DataFrame.")
 
             for start_layer, end_layer in ranges:
                 try:
                     s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
                     e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
                     
-                    line = ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=12, color=color, alpha=0.9)
+                    ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=12, color=color, alpha=0.9)
                     ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=9, fontweight='bold', color=color)
                 except StopIteration:
                     continue
@@ -359,7 +394,6 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         plt.close()
         logger.info(f"Generated unified decision map: {save_path}")
 
-        
 if __name__ == "__main__":
     try:
         raw = load_results()
