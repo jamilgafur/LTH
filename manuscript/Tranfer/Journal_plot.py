@@ -203,7 +203,7 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
                 fig, ax = plt.subplots(figsize=(12, 6))
                 sns.barplot(data=g_dataset, x="display_name", y=metric, hue="posthoc_or_posttrain", palette=palette, edgecolor="black", ax=ax)
                 plt.xticks(rotation=45, ha="right")
-                plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.png")
+                plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.svg")
                 plt.close()
 
 # ========================= FIG 2 ========================= #
@@ -312,7 +312,7 @@ def fig2_methodology_bav_regions(
         sns.despine(ax=ax)
 
         plt.tight_layout()
-        save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
+        save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.svg"
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
         
@@ -471,7 +471,7 @@ def fig3_v2t_heuristic_validation(
         axes[1].legend(loc="lower right", framealpha=0.9)
 
     sns.despine()
-    plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
+    plt.savefig(out_dir / "V2T_heuristic_validation_map.svg")
     plt.close()
 
     logger.info("[FIG3] Completed successfully")
@@ -579,7 +579,7 @@ def fig4_results_bav_validation(
             sns.despine(ax=ax_heur)
             
             file_suffix = "quantized" if is_quant_target else "unquantized"
-            save_path = out_dir / f"{arch}_{dataset}_empirical_results_{file_suffix}.png"
+            save_path = out_dir / f"{arch}_{dataset}_empirical_results_{file_suffix}.svg"
             plt.savefig(save_path, bbox_inches='tight')
             plt.close()
 
