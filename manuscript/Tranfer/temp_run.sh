@@ -50,7 +50,7 @@ MobileNet_experiments=(
 
 # XceptionNet: Control group for MobileNet behavior
 XceptionNet_experiments=(
-   "Original Model", "Entry Flow (Full)", "Middle Flow (Full)", "Exit Flow (Full)", "Block 1 Only", "Block 2 Only", "Block 3 Only", "Conv 3 and 4 Only", "Middle Flow Block 4 Only", "Middle Flow Block 7 Only", "Block 4 Only", "Entry and Middle Flow", "Middle and Exit Flow",   
+   "Original Model" "Entry Flow (Full)" "Middle Flow (Full)" "Exit Flow (Full)" "Block 1 Only" "Block 2 Only" "Block 3 Only" "Conv 3 and 4 Only" "Middle Flow Block 4 Only" "Middle Flow Block 7 Only" "Block 4 Only" "Entry and Middle Flow" "Middle and Exit Flow"   
 )
 
 # InceptionNet: Probing flat early stages vs massive Stage 5 spikes
@@ -93,7 +93,7 @@ for model in "${models[@]}"; do
                     command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"$experiment\",FLAG=\"$flag\",QUANT=\"$quant_flag\" submit_job.pbs"
                     
                     echo "Executing: $command"
-                    eval "$command"
+                    eval "$command "
 
                 done
             done
