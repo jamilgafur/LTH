@@ -20,11 +20,15 @@ import seaborn as sns
 # Configuration & Logging
 # =========================
 # CHANGED: Log level set to DEBUG to output everything
+
 logging.basicConfig(
     level=logging.DEBUG, 
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
+# Set Matplotlib's logger to INFO or WARNING level
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
+logging.getLogger('PIL').setLevel(logging.WARNING) # Silences image processing logs too
 logger = logging.getLogger(__name__)
 
 # Make sure Pandas prints out all the columns when debugging
