@@ -693,112 +693,112 @@ def fig4_comprehensive_search_space_map(
             plt.close()
 
     logger.info("[FIG4] Comprehensive Search Space Maps generated successfully.")
-# def fig4_results_bav_validation(
-#     df: pd.DataFrame,
-#     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
-#     out_dir: Path = Path("./figures/search_space")
-# ):
-#     try:
-#         from transfer import EXPERIMENTS
-#     except ImportError:
-#         logger.error("[FIG4] Could not import EXPERIMENTS")
-#         return
+def fig4_results_bav_validation(
+    df: pd.DataFrame,
+    stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
+    out_dir: Path = Path("./figures/search_space")
+):
+    try:
+        from transfer import EXPERIMENTS
+    except ImportError:
+        logger.error("[FIG4] Could not import EXPERIMENTS")
+        return
 
-#     out_dir.mkdir(parents=True, exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-#     def get_acc_color(d_acc):
-#         if d_acc >= -2.0: return "#2ca02c"
-#         if d_acc >= -6.0: return "#ff7f0e"
-#         return "#d62728"
+    def get_acc_color(d_acc):
+        if d_acc >= -2.0: return "#2ca02c"
+        if d_acc >= -6.0: return "#ff7f0e"
+        return "#d62728"
 
-#     def robust_match(target_name, is_quant_target, g_df):
-#         try:
-#             sub_df = g_df[g_df['is_quantized'] == is_quant_target]
-#             if sub_df.empty: return pd.DataFrame()
+    def robust_match(target_name, is_quant_target, g_df):
+        try:
+            sub_df = g_df[g_df['is_quantized'] == is_quant_target]
+            if sub_df.empty: return pd.DataFrame()
 
-#             m = sub_df[sub_df['base_name'] == target_name]
-#             if not m.empty: return m
+            m = sub_df[sub_df['base_name'] == target_name]
+            if not m.empty: return m
 
-#             m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
-#             if not m.empty: return m
+            m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
+            if not m.empty: return m
 
-#             def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
-#             st = squash(target_name)
+            def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
+            st = squash(target_name)
 
-#             return sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
-#         except Exception as e:
-#             logger.error(f"[FIG4] robust_match failed: {e}")
-#             return pd.DataFrame()
+            return sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
+        except Exception as e:
+            logger.error(f"[FIG4] robust_match failed: {e}")
+            return pd.DataFrame()
 
-#     def format_dataset_name(ds: str) -> str:
-#         mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
-#         return mapping.get(ds, ds.capitalize())
+    def format_dataset_name(ds: str) -> str:
+        mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
+        return mapping.get(ds, ds.capitalize())
 
-#     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-#         logger.info(f"[FIG4] Processing Validation Plot for {arch}/{dataset}")
+    for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        logger.info(f"[FIG4] Processing Validation Plot for {arch}/{dataset}")
 
-#         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
-#         if not csv_path.exists(): continue
-#         layer_df = pd.read_csv(csv_path)
-#         layers = layer_df['Layer'].tolist()
+        csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
+        if not csv_path.exists(): continue
+        layer_df = pd.read_csv(csv_path)
+        layers = layer_df['Layer'].tolist()
 
-#         model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
-#         if not model_exps: continue
+        model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
+        if not model_exps: continue
 
-#         for is_quant_target in [False, True]:
-#             target_label = "Quantized" if is_quant_target else "Unquantized"
-#             valid_exps = []
+        for is_quant_target in [False, True]:
+            target_label = "Quantized" if is_quant_target else "Unquantized"
+            valid_exps = []
             
-#             for exp_name, ranges in model_exps.items():
-#                 if ranges is None: continue
-#                 cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
+            for exp_name, ranges in model_exps.items():
+                if ranges is None: continue
+                cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
                 
-#                 m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
-#                 if not m.empty:
-#                     exp_results = m.mean(numeric_only=True)
-#                     valid_exps.append((exp_name, ranges, exp_results, cleaned_name))
+                m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
+                if not m.empty:
+                    exp_results = m.mean(numeric_only=True)
+                    valid_exps.append((exp_name, ranges, exp_results, cleaned_name))
                     
-#             if not valid_exps: continue
-#             valid_exps = sorted(valid_exps, key=lambda x: x[2]['d_acc'])
+            if not valid_exps: continue
+            valid_exps = sorted(valid_exps, key=lambda x: x[2]['d_acc'])
             
-#             # Dynamic height based on number of candidates to maintain consistent bar thickness
-#             num_bars = len(valid_exps)
-#             fig_height = max(4, 1.0 + 0.5 * num_bars)
+            # Dynamic height based on number of candidates to maintain consistent bar thickness
+            num_bars = len(valid_exps)
+            fig_height = max(4, 1.0 + 0.5 * num_bars)
             
-#             fig, ax_heur = plt.subplots(figsize=(12, fig_height))
+            fig, ax_heur = plt.subplots(figsize=(12, fig_height))
 
-#             title_text = f"BAV Empirical Validation: {arch} on {format_dataset_name(dataset)} ({target_label})"
-#             ax_heur.set_title(title_text, loc='left', pad=15, fontsize=14, fontweight='bold')
+            title_text = f"BAV Empirical Validation: {arch} on {format_dataset_name(dataset)} ({target_label})"
+            ax_heur.set_title(title_text, loc='left', pad=15, fontsize=14, fontweight='bold')
 
-#             for i, (orig_exp_name, ranges, exp_results, display_name) in enumerate(valid_exps):
-#                 ranges = ranges if isinstance(ranges, list) else [ranges]
-#                 d_acc = exp_results['d_acc']
-#                 final_acc = exp_results.get('accuracy', 0.0)
-#                 color = get_acc_color(d_acc)
-#                 label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
+            for i, (orig_exp_name, ranges, exp_results, display_name) in enumerate(valid_exps):
+                ranges = ranges if isinstance(ranges, list) else [ranges]
+                d_acc = exp_results['d_acc']
+                final_acc = exp_results.get('accuracy', 0.0)
+                color = get_acc_color(d_acc)
+                label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
 
-#                 for start_layer, end_layer in ranges:
-#                     try:
-#                         s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
-#                         e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
+                for start_layer, end_layer in ranges:
+                    try:
+                        s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
+                        e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
                         
-#                         ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.9)
-#                         ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=10, fontweight='bold', color=color)
-#                     except StopIteration: continue
+                        ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.9)
+                        ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=10, fontweight='bold', color=color)
+                    except StopIteration: continue
             
-#             ax_heur.set_yticks(range(len(valid_exps)))
-#             ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=10, fontweight='bold')
-#             ax_heur.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
-#             ax_heur.set_xlim(-1, len(layers) + 5) # Ensure text isn't cut off
+            ax_heur.set_yticks(range(len(valid_exps)))
+            ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=10, fontweight='bold')
+            ax_heur.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
+            ax_heur.set_xlim(-1, len(layers) + 5) # Ensure text isn't cut off
             
-#             sns.despine(ax=ax_heur)
+            sns.despine(ax=ax_heur)
             
-#             file_suffix = "quantized" if is_quant_target else "unquantized"
-#             save_path = out_dir / f"{arch}_{dataset}_empirical_results_{file_suffix}.svg"
-#             plt.savefig(save_path, bbox_inches='tight')
-#             plt.close()
+            file_suffix = "quantized" if is_quant_target else "unquantized"
+            save_path = out_dir / f"{arch}_{dataset}_empirical_results_{file_suffix}.svg"
+            plt.savefig(save_path, bbox_inches='tight')
+            plt.close()
 
-#     logger.info("[FIG4] Validation plots generated successfully.")
+    logger.info("[FIG4] Validation plots generated successfully.")
 
 
 def fig5_hardware_efficiency_profiles(
@@ -1055,6 +1055,7 @@ if __name__ == "__main__":
         fig2_methodology_bav_regions()
         fig3_v2t_heuristic_validation(df)
         fig4_results_bav_validation(df)
+        fig4_comprehensive_search_space_map(df)
         fig5_hardware_efficiency_profiles(df)
         logger.info("Script completed.")
     except Exception as e:
