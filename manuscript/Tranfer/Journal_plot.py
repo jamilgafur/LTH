@@ -585,20 +585,34 @@ def fig4_results_bav_validation(
 
     logger.info("[FIG4] Validation plots generated successfully.")
 
+
 def fig5_hardware_efficiency_profiles(
     df: pd.DataFrame,
     out_dir: Path = Path("./figures/hardware_efficiency")
 ):
     """
-    Finds the optimal collapsed candidate for each architecture (based on best d_acc),
-    exports a summary CSV, and generates a single, unified grouped bar chart 
-    for the research paper.
+    Generates comprehensive hardware efficiency reports:
+    1. Per-model CSVs of all candidates.
+    2. Per-model LaTeX tables.
+    3. Per-model grouped bar charts.
+    4. Unified Grouped Bar Chart of the BEST candidate per architecture.
+    5. Unified Grouped Bar Chart of the WORST candidate per architecture.
+    6. A global Accuracy vs. FLOPs Trade-off Scatter Plot (Pareto Frontier).
     """
     out_dir.mkdir(parents=True, exist_ok=True)
-    summary_data = []
+    
+    best_summary = []
+    worst_summary = []
+    all_tradeoff_data = []
+
+    def format_dataset_name(ds: str) -> str:
+        mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
+        return mapping.get(ds, ds.capitalize())
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        # 1. Identify the Baseline
+        logger.info(f"[FIG5] Processing Hardware Profiles for {arch}/{dataset}")
+        
+        # 1. Identify Baseline
         baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
         if not baseline_mask.any(): continue
             
@@ -607,104 +621,118 @@ def fig5_hardware_efficiency_profiles(
         base_flops = baseline_row.get('flops', np.nan)
         base_memory = baseline_row.get('memory', np.nan)
         
-        if pd.isna(base_params) or pd.isna(base_flops) or pd.isna(base_memory):
-            continue
+        if pd.isna(base_params) or pd.isna(base_flops): continue
 
-        # 2. Filter for collapsed candidates (Unquantized for clean hardware baseline)
+        # 2. Filter Candidates (Unquantized)
         candidates = g_metrics[(g_metrics['posthoc_or_posttrain'] != 'Baseline') & 
                                (g_metrics['is_quantized'] == False)].copy()
-        
         if candidates.empty: continue
             
-        # 3. Find the optimal candidate (Highest Delta Accuracy)
-        best_candidate = candidates.loc[candidates['d_acc'].idxmax()]
+        # Calculate Reductions
+        candidates['Params Reduced (%)'] = 100 * (1 - (candidates['params'] / base_params))
+        candidates['FLOPs Reduced (%)'] = 100 * (1 - (candidates['flops'] / base_flops))
+        candidates['Memory Reduced (%)'] = 100 * (1 - (candidates['memory'] / base_memory))
+        candidates = candidates.sort_values(by='d_acc', ascending=False) # Best to worst
+
+        # --- Deliverable 1 & 5: Per-Model CSV and LaTeX Tables ---
+        table_df = candidates[['base_name', 'd_acc', 'Params Reduced (%)', 'FLOPs Reduced (%)', 'Memory Reduced (%)']].copy()
+        table_df.columns = ['Candidate Block', 'Delta Acc (%)', 'Params Red. (%)', 'FLOPs Red. (%)', 'Memory Red. (%)']
         
-        # 4. Calculate Percentage Reductions
-        p_red = 100 * (1 - (best_candidate['params'] / base_params))
-        f_red = 100 * (1 - (best_candidate['flops'] / base_flops))
-        m_red = 100 * (1 - (best_candidate['memory'] / base_memory))
+        table_df.to_csv(out_dir / f"{arch}_{dataset}_all_candidates.csv", index=False)
+        table_df.to_latex(out_dir / f"{arch}_{dataset}_all_candidates.tex", index=False, float_format="%.2f")
+
+        # --- Deliverable 2: Per-Model Grouped Bar Chart ---
+        melted_arch = candidates.melt(
+            id_vars=['base_name', 'd_acc'], 
+            value_vars=['Params Reduced (%)', 'FLOPs Reduced (%)', 'Memory Reduced (%)'],
+            var_name='Metric', value_name='Reduction (%)'
+        )
+        melted_arch['Metric'] = melted_arch['Metric'].str.replace(' Reduced (%)', '')
+        y_labels = [f"{row['base_name']}\n($\\Delta$ {row['d_acc']:+.1f}%)" for _, row in candidates.iterrows()]
+
+        fig, ax = plt.subplots(figsize=(10, max(5, len(candidates) * 0.8)))
+        sns.barplot(data=melted_arch, y='base_name', x='Reduction (%)', hue='Metric', 
+                    palette=['#4C72B0', '#DD8452', '#55A868'], edgecolor='black', ax=ax)
         
-        summary_data.append({
-            "Architecture": arch,
-            "Dataset": dataset,
-            "Optimal_Target": best_candidate['base_name'],
-            "Delta_Acc": best_candidate['d_acc'],
-            "Params Reduced (%)": p_red,
-            "FLOPs Reduced (%)": f_red,
-            "Memory Reduced (%)": m_red
-        })
+        ax.set_yticklabels(y_labels, fontsize=10, fontweight='bold')
+        ax.set_ylabel(""); ax.set_xlabel("Reduction Relative to Baseline (%)", fontweight='bold')
+        ax.set_title(f"Hardware Resource Optimization: {arch}", pad=15, fontweight='bold', fontsize=14)
+        ax.xaxis.grid(True, linestyle='--', alpha=0.7); ax.set_axisbelow(True)
+        ax.legend(title="", loc='lower right'); sns.despine()
+        plt.tight_layout()
+        plt.savefig(out_dir / f"{arch}_{dataset}_hardware_profile.png", bbox_inches='tight')
+        plt.close()
 
-    if not summary_data:
-        logger.warning("[FIG5] No data available to plot.")
-        return
+        # --- Prep for Unified Plots ---
+        best_cand = candidates.iloc[0]  # Highest d_acc
+        worst_cand = candidates.iloc[-1] # Lowest d_acc
+        
+        for cand, target_list in zip([best_cand, worst_cand], [best_summary, worst_summary]):
+            target_list.append({
+                "Architecture": arch,
+                "Delta_Acc": cand['d_acc'],
+                "Params": cand['Params Reduced (%)'],
+                "FLOPs": cand['FLOPs Reduced (%)'],
+                "Memory": cand['Memory Reduced (%)']
+            })
 
-    summary_df = pd.DataFrame(summary_data)
-    
-    # Sort nicely for the paper (Best accuracy improvement to worst)
-    summary_df = summary_df.sort_values(by="Delta_Acc", ascending=False)
-    
-    # ==========================================
-    # EXPORT 1: The CSV Data
-    # ==========================================
-    csv_path = out_dir / "optimal_hardware_reductions.csv"
-    summary_df.to_csv(csv_path, index=False)
-    logger.info(f"[FIG5] Exported optimal hardware summary CSV to {csv_path}")
+        # Add to Trade-off data
+        for _, row in candidates.iterrows():
+            all_tradeoff_data.append({
+                "Architecture": arch,
+                "Delta_Acc": row['d_acc'],
+                "FLOPs_Reduction": row['FLOPs Reduced (%)']
+            })
 
-    # ==========================================
-    # EXPORT 2: The Unified Journal Plot
-    # ==========================================
-    # Reshape for seaborn
-    melted = summary_df.melt(
-        id_vars=['Architecture', 'Delta_Acc'], 
-        value_vars=['Params Reduced (%)', 'FLOPs Reduced (%)', 'Memory Reduced (%)'],
-        var_name='Metric', 
-        value_name='Reduction'
-    )
+    # --- Deliverables 3 & 4: Unified Best and Worst Plots ---
+    def plot_unified(data_list, filename_suffix, title_prefix):
+        if not data_list: return
+        df_unified = pd.DataFrame(data_list).sort_values(by="Delta_Acc", ascending=False)
+        melted = df_unified.melt(id_vars=['Architecture', 'Delta_Acc'], 
+                                 value_vars=['Params', 'FLOPs', 'Memory'],
+                                 var_name='Metric', value_name='Reduction')
+        x_labels = [f"{r['Architecture']}\n($\\Delta$ {r['Delta_Acc']:+.1f}%)" for _, r in df_unified.iterrows()]
 
-    # Clean metric names for the legend
-    melted['Metric'] = melted['Metric'].str.replace(' Reduced (%)', '')
+        fig, ax = plt.subplots(figsize=(12, 5.5))
+        sns.barplot(data=melted, x='Architecture', y='Reduction', hue='Metric', 
+                    palette=['#4C72B0', '#DD8452', '#55A868'], edgecolor='black', ax=ax, order=df_unified['Architecture'])
+        
+        ax.set_xticklabels(x_labels, fontsize=11, fontweight='bold')
+        ax.set_xlabel("Architecture & Accuracy Impact", fontweight='bold', fontsize=12)
+        ax.set_ylabel("Reduction Relative to Baseline (%)", fontweight='bold', fontsize=12)
+        ax.set_title(f"{title_prefix} Structural Collapse Efficiency by Architecture", pad=15, fontweight='bold', fontsize=14)
+        ax.yaxis.grid(True, linestyle='--', alpha=0.7); ax.set_axisbelow(True)
+        ax.legend(title="", loc='upper right'); sns.despine()
+        plt.tight_layout()
+        plt.savefig(out_dir / f"unified_{filename_suffix}.png", bbox_inches='tight')
+        plt.close()
 
-    # Create custom X labels that include the Delta Acc
-    unique_archs = summary_df['Architecture'].tolist()
-    accs = summary_df['Delta_Acc'].tolist()
-    x_labels = [f"{arch}\n($\\Delta$ {acc:+.1f}%)" for arch, acc in zip(unique_archs, accs)]
+    plot_unified(best_summary, "BEST_hardware_efficiency", "Optimal (Best Case)")
+    plot_unified(worst_summary, "WORST_hardware_efficiency", "Catastrophic (Worst Case)")
 
-    # Initialize a wide, paper-friendly figure
-    fig, ax = plt.subplots(figsize=(12, 5.5))
-    
-    sns.barplot(
-        data=melted, 
-        x='Architecture', 
-        y='Reduction', 
-        hue='Metric', 
-        palette=['#4C72B0', '#DD8452', '#55A868'], # Clean, colorblind-safe (Blue, Orange, Green)
-        edgecolor='black',
-        linewidth=1.2,
-        ax=ax,
-        order=unique_archs
-    )
+    # --- Deliverable 6: The Trade-off Scatter Plot (Pareto Frontier) ---
+    if all_tradeoff_data:
+        df_trade = pd.DataFrame(all_tradeoff_data)
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Quadrant coloring
+        ax.axhline(0, color='black', linestyle='-', linewidth=1.5, zorder=1)
+        ax.axvspan(0, 100, ymin=0.5, ymax=1, color='#e6f4ea', alpha=0.3, zorder=0, label="Ideal (Faster & More Accurate)")
+        ax.axvspan(0, 100, ymin=0, ymax=0.5, color='#fce8e6', alpha=0.3, zorder=0, label="Degraded (Faster but Less Accurate)")
 
-    # Formatting for Journal
-    ax.set_xticklabels(x_labels, fontsize=11, fontweight='bold')
-    ax.set_xlabel("Architecture & Accuracy Impact", fontweight='bold', fontsize=12, labelpad=10)
-    ax.set_ylabel("Reduction Relative to Baseline (%)", fontweight='bold', fontsize=12)
-    ax.set_title("Optimal Structural Collapse Efficiency by Architecture", pad=15, fontweight='bold', fontsize=14)
-    
-    # Add horizontal gridlines for readability
-    ax.yaxis.grid(True, linestyle='--', alpha=0.7)
-    ax.set_axisbelow(True)
-    ax.set_ylim(0, max(100, melted['Reduction'].max() + 5)) # Scale 0 to 100%
+        sns.scatterplot(data=df_trade, x='FLOPs_Reduction', y='Delta_Acc', hue='Architecture', 
+                        s=150, edgecolor='black', alpha=0.8, ax=ax, zorder=3)
+        
+        ax.set_xlabel("Computational Reduction (FLOPs Removed %)", fontweight='bold', fontsize=12)
+        ax.set_ylabel("Accuracy Impact ($\Delta$ %)", fontweight='bold', fontsize=12)
+        ax.set_title("Global Hardware Efficiency vs. Accuracy Trade-off", pad=15, fontweight='bold', fontsize=14)
+        ax.legend(loc='lower left', framealpha=0.9)
+        sns.despine()
+        plt.tight_layout()
+        plt.savefig(out_dir / "global_tradeoff_scatter.png", bbox_inches='tight')
+        plt.close()
 
-    # Clean legend
-    ax.legend(title="", loc='upper right', framealpha=0.9, fontsize=11)
-    sns.despine()
-
-    plt.tight_layout()
-    save_path = out_dir / "unified_optimal_hardware_efficiency.png"
-    plt.savefig(save_path, bbox_inches='tight')
-    plt.close()
-    
-    logger.info(f"[FIG5] Unified hardware efficiency plot saved to {save_path}")
+    logger.info("[FIG5] All 6 hardware deliverables generated successfully.")
 
 # def fig5_hardware_efficiency_profiles(
 #     df: pd.DataFrame,
