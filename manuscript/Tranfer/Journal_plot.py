@@ -19,13 +19,20 @@ import seaborn as sns
 # =========================
 # Configuration & Logging
 # =========================
-# ENABLED DEEP DEBUGGING
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S"
 )
+
+# 2. Grab our script's specific logger and force it to DEBUG
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# 3. Explicitly gag Matplotlib's font manager and other noisy modules
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
+logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
+logging.getLogger('PIL').setLevel(logging.WARNING)
 
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
