@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+from scipy.signal import argrelextrema # Added for BAV Heuristic
 # =========================
 # Configuration & Logging
 # =========================
