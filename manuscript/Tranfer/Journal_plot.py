@@ -25,11 +25,9 @@ logging.basicConfig(
     datefmt="%H:%M:%S"
 )
 
-# 2. Grab our script's specific logger and force it to DEBUG
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# 3. Explicitly gag Matplotlib's font manager and other noisy modules
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
 logging.getLogger('PIL').setLevel(logging.WARNING)
@@ -103,36 +101,48 @@ def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
     n = exp_name.lower()
     if "original" in n or "baseline" in n:
         return "Baseline"
-    if "VGG16" in architecture or "RegNetX" in architecture:
-        is_legacy_run = any(x in n for x in ["jf", "pruned", "kevin", "no-prune", "not pruned"])
-        if is_legacy_run:
-            return "Retrained"
+    # Legacy pruning flags removed. Architectures that require retraining get mapped to 'Retrained'.
+    if "vgg16" in architecture.lower() or "regnetx" in architecture.lower():
+        return "Retrained"
     return "Collapsed"
 
 def clean_exp_name(exp_name: str) -> str:
     n = exp_name
+    
+    # 1. Remove quantization tags
     n = re.sub(r'(?i)[_-]?quant|\(quant\)', '', n)
-    n = re.sub(r'(?i)[_-]?jf|\(jf\)|[_-]?kevin|\(kevin\)|no-prune|not pruned|pruned', '', n)
-    for arch in ["RegNetX_400MF_", "VGG16_", "MobileNet_", "ConvNeXt_", "InceptionNet_", "XceptionNet_"]:
-        n = n.replace(arch, "")
+    
+    # 2. Aggressively remove jf/kevin/pruning tags to group them together for averaging
+    remove_tags = [
+        "_jf", "-jf", "(jf)", " jf", "_JF",
+        "_kevin", "-kevin", "(kevin)", " kevin", 
+        "no-prune", "not pruned", "pruned", "(no-prune)", "(not pruned)", "(pruned)"
+    ]
+    for tag in remove_tags:
+        n = re.compile(re.escape(tag), re.IGNORECASE).sub('', n)
+        
+    # 3. Remove Architecture Prefixes
+    for arch in ["RegNetX_400MF", "VGG16", "MobileNet", "ConvNeXt", "InceptionNet", "XceptionNet"]:
+        n = re.compile(re.escape(arch + "_"), re.IGNORECASE).sub('', n)
+        n = re.compile(re.escape(arch), re.IGNORECASE).sub('', n)
+        
+    # 4. Standardize text
     n = n.replace("Block ", "Block-").replace("Stage ", "Stage-") 
     n = n.replace(" Only", "")
-    n = n.strip(" -_()")
+    n = n.replace("()", "") # Remove empty parens left behind by tag stripping
+    
+    # 5. Clean edges without destroying actual parentheses (CRITICAL FIX)
+    n = n.strip(" -_")
+    
     if "Original" in n or "Baseline" in n: return "Original Model"
     return n.strip()
 
 def find_baseline(df: pd.DataFrame):
-    """
-    Finds the baseline accuracy for a given dataset/architecture group.
-    """
     mask = (df["exp_name"].str.lower().str.contains("original") | df["exp_name"].str.lower().str.contains("baseline"))
     b_df = df[mask & (df["is_quantized"] == False)]
     if b_df.empty: b_df = df[mask]
     if b_df.empty: return None
-    
-    # Calculate mean in case there are multiple baseline runs
-    mean_baseline = b_df.mean(numeric_only=True)
-    return mean_baseline
+    return b_df.mean(numeric_only=True)
 
 def load_results() -> pd.DataFrame:
     logger.info(f"Scanning for metrics files in {RESULTS_DIR.resolve()}")
@@ -140,19 +150,27 @@ def load_results() -> pd.DataFrame:
     if not files:
         if (RESULTS_DIR / "merged_metrics.json").exists(): files = [RESULTS_DIR / "merged_metrics.json"]
         else: raise FileNotFoundError("No merged_metrics.json files found")
+    
     rows = []
     for p in files:
         dataset = infer_dataset_from_path(p)
         if dataset == "unknown" and "tinyimagenet" in str(p).lower(): dataset = "tinyimagenet"
         arch = infer_architecture_from_path(p)
         if arch == "UnknownArch": arch = infer_architecture_from_path(Path(p.name))
+        
         try:
             with open(p) as f: raw = json.load(f)
-        except Exception: continue
+        except Exception as e:
+            logger.error(f"Failed to load JSON {p}: {e}")
+            continue
+            
         for exp_name, metrics in raw.items():
             method_group = infer_posthoc_or_posttrain(exp_name, arch)
             is_quant = infer_isquant(exp_name)
             base_name = clean_exp_name(exp_name)
+            
+            logger.debug(f"[LOAD] Raw: '{exp_name}' -> Cleaned: '{base_name}'")
+            
             rows.append({
                 "dataset": dataset, "architecture": arch, "exp_name": exp_name,
                 "base_name": base_name, "display_name": f"{base_name}\n(Quant)" if is_quant else base_name,
@@ -161,6 +179,8 @@ def load_results() -> pd.DataFrame:
                 "params": metrics.get("param_count"), "flops": metrics.get("flops"),
                 "memory": metrics.get("total_size_mb"),
             })
+            
+    logger.info(f"Successfully parsed {len(rows)} experiment rows.")
     return pd.DataFrame(rows)
 
 def normalize(df: pd.DataFrame) -> pd.DataFrame:
@@ -191,9 +211,11 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
 
 def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", "memory"], out_dir: Path = Path("./figures/individual_plots")):
     out_dir.mkdir(parents=True, exist_ok=True)
-    palette = {"Baseline": "#333333", "Retrained": "#ff7f0e", "Not Pruned": "#ff7f0e", "Collapsed": "#2ca02c"}
+    palette = {"Baseline": "#333333", "Retrained": "#ff7f0e", "Collapsed": "#2ca02c"}
     group_cols = ["dataset", "architecture", "base_name", "display_name", "posthoc_or_posttrain", "is_quantized"]
     available_metrics = [m for m in metrics if m in df.columns]
+    
+    # Averages jf/kevin naturally here since they now share the same base_name
     df_agg = df.groupby(group_cols, dropna=False)[available_metrics].mean(numeric_only=True).reset_index()
 
     for architecture, df_arch in df_agg.groupby("architecture"):
@@ -213,8 +235,7 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
     all_merged_data = []
     
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        # FILTER: Only Unquantized, pure Collapsed models
-        clean_metrics = g_metrics[(g_metrics['is_quantized'] == False) & (g_metrics['posthoc_or_posttrain'] == 'Collapsed')]
+        clean_metrics = g_metrics[(g_metrics['is_quantized'] == False) & (g_metrics['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained']))]
         if clean_metrics.empty: continue
             
         csv_path = stats_dir / f"{arch}_{dataset}_experiment_block_stats.csv"
@@ -272,15 +293,14 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
     out_dir.mkdir(parents=True, exist_ok=True)
     
     def get_acc_color(d_acc):
-        if d_acc >= -2.0: return "#2ca02c" # Green: Excellent
-        if d_acc >= -6.0: return "#ff7f0e" # Orange: Moderate
-        return "#d62728"                   # Red: Poor
+        if d_acc >= -2.0: return "#2ca02c"
+        if d_acc >= -6.0: return "#ff7f0e"
+        return "#d62728"
 
     def robust_match(target_name, g_df):
         logger.debug(f"  [MATCHING] Attempting to find: '{target_name}'")
         
-        # Enforce non-quantized, purely collapsed lookup
-        sub_df = g_df[(g_df['is_quantized'] == False) & (g_df['posthoc_or_posttrain'] == 'Collapsed')]
+        sub_df = g_df[(g_df['is_quantized'] == False) & (g_df['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained']))]
         if sub_df.empty: sub_df = g_df[(g_df['is_quantized'] == False)]
         if sub_df.empty: sub_df = g_df
 
@@ -289,18 +309,25 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
 
         m = sub_df[sub_df['base_name'] == target_name]
         if not m.empty: 
-            logger.debug(f"  [MATCHING] Exact match found!")
+            logger.debug(f"  [MATCHING] Exact match found! ({len(m)} runs to average)")
             return m
         
         # Fuzzy fallback
         def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
         st = squash(target_name)
+        
+        fuzzy_matches = []
         for _, row in sub_df.iterrows():
             if squash(row['base_name']) == st:
-                logger.debug(f"  [MATCHING] Fuzzy match found: '{target_name}' -> '{row['base_name']}'")
-                return pd.DataFrame([row])
+                fuzzy_matches.append(row)
                 
-        logger.warning(f"  [MATCHING] FAILED to find any match for '{target_name}'")
+        if fuzzy_matches:
+            res_df = pd.DataFrame(fuzzy_matches)
+            logger.debug(f"  [MATCHING] Fuzzy match found: '{target_name}' -> '{res_df['base_name'].iloc[0]}' ({len(res_df)} runs to average)")
+            return res_df
+                
+        # Super verbose failure log
+        logger.warning(f"  [MATCHING] FAILED to find any match for '{target_name}'. All known keys for this architecture: {g_df['base_name'].unique().tolist()}")
         return pd.DataFrame()
 
     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
@@ -357,7 +384,6 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
             exp_results = robust_match(cleaned_name, g_metrics)
             
             if not exp_results.empty:
-                # Average multiple runs of the same experiment if they exist to be safe
                 exp_results = exp_results.mean(numeric_only=True)
                 d_acc = exp_results['d_acc']
                 final_acc = exp_results['accuracy']
@@ -365,7 +391,7 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
                 label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
                 logger.debug(f"  [RESULT] Plotting '{exp_name}' -> d_acc: {d_acc:.2f}%, final_acc: {final_acc:.2f}%")
             else:
-                color = 'gray'
+                color = '#d3d3d3' # Lighter gray
                 label_text = "N/A"
 
             for start_layer, end_layer in ranges:
