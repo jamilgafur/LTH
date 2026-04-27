@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import torch
-import torch.nn as nn
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -19,23 +18,19 @@ import seaborn as sns
 # =========================
 # Configuration & Logging
 # =========================
-# CHANGED: Log level set to DEBUG to output everything
-
 logging.basicConfig(
     level=logging.DEBUG, 
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
-# Set Matplotlib's logger to INFO or WARNING level
+# Silence Matplotlib font spam while keeping our debug logs
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
-logging.getLogger('PIL').setLevel(logging.WARNING) # Silences image processing logs too
+logging.getLogger('PIL').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
-# Make sure Pandas prints out all the columns when debugging
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", 1000)
 
-# Map raw dataset strings to Journal-ready text
 DATASET_NAME_MAP = {
     "tinyimagenet": "TinyImageNet",
     "cifar10_": "CIFAR-10",
@@ -43,7 +38,6 @@ DATASET_NAME_MAP = {
     "imagenet": "ImageNet"
 }
 
-# Enhanced Journal-level styling
 sns.set_theme(
     context="paper",
     style="ticks",
@@ -116,6 +110,13 @@ def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
             return "Retrained"
     return "Collapsed"
 
+def infer_run_id(exp_name: str) -> str:
+    """Isolate different runs to prevent cross-matching baselines."""
+    n = exp_name.lower()
+    if "jf" in n: return "JF"
+    if "kevin" in n: return "Kevin"
+    return "Default"
+
 def clean_exp_name(exp_name: str) -> str:
     n = exp_name
     n = re.sub(r'(?i)[_-]?quant|\(quant\)', '', n)
@@ -124,9 +125,20 @@ def clean_exp_name(exp_name: str) -> str:
         n = n.replace(arch, "")
     n = n.replace("Block ", "Block-").replace("Stage ", "Stage-") 
     n = n.replace(" Only", "")
-    n = n.strip(" -_()")
+    
+    # FIXED: Removed parentheses from strip to prevent breaking "(Full)" and "(1-11)"
+    n = n.strip(" -_")
+    
     if "Original" in n or "Baseline" in n: return "Original Model"
     return n.strip()
+
+def standardize_heuristic_name(name: str) -> str:
+    """Fuzzy matching helper to link extracted names with EXPERIMENT keys."""
+    name = name.replace("-", " ").strip().lower()
+    # Safely close parentheses if they were somehow cut off
+    if "(" in name and ")" not in name:
+        name += ")"
+    return re.sub(r'\s+', ' ', name)
 
 def find_baseline(df: pd.DataFrame):
     mask = (df["exp_name"].str.lower().str.contains("original") | df["exp_name"].str.lower().str.contains("baseline"))
@@ -140,12 +152,10 @@ def load_results() -> pd.DataFrame:
     if not files:
         if (RESULTS_DIR / "merged_metrics.json").exists(): files = [RESULTS_DIR / "merged_metrics.json"]
         else: 
-            logger.warning("No merged_metrics.json files found returning empty dataframe.")
+            logger.warning("No merged_metrics.json files found. Returning empty dataframe.")
             return pd.DataFrame() 
 
-    logger.debug(f"Found files: {[str(f) for f in files]}")
     rows = []
-    
     for p in files:
         dataset = infer_dataset_from_path(p)
         if dataset == "unknown" and "tinyimagenet" in str(p).lower(): dataset = "tinyimagenet"
@@ -154,7 +164,6 @@ def load_results() -> pd.DataFrame:
         
         try:
             with open(p) as f: raw = json.load(f)
-            logger.debug(f"Loaded {len(raw)} experiments from {p.name} (Arch: {arch}, Dataset: {dataset})")
         except Exception as e: 
             logger.error(f"Failed to load JSON {p}: {e}")
             continue
@@ -163,16 +172,14 @@ def load_results() -> pd.DataFrame:
             method_group = infer_posthoc_or_posttrain(exp_name, arch)
             is_quant = infer_isquant(exp_name)
             base_name = clean_exp_name(exp_name)
-            
-            # Extract metrics safely
+            run_id = infer_run_id(exp_name)
             acc = metrics.get("final_accuracy")
             params = metrics.get("param_count")
             
-            logger.debug(f"  -> Extracted: {exp_name} | Acc: {acc} | Params: {params}")
-            
             rows.append({
-                "dataset": dataset, "architecture": arch, "exp_name": exp_name,
-                "base_name": base_name, "display_name": f"{base_name}\n(Quant)" if is_quant else base_name,
+                "dataset": dataset, "architecture": arch, "run_id": run_id, 
+                "exp_name": exp_name, "base_name": base_name, 
+                "display_name": f"{base_name}\n(Quant)" if is_quant else base_name,
                 "posthoc_or_posttrain": method_group, "model_type": infer_model_type(exp_name),
                 "is_quantized": is_quant, "accuracy": acc,
                 "params": params, "flops": metrics.get("flops"),
@@ -180,25 +187,22 @@ def load_results() -> pd.DataFrame:
             })
             
     df = pd.DataFrame(rows)
-    logger.info(f"\n{'='*20} RAW DATAFRAME LOADED {'='*20}\n{df.head(15)}\nTotal rows: {len(df)}")
+    logger.info(f"Loaded {len(df)} total experiment rows.")
     return df
 
 def normalize(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty: return df
     out = []
     
-    logger.info(f"\n{'='*20} STARTING NORMALIZATION {'='*20}")
-    
-    for (ds, arch), g in df.groupby(["dataset", "architecture"]):
-        logger.debug(f"\nNormalizing Group: Architecture='{arch}', Dataset='{ds}' (Rows: {len(g)})")
-        
+    # FIXED: Group by run_id as well to isolate Kevin vs JF baselines
+    for (ds, arch, run_id), g in df.groupby(["dataset", "architecture", "run_id"]):
         baseline = find_baseline(g)
         if baseline is None:
-            logger.warning(f"  -> NO BASELINE FOUND for {arch} on {ds}. Skipping delta calculations.")
+            logger.debug(f"No Baseline for {arch}/{ds} ({run_id} run). Skipping deltas.")
             for _, r in g.iterrows(): out.append(r)
             continue
             
-        logger.debug(f"  -> Found Baseline: '{baseline['exp_name']}' | Acc: {baseline['accuracy']} | Params: {baseline['params']}")
+        logger.debug(f"Normalizing {arch}/{ds} ({run_id}) against Baseline: {baseline['accuracy']:.2f}%")
         
         for _, r in g.iterrows():
             row = r.copy()
@@ -208,20 +212,13 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
                 row["baseline_acc"] = baseline["accuracy"] 
                 row["d_params"] = 100 * (1 - r["params"] / baseline["params"])
                 
-                logger.debug(f"    -> Row: {r['base_name']} | Raw Acc: {r['accuracy']} | Delta Acc: {row['d_acc']:.2f} | Acc Drop: {row['acc_drop']:.2f}")
-                
                 if pd.notnull(baseline.get("flops")) and baseline["flops"] > 0:
                     row["d_flops"] = 100 * (1 - r["flops"] / baseline["flops"])
                 if pd.notnull(baseline.get("memory")) and baseline["memory"] > 0:
                     row["d_memory"] = 100 * (1 - r["memory"] / baseline["memory"])
-            else:
-                logger.debug(f"    -> Missing params in baseline, skipping delta for {r['base_name']}")
-                
             out.append(row)
             
-    norm_df = pd.DataFrame(out)
-    logger.info(f"\n{'='*20} NORMALIZED DATAFRAME {'='*20}\n{norm_df[['architecture', 'base_name', 'accuracy', 'acc_drop']].head(15)}\n")
-    return norm_df
+    return pd.DataFrame(out)
 
 # =========================
 # Figure Generations
@@ -244,9 +241,6 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
             # Sort baseline to left
             g_dataset['is_baseline'] = g_dataset['base_name'].apply(lambda x: 0 if 'Original' in x or 'Baseline' in x else 1)
             g_dataset = g_dataset.sort_values(by=['is_baseline', 'display_name'])
-            
-            logger.debug(f"\n[FIG 1 DEBUG] Sorted Plotting Data for {architecture} on {dataset}:")
-            logger.debug(f"\n{g_dataset[['display_name', 'is_baseline', 'accuracy', 'posthoc_or_posttrain']]}")
             
             clean_ds = DATASET_NAME_MAP.get(dataset, dataset)
 
@@ -276,12 +270,14 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
     
     def get_acc_color(drop):
         if pd.isna(drop): return "#e0e0e0" 
-        if drop < 1.5: return "#2ca02c"    
-        if drop < 5.0: return "#ff7f0e"    
+        # FIXED: Account for models that perform better than baseline (negative drop)
+        color_drop = max(0, drop)
+        if color_drop < 1.5: return "#2ca02c"    
+        if color_drop < 5.0: return "#ff7f0e"    
         return "#d62728"                   
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        logger.info(f"\n{'='*20} BUILDING FIG 4 FOR {arch} on {dataset} {'='*20}")
+        logger.info(f"Building Search Space Map for {arch} on {dataset}...")
         
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
         if not csv_path.exists(): 
@@ -291,14 +287,15 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
         variances = layer_df['Variance'].values
-        logger.debug(f"  -> Loaded Layer Stats: {len(layers)} layers")
         
         model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
         if not model_exps: 
-            logger.warning(f"  -> Skipping. No heuristics defined in EXPERIMENTS for {arch}/{dataset}")
             continue
             
-        logger.debug(f"  -> Found {len(model_exps)} target heuristics in EXPERIMENTS.")
+        # Pre-process base_names for fuzzy matching
+        # Averages across runs (e.g. JF and Kevin) if both exist for the same base_name
+        g_agg = g_metrics.groupby("base_name", as_index=False).mean(numeric_only=True)
+        metrics_lookup = {standardize_heuristic_name(r['base_name']): r for _, r in g_agg.iterrows()}
         
         clean_ds = DATASET_NAME_MAP.get(dataset, dataset)
         fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, 10), sharex=True, 
@@ -323,22 +320,21 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
             ranges = model_exps[exp_name]
             ranges = ranges if isinstance(ranges, list) else [ranges]
             
-            exp_results = g_metrics[g_metrics['base_name'] == exp_name]
+            clean_target = standardize_heuristic_name(exp_name)
+            match = metrics_lookup.get(clean_target)
             
-            if not exp_results.empty:
-                acc_drop = exp_results['acc_drop'].iloc[0]
-                final_acc = exp_results['accuracy'].iloc[0]
+            if match is not None:
+                acc_drop = match['acc_drop']
+                final_acc = match['accuracy']
                 color = get_acc_color(acc_drop)
                 label_text = f"{final_acc:.1f}% ($\Delta$ {-acc_drop:+.1f}%)"
                 lw = 12
                 txt_color = color
-                logger.debug(f"    -> Plotted: '{exp_name}' | Final Acc: {final_acc:.2f} | Drop: {acc_drop:.2f}")
             else:
                 color = get_acc_color(np.nan)
                 label_text = "N/A"
                 lw = 6 
                 txt_color = '#aaaaaa'
-                logger.debug(f"    -> Plotted: '{exp_name}' | MISSING DATA (N/A)")
 
             for start_layer, end_layer in ranges:
                 try:
@@ -347,7 +343,6 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
                     ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=lw, color=color, alpha=0.9)
                     ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=9, fontweight='bold', color=txt_color)
                 except StopIteration:
-                    logger.error(f"    -> ERROR matching layers '{start_layer}' or '{end_layer}' for heuristic '{exp_name}'")
                     continue
         
         ax_heur.set_yticks(range(len(exp_list)))
