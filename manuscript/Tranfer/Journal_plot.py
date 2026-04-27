@@ -19,16 +19,27 @@ import seaborn as sns
 # =========================
 # Configuration & Logging
 # =========================
+# CHANGED: Log level set to DEBUG to output everything
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG, 
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 logger = logging.getLogger(__name__)
 
+# Make sure Pandas prints out all the columns when debugging
 pd.set_option("display.max_columns", None)
-pd.set_option("display.width", None)
+pd.set_option("display.width", 1000)
 
+# Map raw dataset strings to Journal-ready text
+DATASET_NAME_MAP = {
+    "tinyimagenet": "TinyImageNet",
+    "cifar10_": "CIFAR-10",
+    "cifar100_": "CIFAR-100",
+    "imagenet": "ImageNet"
+}
+
+# Enhanced Journal-level styling
 sns.set_theme(
     context="paper",
     style="ticks",
@@ -114,292 +125,226 @@ def clean_exp_name(exp_name: str) -> str:
     return n.strip()
 
 def find_baseline(df: pd.DataFrame):
-    """
-    CRITICAL FIX: Averages all valid, unquantized baselines to ensure 
-    the d_acc math perfectly matches the bar charts.
-    """
     mask = (df["exp_name"].str.lower().str.contains("original") | df["exp_name"].str.lower().str.contains("baseline"))
-    b_df = df[mask & (df["is_quantized"] == False)]
-    if b_df.empty: b_df = df[mask]
-    if b_df.empty: return None
-    return b_df.mean(numeric_only=True)
+    m = df[mask].sort_values("exp_name")
+    return None if m.empty else m.iloc[0]
 
 def load_results() -> pd.DataFrame:
     logger.info(f"Scanning for metrics files in {RESULTS_DIR.resolve()}")
     files = list(RESULTS_DIR.rglob("*merged_metrics.json"))
+    
     if not files:
         if (RESULTS_DIR / "merged_metrics.json").exists(): files = [RESULTS_DIR / "merged_metrics.json"]
-        else: raise FileNotFoundError("No merged_metrics.json files found")
+        else: 
+            logger.warning("No merged_metrics.json files found returning empty dataframe.")
+            return pd.DataFrame() 
+
+    logger.debug(f"Found files: {[str(f) for f in files]}")
     rows = []
+    
     for p in files:
         dataset = infer_dataset_from_path(p)
         if dataset == "unknown" and "tinyimagenet" in str(p).lower(): dataset = "tinyimagenet"
         arch = infer_architecture_from_path(p)
         if arch == "UnknownArch": arch = infer_architecture_from_path(Path(p.name))
+        
         try:
             with open(p) as f: raw = json.load(f)
-        except Exception: continue
+            logger.debug(f"Loaded {len(raw)} experiments from {p.name} (Arch: {arch}, Dataset: {dataset})")
+        except Exception as e: 
+            logger.error(f"Failed to load JSON {p}: {e}")
+            continue
+            
         for exp_name, metrics in raw.items():
             method_group = infer_posthoc_or_posttrain(exp_name, arch)
             is_quant = infer_isquant(exp_name)
             base_name = clean_exp_name(exp_name)
+            
+            # Extract metrics safely
+            acc = metrics.get("final_accuracy")
+            params = metrics.get("param_count")
+            
+            logger.debug(f"  -> Extracted: {exp_name} | Acc: {acc} | Params: {params}")
+            
             rows.append({
                 "dataset": dataset, "architecture": arch, "exp_name": exp_name,
                 "base_name": base_name, "display_name": f"{base_name}\n(Quant)" if is_quant else base_name,
                 "posthoc_or_posttrain": method_group, "model_type": infer_model_type(exp_name),
-                "is_quantized": is_quant, "accuracy": metrics.get("final_accuracy"),
-                "params": metrics.get("param_count"), "flops": metrics.get("flops"),
+                "is_quantized": is_quant, "accuracy": acc,
+                "params": params, "flops": metrics.get("flops"),
                 "memory": metrics.get("total_size_mb"),
             })
-    return pd.DataFrame(rows)
+            
+    df = pd.DataFrame(rows)
+    logger.info(f"\n{'='*20} RAW DATAFRAME LOADED {'='*20}\n{df.head(15)}\nTotal rows: {len(df)}")
+    return df
 
 def normalize(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty: return df
     out = []
+    
+    logger.info(f"\n{'='*20} STARTING NORMALIZATION {'='*20}")
+    
     for (ds, arch), g in df.groupby(["dataset", "architecture"]):
+        logger.debug(f"\nNormalizing Group: Architecture='{arch}', Dataset='{ds}' (Rows: {len(g)})")
+        
         baseline = find_baseline(g)
         if baseline is None:
+            logger.warning(f"  -> NO BASELINE FOUND for {arch} on {ds}. Skipping delta calculations.")
             for _, r in g.iterrows(): out.append(r)
             continue
+            
+        logger.debug(f"  -> Found Baseline: '{baseline['exp_name']}' | Acc: {baseline['accuracy']} | Params: {baseline['params']}")
+        
         for _, r in g.iterrows():
             row = r.copy()
             if pd.notnull(baseline.get("params")) and baseline["params"] > 0:
                 row["d_acc"] = r["accuracy"] - baseline["accuracy"] 
+                row["acc_drop"] = baseline["accuracy"] - r["accuracy"] 
                 row["baseline_acc"] = baseline["accuracy"] 
                 row["d_params"] = 100 * (1 - r["params"] / baseline["params"])
+                
+                logger.debug(f"    -> Row: {r['base_name']} | Raw Acc: {r['accuracy']} | Delta Acc: {row['d_acc']:.2f} | Acc Drop: {row['acc_drop']:.2f}")
+                
                 if pd.notnull(baseline.get("flops")) and baseline["flops"] > 0:
                     row["d_flops"] = 100 * (1 - r["flops"] / baseline["flops"])
                 if pd.notnull(baseline.get("memory")) and baseline["memory"] > 0:
                     row["d_memory"] = 100 * (1 - r["memory"] / baseline["memory"])
+            else:
+                logger.debug(f"    -> Missing params in baseline, skipping delta for {r['base_name']}")
+                
             out.append(row)
-    return pd.DataFrame(out)
+            
+    norm_df = pd.DataFrame(out)
+    logger.info(f"\n{'='*20} NORMALIZED DATAFRAME {'='*20}\n{norm_df[['architecture', 'base_name', 'accuracy', 'acc_drop']].head(15)}\n")
+    return norm_df
 
 # =========================
 # Figure Generations
 # =========================
 
 def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", "memory"], out_dir: Path = Path("./figures/individual_plots")):
+    if df.empty: return
     out_dir.mkdir(parents=True, exist_ok=True)
     palette = {"Baseline": "#333333", "Retrained": "#ff7f0e", "Not Pruned": "#ff7f0e", "Collapsed": "#2ca02c"}
     group_cols = ["dataset", "architecture", "base_name", "display_name", "posthoc_or_posttrain", "is_quantized"]
     available_metrics = [m for m in metrics if m in df.columns]
+    
     df_agg = df.groupby(group_cols, dropna=False)[available_metrics].mean(numeric_only=True).reset_index()
 
     for architecture, df_arch in df_agg.groupby("architecture"):
         for dataset in df_arch["dataset"].unique():
             g_dataset = df_arch[df_arch["dataset"] == dataset].copy()
             if g_dataset.empty: continue
+            
+            # Sort baseline to left
+            g_dataset['is_baseline'] = g_dataset['base_name'].apply(lambda x: 0 if 'Original' in x or 'Baseline' in x else 1)
+            g_dataset = g_dataset.sort_values(by=['is_baseline', 'display_name'])
+            
+            logger.debug(f"\n[FIG 1 DEBUG] Sorted Plotting Data for {architecture} on {dataset}:")
+            logger.debug(f"\n{g_dataset[['display_name', 'is_baseline', 'accuracy', 'posthoc_or_posttrain']]}")
+            
+            clean_ds = DATASET_NAME_MAP.get(dataset, dataset)
+
             for metric in available_metrics:
-                fig, ax = plt.subplots(figsize=(12, 6))
-                sns.barplot(data=g_dataset, x="display_name", y=metric, hue="posthoc_or_posttrain", palette=palette, edgecolor="black", ax=ax)
-                plt.xticks(rotation=45, ha="right")
+                fig, ax = plt.subplots(figsize=(14, 6))
+                sns.barplot(data=g_dataset, x="display_name", y=metric, hue="posthoc_or_posttrain", 
+                            palette=palette, edgecolor="black", ax=ax, dodge=False)
+                
+                handles, labels = ax.get_legend_handles_labels()
+                ax.legend(handles, labels, title="Optimization Strategy", loc='upper right', bbox_to_anchor=(1.0, 1.0))
+                ax.set_title(f"{metric.capitalize()} Comparison: {architecture} on {clean_ds}")
+                ax.set_xlabel("Model Configurations")
+                ax.set_ylabel(metric.capitalize())
+                plt.xticks(rotation=45, ha="right", rotation_mode="anchor")
                 plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.png")
                 plt.close()
 
-def fig2_correlation_and_pareto(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/correlation_plots")):
-    out_dir.mkdir(parents=True, exist_ok=True)
-    df_agg = df.groupby(["dataset", "architecture", "base_name"]).mean(numeric_only=True).reset_index()
-    for (dataset, arch), g_metrics in df_agg.groupby(["dataset", "architecture"]):
-        csv_filename = f"{arch}_{dataset}_experiment_block_stats.csv"
-        csv_path = stats_dir / csv_filename
-        if not csv_path.exists(): continue
-        df_heuristics = pd.read_csv(csv_path)
-        df_merged = pd.merge(df_heuristics, g_metrics, left_on="Experiment", right_on="base_name", how="inner")
-        if df_merged.empty: continue
-        baseline_acc = g_metrics["baseline_acc"].max() if "baseline_acc" in g_metrics.columns else 100.0
-
-        fig, ax = plt.subplots(figsize=(8, 6))
-        pareto_df = df_merged.sort_values("d_params", ascending=False)
-        pareto_front_x, pareto_front_y = [0], [baseline_acc]
-        max_acc_seen = -float('inf')
-        for _, row in pareto_df.iterrows():
-            if row["accuracy"] >= max_acc_seen:
-                pareto_front_x.append(row["d_params"]); pareto_front_y.append(row["accuracy"])
-                max_acc_seen = row["accuracy"]
-
-        ax.step(pareto_front_x, pareto_front_y, where='pre', color='darkorange', linewidth=2, label="Pareto Frontier")
-        sns.scatterplot(data=df_merged, x="d_params", y="accuracy", hue="Median Variance", palette="viridis", s=120, ax=ax)
-        
-        for _, row in df_merged.iterrows():
-            ax.text(row["d_params"], row["accuracy"], row["Experiment"], size=8, alpha=0.8)
-
-        ax.set_title(f"Efficiency Frontier: {arch}")
-        plt.savefig(out_dir / f"{arch}_{dataset}_pareto_efficiency.png")
-        plt.close()
-
-def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/heuristic_validation")):
-    """
-    Split-Panel Validation Map: 
-    Directly proves the V2T Heuristic.
-    """
-    out_dir.mkdir(parents=True, exist_ok=True)
-    multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
-    all_merged_data = []
-    
-    for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        # Only evaluate unquantized, purely collapsed architectures
-        clean_metrics = g_metrics[(g_metrics['is_quantized'] == False) & (g_metrics['posthoc_or_posttrain'] == 'Collapsed')]
-        if clean_metrics.empty: continue
-            
-        csv_path = stats_dir / f"{arch}_{dataset}_experiment_block_stats.csv"
-        if csv_path.exists():
-            df_h = pd.read_csv(csv_path)
-            merged = pd.merge(df_h, clean_metrics, left_on="Experiment", right_on="base_name")
-            merged["Topology"] = "Multi-Path" if arch in multi_path_archs else "Single-Path"
-            all_merged_data.append(merged)
-            
-    if not all_merged_data: return
-    full_df = pd.concat(all_merged_data)
-    
-    fig, axes = plt.subplots(1, 2, figsize=(16, 7), sharey=True)
-    plt.subplots_adjust(wspace=0.05)
-    
-    # Shared Y-axis baseline
-    for ax in axes:
-        ax.axhline(0, color='black', linestyle='--', linewidth=2, zorder=1)
-        ax.axhspan(0, 100, color='#2ca02c', alpha=0.05, zorder=0, label="Accuracy Improved")
-        ax.axhspan(-2.0, 0, color='#ff7f0e', alpha=0.05, zorder=0, label="Minor Degradation (<2%)")
-        ax.axhspan(-100, -2.0, color='#d62728', alpha=0.05, zorder=0, label="Severe Degradation")
-        ax.set_ylim(full_df['d_acc'].min() - 2, max(full_df['d_acc'].max() + 2, 5))
-    
-    # --- Panel 1: Single-Path ---
-    sp_df = full_df[full_df['Topology'] == 'Single-Path']
-    if not sp_df.empty:
-        sns.scatterplot(data=sp_df, x="Median Variance", y="d_acc", style="architecture", 
-                        s=250, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[0], zorder=3)
-        
-        q1 = sp_df["Median Variance"].quantile(0.3)
-        axes[0].axvspan(1e-4, q1, color='#2ca02c', alpha=0.15, zorder=0, label=f"V2T Target: Flat Flow (<{q1:.1f})")
-        
-        axes[0].set_xscale('symlog', linthresh=1e-2)
-        axes[0].set_title("Single-Path: Target Flat Representation", fontsize=16, fontweight='bold', pad=15)
-        axes[0].set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better", fontsize=14, fontweight='bold')
-        axes[0].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
-        axes[0].legend(loc="lower left", framealpha=0.9)
-        
-    # --- Panel 2: Multi-Path ---
-    mp_df = full_df[full_df['Topology'] == 'Multi-Path']
-    if not mp_df.empty:
-        sns.scatterplot(data=mp_df, x="Median Variance", y="d_acc", style="architecture", 
-                        s=250, alpha=0.9, edgecolor="black", color="#d62728", ax=axes[1], zorder=3)
-        
-        q3 = mp_df["Median Variance"].quantile(0.6)
-        axes[1].axvspan(q3, mp_df["Median Variance"].max() * 5, color='#d62728', alpha=0.15, zorder=0, label=f"V2T Target: High Spikes (>{q3:.1f})")
-        
-        axes[1].set_xscale('symlog', linthresh=1e-2)
-        axes[1].set_title("Multi-Path: Target Overfitting Spikes", fontsize=16, fontweight='bold', pad=15)
-        axes[1].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
-        axes[1].legend(loc="lower right", framealpha=0.9)
-
-    sns.despine()
-    plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
-    plt.close()
-    logger.info("Generated Split-Panel Heuristic Validation Map.")
-
 def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/search_space")):
-    """
-    Ladder Plot: Prevents 'N/A' by strictly matching experiment strings and filtering quant noise.
-    Prevents log-scale crashing by applying safe bounds to the variance data.
-    """
-    from transfer import EXPERIMENTS 
+    try:
+        from transfer import EXPERIMENTS 
+    except ImportError:
+        logger.warning("Could not import EXPERIMENTS from transfer.py. Skipping Fig 4.")
+        return
+        
+    if df.empty: return
     out_dir.mkdir(parents=True, exist_ok=True)
     
-    def get_acc_color(d_acc):
-        if d_acc >= -2.0: return "#2ca02c" # Green: Excellent (Within 2% of baseline)
-        if d_acc >= -6.0: return "#ff7f0e" # Orange: Moderate
-        return "#d62728"                   # Red: Poor
-
-    def robust_match(target_name, g_df):
-        # Enforce non-quantized, purely collapsed lookup
-        sub_df = g_df[(g_df['is_quantized'] == False) & (g_df['posthoc_or_posttrain'] == 'Collapsed')]
-        if sub_df.empty: sub_df = g_df[(g_df['is_quantized'] == False)]
-        if sub_df.empty: sub_df = g_df
-
-        m = sub_df[sub_df['base_name'] == target_name]
-        if not m.empty: return m
-        
-        # Fuzzy fallback
-        def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
-        st = squash(target_name)
-        for _, row in sub_df.iterrows():
-            if squash(row['base_name']) == st:
-                return pd.DataFrame([row])
-        return pd.DataFrame()
-
-    multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
+    def get_acc_color(drop):
+        if pd.isna(drop): return "#e0e0e0" 
+        if drop < 1.5: return "#2ca02c"    
+        if drop < 5.0: return "#ff7f0e"    
+        return "#d62728"                   
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        logger.info(f"\n{'='*20} BUILDING FIG 4 FOR {arch} on {dataset} {'='*20}")
+        
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
-        if not csv_path.exists(): continue
+        if not csv_path.exists(): 
+            logger.warning(f"  -> Skipping. Missing variance file: {csv_path}")
+            continue
             
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
-        
-        # CRITICAL FIX: Prevent log-scale crash by replacing 0.0 with a tiny epsilon
-        variances = np.maximum(layer_df['Variance'].values, 1e-6)
+        variances = layer_df['Variance'].values
+        logger.debug(f"  -> Loaded Layer Stats: {len(layers)} layers")
         
         model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
-        if not model_exps: continue
+        if not model_exps: 
+            logger.warning(f"  -> Skipping. No heuristics defined in EXPERIMENTS for {arch}/{dataset}")
+            continue
+            
+        logger.debug(f"  -> Found {len(model_exps)} target heuristics in EXPERIMENTS.")
         
-        fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, 10), sharex=True, gridspec_kw={'height_ratios': [1, 2]})
+        clean_ds = DATASET_NAME_MAP.get(dataset, dataset)
+        fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, 10), sharex=True, 
+                                             gridspec_kw={'height_ratios': [1, 2]})
         plt.subplots_adjust(hspace=0.08)
 
-        # --- TOP PANEL: Activation Variance & Topology Thresholds ---
+        # Top Panel
         ax_var.plot(range(len(layers)), variances, color='#555555', linewidth=1.5, alpha=0.8, label="Activation Variance")
+        ax_var.fill_between(range(len(layers)), variances, color='gray', alpha=0.1)
         ax_var.set_yscale('log')
         ax_var.set_ylabel("Variance ($\sigma^2$)")
-        ax_var.set_title(f"Heuristic Search Space Guide: {arch} on {dataset}", loc='left', pad=20, fontsize=16, fontweight='bold')
+        ax_var.set_title(f"Heuristic Search Space Guide: {arch} on {clean_ds}", loc='left', pad=20, fontweight='bold')
         
-        # Determine Safe Y-limits
-        y_min = max(1e-4, min(variances) * 0.5)
-        y_max = max(variances) * 2.0
-        ax_var.set_ylim(y_min, y_max)
-        
-        is_multi = arch in multi_path_archs
-        if is_multi:
-            var_thresh = np.percentile(variances, 60)
-            ax_var.axhline(y=var_thresh, color='#d62728', linestyle='--', alpha=0.5, label="Multi-Path Threshold (Spikes)")
-            ax_var.fill_between(range(len(layers)), var_thresh, y_max, where=(variances >= var_thresh), color='#d62728', alpha=0.15)
-        else:
-            var_thresh = np.percentile(variances, 30)
-            ax_var.axhline(y=var_thresh, color='#2ca02c', linestyle='--', alpha=0.5, label="Single-Path Threshold (Flat)")
-            ax_var.fill_between(range(len(layers)), y_min, var_thresh, where=(variances <= var_thresh), color='#2ca02c', alpha=0.15)
+        variance_threshold = np.percentile(variances, 25)
+        ax_var.axhline(y=variance_threshold, color='green', linestyle='--', alpha=0.4, label="Low Variance Threshold")
+        ax_var.legend(loc='lower right', bbox_to_anchor=(1.0, 1.05), frameon=True, ncol=2)
 
-        ax_var.legend(loc='upper right', frameon=True, fontsize=10)
-
-        # --- BOTTOM PANEL: Heuristic Decisions ---
+        # Bottom Panel
         exp_list = [n for n, r in model_exps.items() if r is not None]
-        
-        def get_start_idx(exp_key):
-            ranges = model_exps[exp_key]
-            r = ranges[0] if isinstance(ranges, list) else ranges
-            try: return next(idx for idx, n in enumerate(layers) if r[0] in n)
-            except StopIteration: return 0
-                
-        exp_list = sorted(exp_list, key=get_start_idx, reverse=True)
         
         for i, exp_name in enumerate(exp_list):
             ranges = model_exps[exp_name]
             ranges = ranges if isinstance(ranges, list) else [ranges]
             
-            cleaned_name = clean_exp_name(exp_name)
-            exp_results = robust_match(cleaned_name, g_metrics)
+            exp_results = g_metrics[g_metrics['base_name'] == exp_name]
             
             if not exp_results.empty:
-                d_acc = exp_results['d_acc'].iloc[0]
+                acc_drop = exp_results['acc_drop'].iloc[0]
                 final_acc = exp_results['accuracy'].iloc[0]
-                color = get_acc_color(d_acc)
-                label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
+                color = get_acc_color(acc_drop)
+                label_text = f"{final_acc:.1f}% ($\Delta$ {-acc_drop:+.1f}%)"
+                lw = 12
+                txt_color = color
+                logger.debug(f"    -> Plotted: '{exp_name}' | Final Acc: {final_acc:.2f} | Drop: {acc_drop:.2f}")
             else:
-                color = 'gray'
+                color = get_acc_color(np.nan)
                 label_text = "N/A"
+                lw = 6 
+                txt_color = '#aaaaaa'
+                logger.debug(f"    -> Plotted: '{exp_name}' | MISSING DATA (N/A)")
 
             for start_layer, end_layer in ranges:
                 try:
                     s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
                     e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
-                    ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=12, color=color, alpha=0.9)
-                    ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=9, fontweight='bold', color=color)
-                except StopIteration: continue
+                    ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=lw, color=color, alpha=0.9)
+                    ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=9, fontweight='bold', color=txt_color)
+                except StopIteration:
+                    logger.error(f"    -> ERROR matching layers '{start_layer}' or '{end_layer}' for heuristic '{exp_name}'")
+                    continue
         
         ax_heur.set_yticks(range(len(exp_list)))
         ax_heur.set_yticklabels([clean_exp_name(e) for e in exp_list], fontsize=10)
@@ -408,7 +353,7 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         
         sns.despine(ax=ax_var)
         sns.despine(ax=ax_heur)
-        ax_heur.grid(axis='x', alpha=0.2)
+        ax_heur.grid(axis='x', alpha=0.15)
 
         save_path = out_dir / f"{arch}_{dataset}_decision_map.png"
         plt.savefig(save_path, bbox_inches='tight')
@@ -416,12 +361,11 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
 
 if __name__ == "__main__":
     try:
+        logger.info("Initializing plot generation script...")
         raw = load_results()
         df = normalize(raw)
         fig1(df)
-        fig2_correlation_and_pareto(df)
-        fig3_v2t_heuristic_validation(df)
         fig4_heuristic_search_space_map(df)
-        logger.info("All journal figures generated successfully as PNG.")
+        logger.info("Script completed. All targeted journals generated successfully.")
     except Exception as e:
-        logger.critical(f"Error: {e}", exc_info=True)
+        logger.critical(f"FATAL ERROR during execution: {e}", exc_info=True)
