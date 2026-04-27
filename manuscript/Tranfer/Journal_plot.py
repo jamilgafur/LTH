@@ -585,6 +585,105 @@ def fig4_results_bav_validation(
 
     logger.info("[FIG4] Validation plots generated successfully.")
 
+
+def fig5_hardware_efficiency_profiles(
+    df: pd.DataFrame,
+    out_dir: Path = Path("./figures/hardware_efficiency")
+):
+    """
+    Generates a unified horizontal grouped bar chart showing the percentage 
+    reduction in Params, FLOPs, and Memory for each collapsed candidate.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    
+    def format_dataset_name(ds: str) -> str:
+        mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
+        return mapping.get(ds, ds.capitalize())
+
+    for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        logger.info(f"[FIG5] Generating Unified Hardware Profile for {arch}/{dataset}")
+        
+        # 1. Identify the Baseline
+        baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
+        if not baseline_mask.any():
+            logger.warning(f"No baseline found for {arch}/{dataset}. Skipping.")
+            continue
+            
+        baseline_row = g_metrics[baseline_mask].iloc[0]
+        base_params = baseline_row.get('params', np.nan)
+        base_flops = baseline_row.get('flops', np.nan)
+        base_memory = baseline_row.get('memory', np.nan)
+        
+        if pd.isna(base_params) or pd.isna(base_flops) or pd.isna(base_memory):
+            logger.warning(f"Missing base hardware metrics for {arch}/{dataset}. Skipping.")
+            continue
+
+        # 2. Filter for collapsed candidates (Unquantized for clean hardware comparison)
+        candidates = g_metrics[(g_metrics['posthoc_or_posttrain'] != 'Baseline') & 
+                               (g_metrics['is_quantized'] == False)].copy()
+        
+        if candidates.empty:
+            continue
+            
+        # 3. Calculate Percentage Reductions
+        candidates['Params Reduced (%)'] = 100 * (1 - (candidates['params'] / base_params))
+        candidates['FLOPs Reduced (%)'] = 100 * (1 - (candidates['flops'] / base_flops))
+        candidates['Memory Reduced (%)'] = 100 * (1 - (candidates['memory'] / base_memory))
+        
+        # Sort by Accuracy impact (worst to best) so the best are at the top of the chart
+        candidates = candidates.sort_values(by='d_acc', ascending=True)
+
+        # 4. Reshape data for seaborn
+        melted = candidates.melt(
+            id_vars=['base_name', 'd_acc'], 
+            value_vars=['Params Reduced (%)', 'FLOPs Reduced (%)', 'Memory Reduced (%)'],
+            var_name='Metric', 
+            value_name='Reduction (%)'
+        )
+
+        # 5. Plotting
+        num_candidates = len(candidates)
+        fig_height = max(5, num_candidates * 0.8)
+        fig, ax = plt.subplots(figsize=(10, fig_height))
+
+        # Create custom y-labels that include the Accuracy change
+        y_labels = [f"{row['base_name']} \n($\\Delta$ Acc: {row['d_acc']:+.1f}%)" 
+                    for _, row in candidates.iterrows()]
+
+        sns.barplot(
+            data=melted, 
+            y='base_name', 
+            x='Reduction (%)', 
+            hue='Metric', 
+            palette=['#1f77b4', '#ff7f0e', '#2ca02c'], # Blue, Orange, Green
+            edgecolor='black',
+            linewidth=1,
+            ax=ax
+        )
+
+        # Formatting for Journal
+        ax.set_yticklabels(y_labels, fontsize=10, fontweight='bold')
+        ax.set_ylabel("")
+        ax.set_xlabel("Reduction Relative to Baseline (%) $\\rightarrow$ Higher is Better", fontweight='bold', fontsize=11)
+        ax.set_title(f"Hardware Resource Optimization: {arch} on {format_dataset_name(dataset)}", 
+                     pad=20, fontweight='bold', fontsize=14, loc='left')
+        
+        # Add vertical gridlines for readability
+        ax.xaxis.grid(True, linestyle='--', alpha=0.7)
+        ax.set_axisbelow(True)
+        ax.set_xlim(0, max(10, melted['Reduction (%)'].max() * 1.15)) # Give breathing room on right
+
+        # Clean legend
+        ax.legend(title="", loc='lower right', framealpha=0.9, fontsize=10)
+        sns.despine()
+
+        plt.tight_layout()
+        save_path = out_dir / f"{arch}_{dataset}_unified_hardware_reduction.png"
+        plt.savefig(save_path, bbox_inches='tight')
+        plt.close()
+
+    logger.info("[FIG5] Hardware efficiency profiles generated successfully.")
+
 if __name__ == "__main__":
     try:
         raw = load_results()
@@ -593,6 +692,7 @@ if __name__ == "__main__":
         fig2_methodology_bav_regions()
         fig3_v2t_heuristic_validation(df)
         fig4_results_bav_validation(df)
+        fig5_hardware_efficiency_profiles(df)
         logger.info("Script completed.")
     except Exception as e:
         logger.critical(f"Error: {e}", exc_info=True)
