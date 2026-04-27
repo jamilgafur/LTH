@@ -22,7 +22,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# Suppress noisy modules
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
 logging.getLogger('PIL').setLevel(logging.WARNING)
@@ -107,19 +106,11 @@ def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
 
 def clean_exp_name(exp_name: str) -> str:
     n = exp_name
-    
-    # 1. Strip quantization flags (Aggressive pass to catch _quant_Kevin cleanly)
     n = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', n)
-    
-    # 2. Aggressively strip JF, Kevin, and legacy pruning flags for seamless averaging
     n = re.sub(r'(?i)[_\-\s\(]?(jf|kevin|no-prune|not pruned|pruned)\b\)?', '', n)
-        
-    # 3. Strip Architecture Prefixes
     for arch in ["RegNetX_400MF", "VGG16", "MobileNet", "ConvNeXt", "InceptionNet", "XceptionNet"]:
         n = re.compile(re.escape(arch + "_"), re.IGNORECASE).sub('', n)
         n = re.compile(re.escape(arch), re.IGNORECASE).sub('', n)
-        
-    # 4. Standardize terminology and clean artifacts
     n = n.replace("Block ", "Block-").replace("Stage ", "Stage-") 
     n = n.replace(" Only", "").replace("()", "") 
     n = n.strip(" -_")
@@ -159,8 +150,6 @@ def load_results() -> pd.DataFrame:
             is_quant = infer_isquant(exp_name)
             base_name = clean_exp_name(exp_name)
             
-            logger.debug(f"[LOAD] Raw: '{exp_name}' -> Cleaned: '{base_name}'")
-            
             rows.append({
                 "dataset": dataset, "architecture": arch, "exp_name": exp_name,
                 "base_name": base_name, "display_name": f"{base_name}\n(Quant)" if is_quant else base_name,
@@ -178,13 +167,10 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
     for (ds, arch), g in df.groupby(["dataset", "architecture"]):
         baseline = find_baseline(g)
         if baseline is None:
-            logger.warning(f"[BASELINE] No baseline found for {arch} on {ds}.")
             for _, r in g.iterrows(): out.append(r)
             continue
             
         b_acc = baseline["accuracy"]
-        logger.debug(f"[BASELINE] {arch} on {ds} -> Baseline Accuracy = {b_acc:.2f}%")
-        
         for _, r in g.iterrows():
             row = r.copy()
             if pd.notnull(baseline.get("params")) and baseline["params"] > 0:
@@ -224,7 +210,6 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
     all_merged_data = []
     
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        # FILTER: Now allows both quantized and unquantized runs for validation
         clean_metrics = g_metrics[g_metrics['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained'])]
         if clean_metrics.empty: continue
             
@@ -248,36 +233,34 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
         ax.axhspan(-100, -2.0, color='#d62728', alpha=0.05, zorder=0, label="Severe Degradation")
         ax.set_ylim(full_df['d_acc'].min() - 2, max(full_df['d_acc'].max() + 2, 5))
     
-    # Single-Path
     sp_df = full_df[full_df['Topology'] == 'Single-Path']
     if not sp_df.empty:
-        # Maps unquantized to circles (o), quantized to X's to see how quantization shifts the drop
         sns.scatterplot(data=sp_df, x="Median Variance", y="d_acc", style="is_quantized", markers={False: "o", True: "X"},
                         s=250, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[0], zorder=3)
-        q1 = sp_df["Median Variance"].quantile(0.3)
-        axes[0].axvspan(1e-4, q1, color='#2ca02c', alpha=0.15, zorder=0, label=f"V2T Target: Flat Flow (<{q1:.1f})")
+        # SWAPPED: Single-Path optimal target is now High Spikes (right side)
+        q3 = sp_df["Median Variance"].quantile(0.6)
+        axes[0].axvspan(q3, sp_df["Median Variance"].max() * 5, color='#2ca02c', alpha=0.15, zorder=0, label=f"V2T Target: High Spikes (>{q3:.1f})")
         axes[0].set_xscale('symlog', linthresh=1e-2)
-        axes[0].set_title("Single-Path: Target Flat Representation", fontsize=16, fontweight='bold', pad=15)
+        axes[0].set_title("Single-Path: Target Overfitting Spikes", fontsize=16, fontweight='bold', pad=15)
         axes[0].set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better", fontsize=14, fontweight='bold')
         axes[0].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
         axes[0].legend(loc="lower left", framealpha=0.9)
         
-    # Multi-Path
     mp_df = full_df[full_df['Topology'] == 'Multi-Path']
     if not mp_df.empty:
         sns.scatterplot(data=mp_df, x="Median Variance", y="d_acc", style="is_quantized", markers={False: "o", True: "X"},
-                        s=250, alpha=0.9, edgecolor="black", color="#d62728", ax=axes[1], zorder=3)
-        q3 = mp_df["Median Variance"].quantile(0.6)
-        axes[1].axvspan(q3, mp_df["Median Variance"].max() * 5, color='#d62728', alpha=0.15, zorder=0, label=f"V2T Target: High Spikes (>{q3:.1f})")
+                        s=250, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[1], zorder=3)
+        # SWAPPED: Multi-Path optimal target is now Flat Flow (left side)
+        q1 = mp_df["Median Variance"].quantile(0.3)
+        axes[1].axvspan(1e-4, q1, color='#2ca02c', alpha=0.15, zorder=0, label=f"V2T Target: Flat Flow (<{q1:.1f})")
         axes[1].set_xscale('symlog', linthresh=1e-2)
-        axes[1].set_title("Multi-Path: Target Overfitting Spikes", fontsize=16, fontweight='bold', pad=15)
+        axes[1].set_title("Multi-Path: Target Flat Representation", fontsize=16, fontweight='bold', pad=15)
         axes[1].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
         axes[1].legend(loc="lower right", framealpha=0.9)
 
     sns.despine()
     plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
     plt.close()
-
 
 def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/search_space")):
     try:
@@ -296,7 +279,7 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
     def robust_match(target_name, is_quant_target, g_df):
         sub_df = g_df[(g_df['is_quantized'] == is_quant_target) & (g_df['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained']))]
         if sub_df.empty: sub_df = g_df[(g_df['is_quantized'] == is_quant_target)]
-        if sub_df.empty: return pd.DataFrame() # Avoids falling back to opposite quantization
+        if sub_df.empty: return pd.DataFrame()
 
         m = sub_df[sub_df['base_name'] == target_name]
         if not m.empty: return m
@@ -312,17 +295,12 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
             if squash(row['base_name']) == st:
                 fuzzy_matches.append(row)
                 
-        if fuzzy_matches:
-            return pd.DataFrame(fuzzy_matches)
-                
+        if fuzzy_matches: return pd.DataFrame(fuzzy_matches)
         return pd.DataFrame()
 
     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        logger.info(f"--- Generating Ladder Plot for {arch} on {dataset} ---")
-        g_metrics.to_csv(DIAGNOSTICS_DIR / f"{arch}_{dataset}_processed_metrics.csv", index=False)
-        
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
         if not csv_path.exists(): continue
             
@@ -330,101 +308,91 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         layers = layer_df['Layer'].tolist()
         variances = np.maximum(layer_df['Variance'].values, 1e-6)
         
+        mu_net = np.mean(variances)
+        median_net = np.median(variances)
+        std_net = np.std(variances)
+        
         model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
         if not model_exps: continue
-        
-        # Build experiment tuples (exp_name, ranges, results_df, is_quantized, display_label)
-        valid_exps = []
-        for exp_name, ranges in model_exps.items():
-            if ranges is None: continue
-            cleaned_name = clean_exp_name(exp_name)
-            
-            # Find Unquantized Variant
-            m_nq = robust_match(cleaned_name, is_quant_target=False, g_df=g_metrics)
-            if not m_nq.empty:
-                valid_exps.append((exp_name, ranges, m_nq, False, cleaned_name))
-                
-            # Find Quantized Variant
-            m_q = robust_match(cleaned_name, is_quant_target=True, g_df=g_metrics)
-            if not m_q.empty:
-                valid_exps.append((exp_name, ranges, m_q, True, f"{cleaned_name} (Quant)"))
-                
-            if m_nq.empty and m_q.empty:
-                logger.warning(f"  [SKIPPING] Dropping '{exp_name}' from Ladder Plot to avoid N/A rendering.")
-                
-        if not valid_exps:
-            logger.warning(f"  [EMPTY] No valid data remains for {arch} on {dataset}. Skipping plot generation.")
-            continue
-        
-        # Calculate dynamic height based on total number of valid bars (unquantized + quantized)
-        num_bars = len(valid_exps)
-        fig_height = max(10, 4 + 0.35 * num_bars)
-        height_ratios = [1, max(2, fig_height / 3.5)]
-        
-        fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, fig_height), sharex=True, gridspec_kw={'height_ratios': height_ratios})
-        plt.subplots_adjust(hspace=0.08)
 
-        # TOP PANEL
-        ax_var.plot(range(len(layers)), variances, color='#555555', linewidth=1.5, alpha=0.8)
-        ax_var.set_yscale('log')
-        ax_var.set_ylabel("Variance ($\sigma^2$)")
-        ax_var.set_title(f"Heuristic Search Space Guide: {arch} on {format_dataset_name(dataset)}", loc='left', pad=20, fontsize=16, fontweight='bold')
-        
-        y_min = max(1e-4, min(variances) * 0.5)
-        y_max = max(variances) * 2.0
-        ax_var.set_ylim(y_min, y_max)
-        
-        if arch in multi_path_archs:
-            var_thresh = np.percentile(variances, 60)
-            ax_var.axhline(y=var_thresh, color='#d62728', linestyle='--', alpha=0.5, label="Multi-Path Threshold (Spikes)")
-            ax_var.fill_between(range(len(layers)), var_thresh, y_max, where=(variances >= var_thresh), color='#d62728', alpha=0.15)
-        else:
-            var_thresh = np.percentile(variances, 30)
-            ax_var.axhline(y=var_thresh, color='#2ca02c', linestyle='--', alpha=0.5, label="Single-Path Threshold (Flat)")
-            ax_var.fill_between(range(len(layers)), y_min, var_thresh, where=(variances <= var_thresh), color='#2ca02c', alpha=0.15)
-        ax_var.legend(loc='upper right')
+        for is_quant_target in [False, True]:
+            target_label = "Quantized" if is_quant_target else "Unquantized"
+            logger.info(f"--- Generating Ladder Plot for {arch} on {dataset} ({target_label}) ---")
+            
+            valid_exps = []
+            for exp_name, ranges in model_exps.items():
+                if ranges is None: continue
+                cleaned_name = clean_exp_name(exp_name)
+                
+                m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
+                if not m.empty:
+                    valid_exps.append((exp_name, ranges, m, cleaned_name))
+                    
+            if not valid_exps:
+                logger.warning(f"  [EMPTY] No valid data remains for {arch} on {dataset} ({target_label}). Skipping plot.")
+                continue
+            
+            # Sort by performance: highest d_acc (lowest drop) plots at the top (highest index)
+            valid_exps = sorted(valid_exps, key=lambda x: x[2].mean(numeric_only=True)['d_acc'])
+            
+            num_bars = len(valid_exps)
+            fig_height = max(8, 4 + 0.4 * num_bars)
+            height_ratios = [1, max(2, fig_height / 3.5)]
+            
+            fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, fig_height), sharex=True, gridspec_kw={'height_ratios': height_ratios})
+            plt.subplots_adjust(hspace=0.08)
 
-        # BOTTOM PANEL - Sort dynamically so non-quantized plots directly below its quantized sibling
-        def get_sort_key(exp_tuple):
-            r = exp_tuple[1]
-            r = r[0] if isinstance(r, list) else r
-            try: 
-                idx = next(i for i, n in enumerate(layers) if r[0] in n)
-            except StopIteration: 
-                idx = 0
-            is_quant = exp_tuple[3]
-            return (idx, 1 if not is_quant else 0) 
+            # TOP PANEL: Variance & Heuristics
+            ax_var.plot(range(len(layers)), variances, color='#555555', linewidth=1.5, alpha=0.8)
+            ax_var.set_yscale('log')
+            ax_var.set_ylabel("Variance ($\sigma^2$)")
+            title_text = f"Heuristic Search Space Guide: {arch} on {format_dataset_name(dataset)} ({target_label})"
+            ax_var.set_title(title_text, loc='left', pad=20, fontsize=16, fontweight='bold')
             
-        valid_exps = sorted(valid_exps, key=get_sort_key, reverse=True)
-        
-        for i, (orig_exp_name, ranges, exp_results, is_quant, display_name) in enumerate(valid_exps):
-            ranges = ranges if isinstance(ranges, list) else [ranges]
+            y_min = max(1e-4, min(variances) * 0.5)
+            y_max = max(variances) * 2.0
+            ax_var.set_ylim(y_min, y_max)
             
-            exp_results = exp_results.mean(numeric_only=True)
-            d_acc = exp_results['d_acc']
-            final_acc = exp_results['accuracy']
-            color = get_acc_color(d_acc)
-            label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
-            
-            logger.debug(f"  [RESULT] Plotting '{display_name}' -> d_acc: {d_acc:.2f}%, final_acc: {final_acc:.2f}%")
+            if arch in multi_path_archs:
+                # SWAPPED: Target regions under the global mean for Multi-Path
+                var_thresh = mu_net
+                ax_var.axhline(y=var_thresh, color='#2ca02c', linestyle='--', alpha=0.5, label=r"Multi-Path Target ($V_m < \mu_{net}$)")
+                ax_var.fill_between(range(len(layers)), y_min, var_thresh, where=(variances <= var_thresh), color='#2ca02c', alpha=0.15)
+            else:
+                # SWAPPED: Target regions above the global median + std for Single-Path
+                var_thresh = median_net + std_net
+                ax_var.axhline(y=var_thresh, color='#2ca02c', linestyle='--', alpha=0.5, label=r"Single-Path Target ($V_m > \tilde{V} + \sigma$)")
+                ax_var.fill_between(range(len(layers)), var_thresh, y_max, where=(variances >= var_thresh), color='#2ca02c', alpha=0.15)
+            ax_var.legend(loc='upper right')
 
-            for start_layer, end_layer in ranges:
-                try:
-                    s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
-                    e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
-                    ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=12, color=color, alpha=0.9)
-                    ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=9, fontweight='bold', color=color)
-                except StopIteration: continue
-        
-        ax_heur.set_yticks(range(len(valid_exps)))
-        ax_heur.set_yticklabels([e[4] for e in valid_exps], fontsize=10)
-        ax_heur.set_xlabel("Network Depth (Layer Index)")
-        ax_heur.set_ylabel("Collapsed Layer Candidates")
-        sns.despine(ax=ax_var); sns.despine(ax=ax_heur)
-        
-        save_path = out_dir / f"{arch}_{dataset}_decision_map.png"
-        plt.savefig(save_path, bbox_inches='tight')
-        plt.close()
+            # BOTTOM PANEL: Sorted Search Space Candidates
+            for i, (orig_exp_name, ranges, exp_results, display_name) in enumerate(valid_exps):
+                ranges = ranges if isinstance(ranges, list) else [ranges]
+                
+                exp_results = exp_results.mean(numeric_only=True)
+                d_acc = exp_results['d_acc']
+                final_acc = exp_results['accuracy']
+                color = get_acc_color(d_acc)
+                label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
+
+                for start_layer, end_layer in ranges:
+                    try:
+                        s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
+                        e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
+                        ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=12, color=color, alpha=0.9)
+                        ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=9, fontweight='bold', color=color)
+                    except StopIteration: continue
+            
+            ax_heur.set_yticks(range(len(valid_exps)))
+            ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=10)
+            ax_heur.set_xlabel("Network Depth (Layer Index)")
+            ax_heur.set_ylabel("Collapsed Layer Candidates")
+            sns.despine(ax=ax_var); sns.despine(ax=ax_heur)
+            
+            file_suffix = "quantized" if is_quant_target else "unquantized"
+            save_path = out_dir / f"{arch}_{dataset}_decision_map_{file_suffix}.png"
+            plt.savefig(save_path, bbox_inches='tight')
+            plt.close()
 
 if __name__ == "__main__":
     try:
