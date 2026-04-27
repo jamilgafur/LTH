@@ -108,8 +108,8 @@ def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
 def clean_exp_name(exp_name: str) -> str:
     n = exp_name
     
-    # 1. Strip quantization flags
-    n = re.sub(r'(?i)[_\-\s\(]?quant\b\)?', '', n)
+    # 1. Strip quantization flags (Aggressive pass to catch _quant_Kevin cleanly)
+    n = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', n)
     
     # 2. Aggressively strip JF, Kevin, and legacy pruning flags for seamless averaging
     n = re.sub(r'(?i)[_\-\s\(]?(jf|kevin|no-prune|not pruned|pruned)\b\)?', '', n)
@@ -205,7 +205,6 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
     group_cols = ["dataset", "architecture", "base_name", "display_name", "posthoc_or_posttrain", "is_quantized"]
     available_metrics = [m for m in metrics if m in df.columns]
     
-    # Pandas will inherently average the JF/Kevin rows here since their base_name tags were stripped
     df_agg = df.groupby(group_cols, dropna=False)[available_metrics].mean(numeric_only=True).reset_index()
 
     for architecture, df_arch in df_agg.groupby("architecture"):
@@ -225,7 +224,8 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
     all_merged_data = []
     
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        clean_metrics = g_metrics[(g_metrics['is_quantized'] == False) & (g_metrics['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained']))]
+        # FILTER: Now allows both quantized and unquantized runs for validation
+        clean_metrics = g_metrics[g_metrics['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained'])]
         if clean_metrics.empty: continue
             
         csv_path = stats_dir / f"{arch}_{dataset}_experiment_block_stats.csv"
@@ -251,7 +251,8 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
     # Single-Path
     sp_df = full_df[full_df['Topology'] == 'Single-Path']
     if not sp_df.empty:
-        sns.scatterplot(data=sp_df, x="Median Variance", y="d_acc", style="architecture", 
+        # Maps unquantized to circles (o), quantized to X's to see how quantization shifts the drop
+        sns.scatterplot(data=sp_df, x="Median Variance", y="d_acc", style="is_quantized", markers={False: "o", True: "X"},
                         s=250, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[0], zorder=3)
         q1 = sp_df["Median Variance"].quantile(0.3)
         axes[0].axvspan(1e-4, q1, color='#2ca02c', alpha=0.15, zorder=0, label=f"V2T Target: Flat Flow (<{q1:.1f})")
@@ -264,7 +265,7 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
     # Multi-Path
     mp_df = full_df[full_df['Topology'] == 'Multi-Path']
     if not mp_df.empty:
-        sns.scatterplot(data=mp_df, x="Median Variance", y="d_acc", style="architecture", 
+        sns.scatterplot(data=mp_df, x="Median Variance", y="d_acc", style="is_quantized", markers={False: "o", True: "X"},
                         s=250, alpha=0.9, edgecolor="black", color="#d62728", ax=axes[1], zorder=3)
         q3 = mp_df["Median Variance"].quantile(0.6)
         axes[1].axvspan(q3, mp_df["Median Variance"].max() * 5, color='#d62728', alpha=0.15, zorder=0, label=f"V2T Target: High Spikes (>{q3:.1f})")
@@ -292,21 +293,17 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         if d_acc >= -6.0: return "#ff7f0e"
         return "#d62728"
 
-    def robust_match(target_name, g_df):
-        sub_df = g_df[(g_df['is_quantized'] == False) & (g_df['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained']))]
-        if sub_df.empty: sub_df = g_df[(g_df['is_quantized'] == False)]
-        if sub_df.empty: sub_df = g_df
+    def robust_match(target_name, is_quant_target, g_df):
+        sub_df = g_df[(g_df['is_quantized'] == is_quant_target) & (g_df['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained']))]
+        if sub_df.empty: sub_df = g_df[(g_df['is_quantized'] == is_quant_target)]
+        if sub_df.empty: return pd.DataFrame() # Avoids falling back to opposite quantization
 
         m = sub_df[sub_df['base_name'] == target_name]
-        if not m.empty: 
-            return m
+        if not m.empty: return m
         
-        # Exact Case-insensitive Match Fallback
         m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
-        if not m.empty: 
-            return m
+        if not m.empty: return m
         
-        # Fuzzy Substring Match Fallback
         def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
         st = squash(target_name)
         
@@ -318,15 +315,12 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         if fuzzy_matches:
             return pd.DataFrame(fuzzy_matches)
                 
-        logger.warning(f"  [MISSING EXPERIMENT] Could not find any match for '{target_name}'. Known keys: {sub_df['base_name'].unique().tolist()}")
         return pd.DataFrame()
 
     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         logger.info(f"--- Generating Ladder Plot for {arch} on {dataset} ---")
-        
-        # Save exact grouping layout out to CSV for diagnostics
         g_metrics.to_csv(DIAGNOSTICS_DIR / f"{arch}_{dataset}_processed_metrics.csv", index=False)
         
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
@@ -339,23 +333,35 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
         if not model_exps: continue
         
-        # Filter the experiment definitions to ONLY plot things that have actual data
+        # Build experiment tuples (exp_name, ranges, results_df, is_quantized, display_label)
         valid_exps = []
         for exp_name, ranges in model_exps.items():
             if ranges is None: continue
             cleaned_name = clean_exp_name(exp_name)
-            exp_results = robust_match(cleaned_name, g_metrics)
             
-            if not exp_results.empty:
-                valid_exps.append((exp_name, ranges, exp_results))
-            else:
+            # Find Unquantized Variant
+            m_nq = robust_match(cleaned_name, is_quant_target=False, g_df=g_metrics)
+            if not m_nq.empty:
+                valid_exps.append((exp_name, ranges, m_nq, False, cleaned_name))
+                
+            # Find Quantized Variant
+            m_q = robust_match(cleaned_name, is_quant_target=True, g_df=g_metrics)
+            if not m_q.empty:
+                valid_exps.append((exp_name, ranges, m_q, True, f"{cleaned_name} (Quant)"))
+                
+            if m_nq.empty and m_q.empty:
                 logger.warning(f"  [SKIPPING] Dropping '{exp_name}' from Ladder Plot to avoid N/A rendering.")
                 
         if not valid_exps:
             logger.warning(f"  [EMPTY] No valid data remains for {arch} on {dataset}. Skipping plot generation.")
             continue
-            
-        fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, 10), sharex=True, gridspec_kw={'height_ratios': [1, 2]})
+        
+        # Calculate dynamic height based on total number of valid bars (unquantized + quantized)
+        num_bars = len(valid_exps)
+        fig_height = max(10, 4 + 0.35 * num_bars)
+        height_ratios = [1, max(2, fig_height / 3.5)]
+        
+        fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, fig_height), sharex=True, gridspec_kw={'height_ratios': height_ratios})
         plt.subplots_adjust(hspace=0.08)
 
         # TOP PANEL
@@ -378,16 +384,20 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
             ax_var.fill_between(range(len(layers)), y_min, var_thresh, where=(variances <= var_thresh), color='#2ca02c', alpha=0.15)
         ax_var.legend(loc='upper right')
 
-        # BOTTOM PANEL - Sort valid elements by depth
-        def get_start_idx(exp_tuple):
+        # BOTTOM PANEL - Sort dynamically so non-quantized plots directly below its quantized sibling
+        def get_sort_key(exp_tuple):
             r = exp_tuple[1]
             r = r[0] if isinstance(r, list) else r
-            try: return next(idx for idx, n in enumerate(layers) if r[0] in n)
-            except StopIteration: return 0
+            try: 
+                idx = next(i for i, n in enumerate(layers) if r[0] in n)
+            except StopIteration: 
+                idx = 0
+            is_quant = exp_tuple[3]
+            return (idx, 1 if not is_quant else 0) 
             
-        valid_exps = sorted(valid_exps, key=get_start_idx, reverse=True)
+        valid_exps = sorted(valid_exps, key=get_sort_key, reverse=True)
         
-        for i, (exp_name, ranges, exp_results) in enumerate(valid_exps):
+        for i, (orig_exp_name, ranges, exp_results, is_quant, display_name) in enumerate(valid_exps):
             ranges = ranges if isinstance(ranges, list) else [ranges]
             
             exp_results = exp_results.mean(numeric_only=True)
@@ -396,7 +406,7 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
             color = get_acc_color(d_acc)
             label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
             
-            logger.debug(f"  [RESULT] Plotting '{exp_name}' -> d_acc: {d_acc:.2f}%, final_acc: {final_acc:.2f}%")
+            logger.debug(f"  [RESULT] Plotting '{display_name}' -> d_acc: {d_acc:.2f}%, final_acc: {final_acc:.2f}%")
 
             for start_layer, end_layer in ranges:
                 try:
@@ -407,7 +417,7 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
                 except StopIteration: continue
         
         ax_heur.set_yticks(range(len(valid_exps)))
-        ax_heur.set_yticklabels([clean_exp_name(e[0]) for e in valid_exps], fontsize=10)
+        ax_heur.set_yticklabels([e[4] for e in valid_exps], fontsize=10)
         ax_heur.set_xlabel("Network Depth (Layer Index)")
         ax_heur.set_ylabel("Collapsed Layer Candidates")
         sns.despine(ax=ax_var); sns.despine(ax=ax_heur)
