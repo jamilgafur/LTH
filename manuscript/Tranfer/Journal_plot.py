@@ -364,7 +364,6 @@ def fig3_v2t_heuristic_validation(
 
 
 # ========================= FIG 4 ========================= #
-
 def fig4_heuristic_search_space_map(
     df: pd.DataFrame,
     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
@@ -376,13 +375,14 @@ def fig4_heuristic_search_space_map(
         logger.error("[FIG4] Could not import EXPERIMENTS")
         return
 
+    from scipy.signal import argrelextrema
+
     out_dir.mkdir(parents=True, exist_ok=True)
 
     REQUIRED_COLS = {"dataset", "architecture", "base_name", "is_quantized", "d_acc", "accuracy", "params", "flops"}
     missing = REQUIRED_COLS - set(df.columns)
     if missing:
-        logger.error(f"[FIG4] Missing required columns: {missing}. Ensure your dataframe has all metrics.")
-        # We will continue but warn, as get() will handle missing keys safely below
+        logger.warning(f"[FIG4] Missing some rich columns: {missing}. Will proceed with available data.")
 
     def get_acc_color(d_acc):
         if d_acc >= -2.0: return "#2ca02c"  # Green
@@ -410,6 +410,10 @@ def fig4_heuristic_search_space_map(
             return pd.DataFrame()
 
     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
+
+    def format_dataset_name(ds: str) -> str:
+        mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
+        return mapping.get(ds, ds.capitalize())
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         logger.info(f"[FIG4] Processing {arch}/{dataset}")
@@ -446,7 +450,7 @@ def fig4_heuristic_search_space_map(
             target_label = "Quantized" if is_quant_target else "Unquantized"
             
             valid_exps = []
-            csv_export_data = [] # Store rich plotting data for CSV export
+            csv_export_data = [] 
             
             for exp_name, ranges in model_exps.items():
                 if ranges is None: continue
@@ -491,7 +495,6 @@ def fig4_heuristic_search_space_map(
             x_vals = np.arange(len(layers))
 
             # --- TOP PANEL: Variance Trend & Highlighted Zones ---
-            # Plot raw variance (faded) and smoothed trend (dominant)
             ax_var.plot(x_vals, variances, color='#999999', linewidth=1.0, alpha=0.6, label='Raw Variance')
             ax_var.plot(x_vals, smoothed_var, color='#333333', linewidth=2.0, label='Macro Trend (Rolling)')
             
@@ -504,46 +507,59 @@ def fig4_heuristic_search_space_map(
             y_max = max(variances) * 2.0
             ax_var.set_ylim(y_min, y_max)
             
-            # Determine threshold and create contiguous Target/Danger zones
             if arch in multi_path_archs:
                 threshold = median_net
-                label_target = r"Multi-Path Target Zone ($\tilde{V}_{trend} < \tilde{V}_{net}$)"
+                label_target = r"Target Zone ($\tilde{V}_{trend} < \tilde{V}_{net}$)"
             else:
                 threshold = mu_net
-                label_target = r"Single-Path Target Zone ($\tilde{V}_{trend} < \mu_{net}$)"
+                label_target = r"Target Zone ($\tilde{V}_{trend} < \mu_{net}$)"
                 
             ax_var.axhline(y=threshold, color='blue', linestyle='--', alpha=0.5, label='Network Threshold')
             
+            # Calculate base variance targets
             is_target = smoothed_var <= threshold
             
-            # Find contiguous blocks of True/False to draw background spans
+            # Apply Hierarchical Depth Guardrail (Veto first 25% of network)
+            veto_idx = int(len(layers) * 0.25)
+            is_target[:veto_idx] = False 
+            
+            # Draw Foundational Veto Zone
+            ax_var.axvspan(0, max(0, veto_idx - 0.5), color='gray', alpha=0.15, hatch='//', edgecolor='gray', label="Foundational Guardrail (Veto)")
+            
+            # Draw contiguous blocks for Target/Danger zones (starting after veto)
             zones = []
-            start_idx = 0
-            current_val = is_target[0]
-            for i in range(1, len(is_target)):
-                if is_target[i] != current_val:
-                    zones.append((start_idx, i, current_val))
-                    start_idx = i
-                    current_val = is_target[i]
-            zones.append((start_idx, len(is_target)-1, current_val))
+            if veto_idx < len(is_target):
+                start_idx = veto_idx
+                current_val = is_target[veto_idx]
+                for i in range(veto_idx + 1, len(is_target)):
+                    if is_target[i] != current_val:
+                        zones.append((start_idx, i, current_val))
+                        start_idx = i
+                        current_val = is_target[i]
+                zones.append((start_idx, len(is_target)-1, current_val))
             
             added_target_legend = False
             added_danger_legend = False
             
             for start, end, is_good in zones:
+                # Slight visual offset so spans touch perfectly
+                span_start = max(veto_idx, start - 0.5) if start > 0 else start
+                span_end = min(len(layers) - 1, end + 0.5)
+                
                 if is_good:
                     lbl = label_target if not added_target_legend else ""
-                    ax_var.axvspan(start, end, color='#2ca02c', alpha=0.15, label=lbl)
+                    ax_var.axvspan(span_start, span_end, color='#2ca02c', alpha=0.15, label=lbl)
                     added_target_legend = True
                 else:
                     lbl = "Danger Zone (Avoid)" if not added_danger_legend else ""
-                    ax_var.axvspan(start, end, color='#d62728', alpha=0.08, label=lbl)
+                    ax_var.axvspan(span_start, span_end, color='#d62728', alpha=0.08, label=lbl)
                     added_danger_legend = True
 
-            # Highlight Valleys (Boundary anchors)
+            # Highlight Valleys (Boundary anchors) outside the veto zone
             valleys = argrelextrema(smoothed_var, np.less, order=2)[0]
             for v in valleys:
-                ax_var.axvline(x=v, color='black', linestyle=':', alpha=0.3, zorder=0)
+                if v >= veto_idx: 
+                    ax_var.axvline(x=v, color='black', linestyle=':', alpha=0.3, zorder=0)
 
             ax_var.legend(loc='upper right', ncol=2, fontsize=9)
 
@@ -574,6 +590,215 @@ def fig4_heuristic_search_space_map(
             plt.close()
 
     logger.info("[FIG4] Completed")
+# def fig4_heuristic_search_space_map(
+#     df: pd.DataFrame,
+#     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
+#     out_dir: Path = Path("./figures/search_space")
+# ):
+#     try:
+#         from transfer import EXPERIMENTS
+#     except ImportError:
+#         logger.error("[FIG4] Could not import EXPERIMENTS")
+#         return
+
+#     out_dir.mkdir(parents=True, exist_ok=True)
+
+#     REQUIRED_COLS = {"dataset", "architecture", "base_name", "is_quantized", "d_acc", "accuracy", "params", "flops"}
+#     missing = REQUIRED_COLS - set(df.columns)
+#     if missing:
+#         logger.error(f"[FIG4] Missing required columns: {missing}. Ensure your dataframe has all metrics.")
+#         # We will continue but warn, as get() will handle missing keys safely below
+
+#     def get_acc_color(d_acc):
+#         if d_acc >= -2.0: return "#2ca02c"  # Green
+#         if d_acc >= -6.0: return "#ff7f0e"  # Orange
+#         return "#d62728"                    # Red
+
+#     def robust_match(target_name, is_quant_target, g_df):
+#         try:
+#             sub_df = g_df[g_df['is_quantized'] == is_quant_target]
+#             if sub_df.empty: return pd.DataFrame()
+
+#             m = sub_df[sub_df['base_name'] == target_name]
+#             if not m.empty: return m
+
+#             m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
+#             if not m.empty: return m
+
+#             def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
+#             st = squash(target_name)
+
+#             fuzzy = sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
+#             return fuzzy
+#         except Exception as e:
+#             logger.error(f"[FIG4] robust_match failed: {e}")
+#             return pd.DataFrame()
+
+#     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
+
+#     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+#         logger.info(f"[FIG4] Processing {arch}/{dataset}")
+
+#         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
+#         if not csv_path.exists():
+#             logger.warning(f"[FIG4] Missing layer stats: {csv_path}")
+#             continue
+
+#         try:
+#             layer_df = pd.read_csv(csv_path)
+#         except Exception as e:
+#             logger.error(f"[FIG4] Failed reading {csv_path}: {e}")
+#             continue
+
+#         if not {"Layer", "Variance"}.issubset(layer_df.columns):
+#             logger.error(f"[FIG4] Missing columns in {csv_path}")
+#             continue
+
+#         layers = layer_df['Layer'].tolist()
+#         variances = np.maximum(layer_df['Variance'].values, 1e-6)
+        
+#         # Calculate macro-trend using a rolling median (window of 5 layers)
+#         smoothed_var = pd.Series(variances).rolling(window=5, center=True, min_periods=1).median().values
+        
+#         mu_net = np.mean(variances)
+#         median_net = np.median(variances)
+
+#         model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
+#         if not model_exps:
+#             continue
+
+#         for is_quant_target in [False, True]:
+#             target_label = "Quantized" if is_quant_target else "Unquantized"
+            
+#             valid_exps = []
+#             csv_export_data = [] # Store rich plotting data for CSV export
+            
+#             for exp_name, ranges in model_exps.items():
+#                 if ranges is None: continue
+#                 cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
+                
+#                 m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
+#                 if not m.empty:
+#                     exp_results = m.mean(numeric_only=True)
+#                     valid_exps.append((exp_name, ranges, exp_results, cleaned_name))
+                    
+#                     # Store data for CSV
+#                     csv_export_data.append({
+#                         "Architecture": arch,
+#                         "Dataset": dataset,
+#                         "Candidate_Name": cleaned_name,
+#                         "Quantized": is_quant_target,
+#                         "Ranges": str(ranges),
+#                         "d_Acc": exp_results.get('d_acc', np.nan),
+#                         "Accuracy": exp_results.get('accuracy', np.nan),
+#                         "Params": exp_results.get('params', np.nan),
+#                         "FLOPs": exp_results.get('flops', np.nan),
+#                         "Memory": exp_results.get('memory', np.nan)
+#                     })
+                    
+#             if not valid_exps:
+#                 continue
+            
+#             # Export the rich plotting data to CSV
+#             file_suffix = "quantized" if is_quant_target else "unquantized"
+#             export_csv_path = out_dir / f"{arch}_{dataset}_plotting_info_{file_suffix}.csv"
+#             pd.DataFrame(csv_export_data).to_csv(export_csv_path, index=False)
+#             logger.info(f"Exported plotting data to {export_csv_path}")
+            
+#             valid_exps = sorted(valid_exps, key=lambda x: x[2]['d_acc'])
+            
+#             num_bars = len(valid_exps)
+#             fig_height = max(8, 4 + 0.4 * num_bars)
+#             height_ratios = [1, max(2, fig_height / 3.5)]
+            
+#             fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, fig_height), sharex=True, gridspec_kw={'height_ratios': height_ratios})
+#             plt.subplots_adjust(hspace=0.08)
+#             x_vals = np.arange(len(layers))
+
+#             # --- TOP PANEL: Variance Trend & Highlighted Zones ---
+#             # Plot raw variance (faded) and smoothed trend (dominant)
+#             ax_var.plot(x_vals, variances, color='#999999', linewidth=1.0, alpha=0.6, label='Raw Variance')
+#             ax_var.plot(x_vals, smoothed_var, color='#333333', linewidth=2.0, label='Macro Trend (Rolling)')
+            
+#             ax_var.set_yscale('log')
+#             ax_var.set_ylabel("Variance ($\sigma^2$)")
+#             title_text = f"BAV Search Space Regions: {arch} on {format_dataset_name(dataset)} ({target_label})"
+#             ax_var.set_title(title_text, loc='left', pad=20, fontsize=16, fontweight='bold')
+            
+#             y_min = max(1e-4, min(variances) * 0.5)
+#             y_max = max(variances) * 2.0
+#             ax_var.set_ylim(y_min, y_max)
+            
+#             # Determine threshold and create contiguous Target/Danger zones
+#             if arch in multi_path_archs:
+#                 threshold = median_net
+#                 label_target = r"Multi-Path Target Zone ($\tilde{V}_{trend} < \tilde{V}_{net}$)"
+#             else:
+#                 threshold = mu_net
+#                 label_target = r"Single-Path Target Zone ($\tilde{V}_{trend} < \mu_{net}$)"
+                
+#             ax_var.axhline(y=threshold, color='blue', linestyle='--', alpha=0.5, label='Network Threshold')
+            
+#             is_target = smoothed_var <= threshold
+            
+#             # Find contiguous blocks of True/False to draw background spans
+#             zones = []
+#             start_idx = 0
+#             current_val = is_target[0]
+#             for i in range(1, len(is_target)):
+#                 if is_target[i] != current_val:
+#                     zones.append((start_idx, i, current_val))
+#                     start_idx = i
+#                     current_val = is_target[i]
+#             zones.append((start_idx, len(is_target)-1, current_val))
+            
+#             added_target_legend = False
+#             added_danger_legend = False
+            
+#             for start, end, is_good in zones:
+#                 if is_good:
+#                     lbl = label_target if not added_target_legend else ""
+#                     ax_var.axvspan(start, end, color='#2ca02c', alpha=0.15, label=lbl)
+#                     added_target_legend = True
+#                 else:
+#                     lbl = "Danger Zone (Avoid)" if not added_danger_legend else ""
+#                     ax_var.axvspan(start, end, color='#d62728', alpha=0.08, label=lbl)
+#                     added_danger_legend = True
+
+#             # Highlight Valleys (Boundary anchors)
+#             valleys = argrelextrema(smoothed_var, np.less, order=2)[0]
+#             for v in valleys:
+#                 ax_var.axvline(x=v, color='black', linestyle=':', alpha=0.3, zorder=0)
+
+#             ax_var.legend(loc='upper right', ncol=2, fontsize=9)
+
+#             # --- BOTTOM PANEL: Sorted Search Space Candidates ---
+#             for i, (orig_exp_name, ranges, exp_results, display_name) in enumerate(valid_exps):
+#                 ranges = ranges if isinstance(ranges, list) else [ranges]
+#                 d_acc = exp_results['d_acc']
+#                 final_acc = exp_results.get('accuracy', 0.0)
+#                 color = get_acc_color(d_acc)
+#                 label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
+
+#                 for start_layer, end_layer in ranges:
+#                     try:
+#                         s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
+#                         e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
+#                         ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=12, color=color, alpha=0.9)
+#                         ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=9, fontweight='bold', color=color)
+#                     except StopIteration: continue
+            
+#             ax_heur.set_yticks(range(len(valid_exps)))
+#             ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=10)
+#             ax_heur.set_xlabel("Network Depth (Layer Index)")
+#             ax_heur.set_ylabel("Collapsed Layer Candidates")
+#             sns.despine(ax=ax_var); sns.despine(ax=ax_heur)
+            
+#             save_path = out_dir / f"{arch}_{dataset}_bav_decision_map_{file_suffix}.png"
+#             plt.savefig(save_path, bbox_inches='tight')
+#             plt.close()
+
+#     logger.info("[FIG4] Completed")
 
 if __name__ == "__main__":
     try:
