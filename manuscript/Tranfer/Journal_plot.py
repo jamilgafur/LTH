@@ -477,16 +477,15 @@ def fig3_v2t_heuristic_validation(
     logger.info("[FIG3] Completed successfully")
 
 # ========================= FIG 4 ========================= #
-# ========================= FIG 4 ========================= #
 def fig4_comprehensive_search_space_map(
     df: pd.DataFrame,
     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
     out_dir: Path = Path("./figures/search_space")
 ):
     """
-    Generates the decision map and hardware sidebar as SEPARATE, height-aligned files:
-    1. The BAV Decision Map (Variance Trend + Candidate Layers)
-    2. The Hardware Sidebar (Delta Acc, Params, FLOPs, Memory)
+    Generates two separate files for the paper:
+    1. The Variance Trend (The theory / macro-trend line)
+    2. The Candidate Bars + Hardware Sidebar integrated into one figure.
     """
     try:
         from transfer import EXPERIMENTS
@@ -495,6 +494,7 @@ def fig4_comprehensive_search_space_map(
         return
 
     from scipy.signal import argrelextrema
+    import matplotlib.gridspec as gridspec
     out_dir.mkdir(parents=True, exist_ok=True)
 
     def get_acc_color(d_acc):
@@ -525,7 +525,7 @@ def fig4_comprehensive_search_space_map(
         return mapping.get(ds, ds.capitalize())
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        logger.info(f"[FIG4] Processing Separated Maps for {arch}/{dataset}")
+        logger.info(f"[FIG4] Processing Trend and Candidate+Sidebar Maps for {arch}/{dataset}")
 
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
         if not csv_path.exists(): continue
@@ -569,24 +569,20 @@ def fig4_comprehensive_search_space_map(
             valid_exps = sorted(valid_exps, key=lambda x: x[2].get('d_acc', -100))
             
             num_bars = len(valid_exps)
-            
-            # Shared Height to ensure they align side-by-side in LaTeX
-            fig_height = max(7, 3.5 + 0.45 * num_bars)
-            y_limits = (-1, num_bars) # Strictly lock Y-axis for alignment
-
-            # ==========================================
-            # FILE 1: The Decision Map (Left Side)
-            # ==========================================
-            fig_map, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(10, fig_height), height_ratios=[1, max(1.5, fig_height/3)], sharex=False)
-            
             x_vals = np.arange(len(layers))
+            file_suffix = "quantized" if is_quant_target else "unquantized"
 
-            # Top Panel: Variance Trend
+            # ==========================================
+            # FILE 1: The Variance Trend Plot
+            # ==========================================
+            fig_var, ax_var = plt.subplots(figsize=(10, 3.5))
+
             ax_var.plot(x_vals, variances, color='#999999', linewidth=1.0, alpha=0.6, label='Raw Variance')
             ax_var.plot(x_vals, smoothed_var, color='#333333', linewidth=2.0, label='Macro Trend')
             ax_var.set_yscale('log')
             ax_var.set_ylabel("Variance ($\sigma^2$)", fontweight='bold')
-            ax_var.set_title(f"BAV Decision Map: {arch} ({target_label})", loc='left', pad=15, fontsize=14, fontweight='bold')
+            ax_var.set_xlabel("Network Depth (Layer Index)", fontweight='bold')
+            ax_var.set_title(f"BAV Macro-Trend: {arch} ({target_label})", loc='left', pad=15, fontsize=14, fontweight='bold')
             ax_var.set_xlim(0, len(layers))
             
             threshold = median_net if arch in multi_path_archs else mu_net
@@ -597,7 +593,29 @@ def fig4_comprehensive_search_space_map(
             is_target[:veto_idx] = False 
             ax_var.axvspan(0, max(0, veto_idx - 0.5), color='gray', alpha=0.15, hatch='//', edgecolor='gray', label="Veto")
             
-            # Bottom Panel: Candidate Bars
+            ax_var.legend(loc='upper right', ncol=3, fontsize=9, framealpha=0.9)
+            sns.despine(ax=ax_var)
+            plt.tight_layout()
+            
+            var_save_path = out_dir / f"{arch}_{dataset}_variance_trend_{file_suffix}.png"
+            fig_var.savefig(var_save_path, bbox_inches='tight')
+            plt.close(fig_var)
+
+
+            # ==========================================
+            # FILE 2: Candidate Bars + Hardware Sidebar
+            # ==========================================
+            fig_height = max(3.5, 0.5 * num_bars + 1)
+            y_limits = (-1, num_bars)
+            
+            fig_cand = plt.figure(figsize=(14, fig_height)) # Wide enough to hold both
+            gs = gridspec.GridSpec(1, 2, width_ratios=[2.5, 1.5], wspace=0.05)
+            
+            ax_heur = fig_cand.add_subplot(gs[0])
+            ax_side = fig_cand.add_subplot(gs[1], sharey=ax_heur)
+            ax_side.axis('off')
+            
+            # --- Left Side: Candidate Bars ---
             for i, (orig_exp_name, ranges, exp_results, display_name, p_red, f_red, m_red) in enumerate(valid_exps):
                 ranges = ranges if isinstance(ranges, list) else [ranges]
                 d_acc = exp_results.get('d_acc', np.nan)
@@ -606,7 +624,7 @@ def fig4_comprehensive_search_space_map(
                     try:
                         s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
                         e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
-                        ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=14, color=color, alpha=0.85)
+                        ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.85)
                     except StopIteration: continue
             
             ax_heur.set_xlim(0, len(layers))
@@ -614,29 +632,14 @@ def fig4_comprehensive_search_space_map(
             ax_heur.set_yticks(range(len(valid_exps)))
             ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=11, fontweight='bold')
             ax_heur.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
+            ax_heur.set_title(f"Structural Candidates & Hardware Reductions", loc='left', pad=25, fontsize=14, fontweight='bold')
+            sns.despine(ax=ax_heur)
 
-            ax_var.legend(loc='upper right', ncol=3, fontsize=9, framealpha=0.9)
-            sns.despine(ax=ax_var); sns.despine(ax=ax_heur)
-            plt.tight_layout()
-            
-            file_suffix = "quantized" if is_quant_target else "unquantized"
-            map_save_path = out_dir / f"{arch}_{dataset}_decision_map_{file_suffix}.png"
-            fig_map.savefig(map_save_path, bbox_inches='tight')
-            plt.close(fig_map)
-
-            # ==========================================
-            # FILE 2: The Hardware Sidebar Table
-            # ==========================================
-            # Notice the figure height matches the map height perfectly
-            fig_side, ax_side = plt.subplots(figsize=(5, fig_height))
-            ax_side.axis('off')
-            ax_side.set_ylim(y_limits)
-
-            cols = [0.15, 0.40, 0.65, 0.90]
+            # --- Right Side: Hardware Sidebar Table ---
+            cols = [0.10, 0.35, 0.65, 0.90]
             headers = ["$\\Delta$ Acc", "Params $\\downarrow$", "FLOPs $\\downarrow$", "Memory $\\downarrow$"]
             
-            # Use data coordinates to perfectly align rows with the left plot
-            header_y = len(valid_exps) + 0.5 
+            header_y = len(valid_exps) # Top row header position
             for x, h in zip(cols, headers):
                 ax_side.text(x, header_y, h, ha='center', va='bottom', fontweight='bold', fontsize=11, color='#333333')
             
@@ -654,11 +657,12 @@ def fig4_comprehensive_search_space_map(
                     alpha = 0.6 if (d_acc < -6.0 and x != cols[0]) else 1.0
                     ax_side.text(x, i, val, ha='center', va='center', color=c, fontweight=fw, fontsize=11, alpha=alpha)
 
-            side_save_path = out_dir / f"{arch}_{dataset}_hardware_sidebar_{file_suffix}.png"
-            fig_side.savefig(side_save_path, bbox_inches='tight')
-            plt.close(fig_side)
+            plt.tight_layout()
+            cand_save_path = out_dir / f"{arch}_{dataset}_candidates_sidebar_{file_suffix}.png"
+            fig_cand.savefig(cand_save_path, bbox_inches='tight')
+            plt.close(fig_cand)
 
-    logger.info("[FIG4] Separated Decision Maps and Sidebars generated successfully.")
+    logger.info("[FIG4] Variance Trends and Candidate/Sidebar plots generated successfully.")
 
 def fig5_hardware_efficiency_profiles(
     df: pd.DataFrame,
