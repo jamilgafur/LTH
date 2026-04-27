@@ -223,6 +223,9 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
     if not all_merged_data: return
     full_df = pd.concat(all_merged_data)
     
+    # Map booleans to clean strings for the legend
+    full_df['Quantization State'] = full_df['is_quantized'].map({False: 'Unquantized', True: 'Quantized'})
+    
     fig, axes = plt.subplots(1, 2, figsize=(16, 7), sharey=True)
     plt.subplots_adjust(wspace=0.05)
     
@@ -235,26 +238,26 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
     
     sp_df = full_df[full_df['Topology'] == 'Single-Path']
     if not sp_df.empty:
-        sns.scatterplot(data=sp_df, x="Median Variance", y="d_acc", style="is_quantized", markers={False: "o", True: "X"},
+        sns.scatterplot(data=sp_df, x="Median Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"},
                         s=250, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[0], zorder=3)
-        # SWAPPED: Single-Path optimal target is now High Spikes (right side)
-        q3 = sp_df["Median Variance"].quantile(0.6)
-        axes[0].axvspan(q3, sp_df["Median Variance"].max() * 5, color='#2ca02c', alpha=0.15, zorder=0, label=f"V2T Target: High Spikes (>{q3:.1f})")
+        # Matches method.tex: Single-Path target is Flat Flow
+        q1 = sp_df["Median Variance"].quantile(0.3)
+        axes[0].axvspan(1e-4, q1, color='#2ca02c', alpha=0.15, zorder=0, label=f"V2T Target: Flat Flow (<{q1:.1f})")
         axes[0].set_xscale('symlog', linthresh=1e-2)
-        axes[0].set_title("Single-Path: Target Overfitting Spikes", fontsize=16, fontweight='bold', pad=15)
+        axes[0].set_title("Single-Path: Target Flat Representation", fontsize=16, fontweight='bold', pad=15)
         axes[0].set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better", fontsize=14, fontweight='bold')
         axes[0].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
         axes[0].legend(loc="lower left", framealpha=0.9)
         
     mp_df = full_df[full_df['Topology'] == 'Multi-Path']
     if not mp_df.empty:
-        sns.scatterplot(data=mp_df, x="Median Variance", y="d_acc", style="is_quantized", markers={False: "o", True: "X"},
-                        s=250, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[1], zorder=3)
-        # SWAPPED: Multi-Path optimal target is now Flat Flow (left side)
-        q1 = mp_df["Median Variance"].quantile(0.3)
-        axes[1].axvspan(1e-4, q1, color='#2ca02c', alpha=0.15, zorder=0, label=f"V2T Target: Flat Flow (<{q1:.1f})")
+        sns.scatterplot(data=mp_df, x="Median Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"},
+                        s=250, alpha=0.9, edgecolor="black", color="#d62728", ax=axes[1], zorder=3)
+        # Matches method.tex: Multi-Path target is High Spikes
+        q3 = mp_df["Median Variance"].quantile(0.6)
+        axes[1].axvspan(q3, mp_df["Median Variance"].max() * 5, color='#d62728', alpha=0.15, zorder=0, label=f"V2T Target: High Spikes (>{q3:.1f})")
         axes[1].set_xscale('symlog', linthresh=1e-2)
-        axes[1].set_title("Multi-Path: Target Flat Representation", fontsize=16, fontweight='bold', pad=15)
+        axes[1].set_title("Multi-Path: Target Overfitting Spikes", fontsize=16, fontweight='bold', pad=15)
         axes[1].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
         axes[1].legend(loc="lower right", framealpha=0.9)
 
@@ -342,8 +345,11 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
             fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, fig_height), sharex=True, gridspec_kw={'height_ratios': height_ratios})
             plt.subplots_adjust(hspace=0.08)
 
+            # Explicit x-array is required to enable fill_between interpolation
+            x_vals = np.arange(len(layers))
+
             # TOP PANEL: Variance & Heuristics
-            ax_var.plot(range(len(layers)), variances, color='#555555', linewidth=1.5, alpha=0.8)
+            ax_var.plot(x_vals, variances, color='#555555', linewidth=1.5, alpha=0.8)
             ax_var.set_yscale('log')
             ax_var.set_ylabel("Variance ($\sigma^2$)")
             title_text = f"Heuristic Search Space Guide: {arch} on {format_dataset_name(dataset)} ({target_label})"
@@ -354,15 +360,15 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
             ax_var.set_ylim(y_min, y_max)
             
             if arch in multi_path_archs:
-                # SWAPPED: Target regions under the global mean for Multi-Path
-                var_thresh = mu_net
-                ax_var.axhline(y=var_thresh, color='#2ca02c', linestyle='--', alpha=0.5, label=r"Multi-Path Target ($V_m < \mu_{net}$)")
-                ax_var.fill_between(range(len(layers)), y_min, var_thresh, where=(variances <= var_thresh), color='#2ca02c', alpha=0.15)
-            else:
-                # SWAPPED: Target regions above the global median + std for Single-Path
+                # Matches method.tex: Target regions above the median + std for Multi-Path
                 var_thresh = median_net + std_net
-                ax_var.axhline(y=var_thresh, color='#2ca02c', linestyle='--', alpha=0.5, label=r"Single-Path Target ($V_m > \tilde{V} + \sigma$)")
-                ax_var.fill_between(range(len(layers)), var_thresh, y_max, where=(variances >= var_thresh), color='#2ca02c', alpha=0.15)
+                ax_var.axhline(y=var_thresh, color='#d62728', linestyle='--', alpha=0.5, label=r"Multi-Path Target ($V_m > \tilde{V} + \sigma$)")
+                ax_var.fill_between(x_vals, var_thresh, y_max, where=(variances >= var_thresh), color='#d62728', alpha=0.15, interpolate=True)
+            else:
+                # Matches method.tex: Target regions under the global mean for Single-Path
+                var_thresh = mu_net
+                ax_var.axhline(y=var_thresh, color='#2ca02c', linestyle='--', alpha=0.5, label=r"Single-Path Target ($V_m < \mu_{net}$)")
+                ax_var.fill_between(x_vals, y_min, var_thresh, where=(variances <= var_thresh), color='#2ca02c', alpha=0.15, interpolate=True)
             ax_var.legend(loc='upper right')
 
             # BOTTOM PANEL: Sorted Search Space Candidates
