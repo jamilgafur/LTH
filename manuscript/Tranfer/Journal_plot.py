@@ -204,60 +204,155 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
                 plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.png")
                 plt.close()
 
-def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/heuristic_validation")):
+# ========================= FIG 3 ========================= #
+
+def fig3_v2t_heuristic_validation(
+    df: pd.DataFrame,
+    stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
+    out_dir: Path = Path("./figures/heuristic_validation")
+):
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    REQUIRED_COLS = {"dataset", "architecture", "posthoc_or_posttrain", "base_name", "is_quantized", "d_acc"}
+    missing = REQUIRED_COLS - set(df.columns)
+    if missing:
+        logger.error(f"[FIG3] Missing required columns: {missing}")
+        return
+
     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
     all_merged_data = []
-    
+
+    logger.info(f"[FIG3] Starting with {len(df)} rows")
+
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        logger.info(f"[FIG3] Processing: dataset={dataset}, arch={arch}, rows={len(g_metrics)}")
+
         clean_metrics = g_metrics[g_metrics['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained'])]
-        if clean_metrics.empty: continue
-            
+
+        if clean_metrics.empty:
+            logger.warning(f"[FIG3] Skipping {arch}/{dataset}: no valid posthoc/posttrain rows")
+            continue
+
         csv_path = stats_dir / f"{arch}_{dataset}_experiment_block_stats.csv"
-        if csv_path.exists():
+
+        if not csv_path.exists():
+            logger.warning(f"[FIG3] Missing stats file: {csv_path}")
+            continue
+
+        try:
             df_h = pd.read_csv(csv_path)
-            merged = pd.merge(df_h, clean_metrics, left_on="Experiment", right_on="base_name")
-            merged["Topology"] = "Multi-Path" if arch in multi_path_archs else "Single-Path"
-            all_merged_data.append(merged)
-            
-    if not all_merged_data: return
-    full_df = pd.concat(all_merged_data)
-    
-    # Map booleans to clean strings for the legend
-    full_df['Quantization State'] = full_df['is_quantized'].map({False: 'Unquantized', True: 'Quantized'})
-    
+        except Exception as e:
+            logger.error(f"[FIG3] Failed to read {csv_path}: {e}")
+            continue
+
+        if "Experiment" not in df_h.columns:
+            logger.error(f"[FIG3] 'Experiment' column missing in {csv_path}")
+            continue
+
+        merged = pd.merge(
+            df_h,
+            clean_metrics,
+            left_on="Experiment",
+            right_on="base_name",
+            how="inner"
+        )
+
+        logger.info(f"[FIG3] Merge result: {len(merged)} rows")
+
+        if merged.empty:
+            logger.warning(f"[FIG3] Empty merge for {arch}/{dataset}")
+            continue
+
+        merged["Topology"] = "Multi-Path" if arch in multi_path_archs else "Single-Path"
+
+        # Save per-merge CSV (debug goldmine)
+        debug_csv = out_dir / f"debug_merge_{arch}_{dataset}.csv"
+        merged.to_csv(debug_csv, index=False)
+
+        all_merged_data.append(merged)
+
+    if not all_merged_data:
+        logger.error("[FIG3] No data after merging. Exiting.")
+        return
+
+    full_df = pd.concat(all_merged_data, ignore_index=True)
+
+    # Save FULL dataset CSV
+    full_csv_path = out_dir / "fig3_full_merged_data.csv"
+    full_df.to_csv(full_csv_path, index=False)
+    logger.info(f"[FIG3] Saved full merged CSV → {full_csv_path}")
+
+    # Map legend labels
+    full_df['Quantization State'] = full_df['is_quantized'].map({
+        False: 'Unquantized',
+        True: 'Quantized'
+    })
+
     fig, axes = plt.subplots(1, 2, figsize=(16, 7), sharey=True)
     plt.subplots_adjust(wspace=0.05)
-    
+
     for ax in axes:
         ax.axhline(0, color='black', linestyle='--', linewidth=2, zorder=1)
-        ax.axhspan(0, 100, color='#2ca02c', alpha=0.05, zorder=0, label="Accuracy Improved")
-        ax.axhspan(-2.0, 0, color='#ff7f0e', alpha=0.05, zorder=0, label="Minor Degradation (<2%)")
-        ax.axhspan(-100, -2.0, color='#d62728', alpha=0.05, zorder=0, label="Severe Degradation")
-        ax.set_ylim(full_df['d_acc'].min() - 2, max(full_df['d_acc'].max() + 2, 5))
-    
+        ax.axhspan(0, 100, color='#2ca02c', alpha=0.05, zorder=0)
+        ax.axhspan(-2.0, 0, color='#ff7f0e', alpha=0.05, zorder=0)
+        ax.axhspan(-100, -2.0, color='#d62728', alpha=0.05, zorder=0)
+
+    y_min = full_df['d_acc'].min() - 2
+    y_max = max(full_df['d_acc'].max() + 2, 5)
+
+    for ax in axes:
+        ax.set_ylim(y_min, y_max)
+
+    # --- Single Path ---
     sp_df = full_df[full_df['Topology'] == 'Single-Path']
-    if not sp_df.empty:
-        sns.scatterplot(data=sp_df, x="Median Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"},
-                        s=250, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[0], zorder=3)
-        # Matches method.tex: Single-Path target is Flat Flow
+    if sp_df.empty:
+        logger.warning("[FIG3] No Single-Path data")
+    else:
+        sns.scatterplot(
+            data=sp_df,
+            x="Median Variance",
+            y="d_acc",
+            style="Quantization State",
+            markers={"Unquantized": "o", "Quantized": "X"},
+            s=250,
+            alpha=0.9,
+            edgecolor="black",
+            color="#2ca02c",
+            ax=axes[0],
+            zorder=3
+        )
+        # BAV Target: Single-Path targets Bounded Growth
         q1 = sp_df["Median Variance"].quantile(0.3)
-        axes[0].axvspan(1e-4, q1, color='#2ca02c', alpha=0.15, zorder=0, label=f"V2T Target: Flat Flow (<{q1:.1f})")
+        axes[0].axvspan(1e-4, q1, color='#2ca02c', alpha=0.15, zorder=0, label=f"BAV Target: Bounded Growth (<{q1:.1f})")
         axes[0].set_xscale('symlog', linthresh=1e-2)
-        axes[0].set_title("Single-Path: Target Flat Representation", fontsize=16, fontweight='bold', pad=15)
+        axes[0].set_title("Single-Path: Target Bounded Growth", fontsize=16, fontweight='bold', pad=15)
         axes[0].set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better", fontsize=14, fontweight='bold')
         axes[0].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
         axes[0].legend(loc="lower left", framealpha=0.9)
-        
+
+    # --- Multi Path ---
     mp_df = full_df[full_df['Topology'] == 'Multi-Path']
-    if not mp_df.empty:
-        sns.scatterplot(data=mp_df, x="Median Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"},
-                        s=250, alpha=0.9, edgecolor="black", color="#d62728", ax=axes[1], zorder=3)
-        # Matches method.tex: Multi-Path target is High Spikes
-        q3 = mp_df["Median Variance"].quantile(0.6)
-        axes[1].axvspan(q3, mp_df["Median Variance"].max() * 5, color='#d62728', alpha=0.15, zorder=0, label=f"V2T Target: High Spikes (>{q3:.1f})")
+    if mp_df.empty:
+        logger.warning("[FIG3] No Multi-Path data")
+    else:
+        sns.scatterplot(
+            data=mp_df,
+            x="Median Variance",
+            y="d_acc",
+            style="Quantization State",
+            markers={"Unquantized": "o", "Quantized": "X"},
+            s=250,
+            alpha=0.9,
+            edgecolor="black",
+            color="#d62728", # Keeping red for contrast, but logic flips to valleys
+            ax=axes[1],
+            zorder=3
+        )
+        # BAV Target: Multi-Path targets Terminal Stabilization / Valleys
+        q1_mp = mp_df["Median Variance"].quantile(0.4)
+        axes[1].axvspan(1e-4, q1_mp, color='#2ca02c', alpha=0.15, zorder=0, label=f"BAV Target: Variance Valleys (<{q1_mp:.1f})")
         axes[1].set_xscale('symlog', linthresh=1e-2)
-        axes[1].set_title("Multi-Path: Target Overfitting Spikes", fontsize=16, fontweight='bold', pad=15)
+        axes[1].set_title("Multi-Path: Target Terminal Stabilization", fontsize=16, fontweight='bold', pad=15)
         axes[1].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
         axes[1].legend(loc="lower right", framealpha=0.9)
 
@@ -265,77 +360,117 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
     plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
     plt.close()
 
-def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/search_space")):
+    logger.info("[FIG3] Completed successfully")
+
+
+# ========================= FIG 4 ========================= #
+
+def fig4_heuristic_search_space_map(
+    df: pd.DataFrame,
+    stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
+    out_dir: Path = Path("./figures/search_space")
+):
     try:
-        from transfer import EXPERIMENTS 
+        from transfer import EXPERIMENTS
     except ImportError:
-        logger.error("Could not import EXPERIMENTS from transfer.py. Skipping Fig4.")
+        logger.error("[FIG4] Could not import EXPERIMENTS")
         return
-        
+
     out_dir.mkdir(parents=True, exist_ok=True)
-    
+
+    REQUIRED_COLS = {"dataset", "architecture", "base_name", "is_quantized", "d_acc"}
+    missing = REQUIRED_COLS - set(df.columns)
+    if missing:
+        logger.error(f"[FIG4] Missing required columns: {missing}")
+        return
+
     def get_acc_color(d_acc):
         if d_acc >= -2.0: return "#2ca02c"
         if d_acc >= -6.0: return "#ff7f0e"
         return "#d62728"
 
     def robust_match(target_name, is_quant_target, g_df):
-        sub_df = g_df[(g_df['is_quantized'] == is_quant_target) & (g_df['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained']))]
-        if sub_df.empty: sub_df = g_df[(g_df['is_quantized'] == is_quant_target)]
-        if sub_df.empty: return pd.DataFrame()
+        try:
+            sub_df = g_df[g_df['is_quantized'] == is_quant_target]
+            if sub_df.empty: return pd.DataFrame()
 
-        m = sub_df[sub_df['base_name'] == target_name]
-        if not m.empty: return m
-        
-        m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
-        if not m.empty: return m
-        
-        def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
-        st = squash(target_name)
-        
-        fuzzy_matches = []
-        for _, row in sub_df.iterrows():
-            if squash(row['base_name']) == st:
-                fuzzy_matches.append(row)
-                
-        if fuzzy_matches: return pd.DataFrame(fuzzy_matches)
-        return pd.DataFrame()
+            m = sub_df[sub_df['base_name'] == target_name]
+            if not m.empty: return m
+
+            m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
+            if not m.empty: return m
+
+            def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
+            st = squash(target_name)
+
+            fuzzy = sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
+            return fuzzy
+        except Exception as e:
+            logger.error(f"[FIG4] robust_match failed: {e}")
+            return pd.DataFrame()
 
     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
 
+    def format_dataset_name(ds: str) -> str:
+        mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
+        return mapping.get(ds, ds.capitalize())
+
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        logger.info(f"[FIG4] Processing {arch}/{dataset}")
+
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
-        if not csv_path.exists(): continue
-            
-        layer_df = pd.read_csv(csv_path)
+        if not csv_path.exists():
+            logger.warning(f"[FIG4] Missing layer stats: {csv_path}")
+            continue
+
+        try:
+            layer_df = pd.read_csv(csv_path)
+        except Exception as e:
+            logger.error(f"[FIG4] Failed reading {csv_path}: {e}")
+            continue
+
+        if not {"Layer", "Variance"}.issubset(layer_df.columns):
+            logger.error(f"[FIG4] Missing columns in {csv_path}")
+            continue
+
+        # Save cleaned layer stats for debugging
+        debug_layer_csv = out_dir / f"debug_layers_{arch}_{dataset}.csv"
+        layer_df.to_csv(debug_layer_csv, index=False)
+
         layers = layer_df['Layer'].tolist()
         variances = np.maximum(layer_df['Variance'].values, 1e-6)
         
         mu_net = np.mean(variances)
         median_net = np.median(variances)
-        std_net = np.std(variances)
-        
+
         model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
-        if not model_exps: continue
+        if not model_exps:
+            logger.warning(f"[FIG4] No experiments defined for {arch}/{dataset}")
+            continue
+
+        # Save experiment mapping snapshot
+        exp_debug_path = out_dir / f"debug_experiments_{arch}_{dataset}.csv"
+        pd.DataFrame(list(model_exps.items()), columns=["exp", "ranges"]).to_csv(exp_debug_path, index=False)
+        logger.info(f"[FIG4] Found {len(model_exps)} experiment configs")
 
         for is_quant_target in [False, True]:
             target_label = "Quantized" if is_quant_target else "Unquantized"
-            logger.info(f"--- Generating Ladder Plot for {arch} on {dataset} ({target_label}) ---")
+            logger.info(f"--- Generating BAV Plot for {arch} on {dataset} ({target_label}) ---")
             
             valid_exps = []
             for exp_name, ranges in model_exps.items():
                 if ranges is None: continue
-                cleaned_name = clean_exp_name(exp_name)
+                # Basic clean implementation for display names
+                cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
                 
                 m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
                 if not m.empty:
                     valid_exps.append((exp_name, ranges, m, cleaned_name))
                     
             if not valid_exps:
-                logger.warning(f"  [EMPTY] No valid data remains for {arch} on {dataset} ({target_label}). Skipping plot.")
+                logger.warning(f"  [EMPTY] No valid data remains for {arch} on {dataset} ({target_label}). Skipping.")
                 continue
             
-            # Sort by performance: highest d_acc (lowest drop) plots at the top (highest index)
             valid_exps = sorted(valid_exps, key=lambda x: x[2].mean(numeric_only=True)['d_acc'])
             
             num_bars = len(valid_exps)
@@ -345,39 +480,43 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
             fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, fig_height), sharex=True, gridspec_kw={'height_ratios': height_ratios})
             plt.subplots_adjust(hspace=0.08)
 
-            # Explicit x-array is required to enable fill_between interpolation
             x_vals = np.arange(len(layers))
 
-            # TOP PANEL: Variance & Heuristics
+            # --- TOP PANEL: Variance & BAV Heuristics ---
             ax_var.plot(x_vals, variances, color='#555555', linewidth=1.5, alpha=0.8)
             ax_var.set_yscale('log')
             ax_var.set_ylabel("Variance ($\sigma^2$)")
-            title_text = f"Heuristic Search Space Guide: {arch} on {format_dataset_name(dataset)} ({target_label})"
+            title_text = f"BAV Heuristic Guide: {arch} on {format_dataset_name(dataset)} ({target_label})"
             ax_var.set_title(title_text, loc='left', pad=20, fontsize=16, fontweight='bold')
             
             y_min = max(1e-4, min(variances) * 0.5)
             y_max = max(variances) * 2.0
             ax_var.set_ylim(y_min, y_max)
             
+            # Plot Local Minima (Valleys) as vertical guides
+            valleys = argrelextrema(variances, np.less, order=1)[0]
+            for v in valleys:
+                ax_var.axvline(x=v, color='gray', linestyle=':', alpha=0.4, zorder=0)
+            
             if arch in multi_path_archs:
-                # Matches method.tex: Target regions above the median + std for Multi-Path
-                var_thresh = median_net + std_net
-                ax_var.axhline(y=var_thresh, color='#d62728', linestyle='--', alpha=0.5, label=r"Multi-Path Target ($V_m > \tilde{V} + \sigma$)")
-                ax_var.fill_between(x_vals, var_thresh, y_max, where=(variances >= var_thresh), color='#d62728', alpha=0.15, interpolate=True)
+                # BAV Target: Variance valleys/stabilization for Multi-Path
+                var_thresh = median_net
+                ax_var.axhline(y=var_thresh, color='#2ca02c', linestyle='--', alpha=0.5, label=r"Multi-Path Target: Variance Valleys ($V_m < \tilde{V}$)")
+                ax_var.fill_between(x_vals, y_min, var_thresh, where=(variances <= var_thresh), color='#2ca02c', alpha=0.15, interpolate=True)
             else:
-                # Matches method.tex: Target regions under the global mean for Single-Path
+                # BAV Target: Bounded growth regions for Single-Path
                 var_thresh = mu_net
-                ax_var.axhline(y=var_thresh, color='#2ca02c', linestyle='--', alpha=0.5, label=r"Single-Path Target ($V_m < \mu_{net}$)")
+                ax_var.axhline(y=var_thresh, color='#2ca02c', linestyle='--', alpha=0.5, label=r"Single-Path Target: Bounded Growth ($V_m < \mu_{net}$)")
                 ax_var.fill_between(x_vals, y_min, var_thresh, where=(variances <= var_thresh), color='#2ca02c', alpha=0.15, interpolate=True)
             ax_var.legend(loc='upper right')
 
-            # BOTTOM PANEL: Sorted Search Space Candidates
+            # --- BOTTOM PANEL: Sorted Search Space Candidates ---
             for i, (orig_exp_name, ranges, exp_results, display_name) in enumerate(valid_exps):
                 ranges = ranges if isinstance(ranges, list) else [ranges]
                 
                 exp_results = exp_results.mean(numeric_only=True)
                 d_acc = exp_results['d_acc']
-                final_acc = exp_results['accuracy']
+                final_acc = exp_results.get('accuracy', 0.0) # Handle missing
                 color = get_acc_color(d_acc)
                 label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
 
@@ -396,9 +535,11 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
             sns.despine(ax=ax_var); sns.despine(ax=ax_heur)
             
             file_suffix = "quantized" if is_quant_target else "unquantized"
-            save_path = out_dir / f"{arch}_{dataset}_decision_map_{file_suffix}.png"
+            save_path = out_dir / f"{arch}_{dataset}_bav_decision_map_{file_suffix}.png"
             plt.savefig(save_path, bbox_inches='tight')
             plt.close()
+
+    logger.info("[FIG4] Completed")
 
 if __name__ == "__main__":
     try:
