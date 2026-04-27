@@ -477,58 +477,80 @@ def fig3_v2t_heuristic_validation(
     logger.info("[FIG3] Completed successfully")
 
 # ========================= FIG 4 ========================= #
-
-def fig4_results_bav_validation(
+# ========================= FIG 4 ========================= #
+def fig4_comprehensive_search_space_map(
     df: pd.DataFrame,
     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
     out_dir: Path = Path("./figures/search_space")
 ):
+    """
+    Generates a comprehensive decision map:
+    - Top Left: Variance Macro-Trend and BAV Zones
+    - Bottom Left: Candidate Blocks aligned to the network depth
+    - Right Sidebar: A clean table showing Delta Acc, Params, FLOPs, and Memory reductions.
+    """
     try:
         from transfer import EXPERIMENTS
     except ImportError:
         logger.error("[FIG4] Could not import EXPERIMENTS")
         return
 
+    from scipy.signal import argrelextrema
+    import matplotlib.gridspec as gridspec
+
     out_dir.mkdir(parents=True, exist_ok=True)
 
     def get_acc_color(d_acc):
-        if d_acc >= -2.0: return "#2ca02c"
-        if d_acc >= -6.0: return "#ff7f0e"
-        return "#d62728"
+        if pd.isna(d_acc): return "#999999"
+        if d_acc >= -2.0: return "#2ca02c"  # Green
+        if d_acc >= -6.0: return "#ff7f0e"  # Orange
+        return "#d62728"                    # Red
 
     def robust_match(target_name, is_quant_target, g_df):
         try:
             sub_df = g_df[g_df['is_quantized'] == is_quant_target]
             if sub_df.empty: return pd.DataFrame()
-
             m = sub_df[sub_df['base_name'] == target_name]
             if not m.empty: return m
-
             m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
             if not m.empty: return m
-
             def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
             st = squash(target_name)
-
-            return sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
+            fuzzy = sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
+            return fuzzy
         except Exception as e:
-            logger.error(f"[FIG4] robust_match failed: {e}")
             return pd.DataFrame()
+
+    multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
 
     def format_dataset_name(ds: str) -> str:
         mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
         return mapping.get(ds, ds.capitalize())
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        logger.info(f"[FIG4] Processing Validation Plot for {arch}/{dataset}")
+        logger.info(f"[FIG4] Processing Comprehensive Map for {arch}/{dataset}")
 
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
         if not csv_path.exists(): continue
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
+        variances = np.maximum(layer_df['Variance'].values, 1e-6)
+        smoothed_var = pd.Series(variances).rolling(window=5, center=True, min_periods=1).median().values
+        mu_net = np.mean(variances)
+        median_net = np.median(variances)
 
         model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
         if not model_exps: continue
+
+        # Extract Baseline Metrics
+        baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
+        if baseline_mask.any():
+            base_row = g_metrics[baseline_mask].iloc[0]
+            base_p = base_row.get('params', np.nan)
+            base_f = base_row.get('flops', np.nan)
+            base_m = base_row.get('memory', np.nan)
+        else:
+            base_p = base_f = base_m = np.nan
 
         for is_quant_target in [False, True]:
             target_label = "Quantized" if is_quant_target else "Unquantized"
@@ -537,53 +559,246 @@ def fig4_results_bav_validation(
             for exp_name, ranges in model_exps.items():
                 if ranges is None: continue
                 cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
-                
                 m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
+                
                 if not m.empty:
                     exp_results = m.mean(numeric_only=True)
-                    valid_exps.append((exp_name, ranges, exp_results, cleaned_name))
+                    # Calculate hardware reductions
+                    p_red = 100 * (1 - exp_results.get('params', np.nan) / base_p) if pd.notnull(base_p) else np.nan
+                    f_red = 100 * (1 - exp_results.get('flops', np.nan) / base_f) if pd.notnull(base_f) else np.nan
+                    m_red = 100 * (1 - exp_results.get('memory', np.nan) / base_m) if pd.notnull(base_m) else np.nan
+                    
+                    valid_exps.append((exp_name, ranges, exp_results, cleaned_name, p_red, f_red, m_red))
                     
             if not valid_exps: continue
-            valid_exps = sorted(valid_exps, key=lambda x: x[2]['d_acc'])
+            valid_exps = sorted(valid_exps, key=lambda x: x[2].get('d_acc', -100))
             
-            # Dynamic height based on number of candidates to maintain consistent bar thickness
             num_bars = len(valid_exps)
-            fig_height = max(4, 1.0 + 0.5 * num_bars)
+            fig_height = max(8, 4 + 0.45 * num_bars)
             
-            fig, ax_heur = plt.subplots(figsize=(12, fig_height))
+            # Setup GridSpec: Left column for plots, Right column for Sidebar
+            fig = plt.figure(figsize=(16, fig_height))
+            gs = gridspec.GridSpec(2, 2, height_ratios=[1, max(2, fig_height / 3.5)], width_ratios=[3, 1.2], wspace=0.05, hspace=0.08)
+            
+            ax_var = fig.add_subplot(gs[0, 0])
+            ax_leg = fig.add_subplot(gs[0, 1])
+            ax_heur = fig.add_subplot(gs[1, 0], sharex=ax_var)
+            ax_side = fig.add_subplot(gs[1, 1], sharey=ax_heur)
+            
+            ax_leg.axis('off')
+            ax_side.axis('off')
 
-            title_text = f"BAV Empirical Validation: {arch} on {format_dataset_name(dataset)} ({target_label})"
-            ax_heur.set_title(title_text, loc='left', pad=15, fontsize=14, fontweight='bold')
+            x_vals = np.arange(len(layers))
 
-            for i, (orig_exp_name, ranges, exp_results, display_name) in enumerate(valid_exps):
+            # --- TOP LEFT: Variance Trend ---
+            ax_var.plot(x_vals, variances, color='#999999', linewidth=1.0, alpha=0.6, label='Raw Variance')
+            ax_var.plot(x_vals, smoothed_var, color='#333333', linewidth=2.0, label='Macro Trend (Rolling)')
+            
+            ax_var.set_yscale('log')
+            ax_var.set_ylabel("Variance ($\sigma^2$)", fontweight='bold')
+            title_text = f"Comprehensive BAV Decision Map: {arch} on {format_dataset_name(dataset)} ({target_label})"
+            ax_var.set_title(title_text, loc='left', pad=20, fontsize=16, fontweight='bold')
+            
+            y_min = max(1e-4, min(variances) * 0.5); y_max = max(variances) * 2.0
+            ax_var.set_ylim(y_min, y_max)
+            
+            threshold = median_net if arch in multi_path_archs else mu_net
+            label_target = r"Target Zone ($\tilde{V}_{trend} < \tilde{V}_{net}$)" if arch in multi_path_archs else r"Target Zone ($\tilde{V}_{trend} < \mu_{net}$)"
+            ax_var.axhline(y=threshold, color='blue', linestyle='--', alpha=0.5, label='Network Threshold')
+            
+            is_target = smoothed_var <= threshold
+            veto_idx = int(len(layers) * 0.25)
+            is_target[:veto_idx] = False 
+            ax_var.axvspan(0, max(0, veto_idx - 0.5), color='gray', alpha=0.15, hatch='//', edgecolor='gray', label="Foundational Veto")
+            
+            zones = []
+            if veto_idx < len(is_target):
+                start_idx, current_val = veto_idx, is_target[veto_idx]
+                for i in range(veto_idx + 1, len(is_target)):
+                    if is_target[i] != current_val:
+                        zones.append((start_idx, i, current_val))
+                        start_idx, current_val = i, is_target[i]
+                zones.append((start_idx, len(is_target)-1, current_val))
+            
+            added_target, added_danger = False, False
+            for start, end, is_good in zones:
+                span_start, span_end = max(veto_idx, start - 0.5) if start > 0 else start, min(len(layers) - 1, end + 0.5)
+                if is_good:
+                    lbl = label_target if not added_target else ""
+                    ax_var.axvspan(span_start, span_end, color='#2ca02c', alpha=0.15, label=lbl)
+                    added_target = True
+                else:
+                    lbl = "Danger Zone (Avoid)" if not added_danger else ""
+                    ax_var.axvspan(span_start, span_end, color='#d62728', alpha=0.08, label=lbl)
+                    added_danger = True
+
+            valleys = argrelextrema(smoothed_var, np.less, order=2)[0]
+            for v in valleys:
+                if v >= veto_idx: ax_var.axvline(x=v, color='black', linestyle=':', alpha=0.3, zorder=0)
+
+            # Move Legend to the empty top-right box
+            handles, labels = ax_var.get_legend_handles_labels()
+            ax_leg.legend(handles, labels, loc='center', ncol=1, fontsize=10, framealpha=0.9, edgecolor='gray')
+
+            # --- BOTTOM LEFT: Search Space Candidates ---
+            for i, (orig_exp_name, ranges, exp_results, display_name, p_red, f_red, m_red) in enumerate(valid_exps):
                 ranges = ranges if isinstance(ranges, list) else [ranges]
-                d_acc = exp_results['d_acc']
-                final_acc = exp_results.get('accuracy', 0.0)
+                d_acc = exp_results.get('d_acc', np.nan)
                 color = get_acc_color(d_acc)
-                label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
 
                 for start_layer, end_layer in ranges:
                     try:
                         s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
                         e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
-                        
-                        ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.9)
-                        ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=10, fontweight='bold', color=color)
+                        ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=14, color=color, alpha=0.85)
                     except StopIteration: continue
             
             ax_heur.set_yticks(range(len(valid_exps)))
-            ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=10, fontweight='bold')
+            ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=11, fontweight='bold')
             ax_heur.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
-            ax_heur.set_xlim(-1, len(layers) + 5) # Ensure text isn't cut off
+            ax_heur.set_ylabel("Collapsed Layer Candidates", fontweight='bold', fontsize=11)
+
+            # --- BOTTOM RIGHT: Hardware Sidebar Table ---
+            # Set up the X-coordinates for the 4 columns
+            cols = [0.15, 0.40, 0.65, 0.90]
+            headers = ["$\\Delta$ Acc", "Params $\\downarrow$", "FLOPs $\\downarrow$", "Memory $\\downarrow$"]
             
-            sns.despine(ax=ax_heur)
+            # Draw Column Headers
+            transform = ax_side.get_yaxis_transform()
+            header_y = len(valid_exps) # Place slightly above the top row
+            for x, h in zip(cols, headers):
+                ax_side.text(x, header_y, h, ha='center', va='bottom', fontweight='bold', fontsize=11, transform=transform, color='#333333')
+            
+            # Draw Data Rows
+            for i, (_, _, exp_results, _, p_red, f_red, m_red) in enumerate(valid_exps):
+                d_acc = exp_results.get('d_acc', np.nan)
+                c = get_acc_color(d_acc)
+                
+                d_str = f"{d_acc:+.1f}%" if pd.notnull(d_acc) else "N/A"
+                p_str = f"{p_red:.1f}%" if pd.notnull(p_red) else "N/A"
+                f_str = f"{f_red:.1f}%" if pd.notnull(f_red) else "N/A"
+                m_str = f"{m_red:.1f}%" if pd.notnull(m_red) else "N/A"
+                
+                for x, val in zip(cols, [d_str, p_str, f_str, m_str]):
+                    fw = 'bold' if x == cols[0] else 'normal'
+                    # Slightly fade the hardware numbers if accuracy dropped severely to draw eye to the red
+                    alpha = 0.6 if (d_acc < -6.0 and x != cols[0]) else 1.0
+                    ax_side.text(x, i, val, ha='center', va='center', transform=transform, color=c, fontweight=fw, fontsize=11, alpha=alpha)
+
+            sns.despine(ax=ax_var); sns.despine(ax=ax_heur)
             
             file_suffix = "quantized" if is_quant_target else "unquantized"
-            save_path = out_dir / f"{arch}_{dataset}_empirical_results_{file_suffix}.svg"
+            save_path = out_dir / f"{arch}_{dataset}_comprehensive_decision_map_{file_suffix}.png"
             plt.savefig(save_path, bbox_inches='tight')
             plt.close()
 
-    logger.info("[FIG4] Validation plots generated successfully.")
+    logger.info("[FIG4] Comprehensive Search Space Maps generated successfully.")
+# def fig4_results_bav_validation(
+#     df: pd.DataFrame,
+#     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
+#     out_dir: Path = Path("./figures/search_space")
+# ):
+#     try:
+#         from transfer import EXPERIMENTS
+#     except ImportError:
+#         logger.error("[FIG4] Could not import EXPERIMENTS")
+#         return
+
+#     out_dir.mkdir(parents=True, exist_ok=True)
+
+#     def get_acc_color(d_acc):
+#         if d_acc >= -2.0: return "#2ca02c"
+#         if d_acc >= -6.0: return "#ff7f0e"
+#         return "#d62728"
+
+#     def robust_match(target_name, is_quant_target, g_df):
+#         try:
+#             sub_df = g_df[g_df['is_quantized'] == is_quant_target]
+#             if sub_df.empty: return pd.DataFrame()
+
+#             m = sub_df[sub_df['base_name'] == target_name]
+#             if not m.empty: return m
+
+#             m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
+#             if not m.empty: return m
+
+#             def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
+#             st = squash(target_name)
+
+#             return sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
+#         except Exception as e:
+#             logger.error(f"[FIG4] robust_match failed: {e}")
+#             return pd.DataFrame()
+
+#     def format_dataset_name(ds: str) -> str:
+#         mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
+#         return mapping.get(ds, ds.capitalize())
+
+#     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+#         logger.info(f"[FIG4] Processing Validation Plot for {arch}/{dataset}")
+
+#         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
+#         if not csv_path.exists(): continue
+#         layer_df = pd.read_csv(csv_path)
+#         layers = layer_df['Layer'].tolist()
+
+#         model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
+#         if not model_exps: continue
+
+#         for is_quant_target in [False, True]:
+#             target_label = "Quantized" if is_quant_target else "Unquantized"
+#             valid_exps = []
+            
+#             for exp_name, ranges in model_exps.items():
+#                 if ranges is None: continue
+#                 cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
+                
+#                 m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
+#                 if not m.empty:
+#                     exp_results = m.mean(numeric_only=True)
+#                     valid_exps.append((exp_name, ranges, exp_results, cleaned_name))
+                    
+#             if not valid_exps: continue
+#             valid_exps = sorted(valid_exps, key=lambda x: x[2]['d_acc'])
+            
+#             # Dynamic height based on number of candidates to maintain consistent bar thickness
+#             num_bars = len(valid_exps)
+#             fig_height = max(4, 1.0 + 0.5 * num_bars)
+            
+#             fig, ax_heur = plt.subplots(figsize=(12, fig_height))
+
+#             title_text = f"BAV Empirical Validation: {arch} on {format_dataset_name(dataset)} ({target_label})"
+#             ax_heur.set_title(title_text, loc='left', pad=15, fontsize=14, fontweight='bold')
+
+#             for i, (orig_exp_name, ranges, exp_results, display_name) in enumerate(valid_exps):
+#                 ranges = ranges if isinstance(ranges, list) else [ranges]
+#                 d_acc = exp_results['d_acc']
+#                 final_acc = exp_results.get('accuracy', 0.0)
+#                 color = get_acc_color(d_acc)
+#                 label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
+
+#                 for start_layer, end_layer in ranges:
+#                     try:
+#                         s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
+#                         e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
+                        
+#                         ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.9)
+#                         ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=10, fontweight='bold', color=color)
+#                     except StopIteration: continue
+            
+#             ax_heur.set_yticks(range(len(valid_exps)))
+#             ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=10, fontweight='bold')
+#             ax_heur.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
+#             ax_heur.set_xlim(-1, len(layers) + 5) # Ensure text isn't cut off
+            
+#             sns.despine(ax=ax_heur)
+            
+#             file_suffix = "quantized" if is_quant_target else "unquantized"
+#             save_path = out_dir / f"{arch}_{dataset}_empirical_results_{file_suffix}.svg"
+#             plt.savefig(save_path, bbox_inches='tight')
+#             plt.close()
+
+#     logger.info("[FIG4] Validation plots generated successfully.")
 
 
 def fig5_hardware_efficiency_profiles(
