@@ -585,11 +585,131 @@ def fig4_results_bav_validation(
 
     logger.info("[FIG4] Validation plots generated successfully.")
 
-
 def fig5_hardware_efficiency_profiles(
     df: pd.DataFrame,
     out_dir: Path = Path("./figures/hardware_efficiency")
 ):
+    """
+    Finds the optimal collapsed candidate for each architecture (based on best d_acc),
+    exports a summary CSV, and generates a single, unified grouped bar chart 
+    for the research paper.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    summary_data = []
+
+    for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        # 1. Identify the Baseline
+        baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
+        if not baseline_mask.any(): continue
+            
+        baseline_row = g_metrics[baseline_mask].iloc[0]
+        base_params = baseline_row.get('params', np.nan)
+        base_flops = baseline_row.get('flops', np.nan)
+        base_memory = baseline_row.get('memory', np.nan)
+        
+        if pd.isna(base_params) or pd.isna(base_flops) or pd.isna(base_memory):
+            continue
+
+        # 2. Filter for collapsed candidates (Unquantized for clean hardware baseline)
+        candidates = g_metrics[(g_metrics['posthoc_or_posttrain'] != 'Baseline') & 
+                               (g_metrics['is_quantized'] == False)].copy()
+        
+        if candidates.empty: continue
+            
+        # 3. Find the optimal candidate (Highest Delta Accuracy)
+        best_candidate = candidates.loc[candidates['d_acc'].idxmax()]
+        
+        # 4. Calculate Percentage Reductions
+        p_red = 100 * (1 - (best_candidate['params'] / base_params))
+        f_red = 100 * (1 - (best_candidate['flops'] / base_flops))
+        m_red = 100 * (1 - (best_candidate['memory'] / base_memory))
+        
+        summary_data.append({
+            "Architecture": arch,
+            "Dataset": dataset,
+            "Optimal_Target": best_candidate['base_name'],
+            "Delta_Acc": best_candidate['d_acc'],
+            "Params Reduced (%)": p_red,
+            "FLOPs Reduced (%)": f_red,
+            "Memory Reduced (%)": m_red
+        })
+
+    if not summary_data:
+        logger.warning("[FIG5] No data available to plot.")
+        return
+
+    summary_df = pd.DataFrame(summary_data)
+    
+    # Sort nicely for the paper (Best accuracy improvement to worst)
+    summary_df = summary_df.sort_values(by="Delta_Acc", ascending=False)
+    
+    # ==========================================
+    # EXPORT 1: The CSV Data
+    # ==========================================
+    csv_path = out_dir / "optimal_hardware_reductions.csv"
+    summary_df.to_csv(csv_path, index=False)
+    logger.info(f"[FIG5] Exported optimal hardware summary CSV to {csv_path}")
+
+    # ==========================================
+    # EXPORT 2: The Unified Journal Plot
+    # ==========================================
+    # Reshape for seaborn
+    melted = summary_df.melt(
+        id_vars=['Architecture', 'Delta_Acc'], 
+        value_vars=['Params Reduced (%)', 'FLOPs Reduced (%)', 'Memory Reduced (%)'],
+        var_name='Metric', 
+        value_name='Reduction'
+    )
+
+    # Clean metric names for the legend
+    melted['Metric'] = melted['Metric'].str.replace(' Reduced (%)', '')
+
+    # Create custom X labels that include the Delta Acc
+    unique_archs = summary_df['Architecture'].tolist()
+    accs = summary_df['Delta_Acc'].tolist()
+    x_labels = [f"{arch}\n($\\Delta$ {acc:+.1f}%)" for arch, acc in zip(unique_archs, accs)]
+
+    # Initialize a wide, paper-friendly figure
+    fig, ax = plt.subplots(figsize=(12, 5.5))
+    
+    sns.barplot(
+        data=melted, 
+        x='Architecture', 
+        y='Reduction', 
+        hue='Metric', 
+        palette=['#4C72B0', '#DD8452', '#55A868'], # Clean, colorblind-safe (Blue, Orange, Green)
+        edgecolor='black',
+        linewidth=1.2,
+        ax=ax,
+        order=unique_archs
+    )
+
+    # Formatting for Journal
+    ax.set_xticklabels(x_labels, fontsize=11, fontweight='bold')
+    ax.set_xlabel("Architecture & Accuracy Impact", fontweight='bold', fontsize=12, labelpad=10)
+    ax.set_ylabel("Reduction Relative to Baseline (%)", fontweight='bold', fontsize=12)
+    ax.set_title("Optimal Structural Collapse Efficiency by Architecture", pad=15, fontweight='bold', fontsize=14)
+    
+    # Add horizontal gridlines for readability
+    ax.yaxis.grid(True, linestyle='--', alpha=0.7)
+    ax.set_axisbelow(True)
+    ax.set_ylim(0, max(100, melted['Reduction'].max() + 5)) # Scale 0 to 100%
+
+    # Clean legend
+    ax.legend(title="", loc='upper right', framealpha=0.9, fontsize=11)
+    sns.despine()
+
+    plt.tight_layout()
+    save_path = out_dir / "unified_optimal_hardware_efficiency.png"
+    plt.savefig(save_path, bbox_inches='tight')
+    plt.close()
+    
+    logger.info(f"[FIG5] Unified hardware efficiency plot saved to {save_path}")
+
+# def fig5_hardware_efficiency_profiles(
+#     df: pd.DataFrame,
+#     out_dir: Path = Path("./figures/hardware_efficiency")
+# ):
     """
     Generates a unified horizontal grouped bar chart showing the percentage 
     reduction in Params, FLOPs, and Memory for each collapsed candidate.
