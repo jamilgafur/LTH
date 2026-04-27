@@ -1,16 +1,10 @@
 from __future__ import annotations
 
-import glob
 import json
-import warnings
 import re
-import os
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
-import torch
-import torch.nn as nn
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -28,6 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+# Suppress noisy modules
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 logging.getLogger('matplotlib.font_manager').setLevel(logging.WARNING)
 logging.getLogger('PIL').setLevel(logging.WARNING)
@@ -62,15 +57,20 @@ plt.rcParams.update({
 RESULTS_DIR = Path("./")
 FIG_DIR = Path("./figures")
 TABLE_DIR = Path("./tables")
+DIAGNOSTICS_DIR = Path("./diagnostics")
 
-FIG_DIR.mkdir(exist_ok=True)
-TABLE_DIR.mkdir(exist_ok=True)
+for d in [FIG_DIR, TABLE_DIR, DIAGNOSTICS_DIR]:
+    d.mkdir(parents=True, exist_ok=True)
 
 DATASET_ORDER = ["cifar10_", "cifar100_", "tinyimagenet", "imagenet", "ConvNeXt"]
 
 # =========================
 # Data Loading & Utilities
 # =========================
+
+def format_dataset_name(ds: str) -> str:
+    mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
+    return mapping.get(ds, ds.capitalize())
 
 def infer_dataset_from_path(p: Path) -> str:
     name = p.parent.parent.name.lower()
@@ -101,7 +101,6 @@ def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
     n = exp_name.lower()
     if "original" in n or "baseline" in n:
         return "Baseline"
-    # Legacy pruning flags removed. Architectures that require retraining get mapped to 'Retrained'.
     if "vgg16" in architecture.lower() or "regnetx" in architecture.lower():
         return "Retrained"
     return "Collapsed"
@@ -109,29 +108,20 @@ def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
 def clean_exp_name(exp_name: str) -> str:
     n = exp_name
     
-    # 1. Remove quantization tags
-    n = re.sub(r'(?i)[_-]?quant|\(quant\)', '', n)
+    # 1. Strip quantization flags
+    n = re.sub(r'(?i)[_\-\s\(]?quant\b\)?', '', n)
     
-    # 2. Aggressively remove jf/kevin/pruning tags to group them together for averaging
-    remove_tags = [
-        "_jf", "-jf", "(jf)", " jf", "_JF",
-        "_kevin", "-kevin", "(kevin)", " kevin", 
-        "no-prune", "not pruned", "pruned", "(no-prune)", "(not pruned)", "(pruned)"
-    ]
-    for tag in remove_tags:
-        n = re.compile(re.escape(tag), re.IGNORECASE).sub('', n)
+    # 2. Aggressively strip JF, Kevin, and legacy pruning flags for seamless averaging
+    n = re.sub(r'(?i)[_\-\s\(]?(jf|kevin|no-prune|not pruned|pruned)\b\)?', '', n)
         
-    # 3. Remove Architecture Prefixes
+    # 3. Strip Architecture Prefixes
     for arch in ["RegNetX_400MF", "VGG16", "MobileNet", "ConvNeXt", "InceptionNet", "XceptionNet"]:
         n = re.compile(re.escape(arch + "_"), re.IGNORECASE).sub('', n)
         n = re.compile(re.escape(arch), re.IGNORECASE).sub('', n)
         
-    # 4. Standardize text
+    # 4. Standardize terminology and clean artifacts
     n = n.replace("Block ", "Block-").replace("Stage ", "Stage-") 
-    n = n.replace(" Only", "")
-    n = n.replace("()", "") # Remove empty parens left behind by tag stripping
-    
-    # 5. Clean edges without destroying actual parentheses (CRITICAL FIX)
+    n = n.replace(" Only", "").replace("()", "") 
     n = n.strip(" -_")
     
     if "Original" in n or "Baseline" in n: return "Original Model"
@@ -215,7 +205,7 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
     group_cols = ["dataset", "architecture", "base_name", "display_name", "posthoc_or_posttrain", "is_quantized"]
     available_metrics = [m for m in metrics if m in df.columns]
     
-    # Averages jf/kevin naturally here since they now share the same base_name
+    # Pandas will inherently average the JF/Kevin rows here since their base_name tags were stripped
     df_agg = df.groupby(group_cols, dropna=False)[available_metrics].mean(numeric_only=True).reset_index()
 
     for architecture, df_arch in df_agg.groupby("architecture"):
@@ -289,7 +279,12 @@ def fig3_v2t_heuristic_validation(df: pd.DataFrame, stats_dir: Path = Path("./ru
 
 
 def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./runs/plots/Layer_Statistics"), out_dir: Path = Path("./figures/search_space")):
-    from transfer import EXPERIMENTS 
+    try:
+        from transfer import EXPERIMENTS 
+    except ImportError:
+        logger.error("Could not import EXPERIMENTS from transfer.py. Skipping Fig4.")
+        return
+        
     out_dir.mkdir(parents=True, exist_ok=True)
     
     def get_acc_color(d_acc):
@@ -298,21 +293,20 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         return "#d62728"
 
     def robust_match(target_name, g_df):
-        logger.debug(f"  [MATCHING] Attempting to find: '{target_name}'")
-        
         sub_df = g_df[(g_df['is_quantized'] == False) & (g_df['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained']))]
         if sub_df.empty: sub_df = g_df[(g_df['is_quantized'] == False)]
         if sub_df.empty: sub_df = g_df
 
-        available_keys = sub_df['base_name'].unique().tolist()
-        logger.debug(f"  [MATCHING] Available keys in subset: {available_keys}")
-
         m = sub_df[sub_df['base_name'] == target_name]
         if not m.empty: 
-            logger.debug(f"  [MATCHING] Exact match found! ({len(m)} runs to average)")
             return m
         
-        # Fuzzy fallback
+        # Exact Case-insensitive Match Fallback
+        m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
+        if not m.empty: 
+            return m
+        
+        # Fuzzy Substring Match Fallback
         def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
         st = squash(target_name)
         
@@ -322,18 +316,19 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
                 fuzzy_matches.append(row)
                 
         if fuzzy_matches:
-            res_df = pd.DataFrame(fuzzy_matches)
-            logger.debug(f"  [MATCHING] Fuzzy match found: '{target_name}' -> '{res_df['base_name'].iloc[0]}' ({len(res_df)} runs to average)")
-            return res_df
+            return pd.DataFrame(fuzzy_matches)
                 
-        # Super verbose failure log
-        logger.warning(f"  [MATCHING] FAILED to find any match for '{target_name}'. All known keys for this architecture: {g_df['base_name'].unique().tolist()}")
+        logger.warning(f"  [MISSING EXPERIMENT] Could not find any match for '{target_name}'. Known keys: {sub_df['base_name'].unique().tolist()}")
         return pd.DataFrame()
 
     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         logger.info(f"--- Generating Ladder Plot for {arch} on {dataset} ---")
+        
+        # Save exact grouping layout out to CSV for diagnostics
+        g_metrics.to_csv(DIAGNOSTICS_DIR / f"{arch}_{dataset}_processed_metrics.csv", index=False)
+        
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
         if not csv_path.exists(): continue
             
@@ -344,6 +339,22 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
         if not model_exps: continue
         
+        # Filter the experiment definitions to ONLY plot things that have actual data
+        valid_exps = []
+        for exp_name, ranges in model_exps.items():
+            if ranges is None: continue
+            cleaned_name = clean_exp_name(exp_name)
+            exp_results = robust_match(cleaned_name, g_metrics)
+            
+            if not exp_results.empty:
+                valid_exps.append((exp_name, ranges, exp_results))
+            else:
+                logger.warning(f"  [SKIPPING] Dropping '{exp_name}' from Ladder Plot to avoid N/A rendering.")
+                
+        if not valid_exps:
+            logger.warning(f"  [EMPTY] No valid data remains for {arch} on {dataset}. Skipping plot generation.")
+            continue
+            
         fig, (ax_var, ax_heur) = plt.subplots(2, 1, figsize=(14, 10), sharex=True, gridspec_kw={'height_ratios': [1, 2]})
         plt.subplots_adjust(hspace=0.08)
 
@@ -351,7 +362,7 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
         ax_var.plot(range(len(layers)), variances, color='#555555', linewidth=1.5, alpha=0.8)
         ax_var.set_yscale('log')
         ax_var.set_ylabel("Variance ($\sigma^2$)")
-        ax_var.set_title(f"Heuristic Search Space Guide: {arch} on {dataset}", loc='left', pad=20, fontsize=16, fontweight='bold')
+        ax_var.set_title(f"Heuristic Search Space Guide: {arch} on {format_dataset_name(dataset)}", loc='left', pad=20, fontsize=16, fontweight='bold')
         
         y_min = max(1e-4, min(variances) * 0.5)
         y_max = max(variances) * 2.0
@@ -367,32 +378,25 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
             ax_var.fill_between(range(len(layers)), y_min, var_thresh, where=(variances <= var_thresh), color='#2ca02c', alpha=0.15)
         ax_var.legend(loc='upper right')
 
-        # BOTTOM PANEL
-        exp_list = [n for n, r in model_exps.items() if r is not None]
-        def get_start_idx(exp_key):
-            r = model_exps[exp_key]
+        # BOTTOM PANEL - Sort valid elements by depth
+        def get_start_idx(exp_tuple):
+            r = exp_tuple[1]
             r = r[0] if isinstance(r, list) else r
             try: return next(idx for idx, n in enumerate(layers) if r[0] in n)
             except StopIteration: return 0
-        exp_list = sorted(exp_list, key=get_start_idx, reverse=True)
+            
+        valid_exps = sorted(valid_exps, key=get_start_idx, reverse=True)
         
-        for i, exp_name in enumerate(exp_list):
-            ranges = model_exps[exp_name]
+        for i, (exp_name, ranges, exp_results) in enumerate(valid_exps):
             ranges = ranges if isinstance(ranges, list) else [ranges]
             
-            cleaned_name = clean_exp_name(exp_name)
-            exp_results = robust_match(cleaned_name, g_metrics)
+            exp_results = exp_results.mean(numeric_only=True)
+            d_acc = exp_results['d_acc']
+            final_acc = exp_results['accuracy']
+            color = get_acc_color(d_acc)
+            label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
             
-            if not exp_results.empty:
-                exp_results = exp_results.mean(numeric_only=True)
-                d_acc = exp_results['d_acc']
-                final_acc = exp_results['accuracy']
-                color = get_acc_color(d_acc)
-                label_text = f"{final_acc:.1f}% ($\Delta$ {d_acc:+.1f}%)"
-                logger.debug(f"  [RESULT] Plotting '{exp_name}' -> d_acc: {d_acc:.2f}%, final_acc: {final_acc:.2f}%")
-            else:
-                color = '#d3d3d3' # Lighter gray
-                label_text = "N/A"
+            logger.debug(f"  [RESULT] Plotting '{exp_name}' -> d_acc: {d_acc:.2f}%, final_acc: {final_acc:.2f}%")
 
             for start_layer, end_layer in ranges:
                 try:
@@ -402,8 +406,8 @@ def fig4_heuristic_search_space_map(df: pd.DataFrame, stats_dir: Path = Path("./
                     ax_heur.text(e_idx + 0.5, i, label_text, va='center', fontsize=9, fontweight='bold', color=color)
                 except StopIteration: continue
         
-        ax_heur.set_yticks(range(len(exp_list)))
-        ax_heur.set_yticklabels([clean_exp_name(e) for e in exp_list], fontsize=10)
+        ax_heur.set_yticks(range(len(valid_exps)))
+        ax_heur.set_yticklabels([clean_exp_name(e[0]) for e in valid_exps], fontsize=10)
         ax_heur.set_xlabel("Network Depth (Layer Index)")
         ax_heur.set_ylabel("Collapsed Layer Candidates")
         sns.despine(ax=ax_var); sns.despine(ax=ax_heur)
