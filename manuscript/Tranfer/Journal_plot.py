@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.signal import argrelextrema
 
 # =========================
 # Configuration & Logging
@@ -46,8 +45,8 @@ plt.rcParams.update({
     "axes.titleweight": "bold",
     "axes.labelsize": 12,
     "axes.labelweight": "bold",
-    "legend.fontsize": 10,
-    "legend.title_fontsize": 11,
+    "legend.fontsize": 11,
+    "legend.title_fontsize": 12,
     "xtick.labelsize": 10,
     "ytick.labelsize": 10,
     "lines.linewidth": 2.0,
@@ -206,16 +205,6 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
                 plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.png")
                 plt.close()
 
-# Helper piecewise function for methodology and search space
-def piecewise_h(sigma_i, sigma_bar):
-    diff = sigma_i - sigma_bar
-    if diff < 0:
-        return max(diff / sigma_bar, -1.0)
-    else:
-        return min(diff / sigma_bar, 1.0)
-        
-vec_h = np.vectorize(piecewise_h)
-
 # ========================= FIG 2 ========================= #
 
 def fig2_methodology_bav_regions(
@@ -223,9 +212,10 @@ def fig2_methodology_bav_regions(
     out_dir: Path = Path("./figures/methodology")
 ):
     out_dir.mkdir(parents=True, exist_ok=True)
-    multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
 
-    stat_files = list(stats_dir.glob("*_layer_stats.csv"))
+    # FIX: Ignore the normalized files so Pandas doesn't crash looking for 'Variance'
+    stat_files = [f for f in stats_dir.glob("*_layer_stats.csv") if "normalized" not in f.name]
+    
     if not stat_files:
         logger.warning("[FIG2] No layer stats CSVs found in the specified directory.")
         return
@@ -243,48 +233,42 @@ def fig2_methodology_bav_regions(
             logger.error(f"[FIG2] Failed to read {csv_path}: {e}")
             continue
 
-        # Calculate macro-trend
-        smoothed_var = pd.Series(variances).rolling(window=5, center=True, min_periods=1).median().values
-        mu_net = np.mean(variances)
-        median_net = np.median(variances)
-
-        # Set Architecture-Specific Thresholds
-        if arch in multi_path_archs:
-            threshold = median_net
-            target_label = r"Potential Target Zone ($h < 0$)"
-            title_text = f"BAV Methodology (Multi-Path): {arch} on {dataset.capitalize()}"
-        else:
-            threshold = mu_net
-            target_label = r"Potential Target Zone ($h < 0$)"
-            title_text = f"BAV Methodology (Single-Path): {arch} on {dataset.capitalize()}"
-
-        # Apply piecewise mapping
-        h_variances = vec_h(variances, threshold)
-        h_smoothed = vec_h(smoothed_var, threshold)
+        # Use the EXACT same sliding window logic as transfer.py for visual 1:1 parity
+        h_vals = []
+        for i, sigma_i in enumerate(variances):
+            next_vars = variances[i+1 : i+6]
+            sigma_bar = np.mean(next_vars) if len(next_vars) > 0 else np.mean(variances)
+            sigma_bar = max(sigma_bar, 1e-12)
+            
+            diff = sigma_i - sigma_bar
+            h = max(diff / sigma_bar, -1.0) if diff < 0 else min(diff / sigma_bar, 1.0)
+            h_vals.append(h)
+            
+        h_vals = np.array(h_vals)
 
         # Initialize Paper-Formatted Plot
-        fig, ax = plt.subplots(figsize=(12, 4.5))
+        fig, ax = plt.subplots(figsize=(12, 5))
 
         x_vals = range(len(layers))
-        ax.bar(x_vals, h_variances, color='#b0b0b0', alpha=0.6, label='Normalized Raw Variance')
-        ax.plot(x_vals, h_smoothed, color='#111111', linewidth=2.0, drawstyle='steps-mid', label=r'Macro Trend $h(\tilde{V}_{trend}, \bar{\sigma})$')
-
-        # Drop log scale, use clamped bounds
-        ax.set_ylim(-1.1, 1.1)
-        ax.set_ylabel(r"Relative Variance $h(\sigma_i, \bar{\sigma})$", fontweight='bold', fontsize=11)
-        ax.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
-        ax.set_title(title_text, pad=25, fontweight='bold', fontsize=14, loc='left')
         
-        # Plot Threshold at 0 (since it's normalized)
-        ax.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=1.5, label='Network Variance Threshold (0)')
+        # Plotted as the sole metric - no more black line needed
+        ax.bar(x_vals, h_vals, color='#4A4A4A', alpha=0.8, edgecolor='black', linewidth=0.5, label='Relative Local Variance ($h$)')
+
+        ax.set_ylim(-1.1, 1.1)
+        ax.set_ylabel(r"Relative Variance ($h$)", fontweight='bold', fontsize=12)
+        ax.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=12)
+        ax.set_title(f"Dynamic Structural Redundancy Regions\n{arch} on {dataset.capitalize()}", pad=15, fontweight='bold', fontsize=15, loc='center')
+        
+        # Plot Threshold
+        ax.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2, label='Collapse Threshold (0)')
 
         # Identify Zones based on normalized mapped values
-        is_target = h_smoothed <= 0
+        is_target = h_vals < 0
         veto_idx = int(len(layers) * 0.25)
         is_target[:veto_idx] = False
 
-        # 1. Plot Foundational Veto
-        ax.axvspan(0, max(0, veto_idx - 0.5), color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
+        # 1. Plot Foundational Veto (Fixed coordinate spanning)
+        ax.axvspan(-0.5, veto_idx - 0.5, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Layers (Vetoed)")
 
         # Compile contiguous Target/Danger zones
         zones = []
@@ -293,7 +277,7 @@ def fig2_methodology_bav_regions(
             current_val = is_target[veto_idx]
             for i in range(veto_idx + 1, len(is_target)):
                 if is_target[i] != current_val:
-                    zones.append((start_idx, i, current_val))
+                    zones.append((start_idx, i - 1, current_val))
                     start_idx = i
                     current_val = is_target[i]
             zones.append((start_idx, len(is_target)-1, current_val))
@@ -301,31 +285,22 @@ def fig2_methodology_bav_regions(
         added_target = False
         added_danger = False
 
-        # 2. Plot Target and Danger Zones
+        # 2. Plot Target and Danger Zones (Fixed coordinate spanning)
         for start, end, is_good in zones:
-            span_start = max(veto_idx, start - 0.5) if start > 0 else start
-            span_end = min(len(layers) - 1, end + 0.5)
+            span_start = start - 0.5
+            span_end = end + 0.5
 
             if is_good:
-                lbl = target_label if not added_target else ""
+                lbl = "Candidate Collapse Region ($h < 0$)" if not added_target else ""
                 ax.axvspan(span_start, span_end, color='#2ca02c', alpha=0.2, label=lbl)
                 added_target = True
             else:
-                lbl = "Danger Zone (Avoid)" if not added_danger else ""
+                lbl = "Feature Extraction Region ($h \ge 0$)" if not added_danger else ""
                 ax.axvspan(span_start, span_end, color='#d62728', alpha=0.1, label=lbl)
                 added_danger = True
 
-        # 3. Plot Boundary Anchors (Calculate on smoothed_var to avoid flat clamping destruction)
-        valleys = argrelextrema(smoothed_var, np.less, order=2)[0]
-        added_valley = False
-        for v in valleys:
-            if v >= veto_idx:
-                lbl = "Boundary Anchors (Local Minima)" if not added_valley else ""
-                ax.axvline(x=v, color='black', linestyle=':', alpha=0.4, linewidth=1.5, label=lbl)
-                added_valley = True
-
-        # Legend formatting specifically for papers (horizontal, top outside)
-        ax.legend(loc='upper right', bbox_to_anchor=(1.0, 1.22), ncol=3, fontsize=9, frameon=False)
+        # Clean Legend - Moved to the bottom to completely prevent overlap
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=10, frameon=False)
         sns.despine(ax=ax)
 
         plt.tight_layout()
@@ -353,71 +328,32 @@ def fig3_v2t_heuristic_validation(
     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
     all_merged_data = []
 
-    logger.info(f"[FIG3] Starting with {len(df)} rows")
-
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        logger.info(f"[FIG3] Processing: dataset={dataset}, arch={arch}, rows={len(g_metrics)}")
-
         clean_metrics = g_metrics[g_metrics['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained'])]
-
-        if clean_metrics.empty:
-            logger.warning(f"[FIG3] Skipping {arch}/{dataset}: no valid posthoc/posttrain rows")
-            continue
+        if clean_metrics.empty: continue
 
         csv_path = stats_dir / f"{arch}_{dataset}_experiment_block_stats.csv"
-
-        if not csv_path.exists():
-            logger.warning(f"[FIG3] Missing stats file: {csv_path}")
-            continue
+        if not csv_path.exists(): continue
 
         try:
             df_h = pd.read_csv(csv_path)
-        except Exception as e:
-            logger.error(f"[FIG3] Failed to read {csv_path}: {e}")
-            continue
+        except Exception: continue
 
-        if "Experiment" not in df_h.columns:
-            logger.error(f"[FIG3] 'Experiment' column missing in {csv_path}")
-            continue
+        if "Experiment" not in df_h.columns: continue
 
-        merged = pd.merge(
-            df_h,
-            clean_metrics,
-            left_on="Experiment",
-            right_on="base_name",
-            how="inner"
-        )
-
-        logger.info(f"[FIG3] Merge result: {len(merged)} rows")
-
-        if merged.empty:
-            logger.warning(f"[FIG3] Empty merge for {arch}/{dataset}")
-            continue
+        merged = pd.merge(df_h, clean_metrics, left_on="Experiment", right_on="base_name", how="inner")
+        if merged.empty: continue
 
         merged["Topology"] = "Multi-Path" if arch in multi_path_archs else "Single-Path"
-
-        # Save per-merge CSV (debug goldmine)
-        debug_csv = out_dir / f"debug_merge_{arch}_{dataset}.csv"
-        merged.to_csv(debug_csv, index=False)
-
         all_merged_data.append(merged)
 
-    if not all_merged_data:
-        logger.error("[FIG3] No data after merging. Exiting.")
-        return
+    if not all_merged_data: return
 
     full_df = pd.concat(all_merged_data, ignore_index=True)
-
-    # Save FULL dataset CSV
     full_csv_path = out_dir / "fig3_full_merged_data.csv"
     full_df.to_csv(full_csv_path, index=False)
-    logger.info(f"[FIG3] Saved full merged CSV → {full_csv_path}")
 
-    # Map legend labels
-    full_df['Quantization State'] = full_df['is_quantized'].map({
-        False: 'Unquantized',
-        True: 'Quantized'
-    })
+    full_df['Quantization State'] = full_df['is_quantized'].map({False: 'Unquantized', True: 'Quantized'})
 
     fig, axes = plt.subplots(1, 2, figsize=(16, 7), sharey=True)
     plt.subplots_adjust(wspace=0.05)
@@ -428,31 +364,13 @@ def fig3_v2t_heuristic_validation(
         ax.axhspan(-2.0, 0, color='#ff7f0e', alpha=0.05, zorder=0)
         ax.axhspan(-100, -2.0, color='#d62728', alpha=0.05, zorder=0)
 
-    y_min = full_df['d_acc'].min() - 2
-    y_max = max(full_df['d_acc'].max() + 2, 5)
-
-    for ax in axes:
-        ax.set_ylim(y_min, y_max)
+    y_min, y_max = full_df['d_acc'].min() - 2, max(full_df['d_acc'].max() + 2, 5)
+    for ax in axes: ax.set_ylim(y_min, y_max)
 
     # --- Single Path ---
     sp_df = full_df[full_df['Topology'] == 'Single-Path']
-    if sp_df.empty:
-        logger.warning("[FIG3] No Single-Path data")
-    else:
-        sns.scatterplot(
-            data=sp_df,
-            x="Median Variance",
-            y="d_acc",
-            style="Quantization State",
-            markers={"Unquantized": "o", "Quantized": "X"},
-            s=250,
-            alpha=0.9,
-            edgecolor="black",
-            color="#2ca02c",
-            ax=axes[0],
-            zorder=3
-        )
-        # BAV Target: Single-Path targets Bounded Growth
+    if not sp_df.empty:
+        sns.scatterplot(data=sp_df, x="Median Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"}, s=250, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[0], zorder=3)
         q1 = sp_df["Median Variance"].quantile(0.3)
         axes[0].axvspan(1e-4, q1, color='#2ca02c', alpha=0.15, zorder=0, label=f"BAV Target: Bounded Growth (<{q1:.1f})")
         axes[0].set_xscale('symlog', linthresh=1e-2)
@@ -463,23 +381,8 @@ def fig3_v2t_heuristic_validation(
 
     # --- Multi Path ---
     mp_df = full_df[full_df['Topology'] == 'Multi-Path']
-    if mp_df.empty:
-        logger.warning("[FIG3] No Multi-Path data")
-    else:
-        sns.scatterplot(
-            data=mp_df,
-            x="Median Variance",
-            y="d_acc",
-            style="Quantization State",
-            markers={"Unquantized": "o", "Quantized": "X"},
-            s=250,
-            alpha=0.9,
-            edgecolor="black",
-            color="#d62728",
-            ax=axes[1],
-            zorder=3
-        )
-        # BAV Target: Multi-Path targets Terminal Stabilization / Valleys
+    if not mp_df.empty:
+        sns.scatterplot(data=mp_df, x="Median Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"}, s=250, alpha=0.9, edgecolor="black", color="#d62728", ax=axes[1], zorder=3)
         q1_mp = mp_df["Median Variance"].quantile(0.4)
         axes[1].axvspan(1e-4, q1_mp, color='#2ca02c', alpha=0.15, zorder=0, label=f"BAV Target: Variance Valleys (<{q1_mp:.1f})")
         axes[1].set_xscale('symlog', linthresh=1e-2)
@@ -490,7 +393,6 @@ def fig3_v2t_heuristic_validation(
     sns.despine()
     plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
     plt.close()
-
     logger.info("[FIG3] Completed successfully")
 
 # ========================= FIG 4 ========================= #
@@ -504,9 +406,9 @@ def fig4_comprehensive_search_space_map(
 
     def get_acc_color(d_acc):
         if pd.isna(d_acc): return "#999999"
-        if d_acc >= -2.0: return "#2ca02c"  # Green
-        if d_acc >= -6.0: return "#ff7f0e"  # Orange
-        return "#d62728"                    # Red
+        if d_acc >= -2.0: return "#2ca02c"
+        if d_acc >= -6.0: return "#ff7f0e"
+        return "#d62728"
 
     def robust_match(target_name, is_quant_target, g_df):
         try:
@@ -520,49 +422,32 @@ def fig4_comprehensive_search_space_map(
             st = squash(target_name)
             fuzzy = sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
             return fuzzy
-        except Exception as e:
-            return pd.DataFrame()
-
-    multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
+        except Exception: return pd.DataFrame()
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        logger.info(f"[FIG4] Processing Trend and Candidate+Sidebar Maps for {arch}/{dataset}")
-
+        
+        # Exclude normalized files
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
         if not csv_path.exists(): continue
+            
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
         variances = np.maximum(layer_df['Variance'].values, 1e-6)
-        smoothed_var = pd.Series(variances).rolling(window=5, center=True, min_periods=1).median().values
-        mu_net = np.mean(variances)
-        median_net = np.median(variances)
 
-        # ==============================================================
-        # DYNAMIC JSON IMPORT: Replace the old hardcoded EXPERIMENTS map
-        # ==============================================================
         json_files = list(Path(".").glob(f"{arch}_{dataset}_*_discovered_regions.json"))
-        if not json_files:
-            logger.warning(f"[FIG4] Missing JSON config map for {arch} on {dataset}. Skipping.")
-            continue
+        if not json_files: continue
             
         try:
             with open(json_files[0], 'r') as f:
                 model_exps = json.load(f)
-        except Exception as e:
-            logger.error(f"[FIG4] Failed to read {json_files[0]}: {e}")
-            continue
-            
+        except Exception: continue
         if not model_exps: continue
 
-        # Extract Baseline Metrics
         baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
         if baseline_mask.any():
             base_row = g_metrics[baseline_mask].iloc[0]
-            base_p = base_row.get('params', np.nan)
-            base_f = base_row.get('flops', np.nan)
-            base_m = base_row.get('memory', np.nan)
-        else:
-            base_p = base_f = base_m = np.nan
+            base_p, base_f, base_m = base_row.get('params', np.nan), base_row.get('flops', np.nan), base_row.get('memory', np.nan)
+        else: base_p = base_f = base_m = np.nan
 
         for is_quant_target in [False, True]:
             target_label = "Quantized" if is_quant_target else "Unquantized"
@@ -588,32 +473,36 @@ def fig4_comprehensive_search_space_map(
             file_suffix = "quantized" if is_quant_target else "unquantized"
 
             # ==========================================
-            # FILE 1: The Variance Trend Plot
+            # FILE 1: The Variance Plot (Updated perfectly to sliding window!)
             # ==========================================
-            fig_var, ax_var = plt.subplots(figsize=(10, 3.5))
+            fig_var, ax_var = plt.subplots(figsize=(10, 4.5))
 
-            threshold = median_net if arch in multi_path_archs else mu_net
-            
-            h_variances = vec_h(variances, threshold)
-            h_smoothed = vec_h(smoothed_var, threshold)
+            h_vals = []
+            for i, sigma_i in enumerate(variances):
+                next_vars = variances[i+1 : i+6]
+                sigma_bar = np.mean(next_vars) if len(next_vars) > 0 else np.mean(variances)
+                sigma_bar = max(sigma_bar, 1e-12)
+                
+                diff = sigma_i - sigma_bar
+                h = max(diff / sigma_bar, -1.0) if diff < 0 else min(diff / sigma_bar, 1.0)
+                h_vals.append(h)
+                
+            h_vals = np.array(h_vals)
 
-            ax_var.bar(x_vals, h_variances, color='#999999', alpha=0.6, label='Normalized Raw Variance')
-            ax_var.plot(x_vals, h_smoothed, color='#333333', linewidth=2.0, drawstyle='steps-mid', label='Macro Trend')
+            ax_var.bar(x_vals, h_vals, color='#4A4A4A', alpha=0.8, edgecolor='black', linewidth=0.5, label='Relative Local Variance ($h$)')
             
             ax_var.set_ylim(-1.1, 1.1)
-            ax_var.set_ylabel(r"Relative Variance $h(\sigma_i, \bar{\sigma})$", fontweight='bold')
+            ax_var.set_ylabel(r"Relative Variance ($h$)", fontweight='bold')
             ax_var.set_xlabel("Network Depth (Layer Index)", fontweight='bold')
-            ax_var.set_title(f"BAV Macro-Trend: {arch} ({target_label})", loc='left', pad=15, fontsize=14, fontweight='bold')
-            ax_var.set_xlim(0, len(layers))
+            ax_var.set_title(f"Dynamic Structural Redundancy\n{arch} ({target_label})", loc='center', pad=15, fontsize=14, fontweight='bold')
+            ax_var.set_xlim(-1, len(layers))
             
-            ax_var.axhline(y=0, color='blue', linestyle='--', alpha=0.5, label='Network Threshold (0)')
+            ax_var.axhline(y=0, color='blue', linestyle='--', alpha=0.5, label='Collapse Threshold (0)')
             
-            is_target = h_smoothed <= 0
             veto_idx = int(len(layers) * 0.25)
-            is_target[:veto_idx] = False 
-            ax_var.axvspan(0, max(0, veto_idx - 0.5), color='gray', alpha=0.15, hatch='//', edgecolor='gray', label="Veto")
+            ax_var.axvspan(-0.5, veto_idx - 0.5, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Layers (Vetoed)")
             
-            ax_var.legend(loc='upper right', ncol=3, fontsize=9, framealpha=0.9)
+            ax_var.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=10, frameon=False)
             sns.despine(ax=ax_var)
             plt.tight_layout()
             
@@ -621,26 +510,20 @@ def fig4_comprehensive_search_space_map(
             fig_var.savefig(var_save_path, bbox_inches='tight')
             plt.close(fig_var)
 
-
             # ==========================================
             # FILE 2: Candidate Bars + Hardware Sidebar
             # ==========================================
             fig_height = max(3.5, 0.5 * num_bars + 1)
             y_limits = (-1, num_bars)
             
-            fig_cand = plt.figure(figsize=(14, fig_height)) # Wide enough to hold both
+            fig_cand = plt.figure(figsize=(14, fig_height)) 
             gs = gridspec.GridSpec(1, 2, width_ratios=[2.5, 1.5], wspace=0.05)
             
             ax_heur = fig_cand.add_subplot(gs[0])
             ax_side = fig_cand.add_subplot(gs[1], sharey=ax_heur)
             ax_side.axis('off')
             
-            # --- Left Side: Candidate Bars ---
             for i, (orig_exp_name, ranges, exp_results, display_name, p_red, f_red, m_red) in enumerate(valid_exps):
-                
-                # FIX JSON LIST PARSING: 
-                # JSON converts ranges like ("Conv1", "Conv2") into ["Conv1", "Conv2"]
-                # We need to wrap it into a list of ranges so the unpacker doesn't crash on strings
                 if isinstance(ranges, tuple) or (isinstance(ranges, list) and len(ranges) > 0 and isinstance(ranges[0], str)):
                     ranges = [ranges]
                 
@@ -653,7 +536,7 @@ def fig4_comprehensive_search_space_map(
                         ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.85)
                     except StopIteration: continue
             
-            ax_heur.set_xlim(0, len(layers))
+            ax_heur.set_xlim(-1, len(layers))
             ax_heur.set_ylim(y_limits)
             ax_heur.set_yticks(range(len(valid_exps)))
             ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=11, fontweight='bold')
@@ -661,11 +544,10 @@ def fig4_comprehensive_search_space_map(
             ax_heur.set_title(f"Structural Candidates & Hardware Reductions", loc='left', pad=25, fontsize=14, fontweight='bold')
             sns.despine(ax=ax_heur)
 
-            # --- Right Side: Hardware Sidebar Table ---
             cols = [0.10, 0.35, 0.65, 0.90]
             headers = ["$\\Delta$ Acc", "Params $\\downarrow$", "FLOPs $\\downarrow$", "Memory $\\downarrow$"]
             
-            header_y = len(valid_exps) # Top row header position
+            header_y = len(valid_exps) 
             for x, h in zip(cols, headers):
                 ax_side.text(x, header_y, h, ha='center', va='bottom', fontweight='bold', fontsize=11, color='#333333')
             
@@ -812,7 +694,6 @@ def fig5_hardware_efficiency_profiles(
         df_trade = pd.DataFrame(all_tradeoff_data)
         fig, ax = plt.subplots(figsize=(10, 6))
         
-        # Quadrant coloring
         ax.axhline(0, color='black', linestyle='-', linewidth=1.5, zorder=1)
         ax.axvspan(0, 100, ymin=0.5, ymax=1, color='#e6f4ea', alpha=0.3, zorder=0, label="Ideal (Faster & More Accurate)")
         ax.axvspan(0, 100, ymin=0, ymax=0.5, color='#fce8e6', alpha=0.3, zorder=0, label="Degraded (Faster but Less Accurate)")
