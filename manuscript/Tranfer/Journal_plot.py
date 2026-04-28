@@ -235,28 +235,42 @@ def fig2_methodology_bav_regions(
 
         # Exact mathematical parity with transfer.py
         h_vals = []
+        sigma_bars = []
+        
         for i, sigma_i in enumerate(variances):
             next_vars = variances[i+1 : i+6]
             sigma_bar = np.mean(next_vars) if len(next_vars) > 0 else np.mean(variances)
             sigma_bar = max(sigma_bar, 1e-12)
+            sigma_bars.append(sigma_bar)
             
             diff = sigma_i - sigma_bar
             h = max(diff / sigma_bar, -1.0) if diff < 0 else min(diff / sigma_bar, 1.0)
             h_vals.append(h)
             
         h_vals = np.array(h_vals)
+        sigma_bars = np.array(sigma_bars)
 
-        fig, ax = plt.subplots(figsize=(12, 5))
+        # Two-Panel Layout
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
         x_vals = range(len(layers))
         
-        ax.bar(x_vals, h_vals, color='#4A4A4A', alpha=0.8, edgecolor='black', linewidth=0.5, label='Relative Local Variance ($h$)')
-        ax.set_ylim(-1.1, 1.1)
-        ax.set_ylabel(r"Relative Variance ($h$)", fontweight='bold', fontsize=12)
-        ax.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=12)
-        ax.set_title(f"Dynamic Structural Redundancy Regions\n{arch} on {dataset.capitalize()}", pad=15, fontweight='bold', fontsize=15, loc='center')
-        ax.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2, label='Collapse Threshold (0)')
+        # --- TOP PANEL ---
+        ax1.plot(x_vals, variances, color='#4A4A4A', marker='o', markersize=4, linestyle='-', linewidth=1.5, label=r'Layer Variance ($\sigma_i$)')
+        ax1.plot(x_vals, sigma_bars, color='#ff7f0e', linestyle='--', linewidth=2.5, label=r'Local Context Mean ($\bar{\sigma}$)')
+        ax1.set_ylabel("Raw Variance (Log)", fontweight='bold', fontsize=12)
+        ax1.set_yscale('log')
+        ax1.set_title(f"Dynamic Structural Redundancy Analysis\n{arch} on {dataset.capitalize()}", pad=15, fontweight='bold', fontsize=15, loc='center')
+        ax1.legend(loc='upper right', frameon=False, fontsize=10)
+        sns.despine(ax=ax1)
 
-        # Precision Zone Mapping (No more "Sandwich" effect)
+        # --- BOTTOM PANEL ---
+        ax2.bar(x_vals, h_vals, color='#4A4A4A', alpha=0.8, edgecolor='black', linewidth=0.5, label='Relative Local Variance ($h$)')
+        ax2.set_ylim(-1.1, 1.1)
+        ax2.set_ylabel(r"Relative Variance ($h$)", fontweight='bold', fontsize=12)
+        ax2.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=12)
+        ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2, label='Collapse Threshold (0)')
+
+        # Precision Zone Mapping
         veto_idx = int(len(layers) * 0.25)
         zones = []
         if len(h_vals) > 0:
@@ -277,18 +291,24 @@ def fig2_methodology_bav_regions(
         for start, end, state in zones:
             span_start, span_end = start - 0.5, end + 0.5
             if state == "VETO":
-                ax.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', 
-                           label="Foundational Veto (Depth < 25%)" if "Foundational" not in [l.get_label() for l in ax.get_lines() + ax.patches] else "")
+                ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='none')
+                ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
             elif state == "SAFE":
-                ax.axvspan(span_start, span_end, color='#2ca02c', alpha=0.2, 
-                           label="Candidate Collapse Region ($h < 0$)" if "Candidate" not in [l.get_label() for l in ax.get_lines() + ax.patches] else "")
+                ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.1, edgecolor='none')
+                ax2.axvspan(span_start, span_end, color='#2ca02c', alpha=0.2, label="Candidate Collapse Region ($h < 0$)")
             else:
-                # FIXED LATEX PARSING BUG HERE (\ge -> \geq and raw string)
-                ax.axvspan(span_start, span_end, color='#d62728', alpha=0.1, 
-                           label=r"Feature Extraction Region ($h \geq 0$)" if "Feature" not in [l.get_label() for l in ax.get_lines() + ax.patches] else "")
+                ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
+                # LAtex Bug fixed here
+                ax2.axvspan(span_start, span_end, color='#d62728', alpha=0.1, label=r"Feature Extraction Region ($h \geq 0$)")
 
-        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=10, frameon=False)
-        sns.despine(ax=ax)
+        # Perfect Deduplication
+        handles, labels = ax2.get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        # Ensure we drop any empty labels
+        by_label = {k: v for k, v in by_label.items() if k}
+        ax2.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=2, fontsize=10, frameon=False)
+        
+        sns.despine(ax=ax2)
         plt.tight_layout()
         save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
         plt.savefig(save_path, bbox_inches='tight')
@@ -504,17 +524,19 @@ def fig4_comprehensive_search_space_map(
             for start, end, state in zones:
                 span_start, span_end = start - 0.5, end + 0.5
                 if state == "VETO":
-                    ax_var.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', 
-                               label="Foundational Veto (Depth < 25%)" if "Foundational" not in [l.get_label() for l in ax_var.get_lines() + ax_var.patches] else "")
+                    ax_var.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
                 elif state == "SAFE":
-                    ax_var.axvspan(span_start, span_end, color='#2ca02c', alpha=0.2, 
-                               label="Candidate Collapse Region ($h < 0$)" if "Candidate" not in [l.get_label() for l in ax_var.get_lines() + ax_var.patches] else "")
+                    ax_var.axvspan(span_start, span_end, color='#2ca02c', alpha=0.2, label="Candidate Collapse Region ($h < 0$)")
                 else:
                     # FIXED LATEX PARSING BUG HERE (\ge -> \geq and raw string)
-                    ax_var.axvspan(span_start, span_end, color='#d62728', alpha=0.1, 
-                               label=r"Feature Extraction Region ($h \geq 0$)" if "Feature" not in [l.get_label() for l in ax_var.get_lines() + ax_var.patches] else "")
+                    ax_var.axvspan(span_start, span_end, color='#d62728', alpha=0.1, label=r"Feature Extraction Region ($h \geq 0$)")
 
-            ax_var.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=10, frameon=False)
+            # Perfect Deduplication
+            handles, labels = ax_var.get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            by_label = {k: v for k, v in by_label.items() if k}
+            ax_var.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=10, frameon=False)
+            
             sns.despine(ax=ax_var)
             plt.tight_layout()
             
