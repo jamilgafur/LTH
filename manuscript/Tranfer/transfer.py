@@ -1,6 +1,18 @@
 # transfer.py
 import os
+import glob
+import json
+import random
+import argparse
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.backends import cudnn
+
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.models.RegNetX import RegNetX_400MF
 from pyPrune.models.ConvNetX import ConvNeXt
@@ -14,14 +26,6 @@ from utils import *
 from plots import *
 from pyPrune.utils import *
 from trainer import train_one_epoch
-from torch.backends import cudnn
-import random
-import numpy as np
-import seaborn as sns
-import pandas as pd
-import matplotlib.pyplot as plt
-import glob
-import argparse
 
 # set seed for reproducibility
 seed = 42
@@ -106,35 +110,51 @@ CHECKPOINT_FILES = {
 }
 
 # ==============================================================================
-# DYNAMIC EXPERIMENT GENERATOR
+# Dynamic Collapse Logic
 # ==============================================================================
+def get_layer_variances(model, dummy_input):
+    """Minimal hook to capture the variance of each layer's activations."""
+    variances = {}
+    hooks = []
+    
+    def make_hook(name):
+        def hook(module, inp, out):
+            if isinstance(out, torch.Tensor):
+                variances[name] = out.var(dim=[0, 2, 3]).mean().item() if out.ndim == 4 else out.var().item()
+        return hook
+    
+    for name, module in model.named_modules():
+        if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear)):
+            hooks.append(module.register_forward_hook(make_hook(name)))
+            
+    model.eval()
+    with torch.no_grad():
+        model(dummy_input)
+        
+    for h in hooks:
+        h.remove()
+    return variances
+
 def get_dynamic_experiment_config(layer_variances):
-    """
-    Dynamically generates collapse regions based on the piecewise variance function.
-    Identifies contiguous sets of layers where variance is below the network mean,
-    and returns full collapse sets alongside their individual layers.
-    """
+    """Dynamic algorithm with sliding window (5) and chunking (3)."""
     exp_config = {"Original Model": None}
-    if not layer_variances:
-        return exp_config
+    if not layer_variances: return exp_config
 
     layer_names = list(layer_variances.keys())
     variances = list(layer_variances.values())
-    sigma_bar = np.mean(variances)
 
-    def calculate_h(sigma_i, s_bar):
-        diff = sigma_i - s_bar
-        if diff < 0:
-            return max(diff / s_bar, -1.0)
-        else:
-            return min(diff / s_bar, 1.0)
-
-    collapse_sets = []
-    current_set = []
+    collapse_sets, current_set = [], []
 
     for i, name in enumerate(layer_names):
         sigma_i = variances[i]
-        h_val = calculate_h(sigma_i, sigma_bar)
+        next_vars = variances[i+1 : i+6] # Sliding window of 5
+        
+        # Local mean, fallback to global mean for the absolute last layers
+        sigma_bar = sum(next_vars)/len(next_vars) if next_vars else (sum(variances)/len(variances) if variances else 1e-12)
+
+        s_bar_safe = 1e-12 if sigma_bar == 0 else sigma_bar
+        diff = sigma_i - s_bar_safe
+        h_val = max(diff / s_bar_safe, -1.0) if diff < 0 else min(diff / s_bar_safe, 1.0)
 
         if h_val < 0:
             current_set.append(name)
@@ -143,18 +163,25 @@ def get_dynamic_experiment_config(layer_variances):
                 collapse_sets.append(current_set)
                 current_set = []
                 
-    if current_set:
-        collapse_sets.append(current_set)
+    if current_set: collapse_sets.append(current_set)
 
     for k, s in enumerate(collapse_sets):
+        set_num = k + 1
         if len(s) > 1:
-            exp_config[f"Set {k+1} (Full)"] = (s[0], s[-1])
+            exp_config[f"Set {set_num} (Full)"] = (s[0], s[-1])
+        if len(s) > 3: # Break large sets into groups of 3
+            for i in range(0, len(s), 3):
+                chunk = s[i:i+3]
+                if len(chunk) > 1 and len(chunk) != len(s):
+                    exp_config[f"Set {set_num} Sub-group ({i+1} to {i+len(chunk)})"] = (chunk[0], chunk[-1])
         for layer in s:
             exp_config[f"Single Layer: {layer}"] = (layer, layer)
 
     return exp_config
 
+# ==============================================================================
 # Helper functions
+# ==============================================================================
 def create_optimizer_scheduler(model, learning_rate=1e-3):
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9, weight_decay=5e-4)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
@@ -167,114 +194,12 @@ def initialize_model_and_data(args):
     
     train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, model_class)
     model_kwargs["num_classes"] = num_classes
-    model_kwargs["one_batch"] = next(iter(train_loader))[0]
+    model_kwargs["one_batch"] = next(iter(load_dataset(dataset, model_class)[0]))[0]
     
     if args.model == "InceptionNet":
         model_kwargs["aux_logits"] = False
         
     return train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes
-
-# -------------------------------------------------------------
-# HPC Safe Heuristic Profiling
-# -------------------------------------------------------------
-def run_heuristic_profiling_safely(model_class, model_kwargs, train_loader, epochs, device, dataset, model_name):
-    import os
-    import glob
-    import torch
-    import time
-    
-    lock_dir_path = f"{model_name}_{dataset}_heuristics.lock_dir"
-    done_marker_path = f"{model_name}_{dataset}_heuristics_done.marker"
-    plots_root_dir = os.path.join("runs", "plots")
-    ckpt_root_dir = os.path.join("runs", "checkpoints", "heuristics")
-    
-    ensure_dir(plots_root_dir)
-    ensure_dir(ckpt_root_dir)
-
-    is_already_done = os.path.exists(done_marker_path)
-    if is_already_done:
-        print(f"[INFO] Done marker found for {model_name}. Will load checkpoint and skip to analysis.")
-
-    print(f"[INFO] Attempting to acquire lock: {lock_dir_path}")
-    try:
-        os.mkdir(lock_dir_path)
-        print("[INFO] Lock acquired! Starting/Resuming process...")
-    except FileExistsError:
-        print("[INFO] Lock busy. Another job is running this. Skipping.")
-        return
-    except OSError as e:
-        print(f"[WARN] OS Error acquiring lock: {e}")
-        return
-
-    try:
-        if isinstance(model_class, str):
-            model_class_obj = eval(model_class)
-        else:
-            model_class_obj = model_class
-
-        model = model_class_obj(**model_kwargs).to(device)
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
-        ckpt_prefix = f"{model_name}_{dataset}_heuristic"
-        ckpt_pattern = os.path.join(ckpt_root_dir, f"{ckpt_prefix}_epoch*.pt")
-        existing_ckpts = sorted(
-            glob.glob(ckpt_pattern),
-            key=lambda x: int(os.path.basename(x).split("epoch")[-1].split(".")[0])
-        )
-
-        start_epoch = 0
-        if existing_ckpts:
-            last_ckpt = existing_ckpts[-1]
-            print(f"[INFO] Found checkpoint: {last_ckpt}. Loading state...")
-            checkpoint = torch.load(last_ckpt, map_location=device)
-            model.load_state_dict(checkpoint['model_state_dict'])
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-            start_epoch = checkpoint['epoch']
-            print(f"[✓] Model loaded. State is at Epoch {start_epoch}")
-
-        if not is_already_done and start_epoch < epochs:
-            print(f"[INFO] Training model for {epochs} epochs...")
-            for epoch in range(start_epoch + 1, epochs + 1):
-                train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, device)
-                print(f"    [Epoch {epoch}/{epochs}] Loss: {train_loss:.4f} | Acc: {train_acc:.2f}%")
-                ckpt_path = os.path.join(ckpt_root_dir, f"{ckpt_prefix}_epoch{epoch}.pt")
-                torch.save({
-                    'epoch': epoch,
-                    'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'loss': train_loss
-                }, ckpt_path)
-                prev_ckpt = os.path.join(ckpt_root_dir, f"{ckpt_prefix}_epoch{epoch-1}.pt")
-                if os.path.exists(prev_ckpt):
-                    os.remove(prev_ckpt)
-        else:
-            print(f"[INFO] Skipping training loop. Proceeding to analysis.")
-
-        print("[INFO] Running analysis...")
-        input_sample = model_kwargs["one_batch"].to(device)
-        analyze_collapse_heuristics(
-            model=model, 
-            input_tensor=input_sample, 
-            save_root_dir=plots_root_dir, 
-            model_name=model_name,
-            dataset_name=dataset
-        )
-        
-        with open(done_marker_path, 'w') as f:
-            f.write(f"Completed/Verified at {time.ctime()}")
-            
-        print("[INFO] Heuristic profiling complete. Plots saved.")
-
-    except Exception as e:
-        print(f"[ERROR] An error occurred during heuristic profiling: {e}")
-
-    finally:
-        if os.path.exists(lock_dir_path):
-            try:
-                os.rmdir(lock_dir_path)
-                print("[INFO] Lock released.")
-            except OSError:
-                pass
 
 def setup_directories(save_root_dir):
     dirs = {
@@ -300,7 +225,6 @@ def run_baseline_pass(model, input_tensor):
             x = inp[0].detach().cpu()
             y = out.detach().cpu()
             saved_tensors[name] = {"in": x, "out": y}
-            
             if y.ndim == 4:
                 act_var = y.var(dim=[2, 3]).mean().item()
                 act_mean = y.mean(dim=[2, 3]).mean().item()
@@ -328,18 +252,13 @@ def run_baseline_pass(model, input_tensor):
     return saved_tensors, layer_variances, layer_activations, global_median_var, baseline_probs
 
 def plot_individual_layers(layer_activations, layer_variances, directory, model_name, dataset_name, exp_config=None):
-    """Updated to use Bar Charts for discrete layer representation."""
-    if not layer_activations: return
-    
+    if not layer_activations:
+        return
     layers = list(layer_activations.keys())
     activations = list(layer_activations.values())
     variances = list(layer_variances.values())
 
-    df = pd.DataFrame({
-        "Layer": layers,
-        "Mean Activation": activations,
-        "Variance": variances
-    })
+    df = pd.DataFrame({"Layer": layers, "Mean Activation": activations, "Variance": variances})
     df.to_csv(os.path.join(directory, f"{model_name}_{dataset_name}_layer_stats.csv"), index=False)
 
     sns.set_theme(style="whitegrid", context="paper", font_scale=1.1)
@@ -364,12 +283,11 @@ def plot_individual_layers(layer_activations, layer_variances, directory, model_
         y_max = max(variances) if variances else 1
         ax2.text((start + end) / 2, y_max * 0.95, region_name, ha='center', va='top', fontsize=11, fontweight='bold', color='#555555', alpha=0.8, bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', boxstyle='round,pad=0.2'))
 
-    # ---- UPDATED to Barplot ----
-    sns.barplot(data=df, x="Layer", y="Mean Activation", color="steelblue", ax=ax1, zorder=3)
+    sns.lineplot(data=df, x="Layer", y="Mean Activation", marker="o", color="steelblue", linewidth=2, ax=ax1, zorder=3)
     ax1.set_ylabel("Mean Activation", fontweight='bold', labelpad=10)
     ax1.set_title(f"Layer-wise Activation & Structural Stages\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold', pad=12)
 
-    sns.barplot(data=df, x="Layer", y="Variance", color="crimson", ax=ax2, zorder=3)
+    sns.lineplot(data=df, x="Layer", y="Variance", marker="s", color="crimson", linewidth=2, linestyle="--", ax=ax2, zorder=3)
     ax2.set_ylabel("Variance", fontweight='bold', labelpad=10)
     ax2.set_xlabel("Network Layer", fontweight='bold', labelpad=10)
     ax2.set_xticks(range(len(layers)))
@@ -404,6 +322,7 @@ def plot_normalized_metrics(layer_activations, layer_variances, directory, model
     ax.set_title(f"Normalized Layer Variance\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold', pad=15)
     ax.set_ylabel("Variance / Avg Variance", fontweight='bold')
     ax.set_xlabel("Network Layer", fontweight='bold')
+    ax.set_xticks(range(len(layers)))
     ax.set_xticklabels(layers, rotation=90, fontsize=9)
     ax.legend(loc='upper right')
     plt.tight_layout()
@@ -416,6 +335,7 @@ def plot_normalized_metrics(layer_activations, layer_variances, directory, model
     ax.set_title(f"Normalized Coefficient of Variation (CV)\n{model_name} | {dataset_name}", fontsize=16, fontweight='bold', pad=15)
     ax.set_ylabel("Layer CV / Avg CV", fontweight='bold')
     ax.set_xlabel("Network Layer", fontweight='bold')
+    ax.set_xticks(range(len(layers)))
     ax.set_xticklabels(layers, rotation=90, fontsize=9)
     ax.legend(loc='upper right')
     plt.tight_layout()
@@ -562,8 +482,10 @@ def save_and_plot_metric(data, y_col, directory, title_prefix, ylabel, hline_val
 
 def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
     print(f"[•] Running Comprehensive Heuristic Analysis for {model_name} on {dataset_name}...")
+    
     model.eval()
-    if len(input_tensor.shape) == 3: input_tensor = input_tensor.unsqueeze(0)
+    if len(input_tensor.shape) == 3:
+        input_tensor = input_tensor.unsqueeze(0)
 
     module_dict = dict(model.named_modules())
     layer_names = list(module_dict.keys())
@@ -571,7 +493,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     dirs = setup_directories(save_root_dir)
     saved_tensors, layer_variances, layer_activations, global_median_var, baseline_probs = run_baseline_pass(model, input_tensor)
 
-    # 3. Dynamic Experiment Fetch
+    # Use the dynamic generator instead of hardcoded
     exp_config = get_dynamic_experiment_config(layer_variances)
     if not exp_config: print("[WARN] No experiment config dynamically generated.")
 
@@ -612,28 +534,25 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
         epochs = pretrain
         pretrain = 0
 
-    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, args.model)
-
-    run_heuristic_profiling_safely(model_class=model_class, model_kwargs=model_kwargs, train_loader=train_loader, epochs=epochs, device=device, dataset=dataset, model_name=args.model)
-    
-    print("\n[STEP] Generating Heuristic and Architectural Visuals...")
-    csv_path = os.path.join("runs/plots", "Layer_Statistics", f"{args.model}_{dataset}_layer_stats.csv")
-    if os.path.exists(csv_path):
-        try: plot_experiment_heuristics(args.model, dataset, csv_path)
-        except Exception as e: print(f"[WARN] Failed to generate visual plots: {e}")
-    else: print(f"[WARN] Could not find {csv_path} to generate heuristic plots.")
+    if train_loader is None or test_loader is None:
+        train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, args.model)
+    else:
+        input_size = model_kwargs['one_batch'].shape
 
     for name, layers in experiments.items():
         print(f"\n--- Running experiment: {name} ---")
         run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
 
+# ==============================================================================
+# Main Entry Point
+# ==============================================================================
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="RegNetX_400MF", choices=["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet", "ConvNeXt"], help="Model architecture to use")
-    parser.add_argument("--dataset", type=str, default="Cifar10", help="Dataset to use (Cifar10, Cifar100, ImageNet, TinyImageNet)")
+    parser.add_argument("--dataset", type=str, default="Cifar10", help="Dataset to use")
     parser.add_argument("--epochs", type=int, default=1, help="Number of epochs to train for")
     parser.add_argument("--pretrain", type=int, default=10, help="Number of pretraining epochs")
-    parser.add_argument("--experiment", type=str, default="all", help="Experiment to run, or 'all' to run dynamically discovered sets")
+    parser.add_argument("--experiment", type=str, required=True, help="Experiment to run, or 'discover' to generate regions")
     parser.add_argument("--post_compress_epochs", type=int, default=0, help="Number of post-pruning compression epochs")
     parser.add_argument("--imp", action="store_false", help="Apply Iterative Magnitude Pruning")
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
@@ -641,36 +560,77 @@ def main():
     parser.add_argument("--quant", action="store_true", help="Apply Quantization Aware Training")
     args = parser.parse_args()
     
-    print(args)
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
     train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
     
     base_path = CHECKPOINT_BASES[args.model][args.dataset]
     model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
     model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][1])
 
-    print("\n[INFO] Running baseline pass to discover collapse targets...")
-    model_class_obj = eval(model_class) if isinstance(model_class, str) else model_class
-    eval_model = model_class_obj(**model_kwargs).to(device)
-    input_tensor = model_kwargs["one_batch"].to(device)
-    
-    _, layer_variances, _, _, _ = run_baseline_pass(eval_model, input_tensor)
-    dynamic_experiments = get_dynamic_experiment_config(layer_variances)
-    
-    if args.experiment == "all":
-        experiment_dict = dynamic_experiments
-    else:
-        if args.experiment not in dynamic_experiments:
-            raise ValueError(f"Experiment '{args.experiment}' not dynamically found. Available experiments: {list(dynamic_experiments.keys())}")
-        experiment_dict = {args.experiment: dynamic_experiments[args.experiment]}
+    json_file = f"{args.model}_{args.dataset}_{'JF' if args.JF else 'Kevin'}_discovered_regions.json"
+
+    # =========================================================================
+    # PRE-FLIGHT PROBE: Train (if needed), capture variances, output JSON
+    # =========================================================================
+    if args.experiment == "discover":
+        print(f"[INFO] Running Discovery Mode for {args.model}")
+        
+        # 1. Run/Ensure the Original Model is trained using YOUR existing logic. 
+        # (If checkpoints exist, experiments.py naturally skips training!)
+        run_experiments_for_dataset(
+            {"Original Model": None}, args.dataset, model_path_097, model_path_000, 
+            train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
+            model_kwargs, args.post_compress_epochs, None, args.quant, args
+        )
+
+        # 2. Reconstruct save path to grab the finalized checkpoint
+        actual_epochs = args.pretrain if args.model in ["InceptionNet", "XceptionNet", "MobileNet"] else args.epochs
+        actual_pretrain = 0 if args.model in ["InceptionNet", "XceptionNet", "MobileNet"] else args.pretrain
+        save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}_epochs{actual_epochs}_pretrain{actual_pretrain}_postcompress{args.post_compress_epochs}"
+        ckpt_dir = os.path.join(save_path, "checkpoints")
+        
+        flag_str = "JF" if args.JF else "Kevin"
+        quant_str = "_quant" if args.quant else ""
+        trained_baseline_path = os.path.join(ckpt_dir, f"final_{flag_str}_Original Model{quant_str}.pt")
+        
+        # 3. Load the weights and calculate variances
+        model_class_obj = eval(model_class) if isinstance(model_class, str) else model_class
+        eval_model = model_class_obj(**model_kwargs).to(device)
+        
+        if os.path.exists(trained_baseline_path):
+            ckpt = torch.load(trained_baseline_path, map_location=device, weights_only=False)
+            eval_model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt['model'], strict=False)
+        else:
+            print(f"[ERROR] Failed to find finalized model at {trained_baseline_path}")
+            return
+
+        print("[INFO] Computing layer variances for JSON map...")
+        input_tensor = model_kwargs["one_batch"].to(device)
+        if len(input_tensor.shape) == 3: input_tensor = input_tensor.unsqueeze(0)
+        
+        layer_variances = get_layer_variances(eval_model, input_tensor)
+        dynamic_experiments = get_dynamic_experiment_config(layer_variances)
+        
+        with open(json_file, 'w') as f:
+            json.dump(dynamic_experiments, f, indent=4)
+        print(f"[✓] Saved {len(dynamic_experiments)} targets to {json_file}")
+        return
+
+    # =========================================================================
+    # HPC EXECUTION: Read JSON and run the requested experiment
+    # =========================================================================
+    if not os.path.exists(json_file):
+        raise FileNotFoundError(f"Missing {json_file}. Run with --experiment 'discover' first.")
+        
+    with open(json_file, 'r') as f:
+        dynamic_experiments = json.load(f)
+        
+    if args.experiment not in dynamic_experiments:
+        raise ValueError(f"Experiment '{args.experiment}' not found in {json_file}.")
 
     run_experiments_for_dataset(
-        experiment_dict,
-        args.dataset,
-        model_path_097,
-        model_path_000,
-        None, None, device, args.epochs, args.pretrain, model_class,
+        {args.experiment: dynamic_experiments[args.experiment]}, args.dataset, model_path_097, model_path_000, 
+        train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
         model_kwargs, args.post_compress_epochs, None, args.quant, args
     )
 
