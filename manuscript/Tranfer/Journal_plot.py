@@ -283,8 +283,9 @@ def fig2_methodology_bav_regions(
                 ax.axvspan(span_start, span_end, color='#2ca02c', alpha=0.2, 
                            label="Candidate Collapse Region ($h < 0$)" if "Candidate" not in [l.get_label() for l in ax.get_lines() + ax.patches] else "")
             else:
+                # FIXED LATEX PARSING BUG HERE (\ge -> \geq and raw string)
                 ax.axvspan(span_start, span_end, color='#d62728', alpha=0.1, 
-                           label="Feature Extraction Region ($h \ge 0$)" if "Feature" not in [l.get_label() for l in ax.get_lines() + ax.patches] else "")
+                           label=r"Feature Extraction Region ($h \geq 0$)" if "Feature" not in [l.get_label() for l in ax.get_lines() + ax.patches] else "")
 
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=10, frameon=False)
         sns.despine(ax=ax)
@@ -509,8 +510,9 @@ def fig4_comprehensive_search_space_map(
                     ax_var.axvspan(span_start, span_end, color='#2ca02c', alpha=0.2, 
                                label="Candidate Collapse Region ($h < 0$)" if "Candidate" not in [l.get_label() for l in ax_var.get_lines() + ax_var.patches] else "")
                 else:
+                    # FIXED LATEX PARSING BUG HERE (\ge -> \geq and raw string)
                     ax_var.axvspan(span_start, span_end, color='#d62728', alpha=0.1, 
-                               label="Feature Extraction Region ($h \ge 0$)" if "Feature" not in [l.get_label() for l in ax_var.get_lines() + ax_var.patches] else "")
+                               label=r"Feature Extraction Region ($h \geq 0$)" if "Feature" not in [l.get_label() for l in ax_var.get_lines() + ax_var.patches] else "")
 
             ax_var.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=10, frameon=False)
             sns.despine(ax=ax_var)
