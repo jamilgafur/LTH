@@ -1,3 +1,4 @@
+# Journal_plot.py
 from __future__ import annotations
 
 import json
@@ -498,12 +499,6 @@ def fig4_comprehensive_search_space_map(
     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
     out_dir: Path = Path("./figures/search_space")
 ):
-    try:
-        from transfer import EXPERIMENTS
-    except ImportError:
-        logger.error("[FIG4] Could not import EXPERIMENTS")
-        return
-
     import matplotlib.gridspec as gridspec
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -542,7 +537,21 @@ def fig4_comprehensive_search_space_map(
         mu_net = np.mean(variances)
         median_net = np.median(variances)
 
-        model_exps = EXPERIMENTS.get(arch, {}).get(dataset, {})
+        # ==============================================================
+        # DYNAMIC JSON IMPORT: Replace the old hardcoded EXPERIMENTS map
+        # ==============================================================
+        json_files = list(Path(".").glob(f"{arch}_{dataset}_*_discovered_regions.json"))
+        if not json_files:
+            logger.warning(f"[FIG4] Missing JSON config map for {arch} on {dataset}. Skipping.")
+            continue
+            
+        try:
+            with open(json_files[0], 'r') as f:
+                model_exps = json.load(f)
+        except Exception as e:
+            logger.error(f"[FIG4] Failed to read {json_files[0]}: {e}")
+            continue
+            
         if not model_exps: continue
 
         # Extract Baseline Metrics
@@ -628,7 +637,13 @@ def fig4_comprehensive_search_space_map(
             
             # --- Left Side: Candidate Bars ---
             for i, (orig_exp_name, ranges, exp_results, display_name, p_red, f_red, m_red) in enumerate(valid_exps):
-                ranges = ranges if isinstance(ranges, list) else [ranges]
+                
+                # FIX JSON LIST PARSING: 
+                # JSON converts ranges like ("Conv1", "Conv2") into ["Conv1", "Conv2"]
+                # We need to wrap it into a list of ranges so the unpacker doesn't crash on strings
+                if isinstance(ranges, tuple) or (isinstance(ranges, list) and len(ranges) > 0 and isinstance(ranges[0], str)):
+                    ranges = [ranges]
+                
                 d_acc = exp_results.get('d_acc', np.nan)
                 color = get_acc_color(d_acc)
                 for start_layer, end_layer in ranges:
@@ -734,6 +749,7 @@ def fig5_hardware_efficiency_profiles(
         sns.barplot(data=melted_arch, y='base_name', x='Reduction (%)', hue='Metric', 
                     palette=['#4C72B0', '#DD8452', '#55A868'], edgecolor='black', ax=ax)
         
+        ax.set_yticks(range(len(y_labels)))
         ax.set_yticklabels(y_labels, fontsize=10, fontweight='bold')
         ax.set_ylabel(""); ax.set_xlabel("Reduction Relative to Baseline (%)", fontweight='bold')
         ax.set_title(f"Hardware Resource Optimization: {arch}", pad=15, fontweight='bold', fontsize=14)
@@ -777,6 +793,7 @@ def fig5_hardware_efficiency_profiles(
         sns.barplot(data=melted, x='Architecture', y='Reduction', hue='Metric', 
                     palette=['#4C72B0', '#DD8452', '#55A868'], edgecolor='black', ax=ax, order=df_unified['Architecture'])
         
+        ax.set_xticks(range(len(x_labels)))
         ax.set_xticklabels(x_labels, fontsize=11, fontweight='bold')
         ax.set_xlabel("Architecture & Accuracy Impact", fontweight='bold', fontsize=12)
         ax.set_ylabel("Reduction Relative to Baseline (%)", fontweight='bold', fontsize=12)
