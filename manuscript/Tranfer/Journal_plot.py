@@ -202,7 +202,7 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
                 fig, ax = plt.subplots(figsize=(12, 6))
                 sns.barplot(data=g_dataset, x="display_name", y=metric, hue="posthoc_or_posttrain", palette=palette, edgecolor="black", ax=ax)
                 plt.xticks(rotation=45, ha="right")
-                plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.svg")
+                plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.png")
                 plt.close()
 
 # ========================= FIG 2 ========================= #
@@ -314,7 +314,7 @@ def fig2_methodology_bav_regions(
         sns.despine(ax=ax)
 
         plt.tight_layout()
-        save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.svg"
+        save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
         
@@ -473,7 +473,7 @@ def fig3_v2t_heuristic_validation(
         axes[1].legend(loc="lower right", framealpha=0.9)
 
     sns.despine()
-    plt.savefig(out_dir / "V2T_heuristic_validation_map.svg")
+    plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
     plt.close()
 
     logger.info("[FIG3] Completed successfully")
