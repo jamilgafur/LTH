@@ -137,8 +137,11 @@ def get_layer_variances(model, dummy_input):
 
 def get_dynamic_experiment_config(layer_variances):
     """Dynamic algorithm with sliding window (5) and chunking (3)."""
+    print(f"\n[STEP] Identifying dynamic collapse regions (Sliding Window = 5)...")
     exp_config = {"Original Model": None}
-    if not layer_variances: return exp_config
+    if not layer_variances: 
+        print("[WARN] layer_variances is empty. Returning baseline-only config.")
+        return exp_config
 
     layer_names = list(layer_variances.keys())
     variances = list(layer_variances.values())
@@ -163,21 +166,44 @@ def get_dynamic_experiment_config(layer_variances):
                 collapse_sets.append(current_set)
                 current_set = []
                 
-    if current_set: collapse_sets.append(current_set)
+    if current_set: 
+        collapse_sets.append(current_set)
+
+    # -------------------------------------------------------------------------
+    # FALLBACK: If no regions were found, chunk the network into groups of 5
+    # -------------------------------------------------------------------------
+    if not collapse_sets:
+        print("[WARN] No natural collapse regions found (h >= 0 everywhere). Falling back to chunks of 5.")
+        for i in range(0, len(layer_names), 5):
+            chunk = layer_names[i:i+5]
+            if len(chunk) > 1:
+                exp_config[f"Fallback Set ({i+1} to {i+len(chunk)})"] = (chunk[0], chunk[-1])
+        
+        print(f"[INFO] Fallback complete. Total experimental targets generated: {len(exp_config)}")
+        return exp_config
+    # -------------------------------------------------------------------------
+
+    print(f"[INFO] Found {len(collapse_sets)} raw contiguous structural regions with h(σ) < 0.")
+    print(f"[STEP] Expanding regions into full sets and sub-groups of 3...")
 
     for k, s in enumerate(collapse_sets):
         set_num = k + 1
+        
+        # Add the full set
         if len(s) > 1:
             exp_config[f"Set {set_num} (Full)"] = (s[0], s[-1])
-        if len(s) > 3: # Break large sets into groups of 3
+            
+        # Break large sets into groups of 3
+        if len(s) > 3: 
             for i in range(0, len(s), 3):
                 chunk = s[i:i+3]
                 if len(chunk) > 1 and len(chunk) != len(s):
                     exp_config[f"Set {set_num} Sub-group ({i+1} to {i+len(chunk)})"] = (chunk[0], chunk[-1])
-        
+                    
+        # (Single layer addition was removed per your request)
 
+    print(f"[INFO] Expansion complete. Total experimental targets generated: {len(exp_config)}")
     return exp_config
-
 # ==============================================================================
 # Helper functions
 # ==============================================================================
