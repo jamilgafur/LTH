@@ -174,8 +174,7 @@ def get_dynamic_experiment_config(layer_variances):
                 chunk = s[i:i+3]
                 if len(chunk) > 1 and len(chunk) != len(s):
                     exp_config[f"Set {set_num} Sub-group ({i+1} to {i+len(chunk)})"] = (chunk[0], chunk[-1])
-        for layer in s:
-            exp_config[f"Single Layer: {layer}"] = (layer, layer)
+        
 
     return exp_config
 
