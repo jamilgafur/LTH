@@ -202,8 +202,18 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
                 fig, ax = plt.subplots(figsize=(12, 6))
                 sns.barplot(data=g_dataset, x="display_name", y=metric, hue="posthoc_or_posttrain", palette=palette, edgecolor="black", ax=ax)
                 plt.xticks(rotation=45, ha="right")
-                plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.png")
+                plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.svg")
                 plt.close()
+
+# Helper piecewise function for methodology and search space
+def piecewise_h(sigma_i, sigma_bar):
+    diff = sigma_i - sigma_bar
+    if diff < 0:
+        return max(diff / sigma_bar, -1.0)
+    else:
+        return min(diff / sigma_bar, 1.0)
+        
+vec_h = np.vectorize(piecewise_h)
 
 # ========================= FIG 2 ========================= #
 
@@ -237,34 +247,38 @@ def fig2_methodology_bav_regions(
         mu_net = np.mean(variances)
         median_net = np.median(variances)
 
-        # Initialize Paper-Formatted Plot
-        fig, ax = plt.subplots(figsize=(12, 4.5))
-
-        # Replaced continuous line chart with discrete bar chart for layer variances 
-        # and step plot for the macro trend to prevent false interpolation.
-        x_vals = range(len(layers))
-        ax.bar(x_vals, variances, color='#b0b0b0', alpha=0.6, label='Raw Activation Variance')
-        ax.plot(x_vals, smoothed_var, color='#111111', linewidth=2.0, drawstyle='steps-mid', label=r'Macro Trend ($\tilde{V}_{trend}$)')
-
-        ax.set_yscale('log')
-        ax.set_ylabel("Activation Variance ($\sigma^2$)", fontweight='bold', fontsize=11)
-        ax.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
-
         # Set Architecture-Specific Thresholds
         if arch in multi_path_archs:
             threshold = median_net
-            target_label = r"Potential Target Zone ($\tilde{V}_{trend} < \tilde{V}_{net}$)"
+            target_label = r"Potential Target Zone ($h < 0$)"
             title_text = f"BAV Methodology (Multi-Path): {arch} on {dataset.capitalize()}"
         else:
             threshold = mu_net
-            target_label = r"Potential Target Zone ($\tilde{V}_{trend} < \mu_{net}$)"
+            target_label = r"Potential Target Zone ($h < 0$)"
             title_text = f"BAV Methodology (Single-Path): {arch} on {dataset.capitalize()}"
 
-        ax.set_title(title_text, pad=25, fontweight='bold', fontsize=14, loc='left')
-        ax.axhline(y=threshold, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=1.5, label='Network Variance Threshold')
+        # Apply piecewise mapping
+        h_variances = vec_h(variances, threshold)
+        h_smoothed = vec_h(smoothed_var, threshold)
 
-        # Identify Zones
-        is_target = smoothed_var <= threshold
+        # Initialize Paper-Formatted Plot
+        fig, ax = plt.subplots(figsize=(12, 4.5))
+
+        x_vals = range(len(layers))
+        ax.bar(x_vals, h_variances, color='#b0b0b0', alpha=0.6, label='Normalized Raw Variance')
+        ax.plot(x_vals, h_smoothed, color='#111111', linewidth=2.0, drawstyle='steps-mid', label=r'Macro Trend $h(\tilde{V}_{trend}, \bar{\sigma})$')
+
+        # Drop log scale, use clamped bounds
+        ax.set_ylim(-1.1, 1.1)
+        ax.set_ylabel(r"Relative Variance $h(\sigma_i, \bar{\sigma})$", fontweight='bold', fontsize=11)
+        ax.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
+        ax.set_title(title_text, pad=25, fontweight='bold', fontsize=14, loc='left')
+        
+        # Plot Threshold at 0 (since it's normalized)
+        ax.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=1.5, label='Network Variance Threshold (0)')
+
+        # Identify Zones based on normalized mapped values
+        is_target = h_smoothed <= 0
         veto_idx = int(len(layers) * 0.25)
         is_target[:veto_idx] = False
 
@@ -300,7 +314,7 @@ def fig2_methodology_bav_regions(
                 ax.axvspan(span_start, span_end, color='#d62728', alpha=0.1, label=lbl)
                 added_danger = True
 
-        # 3. Plot Boundary Anchors
+        # 3. Plot Boundary Anchors (Calculate on smoothed_var to avoid flat clamping destruction)
         valleys = argrelextrema(smoothed_var, np.less, order=2)[0]
         added_valley = False
         for v in valleys:
@@ -314,7 +328,7 @@ def fig2_methodology_bav_regions(
         sns.despine(ax=ax)
 
         plt.tight_layout()
-        save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
+        save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.svg"
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
         
@@ -473,7 +487,7 @@ def fig3_v2t_heuristic_validation(
         axes[1].legend(loc="lower right", framealpha=0.9)
 
     sns.despine()
-    plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
+    plt.savefig(out_dir / "V2T_heuristic_validation_map.svg")
     plt.close()
 
     logger.info("[FIG3] Completed successfully")
@@ -484,19 +498,12 @@ def fig4_comprehensive_search_space_map(
     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
     out_dir: Path = Path("./figures/search_space")
 ):
-    """
-    Generates two separate files for the paper:
-    1. The Variance Trend (The theory / macro-trend line) 
-       - Updated to use piecewise function h(sigma_i, sigma_bar) and discrete bar mapping.
-    2. The Candidate Bars + Hardware Sidebar integrated into one figure.
-    """
     try:
         from transfer import EXPERIMENTS
     except ImportError:
         logger.error("[FIG4] Could not import EXPERIMENTS")
         return
 
-    from scipy.signal import argrelextrema
     import matplotlib.gridspec as gridspec
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -522,20 +529,6 @@ def fig4_comprehensive_search_space_map(
             return pd.DataFrame()
 
     multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
-
-    def format_dataset_name(ds: str) -> str:
-        mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
-        return mapping.get(ds, ds.capitalize())
-
-    # Implementation of piecewise function from whiteboard: h(sigma_i, sigma_bar)
-    def piecewise_h(sigma_i, sigma_bar):
-        diff = sigma_i - sigma_bar
-        if diff < 0:
-            return max(diff / sigma_bar, -1.0)
-        else:
-            return min(diff / sigma_bar, 1.0)
-            
-    vec_h = np.vectorize(piecewise_h)
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         logger.info(f"[FIG4] Processing Trend and Candidate+Sidebar Maps for {arch}/{dataset}")
@@ -586,29 +579,24 @@ def fig4_comprehensive_search_space_map(
             file_suffix = "quantized" if is_quant_target else "unquantized"
 
             # ==========================================
-            # FILE 1: The Variance Trend Plot (Updated with piecewise h & Bar charts)
+            # FILE 1: The Variance Trend Plot
             # ==========================================
             fig_var, ax_var = plt.subplots(figsize=(10, 3.5))
 
             threshold = median_net if arch in multi_path_archs else mu_net
             
-            # Apply h(sigma_i, sigma_bar) transformation
             h_variances = vec_h(variances, threshold)
             h_smoothed = vec_h(smoothed_var, threshold)
 
-            # Replaced line chart with bar chart to remove false interpolation
             ax_var.bar(x_vals, h_variances, color='#999999', alpha=0.6, label='Normalized Raw Variance')
-            # Changed macro trend to steps-mid
             ax_var.plot(x_vals, h_smoothed, color='#333333', linewidth=2.0, drawstyle='steps-mid', label='Macro Trend')
             
-            # Since values are now clipped [-1, 1], we don't need log scale anymore.
             ax_var.set_ylim(-1.1, 1.1)
             ax_var.set_ylabel(r"Relative Variance $h(\sigma_i, \bar{\sigma})$", fontweight='bold')
             ax_var.set_xlabel("Network Depth (Layer Index)", fontweight='bold')
             ax_var.set_title(f"BAV Macro-Trend: {arch} ({target_label})", loc='left', pad=15, fontsize=14, fontweight='bold')
             ax_var.set_xlim(0, len(layers))
             
-            # Since data is normalized relative to threshold, the new threshold line is at 0
             ax_var.axhline(y=0, color='blue', linestyle='--', alpha=0.5, label='Network Threshold (0)')
             
             is_target = h_smoothed <= 0
@@ -691,15 +679,6 @@ def fig5_hardware_efficiency_profiles(
     df: pd.DataFrame,
     out_dir: Path = Path("./figures/hardware_efficiency")
 ):
-    """
-    Generates comprehensive hardware efficiency reports:
-    1. Per-model CSVs of all candidates.
-    2. Per-model LaTeX tables.
-    3. Per-model grouped bar charts.
-    4. Unified Grouped Bar Chart of the BEST candidate per architecture.
-    5. Unified Grouped Bar Chart of the WORST candidate per architecture.
-    6. A global Accuracy vs. FLOPs Trade-off Scatter Plot (Pareto Frontier).
-    """
     out_dir.mkdir(parents=True, exist_ok=True)
     
     best_summary = []
