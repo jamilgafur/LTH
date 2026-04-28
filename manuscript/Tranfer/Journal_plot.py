@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import json
@@ -203,7 +202,7 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
                 fig, ax = plt.subplots(figsize=(12, 6))
                 sns.barplot(data=g_dataset, x="display_name", y=metric, hue="posthoc_or_posttrain", palette=palette, edgecolor="black", ax=ax)
                 plt.xticks(rotation=45, ha="right")
-                plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.svg")
+                plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.png")
                 plt.close()
 
 # ========================= FIG 2 ========================= #
@@ -241,8 +240,11 @@ def fig2_methodology_bav_regions(
         # Initialize Paper-Formatted Plot
         fig, ax = plt.subplots(figsize=(12, 4.5))
 
-        ax.plot(range(len(layers)), variances, color='#b0b0b0', linewidth=1.0, alpha=0.6, label='Raw Activation Variance')
-        ax.plot(range(len(layers)), smoothed_var, color='#111111', linewidth=2.0, label=r'Macro Trend ($\tilde{V}_{trend}$)')
+        # Replaced continuous line chart with discrete bar chart for layer variances 
+        # and step plot for the macro trend to prevent false interpolation.
+        x_vals = range(len(layers))
+        ax.bar(x_vals, variances, color='#b0b0b0', alpha=0.6, label='Raw Activation Variance')
+        ax.plot(x_vals, smoothed_var, color='#111111', linewidth=2.0, drawstyle='steps-mid', label=r'Macro Trend ($\tilde{V}_{trend}$)')
 
         ax.set_yscale('log')
         ax.set_ylabel("Activation Variance ($\sigma^2$)", fontweight='bold', fontsize=11)
@@ -312,7 +314,7 @@ def fig2_methodology_bav_regions(
         sns.despine(ax=ax)
 
         plt.tight_layout()
-        save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.svg"
+        save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
         
@@ -471,7 +473,7 @@ def fig3_v2t_heuristic_validation(
         axes[1].legend(loc="lower right", framealpha=0.9)
 
     sns.despine()
-    plt.savefig(out_dir / "V2T_heuristic_validation_map.svg")
+    plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
     plt.close()
 
     logger.info("[FIG3] Completed successfully")
@@ -484,7 +486,8 @@ def fig4_comprehensive_search_space_map(
 ):
     """
     Generates two separate files for the paper:
-    1. The Variance Trend (The theory / macro-trend line)
+    1. The Variance Trend (The theory / macro-trend line) 
+       - Updated to use piecewise function h(sigma_i, sigma_bar) and discrete bar mapping.
     2. The Candidate Bars + Hardware Sidebar integrated into one figure.
     """
     try:
@@ -523,6 +526,16 @@ def fig4_comprehensive_search_space_map(
     def format_dataset_name(ds: str) -> str:
         mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
         return mapping.get(ds, ds.capitalize())
+
+    # Implementation of piecewise function from whiteboard: h(sigma_i, sigma_bar)
+    def piecewise_h(sigma_i, sigma_bar):
+        diff = sigma_i - sigma_bar
+        if diff < 0:
+            return max(diff / sigma_bar, -1.0)
+        else:
+            return min(diff / sigma_bar, 1.0)
+            
+    vec_h = np.vectorize(piecewise_h)
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         logger.info(f"[FIG4] Processing Trend and Candidate+Sidebar Maps for {arch}/{dataset}")
@@ -573,22 +586,32 @@ def fig4_comprehensive_search_space_map(
             file_suffix = "quantized" if is_quant_target else "unquantized"
 
             # ==========================================
-            # FILE 1: The Variance Trend Plot
+            # FILE 1: The Variance Trend Plot (Updated with piecewise h & Bar charts)
             # ==========================================
             fig_var, ax_var = plt.subplots(figsize=(10, 3.5))
 
-            ax_var.plot(x_vals, variances, color='#999999', linewidth=1.0, alpha=0.6, label='Raw Variance')
-            ax_var.plot(x_vals, smoothed_var, color='#333333', linewidth=2.0, label='Macro Trend')
-            ax_var.set_yscale('log')
-            ax_var.set_ylabel("Variance ($\sigma^2$)", fontweight='bold')
+            threshold = median_net if arch in multi_path_archs else mu_net
+            
+            # Apply h(sigma_i, sigma_bar) transformation
+            h_variances = vec_h(variances, threshold)
+            h_smoothed = vec_h(smoothed_var, threshold)
+
+            # Replaced line chart with bar chart to remove false interpolation
+            ax_var.bar(x_vals, h_variances, color='#999999', alpha=0.6, label='Normalized Raw Variance')
+            # Changed macro trend to steps-mid
+            ax_var.plot(x_vals, h_smoothed, color='#333333', linewidth=2.0, drawstyle='steps-mid', label='Macro Trend')
+            
+            # Since values are now clipped [-1, 1], we don't need log scale anymore.
+            ax_var.set_ylim(-1.1, 1.1)
+            ax_var.set_ylabel(r"Relative Variance $h(\sigma_i, \bar{\sigma})$", fontweight='bold')
             ax_var.set_xlabel("Network Depth (Layer Index)", fontweight='bold')
             ax_var.set_title(f"BAV Macro-Trend: {arch} ({target_label})", loc='left', pad=15, fontsize=14, fontweight='bold')
             ax_var.set_xlim(0, len(layers))
             
-            threshold = median_net if arch in multi_path_archs else mu_net
-            ax_var.axhline(y=threshold, color='blue', linestyle='--', alpha=0.5, label='Network Threshold')
+            # Since data is normalized relative to threshold, the new threshold line is at 0
+            ax_var.axhline(y=0, color='blue', linestyle='--', alpha=0.5, label='Network Threshold (0)')
             
-            is_target = smoothed_var <= threshold
+            is_target = h_smoothed <= 0
             veto_idx = int(len(layers) * 0.25)
             is_target[:veto_idx] = False 
             ax_var.axvspan(0, max(0, veto_idx - 0.5), color='gray', alpha=0.15, hatch='//', edgecolor='gray', label="Veto")
@@ -811,104 +834,6 @@ def fig5_hardware_efficiency_profiles(
         plt.close()
 
     logger.info("[FIG5] All 6 hardware deliverables generated successfully.")
-
-# def fig5_hardware_efficiency_profiles(
-#     df: pd.DataFrame,
-#     out_dir: Path = Path("./figures/hardware_efficiency")
-# ):
-    """
-    Generates a unified horizontal grouped bar chart showing the percentage 
-    reduction in Params, FLOPs, and Memory for each collapsed candidate.
-    """
-    out_dir.mkdir(parents=True, exist_ok=True)
-    
-    def format_dataset_name(ds: str) -> str:
-        mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
-        return mapping.get(ds, ds.capitalize())
-
-    for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        logger.info(f"[FIG5] Generating Unified Hardware Profile for {arch}/{dataset}")
-        
-        # 1. Identify the Baseline
-        baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
-        if not baseline_mask.any():
-            logger.warning(f"No baseline found for {arch}/{dataset}. Skipping.")
-            continue
-            
-        baseline_row = g_metrics[baseline_mask].iloc[0]
-        base_params = baseline_row.get('params', np.nan)
-        base_flops = baseline_row.get('flops', np.nan)
-        base_memory = baseline_row.get('memory', np.nan)
-        
-        if pd.isna(base_params) or pd.isna(base_flops) or pd.isna(base_memory):
-            logger.warning(f"Missing base hardware metrics for {arch}/{dataset}. Skipping.")
-            continue
-
-        # 2. Filter for collapsed candidates (Unquantized for clean hardware comparison)
-        candidates = g_metrics[(g_metrics['posthoc_or_posttrain'] != 'Baseline') & 
-                               (g_metrics['is_quantized'] == False)].copy()
-        
-        if candidates.empty:
-            continue
-            
-        # 3. Calculate Percentage Reductions
-        candidates['Params Reduced (%)'] = 100 * (1 - (candidates['params'] / base_params))
-        candidates['FLOPs Reduced (%)'] = 100 * (1 - (candidates['flops'] / base_flops))
-        candidates['Memory Reduced (%)'] = 100 * (1 - (candidates['memory'] / base_memory))
-        
-        # Sort by Accuracy impact (worst to best) so the best are at the top of the chart
-        candidates = candidates.sort_values(by='d_acc', ascending=True)
-
-        # 4. Reshape data for seaborn
-        melted = candidates.melt(
-            id_vars=['base_name', 'd_acc'], 
-            value_vars=['Params Reduced (%)', 'FLOPs Reduced (%)', 'Memory Reduced (%)'],
-            var_name='Metric', 
-            value_name='Reduction (%)'
-        )
-
-        # 5. Plotting
-        num_candidates = len(candidates)
-        fig_height = max(5, num_candidates * 0.8)
-        fig, ax = plt.subplots(figsize=(10, fig_height))
-
-        # Create custom y-labels that include the Accuracy change
-        y_labels = [f"{row['base_name']} \n($\\Delta$ Acc: {row['d_acc']:+.1f}%)" 
-                    for _, row in candidates.iterrows()]
-
-        sns.barplot(
-            data=melted, 
-            y='base_name', 
-            x='Reduction (%)', 
-            hue='Metric', 
-            palette=['#1f77b4', '#ff7f0e', '#2ca02c'], # Blue, Orange, Green
-            edgecolor='black',
-            linewidth=1,
-            ax=ax
-        )
-
-        # Formatting for Journal
-        ax.set_yticklabels(y_labels, fontsize=10, fontweight='bold')
-        ax.set_ylabel("")
-        ax.set_xlabel("Reduction Relative to Baseline (%) $\\rightarrow$ Higher is Better", fontweight='bold', fontsize=11)
-        ax.set_title(f"Hardware Resource Optimization: {arch} on {format_dataset_name(dataset)}", 
-                     pad=20, fontweight='bold', fontsize=14, loc='left')
-        
-        # Add vertical gridlines for readability
-        ax.xaxis.grid(True, linestyle='--', alpha=0.7)
-        ax.set_axisbelow(True)
-        ax.set_xlim(0, max(10, melted['Reduction (%)'].max() * 1.15)) # Give breathing room on right
-
-        # Clean legend
-        ax.legend(title="", loc='lower right', framealpha=0.9, fontsize=10)
-        sns.despine()
-
-        plt.tight_layout()
-        save_path = out_dir / f"{arch}_{dataset}_unified_hardware_reduction.png"
-        plt.savefig(save_path, bbox_inches='tight')
-        plt.close()
-
-    logger.info("[FIG5] Hardware efficiency profiles generated successfully.")
 
 if __name__ == "__main__":
     try:
