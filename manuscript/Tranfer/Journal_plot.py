@@ -213,7 +213,7 @@ def fig2_methodology_bav_regions(
 ):
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # FIX: Ignore the normalized files so Pandas doesn't crash looking for 'Variance'
+    # Ignore normalized files
     stat_files = [f for f in stats_dir.glob("*_layer_stats.csv") if "normalized" not in f.name]
     
     if not stat_files:
@@ -233,7 +233,7 @@ def fig2_methodology_bav_regions(
             logger.error(f"[FIG2] Failed to read {csv_path}: {e}")
             continue
 
-        # Use the EXACT same sliding window logic as transfer.py for visual 1:1 parity
+        # Exact mathematical parity with transfer.py
         h_vals = []
         for i, sigma_i in enumerate(variances):
             next_vars = variances[i+1 : i+6]
@@ -246,63 +246,48 @@ def fig2_methodology_bav_regions(
             
         h_vals = np.array(h_vals)
 
-        # Initialize Paper-Formatted Plot
         fig, ax = plt.subplots(figsize=(12, 5))
-
         x_vals = range(len(layers))
         
-        # Plotted as the sole metric - no more black line needed
         ax.bar(x_vals, h_vals, color='#4A4A4A', alpha=0.8, edgecolor='black', linewidth=0.5, label='Relative Local Variance ($h$)')
-
         ax.set_ylim(-1.1, 1.1)
         ax.set_ylabel(r"Relative Variance ($h$)", fontweight='bold', fontsize=12)
         ax.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=12)
         ax.set_title(f"Dynamic Structural Redundancy Regions\n{arch} on {dataset.capitalize()}", pad=15, fontweight='bold', fontsize=15, loc='center')
-        
-        # Plot Threshold
         ax.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2, label='Collapse Threshold (0)')
 
-        # Identify Zones based on normalized mapped values
-        is_target = h_vals < 0
+        # Precision Zone Mapping (No more "Sandwich" effect)
         veto_idx = int(len(layers) * 0.25)
-        is_target[:veto_idx] = False
-
-        # 1. Plot Foundational Veto (Fixed coordinate spanning)
-        ax.axvspan(-0.5, veto_idx - 0.5, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Layers (Vetoed)")
-
-        # Compile contiguous Target/Danger zones
         zones = []
-        if veto_idx < len(is_target):
-            start_idx = veto_idx
-            current_val = is_target[veto_idx]
-            for i in range(veto_idx + 1, len(is_target)):
-                if is_target[i] != current_val:
-                    zones.append((start_idx, i - 1, current_val))
+        if len(h_vals) > 0:
+            start_idx = 0
+            def check_state(idx):
+                if idx < veto_idx: return "VETO"
+                return "SAFE" if h_vals[idx] < 0 else "DANGER"
+
+            current_state = check_state(0)
+            for i in range(1, len(h_vals)):
+                new_state = check_state(i)
+                if new_state != current_state:
+                    zones.append((start_idx, i - 1, current_state))
                     start_idx = i
-                    current_val = is_target[i]
-            zones.append((start_idx, len(is_target)-1, current_val))
+                    current_state = new_state
+            zones.append((start_idx, len(h_vals) - 1, current_state))
 
-        added_target = False
-        added_danger = False
-
-        # 2. Plot Target and Danger Zones (Fixed coordinate spanning)
-        for start, end, is_good in zones:
-            span_start = start - 0.5
-            span_end = end + 0.5
-
-            if is_good:
-                lbl = "Candidate Collapse Region ($h < 0$)" if not added_target else ""
-                ax.axvspan(span_start, span_end, color='#2ca02c', alpha=0.2, label=lbl)
-                added_target = True
+        for start, end, state in zones:
+            span_start, span_end = start - 0.5, end + 0.5
+            if state == "VETO":
+                ax.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', 
+                           label="Foundational Veto (Depth < 25%)" if "Foundational" not in [l.get_label() for l in ax.get_lines() + ax.patches] else "")
+            elif state == "SAFE":
+                ax.axvspan(span_start, span_end, color='#2ca02c', alpha=0.2, 
+                           label="Candidate Collapse Region ($h < 0$)" if "Candidate" not in [l.get_label() for l in ax.get_lines() + ax.patches] else "")
             else:
-                lbl = "Feature Extraction Region ($h \ge 0$)" if not added_danger else ""
-                ax.axvspan(span_start, span_end, color='#d62728', alpha=0.1, label=lbl)
-                added_danger = True
+                ax.axvspan(span_start, span_end, color='#d62728', alpha=0.1, 
+                           label="Feature Extraction Region ($h \ge 0$)" if "Feature" not in [l.get_label() for l in ax.get_lines() + ax.patches] else "")
 
-        # Clean Legend - Moved to the bottom to completely prevent overlap
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=10, frameon=False)
         sns.despine(ax=ax)
-
         plt.tight_layout()
         save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
         plt.savefig(save_path, bbox_inches='tight')
@@ -426,9 +411,8 @@ def fig4_comprehensive_search_space_map(
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         
-        # Exclude normalized files
         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
-        if not csv_path.exists(): continue
+        if not csv_path.exists() or "normalized" in csv_path.name: continue
             
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
@@ -473,7 +457,7 @@ def fig4_comprehensive_search_space_map(
             file_suffix = "quantized" if is_quant_target else "unquantized"
 
             # ==========================================
-            # FILE 1: The Variance Plot (Updated perfectly to sliding window!)
+            # FILE 1: The Variance Plot
             # ==========================================
             fig_var, ax_var = plt.subplots(figsize=(10, 4.5))
 
@@ -500,8 +484,34 @@ def fig4_comprehensive_search_space_map(
             ax_var.axhline(y=0, color='blue', linestyle='--', alpha=0.5, label='Collapse Threshold (0)')
             
             veto_idx = int(len(layers) * 0.25)
-            ax_var.axvspan(-0.5, veto_idx - 0.5, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Layers (Vetoed)")
-            
+            zones = []
+            if len(h_vals) > 0:
+                start_idx = 0
+                def check_state(idx):
+                    if idx < veto_idx: return "VETO"
+                    return "SAFE" if h_vals[idx] < 0 else "DANGER"
+
+                current_state = check_state(0)
+                for i in range(1, len(h_vals)):
+                    new_state = check_state(i)
+                    if new_state != current_state:
+                        zones.append((start_idx, i - 1, current_state))
+                        start_idx = i
+                        current_state = new_state
+                zones.append((start_idx, len(h_vals) - 1, current_state))
+
+            for start, end, state in zones:
+                span_start, span_end = start - 0.5, end + 0.5
+                if state == "VETO":
+                    ax_var.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', 
+                               label="Foundational Veto (Depth < 25%)" if "Foundational" not in [l.get_label() for l in ax_var.get_lines() + ax_var.patches] else "")
+                elif state == "SAFE":
+                    ax_var.axvspan(span_start, span_end, color='#2ca02c', alpha=0.2, 
+                               label="Candidate Collapse Region ($h < 0$)" if "Candidate" not in [l.get_label() for l in ax_var.get_lines() + ax_var.patches] else "")
+                else:
+                    ax_var.axvspan(span_start, span_end, color='#d62728', alpha=0.1, 
+                               label="Feature Extraction Region ($h \ge 0$)" if "Feature" not in [l.get_label() for l in ax_var.get_lines() + ax_var.patches] else "")
+
             ax_var.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=10, frameon=False)
             sns.despine(ax=ax_var)
             plt.tight_layout()
