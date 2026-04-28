@@ -571,6 +571,9 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
 # ==============================================================================
 # Main Entry Point
 # ==============================================================================
+# ==============================================================================
+# Main Entry Point
+# ==============================================================================
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="RegNetX_400MF", choices=["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet", "ConvNeXt"], help="Model architecture to use")
@@ -585,10 +588,19 @@ def main():
     parser.add_argument("--quant", action="store_true", help="Apply Quantization Aware Training")
     args = parser.parse_args()
     
+    print(f"\n{'='*60}")
+    print(f"[INIT] PyPrune Transfer Learning Framework")
+    print(f"[INIT] Arguments: {args}")
+    print(f"{'='*60}\n")
+    
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    print(f"[INFO] Hardware detected: {device.type.upper()} (CUDA Available: {torch.cuda.is_available()})")
+
     train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
     
     base_path = CHECKPOINT_BASES[args.model][args.dataset]
+    print(f"[DEBUG] Base checkpoint path resolved: {base_path}")
+    
     model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
     model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][1])
 
@@ -598,10 +610,13 @@ def main():
     # PRE-FLIGHT PROBE: Train (if needed), capture variances, output JSON
     # =========================================================================
     if args.experiment == "discover":
-        print(f"[INFO] Running Discovery Mode for {args.model}")
+        print(f"\n{'='*60}")
+        print(f"[MODE] STAGE 1: DISCOVERY & PRE-FLIGHT PROBE")
+        print(f"       Model: {args.model} | Dataset: {args.dataset}")
+        print(f"{'='*60}\n")
         
         # 1. Run/Ensure the Original Model is trained using YOUR existing logic. 
-        # (If checkpoints exist, experiments.py naturally skips training!)
+        print(f"[INFO] Phase 1: Validating/Training 'Original Model' Baseline...")
         run_experiments_for_dataset(
             {"Original Model": None}, args.dataset, model_path_097, model_path_000, 
             train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
@@ -609,55 +624,74 @@ def main():
         )
 
         # 2. Reconstruct save path to grab the finalized checkpoint
-        actual_epochs = args.pretrain if args.model in ["InceptionNet", "XceptionNet", "MobileNet"] else args.epochs
-        actual_pretrain = 0 if args.model in ["InceptionNet", "XceptionNet", "MobileNet"] else args.pretrain
-        save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}_epochs{actual_epochs}_pretrain{actual_pretrain}_postcompress{args.post_compress_epochs}"
-        ckpt_dir = os.path.join(save_path, "checkpoints")
+        print(f"\n[INFO] Phase 2: Loading Finalized Baseline Weights...")
         
+        # ---> CRITICAL FIX: Build the path using the raw args BEFORE they are modified! <---
+        save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}_epochs{args.epochs}_pretrain{args.pretrain}_postcompress{args.post_compress_epochs}"
+        
+        ckpt_dir = os.path.join(save_path, "checkpoints")
         flag_str = "JF" if args.JF else "Kevin"
         quant_str = "_quant" if args.quant else ""
         trained_baseline_path = os.path.join(ckpt_dir, f"final_{flag_str}_Original Model{quant_str}.pt")
+        print(f"[DEBUG] Expected trained baseline path: {trained_baseline_path}")
         
         # 3. Load the weights and calculate variances
         model_class_obj = eval(model_class) if isinstance(model_class, str) else model_class
         eval_model = model_class_obj(**model_kwargs).to(device)
         
         if os.path.exists(trained_baseline_path):
+            print(f"[INFO] Checkpoint located. Restoring model state dict...")
             ckpt = torch.load(trained_baseline_path, map_location=device, weights_only=False)
             eval_model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt['model'], strict=False)
+            print(f"[✓] Weights successfully applied.")
         else:
             print(f"[ERROR] Failed to find finalized model at {trained_baseline_path}")
+            print(f"[ERROR] Discovery cannot proceed without a valid baseline.")
             return
 
-        print("[INFO] Computing layer variances for JSON map...")
+        print(f"\n[INFO] Phase 3: Executing Network Probe...")
         input_tensor = model_kwargs["one_batch"].to(device)
         if len(input_tensor.shape) == 3: input_tensor = input_tensor.unsqueeze(0)
         
         layer_variances = get_layer_variances(eval_model, input_tensor)
         dynamic_experiments = get_dynamic_experiment_config(layer_variances)
         
+        print(f"\n[INFO] Phase 4: Exporting Configuration Map...")
         with open(json_file, 'w') as f:
             json.dump(dynamic_experiments, f, indent=4)
-        print(f"[✓] Saved {len(dynamic_experiments)} targets to {json_file}")
+        print(f"[✓] Stage 1 Complete. Exported {len(dynamic_experiments)} targets to '{json_file}'.")
         return
 
     # =========================================================================
     # HPC EXECUTION: Read JSON and run the requested experiment
     # =========================================================================
+    print(f"\n{'='*60}")
+    print(f"[MODE] STAGE 2: HPC EXPERIMENT EXECUTION")
+    print(f"       Targeting: '{args.experiment}'")
+    print(f"{'='*60}\n")
+    
+    print(f"[INFO] Validating JSON configuration map at: {json_file}")
     if not os.path.exists(json_file):
-        raise FileNotFoundError(f"Missing {json_file}. Run with --experiment 'discover' first.")
+        print(f"[ERROR] Map not found. You must run Stage 1 (discover) prior to HPC array execution.")
+        raise FileNotFoundError(f"Missing {json_file}")
         
     with open(json_file, 'r') as f:
         dynamic_experiments = json.load(f)
         
+    print(f"[DEBUG] Loaded {len(dynamic_experiments)} configurations from map.")
+        
     if args.experiment not in dynamic_experiments:
+        print(f"[ERROR] The requested experiment '{args.experiment}' does not exist in the generated JSON.")
         raise ValueError(f"Experiment '{args.experiment}' not found in {json_file}.")
 
+    print(f"[INFO] Handoff to PyPrune Experiment Framework...")
     run_experiments_for_dataset(
         {args.experiment: dynamic_experiments[args.experiment]}, args.dataset, model_path_097, model_path_000, 
         train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
         model_kwargs, args.post_compress_epochs, None, args.quant, args
     )
 
+if __name__ == "__main__":
+    main()
 if __name__ == "__main__":
     main()
