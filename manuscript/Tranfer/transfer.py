@@ -135,9 +135,13 @@ def get_layer_variances(model, dummy_input):
         h.remove()
     return variances
 
+
 def get_dynamic_experiment_config(layer_variances):
-    """Dynamic algorithm with sliding window (5) and chunking (3)."""
-    print(f"\n[STEP] Identifying dynamic collapse regions (Sliding Window = 5)...")
+    """
+    Dynamic algorithm with sliding window (5) and chunking (3).
+    Enforces a strict minimum of 3 layers per collapse set.
+    """
+    print(f"\n[STEP] Identifying dynamic collapse regions (Sliding Window = 5, Min Set Size = 3)...")
     exp_config = {"Original Model": None}
     if not layer_variances: 
         print("[WARN] layer_variances is empty. Returning baseline-only config.")
@@ -148,13 +152,12 @@ def get_dynamic_experiment_config(layer_variances):
 
     collapse_sets, current_set = [], []
 
+    # 1. Identify raw sets using h(sigma) < 0
     for i, name in enumerate(layer_names):
         sigma_i = variances[i]
-        next_vars = variances[i+1 : i+6] # Sliding window of 5
+        next_vars = variances[i+1 : i+6] 
         
-        # Local mean, fallback to global mean for the absolute last layers
         sigma_bar = sum(next_vars)/len(next_vars) if next_vars else (sum(variances)/len(variances) if variances else 1e-12)
-
         s_bar_safe = 1e-12 if sigma_bar == 0 else sigma_bar
         diff = sigma_i - s_bar_safe
         h_val = max(diff / s_bar_safe, -1.0) if diff < 0 else min(diff / s_bar_safe, 1.0)
@@ -163,47 +166,45 @@ def get_dynamic_experiment_config(layer_variances):
             current_set.append(name)
         else:
             if current_set:
-                collapse_sets.append(current_set)
+                # ENFORCE MINIMUM 3: Only collect if size >= 3
+                if len(current_set) >= 3:
+                    collapse_sets.append(current_set)
                 current_set = []
                 
-    if current_set: 
+    if len(current_set) >= 3: 
         collapse_sets.append(current_set)
 
-    # -------------------------------------------------------------------------
-    # FALLBACK: If no regions were found, chunk the network into groups of 5
-    # -------------------------------------------------------------------------
+    # 2. FALLBACK: If no regions of size >= 3 found, chunk into groups of 5
     if not collapse_sets:
-        print("[WARN] No natural collapse regions found (h >= 0 everywhere). Falling back to chunks of 5.")
+        print("[WARN] No regions >= 3 layers found. Falling back to chunks of 5.")
         for i in range(0, len(layer_names), 5):
             chunk = layer_names[i:i+5]
-            if len(chunk) > 1:
+            if len(chunk) >= 3: # Ensure the leftover chunk at the end is at least 3
                 exp_config[f"Fallback Set ({i+1} to {i+len(chunk)})"] = (chunk[0], chunk[-1])
         
         print(f"[INFO] Fallback complete. Total experimental targets generated: {len(exp_config)}")
         return exp_config
-    # -------------------------------------------------------------------------
 
-    print(f"[INFO] Found {len(collapse_sets)} raw contiguous structural regions with h(σ) < 0.")
-    print(f"[STEP] Expanding regions into full sets and sub-groups of 3...")
-
+    # 3. EXPANSION: Process natural sets and their sub-groups
+    print(f"[INFO] Found {len(collapse_sets)} raw regions satisfying size >= 3.")
     for k, s in enumerate(collapse_sets):
         set_num = k + 1
         
-        # Add the full set
-        if len(s) > 1:
-            exp_config[f"Set {set_num} (Full)"] = (s[0], s[-1])
+        # Add the full set (guaranteed >= 3 by step 1)
+        exp_config[f"Set {set_num} (Full)"] = (s[0], s[-1])
             
-        # Break large sets into groups of 3
+        # Break large sets into contiguous sub-groups of 3
         if len(s) > 3: 
             for i in range(0, len(s), 3):
                 chunk = s[i:i+3]
-                if len(chunk) > 1 and len(chunk) != len(s):
+                # Only add if it's a group of exactly 3 (minimizes noise)
+                # and not a duplicate of the full set
+                if len(chunk) == 3 and len(chunk) != len(s):
                     exp_config[f"Set {set_num} Sub-group ({i+1} to {i+len(chunk)})"] = (chunk[0], chunk[-1])
-                    
-        # (Single layer addition was removed per your request)
 
     print(f"[INFO] Expansion complete. Total experimental targets generated: {len(exp_config)}")
     return exp_config
+
 # ==============================================================================
 # Helper functions
 # ==============================================================================
