@@ -32,7 +32,7 @@ from pyPrune.utils import *
 from trainer import train_one_epoch
 import gc  # Needed for cleaning up memory after evaluating models
 from pathlib import Path # The missing piece causing your current error
-
+from datetime import datetime
 # set seed for reproducibility
 seed = 42
 random.seed(seed)
@@ -183,7 +183,7 @@ def regenerate_merged_metrics(runs_dir="."):
                 final_acc = all_data.get("final_accuracy", 0.0)
                 if final_acc == 0.0 and "accuracies" in all_data and len(all_data["accuracies"]) > 0:
                     final_acc = all_data["accuracies"][-1]
-                import datetime
+                from datetime import datetime
                 metric_data = {
                     "final_accuracy": final_acc,
                     "param_count": all_data.get("param_count", 0),
@@ -237,7 +237,6 @@ def calculate_bav_states(variances, veto_fraction=0.25):
             states.append("DANGER")
             
     return states
-
 
 def get_dynamic_experiment_config(cnn_layers, variances):
     """
