@@ -12,7 +12,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.backends import cudnn
-
+import gc
+import json
+from pathlib import Path
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.models.RegNetX import RegNetX_400MF
 from pyPrune.models.ConvNetX import ConvNeXt
@@ -154,65 +156,53 @@ def calculate_hardware_profile(model):
 
 def regenerate_merged_metrics(runs_dir=".", output_json="merged_metrics.json"):
     """
-    Scans the directory for saved weights and rebuilds the JSON.
+    Scans for checkpoints and rebuilds both individual and merged metrics JSONs.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"[Metrics Regeneration] Using device: {device}")
     
     merged_metrics = {}
-    if Path(output_json).exists():
-        try:
-            with open(output_json, 'r') as f:
-                merged_metrics = json.load(f)
-        except json.JSONDecodeError:
-            pass
+    arch_options = ["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet", "ConvNeXt"]
 
-    # Find all checkpoints
+    # Find all PyTorch weight files recursively from current directory
     checkpoint_paths = list(Path(runs_dir).rglob("*.pt")) + list(Path(runs_dir).rglob("*.pth"))
-    print(f"[Metrics Regeneration] Found {len(checkpoint_paths)} models. Processing...")
+    print(f"[Metrics Regeneration] Found {len(checkpoint_paths)} checkpoints. Processing...")
 
     for ckpt_path in checkpoint_paths:
         exp_name = ckpt_path.stem 
-        if exp_name in merged_metrics and "final_accuracy" in merged_metrics[exp_name]:
-            continue
-            
-        # --- FIXED PATH PARSING ---
-        # Structure: VGG16_tinyimagenet_.../checkpoints/JF_Exp.pt
-        folder_name = ckpt_path.parent.parent.name 
-        parts = folder_name.split('_')
         
-        # Extract Architecture and Dataset from the folder string
-        arch_name = parts[0] if len(parts) > 0 else None
-        dataset_name = parts[1] if len(parts) > 1 else None
+        # Structure: root/Arch_Dataset_.../checkpoints/Filename.pt
+        folder_path = ckpt_path.parent.parent
+        folder_name = folder_path.name 
         
-        if not arch_name or not dataset_name:
-            continue
-
-        print(f"Evaluating: {exp_name} ({arch_name} on {dataset_name})")
+        # Robustly extract Architecture and Dataset from folder name
+        arch_name = next((a for a in arch_options if folder_name.startswith(a)), None)
+        if not arch_name: continue
         
-        model = None # Initialize to avoid UnboundLocalError
+        # Dataset is usually the word immediately after the architecture name
+        dataset_name = folder_name[len(arch_name)+1:].split('_')[0]
+        
+        print(f"Evaluating: {exp_name} | Folder: {folder_name}")
+        
+        model = None
         try:
             # 1. Load Data using your existing helper 
             _, val_loader, _, _, num_classes = load_dataset(dataset_name, arch_name) 
             
-            # 2. Initialize Model based on arch_name 
+            # 2. Initialize Model Class 
             model_class_obj = eval(arch_name)
             model = model_class_obj(num_classes=num_classes).to(device)
             
-            # 3. Load Weights
-            state_dict = torch.load(ckpt_path, map_location=device)
-            # Handle different checkpoint formats [cite: 1]
-            if isinstance(state_dict, dict) and 'model_state_dict' in state_dict:
-                model.load_state_dict(state_dict['model_state_dict'], strict=False)
-            elif isinstance(state_dict, dict) and 'model' in state_dict:
-                model.load_state_dict(state_dict['model'], strict=False)
-            else:
-                model.load_state_dict(state_dict, strict=False)
-                
+            # 3. Load Weights safely 
+            checkpoint = torch.load(ckpt_path, map_location=device)
+            state_dict = checkpoint['model_state_dict'] if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint else checkpoint
+            model.load_state_dict(state_dict, strict=False)
             model.eval()
             
-            # 4. Metrics & Evaluation
+            # 4. Hardware Metrics 
             param_count, total_size_mb, flops = calculate_hardware_profile(model)
+            
+            # 5. Accuracy Evaluation
             correct, total = 0, 0
             with torch.no_grad():
                 for inputs, targets in val_loader:
@@ -221,31 +211,41 @@ def regenerate_merged_metrics(runs_dir=".", output_json="merged_metrics.json"):
                     _, predicted = outputs.max(1)
                     total += targets.size(0)
                     correct += predicted.eq(targets).sum().item()
-                    
+            
             final_accuracy = 100. * correct / total
             
-            merged_metrics[exp_name] = {
+            # 6. Prepare Data Object
+            metric_data = {
                 "final_accuracy": final_accuracy,
                 "param_count": param_count,
                 "total_size_mb": total_size_mb,
-                "flops": flops
+                "flops": flops,
+                "timestamp_recovered": datetime.now().strftime("%Y%m%d_%H%M%S")
             }
             
-            # Incremental save
+            # Update Global Dictionary
+            merged_metrics[exp_name] = metric_data
+            
+            # SAVE TO CORRECT FOLDER: Also save an individual JSON in the local metrics folder 
+            local_metrics_dir = folder_path / "metrics"
+            local_metrics_dir.mkdir(exist_ok=True)
+            local_json = local_metrics_dir / f"{exp_name}_recovered.json"
+            with open(local_json, "w") as f:
+                json.dump({exp_name: metric_data}, f, indent=4)
+            
+            # Incremental save of global merged file
             with open(output_json, "w") as f:
                 json.dump(merged_metrics, f, indent=4)
                 
         except Exception as e:
-            print(f"[Error] Failed to process {ckpt_path.name}: {e}")
+            print(f"  [!] Failed to process {ckpt_path.name}: {e}")
             
         finally:
-            if model is not None:
-                del model
+            if model is not None: del model
             torch.cuda.empty_cache()
             gc.collect()
 
-    print(f"\n[Metrics Regeneration] Complete! Saved to {output_json}")
-    
+    print(f"\n[Metrics Regeneration] Complete! Master file: {output_json}")
 def calculate_bav_states(variances, veto_fraction=0.25):
     """
     Computes the Bounded Activation Variance (BAV) state for each layer.
