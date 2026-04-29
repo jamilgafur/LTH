@@ -756,8 +756,18 @@ def main():
             input_shape=input_tensor.shape,    # <--- Pass the shape e.g., (1, 3, 32, 32)
             device=device
         )
+
+        print(f"\n[INFO] Phase 4: Generating Heuristic Plots & Analytics...")
+        plots_root = os.path.join("runs", "plots")
+        analyze_collapse_heuristics(
+            model=eval_model, 
+            input_tensor=input_tensor, 
+            save_root_dir=plots_root, 
+            model_name=args.model, 
+            dataset_name=args.dataset
+        )
         
-        print(f"\n[INFO] Phase 4: Exporting Configuration Map...")
+        print(f"\n[INFO] Phase 5: Exporting Configuration Map...")
         with open(json_file, 'w') as f:
             json.dump(dynamic_experiments, f, indent=4)
         print(f"[✓] Stage 1 Complete. Exported {len(dynamic_experiments)} targets to '{json_file}'.")
