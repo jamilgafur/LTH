@@ -136,74 +136,126 @@ def get_layer_variances(model, dummy_input):
     return variances
 
 
-def get_dynamic_experiment_config(layer_variances):
+import numpy as np
+
+def calculate_bav_states(variances, veto_fraction=0.25):
     """
-    Dynamic algorithm with sliding window (5) and chunking (3).
-    Enforces a strict minimum of 3 layers per collapse set.
+    Computes the Bounded Activation Variance (BAV) state for each layer.
     """
-    print(f"\n[STEP] Identifying dynamic collapse regions (Sliding Window = 5, Min Set Size = 3)...")
-    exp_config = {"Original Model": None}
-    if not layer_variances: 
-        print("[WARN] layer_variances is empty. Returning baseline-only config.")
-        return exp_config
-
-    layer_names = list(layer_variances.keys())
-    variances = list(layer_variances.values())
-
-    collapse_sets, current_set = [], []
-
-    # 1. Identify raw sets using h(sigma) < 0
-    for i, name in enumerate(layer_names):
-        sigma_i = variances[i]
-        next_vars = variances[i+1 : i+6] 
+    states = []
+    num_layers = len(variances)
+    veto_idx = int(num_layers * veto_fraction)
+    
+    for i, sigma_i in enumerate(variances):
+        next_vars = variances[i+1 : i+6]
+        sigma_bar = np.mean(next_vars) if len(next_vars) > 0 else np.mean(variances)
+        sigma_bar = max(sigma_bar, 1e-12)
         
-        sigma_bar = sum(next_vars)/len(next_vars) if next_vars else (sum(variances)/len(variances) if variances else 1e-12)
-        s_bar_safe = 1e-12 if sigma_bar == 0 else sigma_bar
-        diff = sigma_i - s_bar_safe
-        h_val = max(diff / s_bar_safe, -1.0) if diff < 0 else min(diff / s_bar_safe, 1.0)
-
-        if h_val < 0:
-            current_set.append(name)
+        diff = sigma_i - sigma_bar
+        h = max(diff / sigma_bar, -1.0) if diff < 0 else min(diff / sigma_bar, 1.0)
+        
+        if i < veto_idx:
+            states.append("VETO")
+        elif h < 0:
+            states.append("SAFE")
         else:
-            if current_set:
-                # ENFORCE MINIMUM 3: Only collect if size >= 3
-                if len(current_set) >= 3:
-                    collapse_sets.append(current_set)
-                current_set = []
-                
-    if len(current_set) >= 3: 
-        collapse_sets.append(current_set)
-
-    # 2. FALLBACK: If no regions of size >= 3 found, chunk into groups of 5
-    if not collapse_sets:
-        print("[WARN] No regions >= 3 layers found. Falling back to chunks of 5.")
-        for i in range(0, len(layer_names), 5):
-            chunk = layer_names[i:i+5]
-            if len(chunk) >= 3: # Ensure the leftover chunk at the end is at least 3
-                exp_config[f"Fallback Set ({i+1} to {i+len(chunk)})"] = (chunk[0], chunk[-1])
-        
-        print(f"[INFO] Fallback complete. Total experimental targets generated: {len(exp_config)}")
-        return exp_config
-
-    # 3. EXPANSION: Process natural sets and their sub-groups
-    print(f"[INFO] Found {len(collapse_sets)} raw regions satisfying size >= 3.")
-    for k, s in enumerate(collapse_sets):
-        set_num = k + 1
-        
-        # Add the full set (guaranteed >= 3 by step 1)
-        exp_config[f"Set {set_num} (Full)"] = (s[0], s[-1])
+            states.append("DANGER")
             
-        # Break large sets into contiguous sub-groups of 3
-        if len(s) > 3: 
-            for i in range(0, len(s), 3):
-                chunk = s[i:i+3]
-                # Only add if it's a group of exactly 3 (minimizes noise)
-                # and not a duplicate of the full set
-                if len(chunk) == 3 and len(chunk) != len(s):
-                    exp_config[f"Set {set_num} Sub-group ({i+1} to {i+len(chunk)})"] = (chunk[0], chunk[-1])
+    return states
 
-    print(f"[INFO] Expansion complete. Total experimental targets generated: {len(exp_config)}")
-    return exp_config
+
+def get_dynamic_experiment_config(cnn_layers, variances):
+    """
+    Identifies contiguous 'SAFE' regions for structural collapse and validates them.
+    
+    Args:
+        cnn_layers (list): A sequential list of the model's collapsible layer names (strings).
+        variances (list): The corresponding variance values for those layers.
+        
+    Returns:
+        list: A list of layer tuples representing start and end points for collapse.
+    """
+    if len(cnn_layers) != len(variances):
+        raise ValueError("Mismatch: The number of CNN layers must match the number of variance values.")
+        
+    states = calculate_bav_states(variances)
+    experiment_regions = []
+    
+    current_start_idx = None
+    
+    for i, state in enumerate(states):
+        if state == "SAFE":
+            if current_start_idx is None:
+                current_start_idx = i
+        else:
+            if current_start_idx is not None:
+                if i - current_start_idx > 1:
+                    experiment_regions.append((cnn_layers[current_start_idx], cnn_layers[i-1]))
+                current_start_idx = None
+                
+    if current_start_idx is not None and (len(states) - current_start_idx > 1):
+        experiment_regions.append((cnn_layers[current_start_idx], cnn_layers[-1]))
+        
+    return is_feasible_experiment_config(experiment_regions, cnn_layers)
+
+
+def is_feasible_experiment_config(experiment_regions, cnn_layers):
+    """
+    Validates the experiment configuration. If the BAV heuristic returns an empty list, 
+    this falls back to identifying natural architectural blocks by grouping layers 
+    that share a common parent module/prefix, ensuring compatibility with collapse.py.
+    
+    Args:
+        experiment_regions (list): The list of proposed layer ranges to collapse.
+        cnn_layers (list): A sequential list of the model's collapsible layer names.
+        
+    Returns:
+        list: A guaranteed list of structurally compatible layer regions.
+    """
+    if experiment_regions and len(experiment_regions) > 0:
+        return experiment_regions
+
+    fallback_regions = []
+    current_group = []
+    current_prefix = None
+
+    def get_module_prefix(layer_name):
+        """Extracts the parent module name (e.g., 'features.0.conv' -> 'features.0')."""
+        parts = str(layer_name).split('.')
+        # If deeply nested, group by the immediate parent module
+        if len(parts) > 1:
+            return '.'.join(parts[:-1])
+        return str(layer_name)
+
+    for layer in cnn_layers:
+        prefix = get_module_prefix(layer)
+        
+        if current_prefix is None:
+            current_prefix = prefix
+            current_group.append(layer)
+        elif prefix == current_prefix:
+            # Layer belongs to the same block/stage
+            current_group.append(layer)
+        else:
+            # Prefix changed (e.g., moved from features.0 to features.1, or crossed a pooling layer)
+            if len(current_group) > 1:
+                fallback_regions.append((current_group[0], current_group[-1]))
+            
+            # Reset for the new block
+            current_prefix = prefix
+            current_group = [layer]
+
+    # Close out the final group
+    if len(current_group) > 1:
+        fallback_regions.append((current_group[0], current_group[-1]))
+
+    # Ultimate edge-case: If the model is completely flat and has no module hierarchy, 
+    # propose one end-to-end collapse of the entire list.
+    if not fallback_regions and len(cnn_layers) > 1:
+        fallback_regions.append((cnn_layers[0], cnn_layers[-1]))
+
+    return fallback_regions
+
 
 # ==============================================================================
 # Helper functions
@@ -569,9 +621,6 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
         print(f"\n--- Running experiment: {name} ---")
         run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
 
-# ==============================================================================
-# Main Entry Point
-# ==============================================================================
 # ==============================================================================
 # Main Entry Point
 # ==============================================================================

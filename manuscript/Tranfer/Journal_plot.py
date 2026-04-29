@@ -437,7 +437,6 @@ def fig4_comprehensive_search_space_map(
             
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
-        variances = np.maximum(layer_df['Variance'].values, 1e-6)
 
         json_files = list(Path(".").glob(f"{arch}_{dataset}_*_discovered_regions.json"))
         if not json_files: continue
@@ -455,7 +454,6 @@ def fig4_comprehensive_search_space_map(
         else: base_p = base_f = base_m = np.nan
 
         for is_quant_target in [False, True]:
-            target_label = "Quantized" if is_quant_target else "Unquantized"
             valid_exps = []
             
             for exp_name, ranges in model_exps.items():
@@ -474,78 +472,11 @@ def fig4_comprehensive_search_space_map(
             valid_exps = sorted(valid_exps, key=lambda x: x[2].get('d_acc', -100))
             
             num_bars = len(valid_exps)
-            x_vals = np.arange(len(layers))
             file_suffix = "quantized" if is_quant_target else "unquantized"
 
             # ==========================================
-            # FILE 1: The Variance Plot
-            # ==========================================
-            fig_var, ax_var = plt.subplots(figsize=(10, 4.5))
-
-            h_vals = []
-            for i, sigma_i in enumerate(variances):
-                next_vars = variances[i+1 : i+6]
-                sigma_bar = np.mean(next_vars) if len(next_vars) > 0 else np.mean(variances)
-                sigma_bar = max(sigma_bar, 1e-12)
-                
-                diff = sigma_i - sigma_bar
-                h = max(diff / sigma_bar, -1.0) if diff < 0 else min(diff / sigma_bar, 1.0)
-                h_vals.append(h)
-                
-            h_vals = np.array(h_vals)
-
-            ax_var.bar(x_vals, h_vals, color='#4A4A4A', alpha=0.8, edgecolor='black', linewidth=0.5, label='Relative Local Variance ($h$)')
-            
-            ax_var.set_ylim(-1.1, 1.1)
-            ax_var.set_ylabel(r"Relative Variance ($h$)", fontweight='bold')
-            ax_var.set_xlabel("Network Depth (Layer Index)", fontweight='bold')
-            ax_var.set_title(f"Dynamic Structural Redundancy\n{arch} ({target_label})", loc='center', pad=15, fontsize=14, fontweight='bold')
-            ax_var.set_xlim(-1, len(layers))
-            
-            ax_var.axhline(y=0, color='blue', linestyle='--', alpha=0.5, label='Collapse Threshold (0)')
-            
-            veto_idx = int(len(layers) * 0.25)
-            zones = []
-            if len(h_vals) > 0:
-                start_idx = 0
-                def check_state(idx):
-                    if idx < veto_idx: return "VETO"
-                    return "SAFE" if h_vals[idx] < 0 else "DANGER"
-
-                current_state = check_state(0)
-                for i in range(1, len(h_vals)):
-                    new_state = check_state(i)
-                    if new_state != current_state:
-                        zones.append((start_idx, i - 1, current_state))
-                        start_idx = i
-                        current_state = new_state
-                zones.append((start_idx, len(h_vals) - 1, current_state))
-
-            for start, end, state in zones:
-                span_start, span_end = start - 0.5, end + 0.5
-                if state == "VETO":
-                    ax_var.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
-                elif state == "SAFE":
-                    ax_var.axvspan(span_start, span_end, color='#2ca02c', alpha=0.2, label="Candidate Collapse Region ($h < 0$)")
-                else:
-                    # FIXED LATEX PARSING BUG HERE (\ge -> \geq and raw string)
-                    ax_var.axvspan(span_start, span_end, color='#d62728', alpha=0.1, label=r"Feature Extraction Region ($h \geq 0$)")
-
-            # Perfect Deduplication
-            handles, labels = ax_var.get_legend_handles_labels()
-            by_label = dict(zip(labels, handles))
-            by_label = {k: v for k, v in by_label.items() if k}
-            ax_var.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, -0.2), ncol=2, fontsize=10, frameon=False)
-            
-            sns.despine(ax=ax_var)
-            plt.tight_layout()
-            
-            var_save_path = out_dir / f"{arch}_{dataset}_variance_trend_{file_suffix}.png"
-            fig_var.savefig(var_save_path, bbox_inches='tight')
-            plt.close(fig_var)
-
-            # ==========================================
             # FILE 2: Candidate Bars + Hardware Sidebar
+            # (FILE 1 - Variance Plot removed to prevent redundancy with Methodology Plots)
             # ==========================================
             fig_height = max(3.5, 0.5 * num_bars + 1)
             y_limits = (-1, num_bars)
@@ -604,7 +535,7 @@ def fig4_comprehensive_search_space_map(
             fig_cand.savefig(cand_save_path, bbox_inches='tight')
             plt.close(fig_cand)
 
-    logger.info("[FIG4] Variance Trends and Candidate/Sidebar plots generated successfully.")
+    logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
 
 def fig5_hardware_efficiency_profiles(
     df: pd.DataFrame,
@@ -719,9 +650,6 @@ def fig5_hardware_efficiency_profiles(
         plt.tight_layout()
         plt.savefig(out_dir / f"unified_{filename_suffix}.png", bbox_inches='tight')
         plt.close()
-
-    plot_unified(best_summary, "BEST_hardware_efficiency", "Optimal (Best Case)")
-    plot_unified(worst_summary, "WORST_hardware_efficiency", "Catastrophic (Worst Case)")
 
     # --- Deliverable 6: The Trade-off Scatter Plot (Pareto Frontier) ---
     if all_tradeoff_data:
