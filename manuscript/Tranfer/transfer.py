@@ -732,7 +732,7 @@ def main():
             regenerate_merged_metrics(runs_dir=".")
         except Exception as e:
             print(f"[Warning] Failed to regenerate merged metrics: {e}")
-        return
+       
 
     print(f"\n{'='*60}")
     print(f"[INIT] PyPrune Transfer Learning Framework")
