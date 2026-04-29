@@ -156,96 +156,70 @@ def calculate_hardware_profile(model):
 
 def regenerate_merged_metrics(runs_dir=".", output_json="merged_metrics.json"):
     """
-    Scans for checkpoints and rebuilds both individual and merged metrics JSONs.
+    Extracts metrics directly from the 'all_data' dictionary embedded inside 
+    the finalized checkpoints, avoiding structural model mismatches.
     """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"[Metrics Regeneration] Using device: {device}")
-    
+    # We don't even need a GPU for this—we're just parsing dictionaries!
+    device = torch.device("cpu") 
     merged_metrics = {}
-    arch_options = ["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet", "ConvNeXt"]
-
-    # Find all PyTorch weight files recursively from current directory
-    checkpoint_paths = list(Path(runs_dir).rglob("*.pt")) + list(Path(runs_dir).rglob("*.pth"))
-    print(f"[Metrics Regeneration] Found {len(checkpoint_paths)} checkpoints. Processing...")
+    
+    # We specifically target final_*.pt files because they contain the fully populated 
+    # hardware metrics (flops, param_count) from Step 7 of your training loop.
+    checkpoint_paths = list(Path(runs_dir).rglob("final_*.pt"))
+    print(f"[Metrics Regeneration] Found {len(checkpoint_paths)} finalized checkpoints. Extracting data...")
 
     for ckpt_path in checkpoint_paths:
-        exp_name = ckpt_path.stem 
-        
-        # Structure: root/Arch_Dataset_.../checkpoints/Filename.pt
+        # Checkpoint stem: final_JF_Stage 1 (Full)_quant
+        # We strip 'final_' so the name perfectly matches what Journal_plot.py expects
+        exp_name = ckpt_path.stem.replace("final_", "")
         folder_path = ckpt_path.parent.parent
-        folder_name = folder_path.name 
         
-        # Robustly extract Architecture and Dataset from folder name
-        arch_name = next((a for a in arch_options if folder_name.startswith(a)), None)
-        if not arch_name: continue
+        print(f"Extracting: {exp_name}")
         
-        # Dataset is usually the word immediately after the architecture name
-        dataset_name = folder_name[len(arch_name)+1:].split('_')[0]
-        
-        print(f"Evaluating: {exp_name} | Folder: {folder_name}")
-        
-        model = None
         try:
-            # 1. Load Data using your existing helper 
-            _, val_loader, _, _, num_classes = load_dataset(dataset_name, arch_name) 
+            # Load the checkpoint dict safely to the CPU
+            checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
             
-            # 2. Initialize Model Class 
-            model_class_obj = eval(arch_name)
-            model = model_class_obj(num_classes=num_classes).to(device)
-            
-            # 3. Load Weights safely 
-            checkpoint = torch.load(ckpt_path, map_location=device)
-            state_dict = checkpoint['model_state_dict'] if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint else checkpoint
-            model.load_state_dict(state_dict, strict=False)
-            model.eval()
-            
-            # 4. Hardware Metrics 
-            param_count, total_size_mb, flops = calculate_hardware_profile(model)
-            
-            # 5. Accuracy Evaluation
-            correct, total = 0, 0
-            with torch.no_grad():
-                for inputs, targets in val_loader:
-                    inputs, targets = inputs.to(device), targets.to(device)
-                    outputs = model(inputs)
-                    _, predicted = outputs.max(1)
-                    total += targets.size(0)
-                    correct += predicted.eq(targets).sum().item()
-            
-            final_accuracy = 100. * correct / total
-            
-            # 6. Prepare Data Object
-            metric_data = {
-                "final_accuracy": final_accuracy,
-                "param_count": param_count,
-                "total_size_mb": total_size_mb,
-                "flops": flops,
-                "timestamp_recovered": datetime.now().strftime("%Y%m%d_%H%M%S")
-            }
-            
-            # Update Global Dictionary
-            merged_metrics[exp_name] = metric_data
-            
-            # SAVE TO CORRECT FOLDER: Also save an individual JSON in the local metrics folder 
-            local_metrics_dir = folder_path / "metrics"
-            local_metrics_dir.mkdir(exist_ok=True)
-            local_json = local_metrics_dir / f"{exp_name}_recovered.json"
-            with open(local_json, "w") as f:
-                json.dump({exp_name: metric_data}, f, indent=4)
-            
-            # Incremental save of global merged file
-            with open(output_json, "w") as f:
-                json.dump(merged_metrics, f, indent=4)
+            if isinstance(checkpoint, dict) and "data" in checkpoint:
+                all_data = checkpoint["data"]
+                
+                # Safely extract accuracy
+                final_acc = all_data.get("final_accuracy", 0.0)
+                if final_acc == 0.0 and "accuracies" in all_data and len(all_data["accuracies"]) > 0:
+                    final_acc = all_data["accuracies"][-1]
+                    
+                # Build the metrics object
+                metric_data = {
+                    "final_accuracy": final_acc,
+                    "param_count": all_data.get("param_count", 0),
+                    "total_size_mb": all_data.get("total_size_mb", 0.0),
+                    "flops": all_data.get("flops", 0),
+                    "timestamp_recovered": datetime.now().strftime("%Y%m%d_%H%M%S")
+                }
+                
+                # Store in the global merged dictionary
+                merged_metrics[exp_name] = metric_data
+                
+                # Save an individual JSON in the local folder
+                local_metrics_dir = folder_path / "metrics"
+                local_metrics_dir.mkdir(exist_ok=True)
+                local_json = local_metrics_dir / f"{exp_name}_recovered.json"
+                
+                with open(local_json, "w") as f:
+                    json.dump({exp_name: metric_data}, f, indent=4)
+                    
+            else:
+                print(f"  [!] Checkpoint {ckpt_path.name} missing 'data' dictionary. Skipping.")
                 
         except Exception as e:
-            print(f"  [!] Failed to process {ckpt_path.name}: {e}")
+            print(f"  [!] Failed to extract data from {ckpt_path.name}: {e}")
             
-        finally:
-            if model is not None: del model
-            torch.cuda.empty_cache()
-            gc.collect()
-
+    # Save the master merged file for the plotting script
+    with open(output_json, "w") as f:
+        json.dump(merged_metrics, f, indent=4)
+        
     print(f"\n[Metrics Regeneration] Complete! Master file: {output_json}")
+
 def calculate_bav_states(variances, veto_fraction=0.25):
     """
     Computes the Bounded Activation Variance (BAV) state for each layer.
