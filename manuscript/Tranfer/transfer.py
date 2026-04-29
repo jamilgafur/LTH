@@ -4,6 +4,8 @@ import glob
 import json
 import random
 import argparse
+from manuscript.Tranfer.experiments import merge_all_metrics, safe_update_metrics_json
+from manuscript.Tranfer.experiments import merge_all_metrics
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -156,27 +158,22 @@ def calculate_hardware_profile(model):
 
 def regenerate_merged_metrics(runs_dir="."):
     """
-    Extracts metrics directly from finalized checkpoints and saves a grouped 
-    merged_metrics.json inside each respective experiment folder's metrics directory.
+    Extracts metrics directly from finalized checkpoints and saves them using
+    the robust JSON handlers imported from experiments.py.
     """
     device = torch.device("cpu") 
-    
-    # Dictionary to hold merged metrics grouped by their top-level folder
-    # Keys: Path objects for the experiment root (e.g., VGG16_tinyimagenet_...)
-    # Values: Dict of {exp_name: metric_data}
-    folder_merged_metrics = {}
     
     checkpoint_paths = list(Path(runs_dir).rglob("final_*.pt"))
     print(f"[Metrics Regeneration] Found {len(checkpoint_paths)} finalized checkpoints. Extracting data...")
 
+    # Track which directories we've written to so we can merge them later
+    processed_dirs = set()
+
     for ckpt_path in checkpoint_paths:
         exp_name = ckpt_path.stem.replace("final_", "")
         folder_path = ckpt_path.parent.parent # The VGG16... folder
+        local_metrics_dir = str(folder_path / "metrics")
         
-        # Initialize the nested dictionary for this specific folder if it doesn't exist
-        if folder_path not in folder_merged_metrics:
-            folder_merged_metrics[folder_path] = {}
-            
         try:
             checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
             
@@ -186,7 +183,7 @@ def regenerate_merged_metrics(runs_dir="."):
                 final_acc = all_data.get("final_accuracy", 0.0)
                 if final_acc == 0.0 and "accuracies" in all_data and len(all_data["accuracies"]) > 0:
                     final_acc = all_data["accuracies"][-1]
-                    
+                import datetime
                 metric_data = {
                     "final_accuracy": final_acc,
                     "param_count": all_data.get("param_count", 0),
@@ -195,16 +192,14 @@ def regenerate_merged_metrics(runs_dir="."):
                     "timestamp_recovered": datetime.now().strftime("%Y%m%d_%H%M%S")
                 }
                 
-                # Store in the folder-specific merged dictionary
-                folder_merged_metrics[folder_path][exp_name] = metric_data
-                
-                # Save the individual JSON in this folder's metrics directory
-                local_metrics_dir = folder_path / "metrics"
-                local_metrics_dir.mkdir(exist_ok=True)
-                local_json = local_metrics_dir / f"{exp_name}_recovered.json"
-                
-                with open(local_json, "w") as f:
-                    json.dump({exp_name: metric_data}, f, indent=4)
+                # REUSE LOGIC: Pass extracted data straight to experiments.py functions
+                safe_update_metrics_json(
+                    model_root="recovered", 
+                    exp_name=exp_name, 
+                    new_data=metric_data, 
+                    base_dir=local_metrics_dir
+                )
+                processed_dirs.add(local_metrics_dir)
                     
             else:
                 print(f"  [!] Checkpoint {ckpt_path.name} missing 'data' dictionary. Skipping.")
@@ -212,18 +207,12 @@ def regenerate_merged_metrics(runs_dir="."):
         except Exception as e:
             print(f"  [!] Failed to extract data from {ckpt_path.name}: {e}")
             
-    # After scanning all checkpoints, write the merged_metrics.json for each folder
-    for folder_path, metrics_dict in folder_merged_metrics.items():
-        local_metrics_dir = folder_path / "metrics"
-        local_metrics_dir.mkdir(exist_ok=True)
-        
-        merged_json_path = local_metrics_dir / "merged_metrics.json"
-        with open(merged_json_path, "w") as f:
-            json.dump(metrics_dict, f, indent=4)
-            
-        print(f"[✓] Saved {len(metrics_dict)} merged entries to: {merged_json_path}")
+    # REUSE LOGIC: Trigger the existing merge function for every directory we touched
+    for metrics_dir in processed_dirs:
+        merge_all_metrics(base_dir=metrics_dir)
         
     print("\n[Metrics Regeneration] Complete!")
+    
 def calculate_bav_states(variances, veto_fraction=0.25):
     """
     Computes the Bounded Activation Variance (BAV) state for each layer.

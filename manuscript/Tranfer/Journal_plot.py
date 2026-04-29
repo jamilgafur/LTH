@@ -705,12 +705,14 @@ if __name__ == "__main__":
                 
                 # 4. Join back to the main dataframe
                 df = df.join(base_map, on=group_cols)
+
                 
                 # 5. Compute the deltas
                 df['d_acc'] = df['accuracy'] - df['base_acc']
                 df['d_params'] = (1 - (df['params'] / df['base_params'].replace(0, 1))) * 100
                 df['d_flops'] = (1 - (df['flops'] / df['base_flops'].replace(0, 1))) * 100 
                 df['d_mem'] = (1 - (df['memory'] / df['base_mem'].replace(0, 1))) * 100
+
                 
                 # 6. Clean up NaNs
                 df.fillna({'d_acc': 0, 'd_params': 0, 'd_flops': 0, 'd_mem': 0}, inplace=True)
