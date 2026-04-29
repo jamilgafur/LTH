@@ -658,7 +658,7 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     saved_tensors, layer_variances, layer_activations, global_median_var, baseline_probs = run_baseline_pass(model, input_tensor)
 
     # Use the dynamic generator instead of hardcoded
-    exp_config = get_dynamic_experiment_config(layer_variances)
+    exp_config = get_dynamic_experiment_config(layer_variances.keys(), layer_variances.values())
     if not exp_config: print("[WARN] No experiment config dynamically generated.")
 
     plot_individual_layers(layer_activations, layer_variances, dirs["layer_stats"], model_name, dataset_name, exp_config)
