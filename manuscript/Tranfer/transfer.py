@@ -753,7 +753,7 @@ def main():
         print(f"[MODE] METRICS REGENERATION")
         print(f"{'='*60}\n")
         try:   
-            regenerate_merged_metrics(runs_dir="./runs", output_json="merged_metrics.json")
+            regenerate_merged_metrics(runs_dir=".", output_json="merged_metrics.json")
         except Exception as e:
             print(f"[Warning] Failed to regenerate merged metrics: {e}")
         return
