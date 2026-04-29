@@ -677,42 +677,47 @@ def fig5_hardware_efficiency_profiles(
 if __name__ == "__main__":
     try:
         raw = load_results()
+        df = raw.copy()
         # ---------------------------------------------------------
         # COMPUTE MISSING DELTAS (d_acc, d_params, d_flops, d_mem)
         # ---------------------------------------------------------
-        # Note: If your dataframe variable is named 'raw', replace 'df' with 'raw' below.
-        # Assuming 'df' is the main dataframe used in the plotting functions:
-        df = raw
         if 'd_acc' not in df.columns:
             print("[INFO] Computing missing delta metrics...")
             
-            # Dynamically find the grouping columns to match experiments to their specific baseline
+            # Find the grouping columns to match experiments to their specific baseline
             group_cols = [col for col in ['Architecture', 'Dataset', 'Workflow', 'Quantized'] if col in df.columns]
             
-            # Isolate the baseline rows (Original Model)
-            baselines = df[df['Experiment'].str.contains('Original Model', na=False, case=False)]
+            # Bulletproof search for the "Original Model" baselines
+            mask = df.index.astype(str).str.contains('Original Model', case=False)
+            for col in df.select_dtypes(include=['object', 'string']).columns:
+                mask = mask | df[col].astype(str).str.contains('Original Model', case=False)
+                
+            baselines = df[mask]
             
-            # Create a mapping of base values
-            base_map = baselines.drop_duplicates(subset=group_cols).set_index(group_cols)[
-                ['final_accuracy', 'param_count', 'flops', 'total_size_mb']
-            ].rename(columns={
-                'final_accuracy': 'base_acc',
-                'param_count': 'base_params',
-                'flops': 'base_flops',
-                'total_size_mb': 'base_mem'
-            })
-            
-            # Merge base values into the main dataframe
-            df = df.join(base_map, on=group_cols)
-            
-            # Calculate the Deltas
-            df['d_acc'] = df['final_accuracy'] - df['base_acc']  # Negative means accuracy dropped
-            df['d_params'] = (1 - (df['param_count'] / df['base_params'].replace(0, 1))) * 100  # % reduction
-            df['d_flops'] = (1 - (df['flops'] / df['base_flops'].replace(0, 1))) * 100          # % reduction
-            df['d_mem'] = (1 - (df['total_size_mb'] / df['base_mem'].replace(0, 1))) * 100      # % reduction
-            
-            # Cleanup
-            df.fillna({'d_acc': 0, 'd_params': 0, 'd_flops': 0, 'd_mem': 0}, inplace=True)
+            if baselines.empty:
+                print("[WARNING] Could not find 'Original Model' baselines to compute deltas.")
+            else:
+                # Create a mapping of base values
+                base_map = baselines.drop_duplicates(subset=group_cols).set_index(group_cols)[
+                    ['final_accuracy', 'param_count', 'flops', 'total_size_mb']
+                ].rename(columns={
+                    'final_accuracy': 'base_acc',
+                    'param_count': 'base_params',
+                    'flops': 'base_flops',
+                    'total_size_mb': 'base_mem'
+                })
+                
+                # Merge base values into the main dataframe
+                df = df.join(base_map, on=group_cols)
+                
+                # Calculate the Deltas
+                df['d_acc'] = df['final_accuracy'] - df['base_acc']
+                df['d_params'] = (1 - (df['param_count'] / df['base_params'].replace(0, 1))) * 100
+                df['d_flops'] = (1 - (df['flops'] / df['base_flops'].replace(0, 1))) * 100 
+                df['d_mem'] = (1 - (df['total_size_mb'] / df['base_mem'].replace(0, 1))) * 100
+                
+                # Cleanup
+                df.fillna({'d_acc': 0, 'd_params': 0, 'd_flops': 0, 'd_mem': 0}, inplace=True)
         # ---------------------------------------------------------
         df = normalize(df)
         fig1(df)
