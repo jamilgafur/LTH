@@ -696,9 +696,12 @@ def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwarg
     else: raise ValueError("Specify either --JF or --Kevin.")
 
 def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, post_compress_epochs, experiment_func, quant=False, args=None):
-    steps = [0]
-    epochs = pretrain
-    pretrain = 0
+    if model_class in [InceptionNet, XceptionNet, MobileNet]:
+        steps = [0]
+        epochs = pretrain
+        pretrain = 0
+    else:
+        steps = exponential_decay_list(steps=21)
 
     save_path = f"{model_class}_{dataset}_{CHECKPOINT_FILES[args.model][dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
 
