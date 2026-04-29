@@ -743,7 +743,13 @@ def main():
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
     parser.add_argument("--quant", action="store_true", help="Apply Quantization Aware Training")
     args = parser.parse_args()
-    
+
+    try:   
+        regenerate_merged_metrics(runs_dir="./runs", output_json="merged_metrics.json")
+    except Exception as e:
+        print(f"[Warning] Failed to regenerate merged metrics: {e}")
+        print(f"[Warning] Continuing without merged metrics.")
+        
     print(f"\n{'='*60}")
     print(f"[INIT] PyPrune Transfer Learning Framework")
     print(f"[INIT] Arguments: {args}")
@@ -773,7 +779,6 @@ def main():
         
         # 1. Run/Ensure the Original Model is trained using YOUR existing logic. 
         print(f"[INFO] Phase 1: Validating/Training 'Original Model' Baseline...")
-        regenerate_merged_metrics(runs_dir="./runs", output_json="merged_metrics.json")
         run_experiments_for_dataset(
             {"Original Model": None}, args.dataset, model_path_097, model_path_000, 
             train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
