@@ -166,17 +166,16 @@ def calculate_bav_states(variances, veto_fraction=0.25):
             
     return states
 
-def get_dynamic_experiment_config(cnn_layers, variances):
+
+
+def get_dynamic_experiment_config(cnn_layers, variances, model=None, input_shape=None, device='cpu'):
     """
-    Identifies contiguous 'SAFE' regions for structural collapse and validates them.
+    Identifies contiguous 'SAFE' regions for structural collapse and validates them 
+    against a physical surrogate memory filter.
+    """
+    cnn_layers = list(cnn_layers)
+    variances = list(variances)
     
-    Args:
-        cnn_layers (list): A sequential list of the model's collapsible layer names (strings).
-        variances (list): The corresponding variance values for those layers.
-        
-    Returns:
-        list: A list of layer tuples representing start and end points for collapse.
-    """
     if len(cnn_layers) != len(variances):
         raise ValueError("Mismatch: The number of CNN layers must match the number of variance values.")
         
@@ -191,73 +190,118 @@ def get_dynamic_experiment_config(cnn_layers, variances):
                 current_start_idx = i
         else:
             if current_start_idx is not None:
-                if i - current_start_idx > 1:
+                # Minimum of 2 layers required to collapse
+                if i - current_start_idx >= 1: 
                     experiment_regions.append((cnn_layers[current_start_idx], cnn_layers[i-1]))
                 current_start_idx = None
                 
-    if current_start_idx is not None and (len(states) - current_start_idx > 1):
+    if current_start_idx is not None and (len(states) - current_start_idx >= 2):
         experiment_regions.append((cnn_layers[current_start_idx], cnn_layers[-1]))
         
-    return is_feasible_experiment_config(experiment_regions, cnn_layers)
+    return is_feasible_experiment_config(
+        experiment_regions, cnn_layers, model=model, input_shape=input_shape, device=device
+    )
 
 
-def is_feasible_experiment_config(experiment_regions, cnn_layers):
+def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
     """
-    Validates the experiment configuration. If the BAV heuristic returns an empty list, 
-    this falls back to identifying natural architectural blocks by grouping layers 
-    that share a common parent module/prefix, ensuring compatibility with collapse.py.
+    Validates the experiment configuration. If the heuristic returns an empty list, 
+    this falls back to identifying natural architectural blocks. 
+    It then passes every proposed region through a physical surrogate filter to guarantee memory reduction.
+    """
+    import copy
+    from collapse import collapse_only
+    from utils import count_trainable_params
+    import gc
     
-    Args:
-        experiment_regions (list): The list of proposed layer ranges to collapse.
-        cnn_layers (list): A sequential list of the model's collapsible layer names.
-        
-    Returns:
-        list: A guaranteed list of structurally compatible layer regions.
-    """
-    if experiment_regions and len(experiment_regions) > 0:
-        return experiment_regions
-
     fallback_regions = []
-    current_group = []
-    current_prefix = None
+    
+    # --- Step 1: Guardrail Generation (Fallback) ---
+    if not experiment_regions or len(experiment_regions) == 0:
+        print("[WARN] No heuristic regions found. Falling back to architectural block prefixes.")
+        current_group = []
+        current_prefix = None
 
-    def get_module_prefix(layer_name):
-        """Extracts the parent module name (e.g., 'features.0.conv' -> 'features.0')."""
-        parts = str(layer_name).split('.')
-        # If deeply nested, group by the immediate parent module
-        if len(parts) > 1:
-            return '.'.join(parts[:-1])
-        return str(layer_name)
+        def get_module_prefix(layer_name):
+            parts = str(layer_name).split('.')
+            if len(parts) > 1:
+                return '.'.join(parts[:-1])
+            return str(layer_name)
 
-    for layer in cnn_layers:
-        prefix = get_module_prefix(layer)
-        
-        if current_prefix is None:
-            current_prefix = prefix
-            current_group.append(layer)
-        elif prefix == current_prefix:
-            # Layer belongs to the same block/stage
-            current_group.append(layer)
-        else:
-            # Prefix changed (e.g., moved from features.0 to features.1, or crossed a pooling layer)
-            if len(current_group) > 1:
-                fallback_regions.append((current_group[0], current_group[-1]))
+        for layer in cnn_layers:
+            prefix = get_module_prefix(layer)
+            if current_prefix is None:
+                current_prefix = prefix
+                current_group.append(layer)
+            elif prefix == current_prefix:
+                current_group.append(layer)
+            else:
+                if len(current_group) > 1:
+                    fallback_regions.append((current_group[0], current_group[-1]))
+                current_prefix = prefix
+                current_group = [layer]
+
+        if len(current_group) > 1:
+            fallback_regions.append((current_group[0], current_group[-1]))
+
+        # Ultimate failsafe for totally flat networks
+        if not fallback_regions and len(cnn_layers) > 1:
+            fallback_regions.append((cnn_layers[0], cnn_layers[-1]))
             
-            # Reset for the new block
-            current_prefix = prefix
-            current_group = [layer]
+        regions_to_test = fallback_regions
+    else:
+        regions_to_test = experiment_regions
 
-    # Close out the final group
-    if len(current_group) > 1:
-        fallback_regions.append((current_group[0], current_group[-1]))
+    # --- Step 2: Surrogate Memory Filter ---
+    if model is None or input_shape is None:
+        print("[WARN] Model or input_shape not provided to the config. Skipping surrogate memory filter.")
+        return regions_to_test
 
-    # Ultimate edge-case: If the model is completely flat and has no module hierarchy, 
-    # propose one end-to-end collapse of the entire list.
-    if not fallback_regions and len(cnn_layers) > 1:
-        fallback_regions.append((cnn_layers[0], cnn_layers[-1]))
+    print(f"\n[INFO] Running Surrogate Memory Filter on {len(regions_to_test)} proposed regions...")
+    feasible_regions = []
+    original_params = count_trainable_params(model)
 
-    return fallback_regions
-
+    for region in regions_to_test:
+        start_layer, end_layer = region
+        print(f"[STEP] Validating collapse memory delta: {start_layer} -> {end_layer}")
+        
+        try:
+            # Deepcopy model to safely test the surrogate without corrupting the baseline
+            test_model = copy.deepcopy(model).to(device)
+            
+            # Perform the physical surrogate collapse
+            collapsed_model = collapse_only(
+                model=test_model,
+                compression_set=[(start_layer, end_layer)],
+                input_shape=input_shape,
+                device=device,
+                safe_param_reduction=True,
+                handle_skips=True,
+                debug=False,
+                dry_run=False
+            )
+            
+            collapsed_params = count_trainable_params(collapsed_model)
+            delta = original_params - collapsed_params
+            
+            # Keep it ONLY if memory physically decreases
+            if collapsed_params < original_params:
+                print(f"    [✓] Kept: Memory reduced by {delta:,} parameters ({original_params:,} -> {collapsed_params:,}).")
+                feasible_regions.append(region)
+            else:
+                print(f"    [X] Dropped: Surrogate inflated or stagnated memory ({original_params:,} -> {collapsed_params:,}).")
+                
+            # Immediately wipe surrogate from VRAM
+            del test_model
+            del collapsed_model
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                
+        except Exception as e:
+            print(f"    [!] Dropped: Surrogate physical validation failed - {e}")
+            
+    return feasible_regions
 
 # ==============================================================================
 # Helper functions
@@ -705,7 +749,13 @@ def main():
         if len(input_tensor.shape) == 3: input_tensor = input_tensor.unsqueeze(0)
         
         layer_variances = get_layer_variances(eval_model, input_tensor)
-        dynamic_experiments = get_dynamic_experiment_config(list(layer_variances.keys()), list(layer_variances.values()))
+        dynamic_experiments = get_dynamic_experiment_config(
+            list(layer_variances.keys()), 
+            list(layer_variances.values()),
+            model=eval_model,           # <--- Pass the PyTorch model
+            input_shape=input_tensor.shape,    # <--- Pass the shape e.g., (1, 3, 32, 32)
+            device=device
+        )
         
         print(f"\n[INFO] Phase 4: Exporting Configuration Map...")
         with open(json_file, 'w') as f:
