@@ -150,7 +150,7 @@ def calculate_bav_states(variances, veto_fraction=0.25):
     states = []
     num_layers = len(variances)
     veto_idx = int(num_layers * veto_fraction)
-    window_size = 5
+    window_size = 3
     
     for i, sigma_i in enumerate(variances):
         # Try to look ahead by window_size
