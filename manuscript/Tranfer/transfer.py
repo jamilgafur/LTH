@@ -800,7 +800,7 @@ def main():
         if len(input_tensor.shape) == 3: input_tensor = input_tensor.unsqueeze(0)
         
         layer_variances = get_layer_variances(eval_model, input_tensor)
-        dynamic_experiments = get_dynamic_experiment_config(args.model, layer_variances)
+        dynamic_experiments = get_dynamic_experiment_config(list(layer_variances.keys()), list(layer_variances.values()))
         
         print(f"\n[INFO] Phase 4: Exporting Configuration Map...")
         with open(json_file, 'w') as f:
