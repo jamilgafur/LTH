@@ -232,7 +232,7 @@ def run_experiment(
     # 3. Initialize Training Components
     # These MUST be initialized before loading an epoch checkpoint
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    scaler = GradScaler(enabled=quant)
+    scaler = torch.amp.GradScaler(device=device.type, enabled=quant)
     
     # 4. Checkpoint Discovery (Intermediate Epochs)
     ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
@@ -259,8 +259,13 @@ def run_experiment(
         # Restore structural states
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        if quant and 'scaler_state_dict' in checkpoint:
-            scaler.load_state_dict(checkpoint['scaler_state_dict'])
+        if 'scaler_state_dict' in checkpoint:
+                try:
+                    scaler.load_state_dict(checkpoint['scaler_state_dict'])
+                except RuntimeError as e:
+                    print(f"[WARN] Bypassing empty scaler state dict from older checkpoint. Starting fresh scaler.")
+        # if quant and 'scaler_state_dict' in checkpoint:
+        #     scaler.load_state_dict(checkpoint['scaler_state_dict'])
         
         # Restore RNG states (ensures reproducibility on resume)
         torch.set_rng_state(checkpoint['torch_rng_state'].cpu())
