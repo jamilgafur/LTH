@@ -26,6 +26,8 @@ from utils import *
 from plots import *
 from pyPrune.utils import *
 from trainer import train_one_epoch
+import gc  # Needed for cleaning up memory after evaluating models
+from pathlib import Path # The missing piece causing your current error
 
 # set seed for reproducibility
 seed = 42
