@@ -214,19 +214,51 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
     from utils import count_trainable_params
     import gc
     
+    def get_module_prefix(layer_name):
+        parts = str(layer_name).split('.')
+        if len(parts) > 1:
+            return '.'.join(parts[:-1])
+        return str(layer_name)
+
+    validated_regions = []
+    
+    # --- Guardrail: Prevent cross-architectural boundary regions ---
+    if experiment_regions and len(experiment_regions) > 0:
+        for start_layer, end_layer in experiment_regions:
+            start_prefix = get_module_prefix(start_layer)
+            end_prefix = get_module_prefix(end_layer)
+            
+            if start_prefix == end_prefix:
+                validated_regions.append((start_layer, end_layer))
+            else:
+                print(f"[WARN] Region {start_layer} -> {end_layer} crosses architectural boundaries. Splitting...")
+                if start_layer in cnn_layers and end_layer in cnn_layers:
+                    s_idx = cnn_layers.index(start_layer)
+                    e_idx = cnn_layers.index(end_layer)
+                    
+                    curr_start = s_idx
+                    curr_prefix = get_module_prefix(cnn_layers[curr_start])
+                    
+                    for i in range(s_idx, e_idx + 1):
+                        prefix_i = get_module_prefix(cnn_layers[i])
+                        if prefix_i != curr_prefix:
+                            # Boundary hit. Save previous chunk if valid length >= 2
+                            if (i - 1) - curr_start >= 1:
+                                validated_regions.append((cnn_layers[curr_start], cnn_layers[i-1]))
+                            curr_start = i
+                            curr_prefix = prefix_i
+                            
+                    # Process final chunk
+                    if e_idx - curr_start >= 1:
+                        validated_regions.append((cnn_layers[curr_start], cnn_layers[e_idx]))
+
     fallback_regions = []
     
     # --- Step 1: Guardrail Generation (Fallback) ---
-    if not experiment_regions or len(experiment_regions) == 0:
-        print("[WARN] No heuristic regions found. Falling back to architectural block prefixes.")
+    if not validated_regions or len(validated_regions) == 0:
+        print("[WARN] No valid heuristic regions found. Falling back to architectural block prefixes.")
         current_group = []
         current_prefix = None
-
-        def get_module_prefix(layer_name):
-            parts = str(layer_name).split('.')
-            if len(parts) > 1:
-                return '.'.join(parts[:-1])
-            return str(layer_name)
 
         for layer in cnn_layers:
             prefix = get_module_prefix(layer)
@@ -250,7 +282,7 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
             
         regions_to_test = fallback_regions
     else:
-        regions_to_test = experiment_regions
+        regions_to_test = validated_regions
 
     # --- Step 2: Surrogate Memory Filter ---
     if model is None or input_shape is None:
