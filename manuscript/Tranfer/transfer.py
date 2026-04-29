@@ -202,7 +202,6 @@ def get_dynamic_experiment_config(cnn_layers, variances, model=None, input_shape
         experiment_regions, cnn_layers, model=model, input_shape=input_shape, device=device
     )
 
-
 def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
     """
     Validates the experiment configuration. If the heuristic returns an empty list, 
@@ -284,10 +283,14 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
     else:
         regions_to_test = validated_regions
 
+    # Helper to convert list to dict format required by downstream functions
+    def to_dict(region_list):
+        return {f"Dynamic_Region_{i} (Full)": reg for i, reg in enumerate(region_list)}
+
     # --- Step 2: Surrogate Memory Filter ---
     if model is None or input_shape is None:
         print("[WARN] Model or input_shape not provided to the config. Skipping surrogate memory filter.")
-        return regions_to_test
+        return to_dict(regions_to_test)
 
     print(f"\n[INFO] Running Surrogate Memory Filter on {len(regions_to_test)} proposed regions...")
     feasible_regions = []
@@ -333,7 +336,7 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
         except Exception as e:
             print(f"    [!] Dropped: Surrogate physical validation failed - {e}")
             
-    return feasible_regions
+    return to_dict(feasible_regions)
 
 # ==============================================================================
 # Helper functions
@@ -636,7 +639,7 @@ def save_and_plot_metric(data, y_col, directory, title_prefix, ylabel, hline_val
     plt.savefig(os.path.join(directory, f"{model_name}_experiment_{y_col.split(' ')[0]}.png"), dpi=300, bbox_inches='tight')
     plt.close()
 
-def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name):
+def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, dataset_name, exp_config=None):
     print(f"[•] Running Comprehensive Heuristic Analysis for {model_name} on {dataset_name}...")
     
     model.eval()
@@ -649,8 +652,17 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     dirs = setup_directories(save_root_dir)
     saved_tensors, layer_variances, layer_activations, global_median_var, baseline_probs = run_baseline_pass(model, input_tensor)
 
-    # Use the dynamic generator instead of hardcoded
-    exp_config = get_dynamic_experiment_config(layer_variances.keys(), layer_variances.values())
+    # Use the provided config, or generate dynamically if None is passed
+    if exp_config is None:
+        device = next(model.parameters()).device
+        exp_config = get_dynamic_experiment_config(
+            list(layer_variances.keys()), 
+            list(layer_variances.values()),
+            model=model,
+            input_shape=input_tensor.shape,
+            device=device
+        )
+        
     if not exp_config: print("[WARN] No experiment config dynamically generated.")
 
     plot_individual_layers(layer_activations, layer_variances, dirs["layer_stats"], model_name, dataset_name, exp_config)
@@ -684,13 +696,9 @@ def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwarg
     else: raise ValueError("Specify either --JF or --Kevin.")
 
 def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, post_compress_epochs, experiment_func, quant=False, args=None):
-    if args.model in ["InceptionNet", "XceptionNet", "MobileNet"]:
-        steps = [0]
-        epochs = pretrain
-        pretrain = 0
-    else:
-        steps = exponential_decay_list(steps=21)
-    print(f"[INFO] Pruning steps evaluated: {steps}")
+    steps = [0]
+    epochs = pretrain
+    pretrain = 0
 
     save_path = f"{model_class}_{dataset}_{CHECKPOINT_FILES[args.model][dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
 
@@ -718,8 +726,6 @@ def main():
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
     parser.add_argument("--quant", action="store_true", help="Apply Quantization Aware Training")
-    
-    # 1. Add the regenerate flag here
     parser.add_argument("--regenerate", action="store_true", help="Regenerate merged_metrics.json from checkpoints")
     args = parser.parse_args()
 
@@ -804,7 +810,8 @@ def main():
             input_tensor=input_tensor, 
             save_root_dir=plots_root, 
             model_name=args.model, 
-            dataset_name=args.dataset
+            dataset_name=args.dataset,
+            exp_config=dynamic_experiments # <--- Phase 3 config explicitly passed
         )
         csv_path = os.path.join(plots_root, "Layer_Statistics", f"{args.model}_{args.dataset}_layer_stats.csv")
         if os.path.exists(csv_path):
