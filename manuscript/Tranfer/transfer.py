@@ -135,7 +135,117 @@ def get_layer_variances(model, dummy_input):
         h.remove()
     return variances
 
+def calculate_hardware_profile(model):
+    """Calculates Params and Memory Size."""
+    param_count = sum(p.numel() for p in model.parameters())
+    
+    # Calculate model size in MB
+    param_size = sum(p.numel() * p.element_size() for p in model.parameters())
+    buffer_size = sum(b.numel() * b.element_size() for b in model.buffers())
+    total_size_mb = (param_size + buffer_size) / (1024 * 1024)
+    
+    flops = 0 
+    if hasattr(model, 'flops'):
+        flops = model.flops
+        
+    return param_count, total_size_mb, flops
 
+def regenerate_merged_metrics(runs_dir="./runs", output_json="merged_metrics.json"):
+    """
+    Scans the runs directory for saved weights, dynamically loads them into the 
+    corresponding models, runs validation to get accuracy, and builds the JSON.
+    """
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"[Metrics Regeneration] Using device: {device}")
+    
+    merged_metrics = {}
+    
+    if Path(output_json).exists():
+        try:
+            with open(output_json, 'r') as f:
+                merged_metrics = json.load(f)
+            print(f"[Metrics Regeneration] Loaded existing {output_json} to update.")
+        except json.JSONDecodeError:
+            print(f"[Metrics Regeneration] Existing {output_json} is corrupted. Starting fresh.")
+
+    # Find all PyTorch weight files
+    checkpoint_paths = list(Path(runs_dir).rglob("*.pt")) + list(Path(runs_dir).rglob("*.pth"))
+    
+    if not checkpoint_paths:
+        print("[Metrics Regeneration] No checkpoints found! Ensure 'runs_dir' is correct.")
+        return
+
+    print(f"[Metrics Regeneration] Found {len(checkpoint_paths)} models. Processing...")
+
+    for ckpt_path in checkpoint_paths:
+        exp_name = ckpt_path.stem 
+        
+        if exp_name in merged_metrics and "final_accuracy" in merged_metrics[exp_name]:
+            print(f"Skipping {exp_name} - already exists in JSON.")
+            continue
+            
+        print(f"Evaluating: {exp_name}")
+        
+        # --- PATH PARSING ---
+        # Assuming structure: runs/Architecture/Dataset/exp_name.pt
+        arch_name = ckpt_path.parent.parent.name 
+        dataset_name = ckpt_path.parent.name
+        
+        try:
+            # 1. Initialize Model & Dataloader
+            train_loader, val_loader = get_dataloaders(dataset_name) 
+            model = get_model(arch_name, dataset_name)
+            
+            # 2. Load Weights safely
+            state_dict = torch.load(ckpt_path, map_location=device)
+            if 'model_state' in state_dict:
+                model.load_state_dict(state_dict['model_state'])
+            else:
+                model.load_state_dict(state_dict)
+                
+            model.to(device)
+            model.eval()
+            
+            # 3. Hardware Metrics
+            param_count, total_size_mb, flops = calculate_hardware_profile(model)
+            
+            # 4. Accuracy Evaluation Loop
+            correct = 0
+            total = 0
+            with torch.no_grad():
+                for inputs, targets in val_loader:
+                    inputs, targets = inputs.to(device), targets.to(device)
+                    outputs = model(inputs)
+                    _, predicted = outputs.max(1)
+                    total += targets.size(0)
+                    correct += predicted.eq(targets).sum().item()
+                    
+            final_accuracy = 100. * correct / total
+            
+            # 5. Save to Dictionary
+            merged_metrics[exp_name] = {
+                "final_accuracy": final_accuracy,
+                "param_count": param_count,
+                "total_size_mb": total_size_mb,
+                "flops": flops
+            }
+            
+            print(f"  -> Acc: {final_accuracy:.2f}%, Params: {param_count:,}, Size: {total_size_mb:.2f} MB")
+            
+            # Save incrementally in case of a crash
+            with open(output_json, "w") as f:
+                json.dump(merged_metrics, f, indent=4)
+                
+        except Exception as e:
+            print(f"[Error] Failed to process {ckpt_path.name}: {e}")
+            
+        finally:
+            del model
+            if 'inputs' in locals(): del inputs, targets, outputs
+            torch.cuda.empty_cache()
+            gc.collect()
+
+    print(f"\n[Metrics Regeneration] Complete! Saved to {output_json}")
 import numpy as np
 
 def calculate_bav_states(variances, veto_fraction=0.25):
@@ -608,10 +718,6 @@ def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwarg
 def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, post_compress_epochs, experiment_func, quant=False, args=None):
     save_path = f"{model_class}_{dataset}_{CHECKPOINT_FILES[args.model][dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
 
-    if args.model in ["InceptionNet", "XceptionNet", "MobileNet"]:
-        epochs = pretrain
-        pretrain = 0
-
     if train_loader is None or test_loader is None:
         train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, args.model)
     else:
@@ -667,6 +773,7 @@ def main():
         
         # 1. Run/Ensure the Original Model is trained using YOUR existing logic. 
         print(f"[INFO] Phase 1: Validating/Training 'Original Model' Baseline...")
+        regenerate_merged_metrics(runs_dir="./runs", output_json="merged_metrics.json")
         run_experiments_for_dataset(
             {"Original Model": None}, args.dataset, model_path_097, model_path_000, 
             train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
