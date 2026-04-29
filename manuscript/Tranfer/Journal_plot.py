@@ -203,6 +203,7 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
                 sns.barplot(data=g_dataset, x="display_name", y=metric, hue="posthoc_or_posttrain", palette=palette, edgecolor="black", ax=ax)
                 plt.xticks(rotation=45, ha="right")
                 plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.png")
+                logger.info(f"[FIG1] Saved {metric} plot for {architecture}/{dataset} at {out_dir / f'{architecture}_{dataset}_{metric}.png'}")
                 plt.close()
 
 # ========================= FIG 2 ========================= #
@@ -312,6 +313,7 @@ def fig2_methodology_bav_regions(
         plt.tight_layout()
         save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
         plt.savefig(save_path, bbox_inches='tight')
+        logger.info(f"[FIG2] Saved methodology region plot for {arch}/{dataset} at {save_path}")
         plt.close()
         
     logger.info("[FIG2] Methodology region plots generated successfully.")
@@ -399,7 +401,7 @@ def fig3_v2t_heuristic_validation(
     sns.despine()
     plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
     plt.close()
-    logger.info("[FIG3] Completed successfully")
+    logger.info(f"[FIG3] Saved V2T heuristic validation map at {out_dir / 'V2T_heuristic_validation_map.png'}")
 
 # ========================= FIG 4 ========================= #
 def fig4_comprehensive_search_space_map(
@@ -604,6 +606,8 @@ def fig5_hardware_efficiency_profiles(
         ax.legend(title="", loc='lower right'); sns.despine()
         plt.tight_layout()
         plt.savefig(out_dir / f"{arch}_{dataset}_hardware_profile.png", bbox_inches='tight')
+        # log where it was saved
+        logger.info(f"[FIG5] Saved hardware profile plot for {arch}/{dataset} at {out_dir / f'{arch}_{dataset}_hardware_profile.png'}")
         plt.close()
 
         # --- Prep for Unified Plots ---
@@ -649,6 +653,7 @@ def fig5_hardware_efficiency_profiles(
         ax.legend(title="", loc='upper right'); sns.despine()
         plt.tight_layout()
         plt.savefig(out_dir / f"unified_{filename_suffix}.png", bbox_inches='tight')
+        logger.info(f"[FIG5] Saved unified {filename_suffix} plot at {out_dir / f'unified_{filename_suffix}.png'}")
         plt.close()
 
     # --- Deliverable 6: The Trade-off Scatter Plot (Pareto Frontier) ---
@@ -671,6 +676,7 @@ def fig5_hardware_efficiency_profiles(
         plt.tight_layout()
         plt.savefig(out_dir / "global_tradeoff_scatter.png", bbox_inches='tight')
         plt.close()
+        logger.info(f"[FIG5] Saved global trade-off scatter plot at {out_dir / 'global_tradeoff_scatter.png'}")
 
     logger.info("[FIG5] All 6 hardware deliverables generated successfully.")
 
