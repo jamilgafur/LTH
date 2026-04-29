@@ -736,20 +736,28 @@ def main():
     parser.add_argument("--dataset", type=str, default="Cifar10", help="Dataset to use")
     parser.add_argument("--epochs", type=int, default=1, help="Number of epochs to train for")
     parser.add_argument("--pretrain", type=int, default=10, help="Number of pretraining epochs")
-    parser.add_argument("--experiment", type=str, required=True, help="Experiment to run, or 'discover' to generate regions")
+    parser.add_argument("--experiment", type=str, default="discover", help="Experiment to run, or 'discover' to generate regions")
     parser.add_argument("--post_compress_epochs", type=int, default=0, help="Number of post-pruning compression epochs")
     parser.add_argument("--imp", action="store_false", help="Apply Iterative Magnitude Pruning")
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
     parser.add_argument("--quant", action="store_true", help="Apply Quantization Aware Training")
+    
+    # 1. Add the regenerate flag here
+    parser.add_argument("--regenerate", action="store_true", help="Regenerate merged_metrics.json from checkpoints")
     args = parser.parse_args()
 
-    try:   
-        regenerate_merged_metrics(runs_dir="./runs", output_json="merged_metrics.json")
-    except Exception as e:
-        print(f"[Warning] Failed to regenerate merged metrics: {e}")
-        print(f"[Warning] Continuing without merged metrics.")
-        
+    # 2. Intercept the execution to run the recovery script and exit
+    if args.regenerate:
+        print(f"\n{'='*60}")
+        print(f"[MODE] METRICS REGENERATION")
+        print(f"{'='*60}\n")
+        try:   
+            regenerate_merged_metrics(runs_dir="./runs", output_json="merged_metrics.json")
+        except Exception as e:
+            print(f"[Warning] Failed to regenerate merged metrics: {e}")
+        return
+
     print(f"\n{'='*60}")
     print(f"[INIT] PyPrune Transfer Learning Framework")
     print(f"[INIT] Arguments: {args}")
