@@ -141,78 +141,6 @@ def get_layer_variances(model, dummy_input):
         h.remove()
     return variances
 
-def calculate_hardware_profile(model):
-    """Calculates Params and Memory Size."""
-    param_count = sum(p.numel() for p in model.parameters())
-    
-    # Calculate model size in MB
-    param_size = sum(p.numel() * p.element_size() for p in model.parameters())
-    buffer_size = sum(b.numel() * b.element_size() for b in model.buffers())
-    total_size_mb = (param_size + buffer_size) / (1024 * 1024)
-    
-    flops = 0 
-    if hasattr(model, 'flops'):
-        flops = model.flops
-        
-    return param_count, total_size_mb, flops
-
-def regenerate_merged_metrics(runs_dir="."):
-    """
-    Extracts metrics directly from finalized checkpoints and saves them using
-    the robust JSON handlers imported from experiments.py.
-    """
-    device = torch.device("cpu") 
-    
-    checkpoint_paths = list(Path(runs_dir).rglob("final_*.pt"))
-    print(f"[Metrics Regeneration] Found {len(checkpoint_paths)} finalized checkpoints. Extracting data...")
-
-    # Track which directories we've written to so we can merge them later
-    processed_dirs = set()
-
-    for ckpt_path in checkpoint_paths:
-        exp_name = ckpt_path.stem.replace("final_", "")
-        folder_path = ckpt_path.parent.parent # The VGG16... folder
-        local_metrics_dir = str(folder_path / "metrics")
-        
-        try:
-            checkpoint = torch.load(ckpt_path, map_location=device, weights_only=False)
-            
-            if isinstance(checkpoint, dict) and "data" in checkpoint:
-                all_data = checkpoint["data"]
-                
-                final_acc = all_data.get("final_accuracy", 0.0)
-                if final_acc == 0.0 and "accuracies" in all_data and len(all_data["accuracies"]) > 0:
-                    final_acc = all_data["accuracies"][-1]
-                from datetime import datetime
-                metric_data = {
-                    "final_accuracy": final_acc,
-                    "param_count": all_data.get("param_count", 0),
-                    "total_size_mb": all_data.get("total_size_mb", 0.0),
-                    "flops": all_data.get("flops", 0),
-                    "timestamp_recovered": datetime.now().strftime("%Y%m%d_%H%M%S")
-                }
-                
-                # REUSE LOGIC: Pass extracted data straight to experiments.py functions
-                safe_update_metrics_json(
-                    model_root="recovered", 
-                    exp_name=exp_name, 
-                    new_data=metric_data, 
-                    base_dir=local_metrics_dir
-                )
-                processed_dirs.add(local_metrics_dir)
-                    
-            else:
-                print(f"  [!] Checkpoint {ckpt_path.name} missing 'data' dictionary. Skipping.")
-                
-        except Exception as e:
-            print(f"  [!] Failed to extract data from {ckpt_path.name}: {e}")
-            
-    # REUSE LOGIC: Trigger the existing merge function for every directory we touched
-    for metrics_dir in processed_dirs:
-        merge_all_metrics(base_dir=metrics_dir)
-        
-    print("\n[Metrics Regeneration] Complete!")
-    
 def calculate_bav_states(variances, veto_fraction=0.25):
     """
     Computes the Bounded Activation Variance (BAV) state for each layer.
@@ -710,17 +638,6 @@ def main():
     # 1. Add the regenerate flag here
     parser.add_argument("--regenerate", action="store_true", help="Regenerate merged_metrics.json from checkpoints")
     args = parser.parse_args()
-
-    # 2. Intercept the execution to run the recovery script and exit
-    if args.regenerate:
-        print(f"\n{'='*60}")
-        print(f"[MODE] METRICS REGENERATION")
-        print(f"{'='*60}\n")
-        try:   
-            regenerate_merged_metrics(runs_dir=".")
-        except Exception as e:
-            print(f"[Warning] Failed to regenerate merged metrics: {e}")
-       
 
     print(f"\n{'='*60}")
     print(f"[INIT] PyPrune Transfer Learning Framework")
