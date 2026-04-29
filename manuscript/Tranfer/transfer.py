@@ -144,14 +144,30 @@ def get_layer_variances(model, dummy_input):
 def calculate_bav_states(variances, veto_fraction=0.25):
     """
     Computes the Bounded Activation Variance (BAV) state for each layer.
+    Uses a dynamic sliding window that borrows from previous layers when 
+    approaching the end of the network to maintain a stable local context.
     """
     states = []
     num_layers = len(variances)
     veto_idx = int(num_layers * veto_fraction)
+    window_size = 5
     
     for i, sigma_i in enumerate(variances):
-        next_vars = variances[i+1 : i+6]
-        sigma_bar = np.mean(next_vars) if len(next_vars) > 0 else np.mean(variances)
+        # Try to look ahead by window_size
+        look_ahead = variances[i+1 : i+1+window_size]
+        
+        # If we hit the end of the network, we won't have enough layers in 'look_ahead'.
+        # Calculate the shortfall and borrow from immediately preceding layers.
+        shortfall = window_size - len(look_ahead)
+        if shortfall > 0 and i > 0:
+            look_back_start = max(0, i - shortfall)
+            look_back = variances[look_back_start : i]
+            context_vars = look_back + look_ahead
+        else:
+            context_vars = look_ahead
+            
+        # Fallback to global mean ONLY if the network itself is tiny (e.g., 1 layer total)
+        sigma_bar = np.mean(context_vars) if len(context_vars) > 0 else np.mean(variances)
         sigma_bar = max(sigma_bar, 1e-12)
         
         diff = sigma_i - sigma_bar
@@ -165,8 +181,6 @@ def calculate_bav_states(variances, veto_fraction=0.25):
             states.append("DANGER")
             
     return states
-
-
 
 def get_dynamic_experiment_config(cnn_layers, variances, model=None, input_shape=None, device='cpu'):
     """
