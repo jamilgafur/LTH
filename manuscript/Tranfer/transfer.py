@@ -817,8 +817,8 @@ def main():
             exp_config=dynamic_experiments # <--- Phase 3 config explicitly passed
         )
         csv_path = os.path.join(plots_root, "Layer_Statistics", f"{args.model}_{args.dataset}_layer_stats.csv")
-        if os.path.exists(csv_path):
-            plot_experiment_heuristics(args.model, args.dataset, csv_path)
+        # if os.path.exists(csv_path):
+        #     plot_experiment_heuristics(args.model, args.dataset, csv_path)
         print(f"\n[INFO] Phase 5: Exporting Configuration Map...")
         with open(json_file, 'w') as f:
             json.dump(dynamic_experiments, f, indent=4)
