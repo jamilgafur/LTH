@@ -226,6 +226,7 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
     from collapse import collapse_only
     from utils import count_trainable_params
     import gc
+    import torch
     
     def get_module_prefix(layer_name):
         parts = str(layer_name).split('.')
@@ -340,18 +341,21 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
             else:
                 print(f"    [X] Dropped: Surrogate inflated or stagnated memory ({original_params:,} -> {collapsed_params:,}).")
                 
-            # Immediately wipe surrogate from VRAM
-            del test_model
-            del collapsed_model
+        except (Exception, SystemExit) as e:
+            # ---> Catch SystemExit so collapse.py cannot kill the main thread <---
+            print(f"    [!] Dropped: Surrogate validation failed or triggered exit - {type(e).__name__}: {e}")
+            
+        finally:
+            # ---> Guarantee memory cleanup even if an exception/exit is thrown <---
+            if 'test_model' in locals():
+                del test_model
+            if 'collapsed_model' in locals():
+                del collapsed_model
             gc.collect()
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
-                
-        except Exception as e:
-            print(f"    [!] Dropped: Surrogate physical validation failed - {e}")
             
     return to_dict(feasible_regions)
-
 # ==============================================================================
 # Helper functions
 # ==============================================================================
