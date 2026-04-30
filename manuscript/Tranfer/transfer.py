@@ -183,19 +183,11 @@ def calculate_bav_states(variances, veto_fraction=0.25):
     return states
 
 def get_dynamic_experiment_config(cnn_layers, variances, model=None, input_shape=None, device='cpu'):
-    """
-    Identifies contiguous 'SAFE' regions for structural collapse and validates them 
-    against a physical surrogate memory filter.
-    """
     cnn_layers = list(cnn_layers)
     variances = list(variances)
     
-    if len(cnn_layers) != len(variances):
-        raise ValueError("Mismatch: The number of CNN layers must match the number of variance values.")
-        
     states = calculate_bav_states(variances)
     experiment_regions = []
-    
     current_start_idx = None
     
     for i, state in enumerate(states):
@@ -204,8 +196,9 @@ def get_dynamic_experiment_config(cnn_layers, variances, model=None, input_shape
                 current_start_idx = i
         else:
             if current_start_idx is not None:
-                # Minimum of 2 layers required to collapse
-                if i - current_start_idx >= 1: 
+                # FIX FOR ISSUE 2: Enforce |s| >= 2 strictly. 
+                # i - start must be at least 2 to contain multiple layers.
+                if i - current_start_idx >= 2: 
                     experiment_regions.append((cnn_layers[current_start_idx], cnn_layers[i-1]))
                 current_start_idx = None
                 
@@ -217,22 +210,18 @@ def get_dynamic_experiment_config(cnn_layers, variances, model=None, input_shape
     )
 
 def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
-    """
-    Validates the experiment configuration. If the heuristic returns an empty list, 
-    this falls back to identifying natural architectural blocks. 
-    It then passes every proposed region through a physical surrogate filter to guarantee memory reduction.
-    """
     import copy
     from collapse import collapse_only
     from utils import count_trainable_params
+    from fvcore.nn import FlopCountAnalysis
     import gc
     import torch
     
     def get_module_prefix(layer_name):
+        # FIX FOR ISSUE 3: Group by the top-level macro-stage ONLY.
+        # e.g., 's1.b1.conv' and 's1.b2.conv' both return 's1'.
         parts = str(layer_name).split('.')
-        if len(parts) > 1:
-            return '.'.join(parts[:-1])
-        return str(layer_name)
+        return parts[0] if len(parts) > 0 else str(layer_name)
 
     validated_regions = []
     
@@ -245,81 +234,49 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
             if start_prefix == end_prefix:
                 validated_regions.append((start_layer, end_layer))
             else:
-                print(f"[WARN] Region {start_layer} -> {end_layer} crosses architectural boundaries. Splitting...")
-                if start_layer in cnn_layers and end_layer in cnn_layers:
-                    s_idx = cnn_layers.index(start_layer)
-                    e_idx = cnn_layers.index(end_layer)
-                    
-                    curr_start = s_idx
-                    curr_prefix = get_module_prefix(cnn_layers[curr_start])
-                    
-                    for i in range(s_idx, e_idx + 1):
-                        prefix_i = get_module_prefix(cnn_layers[i])
-                        if prefix_i != curr_prefix:
-                            # Boundary hit. Save previous chunk if valid length >= 2
-                            if (i - 1) - curr_start >= 1:
-                                validated_regions.append((cnn_layers[curr_start], cnn_layers[i-1]))
-                            curr_start = i
-                            curr_prefix = prefix_i
-                            
-                    # Process final chunk
-                    if e_idx - curr_start >= 1:
-                        validated_regions.append((cnn_layers[curr_start], cnn_layers[e_idx]))
+                print(f"[WARN] Region {start_layer} -> {end_layer} crosses macro boundaries. Splitting...")
+                s_idx = cnn_layers.index(start_layer)
+                e_idx = cnn_layers.index(end_layer)
+                
+                curr_start = s_idx
+                curr_prefix = get_module_prefix(cnn_layers[curr_start])
+                
+                for i in range(s_idx, e_idx + 1):
+                    prefix_i = get_module_prefix(cnn_layers[i])
+                    if prefix_i != curr_prefix:
+                        # Enforce |s| >= 2 even during boundary splits
+                        if (i - 1) - curr_start >= 1: # Represents 2 actual layers inclusive
+                            validated_regions.append((cnn_layers[curr_start], cnn_layers[i-1]))
+                        curr_start = i
+                        curr_prefix = prefix_i
+                        
+                if e_idx - curr_start >= 1:
+                    validated_regions.append((cnn_layers[curr_start], cnn_layers[e_idx]))
 
-    fallback_regions = []
-    
-    # --- Step 1: Guardrail Generation (Fallback) ---
-    if not validated_regions or len(validated_regions) == 0:
-        print("[WARN] No valid heuristic regions found. Falling back to architectural block prefixes.")
-        current_group = []
-        current_prefix = None
-
-        for layer in cnn_layers:
-            prefix = get_module_prefix(layer)
-            if current_prefix is None:
-                current_prefix = prefix
-                current_group.append(layer)
-            elif prefix == current_prefix:
-                current_group.append(layer)
-            else:
-                if len(current_group) > 1:
-                    fallback_regions.append((current_group[0], current_group[-1]))
-                current_prefix = prefix
-                current_group = [layer]
-
-        if len(current_group) > 1:
-            fallback_regions.append((current_group[0], current_group[-1]))
-
-        # Ultimate failsafe for totally flat networks
-        if not fallback_regions and len(cnn_layers) > 1:
-            fallback_regions.append((cnn_layers[0], cnn_layers[-1]))
-            
-        regions_to_test = fallback_regions
-    else:
-        regions_to_test = validated_regions
-
-    # Helper to convert list to dict format required by downstream functions
     def to_dict(region_list):
         return {f"Dynamic_Region_{i} (Full)": reg for i, reg in enumerate(region_list)}
 
-    # --- Step 2: Surrogate Memory Filter ---
+    # --- Step 2: Surrogate Memory & FLOP Filter ---
     if model is None or input_shape is None:
-        print("[WARN] Model or input_shape not provided to the config. Skipping surrogate memory filter.")
-        return to_dict(regions_to_test)
+        return to_dict(validated_regions)
 
-    print(f"\n[INFO] Running Surrogate Memory Filter on {len(regions_to_test)} proposed regions...")
+    print(f"\n[INFO] Running Surrogate Hardware Filter on {len(validated_regions)} proposed regions...")
     feasible_regions = []
+    
+    # Generate dummy input to accurately measure FLOPs
+    dummy_input = torch.randn(1, *input_shape[1:]).to(device)
+    
+    model.eval()
     original_params = count_trainable_params(model)
+    # Silence fvcore warnings
+    original_flops = FlopCountAnalysis(model, dummy_input).unsupported_ops_warnings(False).total()
 
-    for region in regions_to_test:
+    for region in validated_regions:
         start_layer, end_layer = region
-        print(f"[STEP] Validating collapse memory delta: {start_layer} -> {end_layer}")
+        print(f"[STEP] Validating collapse hardware delta: {start_layer} -> {end_layer}")
         
         try:
-            # Deepcopy model to safely test the surrogate without corrupting the baseline
             test_model = copy.deepcopy(model).to(device)
-            
-            # Perform the physical surrogate collapse
             collapsed_model = collapse_only(
                 model=test_model,
                 compression_set=[(start_layer, end_layer)],
@@ -331,38 +288,31 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
                 dry_run=False
             )
             
+            collapsed_model.eval()
             collapsed_params = count_trainable_params(collapsed_model)
-            delta = original_params - collapsed_params
+            collapsed_flops = FlopCountAnalysis(collapsed_model, dummy_input).unsupported_ops_warnings(False).total()
             
-            # Keep it ONLY if memory physically decreases
-            if collapsed_params < original_params:
-                print(f"    [✓] Kept: Memory reduced by {delta:,} parameters ({original_params:,} -> {collapsed_params:,}).")
+            delta_params = original_params - collapsed_params
+            delta_flops = original_flops - collapsed_flops
+            
+            # FIX FOR ISSUES 1 & 4: STRICT EVALUATION OF BOTH PARAMS AND FLOPS
+            if collapsed_params < original_params and collapsed_flops < original_flops:
+                print(f"    [✓] Kept: Params reduced by {delta_params:,} | FLOPs reduced by {delta_flops:,}")
                 feasible_regions.append(region)
             else:
-                print(f"    [X] Dropped: Surrogate inflated or stagnated memory ({original_params:,} -> {collapsed_params:,}).")
+                print(f"    [X] Dropped: Surrogate inflated Params ({delta_params:,}) or FLOPs ({delta_flops:,}).")
                 
         except (Exception, SystemExit) as e:
-            # ---> Catch SystemExit so collapse.py cannot kill the main thread <---
-            print(f"    [!] Dropped: Surrogate validation failed or triggered exit - {type(e).__name__}: {e}")
+            print(f"    [!] Dropped: Surrogate validation failed - {type(e).__name__}: {e}")
             
         finally:
-            # ---> Guarantee memory cleanup even if an exception/exit is thrown <---
-            if 'test_model' in locals():
-                del test_model
-            if 'collapsed_model' in locals():
-                del collapsed_model
+            if 'test_model' in locals(): del test_model
+            if 'collapsed_model' in locals(): del collapsed_model
             gc.collect()
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
+            if torch.cuda.is_available(): torch.cuda.empty_cache()
             
-    # --- NEW: Add the "Set of All Sets" Experiment ---
     final_experiments = to_dict(feasible_regions)
-    
-    # If there are 2 or more valid regions, create a master experiment that collapses ALL of them
     if len(feasible_regions) > 1:
-        print(f"[INFO] Adding 'Dynamic_Region_All_Combined' encompassing {len(feasible_regions)} regions.")
-        # feasible_regions is already a list of tuples [(start1, end1), (start2, end2), ...]
-        # which is exactly what the downstream compression_set expects!
         final_experiments["Dynamic_Region_All_Combined"] = feasible_regions
         
     return final_experiments
