@@ -355,7 +355,18 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             
-    return to_dict(feasible_regions)
+    # --- NEW: Add the "Set of All Sets" Experiment ---
+    final_experiments = to_dict(feasible_regions)
+    
+    # If there are 2 or more valid regions, create a master experiment that collapses ALL of them
+    if len(feasible_regions) > 1:
+        print(f"[INFO] Adding 'Dynamic_Region_All_Combined' encompassing {len(feasible_regions)} regions.")
+        # feasible_regions is already a list of tuples [(start1, end1), (start2, end2), ...]
+        # which is exactly what the downstream compression_set expects!
+        final_experiments["Dynamic_Region_All_Combined"] = feasible_regions
+        
+    return final_experiments
+
 # ==============================================================================
 # Helper functions
 # ==============================================================================
