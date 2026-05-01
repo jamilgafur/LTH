@@ -271,24 +271,40 @@ def fig2_methodology_bav_regions(
         ax2.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=12)
         ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2, label='Collapse Threshold (0)')
 
-        # Precision Zone Mapping
+        # --- MATHEMATICALLY ENFORCED ZONES (|s| >= 2) ---
         veto_idx = int(len(layers) * 0.25)
-        zones = []
-        if len(h_vals) > 0:
-            start_idx = 0
-            def check_state(idx):
-                if idx < veto_idx: return "VETO"
-                return "SAFE" if h_vals[idx] < 0 else "DANGER"
+        
+        # 1. Generate raw states
+        raw_states = []
+        for i in range(len(h_vals)):
+            if i < veto_idx:
+                raw_states.append("VETO")
+            elif h_vals[i] < 0:
+                raw_states.append("SAFE")
+            else:
+                raw_states.append("DANGER")
+                
+        # 2. Apply Spatial Filter: Demote isolated SAFE layers (fixes the 1-layer issue)
+        for i in range(len(raw_states)):
+            if raw_states[i] == "SAFE":
+                left_safe = (i > 0 and raw_states[i-1] == "SAFE")
+                right_safe = (i < len(raw_states) - 1 and raw_states[i+1] == "SAFE")
+                if not left_safe and not right_safe:
+                    raw_states[i] = "DANGER" 
 
-            current_state = check_state(0)
-            for i in range(1, len(h_vals)):
-                new_state = check_state(i)
-                if new_state != current_state:
+        # 3. Group into contiguous chunks
+        zones = []
+        if len(raw_states) > 0:
+            start_idx = 0
+            current_state = raw_states[0]
+            for i in range(1, len(raw_states)):
+                if raw_states[i] != current_state:
                     zones.append((start_idx, i - 1, current_state))
                     start_idx = i
-                    current_state = new_state
-            zones.append((start_idx, len(h_vals) - 1, current_state))
+                    current_state = raw_states[i]
+            zones.append((start_idx, len(raw_states) - 1, current_state))
 
+        # 4. Draw Spans
         for start, end, state in zones:
             span_start, span_end = start - 0.5, end + 0.5
             if state == "VETO":
@@ -299,13 +315,11 @@ def fig2_methodology_bav_regions(
                 ax2.axvspan(span_start, span_end, color='#2ca02c', alpha=0.2, label="Candidate Collapse Region ($h < 0$)")
             else:
                 ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
-                # LAtex Bug fixed here
                 ax2.axvspan(span_start, span_end, color='#d62728', alpha=0.1, label=r"Feature Extraction Region ($h \geq 0$)")
 
         # Perfect Deduplication
         handles, labels = ax2.get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
-        # Ensure we drop any empty labels
         by_label = {k: v for k, v in by_label.items() if k}
         ax2.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=2, fontsize=10, frameon=False)
         
@@ -317,7 +331,6 @@ def fig2_methodology_bav_regions(
         plt.close()
         
     logger.info("[FIG2] Methodology region plots generated successfully.")
-
 # ========================= FIG 3 ========================= #
 
 def fig3_v2t_heuristic_validation(
