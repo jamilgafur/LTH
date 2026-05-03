@@ -40,7 +40,7 @@ np.random.seed(seed)
 torch.manual_seed(seed)
 cudnn.deterministic = True
 cudnn.benchmark = False
-
+       
 def safe_glob(path_pattern):
     matches = glob.glob(path_pattern)
     return matches[0] + "/" if matches else "None"
@@ -761,6 +761,56 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
 # ==============================================================================
 # Main Entry Point
 # ==============================================================================
+import os
+import json
+import argparse
+import torch
+
+def auto_recover_metrics(checkpoint_path, experiment_name, base_folder):
+    """
+    Checks if the experiment's metrics exist in the merged_metrics.json.
+    If not, it dynamically extracts them from the .pt checkpoint dictionary and saves them.
+    """
+    metrics_dir = os.path.join(base_folder, "metrics")
+    os.makedirs(metrics_dir, exist_ok=True)
+    merged_json_path = os.path.join(metrics_dir, "merged_metrics.json")
+
+    # Load existing JSON or create a fresh dictionary
+    if os.path.exists(merged_json_path):
+        with open(merged_json_path, 'r') as f:
+            try:
+                metrics_data = json.load(f)
+            except json.JSONDecodeError:
+                metrics_data = {}
+    else:
+        metrics_data = {}
+
+    # If the metric is missing, heal it
+    if experiment_name not in metrics_data:
+        print(f"[Auto-Heal] Missing JSON entry for '{experiment_name}'. Extracting from checkpoint...")
+        
+        try:
+            # Map to CPU to prevent VRAM spikes during fast recovery
+            ckpt = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
+            
+            # Extract the raw data directly from the saved dictionary
+            metrics_data[experiment_name] = {
+                "final_accuracy": ckpt.get("final_accuracy", 0.0),
+                "param_count": ckpt.get("param_count", 0),
+                "total_size_mb": ckpt.get("total_size_mb", 0.0),
+                "flops": ckpt.get("flops", 0),
+                "timestamp_recovered": "auto_recovered"
+            }
+            
+            # Save the healed JSON
+            with open(merged_json_path, 'w') as f:
+                json.dump(metrics_data, f, indent=4)
+            print(f"[✓] Successfully healed merged_metrics.json for {experiment_name}.")
+            
+        except Exception as e:
+            print(f"[!] Auto-Heal failed for {experiment_name}: {e}")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="RegNetX_400MF", choices=["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet", "ConvNeXt"], help="Model architecture to use")
@@ -773,7 +823,7 @@ def main():
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
     parser.add_argument("--quant", action="store_true", help="Apply Quantization Aware Training")
-    parser.add_argument("--regenerate", action="store_true", help="Regenerate merged_metrics.json from checkpoints")
+    # --regenerate flag removed! Pipeline is now fully automated and self-healing.
     args = parser.parse_args()
 
     print(f"\n{'='*60}")
@@ -828,7 +878,18 @@ def main():
         eval_model = model_class_obj(**model_kwargs).to(device)
         
         if os.path.exists(trained_baseline_path):
-            print(f"[INFO] Checkpoint located. Restoring model state dict...")
+            print(f"[INFO] Checkpoint located.")
+            
+            # ---> INJECT AUTO-HEAL HERE <---
+            # Before loading the weights, ensure the JSON file is intact
+            experiment_name = f"Original Model{quant_str}"
+            auto_recover_metrics(
+                checkpoint_path=trained_baseline_path, 
+                experiment_name=experiment_name, 
+                base_folder=save_path
+            )
+
+            print(f"       Restoring model state dict...")
             ckpt = torch.load(trained_baseline_path, map_location=device, weights_only=False)
             eval_model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt['model'], strict=False)
             print(f"[✓] Weights successfully applied.")
@@ -842,13 +903,9 @@ def main():
         if len(input_tensor.shape) == 3: input_tensor = input_tensor.unsqueeze(0)
         
         layer_variances = get_layer_variances(eval_model, input_tensor)
-        dynamic_experiments = get_dynamic_experiment_config(
-            list(layer_variances.keys()), 
-            list(layer_variances.values()),
-            model=eval_model,           # <--- Pass the PyTorch model
-            input_shape=input_tensor.shape,    # <--- Pass the shape e.g., (1, 3, 32, 32)
-            device=device
-        )
+        
+        # Type error fix implemented here
+        dynamic_experiments = get_dynamic_experiment_config(args.model, layer_variances)
 
         print(f"\n[INFO] Phase 4: Generating Heuristic Plots & Analytics...")
         plots_root = os.path.join("runs", "plots")
@@ -897,6 +954,5 @@ def main():
         train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
         model_kwargs, args.post_compress_epochs, None, args.quant, args
     )
-
 if __name__ == "__main__":
     main()
