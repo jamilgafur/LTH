@@ -8,7 +8,7 @@ echo "=== Submitting Stage 2: Parallel HPC Execution ==="
 
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do
-        for flag in "JF" "Kevin"; do
+        for flag in "JF"; do
             
             # Locate the JSON file created by Stage 1
             json_file="${model}_${dataset}_${flag}_discovered_regions.json"

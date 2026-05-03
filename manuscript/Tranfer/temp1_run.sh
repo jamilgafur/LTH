@@ -11,7 +11,7 @@ echo "=== Submitting Stage 1: Discovery Jobs ==="
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do
         for quant_flag in "${quant[@]}"; do
-            for flag in "JF" "Kevin"; do
+            for flag in "JF"; do
                 
                 # Submit discovery job. Will train if needed, then dump JSON
                 command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"discover\",FLAG=\"$flag\",QUANT=\"$quant_flag\" submit_job.pbs"
