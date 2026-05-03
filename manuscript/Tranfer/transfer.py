@@ -182,33 +182,98 @@ def calculate_bav_states(variances, veto_fraction=0.25):
             
     return states
 
-def get_dynamic_experiment_config(cnn_layers, variances, model=None, input_shape=None, device='cpu'):
-    cnn_layers = list(cnn_layers)
-    variances = list(variances)
-    
-    states = calculate_bav_states(variances)
-    experiment_regions = []
-    current_start_idx = None
-    
-    for i, state in enumerate(states):
-        if state == "SAFE":
-            if current_start_idx is None:
-                current_start_idx = i
-        else:
-            if current_start_idx is not None:
-                # FIX FOR ISSUE 2: Enforce |s| >= 2 strictly. 
-                # i - start must be at least 2 to contain multiple layers.
-                if i - current_start_idx >= 2: 
-                    experiment_regions.append((cnn_layers[current_start_idx], cnn_layers[i-1]))
-                current_start_idx = None
-                
-    if current_start_idx is not None and (len(states) - current_start_idx >= 2):
-        experiment_regions.append((cnn_layers[current_start_idx], cnn_layers[-1]))
-        
-    return is_feasible_experiment_config(
-        experiment_regions, cnn_layers, model=model, input_shape=input_shape, device=device
-    )
+def find_efficient_subregions(model, layers_list, input_shape):
+    """
+    Recursively divides a contiguous block of layers to find the largest
+    sub-blocks that reduce parameters without crossing structural boundaries.
+    """
+    import copy
+    from collapse import collapse_only
+    from utils import count_trainable_params
 
+    # Base case: We need at least 2 layers to perform a collapse
+    if len(layers_list) < 2:
+        return []
+
+    base_params = count_trainable_params(model)
+
+    try:
+        test_model = copy.deepcopy(model)
+        collapsed_model = collapse_only(
+            model=test_model,
+            compression_set={"test": layers_list},
+            input_shape=input_shape,
+            dry_run=True
+        )
+        new_params = count_trainable_params(collapsed_model)
+
+        # If it reduces or maintains memory, this entire block is valid!
+        if new_params <= base_params:
+            return [layers_list]
+
+    except Exception:
+        # If the collapse physically fails (e.g., shape mismatch across pooling boundaries)
+        # we catch it and force a split below.
+        pass
+
+    # If we reach here, the block crossed a boundary (LCA explosion) and increased memory.
+    # Split the block in half and recursively check both sides!
+    mid = len(layers_list) // 2
+    left_valid = find_efficient_subregions(model, layers_list[:mid], input_shape)
+    right_valid = find_efficient_subregions(model, layers_list[mid:], input_shape)
+
+    return left_valid + right_valid
+
+def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5):
+    import numpy as np
+
+    # 1. Calculate Rolling Mean and H-values (Your existing logic)
+    rolling_means = []
+    for i in range(len(variances)):
+        start = max(0, i - window_size)
+        end = min(len(variances), i + window_size + 1)
+        rolling_means.append(np.mean(variances[start:end]))
+        
+    h_values = []
+    for var, mean_var in zip(variances, rolling_means):
+        if var - mean_var < 0:
+            h_values.append(max((var - mean_var) / mean_var, -1))
+        else:
+            h_values.append(min((var - mean_var) / mean_var, 1))
+
+    # 2. Extract Raw Contiguous Sets (h < 0)
+    raw_sets = []
+    current_set = []
+    for i, h in enumerate(h_values):
+        if h < 0:
+            current_set.append(cnn_layers[i])
+        else:
+            if len(current_set) >= 2:
+                raw_sets.append(current_set)
+            current_set = []
+    if len(current_set) >= 2:
+        raw_sets.append(current_set)
+
+    # 3. Process via Recursive Boundary Splitting
+    experiment_regions = {}
+    set_counter = 0
+    all_combined_sets = {}
+
+    for raw_set in raw_sets:
+        # This will fracture [39...52] into safe sub-chunks like [39..45] and [46..52]
+        valid_subregions = find_efficient_subregions(model, raw_set, input_shape)
+
+        for valid_set in valid_subregions:
+            set_name = f"Set_{set_counter}"
+            experiment_regions[set_name] = valid_set
+            all_combined_sets[set_name] = valid_set
+            set_counter += 1
+
+    # 4. Generate the "Set of All Sets"
+    if all_combined_sets:
+        experiment_regions["Dynamic_Region_All_Combined"] = all_combined_sets
+
+    return experiment_regions
 def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
     import copy
     from collapse import collapse_only
