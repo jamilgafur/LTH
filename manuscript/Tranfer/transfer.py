@@ -766,10 +766,16 @@ import json
 import argparse
 import torch
 
-def auto_recover_metrics(checkpoint_path, experiment_name, base_folder):
+import os
+import json
+import torch
+from fvcore.nn import FlopCountAnalysis
+
+def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=None, test_loader=None, input_shape=None, device='cpu'):
     """
-    Checks if the experiment's metrics exist in the merged_metrics.json.
-    If not, it dynamically extracts them from the .pt checkpoint dictionary and saves them.
+    Self-healing metric recovery: 
+    1. Tries to extract from nested checkpoint dicts.
+    2. Falls back to live evaluation if values are missing or zero.
     """
     metrics_dir = os.path.join(base_folder, "metrics")
     os.makedirs(metrics_dir, exist_ok=True)
@@ -787,29 +793,76 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder):
 
     # If the metric is missing, heal it
     if experiment_name not in metrics_data:
-        print(f"[Auto-Heal] Missing JSON entry for '{experiment_name}'. Extracting from checkpoint...")
+        print(f"[Auto-Heal] Missing JSON entry for '{experiment_name}'. Attempting recovery...")
         
+        # --- Phase 1: Fast Dictionary Extraction ---
         try:
-            # Map to CPU to prevent VRAM spikes during fast recovery
             ckpt = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
+            nested = ckpt.get('metrics', ckpt.get('results', ckpt.get('stats', {})))
             
-            # Extract the raw data directly from the saved dictionary
-            metrics_data[experiment_name] = {
-                "final_accuracy": ckpt.get("final_accuracy", 0.0),
-                "param_count": ckpt.get("param_count", 0),
-                "total_size_mb": ckpt.get("total_size_mb", 0.0),
-                "flops": ckpt.get("flops", 0),
-                "timestamp_recovered": "auto_recovered"
-            }
+            acc = nested.get("final_accuracy", ckpt.get("final_accuracy", 0.0))
+            params = nested.get("param_count", ckpt.get("param_count", 0))
+            size_mb = nested.get("total_size_mb", ckpt.get("total_size_mb", 0.0))
+            flops = nested.get("flops", ckpt.get("flops", 0))
+        except Exception as e:
+            print(f"[!] Checkpoint load failed, preparing for full live evaluation: {e}")
+            acc, params, size_mb, flops = 0.0, 0, 0.0, 0
             
-            # Save the healed JSON
+        # --- Phase 2: Live Evaluation Fallback ---
+        if model is not None:
+            model.to(device)
+            model.eval()
+            
+            # Fallback for Params and Size
+            if params == 0 or size_mb == 0.0:
+                print("    -> Calculating parameters live...")
+                try:
+                    params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+                    size_mb = params * 4 / (1024 ** 2)  # Assuming FP32 (4 bytes per param)
+                except Exception as e:
+                    print(f"    [!] Failed live param calculation: {e}")
+
+            # Fallback for FLOPs
+            if flops == 0 and input_shape is not None:
+                print("    -> Calculating FLOPs live...")
+                try:
+                    # Generate dummy input to accurately measure FLOPs
+                    dummy_input = torch.randn(1, *input_shape[1:]).to(device)
+                    flops = FlopCountAnalysis(model, dummy_input).unsupported_ops_warnings(False).total()
+                except Exception as e:
+                    print(f"    [!] Failed live FLOP calculation: {e}")
+
+            # Fallback for Accuracy
+            if acc == 0.0 and test_loader is not None:
+                print("    -> Calculating accuracy live (this may take a moment)...")
+                correct = 0
+                total = 0
+                with torch.no_grad():
+                    for inputs, targets in test_loader:
+                        inputs, targets = inputs.to(device), targets.to(device)
+                        outputs = model(inputs)
+                        _, predicted = outputs.max(1)
+                        total += targets.size(0)
+                        correct += predicted.eq(targets).sum().item()
+                
+                acc = correct / total if total > 0 else 0.0
+
+        # --- Phase 3: Save Recovered Metrics ---
+        metrics_data[experiment_name] = {
+            "final_accuracy": acc,
+            "param_count": params,
+            "total_size_mb": size_mb,
+            "flops": flops,
+            "timestamp_recovered": "auto_recovered_live"
+        }
+        
+        # Save the healed JSON
+        try:
             with open(merged_json_path, 'w') as f:
                 json.dump(metrics_data, f, indent=4)
             print(f"[✓] Successfully healed merged_metrics.json for {experiment_name}.")
-            
         except Exception as e:
-            print(f"[!] Auto-Heal failed for {experiment_name}: {e}")
-
+            print(f"[!] Auto-Heal failed to write JSON: {e}")
 
 def main():
     parser = argparse.ArgumentParser()
