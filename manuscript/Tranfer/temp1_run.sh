@@ -4,7 +4,7 @@ rm ~/submit* 2>/dev/null
 
 models=("VGG16" "RegNetX_400MF" "XceptionNet" "InceptionNet" "MobileNet" "ConvNeXt")
 datasets=("tinyimagenet")
-quant=("True" "False")
+quant=("False")
 
 echo "=== Submitting Stage 1: Discovery Jobs ==="
 
