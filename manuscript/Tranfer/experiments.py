@@ -257,8 +257,14 @@ def run_experiment(
         checkpoint = torch.load(last_ckpt, map_location=device)
 
         # Restore structural states
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        # Restore structural states
+        model.load_state_dict(checkpoint['model_state_dict'], strict=False)
+        
+        try:
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        except ValueError as e:
+            print(f"[WARN] Optimizer state mismatch due to structural changes. Starting fresh optimizer.")
+            
         if 'scaler_state_dict' in checkpoint:
                 try:
                     scaler.load_state_dict(checkpoint['scaler_state_dict'])
