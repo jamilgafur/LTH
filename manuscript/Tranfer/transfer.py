@@ -867,6 +867,9 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=No
 # ==============================================================================
 # Refactored Main Execution Pipeline
 # ==============================================================================
+# ==============================================================================
+# Refactored Main Execution Pipeline
+# ==============================================================================
 
 def parse_cli_args():
     """Extracts and returns command line arguments."""
@@ -919,15 +922,20 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
         eval_model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt['model'], strict=False)
         print(f"[✓] Weights successfully applied.")
         
-        # ---> AUTO-HEAL INJECTION: Model is loaded, run live eval if needed <---
+        # ---> FORMAT THE TENSOR SHAPE BEFORE AUTO-HEAL <---
+        input_tensor = model_kwargs["one_batch"].to(device)
+        if len(input_tensor.shape) == 3: 
+            input_tensor = input_tensor.unsqueeze(0) # Ensures [B, C, H, W]
+            
+        # ---> AUTO-HEAL INJECTION <---
         experiment_name = f"Original Model{quant_str}"
         auto_recover_metrics(
             checkpoint_path=trained_baseline_path, 
             experiment_name=experiment_name, 
             base_folder=save_path,
-            model=eval_model,          # Pass live model
-            test_loader=test_loader,   # Pass live loader for acc eval
-            input_shape=input_size,    # Pass shape for FLOPs eval
+            model=eval_model,          
+            test_loader=test_loader,   
+            input_shape=input_tensor.shape,    # Pass the guaranteed 4D shape here
             device=device
         )
     else:
@@ -937,10 +945,7 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
 
     # --- Phase 3: Executing Network Probe ---
     print(f"\n[INFO] Phase 3: Executing Network Probe...")
-    input_tensor = model_kwargs["one_batch"].to(device)
-    if len(input_tensor.shape) == 3: 
-        input_tensor = input_tensor.unsqueeze(0)
-    
+    # (input_tensor is already defined above now, so we just pass it straight in)
     layer_variances = get_layer_variances(eval_model, input_tensor)
     
     dynamic_experiments = get_dynamic_experiment_config(
@@ -1033,7 +1038,5 @@ def main():
             model_path_097, model_path_000, json_file
         )
 
-if __name__ == "__main__":
-    main()
 if __name__ == "__main__":
     main()
