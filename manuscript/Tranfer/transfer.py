@@ -905,7 +905,13 @@ def main():
         layer_variances = get_layer_variances(eval_model, input_tensor)
         
         # Type error fix implemented here
-        dynamic_experiments = get_dynamic_experiment_config(args.model, layer_variances, variances=list(layer_variances.values()), input_shape=input_tensor.shape, window_size=3)
+        dynamic_experiments = get_dynamic_experiment_config(
+            model=eval_model, 
+            cnn_layers=list(layer_variances.keys()), 
+            variances=list(layer_variances.values()), 
+            input_shape=input_tensor.shape, 
+            window_size=3
+        )
 
         print(f"\n[INFO] Phase 4: Generating Heuristic Plots & Analytics...")
         plots_root = os.path.join("runs", "plots")
