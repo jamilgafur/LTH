@@ -864,7 +864,12 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=No
         except Exception as e:
             print(f"[!] Auto-Heal failed to write JSON: {e}")
 
-def main():
+# ==============================================================================
+# Refactored Main Execution Pipeline
+# ==============================================================================
+
+def parse_cli_args():
+    """Extracts and returns command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="RegNetX_400MF", choices=["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet", "ConvNeXt"], help="Model architecture to use")
     parser.add_argument("--dataset", type=str, default="Cifar10", help="Dataset to use")
@@ -876,118 +881,97 @@ def main():
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
     parser.add_argument("--quant", action="store_true", help="Apply Quantization Aware Training")
-    # --regenerate flag removed! Pipeline is now fully automated and self-healing.
-    args = parser.parse_args()
+    return parser.parse_args()
 
+
+def run_discovery_stage(args, device, train_loader, test_loader, model_class, model_kwargs, input_size, model_path_097, model_path_000, json_file):
+    """Handles Phase 1: Model Baseline Training, Evaluation, Probe, and JSON generation."""
     print(f"\n{'='*60}")
-    print(f"[INIT] PyPrune Transfer Learning Framework")
-    print(f"[INIT] Arguments: {args}")
+    print(f"[MODE] STAGE 1: DISCOVERY & PRE-FLIGHT PROBE")
+    print(f"       Model: {args.model} | Dataset: {args.dataset}")
     print(f"{'='*60}\n")
     
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-    print(f"[INFO] Hardware detected: {device.type.upper()} (CUDA Available: {torch.cuda.is_available()})")
+    # --- Phase 1: Validating/Training 'Original Model' Baseline ---
+    print(f"[INFO] Phase 1: Validating/Training 'Original Model' Baseline...")
+    run_experiments_for_dataset(
+        {"Original Model": None}, args.dataset, model_path_097, model_path_000, 
+        train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
+        model_kwargs, args.post_compress_epochs, None, args.quant, args
+    )
 
-    train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
+    # --- Phase 2: Loading Finalized Baseline Weights & Auto-Healing ---
+    print(f"\n[INFO] Phase 2: Loading Finalized Baseline Weights...")
+    save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}_epochs{args.epochs}_pretrain{args.pretrain}_postcompress{args.post_compress_epochs}"
     
-    base_path = CHECKPOINT_BASES[args.model][args.dataset]
-    print(f"[DEBUG] Base checkpoint path resolved: {base_path}")
+    ckpt_dir = os.path.join(save_path, "checkpoints")
+    flag_str = "JF" if args.JF else "Kevin"
+    quant_str = "_quant" if args.quant else ""
+    trained_baseline_path = os.path.join(ckpt_dir, f"final_{flag_str}_Original Model{quant_str}.pt")
     
-    model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
-    model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][1])
-
-    json_file = f"{args.model}_{args.dataset}_{'JF' if args.JF else 'Kevin'}_discovered_regions.json"
-
-    # =========================================================================
-    # PRE-FLIGHT PROBE: Train (if needed), capture variances, output JSON
-    # =========================================================================
-    if args.experiment == "discover":
-        print(f"\n{'='*60}")
-        print(f"[MODE] STAGE 1: DISCOVERY & PRE-FLIGHT PROBE")
-        print(f"       Model: {args.model} | Dataset: {args.dataset}")
-        print(f"{'='*60}\n")
+    print(f"[DEBUG] Expected trained baseline path: {trained_baseline_path}")
+    
+    model_class_obj = eval(model_class) if isinstance(model_class, str) else model_class
+    eval_model = model_class_obj(**model_kwargs).to(device)
+    
+    if os.path.exists(trained_baseline_path):
+        print(f"[INFO] Checkpoint located. Restoring model state dict...")
+        ckpt = torch.load(trained_baseline_path, map_location=device, weights_only=False)
+        eval_model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt['model'], strict=False)
+        print(f"[✓] Weights successfully applied.")
         
-        # 1. Run/Ensure the Original Model is trained using YOUR existing logic. 
-        print(f"[INFO] Phase 1: Validating/Training 'Original Model' Baseline...")
-        run_experiments_for_dataset(
-            {"Original Model": None}, args.dataset, model_path_097, model_path_000, 
-            train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
-            model_kwargs, args.post_compress_epochs, None, args.quant, args
+        # ---> AUTO-HEAL INJECTION: Model is loaded, run live eval if needed <---
+        experiment_name = f"Original Model{quant_str}"
+        auto_recover_metrics(
+            checkpoint_path=trained_baseline_path, 
+            experiment_name=experiment_name, 
+            base_folder=save_path,
+            model=eval_model,          # Pass live model
+            test_loader=test_loader,   # Pass live loader for acc eval
+            input_shape=input_size,    # Pass shape for FLOPs eval
+            device=device
         )
-
-        # 2. Reconstruct save path to grab the finalized checkpoint
-        print(f"\n[INFO] Phase 2: Loading Finalized Baseline Weights...")
-        
-        # ---> CRITICAL FIX: Build the path using the raw args BEFORE they are modified! <---
-        save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}_epochs{args.epochs}_pretrain{args.pretrain}_postcompress{args.post_compress_epochs}"
-        
-        ckpt_dir = os.path.join(save_path, "checkpoints")
-        flag_str = "JF" if args.JF else "Kevin"
-        quant_str = "_quant" if args.quant else ""
-        trained_baseline_path = os.path.join(ckpt_dir, f"final_{flag_str}_Original Model{quant_str}.pt")
-        print(f"[DEBUG] Expected trained baseline path: {trained_baseline_path}")
-        
-        # 3. Load the weights and calculate variances
-        model_class_obj = eval(model_class) if isinstance(model_class, str) else model_class
-        eval_model = model_class_obj(**model_kwargs).to(device)
-        
-        if os.path.exists(trained_baseline_path):
-            print(f"[INFO] Checkpoint located.")
-            
-            # ---> INJECT AUTO-HEAL HERE <---
-            # Before loading the weights, ensure the JSON file is intact
-            experiment_name = f"Original Model{quant_str}"
-            auto_recover_metrics(
-                checkpoint_path=trained_baseline_path, 
-                experiment_name=experiment_name, 
-                base_folder=save_path
-            )
-
-            print(f"       Restoring model state dict...")
-            ckpt = torch.load(trained_baseline_path, map_location=device, weights_only=False)
-            eval_model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt['model'], strict=False)
-            print(f"[✓] Weights successfully applied.")
-        else:
-            print(f"[ERROR] Failed to find finalized model at {trained_baseline_path}")
-            print(f"[ERROR] Discovery cannot proceed without a valid baseline.")
-            return
-
-        print(f"\n[INFO] Phase 3: Executing Network Probe...")
-        input_tensor = model_kwargs["one_batch"].to(device)
-        if len(input_tensor.shape) == 3: input_tensor = input_tensor.unsqueeze(0)
-        
-        layer_variances = get_layer_variances(eval_model, input_tensor)
-        
-        # Type error fix implemented here
-        dynamic_experiments = get_dynamic_experiment_config(
-            model=eval_model, 
-            cnn_layers=list(layer_variances.keys()), 
-            variances=list(layer_variances.values()), 
-            input_shape=input_tensor.shape, 
-            window_size=3
-        )
-
-        print(f"\n[INFO] Phase 4: Generating Heuristic Plots & Analytics...")
-        plots_root = os.path.join("runs", "plots")
-        analyze_collapse_heuristics(
-            model=eval_model, 
-            input_tensor=input_tensor, 
-            save_root_dir=plots_root, 
-            model_name=args.model, 
-            dataset_name=args.dataset,
-            exp_config=dynamic_experiments # <--- Phase 3 config explicitly passed
-        )
-        csv_path = os.path.join(plots_root, "Layer_Statistics", f"{args.model}_{args.dataset}_layer_stats.csv")
-        # if os.path.exists(csv_path):
-        #     plot_experiment_heuristics(args.model, args.dataset, csv_path)
-        print(f"\n[INFO] Phase 5: Exporting Configuration Map...")
-        with open(json_file, 'w') as f:
-            json.dump(dynamic_experiments, f, indent=4)
-        print(f"[✓] Stage 1 Complete. Exported {len(dynamic_experiments)} targets to '{json_file}'.")
+    else:
+        print(f"[ERROR] Failed to find finalized model at {trained_baseline_path}")
+        print(f"[ERROR] Discovery cannot proceed without a valid baseline.")
         return
 
-    # =========================================================================
-    # HPC EXECUTION: Read JSON and run the requested experiment
-    # =========================================================================
+    # --- Phase 3: Executing Network Probe ---
+    print(f"\n[INFO] Phase 3: Executing Network Probe...")
+    input_tensor = model_kwargs["one_batch"].to(device)
+    if len(input_tensor.shape) == 3: 
+        input_tensor = input_tensor.unsqueeze(0)
+    
+    layer_variances = get_layer_variances(eval_model, input_tensor)
+    
+    dynamic_experiments = get_dynamic_experiment_config(
+        model=eval_model, 
+        cnn_layers=list(layer_variances.keys()), 
+        variances=list(layer_variances.values()), 
+        input_shape=input_tensor.shape, 
+        window_size=3
+    )
+
+    # --- Phase 4: Generating Heuristic Plots & Analytics ---
+    print(f"\n[INFO] Phase 4: Generating Heuristic Plots & Analytics...")
+    plots_root = os.path.join("runs", "plots")
+    analyze_collapse_heuristics(
+        model=eval_model, 
+        input_tensor=input_tensor, 
+        save_root_dir=plots_root, 
+        model_name=args.model, 
+        dataset_name=args.dataset,
+        exp_config=dynamic_experiments
+    )
+    
+    # --- Phase 5: Exporting Configuration Map ---
+    print(f"\n[INFO] Phase 5: Exporting Configuration Map...")
+    with open(json_file, 'w') as f:
+        json.dump(dynamic_experiments, f, indent=4)
+    print(f"[✓] Stage 1 Complete. Exported {len(dynamic_experiments)} targets to '{json_file}'.")
+
+
+def run_hpc_stage(args, device, train_loader, test_loader, model_class, model_kwargs, model_path_097, model_path_000, json_file):
+    """Handles Phase 2: HPC execution of specific targets parsed from the generated JSON map."""
     print(f"\n{'='*60}")
     print(f"[MODE] STAGE 2: HPC EXPERIMENT EXECUTION")
     print(f"       Targeting: '{args.experiment}'")
@@ -1013,5 +997,43 @@ def main():
         train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
         model_kwargs, args.post_compress_epochs, None, args.quant, args
     )
+
+
+def main():
+    args = parse_cli_args()
+
+    print(f"\n{'='*60}")
+    print(f"[INIT] PyPrune Transfer Learning Framework")
+    print(f"[INIT] Arguments: {args}")
+    print(f"{'='*60}\n")
+    
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    print(f"[INFO] Hardware detected: {device.type.upper()} (CUDA Available: {torch.cuda.is_available()})")
+
+    # Initialize shared dependencies
+    train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
+    
+    base_path = CHECKPOINT_BASES[args.model][args.dataset]
+    print(f"[DEBUG] Base checkpoint path resolved: {base_path}")
+    
+    model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
+    model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][1])
+
+    json_file = f"{args.model}_{args.dataset}_{'JF' if args.JF else 'Kevin'}_discovered_regions.json"
+
+    # Route to appropriate stage
+    if args.experiment == "discover":
+        run_discovery_stage(
+            args, device, train_loader, test_loader, model_class, model_kwargs, 
+            input_size, model_path_097, model_path_000, json_file
+        )
+    else:
+        run_hpc_stage(
+            args, device, train_loader, test_loader, model_class, model_kwargs, 
+            model_path_097, model_path_000, json_file
+        )
+
+if __name__ == "__main__":
+    main()
 if __name__ == "__main__":
     main()
