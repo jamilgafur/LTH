@@ -201,8 +201,10 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     try:
         with torch.no_grad():
             base_flops = FlopCountAnalysis(model, dummy_input).unsupported_ops_warnings(False).total()
+        check_flops = True
     except Exception:
         base_flops = float('inf')
+        check_flops = False
 
     # =====================================================================
     # PHASE 1: Calculating the Sliding Window Variance Normalization
@@ -224,7 +226,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     # PHASE 2: Ensure Multi-Layer Collapsing (Candidate Selection)
     # =====================================================================
     num_layers = len(cnn_layers)
-    veto_idx = int(num_layers * veto_fraction)  # Target layers >= N/4
+    veto_idx = int(num_layers * veto_fraction)
     
     R_candidates = []
     current_set = []
@@ -233,7 +235,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         layer_name = cnn_layers[i]
         mod = module_dict.get(layer_name)
         
-        # We strictly exclude nn.Linear layers from forming blocks to prevent backend crashes
+        # We strictly exclude nn.Linear layers from forming blocks
         is_valid_target = isinstance(mod, torch.nn.Conv2d)
         
         if i < veto_idx or not is_valid_target:
@@ -261,13 +263,11 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
 
     print(f"\n[INFO] Phase 3: Evaluating Candidate Regions (with Safe Fracturing)...")
     
-    # CRITICAL FIX for InceptionNet: Queue-based evaluation.
-    # If a sequence structurally crashes due to crossing parallel branches, 
-    # we gracefully split it in half and evaluate the sub-components.
     queue = R_candidates.copy()
     
     while queue:
         r = queue.pop(0)
+        # Base Case: Discard anything less than 2 layers long
         if len(r) < 2:
             continue
             
@@ -276,7 +276,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         region_tuple = (start_name, end_name)
         
         try:
-            print(f"    [STEP] Testing candidate sequence: {start_name} -> {end_name}")
+            print(f"    [STEP] Testing candidate sequence: {start_name} -> {end_name} (Length: {len(r)})")
             test_model = copy.deepcopy(model).to(device)
             
             collapsed_model = collapse_only(
@@ -297,20 +297,26 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             except Exception:
                 new_flops = float('inf')
 
-            if new_params < base_params and new_flops < base_flops:
+            # --- UNIVERSAL FAILURE HANDLER ---
+            # If the block reduces compute, we keep it. 
+            # If it inflated compute, OR if new_params == base_params (meaning the backend printed 
+            # a [WARN] and swallowed an error), we fracture it.
+            if new_params < base_params and (not check_flops or new_flops < base_flops):
                 print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,}) | FLOPs ({base_flops:,} -> {new_flops:,})")
                 experiment_regions[f"Set_{set_counter}"] = region_tuple
                 R_final.append(region_tuple)
                 set_counter += 1
-            elif new_params == base_params:
-                # Collapse library swallowed an error and returned unmodified model. Treat as crash.
-                raise RuntimeError("Collapse library returned unmodified model.")
             else:
-                print(f"        [X] REJECTED: Inflated Params or FLOPs")
+                reason = "Inflated compute" if new_params > base_params else "Backend rejected (Unmodified)"
+                print(f"        [X] FAILED TO REDUCE: {reason}. Fracturing block...")
+                mid = len(r) // 2
+                if mid > 0:
+                    queue.insert(0, r[mid:])
+                    queue.insert(0, r[:mid])
 
         except Exception as e:
+            # If it threw a Python exception (e.g., shape mismatch across branches), fracture it.
             print(f"        [!] CRASH: Architecture Exception ({type(e).__name__}). Fracturing block...")
-            # Automatically salvage structurally invalid blocks by splitting them
             mid = len(r) // 2
             if mid > 0:
                 queue.insert(0, r[mid:])
@@ -328,7 +334,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         print(f"\n[INFO] Phase 4: Validating 'Dynamic_Region_All_Combined' (Greedy Integration)...")
         safe_combined_regions = []
         
-        # Track the 'current best' state to ensure NO region ever inflates the combination.
         current_best_params = base_params
         current_best_flops = base_flops
         
@@ -357,11 +362,12 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 except Exception:
                     new_flops_combo = float('inf')
 
-                # MONOTONIC CHECK: Ensure combination is strictly more efficient than previous state
-                if new_params_combo >= current_best_params or new_flops_combo >= current_best_flops:
-                    raise ValueError(f"Inflation Detected: Params ({new_params_combo} >= {current_best_params}) or FLOPs ({new_flops_combo} >= {current_best_flops})")
+                # Monotonic Check: Ensure combination is strictly more efficient than the previous state
+                if new_params_combo >= current_best_params:
+                    raise ValueError(f"Param Inflation: {new_params_combo:,} >= {current_best_params:,}")
+                if check_flops and new_flops_combo >= current_best_flops:
+                    raise ValueError(f"FLOP Inflation: {new_flops_combo:,} >= {current_best_flops:,}")
                 
-                # Passed! Add to safe list and update strict baseline.
                 current_best_params = new_params_combo
                 current_best_flops = new_flops_combo
                 safe_combined_regions.append(region_tuple)
@@ -379,7 +385,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
 
     return experiment_regions
-
 # def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5, veto_fraction=0.25):
 #     import numpy as np
 #     import copy
