@@ -305,7 +305,7 @@ def find_efficient_subregions(model, layers_list, input_shape):
     right_valid = find_efficient_subregions(model, layers_list[mid:], input_shape)
 
     return left_valid + right_valid
-    
+
 def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
     import copy
     import torch
@@ -1051,6 +1051,7 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
     with open(json_file, 'w') as f:
         json.dump(dynamic_experiments, f, indent=4)
     print(f"[✓] Stage 1 Complete. Exported {len(dynamic_experiments)} targets to '{json_file}'.")
+    print(f"Contained {dynamic_experiments}")
 
 
 def run_hpc_stage(args, device, train_loader, test_loader, model_class, model_kwargs, model_path_097, model_path_000, json_file):
