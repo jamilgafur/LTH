@@ -266,6 +266,9 @@ def find_efficient_subregions(model, layers_list, input_shape):
 
     base_params = count_trainable_params(model)
     device = next(model.parameters()).device
+    
+    start_name = layers_list[0]
+    end_name = layers_list[-1]
 
     try:
         test_model = copy.deepcopy(model).to(device)
@@ -288,24 +291,24 @@ def find_efficient_subregions(model, layers_list, input_shape):
 
         new_params = count_trainable_params(collapsed_model)
 
-        # CRITICAL FIX: Strictly less than (<). 
-        # If new_params == base_params, collapse_only swallowed an error 
-        # and returned the unmodified model. We MUST force a split.
+        # STRICT EVALUATION
         if new_params < base_params:
+            print(f"    [DEBUG-SUCCESS] Valid block found: {start_name} -> {end_name} (Params: {base_params:,} -> {new_params:,})")
             return [layers_list]
+        else:
+            print(f"    [DEBUG-SPLIT] Unmodified/Inflated: {start_name} -> {end_name} (Params: {base_params:,} -> {new_params:,}). Fracturing...")
 
-    except Exception:
-        # Catch hard crashes and force a split
-        pass
+    except Exception as e:
+        # Catch hard crashes (like the Linear 'groups' error or shape mismatches) and log the exact reason
+        print(f"    [DEBUG-SPLIT] Exception in: {start_name} -> {end_name}. Reason: {type(e).__name__} - {e}. Fracturing...")
 
-    # If we reach here, the block failed, increased memory, OR did nothing.
+    # If we reach here, the block failed.
     # Split the block in half and recursively check both sides!
     mid = len(layers_list) // 2
     left_valid = find_efficient_subregions(model, layers_list[:mid], input_shape)
     right_valid = find_efficient_subregions(model, layers_list[mid:], input_shape)
 
     return left_valid + right_valid
-
 def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
     import copy
     import torch
