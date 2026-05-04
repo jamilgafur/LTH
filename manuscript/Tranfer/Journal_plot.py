@@ -216,12 +216,8 @@ def fig2_methodology_bav_regions(
     import json
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Ignore normalized files
     stat_files = [f for f in stats_dir.glob("*_layer_stats.csv") if "normalized" not in f.name]
-    
-    if not stat_files:
-        logger.warning("[FIG2] No layer stats CSVs found in the specified directory.")
-        return
+    if not stat_files: return
 
     for csv_path in stat_files:
         parts = csv_path.stem.replace("_layer_stats", "").split("_")
@@ -232,17 +228,19 @@ def fig2_methodology_bav_regions(
             layer_df = pd.read_csv(csv_path)
             layers = layer_df['Layer'].tolist()
             variances = np.maximum(layer_df['Variance'].values, 1e-6)
-        except Exception as e:
-            logger.error(f"[FIG2] Failed to read {csv_path}: {e}")
-            continue
+        except Exception as e: continue
 
-        # Exact mathematical parity with transfer.py
+        # --- CRITICAL FIX: Ensure centered window matching transfer.py ---
         h_vals = []
         sigma_bars = []
+        window_size = 5
         
         for i, sigma_i in enumerate(variances):
-            next_vars = variances[i+1 : i+6]
-            sigma_bar = np.mean(next_vars) if len(next_vars) > 0 else np.mean(variances)
+            start = max(0, i - window_size)
+            end = min(len(variances), i + window_size + 1)
+            local_vars = variances[start:end]
+            
+            sigma_bar = np.mean(local_vars) if len(local_vars) > 0 else np.mean(variances)
             sigma_bar = max(sigma_bar, 1e-12)
             sigma_bars.append(sigma_bar)
             
@@ -253,7 +251,6 @@ def fig2_methodology_bav_regions(
         h_vals = np.array(h_vals)
         sigma_bars = np.array(sigma_bars)
 
-        # --- NEW: Read JSON to get Verified Regions ---
         json_pattern = f"{arch}_{dataset}_*_discovered_regions.json"
         json_files = list(Path(".").glob(json_pattern))
         verified_idx_ranges = []
@@ -262,7 +259,6 @@ def fig2_methodology_bav_regions(
             try:
                 with open(json_files[0], 'r') as f:
                     config = json.load(f)
-                # Extract regions from Set_0, Set_1, etc.
                 for k, v in config.items():
                     if k.startswith("Set_"):
                         start_layer, end_layer = v
@@ -270,16 +266,12 @@ def fig2_methodology_bav_regions(
                             s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
                             e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
                             verified_idx_ranges.append((s_idx, e_idx))
-                        except StopIteration:
-                            continue
-            except Exception as e:
-                logger.error(f"[FIG2] Failed to read JSON for {arch} {dataset}: {e}")
+                        except StopIteration: continue
+            except Exception: pass
 
-        # Two-Panel Layout
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
         x_vals = range(len(layers))
         
-        # --- TOP PANEL ---
         ax1.plot(x_vals, variances, color='#4A4A4A', marker='o', markersize=4, linestyle='-', linewidth=1.5, label=r'Layer Variance ($\sigma_i$)')
         ax1.plot(x_vals, sigma_bars, color='#ff7f0e', linestyle='--', linewidth=2.5, label=r'Local Context Mean ($\bar{\sigma}$)')
         ax1.set_ylabel("Raw Variance (Log)", fontweight='bold', fontsize=12)
@@ -288,14 +280,12 @@ def fig2_methodology_bav_regions(
         ax1.legend(loc='upper right', frameon=False, fontsize=10)
         sns.despine(ax=ax1)
 
-        # --- BOTTOM PANEL ---
         ax2.bar(x_vals, h_vals, color='#4A4A4A', alpha=0.8, edgecolor='black', linewidth=0.5, label='Relative Local Variance ($h$)')
         ax2.set_ylim(-1.1, 1.1)
         ax2.set_ylabel(r"Relative Variance ($h$)", fontweight='bold', fontsize=12)
         ax2.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=12)
         ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2, label='Collapse Threshold (0)')
 
-        # --- STATE DETERMINATION (Checks JSON mapping) ---
         veto_idx = int(len(layers) * 0.25)
         final_states = ["DANGER"] * len(layers)
         
@@ -303,7 +293,6 @@ def fig2_methodology_bav_regions(
             if i < veto_idx:
                 final_states[i] = "VETO"
             else:
-                # Check if layer falls inside any of the verified JSON bounds
                 in_verified = False
                 for s_idx, e_idx in verified_idx_ranges:
                     if s_idx <= i <= e_idx:
@@ -313,12 +302,10 @@ def fig2_methodology_bav_regions(
                 if in_verified:
                     final_states[i] = "VERIFIED"
                 elif h_vals[i] < 0:
-                    # Passed heuristic math, but was rejected by compiler (e.g. VGG Linears)
                     final_states[i] = "REJECTED"
                 else:
                     final_states[i] = "DANGER"
 
-        # Group into contiguous chunks
         zones = []
         if len(final_states) > 0:
             start_idx = 0
@@ -330,7 +317,6 @@ def fig2_methodology_bav_regions(
                     current_state = final_states[i]
             zones.append((start_idx, len(final_states) - 1, current_state))
 
-        # Draw Spans
         for start, end, state in zones:
             span_start, span_end = start - 0.5, end + 0.5
             if state == "VETO":
@@ -346,7 +332,6 @@ def fig2_methodology_bav_regions(
                 ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
                 ax2.axvspan(span_start, span_end, color='#d62728', alpha=0.1, label=r"Feature Extraction Region ($h \geq 0$)")
 
-        # Perfect Deduplication for Legend
         handles, labels = ax2.get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
         by_label = {k: v for k, v in by_label.items() if k}
@@ -356,10 +341,7 @@ def fig2_methodology_bav_regions(
         plt.tight_layout()
         save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
         plt.savefig(save_path, bbox_inches='tight')
-        logger.info(f"[FIG2] Saved methodology region plot for {arch}/{dataset} at {save_path}")
         plt.close()
-        
-    logger.info("[FIG2] Methodology region plots generated successfully.")
 # ========================= FIG 3 ========================= #
 
 def fig3_v2t_heuristic_validation(
