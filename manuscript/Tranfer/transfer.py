@@ -182,10 +182,10 @@ def calculate_bav_states(variances, veto_fraction=0.25):
             
     return states
 
-def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5):
+def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5, veto_fraction=0.25):
     import numpy as np
 
-    # 1. Calculate Rolling Mean and H-values (Your existing logic)
+    # 1. Calculate Rolling Mean and H-values
     rolling_means = []
     for i in range(len(variances)):
         start = max(0, i - window_size)
@@ -199,44 +199,53 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         else:
             h_values.append(min((var - mean_var) / mean_var, 1))
 
-    # 2. Extract Raw Contiguous Sets (h < 0)
+    # --- PHASE 2: EXTRACT RAW SETS WITH VETO LOGIC ---
+    num_layers = len(cnn_layers)
+    veto_idx = int(num_layers * veto_fraction)  # First 25% of layers
+    
     raw_sets = []
     current_set = []
+    
     for i, h in enumerate(h_values):
+        # Apply the veto: skip any layer in the first 25% of the network
+        if i < veto_idx:
+            if len(current_set) >= 2:
+                raw_sets.append(current_set)
+            current_set = []
+            continue
+
         if h < 0:
             current_set.append(cnn_layers[i])
         else:
             if len(current_set) >= 2:
                 raw_sets.append(current_set)
             current_set = []
+            
     if len(current_set) >= 2:
         raw_sets.append(current_set)
 
-    # 3. Process via Recursive Boundary Splitting
+    # --- PHASE 3: PROCESS VIA RECURSIVE BOUNDARY SPLITTING ---
     experiment_regions = {}
     set_counter = 0
-    
-    # FIX 1: Change from dict to list to match pipeline expectations
     all_combined_sets = []
 
     for raw_set in raw_sets:
-        # This will fracture [39...52] into safe sub-chunks like [39..45] and [46..52]
+        # Fracture invalid blocks into safe sub-chunks
         valid_subregions = find_efficient_subregions(model, raw_set, input_shape)
 
         for valid_set in valid_subregions:
             if len(valid_set) >= 2:
                 set_name = f"Set_{set_counter}"
                 
-                # FIX 2: Convert the raw list of layers into a strict (start, end) 2-tuple
+                # Convert the raw list of layers into a strict (start, end) 2-tuple
                 region_tuple = (valid_set[0], valid_set[-1])
                 
                 experiment_regions[set_name] = region_tuple
                 all_combined_sets.append(region_tuple)
                 set_counter += 1
 
-    # 4. Generate the "Set of All Sets"
-    if all_combined_sets:
-        # FIX 3: Store as a flat list of tuples, preventing the downstream ValueError
+    # --- PHASE 4: GENERATE COMBINED REGION ---
+    if len(all_combined_sets) > 1:
         experiment_regions["Dynamic_Region_All_Combined"] = all_combined_sets
 
     return experiment_regions
@@ -261,8 +270,7 @@ def find_efficient_subregions(model, layers_list, input_shape):
     try:
         test_model = copy.deepcopy(model).to(device)
         
-        # CRITICAL FIX 1: Pass device so it matches dummy_input (prevents silent exception)
-        # CRITICAL FIX 2: dry_run=False so the geometry actually changes for the test
+        # dry_run MUST be False here so the geometry actually changes for the test
         collapsed_model = collapse_only(
             model=test_model,
             compression_set={"test": layers_list},
@@ -284,11 +292,9 @@ def find_efficient_subregions(model, layers_list, input_shape):
         if new_params <= base_params:
             return [layers_list]
 
-    except Exception as e:
+    except Exception:
         # If the collapse physically fails or breaks the .fc layer downstream,
         # we catch it and force a split below.
-        # Uncomment the line below if you ever want to see exactly WHY a block failed:
-        # print(f"[DEBUG] Splitting block {layers_list[0]} -> {layers_list[-1]}. Reason: {e}")
         pass
 
     # If we reach here, the block crossed a boundary and increased memory or crashed.
