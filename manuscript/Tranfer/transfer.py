@@ -182,6 +182,7 @@ def calculate_bav_states(variances, veto_fraction=0.25):
             
     return states
 
+
 def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5, veto_fraction=0.25):
     import numpy as np
     import copy
@@ -193,17 +194,42 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     base_params = count_trainable_params(model)
     module_dict = dict(model.named_modules())
 
+    # --- HELPER: Elevate convolutions to their Structural Macro-Blocks ---
+    def get_macro_block_name(layer_name):
+        parts = layer_name.split('.')
+        # ConvNeXt uses 3 parts for a structural block: e.g., stages.0.0
+        if len(parts) >= 3 and parts[0] == 'stages' and parts[1].isdigit() and parts[2].isdigit():
+            return f"{parts[0]}.{parts[1]}.{parts[2]}"
+        # All others (Inception, RegNetX, VGG, MobileNet, Xception) use 2 parts
+        return ".".join(parts[:2])
+
+    # Group individual layers into their parent blocks
+    block_variances = {}
+    block_layers = {}
+    
+    for name, var in zip(cnn_layers, variances):
+        b_name = get_macro_block_name(name)
+        if b_name not in block_variances:
+            block_variances[b_name] = []
+            block_layers[b_name] = []
+        block_variances[b_name].append(var)
+        block_layers[b_name].append(name)
+        
+    ordered_blocks = list(block_variances.keys())
+    # Block variance is the mean variance of its internal convolutions
+    b_variances = [np.mean(block_variances[b]) for b in ordered_blocks]
+
     # =====================================================================
-    # PHASE 1: Calculating the Sliding Window Variance Normalization
+    # PHASE 1: Calculating the Sliding Window Variance Normalization (On Blocks)
     # =====================================================================
     rolling_means = []
-    for i in range(len(variances)):
+    for i in range(len(b_variances)):
         start = max(0, i - window_size)
-        end = min(len(variances), i + window_size + 1)
-        rolling_means.append(np.mean(variances[start:end]))
+        end = min(len(b_variances), i + window_size + 1)
+        rolling_means.append(np.mean(b_variances[start:end]))
         
     h_values = []
-    for var, mean_var in zip(variances, rolling_means):
+    for var, mean_var in zip(b_variances, rolling_means):
         if var - mean_var < 0:
             h_values.append(max((var - mean_var) / mean_var, -1))
         else:
@@ -212,21 +238,22 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     # =====================================================================
     # PHASE 2: Ensure Multi-Layer Collapsing (Candidate Selection)
     # =====================================================================
-    num_layers = len(cnn_layers)
-    veto_idx = int(num_layers * veto_fraction)  # Target layers >= N/4
+    num_blocks = len(ordered_blocks)
+    veto_idx = int(num_blocks * veto_fraction)  # Target layers >= N/4
     
     R_candidates = []
     current_set = []
     
     for i, h in enumerate(h_values):
-        layer_name = cnn_layers[i]
-        mod = module_dict.get(layer_name)
+        b_name = ordered_blocks[i]
         
-        # We exclude nn.Linear to prevent backend collapse_only crashes,
-        # ensuring we only target spatial feature extractors.
+        # Check the first layer of the block to ensure it's a valid Conv2d target
+        # (Excludes nn.Linear classifier heads like in VGG16)
+        first_layer_in_block = block_layers[b_name][0]
+        mod = module_dict.get(first_layer_in_block)
         is_valid_target = isinstance(mod, torch.nn.Conv2d)
         
-        # Veto if depth < 25% OR layer is not a valid convolution
+        # Veto if depth < 25% OR block does not contain valid convolutions
         if i < veto_idx or not is_valid_target:
             if len(current_set) >= 2:
                 R_candidates.append(current_set)
@@ -235,7 +262,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
 
         # If bounded variance < 0, add to current contiguous sequence
         if h < 0:
-            current_set.append(layer_name)
+            current_set.append(b_name)
         else:
             if len(current_set) >= 2:
                 R_candidates.append(current_set)
@@ -253,10 +280,17 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
 
     dummy_input = torch.randn(1, *input_shape[1:]).to(device)
 
-    print(f"\n[INFO] Phase 3: Evaluating {len(R_candidates)} Candidate Regions (Green Highlights)...")
+    print(f"\n[INFO] Phase 3: Evaluating {len(R_candidates)} Candidate Regions (Macro-Block Level)...")
     for r in R_candidates:
-        start_name = r[0]
-        end_name = r[-1]
+        # Map the block boundaries back to the exact layer names for collapse_only
+        start_block = r[0]
+        end_block = r[-1]
+        
+        # The start layer is the VERY FIRST convolution in the start block
+        start_name = block_layers[start_block][0]
+        # The end layer is the VERY LAST convolution in the end block
+        end_name = block_layers[end_block][-1]
+        
         region_tuple = (start_name, end_name)
         
         try:
@@ -291,11 +325,162 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         except Exception as e:
             print(f"        [X] REJECTED: Architecture Exception ({type(e).__name__})")
 
-    # GENERATE COMBINED REGION
+    # =====================================================================
+    # PHASE 4: Validating Dynamic Region All Combined (Greedy Integration)
+    # =====================================================================
     if len(R_final) > 1:
-        experiment_regions["Dynamic_Region_All_Combined"] = R_final
+        print(f"\n[INFO] Phase 4: Validating 'Dynamic_Region_All_Combined' (Greedy Integration)...")
+        safe_combined_regions = []
+        
+        for region_tuple in R_final:
+            candidate_combo = safe_combined_regions + [region_tuple]
+            
+            try:
+                test_model = copy.deepcopy(model).to(device)
+                
+                # Format properly for collapse_only backend dictionary constraints
+                combo_dict = {f"comb_{i}": reg for i, reg in enumerate(candidate_combo)}
+                
+                collapsed_combined = collapse_only(
+                    model=test_model,
+                    compression_set=combo_dict,
+                    input_shape=input_shape,
+                    device=device,
+                    dry_run=False 
+                )
+                
+                # Ensure the entire combined geometry survives a downstream forward pass
+                collapsed_combined.eval()
+                with torch.no_grad():
+                    _ = collapsed_combined(dummy_input)
+                
+                # Passed! Add to safe list.
+                safe_combined_regions.append(region_tuple)
+                print(f"        [+] Merged safely: {region_tuple[0]} -> {region_tuple[1]}")
+                
+            except Exception as e:
+                # The combination caused a downstream dimension cascade failure. Drop the most recent one.
+                print(f"        [-] Merge rejected: Adding {region_tuple[0]} -> {region_tuple[1]} broke downstream architecture ({type(e).__name__})")
+                
+        if len(safe_combined_regions) > 1:
+            experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
 
     return experiment_regions
+    
+# def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5, veto_fraction=0.25):
+#     import numpy as np
+#     import copy
+#     import torch
+#     from collapse import collapse_only
+#     from utils import count_trainable_params
+
+#     device = next(model.parameters()).device
+#     base_params = count_trainable_params(model)
+#     module_dict = dict(model.named_modules())
+
+#     # =====================================================================
+#     # PHASE 1: Calculating the Sliding Window Variance Normalization
+#     # =====================================================================
+#     rolling_means = []
+#     for i in range(len(variances)):
+#         start = max(0, i - window_size)
+#         end = min(len(variances), i + window_size + 1)
+#         rolling_means.append(np.mean(variances[start:end]))
+        
+#     h_values = []
+#     for var, mean_var in zip(variances, rolling_means):
+#         if var - mean_var < 0:
+#             h_values.append(max((var - mean_var) / mean_var, -1))
+#         else:
+#             h_values.append(min((var - mean_var) / mean_var, 1))
+
+#     # =====================================================================
+#     # PHASE 2: Ensure Multi-Layer Collapsing (Candidate Selection)
+#     # =====================================================================
+#     num_layers = len(cnn_layers)
+#     veto_idx = int(num_layers * veto_fraction)  # Target layers >= N/4
+    
+#     R_candidates = []
+#     current_set = []
+    
+#     for i, h in enumerate(h_values):
+#         layer_name = cnn_layers[i]
+#         mod = module_dict.get(layer_name)
+        
+#         # We exclude nn.Linear to prevent backend collapse_only crashes,
+#         # ensuring we only target spatial feature extractors.
+#         is_valid_target = isinstance(mod, torch.nn.Conv2d)
+        
+#         # Veto if depth < 25% OR layer is not a valid convolution
+#         if i < veto_idx or not is_valid_target:
+#             if len(current_set) >= 2:
+#                 R_candidates.append(current_set)
+#             current_set = []
+#             continue
+
+#         # If bounded variance < 0, add to current contiguous sequence
+#         if h < 0:
+#             current_set.append(layer_name)
+#         else:
+#             if len(current_set) >= 2:
+#                 R_candidates.append(current_set)
+#             current_set = []
+            
+#     if len(current_set) >= 2:
+#         R_candidates.append(current_set)
+
+#     # =====================================================================
+#     # PHASE 3: Collapsable Memory Feasibility & Surrogate Compilation
+#     # =====================================================================
+#     experiment_regions = {}
+#     set_counter = 0
+#     R_final = []
+
+#     dummy_input = torch.randn(1, *input_shape[1:]).to(device)
+
+#     print(f"\n[INFO] Phase 3: Evaluating {len(R_candidates)} Candidate Regions (Green Highlights)...")
+#     for r in R_candidates:
+#         start_name = r[0]
+#         end_name = r[-1]
+#         region_tuple = (start_name, end_name)
+        
+#         try:
+#             print(f"    [STEP] Testing candidate sequence: {start_name} -> {end_name}")
+#             test_model = copy.deepcopy(model).to(device)
+            
+#             # Formulate the unified structural surrogate block
+#             collapsed_model = collapse_only(
+#                 model=test_model,
+#                 compression_set={"test": region_tuple},
+#                 input_shape=input_shape,
+#                 device=device,
+#                 dry_run=False 
+#             )
+            
+#             # Ensure it survives a downstream forward pass
+#             collapsed_model.eval()
+#             with torch.no_grad():
+#                 _ = collapsed_model(dummy_input)
+
+#             new_params = count_trainable_params(collapsed_model)
+
+#             # Strict constraint: Reject if memory footprint inflates
+#             if new_params < base_params:
+#                 print(f"        [✓] ACCEPTED: Params reduced ({base_params:,} -> {new_params:,})")
+#                 experiment_regions[f"Set_{set_counter}"] = region_tuple
+#                 R_final.append(region_tuple)
+#                 set_counter += 1
+#             else:
+#                 print(f"        [X] REJECTED: Inflated or Unmodified ({base_params:,} -> {new_params:,})")
+
+#         except Exception as e:
+#             print(f"        [X] REJECTED: Architecture Exception ({type(e).__name__})")
+
+#     # GENERATE COMBINED REGION
+#     if len(R_final) > 1:
+#         experiment_regions["Dynamic_Region_All_Combined"] = R_final
+
+#     return experiment_regions
 
 def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
     import copy
