@@ -1,0 +1,269 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='VGG16', dataset='tinyimagenet', epochs=50, pretrain=50, experiment='Set_2', post_compress_epochs=0, imp=True, JF=True, Kevin=False, quant=True)
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading Tiny ImageNet data...
+Loading Tiny ImageNet data...
+[DEBUG] Base checkpoint path resolved: ../structured_study/pruning_checkpoints/Vgg16_datasettinyimagenet_pretrain10_finetune30_steps21_batch128_devicecuda_strategy_magnitude/
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Set_2'
+============================================================
+
+[INFO] Validating JSON configuration map at: VGG16_tinyimagenet_JF_discovered_regions.json
+[DEBUG] Loaded 4 configurations from map.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Set_2 ---
+
+=== Running JF experiment ===
+[•] Collapsing ranges [('classifier.fc_2', 'classifier.fc_3')] for Set_2
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 64/64 zeros (100.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 64/64 zeros (100.00%)
+features.conv_3.weight: 0/73728 zeros (0.00%)
+features.conv_3.bias: 0/128 zeros (0.00%)
+features.bn_3.weight: 0/128 zeros (0.00%)
+features.bn_3.bias: 128/128 zeros (100.00%)
+features.conv_4.weight: 0/147456 zeros (0.00%)
+features.conv_4.bias: 0/128 zeros (0.00%)
+features.bn_4.weight: 0/128 zeros (0.00%)
+features.bn_4.bias: 128/128 zeros (100.00%)
+features.conv_5.weight: 0/294912 zeros (0.00%)
+features.conv_5.bias: 0/256 zeros (0.00%)
+features.bn_5.weight: 0/256 zeros (0.00%)
+features.bn_5.bias: 256/256 zeros (100.00%)
+features.conv_6.weight: 0/589824 zeros (0.00%)
+features.conv_6.bias: 0/256 zeros (0.00%)
+features.bn_6.weight: 0/256 zeros (0.00%)
+features.bn_6.bias: 256/256 zeros (100.00%)
+features.conv_7.weight: 0/589824 zeros (0.00%)
+features.conv_7.bias: 0/256 zeros (0.00%)
+features.bn_7.weight: 0/256 zeros (0.00%)
+features.bn_7.bias: 256/256 zeros (100.00%)
+features.conv_8.weight: 0/1179648 zeros (0.00%)
+features.conv_8.bias: 0/512 zeros (0.00%)
+features.bn_8.weight: 0/512 zeros (0.00%)
+features.bn_8.bias: 512/512 zeros (100.00%)
+features.conv_9.weight: 0/2359296 zeros (0.00%)
+features.conv_9.bias: 0/512 zeros (0.00%)
+features.bn_9.weight: 0/512 zeros (0.00%)
+features.bn_9.bias: 512/512 zeros (100.00%)
+features.conv_10.weight: 0/2359296 zeros (0.00%)
+features.conv_10.bias: 0/512 zeros (0.00%)
+features.bn_10.weight: 0/512 zeros (0.00%)
+features.bn_10.bias: 512/512 zeros (100.00%)
+features.conv_11.weight: 0/2359296 zeros (0.00%)
+features.conv_11.bias: 0/512 zeros (0.00%)
+features.bn_11.weight: 0/512 zeros (0.00%)
+features.bn_11.bias: 512/512 zeros (100.00%)
+features.conv_12.weight: 0/2359296 zeros (0.00%)
+features.conv_12.bias: 0/512 zeros (0.00%)
+features.bn_12.weight: 0/512 zeros (0.00%)
+features.bn_12.bias: 512/512 zeros (100.00%)
+features.conv_13.weight: 0/2359296 zeros (0.00%)
+features.conv_13.bias: 0/512 zeros (0.00%)
+features.bn_13.weight: 0/512 zeros (0.00%)
+features.bn_13.bias: 512/512 zeros (100.00%)
+classifier.fc_1.weight: 2/8388608 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc1.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc1.bias: 4096/4096 zeros (100.00%)
+classifier.fc_2.weight: 1/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc2.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc2.bias: 4096/4096 zeros (100.00%)
+classifier.fc_3.weight: 0/819200 zeros (0.00%)
+classifier.fc_3.bias: 0/200 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 1 pairs.
+    [DEBUG] Added mapping: collapse_0 = (classifier.fc_2 → classifier.fc_3)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] classifier.fc_2 → classifier.fc_3
+[INFO] Model parameter count before collapsing: 40,732,936
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': classifier.fc_2 → classifier.fc_3
+[STEP] Calling _collapse_block('classifier.fc_2', 'classifier.fc_3')
+
+[INFO] ===== Collapsing block: classifier.fc_2 → classifier.fc_3 =====
+[STEP 1] Locating block boundaries...
+[DEBUG] Locating and preparing block: start='classifier.fc_2', end:'classifier.fc_3'
+[DEBUG] Containers resolved → chosen LCA container: 'classifier'
+[DEBUG] Found 9 children in container 'classifier'
+[DEBUG] Block slice length: 5
+[DEBUG] Block composition → 0 Conv2d, 2 Linear (collapse_mode=linear)
+[DEBUG] Located block with 5 layers
+    [LAYER] fc_2: Linear(in_features=4096, out_features=4096, bias=True)
+    [LAYER] bn_fc2: BatchNorm1d(4096, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] relu_2: ReLU(inplace=True)
+    [LAYER] dropout_2: Dropout(p=0.5, inplace=False)
+    [LAYER] fc_3: Linear(in_features=4096, out_features=200, bias=True)
+[STEP 2] Capturing activation before start layer 'classifier.fc_2'...
+[DEBUG] Attempting to capture activation before 'classifier.fc_2' using simulation hook...
+[DEBUG] Successfully captured activation → shape: (64, 4096)
+[DEBUG] Total trainable parameters before collapse: 40,732,936
+[DEBUG] Activation capture complete.
+[DEBUG] Input activation shape entering block: (64, 4096)
+[STEP 3] Searching for next linear layer after 'classifier.fc_3'...
+
+[STEP] Searching for next nn.Linear after 'classifier.fc_3'...
+[DEBUG] Exact layer match found at index 60: classifier.fc_3 (Linear)
+[DEBUG] Scanning forward from index 61 for next Linear...
+[DEBUG] No Linear found after classifier.fc_3. Searching globally...
+[DEBUG] Global fallback Linear found: classifier.fc_1 (Linear(in_features=2048, out_features=4096, bias=True))
+[RESULT] Next Linear detected → name='classifier.fc_1', module=Linear(in_features=2048, out_features=4096, bias=True)
+[DEBUG] Next linear layer: classifier.fc_1 -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[STEP] Analyzing output of collapsed block (5 layers)...
+[DEBUG] Input tensor shape before block: (64, 4096)
+[DEBUG] Running forward pass through block layers:
+    [DEBUG] Layer 1/5: fc_2 (Linear) input=(64, 4096)
+        └── output shape: (64, 4096)
+    [DEBUG] Layer 2/5: bn_fc2 (BatchNorm1d) input=(64, 4096)
+        └── output shape: (64, 4096)
+    [DEBUG] Layer 3/5: relu_2 (ReLU) input=(64, 4096)
+        └── output shape: (64, 4096)
+    [DEBUG] Layer 4/5: dropout_2 (Dropout) input=(64, 4096)
+        └── output shape: (64, 4096)
+    [DEBUG] Layer 5/5: fc_3 (Linear) input=(64, 4096)
+        └── output shape: (64, 200)
+[DEBUG] Final block output shape: (64, 200)
+[DEBUG] Determined out_channels=200
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 200)
+         out_channels=200
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=None
+[DEBUG] Block output analysis result:
+    out_shape: (64, 200)
+    out_channels: 200
+    pool_layer: None
+    adaptive_pool_to_use: None
+    shortcut_out_channels: None
+    linear_in_features_heuristic: 2048
+[STEP 5] Rebuilding and replacing collapsed block...
+
+[STEP] Building replacement for collapsed block 'classifier.fc_2'
+[DEBUG] Analyzing info dict keys: ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Target device: cuda
+[DEBUG] Replacement target spatial size (HxW): 1x1
+[DEBUG] Replacement conv in_channels=4096, out_channels=200
+[WARN] ⚠ Collapse failed for block 'collapse_0': 'Linear' object has no attribute 'groups'
+20:53:23 [INFO] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer
+20:53:24 [INFO] Successfully parsed 14 experiment rows.
+20:53:25 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at figures/individual_plots/ConvNeXt_tinyimagenet_accuracy.png
+20:53:26 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at figures/individual_plots/ConvNeXt_tinyimagenet_params.png
+20:53:26 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at figures/individual_plots/ConvNeXt_tinyimagenet_flops.png
+20:53:27 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at figures/individual_plots/ConvNeXt_tinyimagenet_memory.png
+20:53:27 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at figures/individual_plots/InceptionNet_tinyimagenet_accuracy.png
+20:53:27 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at figures/individual_plots/InceptionNet_tinyimagenet_params.png
+20:53:28 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at figures/individual_plots/InceptionNet_tinyimagenet_flops.png
+20:53:28 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at figures/individual_plots/InceptionNet_tinyimagenet_memory.png
+20:53:29 [INFO] [FIG1] Saved accuracy plot for MobileNet/tinyimagenet at figures/individual_plots/MobileNet_tinyimagenet_accuracy.png
+20:53:29 [INFO] [FIG1] Saved params plot for MobileNet/tinyimagenet at figures/individual_plots/MobileNet_tinyimagenet_params.png
+20:53:30 [INFO] [FIG1] Saved flops plot for MobileNet/tinyimagenet at figures/individual_plots/MobileNet_tinyimagenet_flops.png
+20:53:30 [INFO] [FIG1] Saved memory plot for MobileNet/tinyimagenet at figures/individual_plots/MobileNet_tinyimagenet_memory.png
+20:53:30 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/tinyimagenet at figures/individual_plots/RegNetX_400MF_tinyimagenet_accuracy.png
+20:53:31 [INFO] [FIG1] Saved params plot for RegNetX_400MF/tinyimagenet at figures/individual_plots/RegNetX_400MF_tinyimagenet_params.png
+20:53:31 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/tinyimagenet at figures/individual_plots/RegNetX_400MF_tinyimagenet_flops.png
+20:53:32 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/tinyimagenet at figures/individual_plots/RegNetX_400MF_tinyimagenet_memory.png
+20:53:32 [INFO] [FIG1] Saved accuracy plot for VGG16/tinyimagenet at figures/individual_plots/VGG16_tinyimagenet_accuracy.png
+20:53:33 [INFO] [FIG1] Saved params plot for VGG16/tinyimagenet at figures/individual_plots/VGG16_tinyimagenet_params.png
+20:53:33 [INFO] [FIG1] Saved flops plot for VGG16/tinyimagenet at figures/individual_plots/VGG16_tinyimagenet_flops.png
+20:53:33 [INFO] [FIG1] Saved memory plot for VGG16/tinyimagenet at figures/individual_plots/VGG16_tinyimagenet_memory.png
+20:53:34 [INFO] [FIG1] Saved accuracy plot for XceptionNet/tinyimagenet at figures/individual_plots/XceptionNet_tinyimagenet_accuracy.png
+20:53:34 [INFO] [FIG1] Saved params plot for XceptionNet/tinyimagenet at figures/individual_plots/XceptionNet_tinyimagenet_params.png
+20:53:35 [INFO] [FIG1] Saved flops plot for XceptionNet/tinyimagenet at figures/individual_plots/XceptionNet_tinyimagenet_flops.png
+20:53:35 [INFO] [FIG1] Saved memory plot for XceptionNet/tinyimagenet at figures/individual_plots/XceptionNet_tinyimagenet_memory.png
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:311: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='none')
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:312: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:317: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
+20:53:38 [INFO] [FIG2] Saved methodology region plot for MobileNet/tinyimagenet at figures/methodology/MobileNet_tinyimagenet_bav_methodology_regions.png
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:311: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='none')
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:312: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:317: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:314: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.1, edgecolor='none')
+20:53:40 [INFO] [FIG2] Saved methodology region plot for ConvNeXt/tinyimagenet at figures/methodology/ConvNeXt_tinyimagenet_bav_methodology_regions.png
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:311: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='none')
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:312: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:314: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.1, edgecolor='none')
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:317: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
+20:53:41 [INFO] [FIG2] Saved methodology region plot for VGG16/tinyimagenet at figures/methodology/VGG16_tinyimagenet_bav_methodology_regions.png
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:311: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='none')
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:312: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:317: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:314: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.1, edgecolor='none')
+20:53:43 [INFO] [FIG2] Saved methodology region plot for XceptionNet/tinyimagenet at figures/methodology/XceptionNet_tinyimagenet_bav_methodology_regions.png
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:311: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='none')
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:312: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:317: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:314: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.1, edgecolor='none')
+20:53:55 [INFO] [FIG2] Saved methodology region plot for RegNetX/400MF_tinyimagenet at figures/methodology/RegNetX_400MF_tinyimagenet_bav_methodology_regions.png
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:311: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='none')
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:312: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:317: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:314: UserWarning: Setting the 'color' property will override the edgecolor or facecolor properties.
+  ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.1, edgecolor='none')
+20:54:28 [INFO] [FIG2] Saved methodology region plot for InceptionNet/tinyimagenet at figures/methodology/InceptionNet_tinyimagenet_bav_methodology_regions.png
+20:54:28 [INFO] [FIG2] Methodology region plots generated successfully.
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:548: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  plt.tight_layout()
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:548: UserWarning: This figure includes Axes that are not compatible with tight_layout, so results might be incorrect.
+  plt.tight_layout()
+20:54:52 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+20:54:52 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/tinyimagenet
+20:54:52 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
+20:54:52 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/tinyimagenet
+20:54:52 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/tinyimagenet
+20:54:52 [INFO] [FIG5] Processing Hardware Profiles for VGG16/tinyimagenet
+20:54:54 [INFO] [FIG5] Saved hardware profile plot for VGG16/tinyimagenet at figures/hardware_efficiency/VGG16_tinyimagenet_hardware_profile.png
+20:54:54 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/tinyimagenet
+20:54:55 [INFO] [FIG5] Saved global trade-off scatter plot at figures/hardware_efficiency/global_tradeoff_scatter.png
+20:54:55 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+20:54:55 [INFO] Script completed.
