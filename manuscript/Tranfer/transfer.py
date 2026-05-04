@@ -182,99 +182,6 @@ def calculate_bav_states(variances, veto_fraction=0.25):
             
     return states
 
-def find_efficient_subregions(model, layers_list, input_shape):
-    """
-    Recursively divides a contiguous block of layers to find the largest
-    sub-blocks that reduce parameters without crossing structural boundaries.
-    """
-    import copy
-    from collapse import collapse_only
-    from utils import count_trainable_params
-
-    # Base case: We need at least 2 layers to perform a collapse
-    if len(layers_list) < 2:
-        return []
-
-    base_params = count_trainable_params(model)
-
-    try:
-        test_model = copy.deepcopy(model)
-        collapsed_model = collapse_only(
-            model=test_model,
-            compression_set={"test": layers_list},
-            input_shape=input_shape,
-            dry_run=True
-        )
-        new_params = count_trainable_params(collapsed_model)
-
-        # If it reduces or maintains memory, this entire block is valid!
-        if new_params <= base_params:
-            return [layers_list]
-
-    except Exception:
-        # If the collapse physically fails (e.g., shape mismatch across pooling boundaries)
-        # we catch it and force a split below.
-        pass
-
-    # If we reach here, the block crossed a boundary (LCA explosion) and increased memory.
-    # Split the block in half and recursively check both sides!
-    mid = len(layers_list) // 2
-    left_valid = find_efficient_subregions(model, layers_list[:mid], input_shape)
-    right_valid = find_efficient_subregions(model, layers_list[mid:], input_shape)
-
-    return left_valid + right_valid
-
-# def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5):
-#     import numpy as np
-
-#     # 1. Calculate Rolling Mean and H-values (Your existing logic)
-#     rolling_means = []
-#     for i in range(len(variances)):
-#         start = max(0, i - window_size)
-#         end = min(len(variances), i + window_size + 1)
-#         rolling_means.append(np.mean(variances[start:end]))
-        
-#     h_values = []
-#     for var, mean_var in zip(variances, rolling_means):
-#         if var - mean_var < 0:
-#             h_values.append(max((var - mean_var) / mean_var, -1))
-#         else:
-#             h_values.append(min((var - mean_var) / mean_var, 1))
-
-#     # 2. Extract Raw Contiguous Sets (h < 0)
-#     raw_sets = []
-#     current_set = []
-#     for i, h in enumerate(h_values):
-#         if h < 0:
-#             current_set.append(cnn_layers[i])
-#         else:
-#             if len(current_set) >= 2:
-#                 raw_sets.append(current_set)
-#             current_set = []
-#     if len(current_set) >= 2:
-#         raw_sets.append(current_set)
-
-#     # 3. Process via Recursive Boundary Splitting
-#     experiment_regions = {}
-#     set_counter = 0
-#     all_combined_sets = {}
-
-#     for raw_set in raw_sets:
-#         # This will fracture [39...52] into safe sub-chunks like [39..45] and [46..52]
-#         valid_subregions = find_efficient_subregions(model, raw_set, input_shape)
-
-#         for valid_set in valid_subregions:
-#             set_name = f"Set_{set_counter}"
-#             experiment_regions[set_name] = valid_set
-#             all_combined_sets[set_name] = valid_set
-#             set_counter += 1
-
-#     # 4. Generate the "Set of All Sets"
-#     if all_combined_sets:
-#         experiment_regions["Dynamic_Region_All_Combined"] = all_combined_sets
-
-#     return experiment_regions
-
 def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5):
     import numpy as np
 
@@ -333,13 +240,66 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         experiment_regions["Dynamic_Region_All_Combined"] = all_combined_sets
 
     return experiment_regions
+
+def find_efficient_subregions(model, layers_list, input_shape):
+    """
+    Recursively divides a contiguous block of layers to find the largest
+    sub-blocks that reduce parameters without crossing structural boundaries.
+    """
+    import copy
+    import torch
+    from collapse import collapse_only
+    from utils import count_trainable_params
+
+    # Base case: We need at least 2 layers to perform a collapse
+    if len(layers_list) < 2:
+        return []
+
+    base_params = count_trainable_params(model)
+    device = next(model.parameters()).device
+
+    try:
+        test_model = copy.deepcopy(model)
+        collapsed_model = collapse_only(
+            model=test_model,
+            compression_set={"test": layers_list},
+            input_shape=input_shape,
+            dry_run=True
+        )
+        
+        # --- STRICT DOWNSTREAM FORWARD PASS CHECK ---
+        collapsed_model.eval()
+        dummy_input = torch.randn(1, *input_shape[1:]).to(device)
+        with torch.no_grad():
+            _ = collapsed_model(dummy_input)
+        # --------------------------------------------
+
+        new_params = count_trainable_params(collapsed_model)
+
+        # If it reduces or maintains memory AND passes the forward check!
+        if new_params <= base_params:
+            return [layers_list]
+
+    except Exception:
+        # If the collapse physically fails (e.g., shape mismatch across pooling boundaries)
+        # or crashes the .fc layer downstream, we catch it and force a split below.
+        pass
+
+    # If we reach here, the block crossed a boundary and increased memory or crashed.
+    # Split the block in half and recursively check both sides!
+    mid = len(layers_list) // 2
+    left_valid = find_efficient_subregions(model, layers_list[:mid], input_shape)
+    right_valid = find_efficient_subregions(model, layers_list[mid:], input_shape)
+
+    return left_valid + right_valid
+
 def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
     import copy
+    import torch
+    import gc
     from collapse import collapse_only
     from utils import count_trainable_params
     from fvcore.nn import FlopCountAnalysis
-    import gc
-    import torch
     
     def get_module_prefix(layer_name):
         # FIX FOR ISSUE 3: Group by the top-level macro-stage ONLY.
@@ -387,7 +347,7 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
     print(f"\n[INFO] Running Surrogate Hardware Filter on {len(validated_regions)} proposed regions...")
     feasible_regions = []
     
-    # Generate dummy input to accurately measure FLOPs
+    # Generate dummy input to accurately measure FLOPs and run forward passes
     dummy_input = torch.randn(1, *input_shape[1:]).to(device)
     
     model.eval()
@@ -412,14 +372,18 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
                 dry_run=False
             )
             
+            # --- STRICT DOWNSTREAM FORWARD PASS CHECK ---
             collapsed_model.eval()
+            with torch.no_grad():
+                _ = collapsed_model(dummy_input)
+
             collapsed_params = count_trainable_params(collapsed_model)
             collapsed_flops = FlopCountAnalysis(collapsed_model, dummy_input).unsupported_ops_warnings(False).total()
             
             delta_params = original_params - collapsed_params
             delta_flops = original_flops - collapsed_flops
             
-            # FIX FOR ISSUES 1 & 4: STRICT EVALUATION OF BOTH PARAMS AND FLOPS
+            # STRICT EVALUATION OF BOTH PARAMS AND FLOPS
             if collapsed_params < original_params and collapsed_flops < original_flops:
                 print(f"    [✓] Kept: Params reduced by {delta_params:,} | FLOPs reduced by {delta_flops:,}")
                 feasible_regions.append(region)
@@ -427,7 +391,7 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
                 print(f"    [X] Dropped: Surrogate inflated Params ({delta_params:,}) or FLOPs ({delta_flops:,}).")
                 
         except (Exception, SystemExit) as e:
-            print(f"    [!] Dropped: Surrogate validation failed - {type(e).__name__}: {e}")
+            print(f"    [!] Dropped: Downstream validation failed - {type(e).__name__}: {e}")
             
         finally:
             if 'test_model' in locals(): del test_model
@@ -436,11 +400,53 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
             if torch.cuda.is_available(): torch.cuda.empty_cache()
             
     final_experiments = to_dict(feasible_regions)
+    
+    # --- GREEDY COMBINED MERGING LOGIC ---
     if len(feasible_regions) > 1:
-        final_experiments["Dynamic_Region_All_Combined"] = feasible_regions
+        print(f"\n[INFO] Validating 'Dynamic_Region_All_Combined' downstream integrity (Greedy Selection)...")
+        safe_combined_regions = []
         
-    return final_experiments
+        for region in feasible_regions:
+            # Propose a new combination
+            candidate_combo = safe_combined_regions + [region]
+            
+            try:
+                test_model = copy.deepcopy(model).to(device)
+                collapsed_combined = collapse_only(
+                    model=test_model,
+                    compression_set=candidate_combo,
+                    input_shape=input_shape,
+                    device=device,
+                    safe_param_reduction=True,
+                    handle_skips=True,
+                    debug=False,
+                    dry_run=False
+                )
+                
+                # Ensure the combination survives a forward pass
+                collapsed_combined.eval()
+                with torch.no_grad():
+                    _ = collapsed_combined(dummy_input)
+                
+                # Passed! Add to safe list.
+                safe_combined_regions.append(region)
+                print(f"    [+] Merged safely: {region[0]} -> {region[1]}")
+                
+            except Exception as e:
+                # The combination caused a downstream dimension cascade failure. Drop it.
+                print(f"    [-] Merge rejected: Adding {region[0]} -> {region[1]} broke downstream architecture. ({type(e).__name__})")
+            
+            finally:
+                if 'test_model' in locals(): del test_model
+                if 'collapsed_combined' in locals(): del collapsed_combined
+                gc.collect()
+                if torch.cuda.is_available(): torch.cuda.empty_cache()
 
+        # Only expose the combined region if we safely merged more than one chunk
+        if len(safe_combined_regions) > 1:
+            final_experiments["Dynamic_Region_All_Combined"] = safe_combined_regions
+            
+    return final_experiments
 # ==============================================================================
 # Helper functions
 # ==============================================================================
