@@ -182,7 +182,7 @@ def calculate_bav_states(variances, veto_fraction=0.25):
             
     return states
 
-def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5, veto_fraction=0.25):
+def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=3, veto_fraction=0.25):
     import numpy as np
     import copy
     import torch
