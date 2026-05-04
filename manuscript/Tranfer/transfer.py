@@ -189,18 +189,26 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     import torch
     from collapse import collapse_only
     from utils import count_trainable_params
+    from fvcore.nn import FlopCountAnalysis
 
     device = next(model.parameters()).device
     base_params = count_trainable_params(model)
     module_dict = dict(model.named_modules())
 
+    # --- CRITICAL FIX: Calculate Base FLOPs ---
+    dummy_input = torch.randn(1, *input_shape[1:]).to(device)
+    model.eval()
+    try:
+        with torch.no_grad():
+            base_flops = FlopCountAnalysis(model, dummy_input).unsupported_ops_warnings(False).total()
+    except Exception:
+        base_flops = float('inf') # Fallback if analysis fails
+
     # --- HELPER: Elevate convolutions to their Structural Macro-Blocks ---
     def get_macro_block_name(layer_name):
         parts = layer_name.split('.')
-        # ConvNeXt uses 3 parts for a structural block: e.g., stages.0.0
         if len(parts) >= 3 and parts[0] == 'stages' and parts[1].isdigit() and parts[2].isdigit():
             return f"{parts[0]}.{parts[1]}.{parts[2]}"
-        # All others (Inception, RegNetX, VGG, MobileNet, Xception) use 2 parts
         return ".".join(parts[:2])
 
     # Group individual layers into their parent blocks
@@ -216,7 +224,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         block_layers[b_name].append(name)
         
     ordered_blocks = list(block_variances.keys())
-    # Block variance is the mean variance of its internal convolutions
     b_variances = [np.mean(block_variances[b]) for b in ordered_blocks]
 
     # =====================================================================
@@ -246,21 +253,16 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     
     for i, h in enumerate(h_values):
         b_name = ordered_blocks[i]
-        
-        # Check the first layer of the block to ensure it's a valid Conv2d target
-        # (Excludes nn.Linear classifier heads like in VGG16)
         first_layer_in_block = block_layers[b_name][0]
         mod = module_dict.get(first_layer_in_block)
         is_valid_target = isinstance(mod, torch.nn.Conv2d)
         
-        # Veto if depth < 25% OR block does not contain valid convolutions
         if i < veto_idx or not is_valid_target:
             if len(current_set) >= 2:
                 R_candidates.append(current_set)
             current_set = []
             continue
 
-        # If bounded variance < 0, add to current contiguous sequence
         if h < 0:
             current_set.append(b_name)
         else:
@@ -278,26 +280,18 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     set_counter = 0
     R_final = []
 
-    dummy_input = torch.randn(1, *input_shape[1:]).to(device)
-
     print(f"\n[INFO] Phase 3: Evaluating {len(R_candidates)} Candidate Regions (Macro-Block Level)...")
     for r in R_candidates:
-        # Map the block boundaries back to the exact layer names for collapse_only
         start_block = r[0]
         end_block = r[-1]
-        
-        # The start layer is the VERY FIRST convolution in the start block
         start_name = block_layers[start_block][0]
-        # The end layer is the VERY LAST convolution in the end block
         end_name = block_layers[end_block][-1]
-        
         region_tuple = (start_name, end_name)
         
         try:
             print(f"    [STEP] Testing candidate sequence: {start_name} -> {end_name}")
             test_model = copy.deepcopy(model).to(device)
             
-            # Formulate the unified structural surrogate block
             collapsed_model = collapse_only(
                 model=test_model,
                 compression_set={"test": region_tuple},
@@ -306,21 +300,26 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 dry_run=False 
             )
             
-            # Ensure it survives a downstream forward pass
             collapsed_model.eval()
             with torch.no_grad():
                 _ = collapsed_model(dummy_input)
 
             new_params = count_trainable_params(collapsed_model)
+            
+            # --- CRITICAL FIX: Calculate New FLOPs ---
+            try:
+                new_flops = FlopCountAnalysis(collapsed_model, dummy_input).unsupported_ops_warnings(False).total()
+            except Exception:
+                new_flops = float('inf')
 
-            # Strict constraint: Reject if memory footprint inflates
-            if new_params < base_params:
-                print(f"        [✓] ACCEPTED: Params reduced ({base_params:,} -> {new_params:,})")
+            # STRICT CONSTRAINT: Must reduce BOTH Params and FLOPs
+            if new_params < base_params and new_flops < base_flops:
+                print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,}) | FLOPs ({base_flops:,} -> {new_flops:,})")
                 experiment_regions[f"Set_{set_counter}"] = region_tuple
                 R_final.append(region_tuple)
                 set_counter += 1
             else:
-                print(f"        [X] REJECTED: Inflated or Unmodified ({base_params:,} -> {new_params:,})")
+                print(f"        [X] REJECTED: Inflated Params or FLOPs")
 
         except Exception as e:
             print(f"        [X] REJECTED: Architecture Exception ({type(e).__name__})")
@@ -337,8 +336,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             
             try:
                 test_model = copy.deepcopy(model).to(device)
-                
-                # Format properly for collapse_only backend dictionary constraints
                 combo_dict = {f"comb_{i}": reg for i, reg in enumerate(candidate_combo)}
                 
                 collapsed_combined = collapse_only(
@@ -349,24 +346,32 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     dry_run=False 
                 )
                 
-                # Ensure the entire combined geometry survives a downstream forward pass
                 collapsed_combined.eval()
                 with torch.no_grad():
                     _ = collapsed_combined(dummy_input)
+                    
+                new_params_combo = count_trainable_params(collapsed_combined)
+                try:
+                    new_flops_combo = FlopCountAnalysis(collapsed_combined, dummy_input).unsupported_ops_warnings(False).total()
+                except Exception:
+                    new_flops_combo = float('inf')
+
+                # Ensure combining them doesn't suddenly cause an inflation spike
+                if new_params_combo >= base_params or new_flops_combo >= base_flops:
+                    raise ValueError("Combination inflates Params or FLOPs")
                 
                 # Passed! Add to safe list.
                 safe_combined_regions.append(region_tuple)
                 print(f"        [+] Merged safely: {region_tuple[0]} -> {region_tuple[1]}")
                 
             except Exception as e:
-                # The combination caused a downstream dimension cascade failure. Drop the most recent one.
                 print(f"        [-] Merge rejected: Adding {region_tuple[0]} -> {region_tuple[1]} broke downstream architecture ({type(e).__name__})")
                 
         if len(safe_combined_regions) > 1:
             experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
 
     return experiment_regions
-    
+      
 # def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5, veto_fraction=0.25):
 #     import numpy as np
 #     import copy
