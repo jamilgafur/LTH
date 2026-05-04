@@ -224,6 +224,57 @@ def find_efficient_subregions(model, layers_list, input_shape):
 
     return left_valid + right_valid
 
+# def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5):
+#     import numpy as np
+
+#     # 1. Calculate Rolling Mean and H-values (Your existing logic)
+#     rolling_means = []
+#     for i in range(len(variances)):
+#         start = max(0, i - window_size)
+#         end = min(len(variances), i + window_size + 1)
+#         rolling_means.append(np.mean(variances[start:end]))
+        
+#     h_values = []
+#     for var, mean_var in zip(variances, rolling_means):
+#         if var - mean_var < 0:
+#             h_values.append(max((var - mean_var) / mean_var, -1))
+#         else:
+#             h_values.append(min((var - mean_var) / mean_var, 1))
+
+#     # 2. Extract Raw Contiguous Sets (h < 0)
+#     raw_sets = []
+#     current_set = []
+#     for i, h in enumerate(h_values):
+#         if h < 0:
+#             current_set.append(cnn_layers[i])
+#         else:
+#             if len(current_set) >= 2:
+#                 raw_sets.append(current_set)
+#             current_set = []
+#     if len(current_set) >= 2:
+#         raw_sets.append(current_set)
+
+#     # 3. Process via Recursive Boundary Splitting
+#     experiment_regions = {}
+#     set_counter = 0
+#     all_combined_sets = {}
+
+#     for raw_set in raw_sets:
+#         # This will fracture [39...52] into safe sub-chunks like [39..45] and [46..52]
+#         valid_subregions = find_efficient_subregions(model, raw_set, input_shape)
+
+#         for valid_set in valid_subregions:
+#             set_name = f"Set_{set_counter}"
+#             experiment_regions[set_name] = valid_set
+#             all_combined_sets[set_name] = valid_set
+#             set_counter += 1
+
+#     # 4. Generate the "Set of All Sets"
+#     if all_combined_sets:
+#         experiment_regions["Dynamic_Region_All_Combined"] = all_combined_sets
+
+#     return experiment_regions
+
 def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5):
     import numpy as np
 
@@ -257,20 +308,28 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     # 3. Process via Recursive Boundary Splitting
     experiment_regions = {}
     set_counter = 0
-    all_combined_sets = {}
+    
+    # FIX 1: Change from dict to list to match pipeline expectations
+    all_combined_sets = []
 
     for raw_set in raw_sets:
         # This will fracture [39...52] into safe sub-chunks like [39..45] and [46..52]
         valid_subregions = find_efficient_subregions(model, raw_set, input_shape)
 
         for valid_set in valid_subregions:
-            set_name = f"Set_{set_counter}"
-            experiment_regions[set_name] = valid_set
-            all_combined_sets[set_name] = valid_set
-            set_counter += 1
+            if len(valid_set) >= 2:
+                set_name = f"Set_{set_counter}"
+                
+                # FIX 2: Convert the raw list of layers into a strict (start, end) 2-tuple
+                region_tuple = (valid_set[0], valid_set[-1])
+                
+                experiment_regions[set_name] = region_tuple
+                all_combined_sets.append(region_tuple)
+                set_counter += 1
 
     # 4. Generate the "Set of All Sets"
     if all_combined_sets:
+        # FIX 3: Store as a flat list of tuples, preventing the downstream ValueError
         experiment_regions["Dynamic_Region_All_Combined"] = all_combined_sets
 
     return experiment_regions

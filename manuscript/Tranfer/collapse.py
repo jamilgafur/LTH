@@ -119,8 +119,6 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
         "first_layer_name": full_block[0][0],  # Changed from object to name string
         "last_layer_name": full_block[-1][0],   # Changed from object to name string
     }
-
-
 def _build_and_replace_block(
     model,
     start_layer_name,
@@ -135,167 +133,316 @@ def _build_and_replace_block(
     debug,
 ):
     if debug:
-        print(f"\n[STEP] Building replacement for collapsed block '{start_layer_name}'") #
-        print(f"[DEBUG] Analyzing info dict keys: {list(info.keys())}") #
-        print(f"[DEBUG] Target device: {device}") #
+        print(f"\n[STEP] Building replacement for collapsed block '{start_layer_name}'") 
+        print(f"[DEBUG] Analyzing info dict keys: {list(info.keys())}") 
+        print(f"[DEBUG] Target device: {device}") 
 
-    named_layers = info["named_layers"] #
+    named_layers = info["named_layers"] 
     # Prefer the container determined by the locator (LCA).
-    start_container_name = info.get("container_name") #
-    if start_container_name is None: #
-        # Fallback only if not in info (should be there now)
-        start_container_name = _get_container_and_subname(start_layer_name)[0] #
+    start_container_name = info.get("container_name") 
+    if start_container_name is None: 
+        start_container_name = _get_container_and_subname(start_layer_name)[0] 
         
-    start_idx, end_idx = info["start_idx"], info["end_idx"] #
-    out_shape = block_analysis.get("out_shape") #
-    out_channels = block_analysis.get("out_channels") #
+    start_idx, end_idx = info["start_idx"], info["end_idx"] 
+    out_shape = block_analysis.get("out_shape") 
+    out_channels = block_analysis.get("out_channels") 
 
-    if out_shape is None or out_channels is None: #
-        raise RuntimeError("[ERROR] block_analysis missing required out_shape/out_channels") #
+    if out_shape is None or out_channels is None: 
+        raise RuntimeError("[ERROR] block_analysis missing required out_shape/out_channels") 
 
-    target_H, target_W = (out_shape[-2], out_shape[-1]) if len(out_shape) >= 4 else (1, 1) #
+    target_H, target_W = (out_shape[-2], out_shape[-1]) if len(out_shape) >= 4 else (1, 1) 
     if debug:
-        print(f"[DEBUG] Replacement target spatial size (HxW): {target_H}x{target_W}") #
+        print(f"[DEBUG] Replacement target spatial size (HxW): {target_H}x{target_W}") 
 
-    if x is None or x.ndim < 2: #
-        raise RuntimeError("[ERROR] Invalid captured activation `x`.") #
-    in_channels = int(x.shape[1]) #
+    if x is None or x.ndim < 2: 
+        raise RuntimeError("[ERROR] Invalid captured activation `x`.") 
+    in_channels = int(x.shape[1]) 
     if debug:
-        print(f"[DEBUG] Replacement conv in_channels={in_channels}, out_channels={out_channels}") #
+        print(f"[DEBUG] Replacement conv in_channels={in_channels}, out_channels={out_channels}") 
 
-    # -------- NEW INTELLIGENT ROUTING LOGIC --------
+    # -------- INTELLIGENT ROUTING LOGIC --------
     original_convs = info.get("conv_layers", [])
     
     is_depthwise = False
     target_kernel_size = 1
     
     if original_convs:
-        # Inspect the first convolution in the block being collapsed
         first_conv = original_convs[0]
-        
-        # Check if the original layer was depthwise
-        # A true depthwise conv has groups == in_channels == out_channels
         if first_conv.groups == first_conv.in_channels and first_conv.in_channels == first_conv.out_channels:
-            # We can only safely replace with depthwise if our calculated replacement
-            # channels also match (in_channels == out_channels)
             if in_channels == out_channels:
                 is_depthwise = True
-                # Preserve the original spatial kernel size (e.g., 3x3 or 5x5) for depthwise
                 target_kernel_size = first_conv.kernel_size[0] if isinstance(first_conv.kernel_size, tuple) else first_conv.kernel_size
                 
-        # Check if it was explicitly a pointwise (1x1, groups=1)
         elif first_conv.kernel_size == (1, 1) or first_conv.kernel_size == 1:
-            target_kernel_size = 1 # Force pointwise
+            target_kernel_size = 1 
             is_depthwise = False
             
-    # Build the specific convolution type
     if is_depthwise:
-        if debug:
-            print(f"[DEBUG] Rebuilding as DEPTHWISE conv (kernel_size={target_kernel_size})")
-        
-        padding = target_kernel_size // 2 # Keep spatial dimensions identical before the pool
-        conv = nn.Conv2d(in_channels, out_channels, kernel_size=target_kernel_size, 
-                         stride=1, padding=padding, groups=in_channels, bias=False)
+        if debug: print(f"[DEBUG] Rebuilding as DEPTHWISE conv (kernel_size={target_kernel_size})")
+        padding = target_kernel_size // 2 
+        conv = nn.Conv2d(in_channels, out_channels, kernel_size=target_kernel_size, stride=1, padding=padding, groups=in_channels, bias=False)
         conv_name = "conv_dw"
     else:
-        if debug:
-            print(f"[DEBUG] Rebuilding as POINTWISE conv (kernel_size=1)")
-            
-        conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, 
-                         stride=1, padding=0, bias=False)
+        if debug: print(f"[DEBUG] Rebuilding as POINTWISE conv (kernel_size=1)")
+        conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False)
         conv_name = "conv_1x1"
     # -----------------------------------------------
 
-    bn = nn.BatchNorm2d(out_channels)  #
-    relu = nn.ReLU(inplace=False) #
-    pool = nn.AdaptiveAvgPool2d((target_H, target_W)) #
+    bn = nn.BatchNorm2d(out_channels)  
+    relu = nn.ReLU(inplace=False) 
+    pool = nn.AdaptiveAvgPool2d((target_H, target_W)) 
 
     replacement = nn.Sequential(OrderedDict([
         (conv_name, conv),
-        ("bn", bn), #
-        ("relu", relu), #
-        ("adaptive_pool", pool), #
+        ("bn", bn), 
+        ("relu", relu), 
+        ("adaptive_pool", pool), 
     ]))
-    if debug:
-        print(f"[DEBUG] Built replacement Sequential:\n{replacement}") #
+    if debug: print(f"[DEBUG] Built replacement Sequential:\n{replacement}") 
 
-    if debug:
-        print(f"[DEBUG] Replacing children indices {start_idx}..{end_idx} in container '{start_container_name or '<root>'}'") #
+    if debug: print(f"[DEBUG] Replacing children indices {start_idx}..{end_idx} in container '{start_container_name or '<root>'}'") 
     
-    # FIX: Use string names for start_name/end_name
-    updated_container = _replace_layers( #
-            named_layers, #
-            start_idx, #
-            end_idx, #
-            replacement, #
-            start_name=info["first_layer_name"], # passed as string #
-            end_name=info["last_layer_name"],    # passed as string #
+    updated_container = _replace_layers( 
+            named_layers, start_idx, end_idx, replacement, 
+            start_name=info["first_layer_name"], end_name=info["last_layer_name"], 
         )
         
-    _update_container(model, start_container_name, updated_container) #
-    model.to(device) #
+    _update_container(model, start_container_name, updated_container) 
+    model.to(device) 
 
-    post_params = count_trainable_params(model) #
+    post_params = count_trainable_params(model) 
     if debug:
-        print(f"[DEBUG] Params before collapse: {pre_params:,}") #
-        print(f"[DEBUG] Params after  collapse: {post_params:,}") #
-        print(f"[INFO] ΔParams = {pre_params - post_params:+,}") #
+        print(f"[DEBUG] Params before collapse: {pre_params:,}") 
+        print(f"[DEBUG] Params after  collapse: {post_params:,}") 
+        print(f"[INFO] ΔParams = {pre_params - post_params:+,}") 
 
     try:
-        dev = next((p.device for p in model.parameters()), torch.device('cpu')) #
-        rep_module = get_layer(model, start_container_name) #
-        child = None #
+        dev = next((p.device for p in model.parameters()), torch.device('cpu')) 
+        rep_module = get_layer(model, start_container_name) 
+        child = None 
         
-        # Validation search: look inside the container for the new collapsed module
-        # Note: If start_container_name is root (""), rep_module is model
-        for nm, m in rep_module.named_children(): #
-            # UPDATED: We now check for 'conv_name' (either conv_1x1 or conv_dw) instead of a hardcoded string
+        for nm, m in rep_module.named_children(): 
             if nm.startswith("collapsed_") or (isinstance(m, nn.Sequential) and conv_name in dict(m.named_children())):
-                child = m #
-                break #
+                child = m 
+                break 
         
-        # Fallback: if we just replaced a specific index in a Sequential
-        if child is None and isinstance(updated_container, nn.Sequential) and start_container_name != "": #
-             # This path is risky if updated_container isn't attached yet, 
-             # but we called _update_container above, so it should be fine.
-             pass  #
+        if child is None and isinstance(updated_container, nn.Sequential) and start_container_name != "": 
+             pass  
 
-        if child is not None: #
-            with torch.no_grad(): #
-                test_x = x.clone().to(dev) #
-                out = child(test_x) #
-                if debug:
-                    print(f"[DEBUG] Replacement validation OK — output shape {tuple(out.shape)}") #
+        if child is not None: 
+            with torch.no_grad(): 
+                test_x = x.clone().to(dev) 
+                out = child(test_x) 
+                if debug: print(f"[DEBUG] Replacement validation OK — output shape {tuple(out.shape)}") 
         else:
-            print(f"[WARN] Could not find inserted collapsed module for validation.") #
+            print(f"[WARN] Could not find inserted collapsed module for validation.") 
     except Exception as e:
-        print(f"[WARN] Replacement forward validation failed: {e}") #
-        quit() #
-        
+        print(f"[WARN] Replacement forward validation failed: {e}") 
+        quit() 
+
+    # =========================================================
+    # FIX: Run Corrective Pooling BEFORE downstream validation
+    # =========================================================
     try:
         if debug:
-            print(f"[STEP] Validating downstream after replacement...") #
-        _validate_downstream(model, start_container_name, start_idx, x, input_shape, next_linear_name, next_linear_mod, device, debug) #
+            print(f"[STEP] Performing corrective pooling (if needed)...") 
+        model = _insert_corrective_pool(model, next_linear_name, input_shape, debug) 
     except Exception as e:
-        print(f"[WARN] Downstream validation failed: {e}") #
-        quit() #
-        
+        print(f"[WARN] Corrective pool insertion failed: {e}") 
+        quit() 
+
     try:
         if debug:
-            print(f"[STEP] Performing corrective pooling (if needed)...") #
-        model = _insert_corrective_pool(model, next_linear_name, input_shape, debug) #
+            print(f"[STEP] Validating downstream after replacement...") 
+        _validate_downstream(model, start_container_name, start_idx, x, input_shape, next_linear_name, next_linear_mod, device, debug) 
     except Exception as e:
-        print(f"[WARN] Corrective pool insertion failed: {e}") #
-        quit() #
+        print(f"[WARN] Downstream validation failed: {e}") 
+        quit() 
+    # =========================================================
 
-    if post_params > pre_params: #
-        print(f"[WARN] ⚠ Collapsed block increased parameter count — investigate collapse policy.") #
-        quit() #
+    if post_params > pre_params: 
+        print(f"[WARN] ⚠ Collapsed block increased parameter count — investigate collapse policy.") 
+        quit() 
 
-    if debug:
-        print(f"[RESULT] Block replacement complete for '{start_layer_name}'.") #
+    if debug: print(f"[RESULT] Block replacement complete for '{start_layer_name}'.") 
 
-    return model #
+    return model
+
+# def _build_and_replace_block(
+#     model,
+#     start_layer_name,
+#     input_shape,
+#     info,
+#     x,
+#     pre_params,
+#     next_linear_name,
+#     next_linear_mod,
+#     block_analysis,
+#     device,
+#     debug,
+# ):
+#     if debug:
+#         print(f"\n[STEP] Building replacement for collapsed block '{start_layer_name}'") #
+#         print(f"[DEBUG] Analyzing info dict keys: {list(info.keys())}") #
+#         print(f"[DEBUG] Target device: {device}") #
+
+#     named_layers = info["named_layers"] #
+#     # Prefer the container determined by the locator (LCA).
+#     start_container_name = info.get("container_name") #
+#     if start_container_name is None: #
+#         # Fallback only if not in info (should be there now)
+#         start_container_name = _get_container_and_subname(start_layer_name)[0] #
+        
+#     start_idx, end_idx = info["start_idx"], info["end_idx"] #
+#     out_shape = block_analysis.get("out_shape") #
+#     out_channels = block_analysis.get("out_channels") #
+
+#     if out_shape is None or out_channels is None: #
+#         raise RuntimeError("[ERROR] block_analysis missing required out_shape/out_channels") #
+
+#     target_H, target_W = (out_shape[-2], out_shape[-1]) if len(out_shape) >= 4 else (1, 1) #
+#     if debug:
+#         print(f"[DEBUG] Replacement target spatial size (HxW): {target_H}x{target_W}") #
+
+#     if x is None or x.ndim < 2: #
+#         raise RuntimeError("[ERROR] Invalid captured activation `x`.") #
+#     in_channels = int(x.shape[1]) #
+#     if debug:
+#         print(f"[DEBUG] Replacement conv in_channels={in_channels}, out_channels={out_channels}") #
+
+#     # -------- NEW INTELLIGENT ROUTING LOGIC --------
+#     original_convs = info.get("conv_layers", [])
+    
+#     is_depthwise = False
+#     target_kernel_size = 1
+    
+#     if original_convs:
+#         # Inspect the first convolution in the block being collapsed
+#         first_conv = original_convs[0]
+        
+#         # Check if the original layer was depthwise
+#         # A true depthwise conv has groups == in_channels == out_channels
+#         if first_conv.groups == first_conv.in_channels and first_conv.in_channels == first_conv.out_channels:
+#             # We can only safely replace with depthwise if our calculated replacement
+#             # channels also match (in_channels == out_channels)
+#             if in_channels == out_channels:
+#                 is_depthwise = True
+#                 # Preserve the original spatial kernel size (e.g., 3x3 or 5x5) for depthwise
+#                 target_kernel_size = first_conv.kernel_size[0] if isinstance(first_conv.kernel_size, tuple) else first_conv.kernel_size
+                
+#         # Check if it was explicitly a pointwise (1x1, groups=1)
+#         elif first_conv.kernel_size == (1, 1) or first_conv.kernel_size == 1:
+#             target_kernel_size = 1 # Force pointwise
+#             is_depthwise = False
+            
+#     # Build the specific convolution type
+#     if is_depthwise:
+#         if debug:
+#             print(f"[DEBUG] Rebuilding as DEPTHWISE conv (kernel_size={target_kernel_size})")
+        
+#         padding = target_kernel_size // 2 # Keep spatial dimensions identical before the pool
+#         conv = nn.Conv2d(in_channels, out_channels, kernel_size=target_kernel_size, 
+#                          stride=1, padding=padding, groups=in_channels, bias=False)
+#         conv_name = "conv_dw"
+#     else:
+#         if debug:
+#             print(f"[DEBUG] Rebuilding as POINTWISE conv (kernel_size=1)")
+            
+#         conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, 
+#                          stride=1, padding=0, bias=False)
+#         conv_name = "conv_1x1"
+#     # -----------------------------------------------
+
+#     bn = nn.BatchNorm2d(out_channels)  #
+#     relu = nn.ReLU(inplace=False) #
+#     pool = nn.AdaptiveAvgPool2d((target_H, target_W)) #
+
+#     replacement = nn.Sequential(OrderedDict([
+#         (conv_name, conv),
+#         ("bn", bn), #
+#         ("relu", relu), #
+#         ("adaptive_pool", pool), #
+#     ]))
+#     if debug:
+#         print(f"[DEBUG] Built replacement Sequential:\n{replacement}") #
+
+#     if debug:
+#         print(f"[DEBUG] Replacing children indices {start_idx}..{end_idx} in container '{start_container_name or '<root>'}'") #
+    
+#     # FIX: Use string names for start_name/end_name
+#     updated_container = _replace_layers( #
+#             named_layers, #
+#             start_idx, #
+#             end_idx, #
+#             replacement, #
+#             start_name=info["first_layer_name"], # passed as string #
+#             end_name=info["last_layer_name"],    # passed as string #
+#         )
+        
+#     _update_container(model, start_container_name, updated_container) #
+#     model.to(device) #
+
+#     post_params = count_trainable_params(model) #
+#     if debug:
+#         print(f"[DEBUG] Params before collapse: {pre_params:,}") #
+#         print(f"[DEBUG] Params after  collapse: {post_params:,}") #
+#         print(f"[INFO] ΔParams = {pre_params - post_params:+,}") #
+
+#     try:
+#         dev = next((p.device for p in model.parameters()), torch.device('cpu')) #
+#         rep_module = get_layer(model, start_container_name) #
+#         child = None #
+        
+#         # Validation search: look inside the container for the new collapsed module
+#         # Note: If start_container_name is root (""), rep_module is model
+#         for nm, m in rep_module.named_children(): #
+#             # UPDATED: We now check for 'conv_name' (either conv_1x1 or conv_dw) instead of a hardcoded string
+#             if nm.startswith("collapsed_") or (isinstance(m, nn.Sequential) and conv_name in dict(m.named_children())):
+#                 child = m #
+#                 break #
+        
+#         # Fallback: if we just replaced a specific index in a Sequential
+#         if child is None and isinstance(updated_container, nn.Sequential) and start_container_name != "": #
+#              # This path is risky if updated_container isn't attached yet, 
+#              # but we called _update_container above, so it should be fine.
+#              pass  #
+
+#         if child is not None: #
+#             with torch.no_grad(): #
+#                 test_x = x.clone().to(dev) #
+#                 out = child(test_x) #
+#                 if debug:
+#                     print(f"[DEBUG] Replacement validation OK — output shape {tuple(out.shape)}") #
+#         else:
+#             print(f"[WARN] Could not find inserted collapsed module for validation.") #
+#     except Exception as e:
+#         print(f"[WARN] Replacement forward validation failed: {e}") #
+#         quit() #
+        
+#     try:
+#         if debug:
+#             print(f"[STEP] Validating downstream after replacement...") #
+#         _validate_downstream(model, start_container_name, start_idx, x, input_shape, next_linear_name, next_linear_mod, device, debug) #
+#     except Exception as e:
+#         print(f"[WARN] Downstream validation failed: {e}") #
+#         quit() #
+        
+#     try:
+#         if debug:
+#             print(f"[STEP] Performing corrective pooling (if needed)...") #
+#         model = _insert_corrective_pool(model, next_linear_name, input_shape, debug) #
+#     except Exception as e:
+#         print(f"[WARN] Corrective pool insertion failed: {e}") #
+#         quit() #
+
+#     if post_params > pre_params: #
+#         print(f"[WARN] ⚠ Collapsed block increased parameter count — investigate collapse policy.") #
+#         quit() #
+
+#     if debug:
+#         print(f"[RESULT] Block replacement complete for '{start_layer_name}'.") #
+
+#     return model #
 
 # -----------------------------------------------------------------------------
 # Utilities
@@ -927,7 +1074,7 @@ def _validate_downstream(
     for i, (nm, m) in enumerate(children):
         if nm.startswith("collapsed_") or (
             isinstance(m, nn.Sequential)
-            and any(k in dict(m.named_children()) for k in ("conv_1x1", "adaptive_pool"))
+            and any(k in dict(m.named_children()) for k in ("conv_1x1", "adaptive_pool", "conv_dw"))
         ):
             collapsed_idx = i
             print(f"[DEBUG] Found inserted block candidate at index {i}: '{nm}'")
@@ -973,6 +1120,12 @@ def _validate_downstream(
             if isinstance(mod, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d, getattr(nn, "AdaptiveMaxPool2d", nn.AdaptiveAvgPool2d))):
                 safe = _SafePool(mod)
                 print(f"[INFO] Replaced with _SafePool wrapper.")
+            # =========================================================
+            # FIX: Force validate_downstream to back off from nn.Linear
+            # =========================================================
+            elif isinstance(mod, nn.Linear):
+                print(f"[INFO] Target module '{nm}' is nn.Linear. Allowing Corrective Pooling to handle it natively.")
+                return 
             else:
                 safe = nn.Identity()
                 print(f"[INFO] Replaced with Identity() to bypass invalid operation.")
@@ -1003,7 +1156,6 @@ def _validate_downstream(
             return
 
     print(f"[RESULT] ✅ Downstream validation for '{start_container_name}' completed successfully.")
-
 
 # -----------------------------------------------------------------------------
 # Top-level multi-block collapse function (flexible API)
