@@ -233,7 +233,7 @@ def fig2_methodology_bav_regions(
         # --- CRITICAL FIX: Ensure centered window matching transfer.py ---
         h_vals = []
         sigma_bars = []
-        window_size = 5
+        window_size = 3
         
         for i, sigma_i in enumerate(variances):
             start = max(0, i - window_size)
