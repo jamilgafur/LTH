@@ -184,12 +184,18 @@ def calculate_bav_states(variances, veto_fraction=0.25):
 
 def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5, veto_fraction=0.25):
     import numpy as np
-    import torch.nn as nn
-    
-    # Map layer names to their actual PyTorch modules
+    import copy
+    import torch
+    from collapse import collapse_only
+    from utils import count_trainable_params
+
+    device = next(model.parameters()).device
+    base_params = count_trainable_params(model)
     module_dict = dict(model.named_modules())
 
-    # 1. Calculate Rolling Mean and H-values
+    # =====================================================================
+    # PHASE 1: Calculating the Sliding Window Variance Normalization
+    # =====================================================================
     rolling_means = []
     for i in range(len(variances)):
         start = max(0, i - window_size)
@@ -203,135 +209,93 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         else:
             h_values.append(min((var - mean_var) / mean_var, 1))
 
-    # --- PHASE 2: EXTRACT RAW SETS WITH VETO & COMPATIBILITY LOGIC ---
+    # =====================================================================
+    # PHASE 2: Ensure Multi-Layer Collapsing (Candidate Selection)
+    # =====================================================================
     num_layers = len(cnn_layers)
-    veto_idx = int(num_layers * veto_fraction)  # First 25% of layers
+    veto_idx = int(num_layers * veto_fraction)  # Target layers >= N/4
     
-    raw_sets = []
+    R_candidates = []
     current_set = []
     
     for i, h in enumerate(h_values):
         layer_name = cnn_layers[i]
         mod = module_dict.get(layer_name)
         
-        # CRITICAL BACKEND FIX FOR VGG & CONVNEXT:
-        # The collapse_only engine requires '.groups' which only Conv2d has.
-        # We must strictly exclude nn.Linear layers from candidate blocks.
-        is_valid_target = isinstance(mod, nn.Conv2d)
+        # We exclude nn.Linear to prevent backend collapse_only crashes,
+        # ensuring we only target spatial feature extractors.
+        is_valid_target = isinstance(mod, torch.nn.Conv2d)
         
-        # Apply the veto: skip any layer in the first 25% of the network
-        # AND strictly prevent incompatible (Linear) layers from forming blocks
+        # Veto if depth < 25% OR layer is not a valid convolution
         if i < veto_idx or not is_valid_target:
             if len(current_set) >= 2:
-                raw_sets.append(current_set)
+                R_candidates.append(current_set)
             current_set = []
             continue
 
+        # If bounded variance < 0, add to current contiguous sequence
         if h < 0:
             current_set.append(layer_name)
         else:
             if len(current_set) >= 2:
-                raw_sets.append(current_set)
+                R_candidates.append(current_set)
             current_set = []
             
     if len(current_set) >= 2:
-        raw_sets.append(current_set)
+        R_candidates.append(current_set)
 
-    # --- PHASE 3: PROCESS VIA RECURSIVE BOUNDARY SPLITTING ---
+    # =====================================================================
+    # PHASE 3: Collapsable Memory Feasibility & Surrogate Compilation
+    # =====================================================================
     experiment_regions = {}
     set_counter = 0
-    all_combined_sets = []
+    R_final = []
 
-    for raw_set in raw_sets:
-        # Fracture invalid blocks into safe sub-chunks
-        valid_subregions = find_efficient_subregions(model, raw_set, input_shape)
+    dummy_input = torch.randn(1, *input_shape[1:]).to(device)
 
-        for valid_set in valid_subregions:
-            if len(valid_set) >= 2:
-                set_name = f"Set_{set_counter}"
-                
-                # Convert the raw list of layers into a strict (start, end) 2-tuple
-                region_tuple = (valid_set[0], valid_set[-1])
-                
-                experiment_regions[set_name] = region_tuple
-                all_combined_sets.append(region_tuple)
+    print(f"\n[INFO] Phase 3: Evaluating {len(R_candidates)} Candidate Regions (Green Highlights)...")
+    for r in R_candidates:
+        start_name = r[0]
+        end_name = r[-1]
+        region_tuple = (start_name, end_name)
+        
+        try:
+            print(f"    [STEP] Testing candidate sequence: {start_name} -> {end_name}")
+            test_model = copy.deepcopy(model).to(device)
+            
+            # Formulate the unified structural surrogate block
+            collapsed_model = collapse_only(
+                model=test_model,
+                compression_set={"test": region_tuple},
+                input_shape=input_shape,
+                device=device,
+                dry_run=False 
+            )
+            
+            # Ensure it survives a downstream forward pass
+            collapsed_model.eval()
+            with torch.no_grad():
+                _ = collapsed_model(dummy_input)
+
+            new_params = count_trainable_params(collapsed_model)
+
+            # Strict constraint: Reject if memory footprint inflates
+            if new_params < base_params:
+                print(f"        [✓] ACCEPTED: Params reduced ({base_params:,} -> {new_params:,})")
+                experiment_regions[f"Set_{set_counter}"] = region_tuple
+                R_final.append(region_tuple)
                 set_counter += 1
+            else:
+                print(f"        [X] REJECTED: Inflated or Unmodified ({base_params:,} -> {new_params:,})")
 
-    # --- PHASE 4: GENERATE COMBINED REGION ---
-    if len(all_combined_sets) > 1:
-        experiment_regions["Dynamic_Region_All_Combined"] = all_combined_sets
+        except Exception as e:
+            print(f"        [X] REJECTED: Architecture Exception ({type(e).__name__})")
+
+    # GENERATE COMBINED REGION
+    if len(R_final) > 1:
+        experiment_regions["Dynamic_Region_All_Combined"] = R_final
 
     return experiment_regions
-
-def find_efficient_subregions(model, layers_list, input_shape):
-    """
-    Iteratively finds the largest valid sub-blocks that reduce parameters 
-    without crossing structural boundaries (Top-Down Greedy Search).
-    """
-    import copy
-    import torch
-    from collapse import collapse_only
-    from utils import count_trainable_params
-
-    # Base case: We need at least 2 layers to perform a collapse
-    if len(layers_list) < 2:
-        return []
-
-    base_params = count_trainable_params(model)
-    device = next(model.parameters()).device
-    
-    valid_regions = []
-    used_layers = set()
-    
-    # Check from largest possible sub-sequence down to pairs (length 2)
-    for length in range(len(layers_list), 1, -1):
-        for i in range(len(layers_list) - length + 1):
-            sublist = layers_list[i:i+length]
-            
-            # Skip if any layer in this sublist is already part of a found valid region
-            if any(layer in used_layers for layer in sublist):
-                continue
-                
-            start_name = sublist[0]
-            end_name = sublist[-1]
-            
-            try:
-                test_model = copy.deepcopy(model).to(device)
-                
-                # CRITICAL FIX: Pass exactly (start_name, end_name) as a tuple
-                # to prevent "too many values to unpack" errors on blocks > 2 layers.
-                collapsed_model = collapse_only(
-                    model=test_model,
-                    compression_set={"test": (start_name, end_name)},
-                    input_shape=input_shape,
-                    device=device,
-                    dry_run=False 
-                )
-                
-                # --- STRICT DOWNSTREAM FORWARD PASS CHECK ---
-                collapsed_model.eval()
-                dummy_input = torch.randn(1, *input_shape[1:]).to(device)
-                with torch.no_grad():
-                    _ = collapsed_model(dummy_input)
-
-                new_params = count_trainable_params(collapsed_model)
-
-                # STRICT EVALUATION
-                if new_params < base_params:
-                    print(f"    [DEBUG-SUCCESS] Extracted valid sub-region: {start_name} -> {end_name} (Params: {base_params:,} -> {new_params:,})")
-                    valid_regions.append(sublist)
-                    used_layers.update(sublist)  # Lock these layers so they aren't reused
-                else:
-                    print(f"    [DEBUG-SPLIT] Sub-region unmodified/inflated: {start_name} -> {end_name}. Continuing search...")
-
-            except Exception as e:
-                # Catch structural crashes (e.g., crossing MaxPool, mismatched channels)
-                print(f"    [DEBUG-SPLIT] Structural mismatch in: {start_name} -> {end_name} ({type(e).__name__} - {e}). Continuing search...")
-                
-    # Maintain chronological order of the network
-    valid_regions.sort(key=lambda r: layers_list.index(r[0]))
-    
-    return valid_regions
 
 def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
     import copy
