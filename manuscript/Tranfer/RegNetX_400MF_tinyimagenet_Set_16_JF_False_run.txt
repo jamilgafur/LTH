@@ -1,7 +1,7 @@
 
 ============================================================
 [INIT] PyPrune Transfer Learning Framework
-[INIT] Arguments: Namespace(model='RegNetX_400MF', dataset='tinyimagenet', epochs=50, pretrain=50, experiment='Set_16', post_compress_epochs=0, imp=True, JF=True, Kevin=False, quant=True)
+[INIT] Arguments: Namespace(model='RegNetX_400MF', dataset='tinyimagenet', epochs=50, pretrain=50, experiment='Set_16', post_compress_epochs=0, imp=True, JF=True, Kevin=False, quant=False)
 ============================================================
 
 [INFO] Hardware detected: CUDA (CUDA Available: True)
@@ -402,24 +402,6 @@ Sequential(
 [INFO] Parameters after : 4,794,216
 [INFO] ΔParams = +55,296 (expected ≤ 0)
 [RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
-[•] Starting experiment 'Set_16_quant' in workflow 'JF'
-[•] Loading intermediate checkpoint: RegNetX_400MF_tinyimagenet_None_epochs50_pretrain50_postcompress0/checkpoints/JF_Set_16_quant_epoch27.pt
-Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 1101, in <module>
-    main()
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 1095, in main
-    run_hpc_stage(
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 1059, in run_hpc_stage
-    run_experiments_for_dataset(
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 818, in run_experiments_for_dataset
-    run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 795, in run_jf_or_kevin_experiment
-    return run_jf_experiment({experiment_name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, post_compress_epochs=post_compress_epochs, quant=quant)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 426, in run_jf_experiment
-    data = run_experiment(
-           ^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 279, in run_experiment
-    torch.cuda.set_rng_state(checkpoint['cuda_rng_state'].cpu())
-                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'cpu'
+[•] Starting experiment 'Set_16' in workflow 'JF'
+[✓] Experiment 'Set_16' already completed. Found: final_JF_Set_16.pt
+    Skipping training and reloading metrics...

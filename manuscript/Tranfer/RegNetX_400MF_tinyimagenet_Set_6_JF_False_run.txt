@@ -1,7 +1,7 @@
 
 ============================================================
 [INIT] PyPrune Transfer Learning Framework
-[INIT] Arguments: Namespace(model='RegNetX_400MF', dataset='tinyimagenet', epochs=50, pretrain=50, experiment='Set_16', post_compress_epochs=0, imp=True, JF=True, Kevin=False, quant=True)
+[INIT] Arguments: Namespace(model='RegNetX_400MF', dataset='tinyimagenet', epochs=50, pretrain=50, experiment='Set_6', post_compress_epochs=0, imp=True, JF=True, Kevin=False, quant=False)
 ============================================================
 
 [INFO] Hardware detected: CUDA (CUDA Available: True)
@@ -11,18 +11,18 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 
 ============================================================
 [MODE] STAGE 2: HPC EXPERIMENT EXECUTION
-       Targeting: 'Set_16'
+       Targeting: 'Set_6'
 ============================================================
 
 [INFO] Validating JSON configuration map at: RegNetX_400MF_tinyimagenet_JF_discovered_regions.json
 [DEBUG] Loaded 20 configurations from map.
 [INFO] Handoff to PyPrune Experiment Framework...
 
---- Running experiment: Set_16 ---
+--- Running experiment: Set_6 ---
 
 === Running JF experiment ===
 [•] Resumption detected. Architecture will be prepared for checkpoint loading.
-[•] Collapsing ranges [('stage4.stage4_block9.block.conv1', 'stage4.stage4_block9.block.conv2')] for Set_16
+[•] Collapsing ranges [('stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.conv3')] for Set_6
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -250,94 +250,94 @@ None
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
 [DEBUG] Detected compression_set as sequence with 1 pairs.
-    [DEBUG] Added mapping: collapse_0 = (stage4.stage4_block9.block.conv1 → stage4.stage4_block9.block.conv2)
+    [DEBUG] Added mapping: collapse_0 = (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3)
 [DEBUG] Total collapse targets: 1
-    [BLOCK 0] stage4.stage4_block9.block.conv1 → stage4.stage4_block9.block.conv2
+    [BLOCK 0] stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3
 [INFO] Model parameter count before collapsing: 4,849,512
 [STEP] Beginning block-wise collapsing...
 
-[INFO] Processing collapse task 'collapse_0': stage4.stage4_block9.block.conv1 → stage4.stage4_block9.block.conv2
-[STEP] Calling _collapse_block('stage4.stage4_block9.block.conv1', 'stage4.stage4_block9.block.conv2')
+[INFO] Processing collapse task 'collapse_0': stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.conv3')
 
-[INFO] ===== Collapsing block: stage4.stage4_block9.block.conv1 → stage4.stage4_block9.block.conv2 =====
+[INFO] ===== Collapsing block: stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3 =====
 [STEP 1] Locating block boundaries...
-[DEBUG] Locating and preparing block: start='stage4.stage4_block9.block.conv1', end:'stage4.stage4_block9.block.conv2'
-[DEBUG] Containers resolved → chosen LCA container: 'stage4.stage4_block9.block'
-[DEBUG] Found 8 children in container 'stage4.stage4_block9.block'
+[DEBUG] Locating and preparing block: start='stage3.stage3_block2.block.conv2', end:'stage3.stage3_block2.block.conv3'
+[DEBUG] Containers resolved → chosen LCA container: 'stage3.stage3_block2.block'
+[DEBUG] Found 8 children in container 'stage3.stage3_block2.block'
 [DEBUG] Block slice length: 4
 [DEBUG] Block composition → 2 Conv2d, 0 Linear (collapse_mode=conv)
 [DEBUG] Located block with 4 layers
-    [LAYER] conv1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
-    [LAYER] bn1: BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
-    [LAYER] relu1: ReLU(inplace=True)
-    [LAYER] conv2: Conv2d(384, 384, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=24, bias=False)
-[STEP 2] Capturing activation before start layer 'stage4.stage4_block9.block.conv1'...
-[DEBUG] Attempting to capture activation before 'stage4.stage4_block9.block.conv1' using simulation hook...
-[DEBUG] Successfully captured activation → shape: (64, 384, 2, 2)
+    [LAYER] conv2: Conv2d(160, 160, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=10, bias=False)
+    [LAYER] bn2: BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    [LAYER] relu2: ReLU(inplace=True)
+    [LAYER] conv3: Conv2d(160, 160, kernel_size=(1, 1), stride=(1, 1), bias=False)
+[STEP 2] Capturing activation before start layer 'stage3.stage3_block2.block.conv2'...
+[DEBUG] Attempting to capture activation before 'stage3.stage3_block2.block.conv2' using simulation hook...
+[DEBUG] Successfully captured activation → shape: (64, 160, 4, 4)
 [DEBUG] Total trainable parameters before collapse: 4,849,512
 [DEBUG] Activation capture complete.
-[DEBUG] Input activation shape entering block: (64, 384, 2, 2)
-[STEP 3] Searching for next linear layer after 'stage4.stage4_block9.block.conv2'...
+[DEBUG] Input activation shape entering block: (64, 160, 4, 4)
+[STEP 3] Searching for next linear layer after 'stage3.stage3_block2.block.conv3'...
 
-[STEP] Searching for next nn.Linear after 'stage4.stage4_block9.block.conv2'...
-[DEBUG] Exact layer match found at index 250: stage4.stage4_block9.block.conv2 (Conv2d)
-[DEBUG] Scanning forward from index 251 for next Linear...
+[STEP] Searching for next nn.Linear after 'stage3.stage3_block2.block.conv3'...
+[DEBUG] Exact layer match found at index 82: stage3.stage3_block2.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 83 for next Linear...
 [DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=200, bias=True))
 [RESULT] Next Linear detected → name='fc', module=Linear(in_features=384, out_features=200, bias=True)
 [DEBUG] Next linear layer: fc -> Linear
 [STEP 4] Analyzing block output characteristics...
 
 [STEP] Analyzing output of collapsed block (4 layers)...
-[DEBUG] Input tensor shape before block: (64, 384, 2, 2)
+[DEBUG] Input tensor shape before block: (64, 160, 4, 4)
 [DEBUG] Running forward pass through block layers:
-    [DEBUG] Layer 1/4: conv1 (Conv2d) input=(64, 384, 2, 2)
-        └── output shape: (64, 384, 2, 2)
-    [DEBUG] Layer 2/4: bn1 (BatchNorm2d) input=(64, 384, 2, 2)
-        └── output shape: (64, 384, 2, 2)
-    [DEBUG] Layer 3/4: relu1 (ReLU) input=(64, 384, 2, 2)
-        └── output shape: (64, 384, 2, 2)
-    [DEBUG] Layer 4/4: conv2 (Conv2d) input=(64, 384, 2, 2)
-        └── output shape: (64, 384, 2, 2)
-[DEBUG] Final block output shape: (64, 384, 2, 2)
-[DEBUG] Determined out_channels=384
+    [DEBUG] Layer 1/4: conv2 (Conv2d) input=(64, 160, 4, 4)
+        └── output shape: (64, 160, 4, 4)
+    [DEBUG] Layer 2/4: bn2 (BatchNorm2d) input=(64, 160, 4, 4)
+        └── output shape: (64, 160, 4, 4)
+    [DEBUG] Layer 3/4: relu2 (ReLU) input=(64, 160, 4, 4)
+        └── output shape: (64, 160, 4, 4)
+    [DEBUG] Layer 4/4: conv3 (Conv2d) input=(64, 160, 4, 4)
+        └── output shape: (64, 160, 4, 4)
+[DEBUG] Final block output shape: (64, 160, 4, 4)
+[DEBUG] Determined out_channels=160
 [DEBUG] No explicit pooling layer detected inside block.
 [DEBUG] Heuristic next linear in_features = 384
-[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=4 (HxW=2x2)
-[DEBUG] Suggest AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[DEBUG] Comparing spatial dims: expected_hw=2, current_hw=16 (HxW=4x4)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,2) to reconcile linear in_features mismatch.
 [DEBUG] Found shortcut conv → out_channels=32
 [RESULT] Block analysis complete:
-         out_shape=(64, 384, 2, 2)
-         out_channels=384
+         out_shape=(64, 160, 4, 4)
+         out_channels=160
          has_pool=False
-         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 2))
          shortcut_out_channels=32
 [DEBUG] Block output analysis result:
-    out_shape: (64, 384, 2, 2)
-    out_channels: 384
+    out_shape: (64, 160, 4, 4)
+    out_channels: 160
     pool_layer: None
-    adaptive_pool_to_use: AdaptiveAvgPool2d(output_size=(1, 1))
+    adaptive_pool_to_use: AdaptiveAvgPool2d(output_size=(1, 2))
     shortcut_out_channels: 32
     linear_in_features_heuristic: 384
 [STEP 5] Rebuilding and replacing collapsed block...
 
-[STEP] Building replacement for collapsed block 'stage4.stage4_block9.block.conv1'
+[STEP] Building replacement for collapsed block 'stage3.stage3_block2.block.conv2'
 [DEBUG] Analyzing info dict keys: ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
 [DEBUG] Target device: cuda
-[DEBUG] Replacement target spatial size (HxW): 2x2
-[DEBUG] Replacement conv in_channels=384, out_channels=384
+[DEBUG] Replacement target spatial size (HxW): 4x4
+[DEBUG] Replacement conv in_channels=160, out_channels=160
 [DEBUG] Rebuilding as POINTWISE conv (kernel_size=1)
 [DEBUG] Built replacement Sequential:
 Sequential(
-  (conv_1x1): Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
-  (bn): BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (conv_1x1): Conv2d(160, 160, kernel_size=(1, 1), stride=(1, 1), bias=False)
+  (bn): BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
   (relu): ReLU()
-  (adaptive_pool): AdaptiveAvgPool2d(output_size=(2, 2))
+  (adaptive_pool): AdaptiveAvgPool2d(output_size=(4, 4))
 )
-[DEBUG] Replacing children indices 0..3 in container 'stage4.stage4_block9.block'
+[DEBUG] Replacing children indices 3..6 in container 'stage3.stage3_block2.block'
 [DEBUG] Params before collapse: 4,849,512
-[DEBUG] Params after  collapse: 4,794,216
-[INFO] ΔParams = +55,296
-[DEBUG] Replacement validation OK — output shape (64, 384, 2, 2)
+[DEBUG] Params after  collapse: 4,826,472
+[INFO] ΔParams = +23,040
+[DEBUG] Replacement validation OK — output shape (64, 160, 4, 4)
 [STEP] Performing corrective pooling (if needed)...
 
 [STEP] ===== Starting _insert_corrective_pool =====
@@ -348,24 +348,21 @@ Sequential(
 [INFO] ✅ Shapes match (Current == Expected) — no corrective pooling needed.
 [STEP] Validating downstream after replacement...
 
-[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block9.block' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4.stage4_block9.block'...
-[DEBUG] Found inserted block candidate at index 0: 'conv1'
-[STEP] Validating inserted module 'Sequential' at index 0...
-[DEBUG] Inserted module forward successful, output shape: (64, 384, 2, 2)
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block2.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block2.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (64, 160, 4, 4)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
-[DEBUG] Downstream 'stage4.stage4_block9.block.bn1' executed successfully, output shape: (64, 384, 2, 2)
-[DEBUG] Downstream 'stage4.stage4_block9.block.relu1' executed successfully, output shape: (64, 384, 2, 2)
-[DEBUG] Downstream 'stage4.stage4_block9.block.conv2' executed successfully, output shape: (64, 384, 2, 2)
-[DEBUG] Downstream 'stage4.stage4_block9.block.bn2' executed successfully, output shape: (64, 384, 2, 2)
-[DEBUG] Downstream 'stage4.stage4_block9.block.relu2' executed successfully, output shape: (64, 384, 2, 2)
-[DEBUG] Downstream 'stage4.stage4_block9.block.conv3' executed successfully, output shape: (64, 384, 2, 2)
-[DEBUG] Downstream 'stage4.stage4_block9.block.bn3' executed successfully, output shape: (64, 384, 2, 2)
-[RESULT] ✅ Downstream validation for 'stage4.stage4_block9.block' completed successfully.
-[RESULT] Block replacement complete for 'stage4.stage4_block9.block.conv1'.
-[INFO] ✅ Collapse complete for block 'stage4.stage4_block9.block.conv1' → 'stage4.stage4_block9.block.conv2'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.stage4_block9.block.conv1 → stage4.stage4_block9.block.conv2)
+[DEBUG] Downstream 'stage3.stage3_block2.block.bn2' executed successfully, output shape: (64, 160, 4, 4)
+[DEBUG] Downstream 'stage3.stage3_block2.block.relu2' executed successfully, output shape: (64, 160, 4, 4)
+[DEBUG] Downstream 'stage3.stage3_block2.block.conv3' executed successfully, output shape: (64, 160, 4, 4)
+[DEBUG] Downstream 'stage3.stage3_block2.block.bn3' executed successfully, output shape: (64, 160, 4, 4)
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block2.block' completed successfully.
+[RESULT] Block replacement complete for 'stage3.stage3_block2.block.conv2'.
+[INFO] ✅ Collapse complete for block 'stage3.stage3_block2.block.conv2' → 'stage3.stage3_block2.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3)
 [STEP] Patching skip connections (if any)...
 [PATCH] Patched residual block forward (with spatial align): stage1.stage1_block0
 [PATCH] Patched residual block forward (with spatial align): stage2.stage2_block0
@@ -399,27 +396,9 @@ Sequential(
 
 [STEP] ===== Collapse summary =====
 [INFO] Parameters before: 4,849,512
-[INFO] Parameters after : 4,794,216
-[INFO] ΔParams = +55,296 (expected ≤ 0)
+[INFO] Parameters after : 4,826,472
+[INFO] ΔParams = +23,040 (expected ≤ 0)
 [RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
-[•] Starting experiment 'Set_16_quant' in workflow 'JF'
-[•] Loading intermediate checkpoint: RegNetX_400MF_tinyimagenet_None_epochs50_pretrain50_postcompress0/checkpoints/JF_Set_16_quant_epoch27.pt
-Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 1101, in <module>
-    main()
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 1095, in main
-    run_hpc_stage(
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 1059, in run_hpc_stage
-    run_experiments_for_dataset(
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 818, in run_experiments_for_dataset
-    run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 795, in run_jf_or_kevin_experiment
-    return run_jf_experiment({experiment_name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, post_compress_epochs=post_compress_epochs, quant=quant)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 426, in run_jf_experiment
-    data = run_experiment(
-           ^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 279, in run_experiment
-    torch.cuda.set_rng_state(checkpoint['cuda_rng_state'].cpu())
-                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'cpu'
+[•] Starting experiment 'Set_6' in workflow 'JF'
+[✓] Experiment 'Set_6' already completed. Found: final_JF_Set_6.pt
+    Skipping training and reloading metrics...
