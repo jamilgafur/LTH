@@ -259,12 +259,16 @@ def find_efficient_subregions(model, layers_list, input_shape):
     device = next(model.parameters()).device
 
     try:
-        test_model = copy.deepcopy(model)
+        test_model = copy.deepcopy(model).to(device)
+        
+        # CRITICAL FIX 1: Pass device so it matches dummy_input (prevents silent exception)
+        # CRITICAL FIX 2: dry_run=False so the geometry actually changes for the test
         collapsed_model = collapse_only(
             model=test_model,
             compression_set={"test": layers_list},
             input_shape=input_shape,
-            dry_run=True
+            device=device,
+            dry_run=False 
         )
         
         # --- STRICT DOWNSTREAM FORWARD PASS CHECK ---
@@ -280,9 +284,11 @@ def find_efficient_subregions(model, layers_list, input_shape):
         if new_params <= base_params:
             return [layers_list]
 
-    except Exception:
-        # If the collapse physically fails (e.g., shape mismatch across pooling boundaries)
-        # or crashes the .fc layer downstream, we catch it and force a split below.
+    except Exception as e:
+        # If the collapse physically fails or breaks the .fc layer downstream,
+        # we catch it and force a split below.
+        # Uncomment the line below if you ever want to see exactly WHY a block failed:
+        # print(f"[DEBUG] Splitting block {layers_list[0]} -> {layers_list[-1]}. Reason: {e}")
         pass
 
     # If we reach here, the block crossed a boundary and increased memory or crashed.
@@ -292,7 +298,7 @@ def find_efficient_subregions(model, layers_list, input_shape):
     right_valid = find_efficient_subregions(model, layers_list[mid:], input_shape)
 
     return left_valid + right_valid
-
+    
 def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
     import copy
     import torch
