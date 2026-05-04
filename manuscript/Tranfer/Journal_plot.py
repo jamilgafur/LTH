@@ -207,11 +207,13 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
                 plt.close()
 
 # ========================= FIG 2 ========================= #
+# ========================= FIG 2 ========================= #
 
 def fig2_methodology_bav_regions(
     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
     out_dir: Path = Path("./figures/methodology")
 ):
+    import json
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Ignore normalized files
@@ -251,6 +253,28 @@ def fig2_methodology_bav_regions(
         h_vals = np.array(h_vals)
         sigma_bars = np.array(sigma_bars)
 
+        # --- NEW: Read JSON to get Verified Regions ---
+        json_pattern = f"{arch}_{dataset}_*_discovered_regions.json"
+        json_files = list(Path(".").glob(json_pattern))
+        verified_idx_ranges = []
+        
+        if json_files:
+            try:
+                with open(json_files[0], 'r') as f:
+                    config = json.load(f)
+                # Extract regions from Set_0, Set_1, etc.
+                for k, v in config.items():
+                    if k.startswith("Set_"):
+                        start_layer, end_layer = v
+                        try:
+                            s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
+                            e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
+                            verified_idx_ranges.append((s_idx, e_idx))
+                        except StopIteration:
+                            continue
+            except Exception as e:
+                logger.error(f"[FIG2] Failed to read JSON for {arch} {dataset}: {e}")
+
         # Two-Panel Layout
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
         x_vals = range(len(layers))
@@ -271,53 +295,58 @@ def fig2_methodology_bav_regions(
         ax2.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=12)
         ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2, label='Collapse Threshold (0)')
 
-        # --- MATHEMATICALLY ENFORCED ZONES (|s| >= 2) ---
+        # --- STATE DETERMINATION (Checks JSON mapping) ---
         veto_idx = int(len(layers) * 0.25)
+        final_states = ["DANGER"] * len(layers)
         
-        # 1. Generate raw states
-        raw_states = []
-        for i in range(len(h_vals)):
+        for i in range(len(layers)):
             if i < veto_idx:
-                raw_states.append("VETO")
-            elif h_vals[i] < 0:
-                raw_states.append("SAFE")
+                final_states[i] = "VETO"
             else:
-                raw_states.append("DANGER")
+                # Check if layer falls inside any of the verified JSON bounds
+                in_verified = False
+                for s_idx, e_idx in verified_idx_ranges:
+                    if s_idx <= i <= e_idx:
+                        in_verified = True
+                        break
                 
-        # 2. Apply Spatial Filter: Demote isolated SAFE layers (fixes the 1-layer issue)
-        for i in range(len(raw_states)):
-            if raw_states[i] == "SAFE":
-                left_safe = (i > 0 and raw_states[i-1] == "SAFE")
-                right_safe = (i < len(raw_states) - 1 and raw_states[i+1] == "SAFE")
-                if not left_safe and not right_safe:
-                    raw_states[i] = "DANGER" 
+                if in_verified:
+                    final_states[i] = "VERIFIED"
+                elif h_vals[i] < 0:
+                    # Passed heuristic math, but was rejected by compiler (e.g. VGG Linears)
+                    final_states[i] = "REJECTED"
+                else:
+                    final_states[i] = "DANGER"
 
-        # 3. Group into contiguous chunks
+        # Group into contiguous chunks
         zones = []
-        if len(raw_states) > 0:
+        if len(final_states) > 0:
             start_idx = 0
-            current_state = raw_states[0]
-            for i in range(1, len(raw_states)):
-                if raw_states[i] != current_state:
+            current_state = final_states[0]
+            for i in range(1, len(final_states)):
+                if final_states[i] != current_state:
                     zones.append((start_idx, i - 1, current_state))
                     start_idx = i
-                    current_state = raw_states[i]
-            zones.append((start_idx, len(raw_states) - 1, current_state))
+                    current_state = final_states[i]
+            zones.append((start_idx, len(final_states) - 1, current_state))
 
-        # 4. Draw Spans
+        # Draw Spans
         for start, end, state in zones:
             span_start, span_end = start - 0.5, end + 0.5
             if state == "VETO":
                 ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='none')
                 ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
-            elif state == "SAFE":
-                ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.1, edgecolor='none')
-                ax2.axvspan(span_start, span_end, color='#2ca02c', alpha=0.2, label="Candidate Collapse Region ($h < 0$)")
-            else:
+            elif state == "VERIFIED":
+                ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.15, edgecolor='none')
+                ax2.axvspan(span_start, span_end, color='#2ca02c', alpha=0.3, label="Verified Collapse Region (JSON)")
+            elif state == "REJECTED":
+                ax1.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.1, edgecolor='none')
+                ax2.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.2, label="Candidate (Rejected by Compiler)")
+            elif state == "DANGER":
                 ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
                 ax2.axvspan(span_start, span_end, color='#d62728', alpha=0.1, label=r"Feature Extraction Region ($h \geq 0$)")
 
-        # Perfect Deduplication
+        # Perfect Deduplication for Legend
         handles, labels = ax2.get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
         by_label = {k: v for k, v in by_label.items() if k}
