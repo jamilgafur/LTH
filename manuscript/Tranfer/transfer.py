@@ -249,7 +249,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         experiment_regions["Dynamic_Region_All_Combined"] = all_combined_sets
 
     return experiment_regions
-
 def find_efficient_subregions(model, layers_list, input_shape):
     """
     Recursively divides a contiguous block of layers to find the largest
@@ -304,7 +303,7 @@ def find_efficient_subregions(model, layers_list, input_shape):
     right_valid = find_efficient_subregions(model, layers_list[mid:], input_shape)
 
     return left_valid + right_valid
-    
+
 def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
     import copy
     import torch
