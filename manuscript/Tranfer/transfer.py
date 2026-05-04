@@ -262,10 +262,11 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         experiment_regions["Dynamic_Region_All_Combined"] = all_combined_sets
 
     return experiment_regions
+
 def find_efficient_subregions(model, layers_list, input_shape):
     """
-    Recursively divides a contiguous block of layers to find the largest
-    sub-blocks that reduce parameters without crossing structural boundaries.
+    Iteratively finds the largest valid sub-blocks that reduce parameters 
+    without crossing structural boundaries (Top-Down Greedy Search).
     """
     import copy
     import torch
@@ -279,48 +280,59 @@ def find_efficient_subregions(model, layers_list, input_shape):
     base_params = count_trainable_params(model)
     device = next(model.parameters()).device
     
-    start_name = layers_list[0]
-    end_name = layers_list[-1]
+    valid_regions = []
+    used_layers = set()
+    
+    # Check from largest possible sub-sequence down to pairs (length 2)
+    for length in range(len(layers_list), 1, -1):
+        for i in range(len(layers_list) - length + 1):
+            sublist = layers_list[i:i+length]
+            
+            # Skip if any layer in this sublist is already part of a found valid region
+            if any(layer in used_layers for layer in sublist):
+                continue
+                
+            start_name = sublist[0]
+            end_name = sublist[-1]
+            
+            try:
+                test_model = copy.deepcopy(model).to(device)
+                
+                # CRITICAL FIX: Pass exactly (start_name, end_name) as a tuple
+                # to prevent "too many values to unpack" errors on blocks > 2 layers.
+                collapsed_model = collapse_only(
+                    model=test_model,
+                    compression_set={"test": (start_name, end_name)},
+                    input_shape=input_shape,
+                    device=device,
+                    dry_run=False 
+                )
+                
+                # --- STRICT DOWNSTREAM FORWARD PASS CHECK ---
+                collapsed_model.eval()
+                dummy_input = torch.randn(1, *input_shape[1:]).to(device)
+                with torch.no_grad():
+                    _ = collapsed_model(dummy_input)
 
-    try:
-        test_model = copy.deepcopy(model).to(device)
-        
-        # dry_run MUST be False here so the geometry actually changes for the test
-        collapsed_model = collapse_only(
-            model=test_model,
-            compression_set={"test": layers_list},
-            input_shape=input_shape,
-            device=device,
-            dry_run=False 
-        )
-        
-        # --- STRICT DOWNSTREAM FORWARD PASS CHECK ---
-        collapsed_model.eval()
-        dummy_input = torch.randn(1, *input_shape[1:]).to(device)
-        with torch.no_grad():
-            _ = collapsed_model(dummy_input)
-        # --------------------------------------------
+                new_params = count_trainable_params(collapsed_model)
 
-        new_params = count_trainable_params(collapsed_model)
+                # STRICT EVALUATION
+                if new_params < base_params:
+                    print(f"    [DEBUG-SUCCESS] Extracted valid sub-region: {start_name} -> {end_name} (Params: {base_params:,} -> {new_params:,})")
+                    valid_regions.append(sublist)
+                    used_layers.update(sublist)  # Lock these layers so they aren't reused
+                else:
+                    print(f"    [DEBUG-SPLIT] Sub-region unmodified/inflated: {start_name} -> {end_name}. Continuing search...")
 
-        # STRICT EVALUATION
-        if new_params < base_params:
-            print(f"    [DEBUG-SUCCESS] Valid block found: {start_name} -> {end_name} (Params: {base_params:,} -> {new_params:,})")
-            return [layers_list]
-        else:
-            print(f"    [DEBUG-SPLIT] Unmodified/Inflated: {start_name} -> {end_name} (Params: {base_params:,} -> {new_params:,}). Fracturing...")
+            except Exception as e:
+                # Catch structural crashes (e.g., crossing MaxPool, mismatched channels)
+                print(f"    [DEBUG-SPLIT] Structural mismatch in: {start_name} -> {end_name} ({type(e).__name__} - {e}). Continuing search...")
+                
+    # Maintain chronological order of the network
+    valid_regions.sort(key=lambda r: layers_list.index(r[0]))
+    
+    return valid_regions
 
-    except Exception as e:
-        # Catch hard crashes (like the Linear 'groups' error or shape mismatches) and log the exact reason
-        print(f"    [DEBUG-SPLIT] Exception in: {start_name} -> {end_name}. Reason: {type(e).__name__} - {e}. Fracturing...")
-
-    # If we reach here, the block failed.
-    # Split the block in half and recursively check both sides!
-    mid = len(layers_list) // 2
-    left_valid = find_efficient_subregions(model, layers_list[:mid], input_shape)
-    right_valid = find_efficient_subregions(model, layers_list[mid:], input_shape)
-
-    return left_valid + right_valid
 def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
     import copy
     import torch
