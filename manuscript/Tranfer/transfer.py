@@ -249,6 +249,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         experiment_regions["Dynamic_Region_All_Combined"] = all_combined_sets
 
     return experiment_regions
+
 def find_efficient_subregions(model, layers_list, input_shape):
     """
     Recursively divides a contiguous block of layers to find the largest
@@ -287,23 +288,24 @@ def find_efficient_subregions(model, layers_list, input_shape):
 
         new_params = count_trainable_params(collapsed_model)
 
-        # If it reduces or maintains memory AND passes the forward check!
-        if new_params <= base_params:
+        # CRITICAL FIX: Strictly less than (<). 
+        # If new_params == base_params, collapse_only swallowed an error 
+        # and returned the unmodified model. We MUST force a split.
+        if new_params < base_params:
             return [layers_list]
 
     except Exception:
-        # If the collapse physically fails or breaks the .fc layer downstream,
-        # we catch it and force a split below.
+        # Catch hard crashes and force a split
         pass
 
-    # If we reach here, the block crossed a boundary and increased memory or crashed.
+    # If we reach here, the block failed, increased memory, OR did nothing.
     # Split the block in half and recursively check both sides!
     mid = len(layers_list) // 2
     left_valid = find_efficient_subregions(model, layers_list[:mid], input_shape)
     right_valid = find_efficient_subregions(model, layers_list[mid:], input_shape)
 
     return left_valid + right_valid
-
+    
 def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
     import copy
     import torch
