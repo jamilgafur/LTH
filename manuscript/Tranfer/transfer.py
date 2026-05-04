@@ -184,6 +184,10 @@ def calculate_bav_states(variances, veto_fraction=0.25):
 
 def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5, veto_fraction=0.25):
     import numpy as np
+    import torch.nn as nn
+    
+    # Map layer names to their actual PyTorch modules
+    module_dict = dict(model.named_modules())
 
     # 1. Calculate Rolling Mean and H-values
     rolling_means = []
@@ -199,7 +203,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         else:
             h_values.append(min((var - mean_var) / mean_var, 1))
 
-    # --- PHASE 2: EXTRACT RAW SETS WITH VETO LOGIC ---
+    # --- PHASE 2: EXTRACT RAW SETS WITH VETO & COMPATIBILITY LOGIC ---
     num_layers = len(cnn_layers)
     veto_idx = int(num_layers * veto_fraction)  # First 25% of layers
     
@@ -207,15 +211,24 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     current_set = []
     
     for i, h in enumerate(h_values):
+        layer_name = cnn_layers[i]
+        mod = module_dict.get(layer_name)
+        
+        # CRITICAL BACKEND FIX FOR VGG & CONVNEXT:
+        # The collapse_only engine requires '.groups' which only Conv2d has.
+        # We must strictly exclude nn.Linear layers from candidate blocks.
+        is_valid_target = isinstance(mod, nn.Conv2d)
+        
         # Apply the veto: skip any layer in the first 25% of the network
-        if i < veto_idx:
+        # AND strictly prevent incompatible (Linear) layers from forming blocks
+        if i < veto_idx or not is_valid_target:
             if len(current_set) >= 2:
                 raw_sets.append(current_set)
             current_set = []
             continue
 
         if h < 0:
-            current_set.append(cnn_layers[i])
+            current_set.append(layer_name)
         else:
             if len(current_set) >= 2:
                 raw_sets.append(current_set)
@@ -249,7 +262,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         experiment_regions["Dynamic_Region_All_Combined"] = all_combined_sets
 
     return experiment_regions
-
 def find_efficient_subregions(model, layers_list, input_shape):
     """
     Recursively divides a contiguous block of layers to find the largest
