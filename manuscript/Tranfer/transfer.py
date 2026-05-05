@@ -211,6 +211,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     # =====================================================================
     rolling_means = []
     for i in range(len(variances)):
+        # Centered Window (Matches formal algorithm)
         start = max(0, i - window_size)
         end = min(len(variances), i + window_size + 1)
         rolling_means.append(np.mean(variances[start:end]))
@@ -298,9 +299,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 new_flops = float('inf')
 
             # --- UNIVERSAL FAILURE HANDLER ---
-            # If the block reduces compute, we keep it. 
-            # If it inflated compute, OR if new_params == base_params (meaning the backend printed 
-            # a [WARN] and swallowed an error), we fracture it.
             if new_params < base_params and (not check_flops or new_flops < base_flops):
                 print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,}) | FLOPs ({base_flops:,} -> {new_flops:,})")
                 experiment_regions[f"Set_{set_counter}"] = region_tuple
@@ -315,7 +313,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     queue.insert(0, r[:mid])
 
         except Exception as e:
-            # If it threw a Python exception (e.g., shape mismatch across branches), fracture it.
             print(f"        [!] CRASH: Architecture Exception ({type(e).__name__}). Fracturing block...")
             mid = len(r) // 2
             if mid > 0:
@@ -362,7 +359,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 except Exception:
                     new_flops_combo = float('inf')
 
-                # Monotonic Check: Ensure combination is strictly more efficient than the previous state
+                # Monotonic Check
                 if new_params_combo >= current_best_params:
                     raise ValueError(f"Param Inflation: {new_params_combo:,} >= {current_best_params:,}")
                 if check_flops and new_flops_combo >= current_best_flops:
@@ -385,192 +382,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
 
     return experiment_regions
-# def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=5, veto_fraction=0.25):
-#     import numpy as np
-#     import copy
-#     import torch
-#     import gc
-#     from collapse import collapse_only
-#     from utils import count_trainable_params
-#     from fvcore.nn import FlopCountAnalysis
-
-#     device = next(model.parameters()).device
-#     base_params = count_trainable_params(model)
-#     module_dict = dict(model.named_modules())
-
-#     # --- Calculate Base FLOPs ---
-#     dummy_input = torch.randn(1, *input_shape[1:]).to(device)
-#     model.eval()
-#     try:
-#         with torch.no_grad():
-#             base_flops = FlopCountAnalysis(model, dummy_input).unsupported_ops_warnings(False).total()
-#     except Exception:
-#         base_flops = float('inf')
-
-#     # =====================================================================
-#     # PHASE 1: Calculating the Sliding Window Variance Normalization
-#     # =====================================================================
-#     rolling_means = []
-#     for i in range(len(variances)):
-#         # Centered Window (Matches formal algorithm)
-#         start = max(0, i - window_size)
-#         end = min(len(variances), i + window_size + 1)
-#         rolling_means.append(np.mean(variances[start:end]))
-        
-#     h_values = []
-#     for var, mean_var in zip(variances, rolling_means):
-#         if var - mean_var < 0:
-#             h_values.append(max((var - mean_var) / mean_var, -1.0))
-#         else:
-#             h_values.append(min((var - mean_var) / mean_var, 1.0))
-
-#     # =====================================================================
-#     # PHASE 2: Ensure Multi-Layer Collapsing (Candidate Selection)
-#     # =====================================================================
-#     num_layers = len(cnn_layers)
-#     veto_idx = int(num_layers * veto_fraction)  # Target layers >= N/4
-    
-#     R_candidates = []
-#     current_set = []
-    
-#     for i, h in enumerate(h_values):
-#         layer_name = cnn_layers[i]
-#         mod = module_dict.get(layer_name)
-        
-#         # The collapse_only engine requires '.groups' which only Conv2d has.
-#         # We strictly exclude nn.Linear layers from forming blocks.
-#         is_valid_target = isinstance(mod, torch.nn.Conv2d)
-        
-#         # Veto if depth < 25% OR layer is not a valid convolution
-#         if i < veto_idx or not is_valid_target:
-#             if len(current_set) >= 2:
-#                 R_candidates.append(current_set)
-#             current_set = []
-#             continue
-
-#         if h < 0:
-#             current_set.append(layer_name)
-#         else:
-#             if len(current_set) >= 2:
-#                 R_candidates.append(current_set)
-#             current_set = []
-            
-#     if len(current_set) >= 2:
-#         R_candidates.append(current_set)
-
-#     # =====================================================================
-#     # PHASE 3: Collapsable Memory Feasibility & Surrogate Compilation
-#     # =====================================================================
-#     experiment_regions = {}
-#     set_counter = 0
-#     R_final = []
-
-#     print(f"\n[INFO] Phase 3: Evaluating {len(R_candidates)} Candidate Regions (Layer Level)...")
-#     for r in R_candidates:
-#         start_name = r[0]
-#         end_name = r[-1]
-#         region_tuple = (start_name, end_name)
-        
-#         try:
-#             print(f"    [STEP] Testing candidate sequence: {start_name} -> {end_name}")
-#             test_model = copy.deepcopy(model).to(device)
-            
-#             collapsed_model = collapse_only(
-#                 model=test_model,
-#                 compression_set={"test": region_tuple},
-#                 input_shape=input_shape,
-#                 device=device,
-#                 dry_run=False 
-#             )
-            
-#             collapsed_model.eval()
-#             with torch.no_grad():
-#                 _ = collapsed_model(dummy_input)
-
-#             new_params = count_trainable_params(collapsed_model)
-#             try:
-#                 new_flops = FlopCountAnalysis(collapsed_model, dummy_input).unsupported_ops_warnings(False).total()
-#             except Exception:
-#                 new_flops = float('inf')
-
-#             # Strict constraint: Reject if memory footprint or FLOPs inflate
-#             if new_params < base_params and new_flops < base_flops:
-#                 print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,}) | FLOPs ({base_flops:,} -> {new_flops:,})")
-#                 experiment_regions[f"Set_{set_counter}"] = region_tuple
-#                 R_final.append(region_tuple)
-#                 set_counter += 1
-#             else:
-#                 print(f"        [X] REJECTED: Inflated Params or FLOPs ({new_params:,} p, {new_flops:,} f)")
-
-#         except Exception as e:
-#             print(f"        [X] REJECTED: Architecture Exception ({type(e).__name__})")
-#         finally:
-#             if 'test_model' in locals(): del test_model
-#             if 'collapsed_model' in locals(): del collapsed_model
-#             gc.collect()
-#             if torch.cuda.is_available(): torch.cuda.empty_cache()
-
-#     # =====================================================================
-#     # PHASE 4: Validating Dynamic Region All Combined (Greedy Integration)
-#     # =====================================================================
-#     if len(R_final) > 1:
-#         print(f"\n[INFO] Phase 4: Validating 'Dynamic_Region_All_Combined' (Greedy Integration)...")
-#         safe_combined_regions = []
-        
-#         # --- CRITICAL FIX: Monotonic Reduction Tracking ---
-#         # We track the 'current best' state to ensure NO region ever inflates the total pool.
-#         current_best_params = base_params
-#         current_best_flops = base_flops
-        
-#         for region_tuple in R_final:
-#             candidate_combo = safe_combined_regions + [region_tuple]
-            
-#             try:
-#                 test_model = copy.deepcopy(model).to(device)
-#                 combo_dict = {f"comb_{i}": reg for i, reg in enumerate(candidate_combo)}
-                
-#                 collapsed_combined = collapse_only(
-#                     model=test_model,
-#                     compression_set=combo_dict,
-#                     input_shape=input_shape,
-#                     device=device,
-#                     dry_run=False 
-#                 )
-                
-#                 collapsed_combined.eval()
-#                 with torch.no_grad():
-#                     _ = collapsed_combined(dummy_input)
-                    
-#                 new_params_combo = count_trainable_params(collapsed_combined)
-#                 try:
-#                     new_flops_combo = FlopCountAnalysis(collapsed_combined, dummy_input).unsupported_ops_warnings(False).total()
-#                 except Exception:
-#                     new_flops_combo = float('inf')
-
-#                 # MONOTONIC CHECK: Ensure the combination is strictly more efficient than the previous state
-#                 if new_params_combo >= current_best_params or new_flops_combo >= current_best_flops:
-#                     raise ValueError(f"Inflation Detected: Params ({new_params_combo} >= {current_best_params}) or FLOPs ({new_flops_combo} >= {current_best_flops})")
-                
-#                 # Passed! Add to safe list and update our strict baseline.
-#                 current_best_params = new_params_combo
-#                 current_best_flops = new_flops_combo
-#                 safe_combined_regions.append(region_tuple)
-#                 print(f"        [+] Merged safely: {region_tuple[0]} -> {region_tuple[1]}")
-                
-#             except Exception as e:
-#                 # Dropped because it inflated items or crashed the geometry
-#                 print(f"        [-] Merge rejected: Adding {region_tuple[0]} -> {region_tuple[1]} broke constraint ({type(e).__name__}: {e})")
-#             finally:
-#                 if 'test_model' in locals(): del test_model
-#                 if 'collapsed_combined' in locals(): del collapsed_combined
-#                 gc.collect()
-#                 if torch.cuda.is_available(): torch.cuda.empty_cache()
-                
-#         if len(safe_combined_regions) > 1:
-#             experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
-
-#     return experiment_regions
-
 def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, input_shape=None, device='cpu'):
     import copy
     import torch

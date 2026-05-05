@@ -206,7 +206,7 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
                 logger.info(f"[FIG1] Saved {metric} plot for {architecture}/{dataset} at {out_dir / f'{architecture}_{dataset}_{metric}.png'}")
                 plt.close()
 
-# ========================= FIG 2 ========================= #
+
 # ========================= FIG 2 ========================= #
 
 def fig2_methodology_bav_regions(
@@ -230,9 +230,10 @@ def fig2_methodology_bav_regions(
             variances = np.maximum(layer_df['Variance'].values, 1e-6)
         except Exception as e: continue
 
+        # --- CRITICAL FIX: Ensure centered window matches transfer.py EXACTLY ---
         h_vals = []
         sigma_bars = []
-        window_size = 3
+        window_size = 3  # <-- REVERTED TO 3
         
         for i, sigma_i in enumerate(variances):
             start = max(0, i - window_size)
@@ -279,9 +280,6 @@ def fig2_methodology_bav_regions(
         ax1.legend(loc='upper right', frameon=False, fontsize=10)
         sns.despine(ax=ax1)
 
-        # ---------------------------------------------------------
-        # CRITICAL FIX: Calculate states FIRST, then paint the bars
-        # ---------------------------------------------------------
         veto_idx = int(len(layers) * 0.25)
         final_states = ["DANGER"] * len(layers)
         
@@ -302,16 +300,14 @@ def fig2_methodology_bav_regions(
                 else:
                     final_states[i] = "DANGER"
 
-        # Map state to specific colors for the bars
         state_colors = {
-            "VETO": "#999999",     # Grey
-            "VERIFIED": "#2ca02c", # Green
-            "REJECTED": "#ff7f0e", # Orange
-            "DANGER": "#d62728"    # Red
+            "VETO": "#999999",     
+            "VERIFIED": "#2ca02c", 
+            "REJECTED": "#ff7f0e", 
+            "DANGER": "#d62728"    
         }
         bar_colors = [state_colors[s] for s in final_states]
 
-        # Draw the uniquely colored bars
         ax2.bar(x_vals, h_vals, color=bar_colors, alpha=0.85, edgecolor='black', linewidth=0.5, label='Relative Local Variance ($h$)')
         
         ax2.set_ylim(-1.1, 1.1)
@@ -319,7 +315,6 @@ def fig2_methodology_bav_regions(
         ax2.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=12)
         ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2, label='Collapse Threshold (0)')
 
-        # Draw the background spans
         zones = []
         if len(final_states) > 0:
             start_idx = 0
@@ -356,7 +351,6 @@ def fig2_methodology_bav_regions(
         save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
-
 # ========================= FIG 4 ========================= #
 def fig4_comprehensive_search_space_map(
     df: pd.DataFrame,
