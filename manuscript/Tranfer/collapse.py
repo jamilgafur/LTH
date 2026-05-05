@@ -81,7 +81,11 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
 
     full_block = named_layers[start_idx:end_idx + 1]
     print(f"[DEBUG] Block slice length: {len(full_block)}")
-
+    if not isinstance(container, nn.Sequential) and start_idx != end_idx:
+        raise ValueError(
+            f"[ERROR] Container '{lca_path}' is {type(container).__name__}, not nn.Sequential. "
+            f"Slicing multiple parallel branches (like Inception branches) as a sequence is invalid."
+        )
     # --- collect collapsible layers (mixed allowed) ---
     conv_layers = []
     for _, mod in full_block:
@@ -238,7 +242,7 @@ def _build_and_replace_block(
             print(f"[WARN] Could not find inserted collapsed module for validation.") 
     except Exception as e:
         print(f"[WARN] Replacement forward validation failed: {e}") 
-        quit() 
+            
 
     # =========================================================
     # FIX: Run Corrective Pooling BEFORE downstream validation
@@ -249,7 +253,7 @@ def _build_and_replace_block(
         model = _insert_corrective_pool(model, next_linear_name, input_shape, debug) 
     except Exception as e:
         print(f"[WARN] Corrective pool insertion failed: {e}") 
-        quit() 
+            
 
     try:
         if debug:
@@ -257,12 +261,12 @@ def _build_and_replace_block(
         _validate_downstream(model, start_container_name, start_idx, x, input_shape, next_linear_name, next_linear_mod, device, debug) 
     except Exception as e:
         print(f"[WARN] Downstream validation failed: {e}") 
-        quit() 
+            
     # =========================================================
 
     if post_params > pre_params: 
         print(f"[WARN] ⚠ Collapsed block increased parameter count — investigate collapse policy.") 
-        quit() 
+            
 
     if debug: print(f"[RESULT] Block replacement complete for '{start_layer_name}'.") 
 
@@ -417,7 +421,7 @@ def _build_and_replace_block(
 #             print(f"[WARN] Could not find inserted collapsed module for validation.") #
 #     except Exception as e:
 #         print(f"[WARN] Replacement forward validation failed: {e}") #
-#         quit() #
+#             #
         
 #     try:
 #         if debug:
@@ -425,7 +429,7 @@ def _build_and_replace_block(
 #         _validate_downstream(model, start_container_name, start_idx, x, input_shape, next_linear_name, next_linear_mod, device, debug) #
 #     except Exception as e:
 #         print(f"[WARN] Downstream validation failed: {e}") #
-#         quit() #
+#             #
         
 #     try:
 #         if debug:
@@ -433,11 +437,11 @@ def _build_and_replace_block(
 #         model = _insert_corrective_pool(model, next_linear_name, input_shape, debug) #
 #     except Exception as e:
 #         print(f"[WARN] Corrective pool insertion failed: {e}") #
-#         quit() #
+#             #
 
 #     if post_params > pre_params: #
 #         print(f"[WARN] ⚠ Collapsed block increased parameter count — investigate collapse policy.") #
-#         quit() #
+#             #
 
 #     if debug:
 #         print(f"[RESULT] Block replacement complete for '{start_layer_name}'.") #
@@ -942,7 +946,17 @@ def _analyze_block_output(
                     f"    [DEBUG] Layer {idx+1}/{len(full_block)}: "
                     f"{name} ({layer.__class__.__name__}) input={tuple(y.shape)}"
                 )
-            y = layer(y)
+            try:
+                y = layer(y)
+            except RuntimeError as e:
+                # If a layer fails, try a NHWC/NCHW permute fallback for ConvNeXt
+                if "shape" in str(e).lower() and y.ndim == 4:
+                    try:
+                        y = layer(y.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
+                    except:
+                        raise RuntimeError(f"Layer '{name}' forward failed. Topology may be non-sequential.")
+                else:
+                    raise e
             if debug:
                 print(f"        └── output shape: {tuple(y.shape)}")
 
@@ -1272,7 +1286,7 @@ def collapse_only(
             print(f"[INFO] ✅ Successfully collapsed block '{name}' ({start} → {end})")
         except Exception as e:
             print(f"[WARN] ⚠ Collapse failed for block '{name}': {e}")
-            quit()
+               
 
         if handle_skips:
             print(f"[STEP] Patching skip connections (if any)...")

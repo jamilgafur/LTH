@@ -391,11 +391,12 @@ def is_feasible_experiment_config(experiment_regions, cnn_layers, model=None, in
     from fvcore.nn import FlopCountAnalysis
     
     def get_module_prefix(layer_name):
-        # FIX FOR ISSUE 3: Group by the top-level macro-stage ONLY.
-        # e.g., 's1.b1.conv' and 's1.b2.conv' both return 's1'.
         parts = str(layer_name).split('.')
+        # If we see "branch" or "downsample", it's a signal of non-sequentiality
+        if any(x in parts for x in ['branch1', 'branch2', 'branch3', 'branch4', 'shortcut']):
+            # Group by the parent of the branch to keep them in the same bucket
+            return '.'.join(parts[:-2]) 
         return parts[0] if len(parts) > 0 else str(layer_name)
-
     validated_regions = []
     
     # --- Guardrail: Prevent cross-architectural boundary regions ---
