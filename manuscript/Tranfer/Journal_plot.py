@@ -230,7 +230,6 @@ def fig2_methodology_bav_regions(
             variances = np.maximum(layer_df['Variance'].values, 1e-6)
         except Exception as e: continue
 
-        # --- CRITICAL FIX: Ensure centered window matching transfer.py ---
         h_vals = []
         sigma_bars = []
         window_size = 3
@@ -280,12 +279,9 @@ def fig2_methodology_bav_regions(
         ax1.legend(loc='upper right', frameon=False, fontsize=10)
         sns.despine(ax=ax1)
 
-        ax2.bar(x_vals, h_vals, color='#4A4A4A', alpha=0.8, edgecolor='black', linewidth=0.5, label='Relative Local Variance ($h$)')
-        ax2.set_ylim(-1.1, 1.1)
-        ax2.set_ylabel(r"Relative Variance ($h$)", fontweight='bold', fontsize=12)
-        ax2.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=12)
-        ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2, label='Collapse Threshold (0)')
-
+        # ---------------------------------------------------------
+        # CRITICAL FIX: Calculate states FIRST, then paint the bars
+        # ---------------------------------------------------------
         veto_idx = int(len(layers) * 0.25)
         final_states = ["DANGER"] * len(layers)
         
@@ -306,6 +302,24 @@ def fig2_methodology_bav_regions(
                 else:
                     final_states[i] = "DANGER"
 
+        # Map state to specific colors for the bars
+        state_colors = {
+            "VETO": "#999999",     # Grey
+            "VERIFIED": "#2ca02c", # Green
+            "REJECTED": "#ff7f0e", # Orange
+            "DANGER": "#d62728"    # Red
+        }
+        bar_colors = [state_colors[s] for s in final_states]
+
+        # Draw the uniquely colored bars
+        ax2.bar(x_vals, h_vals, color=bar_colors, alpha=0.85, edgecolor='black', linewidth=0.5, label='Relative Local Variance ($h$)')
+        
+        ax2.set_ylim(-1.1, 1.1)
+        ax2.set_ylabel(r"Relative Variance ($h$)", fontweight='bold', fontsize=12)
+        ax2.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=12)
+        ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2, label='Collapse Threshold (0)')
+
+        # Draw the background spans
         zones = []
         if len(final_states) > 0:
             start_idx = 0
@@ -321,16 +335,16 @@ def fig2_methodology_bav_regions(
             span_start, span_end = start - 0.5, end + 0.5
             if state == "VETO":
                 ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='none')
-                ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.6, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
+                ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
             elif state == "VERIFIED":
-                ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.15, edgecolor='none')
-                ax2.axvspan(span_start, span_end, color='#2ca02c', alpha=0.3, label="Verified Collapse Region (JSON)")
+                ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.10, edgecolor='none')
+                ax2.axvspan(span_start, span_end, color='#2ca02c', alpha=0.15, label="Verified Collapse Region (JSON)")
             elif state == "REJECTED":
-                ax1.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.1, edgecolor='none')
-                ax2.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.2, label="Candidate (Rejected by Compiler)")
+                ax1.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.08, edgecolor='none')
+                ax2.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.1, label="Candidate (Rejected by Compiler)")
             elif state == "DANGER":
                 ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
-                ax2.axvspan(span_start, span_end, color='#d62728', alpha=0.1, label=r"Feature Extraction Region ($h \geq 0$)")
+                ax2.axvspan(span_start, span_end, color='#d62728', alpha=0.05, label=r"Feature Extraction Region ($h \geq 0$)")
 
         handles, labels = ax2.get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
@@ -342,6 +356,147 @@ def fig2_methodology_bav_regions(
         save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
+
+# ========================= FIG 4 ========================= #
+def fig4_comprehensive_search_space_map(
+    df: pd.DataFrame,
+    stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
+    out_dir: Path = Path("./figures/search_space")
+):
+    import matplotlib.gridspec as gridspec
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    def get_acc_color(d_acc):
+        # CRITICAL FIX: Make untrained/discovered sets BLUE instead of Grey
+        if pd.isna(d_acc): return "#4C72B0" 
+        if d_acc >= -2.0: return "#2ca02c"
+        if d_acc >= -6.0: return "#ff7f0e"
+        return "#d62728"
+
+    def robust_match(target_name, is_quant_target, g_df):
+        try:
+            sub_df = g_df[g_df['is_quantized'] == is_quant_target]
+            if sub_df.empty: return pd.DataFrame()
+            m = sub_df[sub_df['base_name'] == target_name]
+            if not m.empty: return m
+            m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
+            if not m.empty: return m
+            def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
+            st = squash(target_name)
+            fuzzy = sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
+            return fuzzy
+        except Exception: return pd.DataFrame()
+
+    for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        
+        csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
+        if not csv_path.exists() or "normalized" in csv_path.name: continue
+            
+        layer_df = pd.read_csv(csv_path)
+        layers = layer_df['Layer'].tolist()
+
+        json_files = list(Path(".").glob(f"{arch}_{dataset}_*_discovered_regions.json"))
+        if not json_files: continue
+            
+        try:
+            with open(json_files[0], 'r') as f:
+                model_exps = json.load(f)
+        except Exception: continue
+        if not model_exps: continue
+
+        baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
+        if baseline_mask.any():
+            base_row = g_metrics[baseline_mask].iloc[0]
+            base_p, base_f, base_m = base_row.get('params', np.nan), base_row.get('flops', np.nan), base_row.get('memory', np.nan)
+        else: base_p = base_f = base_m = np.nan
+
+        for is_quant_target in [False, True]:
+            valid_exps = []
+            
+            for exp_name, ranges in model_exps.items():
+                if ranges is None: continue
+                cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
+                m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
+                
+                if not m.empty:
+                    exp_results = m.mean(numeric_only=True)
+                    p_red = 100 * (1 - exp_results.get('params', np.nan) / base_p) if pd.notnull(base_p) else np.nan
+                    f_red = 100 * (1 - exp_results.get('flops', np.nan) / base_f) if pd.notnull(base_f) else np.nan
+                    m_red = 100 * (1 - exp_results.get('memory', np.nan) / base_m) if pd.notnull(base_m) else np.nan
+                    
+                    if p_red < 0 or f_red < 0 or m_red < 0:
+                        continue 
+                else:
+                    # Allow newly discovered (but untrained) regions to plot as Blue
+                    exp_results = {'d_acc': np.nan}
+                    p_red, f_red, m_red = np.nan, np.nan, np.nan
+                        
+                valid_exps.append((exp_name, ranges, exp_results, cleaned_name, p_red, f_red, m_red))
+                    
+            if not valid_exps: continue
+            valid_exps = sorted(valid_exps, key=lambda x: x[2].get('d_acc', -100))
+            
+            num_bars = len(valid_exps)
+            file_suffix = "quantized" if is_quant_target else "unquantized"
+
+            fig_height = max(3.5, 0.5 * num_bars + 1)
+            y_limits = (-1, num_bars)
+            
+            fig_cand = plt.figure(figsize=(14, fig_height)) 
+            gs = gridspec.GridSpec(1, 2, width_ratios=[2.5, 1.5], wspace=0.05)
+            
+            ax_heur = fig_cand.add_subplot(gs[0])
+            ax_side = fig_cand.add_subplot(gs[1], sharey=ax_heur)
+            ax_side.axis('off')
+            
+            for i, (orig_exp_name, ranges, exp_results, display_name, p_red, f_red, m_red) in enumerate(valid_exps):
+                if isinstance(ranges, tuple) or (isinstance(ranges, list) and len(ranges) > 0 and isinstance(ranges[0], str)):
+                    ranges = [ranges]
+                
+                d_acc = exp_results.get('d_acc', np.nan)
+                color = get_acc_color(d_acc)
+                for start_layer, end_layer in ranges:
+                    try:
+                        s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
+                        e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
+                        ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.85)
+                    except StopIteration: continue
+            
+            ax_heur.set_xlim(-1, len(layers))
+            ax_heur.set_ylim(y_limits)
+            ax_heur.set_yticks(range(len(valid_exps)))
+            ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=11, fontweight='bold')
+            ax_heur.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
+            ax_heur.set_title(f"Structural Candidates & Hardware Reductions", loc='left', pad=25, fontsize=14, fontweight='bold')
+            sns.despine(ax=ax_heur)
+
+            cols = [0.10, 0.35, 0.65, 0.90]
+            headers = ["$\\Delta$ Acc", "Params $\\downarrow$", "FLOPs $\\downarrow$", "Memory $\\downarrow$"]
+            
+            header_y = len(valid_exps) 
+            for x, h in zip(cols, headers):
+                ax_side.text(x, header_y, h, ha='center', va='bottom', fontweight='bold', fontsize=11, color='#333333')
+            
+            for i, (_, _, exp_results, _, p_red, f_red, m_red) in enumerate(valid_exps):
+                d_acc = exp_results.get('d_acc', np.nan)
+                c = get_acc_color(d_acc)
+                
+                d_str = f"{d_acc:+.1f}%" if pd.notnull(d_acc) else "N/A"
+                p_str = f"{p_red:.1f}%" if pd.notnull(p_red) else "N/A"
+                f_str = f"{f_red:.1f}%" if pd.notnull(f_red) else "N/A"
+                m_str = f"{m_red:.1f}%" if pd.notnull(m_red) else "N/A"
+                
+                for x, val in zip(cols, [d_str, p_str, f_str, m_str]):
+                    fw = 'bold' if x == cols[0] else 'normal'
+                    alpha = 0.6 if (d_acc < -6.0 and x != cols[0]) else 1.0
+                    ax_side.text(x, i, val, ha='center', va='center', color=c, fontweight=fw, fontsize=11, alpha=alpha)
+
+            plt.tight_layout()
+            cand_save_path = out_dir / f"{arch}_{dataset}_candidates_sidebar_{file_suffix}.png"
+            fig_cand.savefig(cand_save_path, bbox_inches='tight')
+            plt.close(fig_cand)
+
+    logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
 # ========================= FIG 3 ========================= #
 
 def fig3_v2t_heuristic_validation(
@@ -428,142 +583,6 @@ def fig3_v2t_heuristic_validation(
     logger.info(f"[FIG3] Saved V2T heuristic validation map at {out_dir / 'V2T_heuristic_validation_map.png'}")
 
 # ========================= FIG 4 ========================= #
-# ========================= FIG 4 ========================= #
-def fig4_comprehensive_search_space_map(
-    df: pd.DataFrame,
-    stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
-    out_dir: Path = Path("./figures/search_space")
-):
-    import matplotlib.gridspec as gridspec
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    def get_acc_color(d_acc):
-        if pd.isna(d_acc): return "#999999"
-        if d_acc >= -2.0: return "#2ca02c"
-        if d_acc >= -6.0: return "#ff7f0e"
-        return "#d62728"
-
-    def robust_match(target_name, is_quant_target, g_df):
-        try:
-            sub_df = g_df[g_df['is_quantized'] == is_quant_target]
-            if sub_df.empty: return pd.DataFrame()
-            m = sub_df[sub_df['base_name'] == target_name]
-            if not m.empty: return m
-            m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
-            if not m.empty: return m
-            def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
-            st = squash(target_name)
-            fuzzy = sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
-            return fuzzy
-        except Exception: return pd.DataFrame()
-
-    for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        
-        csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
-        if not csv_path.exists() or "normalized" in csv_path.name: continue
-            
-        layer_df = pd.read_csv(csv_path)
-        layers = layer_df['Layer'].tolist()
-
-        json_files = list(Path(".").glob(f"{arch}_{dataset}_*_discovered_regions.json"))
-        if not json_files: continue
-            
-        try:
-            with open(json_files[0], 'r') as f:
-                model_exps = json.load(f)
-        except Exception: continue
-        if not model_exps: continue
-
-        baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
-        if baseline_mask.any():
-            base_row = g_metrics[baseline_mask].iloc[0]
-            base_p, base_f, base_m = base_row.get('params', np.nan), base_row.get('flops', np.nan), base_row.get('memory', np.nan)
-        else: base_p = base_f = base_m = np.nan
-
-        for is_quant_target in [False, True]:
-            valid_exps = []
-            
-            for exp_name, ranges in model_exps.items():
-                if ranges is None: continue
-                cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
-                m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
-                
-                if not m.empty:
-                    exp_results = m.mean(numeric_only=True)
-                    p_red = 100 * (1 - exp_results.get('params', np.nan) / base_p) if pd.notnull(base_p) else np.nan
-                    f_red = 100 * (1 - exp_results.get('flops', np.nan) / base_f) if pd.notnull(base_f) else np.nan
-                    m_red = 100 * (1 - exp_results.get('memory', np.nan) / base_m) if pd.notnull(base_m) else np.nan
-                    
-                    # --- NEW STRICT FILTER: Skip if ANY hardware metric inflated ---
-                    if p_red < 0 or f_red < 0 or m_red < 0:
-                        continue 
-                        
-                    valid_exps.append((exp_name, ranges, exp_results, cleaned_name, p_red, f_red, m_red))
-                    
-            if not valid_exps: continue
-            valid_exps = sorted(valid_exps, key=lambda x: x[2].get('d_acc', -100))
-            
-            num_bars = len(valid_exps)
-            file_suffix = "quantized" if is_quant_target else "unquantized"
-
-            fig_height = max(3.5, 0.5 * num_bars + 1)
-            y_limits = (-1, num_bars)
-            
-            fig_cand = plt.figure(figsize=(14, fig_height)) 
-            gs = gridspec.GridSpec(1, 2, width_ratios=[2.5, 1.5], wspace=0.05)
-            
-            ax_heur = fig_cand.add_subplot(gs[0])
-            ax_side = fig_cand.add_subplot(gs[1], sharey=ax_heur)
-            ax_side.axis('off')
-            
-            for i, (orig_exp_name, ranges, exp_results, display_name, p_red, f_red, m_red) in enumerate(valid_exps):
-                if isinstance(ranges, tuple) or (isinstance(ranges, list) and len(ranges) > 0 and isinstance(ranges[0], str)):
-                    ranges = [ranges]
-                
-                d_acc = exp_results.get('d_acc', np.nan)
-                color = get_acc_color(d_acc)
-                for start_layer, end_layer in ranges:
-                    try:
-                        s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
-                        e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
-                        ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.85)
-                    except StopIteration: continue
-            
-            ax_heur.set_xlim(-1, len(layers))
-            ax_heur.set_ylim(y_limits)
-            ax_heur.set_yticks(range(len(valid_exps)))
-            ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=11, fontweight='bold')
-            ax_heur.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
-            ax_heur.set_title(f"Structural Candidates & Hardware Reductions", loc='left', pad=25, fontsize=14, fontweight='bold')
-            sns.despine(ax=ax_heur)
-
-            cols = [0.10, 0.35, 0.65, 0.90]
-            headers = ["$\\Delta$ Acc", "Params $\\downarrow$", "FLOPs $\\downarrow$", "Memory $\\downarrow$"]
-            
-            header_y = len(valid_exps) 
-            for x, h in zip(cols, headers):
-                ax_side.text(x, header_y, h, ha='center', va='bottom', fontweight='bold', fontsize=11, color='#333333')
-            
-            for i, (_, _, exp_results, _, p_red, f_red, m_red) in enumerate(valid_exps):
-                d_acc = exp_results.get('d_acc', np.nan)
-                c = get_acc_color(d_acc)
-                
-                d_str = f"{d_acc:+.1f}%" if pd.notnull(d_acc) else "N/A"
-                p_str = f"{p_red:.1f}%" if pd.notnull(p_red) else "N/A"
-                f_str = f"{f_red:.1f}%" if pd.notnull(f_red) else "N/A"
-                m_str = f"{m_red:.1f}%" if pd.notnull(m_red) else "N/A"
-                
-                for x, val in zip(cols, [d_str, p_str, f_str, m_str]):
-                    fw = 'bold' if x == cols[0] else 'normal'
-                    alpha = 0.6 if (d_acc < -6.0 and x != cols[0]) else 1.0
-                    ax_side.text(x, i, val, ha='center', va='center', color=c, fontweight=fw, fontsize=11, alpha=alpha)
-
-            plt.tight_layout()
-            cand_save_path = out_dir / f"{arch}_{dataset}_candidates_sidebar_{file_suffix}.png"
-            fig_cand.savefig(cand_save_path, bbox_inches='tight')
-            plt.close(fig_cand)
-
-    logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
 
 # ========================= FIG 5 ========================= #
 def fig5_hardware_efficiency_profiles(
