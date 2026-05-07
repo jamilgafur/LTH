@@ -233,7 +233,7 @@ def fig2_methodology_bav_regions(
         # --- CRITICAL FIX: Ensure centered window matches transfer.py EXACTLY ---
         h_vals = []
         sigma_bars = []
-        window_size = 3  # <-- REVERTED TO 3
+        window_size = 3  
         
         for i, sigma_i in enumerate(variances):
             start = max(0, i - window_size)
@@ -263,14 +263,17 @@ def fig2_methodology_bav_regions(
                     if k.startswith("Set_"):
                         start_layer, end_layer = v
                         try:
-                            s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
-                            e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
+                            # FIX 1: Exact match '==' instead of 'in'
+                            s_idx = next(idx for idx, n in enumerate(layers) if start_layer == n)
+                            e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer == n)
                             verified_idx_ranges.append((s_idx, e_idx))
                         except StopIteration: continue
             except Exception: pass
 
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
-        x_vals = range(len(layers))
+        
+        # FIX 2: Shift X-Axis to 1-based indexing
+        x_vals = range(1, len(layers) + 1)
         
         ax1.plot(x_vals, variances, color='#4A4A4A', marker='o', markersize=4, linestyle='-', linewidth=1.5, label=r'Layer Variance ($\sigma_i$)')
         ax1.plot(x_vals, sigma_bars, color='#ff7f0e', linestyle='--', linewidth=2.5, label=r'Local Context Mean ($\bar{\sigma}$)')
@@ -327,7 +330,9 @@ def fig2_methodology_bav_regions(
             zones.append((start_idx, len(final_states) - 1, current_state))
 
         for start, end, state in zones:
-            span_start, span_end = start - 0.5, end + 0.5
+            # FIX 3: Shift the Background Span Zones to align with 1-based indexing
+            span_start, span_end = (start + 1) - 0.5, (end + 1) + 0.5
+            
             if state == "VETO":
                 ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='none')
                 ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
@@ -351,7 +356,9 @@ def fig2_methodology_bav_regions(
         save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
+
 # ========================= FIG 4 ========================= #
+
 def fig4_comprehensive_search_space_map(
     df: pd.DataFrame,
     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
@@ -361,7 +368,6 @@ def fig4_comprehensive_search_space_map(
     out_dir.mkdir(parents=True, exist_ok=True)
 
     def get_acc_color(d_acc):
-        # CRITICAL FIX: Make untrained/discovered sets BLUE instead of Grey
         if pd.isna(d_acc): return "#4C72B0" 
         if d_acc >= -2.0: return "#2ca02c"
         if d_acc >= -6.0: return "#ff7f0e"
@@ -421,7 +427,6 @@ def fig4_comprehensive_search_space_map(
                     if p_red < 0 or f_red < 0 or m_red < 0:
                         continue 
                 else:
-                    # Allow newly discovered (but untrained) regions to plot as Blue
                     exp_results = {'d_acc': np.nan}
                     p_red, f_red, m_red = np.nan, np.nan, np.nan
                         
@@ -451,12 +456,14 @@ def fig4_comprehensive_search_space_map(
                 color = get_acc_color(d_acc)
                 for start_layer, end_layer in ranges:
                     try:
-                        s_idx = next(idx for idx, n in enumerate(layers) if start_layer in n)
-                        e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer in n)
+                        # FIX 1: Exact match '==' and +1 for 1-based plotting
+                        s_idx = next(idx for idx, n in enumerate(layers) if start_layer == n) + 1
+                        e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer == n) + 1
                         ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.85)
                     except StopIteration: continue
             
-            ax_heur.set_xlim(-1, len(layers))
+            # FIX 2: Shift x-axis limits to start at 0 and encompass the full 1-based length
+            ax_heur.set_xlim(0, len(layers) + 1)
             ax_heur.set_ylim(y_limits)
             ax_heur.set_yticks(range(len(valid_exps)))
             ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=11, fontweight='bold')
@@ -491,6 +498,7 @@ def fig4_comprehensive_search_space_map(
             plt.close(fig_cand)
 
     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
+    
 # ========================= FIG 3 ========================= #
 
 def fig3_v2t_heuristic_validation(
