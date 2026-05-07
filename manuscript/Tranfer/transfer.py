@@ -131,6 +131,19 @@ def get_layer_variances(model, dummy_input):
                 variances[name] = out.var(dim=[2, 3]).mean().item() if out.ndim == 4 else out.var().item()
         return hook
     
+    for name, module in model.named_modules():
+        if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear)):
+            hooks.append(module.register_forward_hook(make_hook(name)))
+            
+    model.eval()
+    with torch.no_grad():
+        model(dummy_input)
+        
+    for h in hooks:
+        h.remove()
+        
+    return variances
+    
 def calculate_bav_states(variances, veto_fraction=0.25):
     """
     Computes the Bounded Activation Variance (BAV) state for each layer.
