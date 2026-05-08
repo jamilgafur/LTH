@@ -343,7 +343,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         if len(safe_combined_regions) > 1:
             experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
     # add original model as baseline
-    experiment_regions["Original Model"] = None
+    experiment_regions["Baseline Model"] = None
     return experiment_regions
 
 
