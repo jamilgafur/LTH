@@ -137,6 +137,7 @@ def load_results() -> pd.DataFrame:
     for p in files:
         dataset = infer_dataset_from_path(p)
         if dataset == "unknown" and "tinyimagenet" in str(p).lower(): dataset = "tinyimagenet"
+        if dataset == "unknown" and "cifar10" in str(p).lower(): dataset = "cifar10_"
         arch = infer_architecture_from_path(p)
         if arch == "UnknownArch": arch = infer_architecture_from_path(Path(p.name))
         
