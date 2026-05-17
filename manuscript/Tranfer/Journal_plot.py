@@ -389,20 +389,29 @@ def fig4_comprehensive_search_space_map(
         except Exception: return pd.DataFrame()
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        # Strip underscores and lowercase for safe searching
+        clean_ds = dataset.strip("_").lower()
         
-        csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
-        if not csv_path.exists() or "normalized" in csv_path.name: continue
+        # 1. Bulletproof Case-Insensitive CSV Search
+        all_csvs = list(stats_dir.glob(f"{arch}_*_layer_stats.csv"))
+        csv_candidates = [f for f in all_csvs if clean_ds in f.name.lower() and "normalized" not in f.name.lower()]
+        
+        if not csv_candidates: 
+            continue
+        csv_path = csv_candidates[0]
             
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
 
-        # Robust CIFAR-10 File Search
-        clean_ds = dataset.strip("_")
-        json_files = list(Path(".").glob(f"{arch}_*[cC]ifar10*_*_discovered_regions.json")) if "cifar10" in clean_ds.lower() else list(Path(".").glob(f"{arch}_{clean_ds}_*_discovered_regions.json"))
-        if not json_files: continue
+        # 2. Bulletproof Case-Insensitive JSON Search
+        all_jsons = list(Path(".").glob(f"{arch}_*_discovered_regions.json"))
+        json_candidates = [f for f in all_jsons if clean_ds in f.name.lower()]
+        
+        if not json_candidates: 
+            continue
             
         try:
-            with open(json_files[0], 'r') as f:
+            with open(json_candidates[0], 'r') as f:
                 model_exps = json.load(f)
         except Exception: continue
         if not model_exps: continue
@@ -431,7 +440,6 @@ def fig4_comprehensive_search_space_map(
                     f_red = 100 * (1 - exp_results.get('flops', np.nan) / base_f) if pd.notnull(base_f) else np.nan
                     m_red = 100 * (1 - exp_results.get('memory', np.nan) / base_m) if pd.notnull(base_m) else np.nan
                     
-                    # Loosened to -0.1 to account for tiny floating point inaccuracies on the 0.0% baseline
                     if p_red < -0.1 or f_red < -0.1 or m_red < -0.1:
                         continue 
                 else:
