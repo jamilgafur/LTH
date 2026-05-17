@@ -126,6 +126,7 @@ def find_baseline(df: pd.DataFrame):
     if b_df.empty: return None
     return b_df.mean(numeric_only=True)
 
+
 def load_results() -> pd.DataFrame:
     logger.info(f"Scanning for metrics files in {RESULTS_DIR.resolve()}")
     files = list(RESULTS_DIR.rglob("*merged_metrics.json"))
@@ -524,148 +525,6 @@ def fig4_comprehensive_search_space_map(
 
     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
     
-# def fig4_comprehensive_search_space_map(
-#     df: pd.DataFrame,
-#     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
-#     out_dir: Path = Path("./figures/search_space")
-# ):
-#     import matplotlib.gridspec as gridspec
-#     out_dir.mkdir(parents=True, exist_ok=True)
-
-#     def get_acc_color(d_acc):
-#         if pd.isna(d_acc): return "#4C72B0" 
-#         if d_acc >= -2.0: return "#2ca02c"
-#         if d_acc >= -6.0: return "#ff7f0e"
-#         return "#d62728"
-
-#     def robust_match(target_name, is_quant_target, g_df):
-#         try:
-#             sub_df = g_df[g_df['is_quantized'] == is_quant_target]
-#             if sub_df.empty: return pd.DataFrame()
-#             m = sub_df[sub_df['base_name'] == target_name]
-#             if not m.empty: return m
-#             m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
-#             if not m.empty: return m
-#             def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
-#             st = squash(target_name)
-#             fuzzy = sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
-#             return fuzzy
-#         except Exception: return pd.DataFrame()
-
-#     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        
-#         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
-#         if not csv_path.exists() or "normalized" in csv_path.name: continue
-            
-#         layer_df = pd.read_csv(csv_path)
-#         layers = layer_df['Layer'].tolist()
-
-#         clean_ds = dataset.strip("_")
-#         # Using a more forgiving glob to handle case-sensitivity (e.g., Cifar10 vs cifar10)
-#         json_files = list(Path(".").glob(f"{arch}_*[cC]ifar10*_*_discovered_regions.json")) if "cifar10" in clean_ds.lower() else list(Path(".").glob(f"{arch}_{clean_ds}_*_discovered_regions.json"))
-#         if not json_files: continue
-            
-#         try:
-#             with open(json_files[0], 'r') as f:
-#                 model_exps = json.load(f)
-#         except Exception: continue
-#         if not model_exps: continue
-
-#         baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
-#         if baseline_mask.any():
-#             base_row = g_metrics[baseline_mask].iloc[0]
-#             base_p, base_f, base_m = base_row.get('params', np.nan), base_row.get('flops', np.nan), base_row.get('memory', np.nan)
-#         else: base_p = base_f = base_m = np.nan
-
-#         for is_quant_target in [False, True]:
-#             valid_exps = []
-            
-#             for exp_name, ranges in model_exps.items():
-#                 if ranges is None: continue
-#                 cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
-#                 m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
-                
-#                 if not m.empty:
-#                     exp_results = m.mean(numeric_only=True)
-#                     p_red = 100 * (1 - exp_results.get('params', np.nan) / base_p) if pd.notnull(base_p) else np.nan
-#                     f_red = 100 * (1 - exp_results.get('flops', np.nan) / base_f) if pd.notnull(base_f) else np.nan
-#                     m_red = 100 * (1 - exp_results.get('memory', np.nan) / base_m) if pd.notnull(base_m) else np.nan
-                    
-#                     if p_red < 0 or f_red < 0 or m_red < 0:
-#                         continue 
-#                 else:
-#                     exp_results = {'d_acc': np.nan}
-#                     p_red, f_red, m_red = np.nan, np.nan, np.nan
-                        
-#                 valid_exps.append((exp_name, ranges, exp_results, cleaned_name, p_red, f_red, m_red))
-                    
-#             if not valid_exps: continue
-#             valid_exps = sorted(valid_exps, key=lambda x: x[2].get('d_acc', -100))
-            
-#             num_bars = len(valid_exps)
-#             file_suffix = "quantized" if is_quant_target else "unquantized"
-
-#             fig_height = max(3.5, 0.5 * num_bars + 1)
-#             y_limits = (-1, num_bars)
-            
-#             fig_cand = plt.figure(figsize=(14, fig_height)) 
-#             gs = gridspec.GridSpec(1, 2, width_ratios=[2.5, 1.5], wspace=0.05)
-            
-#             ax_heur = fig_cand.add_subplot(gs[0])
-#             ax_side = fig_cand.add_subplot(gs[1], sharey=ax_heur)
-#             ax_side.axis('off')
-            
-#             for i, (orig_exp_name, ranges, exp_results, display_name, p_red, f_red, m_red) in enumerate(valid_exps):
-#                 if isinstance(ranges, tuple) or (isinstance(ranges, list) and len(ranges) > 0 and isinstance(ranges[0], str)):
-#                     ranges = [ranges]
-                
-#                 d_acc = exp_results.get('d_acc', np.nan)
-#                 color = get_acc_color(d_acc)
-#                 for start_layer, end_layer in ranges:
-#                     try:
-#                         # FIX 1: Exact match '==' and +1 for 1-based plotting
-#                         s_idx = next(idx for idx, n in enumerate(layers) if start_layer == n) + 1
-#                         e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer == n) + 1
-#                         ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.85)
-#                     except StopIteration: continue
-            
-#             # FIX 2: Shift x-axis limits to start at 0 and encompass the full 1-based length
-#             ax_heur.set_xlim(0, len(layers) + 1)
-#             ax_heur.set_ylim(y_limits)
-#             ax_heur.set_yticks(range(len(valid_exps)))
-#             ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=11, fontweight='bold')
-#             ax_heur.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
-#             ax_heur.set_title(f"Structural Candidates & Hardware Reductions", loc='left', pad=25, fontsize=14, fontweight='bold')
-#             sns.despine(ax=ax_heur)
-
-#             cols = [0.10, 0.35, 0.65, 0.90]
-#             headers = ["$\\Delta$ Acc", "Params $\\downarrow$", "FLOPs $\\downarrow$", "Memory $\\downarrow$"]
-            
-#             header_y = len(valid_exps) 
-#             for x, h in zip(cols, headers):
-#                 ax_side.text(x, header_y, h, ha='center', va='bottom', fontweight='bold', fontsize=11, color='#333333')
-            
-#             for i, (_, _, exp_results, _, p_red, f_red, m_red) in enumerate(valid_exps):
-#                 d_acc = exp_results.get('d_acc', np.nan)
-#                 c = get_acc_color(d_acc)
-                
-#                 d_str = f"{d_acc:+.1f}%" if pd.notnull(d_acc) else "N/A"
-#                 p_str = f"{p_red:.1f}%" if pd.notnull(p_red) else "N/A"
-#                 f_str = f"{f_red:.1f}%" if pd.notnull(f_red) else "N/A"
-#                 m_str = f"{m_red:.1f}%" if pd.notnull(m_red) else "N/A"
-                
-#                 for x, val in zip(cols, [d_str, p_str, f_str, m_str]):
-#                     fw = 'bold' if x == cols[0] else 'normal'
-#                     alpha = 0.6 if (d_acc < -6.0 and x != cols[0]) else 1.0
-#                     ax_side.text(x, i, val, ha='center', va='center', color=c, fontweight=fw, fontsize=11, alpha=alpha)
-
-#             plt.tight_layout()
-#             cand_save_path = out_dir / f"{arch}_{dataset}_candidates_sidebar_{file_suffix}.png"
-#             fig_cand.savefig(cand_save_path, bbox_inches='tight')
-#             plt.close(fig_cand)
-
-#     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
-    
 # ========================= FIG 3 ========================= #
 
 def fig3_v2t_heuristic_validation(
@@ -896,147 +755,97 @@ def fig5_hardware_efficiency_profiles(
 
     logger.info("[FIG5] All 6 hardware deliverables generated successfully.")
 
-def fig5_hardware_efficiency_profiles(
-    df: pd.DataFrame,
-    out_dir: Path = Path("./figures/hardware_efficiency")
+# ========================= FIG 6 ========================= #
+
+def fig6_training_curves(
+    results_dir: Path = Path("./"),
+    out_dir: Path = Path("./figures/learning_curves")
 ):
+    """
+    Scans for merged_metrics.json files and plots validation accuracy 
+    and loss curves for all tracked experiments.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
     
-    best_summary = []
-    worst_summary = []
-    all_tradeoff_data = []
+    logger.info(f"[FIG6] Scanning for metrics files in {results_dir.resolve()} for training curves")
+    files = list(results_dir.rglob("*merged_metrics.json"))
+    
+    if not files:
+        if (results_dir / "merged_metrics.json").exists(): 
+            files = [results_dir / "merged_metrics.json"]
+        else: 
+            logger.warning("[FIG6] No merged_metrics.json files found for training curves.")
+            return
 
-    def format_dataset_name(ds: str) -> str:
-        mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
-        return mapping.get(ds, ds.capitalize())
-
-    for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        logger.info(f"[FIG5] Processing Hardware Profiles for {arch}/{dataset}")
+    for p in files:
+        # Utilize the existing parsers from Journal_plot.py
+        dataset = infer_dataset_from_path(p)
+        if dataset == "unknown" and "tinyimagenet" in str(p).lower(): dataset = "tinyimagenet"
+        if dataset == "unknown" and "cifar10" in str(p).lower(): dataset = "cifar10_"
         
-        # 1. Identify Baseline
-        baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
-        if not baseline_mask.any(): continue
+        arch = infer_architecture_from_path(p)
+        if arch == "UnknownArch": arch = infer_architecture_from_path(Path(p.name))
+        
+        try:
+            with open(p) as f: 
+                raw = json.load(f)
+        except Exception as e:
+            logger.error(f"[FIG6] Failed to load JSON {p}: {e}")
+            continue
             
-        baseline_row = g_metrics[baseline_mask].iloc[0]
-        base_params = baseline_row.get('params', np.nan)
-        base_flops = baseline_row.get('flops', np.nan)
-        base_memory = baseline_row.get('memory', np.nan)
+        if not raw: continue
         
-        if pd.isna(base_params) or pd.isna(base_flops): continue
-
-        # 2. Filter Candidates (Unquantized)
-        candidates = g_metrics[(g_metrics['posthoc_or_posttrain'] != 'Baseline') & 
-                               (g_metrics['is_quantized'] == False)].copy()
-        if candidates.empty: continue
+        sns.set_theme(style="whitegrid", context="paper", font_scale=1.2)
+        fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+        
+        palette = sns.color_palette("husl", len(raw))
+        has_data = False
+        
+        for idx, (exp_name, data) in enumerate(raw.items()):
+            accuracies = data.get("accuracies", [])
+            losses = data.get("losses", [])
             
-        # Calculate Reductions
-        candidates['Params Reduced (%)'] = 100 * (1 - (candidates['params'] / base_params))
-        candidates['FLOPs Reduced (%)'] = 100 * (1 - (candidates['flops'] / base_flops))
-        candidates['Memory Reduced (%)'] = 100 * (1 - (candidates['memory'] / base_memory))
-        candidates = candidates.sort_values(by='d_acc', ascending=False) # Best to worst
+            # Use the existing global namer to keep legend text clean & consistent
+            display_name = clean_exp_name(exp_name)
+            if infer_isquant(exp_name):
+                display_name += " (Quant)"
+                
+            if accuracies:
+                epochs = range(1, len(accuracies) + 1)
+                axes[0].plot(epochs, accuracies, label=display_name, color=palette[idx], linewidth=2.5, alpha=0.85)
+                has_data = True
+                
+            if losses:
+                epochs = range(1, len(losses) + 1)
+                axes[1].plot(epochs, losses, label=display_name, color=palette[idx], linewidth=2.5, alpha=0.85)
+                has_data = True
+                
+        if not has_data:
+            plt.close()
+            continue
 
-        # --- Deliverable 1 & 5: Per-Model CSV and LaTeX Tables ---
-        table_df = candidates[['base_name', 'd_acc', 'Params Reduced (%)', 'FLOPs Reduced (%)', 'Memory Reduced (%)']].copy()
-        table_df.columns = ['Candidate Block', 'Delta Acc (%)', 'Params Red. (%)', 'FLOPs Red. (%)', 'Memory Red. (%)']
+        # --- Formatting Accuracy Subplot ---
+        axes[0].set_title(f"Validation Accuracy Over Epochs\n{arch} | {format_dataset_name(dataset)}", fontsize=16, fontweight='bold', pad=15)
+        axes[0].set_xlabel("Epochs", fontsize=13, fontweight='bold')
+        axes[0].set_ylabel("Accuracy (%)", fontsize=13, fontweight='bold')
+        axes[0].legend(loc="lower right", framealpha=0.9, fontsize=11)
         
-        table_df.to_csv(out_dir / f"{arch}_{dataset}_all_candidates.csv", index=False)
-        table_df.to_latex(out_dir / f"{arch}_{dataset}_all_candidates.tex", index=False, float_format="%.2f")
+        # --- Formatting Loss Subplot ---
+        axes[1].set_title(f"Loss Over Epochs\n{arch} | {format_dataset_name(dataset)}", fontsize=16, fontweight='bold', pad=15)
+        axes[1].set_xlabel("Epochs", fontsize=13, fontweight='bold')
+        axes[1].set_ylabel("Loss", fontsize=13, fontweight='bold')
+        axes[1].legend(loc="upper right", framealpha=0.9, fontsize=11)
 
-        # --- Deliverable 2: Per-Model Grouped Bar Chart ---
-        melted_arch = candidates.melt(
-            id_vars=['base_name', 'd_acc'], 
-            value_vars=['Params Reduced (%)', 'FLOPs Reduced (%)', 'Memory Reduced (%)'],
-            var_name='Metric', value_name='Reduction (%)'
-        )
-        melted_arch['Metric'] = melted_arch['Metric'].str.replace(' Reduced (%)', '')
-        y_labels = [f"{row['base_name']}\n($\\Delta$ {row['d_acc']:+.1f}%)" for _, row in candidates.iterrows()]
-
-        fig, ax = plt.subplots(figsize=(10, max(5, len(candidates) * 0.8)))
-        sns.barplot(data=melted_arch, y='base_name', x='Reduction (%)', hue='Metric', 
-                    palette=['#4C72B0', '#DD8452', '#55A868'], edgecolor='black', ax=ax)
-        
-        ax.set_yticks(range(len(y_labels)))
-        ax.set_yticklabels(y_labels, fontsize=10, fontweight='bold')
-        ax.set_ylabel(""); ax.set_xlabel("Reduction Relative to Baseline (%)", fontweight='bold')
-        ax.set_title(f"Hardware Resource Optimization: {arch}", pad=15, fontweight='bold', fontsize=14)
-        ax.xaxis.grid(True, linestyle='--', alpha=0.7); ax.set_axisbelow(True)
-        ax.legend(title="", loc='lower right'); sns.despine()
+        sns.despine(bottom=False, left=False)
         plt.tight_layout()
-        plt.savefig(out_dir / f"{arch}_{dataset}_hardware_profile.png", bbox_inches='tight')
-        # log where it was saved
-        logger.info(f"[FIG5] Saved hardware profile plot for {arch}/{dataset} at {out_dir / f'{arch}_{dataset}_hardware_profile.png'}")
+
+        # Save utilizing the unified naming convention
+        clean_ds = dataset.strip("_")
+        save_path = out_dir / f"{arch}_{clean_ds}_training_curves.png"
+        
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.close()
-
-        # --- Prep for Unified Plots ---
-        best_cand = candidates.iloc[0]  # Highest d_acc
-        worst_cand = candidates.iloc[-1] # Lowest d_acc
-        
-        for cand, target_list in zip([best_cand, worst_cand], [best_summary, worst_summary]):
-            target_list.append({
-                "Architecture": arch,
-                "Delta_Acc": cand['d_acc'],
-                "Params": cand['Params Reduced (%)'],
-                "FLOPs": cand['FLOPs Reduced (%)'],
-                "Memory": cand['Memory Reduced (%)']
-            })
-
-        # Add to Trade-off data
-        for _, row in candidates.iterrows():
-            all_tradeoff_data.append({
-                "Architecture": arch,
-                "Delta_Acc": row['d_acc'],
-                "FLOPs_Reduction": row['FLOPs Reduced (%)']
-            })
-
-    # --- Deliverables 3 & 4: Unified Best and Worst Plots ---
-    def plot_unified(data_list, filename_suffix, title_prefix):
-        if not data_list: return
-        df_unified = pd.DataFrame(data_list).sort_values(by="Delta_Acc", ascending=False)
-        melted = df_unified.melt(id_vars=['Architecture', 'Delta_Acc'], 
-                                 value_vars=['Params', 'FLOPs', 'Memory'],
-                                 var_name='Metric', value_name='Reduction')
-        x_labels = [f"{r['Architecture']}\n($\\Delta$ {r['Delta_Acc']:+.1f}%)" for _, r in df_unified.iterrows()]
-
-        fig, ax = plt.subplots(figsize=(12, 5.5))
-        sns.barplot(data=melted, x='Architecture', y='Reduction', hue='Metric', 
-                    palette=['#4C72B0', '#DD8452', '#55A868'], edgecolor='black', ax=ax, order=df_unified['Architecture'])
-        
-        ax.set_xticks(range(len(x_labels)))
-        ax.set_xticklabels(x_labels, fontsize=11, fontweight='bold')
-        ax.set_xlabel("Architecture & Accuracy Impact", fontweight='bold', fontsize=12)
-        ax.set_ylabel("Reduction Relative to Baseline (%)", fontweight='bold', fontsize=12)
-        ax.set_title(f"{title_prefix} Structural Collapse Efficiency by Architecture", pad=15, fontweight='bold', fontsize=14)
-        ax.yaxis.grid(True, linestyle='--', alpha=0.7); ax.set_axisbelow(True)
-        ax.legend(title="", loc='upper right'); sns.despine()
-        plt.tight_layout()
-        plt.savefig(out_dir / f"unified_{filename_suffix}.png", bbox_inches='tight')
-        logger.info(f"[FIG5] Saved unified {filename_suffix} plot at {out_dir / f'unified_{filename_suffix}.png'}")
-        plt.close()
-
-    # --- Deliverable 6: The Trade-off Scatter Plot (Pareto Frontier) ---
-    if all_tradeoff_data:
-        df_trade = pd.DataFrame(all_tradeoff_data)
-        fig, ax = plt.subplots(figsize=(10, 6))
-        
-        ax.axhline(0, color='black', linestyle='-', linewidth=1.5, zorder=1)
-        ax.axvspan(0, 100, ymin=0.5, ymax=1, color='#e6f4ea', alpha=0.3, zorder=0, label="Ideal (Faster & More Accurate)")
-        ax.axvspan(0, 100, ymin=0, ymax=0.5, color='#fce8e6', alpha=0.3, zorder=0, label="Degraded (Faster but Less Accurate)")
-
-        sns.scatterplot(data=df_trade, x='FLOPs_Reduction', y='Delta_Acc', hue='Architecture', 
-                        s=150, edgecolor='black', alpha=0.8, ax=ax, zorder=3)
-        
-        ax.set_xlabel("Computational Reduction (FLOPs Removed %)", fontweight='bold', fontsize=12)
-        ax.set_ylabel("Accuracy Impact ($\Delta$ %)", fontweight='bold', fontsize=12)
-        ax.set_title("Global Hardware Efficiency vs. Accuracy Trade-off", pad=15, fontweight='bold', fontsize=14)
-        ax.legend(loc='lower left', framealpha=0.9)
-        sns.despine()
-        plt.tight_layout()
-        plt.savefig(out_dir / "global_tradeoff_scatter.png", bbox_inches='tight')
-        plt.close()
-        logger.info(f"[FIG5] Saved global trade-off scatter plot at {out_dir / 'global_tradeoff_scatter.png'}")
-
-    logger.info("[FIG5] All 6 hardware deliverables generated successfully.")
-
+        logger.info(f"[FIG6] Saved training curves for {arch}/{dataset} at {save_path}")
 if __name__ == "__main__":
     try:
         raw = load_results()
@@ -1047,6 +856,7 @@ if __name__ == "__main__":
         fig3_v2t_heuristic_validation(df)
         fig4_comprehensive_search_space_map(df)
         fig5_hardware_efficiency_profiles(df)
+        fig6_training_curves()
         logger.info("Script completed.")
     except Exception as e:
         logger.critical(f"Error: {e}", exc_info=True)
