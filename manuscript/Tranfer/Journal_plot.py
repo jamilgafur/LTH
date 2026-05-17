@@ -396,7 +396,9 @@ def fig4_comprehensive_search_space_map(
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
 
-        json_files = list(Path(".").glob(f"{arch}_{dataset}_*_discovered_regions.json"))
+        # Robust CIFAR-10 File Search
+        clean_ds = dataset.strip("_")
+        json_files = list(Path(".").glob(f"{arch}_*[cC]ifar10*_*_discovered_regions.json")) if "cifar10" in clean_ds.lower() else list(Path(".").glob(f"{arch}_{clean_ds}_*_discovered_regions.json"))
         if not json_files: continue
             
         try:
@@ -415,8 +417,12 @@ def fig4_comprehensive_search_space_map(
             valid_exps = []
             
             for exp_name, ranges in model_exps.items():
-                if ranges is None: continue
                 cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
+                
+                # Ensure Baseline gets processed and maps correctly to the normalized dataframe
+                if "Original" in cleaned_name or "Baseline" in cleaned_name:
+                    cleaned_name = "Original Model"
+                
                 m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
                 
                 if not m.empty:
@@ -425,7 +431,8 @@ def fig4_comprehensive_search_space_map(
                     f_red = 100 * (1 - exp_results.get('flops', np.nan) / base_f) if pd.notnull(base_f) else np.nan
                     m_red = 100 * (1 - exp_results.get('memory', np.nan) / base_m) if pd.notnull(base_m) else np.nan
                     
-                    if p_red < 0 or f_red < 0 or m_red < 0:
+                    # Loosened to -0.1 to account for tiny floating point inaccuracies on the 0.0% baseline
+                    if p_red < -0.1 or f_red < -0.1 or m_red < -0.1:
                         continue 
                 else:
                     exp_results = {'d_acc': np.nan}
@@ -434,7 +441,9 @@ def fig4_comprehensive_search_space_map(
                 valid_exps.append((exp_name, ranges, exp_results, cleaned_name, p_red, f_red, m_red))
                     
             if not valid_exps: continue
-            valid_exps = sorted(valid_exps, key=lambda x: x[2].get('d_acc', -100))
+            
+            # Sort by delta accuracy, but force the Baseline (None) to the very top (highest index)
+            valid_exps = sorted(valid_exps, key=lambda x: (1 if x[1] is None else 0, x[2].get('d_acc', -100)))
             
             num_bars = len(valid_exps)
             file_suffix = "quantized" if is_quant_target else "unquantized"
@@ -450,6 +459,10 @@ def fig4_comprehensive_search_space_map(
             ax_side.axis('off')
             
             for i, (orig_exp_name, ranges, exp_results, display_name, p_red, f_red, m_red) in enumerate(valid_exps):
+                # Skip drawing the horizontal block span for the baseline
+                if ranges is None:
+                    continue
+                    
                 if isinstance(ranges, tuple) or (isinstance(ranges, list) and len(ranges) > 0 and isinstance(ranges[0], str)):
                     ranges = [ranges]
                 
@@ -457,17 +470,17 @@ def fig4_comprehensive_search_space_map(
                 color = get_acc_color(d_acc)
                 for start_layer, end_layer in ranges:
                     try:
-                        # FIX 1: Exact match '==' and +1 for 1-based plotting
                         s_idx = next(idx for idx, n in enumerate(layers) if start_layer == n) + 1
                         e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer == n) + 1
                         ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.85)
                     except StopIteration: continue
             
-            # FIX 2: Shift x-axis limits to start at 0 and encompass the full 1-based length
             ax_heur.set_xlim(0, len(layers) + 1)
             ax_heur.set_ylim(y_limits)
             ax_heur.set_yticks(range(len(valid_exps)))
-            ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=11, fontweight='bold')
+            
+            # Label the baseline as a Reference point
+            ax_heur.set_yticklabels([e[3] if e[1] is not None else f"{e[3]} (Control)" for e in valid_exps], fontsize=11, fontweight='bold')
             ax_heur.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
             ax_heur.set_title(f"Structural Candidates & Hardware Reductions", loc='left', pad=25, fontsize=14, fontweight='bold')
             sns.despine(ax=ax_heur)
@@ -479,10 +492,13 @@ def fig4_comprehensive_search_space_map(
             for x, h in zip(cols, headers):
                 ax_side.text(x, header_y, h, ha='center', va='bottom', fontweight='bold', fontsize=11, color='#333333')
             
-            for i, (_, _, exp_results, _, p_red, f_red, m_red) in enumerate(valid_exps):
+            for i, (_, ranges, exp_results, _, p_red, f_red, m_red) in enumerate(valid_exps):
                 d_acc = exp_results.get('d_acc', np.nan)
-                c = get_acc_color(d_acc)
                 
+                # Baseline gets a neutral dark grey text, others get color coded
+                c = "#333333" if ranges is None else get_acc_color(d_acc)
+                
+                # Dynamically extract and format ALL values, strictly pulling from the dataframe
                 d_str = f"{d_acc:+.1f}%" if pd.notnull(d_acc) else "N/A"
                 p_str = f"{p_red:.1f}%" if pd.notnull(p_red) else "N/A"
                 f_str = f"{f_red:.1f}%" if pd.notnull(f_red) else "N/A"
@@ -490,7 +506,7 @@ def fig4_comprehensive_search_space_map(
                 
                 for x, val in zip(cols, [d_str, p_str, f_str, m_str]):
                     fw = 'bold' if x == cols[0] else 'normal'
-                    alpha = 0.6 if (d_acc < -6.0 and x != cols[0]) else 1.0
+                    alpha = 0.6 if (d_acc < -6.0 and x != cols[0] and ranges is not None) else 1.0
                     ax_side.text(x, i, val, ha='center', va='center', color=c, fontweight=fw, fontsize=11, alpha=alpha)
 
             plt.tight_layout()
@@ -499,6 +515,148 @@ def fig4_comprehensive_search_space_map(
             plt.close(fig_cand)
 
     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
+    
+# def fig4_comprehensive_search_space_map(
+#     df: pd.DataFrame,
+#     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
+#     out_dir: Path = Path("./figures/search_space")
+# ):
+#     import matplotlib.gridspec as gridspec
+#     out_dir.mkdir(parents=True, exist_ok=True)
+
+#     def get_acc_color(d_acc):
+#         if pd.isna(d_acc): return "#4C72B0" 
+#         if d_acc >= -2.0: return "#2ca02c"
+#         if d_acc >= -6.0: return "#ff7f0e"
+#         return "#d62728"
+
+#     def robust_match(target_name, is_quant_target, g_df):
+#         try:
+#             sub_df = g_df[g_df['is_quantized'] == is_quant_target]
+#             if sub_df.empty: return pd.DataFrame()
+#             m = sub_df[sub_df['base_name'] == target_name]
+#             if not m.empty: return m
+#             m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
+#             if not m.empty: return m
+#             def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
+#             st = squash(target_name)
+#             fuzzy = sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
+#             return fuzzy
+#         except Exception: return pd.DataFrame()
+
+#     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        
+#         csv_path = stats_dir / f"{arch}_{dataset}_layer_stats.csv"
+#         if not csv_path.exists() or "normalized" in csv_path.name: continue
+            
+#         layer_df = pd.read_csv(csv_path)
+#         layers = layer_df['Layer'].tolist()
+
+#         clean_ds = dataset.strip("_")
+#         # Using a more forgiving glob to handle case-sensitivity (e.g., Cifar10 vs cifar10)
+#         json_files = list(Path(".").glob(f"{arch}_*[cC]ifar10*_*_discovered_regions.json")) if "cifar10" in clean_ds.lower() else list(Path(".").glob(f"{arch}_{clean_ds}_*_discovered_regions.json"))
+#         if not json_files: continue
+            
+#         try:
+#             with open(json_files[0], 'r') as f:
+#                 model_exps = json.load(f)
+#         except Exception: continue
+#         if not model_exps: continue
+
+#         baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
+#         if baseline_mask.any():
+#             base_row = g_metrics[baseline_mask].iloc[0]
+#             base_p, base_f, base_m = base_row.get('params', np.nan), base_row.get('flops', np.nan), base_row.get('memory', np.nan)
+#         else: base_p = base_f = base_m = np.nan
+
+#         for is_quant_target in [False, True]:
+#             valid_exps = []
+            
+#             for exp_name, ranges in model_exps.items():
+#                 if ranges is None: continue
+#                 cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
+#                 m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
+                
+#                 if not m.empty:
+#                     exp_results = m.mean(numeric_only=True)
+#                     p_red = 100 * (1 - exp_results.get('params', np.nan) / base_p) if pd.notnull(base_p) else np.nan
+#                     f_red = 100 * (1 - exp_results.get('flops', np.nan) / base_f) if pd.notnull(base_f) else np.nan
+#                     m_red = 100 * (1 - exp_results.get('memory', np.nan) / base_m) if pd.notnull(base_m) else np.nan
+                    
+#                     if p_red < 0 or f_red < 0 or m_red < 0:
+#                         continue 
+#                 else:
+#                     exp_results = {'d_acc': np.nan}
+#                     p_red, f_red, m_red = np.nan, np.nan, np.nan
+                        
+#                 valid_exps.append((exp_name, ranges, exp_results, cleaned_name, p_red, f_red, m_red))
+                    
+#             if not valid_exps: continue
+#             valid_exps = sorted(valid_exps, key=lambda x: x[2].get('d_acc', -100))
+            
+#             num_bars = len(valid_exps)
+#             file_suffix = "quantized" if is_quant_target else "unquantized"
+
+#             fig_height = max(3.5, 0.5 * num_bars + 1)
+#             y_limits = (-1, num_bars)
+            
+#             fig_cand = plt.figure(figsize=(14, fig_height)) 
+#             gs = gridspec.GridSpec(1, 2, width_ratios=[2.5, 1.5], wspace=0.05)
+            
+#             ax_heur = fig_cand.add_subplot(gs[0])
+#             ax_side = fig_cand.add_subplot(gs[1], sharey=ax_heur)
+#             ax_side.axis('off')
+            
+#             for i, (orig_exp_name, ranges, exp_results, display_name, p_red, f_red, m_red) in enumerate(valid_exps):
+#                 if isinstance(ranges, tuple) or (isinstance(ranges, list) and len(ranges) > 0 and isinstance(ranges[0], str)):
+#                     ranges = [ranges]
+                
+#                 d_acc = exp_results.get('d_acc', np.nan)
+#                 color = get_acc_color(d_acc)
+#                 for start_layer, end_layer in ranges:
+#                     try:
+#                         # FIX 1: Exact match '==' and +1 for 1-based plotting
+#                         s_idx = next(idx for idx, n in enumerate(layers) if start_layer == n) + 1
+#                         e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer == n) + 1
+#                         ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.85)
+#                     except StopIteration: continue
+            
+#             # FIX 2: Shift x-axis limits to start at 0 and encompass the full 1-based length
+#             ax_heur.set_xlim(0, len(layers) + 1)
+#             ax_heur.set_ylim(y_limits)
+#             ax_heur.set_yticks(range(len(valid_exps)))
+#             ax_heur.set_yticklabels([e[3] for e in valid_exps], fontsize=11, fontweight='bold')
+#             ax_heur.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
+#             ax_heur.set_title(f"Structural Candidates & Hardware Reductions", loc='left', pad=25, fontsize=14, fontweight='bold')
+#             sns.despine(ax=ax_heur)
+
+#             cols = [0.10, 0.35, 0.65, 0.90]
+#             headers = ["$\\Delta$ Acc", "Params $\\downarrow$", "FLOPs $\\downarrow$", "Memory $\\downarrow$"]
+            
+#             header_y = len(valid_exps) 
+#             for x, h in zip(cols, headers):
+#                 ax_side.text(x, header_y, h, ha='center', va='bottom', fontweight='bold', fontsize=11, color='#333333')
+            
+#             for i, (_, _, exp_results, _, p_red, f_red, m_red) in enumerate(valid_exps):
+#                 d_acc = exp_results.get('d_acc', np.nan)
+#                 c = get_acc_color(d_acc)
+                
+#                 d_str = f"{d_acc:+.1f}%" if pd.notnull(d_acc) else "N/A"
+#                 p_str = f"{p_red:.1f}%" if pd.notnull(p_red) else "N/A"
+#                 f_str = f"{f_red:.1f}%" if pd.notnull(f_red) else "N/A"
+#                 m_str = f"{m_red:.1f}%" if pd.notnull(m_red) else "N/A"
+                
+#                 for x, val in zip(cols, [d_str, p_str, f_str, m_str]):
+#                     fw = 'bold' if x == cols[0] else 'normal'
+#                     alpha = 0.6 if (d_acc < -6.0 and x != cols[0]) else 1.0
+#                     ax_side.text(x, i, val, ha='center', va='center', color=c, fontweight=fw, fontsize=11, alpha=alpha)
+
+#             plt.tight_layout()
+#             cand_save_path = out_dir / f"{arch}_{dataset}_candidates_sidebar_{file_suffix}.png"
+#             fig_cand.savefig(cand_save_path, bbox_inches='tight')
+#             plt.close(fig_cand)
+
+#     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
     
 # ========================= FIG 3 ========================= #
 
