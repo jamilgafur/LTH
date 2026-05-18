@@ -359,6 +359,92 @@ def fig2_methodology_bav_regions(
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
 
+  
+# ========================= FIG 3 ========================= #
+
+def fig3_v2t_heuristic_validation(
+    df: pd.DataFrame,
+    stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
+    out_dir: Path = Path("./figures/heuristic_validation")
+):
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    REQUIRED_COLS = {"dataset", "architecture", "posthoc_or_posttrain", "base_name", "is_quantized", "d_acc"}
+    missing = REQUIRED_COLS - set(df.columns)
+    if missing:
+        logger.error(f"[FIG3] Missing required columns: {missing}")
+        return
+
+    multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
+    all_merged_data = []
+
+    for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        clean_metrics = g_metrics[g_metrics['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained'])]
+        if clean_metrics.empty: continue
+
+        csv_path = stats_dir / f"{arch}_{dataset}_experiment_block_stats.csv"
+        if not csv_path.exists(): continue
+
+        try:
+            df_h = pd.read_csv(csv_path)
+        except Exception: continue
+
+        if "Experiment" not in df_h.columns: continue
+
+        merged = pd.merge(df_h, clean_metrics, left_on="Experiment", right_on="base_name", how="inner")
+        if merged.empty: continue
+
+        merged["Topology"] = "Multi-Path" if arch in multi_path_archs else "Single-Path"
+        all_merged_data.append(merged)
+
+    if not all_merged_data: return
+
+    full_df = pd.concat(all_merged_data, ignore_index=True)
+    full_csv_path = out_dir / "fig3_full_merged_data.csv"
+    full_df.to_csv(full_csv_path, index=False)
+
+    full_df['Quantization State'] = full_df['is_quantized'].map({False: 'Unquantized', True: 'Quantized'})
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 7), sharey=True)
+    plt.subplots_adjust(wspace=0.05)
+
+    for ax in axes:
+        ax.axhline(0, color='black', linestyle='--', linewidth=2, zorder=1)
+        ax.axhspan(0, 100, color='#2ca02c', alpha=0.05, zorder=0)
+        ax.axhspan(-2.0, 0, color='#ff7f0e', alpha=0.05, zorder=0)
+        ax.axhspan(-100, -2.0, color='#d62728', alpha=0.05, zorder=0)
+
+    y_min, y_max = full_df['d_acc'].min() - 2, max(full_df['d_acc'].max() + 2, 5)
+    for ax in axes: ax.set_ylim(y_min, y_max)
+
+    # --- Single Path ---
+    sp_df = full_df[full_df['Topology'] == 'Single-Path']
+    if not sp_df.empty:
+        sns.scatterplot(data=sp_df, x="Median Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"}, s=250, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[0], zorder=3)
+        q1 = sp_df["Median Variance"].quantile(0.3)
+        axes[0].axvspan(1e-4, q1, color='#2ca02c', alpha=0.15, zorder=0, label=f"BAV Target: Bounded Growth (<{q1:.1f})")
+        axes[0].set_xscale('symlog', linthresh=1e-2)
+        axes[0].set_title("Single-Path: Target Bounded Growth", fontsize=16, fontweight='bold', pad=15)
+        axes[0].set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better", fontsize=14, fontweight='bold')
+        axes[0].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
+        axes[0].legend(loc="lower left", framealpha=0.9)
+
+    # --- Multi Path ---
+    mp_df = full_df[full_df['Topology'] == 'Multi-Path']
+    if not mp_df.empty:
+        sns.scatterplot(data=mp_df, x="Median Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"}, s=250, alpha=0.9, edgecolor="black", color="#d62728", ax=axes[1], zorder=3)
+        q1_mp = mp_df["Median Variance"].quantile(0.4)
+        axes[1].axvspan(1e-4, q1_mp, color='#2ca02c', alpha=0.15, zorder=0, label=f"BAV Target: Variance Valleys (<{q1_mp:.1f})")
+        axes[1].set_xscale('symlog', linthresh=1e-2)
+        axes[1].set_title("Multi-Path: Target Terminal Stabilization", fontsize=16, fontweight='bold', pad=15)
+        axes[1].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
+        axes[1].legend(loc="lower right", framealpha=0.9)
+
+    sns.despine()
+    plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
+    plt.close()
+    logger.info(f"[FIG3] Saved V2T heuristic validation map at {out_dir / 'V2T_heuristic_validation_map.png'}")
+
 # ========================= FIG 4 ========================= #
 
 def fig4_comprehensive_search_space_map(
@@ -524,94 +610,7 @@ def fig4_comprehensive_search_space_map(
             plt.close(fig_cand)
 
     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
-    
-# ========================= FIG 3 ========================= #
-
-def fig3_v2t_heuristic_validation(
-    df: pd.DataFrame,
-    stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
-    out_dir: Path = Path("./figures/heuristic_validation")
-):
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    REQUIRED_COLS = {"dataset", "architecture", "posthoc_or_posttrain", "base_name", "is_quantized", "d_acc"}
-    missing = REQUIRED_COLS - set(df.columns)
-    if missing:
-        logger.error(f"[FIG3] Missing required columns: {missing}")
-        return
-
-    multi_path_archs = ["RegNetX_400MF", "InceptionNet", "ConvNeXt", "XceptionNet"]
-    all_merged_data = []
-
-    for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        clean_metrics = g_metrics[g_metrics['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained'])]
-        if clean_metrics.empty: continue
-
-        csv_path = stats_dir / f"{arch}_{dataset}_experiment_block_stats.csv"
-        if not csv_path.exists(): continue
-
-        try:
-            df_h = pd.read_csv(csv_path)
-        except Exception: continue
-
-        if "Experiment" not in df_h.columns: continue
-
-        merged = pd.merge(df_h, clean_metrics, left_on="Experiment", right_on="base_name", how="inner")
-        if merged.empty: continue
-
-        merged["Topology"] = "Multi-Path" if arch in multi_path_archs else "Single-Path"
-        all_merged_data.append(merged)
-
-    if not all_merged_data: return
-
-    full_df = pd.concat(all_merged_data, ignore_index=True)
-    full_csv_path = out_dir / "fig3_full_merged_data.csv"
-    full_df.to_csv(full_csv_path, index=False)
-
-    full_df['Quantization State'] = full_df['is_quantized'].map({False: 'Unquantized', True: 'Quantized'})
-
-    fig, axes = plt.subplots(1, 2, figsize=(16, 7), sharey=True)
-    plt.subplots_adjust(wspace=0.05)
-
-    for ax in axes:
-        ax.axhline(0, color='black', linestyle='--', linewidth=2, zorder=1)
-        ax.axhspan(0, 100, color='#2ca02c', alpha=0.05, zorder=0)
-        ax.axhspan(-2.0, 0, color='#ff7f0e', alpha=0.05, zorder=0)
-        ax.axhspan(-100, -2.0, color='#d62728', alpha=0.05, zorder=0)
-
-    y_min, y_max = full_df['d_acc'].min() - 2, max(full_df['d_acc'].max() + 2, 5)
-    for ax in axes: ax.set_ylim(y_min, y_max)
-
-    # --- Single Path ---
-    sp_df = full_df[full_df['Topology'] == 'Single-Path']
-    if not sp_df.empty:
-        sns.scatterplot(data=sp_df, x="Median Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"}, s=250, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[0], zorder=3)
-        q1 = sp_df["Median Variance"].quantile(0.3)
-        axes[0].axvspan(1e-4, q1, color='#2ca02c', alpha=0.15, zorder=0, label=f"BAV Target: Bounded Growth (<{q1:.1f})")
-        axes[0].set_xscale('symlog', linthresh=1e-2)
-        axes[0].set_title("Single-Path: Target Bounded Growth", fontsize=16, fontweight='bold', pad=15)
-        axes[0].set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better", fontsize=14, fontweight='bold')
-        axes[0].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
-        axes[0].legend(loc="lower left", framealpha=0.9)
-
-    # --- Multi Path ---
-    mp_df = full_df[full_df['Topology'] == 'Multi-Path']
-    if not mp_df.empty:
-        sns.scatterplot(data=mp_df, x="Median Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"}, s=250, alpha=0.9, edgecolor="black", color="#d62728", ax=axes[1], zorder=3)
-        q1_mp = mp_df["Median Variance"].quantile(0.4)
-        axes[1].axvspan(1e-4, q1_mp, color='#2ca02c', alpha=0.15, zorder=0, label=f"BAV Target: Variance Valleys (<{q1_mp:.1f})")
-        axes[1].set_xscale('symlog', linthresh=1e-2)
-        axes[1].set_title("Multi-Path: Target Terminal Stabilization", fontsize=16, fontweight='bold', pad=15)
-        axes[1].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
-        axes[1].legend(loc="lower right", framealpha=0.9)
-
-    sns.despine()
-    plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
-    plt.close()
-    logger.info(f"[FIG3] Saved V2T heuristic validation map at {out_dir / 'V2T_heuristic_validation_map.png'}")
-
-# ========================= FIG 4 ========================= #
-
+  
 # ========================= FIG 5 ========================= #
 def fig5_hardware_efficiency_profiles(
     df: pd.DataFrame,
@@ -630,16 +629,27 @@ def fig5_hardware_efficiency_profiles(
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         logger.info(f"[FIG5] Processing Hardware Profiles for {arch}/{dataset}")
         
-        baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
-        if not baseline_mask.any(): continue
+        # --- FIX: Explicitly target the specific "Baseline Model" control using the raw exp_name ---
+        baseline_mask = g_metrics['exp_name'].str.lower().str.contains('baseline')
+        
+        if not baseline_mask.any(): 
+            logger.warning(f"[FIG5] No true 'Baseline Model' found for {arch}/{dataset}. Skipping.")
+            continue
             
-        baseline_row = g_metrics[baseline_mask].iloc[0]
+        # Ensure we grab the unquantized version of the baseline model as our control
+        baseline_candidates = g_metrics[baseline_mask & (g_metrics['is_quantized'] == False)]
+        if not baseline_candidates.empty:
+            baseline_row = baseline_candidates.iloc[0]
+        else:
+            baseline_row = g_metrics[baseline_mask].iloc[0]
+
         base_params = baseline_row.get('params', np.nan)
         base_flops = baseline_row.get('flops', np.nan)
         base_memory = baseline_row.get('memory', np.nan)
         
         if pd.isna(base_params) or pd.isna(base_flops): continue
 
+        # Filter out ANY baseline models (both Original and Baseline) from the candidate list
         candidates = g_metrics[(g_metrics['posthoc_or_posttrain'] != 'Baseline') & 
                                (g_metrics['is_quantized'] == False)].copy()
         if candidates.empty: continue
@@ -648,7 +658,7 @@ def fig5_hardware_efficiency_profiles(
         candidates['FLOPs Reduced (%)'] = 100 * (1 - (candidates['flops'] / base_flops))
         candidates['Memory Reduced (%)'] = 100 * (1 - (candidates['memory'] / base_memory))
         
-        # --- NEW STRICT FILTER: Reject inflated hardware profiles ---
+        # --- STRICT FILTER: Reject inflated hardware profiles ---
         candidates = candidates[(candidates['Params Reduced (%)'] >= 0) & 
                                 (candidates['FLOPs Reduced (%)'] >= 0) & 
                                 (candidates['Memory Reduced (%)'] >= 0)]
@@ -744,7 +754,7 @@ def fig5_hardware_efficiency_profiles(
                         s=150, edgecolor='black', alpha=0.8, ax=ax, zorder=3)
         
         ax.set_xlabel("Computational Reduction (FLOPs Removed %)", fontweight='bold', fontsize=12)
-        ax.set_ylabel("Accuracy Impact ($\Delta$ %)", fontweight='bold', fontsize=12)
+        ax.set_ylabel("Accuracy Impact ($\\Delta$ %)", fontweight='bold', fontsize=12)
         ax.set_title("Global Hardware Efficiency vs. Accuracy Trade-off", pad=15, fontweight='bold', fontsize=14)
         ax.legend(loc='lower left', framealpha=0.9)
         sns.despine()
@@ -754,7 +764,6 @@ def fig5_hardware_efficiency_profiles(
         logger.info(f"[FIG5] Saved global trade-off scatter plot at {out_dir / 'global_tradeoff_scatter.png'}")
 
     logger.info("[FIG5] All 6 hardware deliverables generated successfully.")
-
 # ========================= FIG 6 ========================= #
 
 def fig6_training_curves(
