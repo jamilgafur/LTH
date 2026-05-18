@@ -846,6 +846,50 @@ def fig6_training_curves(
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.close()
         logger.info(f"[FIG6] Saved training curves for {arch}/{dataset} at {save_path}")
+
+def export_master_summary_json(df: pd.DataFrame, out_path: Path = Path("./master_results_summary.json")):
+    """
+    Consolidates the normalized DataFrame into a single, highly readable 
+    JSON file structured by Architecture -> Dataset -> Experiment for quick lookup.
+    """
+    logger.info(f"[SUMMARY] Generating master lookup JSON...")
+    
+    summary_dict = {}
+    
+    # JSON does not handle NaNs cleanly; replace them with None (null)
+    df_clean = df.replace({np.nan: None})
+    
+    for (arch, dataset), group in df_clean.groupby(["architecture", "dataset"]):
+        if arch not in summary_dict:
+            summary_dict[arch] = {}
+            
+        clean_ds = format_dataset_name(dataset)
+        if clean_ds not in summary_dict[arch]:
+            summary_dict[arch][clean_ds] = {}
+            
+        for _, row in group.iterrows():
+            exp_key = row["exp_name"]
+            
+            # Extract and organize the metrics you need for the paper
+            summary_dict[arch][clean_ds][exp_key] = {
+                "base_name": row.get("base_name"),
+                "posthoc_or_posttrain": row.get("posthoc_or_posttrain"),
+                "is_quantized": row.get("is_quantized"),
+                "accuracy": row.get("accuracy"),
+                "d_acc": row.get("d_acc"),         # Delta accuracy compared to baseline
+                "params": row.get("params"),
+                "d_params_percent": row.get("d_params"), # Hardware reduction %
+                "flops": row.get("flops"),
+                "memory_mb": row.get("memory")
+            }
+            
+    try:
+        with open(out_path, "w") as f:
+            json.dump(summary_dict, f, indent=4)
+        logger.info(f"[SUMMARY] Master JSON successfully exported to {out_path.resolve()}")
+    except Exception as e:
+        logger.error(f"[SUMMARY] Failed to write master JSON: {e}")
+
 if __name__ == "__main__":
     try:
         raw = load_results()
@@ -857,6 +901,7 @@ if __name__ == "__main__":
         fig4_comprehensive_search_space_map(df)
         fig5_hardware_efficiency_profiles(df)
         fig6_training_curves()
+        export_master_summary_json(df)
         logger.info("Script completed.")
     except Exception as e:
         logger.critical(f"Error: {e}", exc_info=True)
