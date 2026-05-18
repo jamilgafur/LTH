@@ -1,7 +1,7 @@
 #!/bin/bash
 
 models=("VGG16" "RegNetX_400MF" "XceptionNet" "InceptionNet" "MobileNet" "ConvNeXt")
-datasets=("tinyimagenet")
+datasets=("tinyimagenet" "Cifar10")
 quant=("True" "False")
 
 echo "=== Submitting Stage 2: Parallel HPC Execution ==="
