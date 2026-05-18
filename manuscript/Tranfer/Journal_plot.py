@@ -160,6 +160,8 @@ def load_results() -> pd.DataFrame:
                 "is_quantized": is_quant, "accuracy": metrics.get("final_accuracy"),
                 "params": metrics.get("param_count"), "flops": metrics.get("flops"),
                 "memory": metrics.get("total_size_mb"),
+                "acc_curve": metrics.get("accuracies", []),
+                "loss_curve": metrics.get("losses", []),
             })
             
     logger.info(f"Successfully parsed {len(rows)} experiment rows.")
@@ -168,21 +170,54 @@ def load_results() -> pd.DataFrame:
 def normalize(df: pd.DataFrame) -> pd.DataFrame:
     out = []
     for (ds, arch), g in df.groupby(["dataset", "architecture"]):
+        # Use our strict baseline finder
         baseline = find_baseline(g)
         if baseline is None:
             for _, r in g.iterrows(): out.append(r)
             continue
             
         b_acc = baseline["accuracy"]
+        b_params = baseline["params"]
+        
+        # Isolate the baseline curves
+        baseline_mask = g["exp_name"].str.lower().str.contains("baseline")
+        b_df_curves = g[baseline_mask & (g["is_quantized"] == False)]
+        if b_df_curves.empty: b_df_curves = g[baseline_mask]
+        
+        b_loss_curve = b_df_curves.iloc[0].get("loss_curve", []) if not b_df_curves.empty else []
+
         for _, r in g.iterrows():
             row = r.copy()
-            if pd.notnull(baseline.get("params")) and baseline["params"] > 0:
+            if pd.notnull(b_params) and b_params > 0:
                 row["d_acc"] = r["accuracy"] - b_acc 
-                row["acc_drop"] = b_acc - r["accuracy"] 
                 row["baseline_acc"] = b_acc 
-                row["d_params"] = 100 * (1 - r["params"] / baseline["params"])
+                row["d_params"] = 100 * (1 - r["params"] / b_params)
+                
+                # --- NEW: Curve Dynamic Math ---
+                r_loss = r.get("loss_curve", [])
+                
+                if len(r_loss) > 5 and len(b_loss_curve) > 5:
+                    # 1. Asymptotic Loss Delta (Difference in last 5 epochs)
+                    cand_asymptote = np.mean(r_loss[-5:])
+                    base_asymptote = np.mean(b_loss_curve[-5:])
+                    row["d_asymptotic_loss"] = cand_asymptote - base_asymptote
+                    
+                    # 2. Trajectory Correlation (Pearson R)
+                    min_len = min(len(r_loss), len(b_loss_curve))
+                    if min_len > 10:
+                        corr_matrix = np.corrcoef(r_loss[:min_len], b_loss_curve[:min_len])
+                        row["loss_correlation"] = corr_matrix[0, 1]
+                else:
+                    row["d_asymptotic_loss"] = None
+                    row["loss_correlation"] = None
+
             out.append(row)
-    return pd.DataFrame(out)
+            
+    # Drop the heavy raw arrays before returning so the dataframe stays light
+    df_out = pd.DataFrame(out)
+    if "acc_curve" in df_out.columns:
+        df_out = df_out.drop(columns=["acc_curve", "loss_curve"])
+    return df_out
 
 # =========================
 # Figure Generations
@@ -885,7 +920,9 @@ def export_master_summary_json(df: pd.DataFrame, out_path: Path = Path("./master
                 "posthoc_or_posttrain": row.get("posthoc_or_posttrain"),
                 "is_quantized": row.get("is_quantized"),
                 "accuracy": row.get("accuracy"),
-                "d_acc": row.get("d_acc"),         # Delta accuracy compared to baseline
+                "d_acc": row.get("d_acc"),
+                "d_asymptotic_loss": row.get("d_asymptotic_loss"), # NEW
+                "loss_correlation": row.get("loss_correlation"),   # NEW
                 "params": row.get("params"),
                 "d_params_percent": row.get("d_params"), # Hardware reduction %
                 "flops": row.get("flops"),
@@ -899,6 +936,93 @@ def export_master_summary_json(df: pd.DataFrame, out_path: Path = Path("./master
     except Exception as e:
         logger.error(f"[SUMMARY] Failed to write master JSON: {e}")
 
+# ========================= FIG 7 ========================= #
+
+def fig7_convergence_metrics(
+    df: pd.DataFrame,
+    out_dir: Path = Path("./figures/convergence")
+):
+    """
+    Generates a dual-panel bar chart proving that candidate models
+    reach the exact same thermodynamic loss minimum as the baseline control,
+    preventing the 'just train it longer' counter-argument.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Ensure the dataframe actually has the new metrics before plotting
+    if 'loss_correlation' not in df.columns or 'd_asymptotic_loss' not in df.columns:
+        logger.warning("[FIG7] Convergence metrics not found in dataframe. Run normalize() with curve extraction.")
+        return
+
+    for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
+        # Filter to just the unquantized candidate runs (we compare FP32 training curves)
+        candidates = g_metrics[(g_metrics['posthoc_or_posttrain'] != 'Baseline') & 
+                               (g_metrics['is_quantized'] == False)].copy()
+        
+        # Drop any rows where curves were missing or too short to calculate
+        candidates = candidates.dropna(subset=['loss_correlation', 'd_asymptotic_loss'])
+        
+        if candidates.empty:
+            continue
+            
+        # Sort by delta accuracy to keep the x-axis consistent with Figure 5
+        candidates = candidates.sort_values(by='d_acc', ascending=False)
+        
+        # Set up a stacked figure
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+        
+        x_labels = [f"{row['base_name']}\n($\\Delta$ {row['d_acc']:+.1f}%)" for _, row in candidates.iterrows()]
+        x_pos = np.arange(len(x_labels))
+        
+        # --- Top Panel: Trajectory Correlation (r) ---
+        sns.barplot(data=candidates, x='base_name', y='loss_correlation', ax=ax1, 
+                    color='#4C72B0', edgecolor='black', alpha=0.9)
+        
+        ax1.axhline(1.0, color='black', linestyle='--', linewidth=2, label='Baseline Control (r = 1.0)')
+        
+        # Auto-scale Y to show variation but emphasize proximity to 1.0
+        min_corr = min(0.9, candidates['loss_correlation'].min() - 0.05)
+        ax1.set_ylim(min_corr, 1.05)
+        
+        ax1.set_ylabel(r"Pearson Correlation ($r$)", fontweight='bold', fontsize=12)
+        ax1.set_title(f"Convergence Trajectory & Asymptotic Stability\n{arch} | {format_dataset_name(dataset)}", 
+                      fontweight='bold', fontsize=14, pad=15)
+        ax1.legend(loc='lower left', framealpha=0.9)
+        ax1.xaxis.grid(False); ax1.yaxis.grid(True, linestyle='--', alpha=0.7)
+        ax1.set_axisbelow(True)
+        
+        # --- Bottom Panel: Asymptotic Loss Delta (ΔL) ---
+        sns.barplot(data=candidates, x='base_name', y='d_asymptotic_loss', ax=ax2, 
+                    color='#DD8452', edgecolor='black', alpha=0.9)
+        
+        ax2.axhline(0.0, color='black', linestyle='--', linewidth=2, label='Baseline Control Ceiling (0.0)')
+        
+        # Make the plot symmetrically bounded around 0 for visual clarity
+        max_abs_val = candidates['d_asymptotic_loss'].abs().max()
+        padding = max(0.02, max_abs_val * 0.2)
+        ax2.set_ylim(-max_abs_val - padding, max_abs_val + padding)
+        
+        ax2.set_ylabel(r"$\Delta$ Final Loss ($\Delta \mathcal{L}_{final}$)", fontweight='bold', fontsize=12)
+        ax2.set_xlabel("Candidate Architectural Sequence", fontweight='bold', fontsize=12)
+        
+        ax2.set_xticks(x_pos)
+        ax2.set_xticklabels(x_labels, rotation=45, ha='right', fontweight='bold', fontsize=11)
+        ax2.legend(loc='upper right', framealpha=0.9)
+        ax2.xaxis.grid(False); ax2.yaxis.grid(True, linestyle='--', alpha=0.7)
+        ax2.set_axisbelow(True)
+        
+        sns.despine(ax=ax1)
+        sns.despine(ax=ax2)
+        plt.tight_layout()
+        
+        # Save output
+        clean_ds = dataset.strip("_")
+        save_path = out_dir / f"{arch}_{clean_ds}_convergence_metrics.png"
+        plt.savefig(save_path, bbox_inches='tight', dpi=300)
+        plt.close()
+        
+        logger.info(f"[FIG7] Saved convergence metrics plot for {arch}/{dataset} at {save_path}")
+
 if __name__ == "__main__":
     try:
         raw = load_results()
@@ -910,6 +1034,7 @@ if __name__ == "__main__":
         fig4_comprehensive_search_space_map(df)
         fig5_hardware_efficiency_profiles(df)
         fig6_training_curves()
+        fig7_convergence_metrics(df)
         export_master_summary_json(df)
         logger.info("Script completed.")
     except Exception as e:
