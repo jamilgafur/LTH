@@ -53,8 +53,9 @@ plt.rcParams.update({
     "axes.spines.top": False,
     "axes.spines.right": False,
 })
-
-RESULTS_DIR = Path("./")
+epochs = 200
+pretrain = 200
+RESULTS_DIR = Path(f"./*epochs{epochs}*pretrain{pretrain}*")
 FIG_DIR = Path("./figures")
 TABLE_DIR = Path("./tables")
 DIAGNOSTICS_DIR = Path("./diagnostics")
