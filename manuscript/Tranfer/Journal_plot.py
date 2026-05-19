@@ -56,13 +56,15 @@ plt.rcParams.update({
 epochs = 200
 pretrain = 200
 RESULTS_DIR = Path(f"./*epochs{epochs}*pretrain{pretrain}*")
-FIG_DIR = Path("./figures")
-TABLE_DIR = Path("./tables")
-DIAGNOSTICS_DIR = Path("./diagnostics")
+
+# --- UPDATE: Make output directories dynamic based on parameters ---
+FIG_DIR = Path(f"./figures_ep{epochs}_pre{pretrain}")
+TABLE_DIR = Path(f"./tables_ep{epochs}_pre{pretrain}")
+DIAGNOSTICS_DIR = Path(f"./diagnostics_ep{epochs}_pre{pretrain}")
 
 for d in [FIG_DIR, TABLE_DIR, DIAGNOSTICS_DIR]:
     d.mkdir(parents=True, exist_ok=True)
-
+    
 DATASET_ORDER = ["cifar10_", "cifar100_", "tinyimagenet", "imagenet", "ConvNeXt"]
 
 # =========================
@@ -289,7 +291,7 @@ def fig2_methodology_bav_regions(
         h_vals = np.array(h_vals)
         sigma_bars = np.array(sigma_bars)
 
-        json_pattern = f"{arch}_{dataset}_*_discovered_regions.json"
+        json_pattern = f"{arch}_{dataset}_epochs{epochs}_pretrain{pretrain}_*_discovered_regions.json"        
         json_files = list(Path(".").glob(json_pattern))
         verified_idx_ranges = []
         
@@ -527,7 +529,7 @@ def fig4_comprehensive_search_space_map(
         layers = layer_df['Layer'].tolist()
 
         # 2. Bulletproof Case-Insensitive JSON Search
-        all_jsons = list(Path(".").glob(f"{arch}_*_discovered_regions.json"))
+        all_jsons = list(Path(".").glob(f"{arch}_*_epochs{epochs}_pretrain{pretrain}_*_discovered_regions.json"))
         json_candidates = [f for f in all_jsons if clean_ds in f.name.lower()]
         
         if not json_candidates: 

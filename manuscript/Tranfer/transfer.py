@@ -828,9 +828,6 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=No
 # ==============================================================================
 # Refactored Main Execution Pipeline
 # ==============================================================================
-# ==============================================================================
-# Refactored Main Execution Pipeline
-# ==============================================================================
 
 def parse_cli_args():
     """Extracts and returns command line arguments."""
@@ -986,7 +983,7 @@ def main():
     model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
     model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][1])
 
-    json_file = f"{args.model}_{args.dataset}_{'JF' if args.JF else 'Kevin'}_discovered_regions.json"
+    json_file = f"{args.model}_{args.dataset}_epochs{args.epochs}_pretrain{args.pretrain}_{'JF' if args.JF else 'Kevin'}_discovered_regions.json"
 
     # Route to appropriate stage
     if args.experiment == "discover":
