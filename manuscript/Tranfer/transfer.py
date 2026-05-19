@@ -711,7 +711,10 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
 
     for name, layers in experiments.items():
         print(f"\n--- Running experiment: {name} ---")
-        run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
+        run_epochs = epochs
+        if name == "Baseline Model":
+            run_epochs = args.pretrain
+        run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, run_epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
 
 # ==============================================================================
 # Main Entry Point
