@@ -846,13 +846,22 @@ def parse_cli_args():
 
 
 def run_discovery_stage(args, device, train_loader, test_loader, model_class, model_kwargs, input_size, model_path_097, model_path_000, json_file):
-    """Handles Phase 1: Model Baseline Training, Evaluation, Probe, and JSON generation."""
+    """
+    Handles Phase 1: Model Baseline Training, Evaluation, Probe, and JSON generation.
+    Includes persistent layer variance caching to avoid redundant computation.
+    """
     print(f"\n{'='*60}")
     print(f"[MODE] STAGE 1: DISCOVERY & PRE-FLIGHT PROBE")
     print(f"       Model: {args.model} | Dataset: {args.dataset}")
     print(f"{'='*60}\n")
     
-    # --- Phase 1: Validating/Training 'Original Model' Baseline ---
+    # 1. Setup paths for persistent storage
+    experiment_id = f"epochs{args.epochs}_pretrain{args.pretrain}"
+    plots_root = Path(f"./runs/plots/{args.model}/{args.dataset}/{experiment_id}")
+    os.makedirs(plots_root, exist_ok=True)
+    variance_file = plots_root / "layer_variances.json"
+
+    # 2. Phase 1: Validating/Training 'Original Model' Baseline
     print(f"[INFO] Phase 1: Validating/Training 'Original Model' Baseline...")
     run_experiments_for_dataset(
         {"Original Model": None}, args.dataset, model_path_097, model_path_000, 
@@ -860,7 +869,7 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
         model_kwargs, args.post_compress_epochs, None, args.quant, args
     )
 
-    # --- Phase 2: Loading Finalized Baseline Weights & Auto-Healing ---
+    # 3. Phase 2: Loading Finalized Baseline Weights & Auto-Healing
     print(f"\n[INFO] Phase 2: Loading Finalized Baseline Weights...")
     save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}_epochs{args.epochs}_pretrain{args.pretrain}_postcompress{args.post_compress_epochs}"
     
@@ -869,61 +878,62 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
     quant_str = "_quant" if args.quant else ""
     trained_baseline_path = os.path.join(ckpt_dir, f"final_{flag_str}_Original Model{quant_str}.pt")
     
-    print(f"[DEBUG] Expected trained baseline path: {trained_baseline_path}")
-    
     model_class_obj = eval(model_class) if isinstance(model_class, str) else model_class
     eval_model = model_class_obj(**model_kwargs).to(device)
     
     if os.path.exists(trained_baseline_path):
-        print(f"[INFO] Checkpoint located. Restoring model state dict...")
         ckpt = torch.load(trained_baseline_path, map_location=device, weights_only=False)
         eval_model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt['model'], strict=False)
-        print(f"[✓] Weights successfully applied.")
         
-        # ---> FORMAT THE TENSOR SHAPE BEFORE AUTO-HEAL <---
         input_tensor = model_kwargs["one_batch"].to(device)
-        if len(input_tensor.shape) == 3: 
-            input_tensor = input_tensor.unsqueeze(0) # Ensures [B, C, H, W]
+        if len(input_tensor.shape) == 3: input_tensor = input_tensor.unsqueeze(0)
             
-        # ---> AUTO-HEAL INJECTION <---
-        experiment_name = f"Original Model{quant_str}"
         auto_recover_metrics(
             checkpoint_path=trained_baseline_path, 
-            experiment_name=experiment_name, 
+            experiment_name=f"Original Model{quant_str}", 
             base_folder=save_path,
             model=eval_model,          
             test_loader=test_loader,   
-            input_shape=input_tensor.shape,    # Pass the guaranteed 4D shape here
+            input_shape=input_tensor.shape,
             device=device
         )
     else:
-        print(f"[ERROR] Failed to find finalized model at {trained_baseline_path}")
-        print(f"[ERROR] Discovery cannot proceed without a valid baseline.")
+        print(f"[ERROR] Baseline model not found at {trained_baseline_path}. Aborting.")
         return
 
-    print(f"\n[INFO] Phase 3: Executing Network Probe...")
-    layer_variances = get_layer_variances(eval_model, input_tensor)
+    # 4. Phase 3: Network Probe with Persistence Check
+    if variance_file.exists():
+        print(f"[INFO] Found existing layer variances at {variance_file}. Skipping probe.")
+        with open(variance_file, 'r') as f:
+            layer_variances = json.load(f)
+    else:
+        print(f"[INFO] No variance file found. Executing Network Probe...")
+        layer_variances = get_layer_variances(eval_model, input_tensor)
+        with open(variance_file, 'w') as f:
+            json.dump(layer_variances, f, indent=4)
+        print(f"[✓] Layer variances saved to {variance_file}")
     
-    # --- Updated Phase 4: Dynamic Path Construction ---
-    experiment_id = f"epochs{args.epochs}_pretrain{args.pretrain}"
-    plots_root = Path(f"./runs/plots/{args.model}/{args.dataset}/{experiment_id}")
-    
+    # 5. Phase 4: Dynamic Experiment Generation
+    dynamic_experiments = get_dynamic_experiment_config(
+        model=eval_model,
+        cnn_layers=list(layer_variances.keys()),
+        variances=list(layer_variances.values()),
+        input_shape=input_tensor.shape
+    )
+
     analyze_collapse_heuristics(
         model=eval_model, 
         input_tensor=input_tensor, 
-        save_root_dir=plots_root, # Now using dynamic path
+        save_root_dir=plots_root, 
         model_name=args.model, 
         dataset_name=args.dataset,
-        exp_config=get_dynamic_experiment_config(...) # Ensure args are passed here
+        exp_config=dynamic_experiments
     )
     
-    # --- Phase 5: Exporting Configuration Map ---
-    print(f"\n[INFO] Phase 5: Exporting Configuration Map...")
+    # 6. Phase 5: Exporting Configuration Map
     with open(json_file, 'w') as f:
         json.dump(dynamic_experiments, f, indent=4)
     print(f"[✓] Stage 1 Complete. Exported {len(dynamic_experiments)} targets to '{json_file}'.")
-    print(f"Contained {dynamic_experiments}")
-
 
 def run_hpc_stage(args, device, train_loader, test_loader, model_class, model_kwargs, model_path_097, model_path_000, json_file):
     """Handles Phase 2: HPC execution of specific targets parsed from the generated JSON map."""
