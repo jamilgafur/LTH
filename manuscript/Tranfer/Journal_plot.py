@@ -280,64 +280,68 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
 # ========================= FIG 2 ========================= #
 
 def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
-    stats_dir = get_stats_dir(epochs, pretrain) # Uses global helper
-    import json
+    stats_dir = get_stats_dir(epochs, pretrain) 
+    logger.info(f"Looking for stats in: {stats_dir.resolve()}")
+    
     out_dir.mkdir(parents=True, exist_ok=True)
 
     stat_files = [f for f in stats_dir.glob("*_layer_stats.csv") if "normalized" not in f.name]
-    if not stat_files: return
+    
+    if not stat_files:
+        logger.warning(f"No *_layer_stats.csv files found in {stats_dir}. Check your path!")
+        return
+    else:
+        logger.info(f"Found {len(stat_files)} stat files to process.")
 
     for csv_path in stat_files:
-        parts = csv_path.stem.replace("_layer_stats", "").split("_")
-        arch = parts[0]
-        dataset = "_".join(parts[1:])
-        
+        logger.info(f"Processing: {csv_path.name}")
         try:
             layer_df = pd.read_csv(csv_path)
             layers = layer_df['Layer'].tolist()
             variances = np.maximum(layer_df['Variance'].values, 1e-6)
-        except Exception as e: continue
+        except Exception as e:
+            logger.error(f"Failed to read CSV {csv_path}: {e}")
+            continue
 
-        # --- CRITICAL FIX: Ensure centered window matches transfer.py EXACTLY ---
-        h_vals = []
-        sigma_bars = []
+        # --- Calculation Logic ---
+        h_vals, sigma_bars = [], []
         window_size = 3  
-        
         for i, sigma_i in enumerate(variances):
             start = max(0, i - window_size)
             end = min(len(variances), i + window_size + 1)
             local_vars = variances[start:end]
-            
             sigma_bar = np.mean(local_vars) if len(local_vars) > 0 else np.mean(variances)
             sigma_bar = max(sigma_bar, 1e-12)
             sigma_bars.append(sigma_bar)
-            
             diff = sigma_i - sigma_bar
             h = max(diff / sigma_bar, -1.0) if diff < 0 else min(diff / sigma_bar, 1.0)
             h_vals.append(h)
             
-        h_vals = np.array(h_vals)
-        sigma_bars = np.array(sigma_bars)
-
-        json_pattern = f"{arch}_{dataset}_epochs{epochs}_pretrain{pretrain}_*_discovered_regions.json"        
-        json_files = list(Path(".").glob(json_pattern))
-        verified_idx_ranges = []
+        # --- JSON Region Matching ---
+        # Fixed the glob pattern search to be more robust
+        parts = csv_path.stem.replace("_layer_stats", "").split("_")
+        arch, dataset = parts[0], "_".join(parts[1:])
         
-        if json_files:
+        json_pattern = f"*{arch}*{dataset}*discovered_regions.json"
+        json_files = list(Path(".").glob(json_pattern))
+        
+        verified_idx_ranges = []
+        if not json_files:
+            logger.debug(f"No JSON regions found for {arch} | {dataset}")
+        else:
             try:
                 with open(json_files[0], 'r') as f:
                     config = json.load(f)
                 for k, v in config.items():
-                    if k.startswith("Set_"):
-                        start_layer, end_layer = v
-                        try:
-                            # FIX 1: Exact match '==' instead of 'in'
-                            s_idx = next(idx for idx, n in enumerate(layers) if start_layer == n)
-                            e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer == n)
-                            verified_idx_ranges.append((s_idx, e_idx))
-                        except StopIteration: continue
-            except Exception: pass
+                    if k.startswith("Set_") and isinstance(v, (list, tuple)):
+                        start_layer, end_layer = v[0], v[-1]
+                        s_idx = next(idx for idx, n in enumerate(layers) if start_layer == n)
+                        e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer == n)
+                        verified_idx_ranges.append((s_idx, e_idx))
+            except Exception as e:
+                logger.error(f"Error parsing JSON {json_files[0]}: {e}")
 
+        # --- Plotting ---
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
         
         # FIX 2: Shift X-Axis to 1-based indexing
@@ -422,6 +426,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
         sns.despine(ax=ax2)
         plt.tight_layout()
         save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
+        print(f"[FIG2] Saving methodology BAV regions plot for {arch} on {dataset} at {save_path}")
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
 
