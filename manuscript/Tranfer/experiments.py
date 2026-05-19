@@ -276,7 +276,8 @@ def run_experiment(
         # Restore RNG states (ensures reproducibility on resume)
         torch.set_rng_state(checkpoint['torch_rng_state'].cpu())
         if torch.cuda.is_available():
-            torch.cuda.set_rng_state(checkpoint['cuda_rng_state'].cpu())
+            if checkpoint.get('cuda_rng_state') is not None:
+                torch.cuda.set_rng_state(checkpoint['cuda_rng_state'].cpu())
 
         start_epoch = checkpoint['epoch']
         all_data = checkpoint['data']
