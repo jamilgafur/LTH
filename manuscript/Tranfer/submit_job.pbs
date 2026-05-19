@@ -13,12 +13,18 @@ cd ~/LTH/manuscript/Tranfer/ || {
     exit 1
 }
 
+# --- Set Training Parameters ---
+PRETRAIN=200
+EPOCHS=100
+
 # --- Debug: Show variable values ---
 echo "MODEL=$MODEL"
 echo "DATASET=$DATASET"
 echo "EXPERIMENT=$EXPERIMENT"
 echo "FLAG=$FLAG"
 echo "QUANT=$QUANT"
+echo "PRETRAIN=$PRETRAIN"
+echo "EPOCHS=$EPOCHS"
 
 # --- Check for required variables ---
 if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$EXPERIMENT" ] || [ -z "$FLAG" ] || [ -z "$QUANT" ]; then
@@ -27,7 +33,8 @@ if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$EXPERIMENT" ] || [ -z "$FLAG" 
 fi
 
 # --- Prepare output file ---
-OUTPUT_FILE="${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}_${QUANT}_run.txt"
+# Added pretrain and epochs to the output file name
+OUTPUT_FILE="${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}_${QUANT}_pre${PRETRAIN}_ep${EPOCHS}_run.txt"
 
 # Remove existing output file if it exists
 if [ -f "$OUTPUT_FILE" ]; then
@@ -42,20 +49,18 @@ if [ "$QUANT" == "True" ]; then
 fi
 
 # --- Run the Python script ---
-echo "Executing: ~/env/lth_env/bin/python transfer.py --model $MODEL --dataset $DATASET --experiment $EXPERIMENT --$FLAG --pretrain 50 --epochs 50 --post_compress_epochs 0 $QUANT_FLAG"
+echo "Executing: ~/env/lth_env/bin/python transfer.py --model $MODEL --dataset $DATASET --experiment $EXPERIMENT --$FLAG --pretrain $PRETRAIN --epochs $EPOCHS --post_compress_epochs 0 $QUANT_FLAG"
 
 time ~/env/lth_env/bin/python transfer.py \
     --model "$MODEL" \
     --dataset "$DATASET" \
     --experiment "$EXPERIMENT" \
-    --pretrain 200 \
-    --epochs 100 \
+    --pretrain "$PRETRAIN" \
+    --epochs "$EPOCHS" \
     --post_compress_epochs 0 \
     --"$FLAG" \
     $QUANT_FLAG \
     > "$OUTPUT_FILE" 2>&1
 
 # append plots to outputfile
-
-time ~/env/lth_env/bin/python Journal_plot.py --model "$MODEL" --dataset "$DATASET" 
-
+time ~/env/lth_env/bin/python Journal_plot.py --model "$MODEL" --dataset "$DATASET"
