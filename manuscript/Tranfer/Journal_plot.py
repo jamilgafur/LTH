@@ -565,9 +565,12 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
   
 # ========================= FIG 3 ========================= #
 
+# ========================= FIG 3 ========================= #
+
 def fig3_v2t_heuristic_validation(
     df: pd.DataFrame,
-    stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
+    epochs: int,
+    pretrain: int,
     out_dir: Path = Path("./figures/heuristic_validation")
 ):
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -585,14 +588,33 @@ def fig3_v2t_heuristic_validation(
         clean_metrics = g_metrics[g_metrics['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained'])]
         if clean_metrics.empty: continue
 
-        csv_path = stats_dir / f"{arch}_{dataset}_experiment_block_stats.csv"
-        if not csv_path.exists(): continue
+        # --- UPDATE: Dynamic Path Resolution ---
+        clean_ds = dataset.strip("_")
+        arch_dir = Path(f"./runs/plots/{arch}")
+        if not arch_dir.exists(): continue
+        
+        # Case-insensitive dataset folder match
+        ds_dirs = [d for d in arch_dir.iterdir() if d.is_dir() and d.name.lower() == clean_ds.lower()]
+        if not ds_dirs: continue
+        
+        target_dir = ds_dirs[0] / f"epochs{epochs}_pretrain{pretrain}"
+        if not target_dir.exists(): continue
 
-        try:
-            df_h = pd.read_csv(csv_path)
-        except Exception: continue
+        # Scan all CSVs in this specific run to find the one with the Median Variance stats
+        csv_candidates = list(target_dir.rglob("*.csv"))
+        df_h = pd.DataFrame()
+        
+        for c in csv_candidates:
+            try:
+                temp_df = pd.read_csv(c)
+                if "Experiment" in temp_df.columns and "Median Variance" in temp_df.columns:
+                    df_h = temp_df
+                    break
+            except Exception: continue
 
-        if "Experiment" not in df_h.columns: continue
+        if df_h.empty: 
+            logger.debug(f"[FIG3] No valid variance CSV found for {arch}/{dataset}")
+            continue
 
         merged = pd.merge(df_h, clean_metrics, left_on="Experiment", right_on="base_name", how="inner")
         if merged.empty: continue
@@ -647,12 +669,14 @@ def fig3_v2t_heuristic_validation(
     plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
     plt.close()
     logger.info(f"[FIG3] Saved V2T heuristic validation map at {out_dir / 'V2T_heuristic_validation_map.png'}")
+# ========================= FIG 4 ========================= #
 
 # ========================= FIG 4 ========================= #
 
 def fig4_comprehensive_search_space_map(
     df: pd.DataFrame,
-    stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
+    epochs: int,
+    pretrain: int,
     out_dir: Path = Path("./figures/search_space")
 ):
     import matplotlib.gridspec as gridspec
@@ -679,12 +703,21 @@ def fig4_comprehensive_search_space_map(
         except Exception: return pd.DataFrame()
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-        # Strip underscores and lowercase for safe searching
         clean_ds = dataset.strip("_").lower()
         
-        # 1. Bulletproof Case-Insensitive CSV Search
-        all_csvs = list(stats_dir.glob(f"{arch}_*_layer_stats.csv"))
-        csv_candidates = [f for f in all_csvs if clean_ds in f.name.lower() and "normalized" not in f.name.lower()]
+        # --- UPDATE: Bulletproof Path Discovery for Layer Stats ---
+        arch_dir = Path(f"./runs/plots/{arch}")
+        if not arch_dir.exists(): continue
+        
+        # Case-insensitive dataset folder match
+        ds_dirs = [d for d in arch_dir.iterdir() if d.is_dir() and d.name.lower() == clean_ds]
+        if not ds_dirs: continue
+        
+        stats_dir = ds_dirs[0] / f"epochs{epochs}_pretrain{pretrain}" / "Layer_Statistics"
+        if not stats_dir.exists(): continue
+        
+        all_csvs = list(stats_dir.glob("*_layer_stats.csv"))
+        csv_candidates = [f for f in all_csvs if "normalized" not in f.name.lower()]
         
         if not csv_candidates: 
             continue
@@ -693,15 +726,15 @@ def fig4_comprehensive_search_space_map(
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
 
-        # 2. Bulletproof Case-Insensitive JSON Search
-        all_jsons = list(Path(".").glob(f"{arch}_*_epochs{epochs}_pretrain{pretrain}_*_discovered_regions.json"))
-        json_candidates = [f for f in all_jsons if clean_ds in f.name.lower()]
+        # --- UPDATE: Robust recursive JSON search ---
+        # Will search everywhere for the JSON tied to this specific run
+        all_jsons = list(Path(".").rglob(f"{arch}*{clean_ds}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
         
-        if not json_candidates: 
+        if not all_jsons: 
             continue
             
         try:
-            with open(json_candidates[0], 'r') as f:
+            with open(all_jsons[0], 'r') as f:
                 model_exps = json.load(f)
         except Exception: continue
         if not model_exps: continue
@@ -718,7 +751,6 @@ def fig4_comprehensive_search_space_map(
             for exp_name, ranges in model_exps.items():
                 cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
                 
-                # Ensure Baseline gets processed and maps correctly to the normalized dataframe
                 if "Original" in cleaned_name or "Baseline" in cleaned_name:
                     cleaned_name = "Original Model"
                 
@@ -740,7 +772,6 @@ def fig4_comprehensive_search_space_map(
                     
             if not valid_exps: continue
             
-            # Sort by delta accuracy, but force the Baseline (None) to the very top (highest index)
             valid_exps = sorted(valid_exps, key=lambda x: (1 if x[1] is None else 0, x[2].get('d_acc', -100)))
             
             num_bars = len(valid_exps)
@@ -757,7 +788,6 @@ def fig4_comprehensive_search_space_map(
             ax_side.axis('off')
             
             for i, (orig_exp_name, ranges, exp_results, display_name, p_red, f_red, m_red) in enumerate(valid_exps):
-                # Skip drawing the horizontal block span for the baseline
                 if ranges is None:
                     continue
                     
@@ -777,7 +807,6 @@ def fig4_comprehensive_search_space_map(
             ax_heur.set_ylim(y_limits)
             ax_heur.set_yticks(range(len(valid_exps)))
             
-            # Label the baseline as a Reference point
             ax_heur.set_yticklabels([e[3] if e[1] is not None else f"{e[3]} (Control)" for e in valid_exps], fontsize=11, fontweight='bold')
             ax_heur.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
             ax_heur.set_title(f"Structural Candidates & Hardware Reductions", loc='left', pad=25, fontsize=14, fontweight='bold')
@@ -792,11 +821,8 @@ def fig4_comprehensive_search_space_map(
             
             for i, (_, ranges, exp_results, _, p_red, f_red, m_red) in enumerate(valid_exps):
                 d_acc = exp_results.get('d_acc', np.nan)
-                
-                # Baseline gets a neutral dark grey text, others get color coded
                 c = "#333333" if ranges is None else get_acc_color(d_acc)
                 
-                # Dynamically extract and format ALL values, strictly pulling from the dataframe
                 d_str = f"{d_acc:+.1f}%" if pd.notnull(d_acc) else "N/A"
                 p_str = f"{p_red:.1f}%" if pd.notnull(p_red) else "N/A"
                 f_str = f"{f_red:.1f}%" if pd.notnull(f_red) else "N/A"
@@ -813,7 +839,7 @@ def fig4_comprehensive_search_space_map(
             plt.close(fig_cand)
 
     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
-  
+    
 # ========================= FIG 5 ========================= #
 def fig5_hardware_efficiency_profiles(
     df: pd.DataFrame,
@@ -1192,7 +1218,6 @@ def fig7_convergence_metrics(
         logger.info(f"[FIG7] Saved convergence metrics plot for {arch}/{dataset} at {save_path}")
 
 
-
 # --- Updated __main__ block ---
 if __name__ == "__main__":
     try:
@@ -1201,11 +1226,12 @@ if __name__ == "__main__":
         
         # Consistent dynamic output directories
         fig1(df, out_dir=FIG_DIR / "individual_plots")
-        # Fixed: passed epochs and pretrain as arguments
         fig2_methodology_bav_regions(epochs, pretrain, out_dir=FIG_DIR / "methodology")
-        fig3_v2t_heuristic_validation(df, out_dir=FIG_DIR / "heuristic_validation")
-        # Fixed: removed redundant epoch/pretrain args
-        fig4_comprehensive_search_space_map(df, out_dir=FIG_DIR / "search_space")
+        
+        # --- UPDATE: Pass epochs and pretrain here ---
+        fig3_v2t_heuristic_validation(df, epochs, pretrain, out_dir=FIG_DIR / "heuristic_validation")
+        fig4_comprehensive_search_space_map(df, epochs, pretrain, out_dir=FIG_DIR / "search_space")
+        
         fig5_hardware_efficiency_profiles(df, out_dir=FIG_DIR / "hardware_efficiency")
         fig6_training_curves(out_dir=FIG_DIR / "learning_curves")
         fig7_convergence_metrics(df, out_dir=FIG_DIR / "convergence")
