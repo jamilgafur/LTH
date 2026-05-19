@@ -144,11 +144,24 @@ def find_baseline(df: pd.DataFrame):
 
 
 def load_results() -> pd.DataFrame:
-    logger.info(f"Scanning for metrics files in {RESULTS_DIR.resolve()}")
-    files = list(RESULTS_DIR.rglob("*merged_metrics.json"))
+    logger.info(f"Scanning for metrics files matching epochs={epochs}, pretrain={pretrain}")
+    
+    # 1. Search for all merged_metrics.json files recursively
+    all_metrics = list(Path(".").rglob("*merged_metrics.json"))
+    
+    # 2. Filter them to only include those matching the current epochs and pretrain strings
+    files = [
+        p for p in all_metrics 
+        if f"epochs{epochs}" in str(p) and f"pretrain{pretrain}" in str(p)
+    ]
+    
     if not files:
-        if (RESULTS_DIR / "merged_metrics.json").exists(): files = [RESULTS_DIR / "merged_metrics.json"]
-        else: raise FileNotFoundError("No merged_metrics.json files found")
+        # Fallback just in case it's in the root directory
+        root_file = Path("merged_metrics.json")
+        if root_file.exists(): 
+            files = [root_file]
+        else: 
+            raise FileNotFoundError(f"No merged_metrics.json files found matching epochs{epochs} and pretrain{pretrain}")
     
     rows = []
     for p in files:
