@@ -14,7 +14,7 @@ PRETRAIN=$2
 rm ~/submit* 2>/dev/null
 
 models=("VGG16" "RegNetX_400MF" "XceptionNet" "InceptionNet" "MobileNet" "ConvNeXt")
-datasets=("Cifar10" "tinyimagenet" "Cifar100")
+datasets=("tinyimagenet" "Cifar10")
 quant=("False")
 
 echo "=== Submitting Stage 1: Discovery Jobs ==="

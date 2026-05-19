@@ -53,8 +53,8 @@ plt.rcParams.update({
     "axes.spines.top": False,
     "axes.spines.right": False,
 })
-epochs = 200
-pretrain = 200
+epochs = 100
+pretrain = 100
 RESULTS_DIR = Path(f"./*epochs{epochs}*pretrain{pretrain}*")
 
 # --- UPDATE: Make output directories dynamic based on parameters ---
