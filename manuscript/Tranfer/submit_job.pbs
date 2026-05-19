@@ -13,10 +13,6 @@ cd ~/LTH/manuscript/Tranfer/ || {
     exit 1
 }
 
-# --- Set Training Parameters ---
-PRETRAIN=200
-EPOCHS=100
-
 # --- Debug: Show variable values ---
 echo "MODEL=$MODEL"
 echo "DATASET=$DATASET"
@@ -27,13 +23,12 @@ echo "PRETRAIN=$PRETRAIN"
 echo "EPOCHS=$EPOCHS"
 
 # --- Check for required variables ---
-if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$EXPERIMENT" ] || [ -z "$FLAG" ] || [ -z "$QUANT" ]; then
-    echo "Error: One or more required environment variables (MODEL, DATASET, EXPERIMENT, FLAG, QUANT) are not set." >&2
+if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$EXPERIMENT" ] || [ -z "$FLAG" ] || [ -z "$QUANT" ] || [ -z "$PRETRAIN" ] || [ -z "$EPOCHS" ]; then
+    echo "Error: One or more required environment variables (MODEL, DATASET, EXPERIMENT, FLAG, QUANT, PRETRAIN, EPOCHS) are not set." >&2
     exit 1
 fi
 
 # --- Prepare output file ---
-# Added pretrain and epochs to the output file name
 OUTPUT_FILE="${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}_${QUANT}_pre${PRETRAIN}_ep${EPOCHS}_run.txt"
 
 # Remove existing output file if it exists
