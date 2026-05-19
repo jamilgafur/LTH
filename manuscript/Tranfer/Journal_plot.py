@@ -279,11 +279,8 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
 
 # ========================= FIG 2 ========================= #
 
-def fig2_methodology_bav_regions(
-    stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
-    out_dir: Path = Path("./figures/methodology")
-):
-    stats_dir = get_stats_dir(epochs, pretrain)
+def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
+    stats_dir = get_stats_dir(epochs, pretrain) # Uses global helper
     import json
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1059,24 +1056,24 @@ def fig7_convergence_metrics(
 
 
 
+# --- Updated __main__ block ---
 if __name__ == "__main__":
     try:
         raw = load_results()
         df = normalize(raw)
         
-        # --- UPDATE: Route all outputs to the parameterized FIG_DIR ---
+        # Consistent dynamic output directories
         fig1(df, out_dir=FIG_DIR / "individual_plots")
-        fig2_methodology_bav_regions(stats_dir = get_stats_dir(epochs, pretrain), out_dir=FIG_DIR / "methodology")
+        # Fixed: passed epochs and pretrain as arguments
+        fig2_methodology_bav_regions(epochs, pretrain, out_dir=FIG_DIR / "methodology")
         fig3_v2t_heuristic_validation(df, out_dir=FIG_DIR / "heuristic_validation")
-        fig4_comprehensive_search_space_map(df, epochs, pretrain, out_dir=FIG_DIR / "search_space")
+        # Fixed: removed redundant epoch/pretrain args
+        fig4_comprehensive_search_space_map(df, out_dir=FIG_DIR / "search_space")
         fig5_hardware_efficiency_profiles(df, out_dir=FIG_DIR / "hardware_efficiency")
         fig6_training_curves(out_dir=FIG_DIR / "learning_curves")
         fig7_convergence_metrics(df, out_dir=FIG_DIR / "convergence")
         
-        # Keep master summary JSON isolated as well
         export_master_summary_json(df, out_path=Path(f"./master_results_summary_ep{epochs}_pre{pretrain}.json"))
-        
         logger.info("Script completed.")
     except Exception as e:
-        logger.critical(f"Error: {e}", exc_info=True)
         logger.critical(f"Error: {e}", exc_info=True)

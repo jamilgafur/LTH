@@ -901,30 +901,20 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
         print(f"[ERROR] Discovery cannot proceed without a valid baseline.")
         return
 
-    # --- Phase 3: Executing Network Probe ---
     print(f"\n[INFO] Phase 3: Executing Network Probe...")
-    # (input_tensor is already defined above now, so we just pass it straight in)
     layer_variances = get_layer_variances(eval_model, input_tensor)
     
-    dynamic_experiments = get_dynamic_experiment_config(
-        model=eval_model, 
-        cnn_layers=list(layer_variances.keys()), 
-        variances=list(layer_variances.values()), 
-        input_shape=input_tensor.shape, 
-        window_size=3
-    )
-
-    # --- Phase 4: Generating Heuristic Plots & Analytics ---
-    print(f"\n[INFO] Phase 4: Generating Heuristic Plots & Analytics...")
-    experiment_id = f"ep{args.epochs}_pre{args.pretrain}"
+    # --- Updated Phase 4: Dynamic Path Construction ---
+    experiment_id = f"epochs{args.epochs}_pretrain{args.pretrain}"
     plots_root = Path(f"./runs/plots/{args.model}/{args.dataset}/{experiment_id}")
+    
     analyze_collapse_heuristics(
         model=eval_model, 
         input_tensor=input_tensor, 
-        save_root_dir=plots_root, 
+        save_root_dir=plots_root, # Now using dynamic path
         model_name=args.model, 
         dataset_name=args.dataset,
-        exp_config=dynamic_experiments
+        exp_config=get_dynamic_experiment_config(...) # Ensure args are passed here
     )
     
     # --- Phase 5: Exporting Configuration Map ---
