@@ -53,8 +53,21 @@ plt.rcParams.update({
     "axes.spines.top": False,
     "axes.spines.right": False,
 })
-epochs = 100
-pretrain = 100
+
+import argparse
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Generate Journal Plots")
+
+    parser.add_argument('--pretrain', type=int, default=None, 
+                        help="Specific epoch integer to filter the Pretrain phase.")
+    parser.add_argument('--epoch', type=int, default=None, 
+                        help="Specific epoch integer to filter the regular/finetuning phases.")
+    
+    return parser.parse_args()
+args = parse_args()
+epochs = args.epoch
+pretrain = args.pretrain
 RESULTS_DIR = Path(f"./*epochs{epochs}*pretrain{pretrain}*")
 
 # --- UPDATE: Make output directories dynamic based on parameters ---
@@ -1025,6 +1038,8 @@ def fig7_convergence_metrics(
         plt.close()
         
         logger.info(f"[FIG7] Saved convergence metrics plot for {arch}/{dataset} at {save_path}")
+
+
 
 if __name__ == "__main__":
     try:
