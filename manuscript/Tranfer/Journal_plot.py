@@ -280,155 +280,164 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
 # ========================= FIG 2 ========================= #
 
 def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
-    stats_dir = get_stats_dir(epochs, pretrain) 
-    logger.info(f"Looking for stats in: {stats_dir.resolve()}")
+    base_dir = Path("./runs/plots")
     
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    stat_files = [f for f in stats_dir.glob("*_layer_stats.csv") if "normalized" not in f.name]
+    # Use glob to find the specific experiment folder matching these epochs/pretrain
+    # This avoids hardcoding the model/dataset names in the path
+    pattern = f"**/epochs{epochs}_pretrain{pretrain}"
+    found_dirs = list(base_dir.glob(pattern))
     
-    if not stat_files:
-        logger.warning(f"No *_layer_stats.csv files found in {stats_dir}. Check your path!")
+    if not found_dirs:
+        logger.error(f"Could not find any directories matching {pattern} under {base_dir}")
         return
-    else:
-        logger.info(f"Found {len(stat_files)} stat files to process.")
 
-    for csv_path in stat_files:
-        logger.info(f"Processing: {csv_path.name}")
-        try:
-            layer_df = pd.read_csv(csv_path)
-            layers = layer_df['Layer'].tolist()
-            variances = np.maximum(layer_df['Variance'].values, 1e-6)
-        except Exception as e:
-            logger.error(f"Failed to read CSV {csv_path}: {e}")
+    # Process each found directory
+    for stats_dir in found_dirs:
+        logger.info(f"Scanning for stats in: {stats_dir}")
+        
+        # Now glob for the files within that specific experiment folder
+        stat_files = [f for f in stats_dir.glob("*_layer_stats.csv") if "normalized" not in f.name]
+        
+        if not stat_files:
+            logger.warning(f"No *_layer_stats.csv found in {stats_dir}")
             continue
 
-        # --- Calculation Logic ---
-        h_vals, sigma_bars = [], []
-        window_size = 3  
-        for i, sigma_i in enumerate(variances):
-            start = max(0, i - window_size)
-            end = min(len(variances), i + window_size + 1)
-            local_vars = variances[start:end]
-            sigma_bar = np.mean(local_vars) if len(local_vars) > 0 else np.mean(variances)
-            sigma_bar = max(sigma_bar, 1e-12)
-            sigma_bars.append(sigma_bar)
-            diff = sigma_i - sigma_bar
-            h = max(diff / sigma_bar, -1.0) if diff < 0 else min(diff / sigma_bar, 1.0)
-            h_vals.append(h)
-            
-        # --- JSON Region Matching ---
-        # Fixed the glob pattern search to be more robust
-        parts = csv_path.stem.replace("_layer_stats", "").split("_")
-        arch, dataset = parts[0], "_".join(parts[1:])
-        
-        json_pattern = f"*{arch}*{dataset}*discovered_regions.json"
-        json_files = list(Path(".").glob(json_pattern))
-        
-        verified_idx_ranges = []
-        if not json_files:
-            logger.debug(f"No JSON regions found for {arch} | {dataset}")
-        else:
+        for csv_path in stat_files:
+            logger.info(f"Processing: {csv_path.name}")
             try:
-                with open(json_files[0], 'r') as f:
-                    config = json.load(f)
-                for k, v in config.items():
-                    if k.startswith("Set_") and isinstance(v, (list, tuple)):
-                        start_layer, end_layer = v[0], v[-1]
-                        s_idx = next(idx for idx, n in enumerate(layers) if start_layer == n)
-                        e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer == n)
-                        verified_idx_ranges.append((s_idx, e_idx))
+                layer_df = pd.read_csv(csv_path)
+                layers = layer_df['Layer'].tolist()
+                variances = np.maximum(layer_df['Variance'].values, 1e-6)
             except Exception as e:
-                logger.error(f"Error parsing JSON {json_files[0]}: {e}")
+                logger.error(f"Failed to read CSV {csv_path}: {e}")
+                continue
 
-        # --- Plotting ---
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
-        
-        # FIX 2: Shift X-Axis to 1-based indexing
-        x_vals = range(1, len(layers) + 1)
-        
-        ax1.plot(x_vals, variances, color='#4A4A4A', marker='o', markersize=4, linestyle='-', linewidth=1.5, label=r'Layer Variance ($\sigma_i$)')
-        ax1.plot(x_vals, sigma_bars, color='#ff7f0e', linestyle='--', linewidth=2.5, label=r'Local Context Mean ($\bar{\sigma}$)')
-        ax1.set_ylabel("Raw Variance (Log)", fontweight='bold', fontsize=12)
-        ax1.set_yscale('log')
-        ax1.set_title(f"Dynamic Structural Redundancy Analysis\n{arch} on {dataset.capitalize()}", pad=15, fontweight='bold', fontsize=15, loc='center')
-        ax1.legend(loc='upper right', frameon=False, fontsize=10)
-        sns.despine(ax=ax1)
-
-        veto_idx = int(len(layers) * 0.25)
-        final_states = ["DANGER"] * len(layers)
-        
-        for i in range(len(layers)):
-            if i < veto_idx:
-                final_states[i] = "VETO"
-            else:
-                in_verified = False
-                for s_idx, e_idx in verified_idx_ranges:
-                    if s_idx <= i <= e_idx:
-                        in_verified = True
-                        break
+            # --- Calculation Logic ---
+            h_vals, sigma_bars = [], []
+            window_size = 3  
+            for i, sigma_i in enumerate(variances):
+                start = max(0, i - window_size)
+                end = min(len(variances), i + window_size + 1)
+                local_vars = variances[start:end]
+                sigma_bar = np.mean(local_vars) if len(local_vars) > 0 else np.mean(variances)
+                sigma_bar = max(sigma_bar, 1e-12)
+                sigma_bars.append(sigma_bar)
+                diff = sigma_i - sigma_bar
+                h = max(diff / sigma_bar, -1.0) if diff < 0 else min(diff / sigma_bar, 1.0)
+                h_vals.append(h)
                 
-                if in_verified:
-                    final_states[i] = "VERIFIED"
-                elif h_vals[i] < 0:
-                    final_states[i] = "REJECTED"
-                else:
-                    final_states[i] = "DANGER"
-
-        state_colors = {
-            "VETO": "#999999",     
-            "VERIFIED": "#2ca02c", 
-            "REJECTED": "#ff7f0e", 
-            "DANGER": "#d62728"    
-        }
-        bar_colors = [state_colors[s] for s in final_states]
-
-        ax2.bar(x_vals, h_vals, color=bar_colors, alpha=0.85, edgecolor='black', linewidth=0.5, label='Relative Local Variance ($h$)')
-        
-        ax2.set_ylim(-1.1, 1.1)
-        ax2.set_ylabel(r"Relative Variance ($h$)", fontweight='bold', fontsize=12)
-        ax2.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=12)
-        ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2, label='Collapse Threshold (0)')
-
-        zones = []
-        if len(final_states) > 0:
-            start_idx = 0
-            current_state = final_states[0]
-            for i in range(1, len(final_states)):
-                if final_states[i] != current_state:
-                    zones.append((start_idx, i - 1, current_state))
-                    start_idx = i
-                    current_state = final_states[i]
-            zones.append((start_idx, len(final_states) - 1, current_state))
-
-        for start, end, state in zones:
-            # FIX 3: Shift the Background Span Zones to align with 1-based indexing
-            span_start, span_end = (start + 1) - 0.5, (end + 1) + 0.5
+            # --- JSON Region Matching ---
+            # Fixed the glob pattern search to be more robust
+            parts = csv_path.stem.replace("_layer_stats", "").split("_")
+            arch, dataset = parts[0], "_".join(parts[1:])
             
-            if state == "VETO":
-                ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='none')
-                ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
-            elif state == "VERIFIED":
-                ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.10, edgecolor='none')
-                ax2.axvspan(span_start, span_end, color='#2ca02c', alpha=0.15, label="Verified Collapse Region (JSON)")
-            elif state == "REJECTED":
-                ax1.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.08, edgecolor='none')
-                ax2.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.1, label="Candidate (Rejected by Compiler)")
-            elif state == "DANGER":
-                ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
-                ax2.axvspan(span_start, span_end, color='#d62728', alpha=0.05, label=r"Feature Extraction Region ($h \geq 0$)")
+            json_pattern = f"*{arch}*{dataset}*discovered_regions.json"
+            json_files = list(Path(".").glob(json_pattern))
+            
+            verified_idx_ranges = []
+            if not json_files:
+                logger.debug(f"No JSON regions found for {arch} | {dataset}")
+            else:
+                try:
+                    with open(json_files[0], 'r') as f:
+                        config = json.load(f)
+                    for k, v in config.items():
+                        if k.startswith("Set_") and isinstance(v, (list, tuple)):
+                            start_layer, end_layer = v[0], v[-1]
+                            s_idx = next(idx for idx, n in enumerate(layers) if start_layer == n)
+                            e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer == n)
+                            verified_idx_ranges.append((s_idx, e_idx))
+                except Exception as e:
+                    logger.error(f"Error parsing JSON {json_files[0]}: {e}")
 
-        handles, labels = ax2.get_legend_handles_labels()
-        by_label = dict(zip(labels, handles))
-        by_label = {k: v for k, v in by_label.items() if k}
-        ax2.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=2, fontsize=10, frameon=False)
-        
-        sns.despine(ax=ax2)
-        plt.tight_layout()
-        save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
-        print(f"[FIG2] Saving methodology BAV regions plot for {arch} on {dataset} at {save_path}")
-        plt.savefig(save_path, bbox_inches='tight')
-        plt.close()
+            # --- Plotting ---
+            fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
+            
+            # FIX 2: Shift X-Axis to 1-based indexing
+            x_vals = range(1, len(layers) + 1)
+            
+            ax1.plot(x_vals, variances, color='#4A4A4A', marker='o', markersize=4, linestyle='-', linewidth=1.5, label=r'Layer Variance ($\sigma_i$)')
+            ax1.plot(x_vals, sigma_bars, color='#ff7f0e', linestyle='--', linewidth=2.5, label=r'Local Context Mean ($\bar{\sigma}$)')
+            ax1.set_ylabel("Raw Variance (Log)", fontweight='bold', fontsize=12)
+            ax1.set_yscale('log')
+            ax1.set_title(f"Dynamic Structural Redundancy Analysis\n{arch} on {dataset.capitalize()}", pad=15, fontweight='bold', fontsize=15, loc='center')
+            ax1.legend(loc='upper right', frameon=False, fontsize=10)
+            sns.despine(ax=ax1)
+
+            veto_idx = int(len(layers) * 0.25)
+            final_states = ["DANGER"] * len(layers)
+            
+            for i in range(len(layers)):
+                if i < veto_idx:
+                    final_states[i] = "VETO"
+                else:
+                    in_verified = False
+                    for s_idx, e_idx in verified_idx_ranges:
+                        if s_idx <= i <= e_idx:
+                            in_verified = True
+                            break
+                    
+                    if in_verified:
+                        final_states[i] = "VERIFIED"
+                    elif h_vals[i] < 0:
+                        final_states[i] = "REJECTED"
+                    else:
+                        final_states[i] = "DANGER"
+
+            state_colors = {
+                "VETO": "#999999",     
+                "VERIFIED": "#2ca02c", 
+                "REJECTED": "#ff7f0e", 
+                "DANGER": "#d62728"    
+            }
+            bar_colors = [state_colors[s] for s in final_states]
+
+            ax2.bar(x_vals, h_vals, color=bar_colors, alpha=0.85, edgecolor='black', linewidth=0.5, label='Relative Local Variance ($h$)')
+            
+            ax2.set_ylim(-1.1, 1.1)
+            ax2.set_ylabel(r"Relative Variance ($h$)", fontweight='bold', fontsize=12)
+            ax2.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=12)
+            ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2, label='Collapse Threshold (0)')
+
+            zones = []
+            if len(final_states) > 0:
+                start_idx = 0
+                current_state = final_states[0]
+                for i in range(1, len(final_states)):
+                    if final_states[i] != current_state:
+                        zones.append((start_idx, i - 1, current_state))
+                        start_idx = i
+                        current_state = final_states[i]
+                zones.append((start_idx, len(final_states) - 1, current_state))
+
+            for start, end, state in zones:
+                # FIX 3: Shift the Background Span Zones to align with 1-based indexing
+                span_start, span_end = (start + 1) - 0.5, (end + 1) + 0.5
+                
+                if state == "VETO":
+                    ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='none')
+                    ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
+                elif state == "VERIFIED":
+                    ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.10, edgecolor='none')
+                    ax2.axvspan(span_start, span_end, color='#2ca02c', alpha=0.15, label="Verified Collapse Region (JSON)")
+                elif state == "REJECTED":
+                    ax1.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.08, edgecolor='none')
+                    ax2.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.1, label="Candidate (Rejected by Compiler)")
+                elif state == "DANGER":
+                    ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
+                    ax2.axvspan(span_start, span_end, color='#d62728', alpha=0.05, label=r"Feature Extraction Region ($h \geq 0$)")
+
+            handles, labels = ax2.get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            by_label = {k: v for k, v in by_label.items() if k}
+            ax2.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=2, fontsize=10, frameon=False)
+            
+            sns.despine(ax=ax2)
+            plt.tight_layout()
+            save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
+            print(f"[FIG2] Saving methodology BAV regions plot for {arch} on {dataset} at {save_path}")
+            plt.savefig(save_path, bbox_inches='tight')
+            plt.close()
 
   
 # ========================= FIG 3 ========================= #
