@@ -12,7 +12,7 @@ PRETRAIN=$2
 
 models=("VGG16" "RegNetX_400MF" "XceptionNet" "InceptionNet" "MobileNet" "ConvNeXt")
 datasets=("tinyimagenet" "Cifar10" "Cifar100")
-quant=("False")
+quant=("True" "False")
 
 echo "=== Submitting Stage 2: Parallel HPC Execution ==="
 echo "    Epochs: $EPOCHS | Pretrain: $PRETRAIN"
