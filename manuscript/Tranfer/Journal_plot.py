@@ -280,25 +280,26 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
 # ========================= FIG 2 ========================= #
 
 def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
-    logger.info(f"Starting FIG2 generation. Target epochs: {epochs}, pretrain: {pretrain}")
+    logger.info(f"Scanning for FIG2 data: ep{epochs}_pre{pretrain}")
     
-    # 1. Robust Path Discovery: Recursively find 'Layer_Statistics'
-    root_plots_dir = Path("./runs/plots")
-    experiment_pattern = f"**/epochs{epochs}_pretrain{pretrain}/**/Layer_Statistics"
-    search_paths = list(root_plots_dir.glob(experiment_pattern))
+    # 1. Use the exact directory structure found by 'find'
+    search_pattern = f"**/epochs{epochs}_pretrain{pretrain}/**/Layer_Statistics"
+    stats_dirs = list(Path("./runs/plots").glob(search_pattern))
     
-    if not search_paths:
-        logger.error(f"No experiment paths found matching {experiment_pattern}")
+    if not stats_dirs:
+        logger.error(f"No Layer_Statistics directories found for {search_pattern}")
         return
 
-    for stats_dir in search_paths:
-        logger.info(f"Scanning directory: {stats_dir}")
-        stat_files = [f for f in stats_dir.glob("*.csv") if "normalized" not in f.name]
+    for stats_dir in stats_dirs:
+        # 2. Extract Arch/Dataset from parents
+        # Structure: .../runs/plots/{arch}/{dataset}/epochs.../Layer_Statistics
+        dataset = stats_dir.parents[1].name
+        arch = stats_dir.parents[2].name
         
-        if not stat_files:
-            continue
-
+        stat_files = list(stats_dir.glob("*_layer_stats.csv"))
+        
         for csv_path in stat_files:
+            logger.info(f"Plotting {arch} ({dataset}) from {csv_path.name}")
             try:
                 layer_df = pd.read_csv(csv_path)
                 if layer_df.empty or 'Variance' not in layer_df.columns:
@@ -404,7 +405,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             out_dir.mkdir(parents=True, exist_ok=True)
             plt.savefig(out_dir / f"{arch}_{dataset}_bav_methodology_regions.png")
             plt.close()
-            
+
 # def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
 #     base_dir = Path("./runs/plots")
     
