@@ -56,6 +56,10 @@ plt.rcParams.update({
 
 import argparse
 
+def get_stats_dir(epochs, pretrain):
+    # This ensures Journal_plot.py looks exactly where transfer.py saved the data
+    return Path(f"./runs/plots/Layer_Statistics_ep{epochs}_pre{pretrain}")
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate Journal Plots")
 
@@ -279,6 +283,7 @@ def fig2_methodology_bav_regions(
     stats_dir: Path = Path("./runs/plots/Layer_Statistics"),
     out_dir: Path = Path("./figures/methodology")
 ):
+    stats_dir = get_stats_dir(epochs, pretrain)
     import json
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1061,7 +1066,7 @@ if __name__ == "__main__":
         
         # --- UPDATE: Route all outputs to the parameterized FIG_DIR ---
         fig1(df, out_dir=FIG_DIR / "individual_plots")
-        fig2_methodology_bav_regions(epochs, pretrain, out_dir=FIG_DIR / "methodology")
+        fig2_methodology_bav_regions(stats_dir = get_stats_dir(epochs, pretrain), out_dir=FIG_DIR / "methodology")
         fig3_v2t_heuristic_validation(df, out_dir=FIG_DIR / "heuristic_validation")
         fig4_comprehensive_search_space_map(df, epochs, pretrain, out_dir=FIG_DIR / "search_space")
         fig5_hardware_efficiency_profiles(df, out_dir=FIG_DIR / "hardware_efficiency")

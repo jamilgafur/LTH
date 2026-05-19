@@ -916,7 +916,8 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
 
     # --- Phase 4: Generating Heuristic Plots & Analytics ---
     print(f"\n[INFO] Phase 4: Generating Heuristic Plots & Analytics...")
-    plots_root = os.path.join("runs", "plots")
+    experiment_id = f"ep{args.epochs}_pre{args.pretrain}"
+    plots_root = Path(f"./runs/plots/{args.model}/{args.dataset}/{experiment_id}")
     analyze_collapse_heuristics(
         model=eval_model, 
         input_tensor=input_tensor, 
