@@ -1029,16 +1029,21 @@ def fig7_convergence_metrics(
 if __name__ == "__main__":
     try:
         raw = load_results()
-        
         df = normalize(raw)
-        fig1(df)
-        fig2_methodology_bav_regions()
-        fig3_v2t_heuristic_validation(df)
-        fig4_comprehensive_search_space_map(df)
-        fig5_hardware_efficiency_profiles(df)
-        fig6_training_curves()
-        fig7_convergence_metrics(df)
-        export_master_summary_json(df)
+        
+        # --- UPDATE: Route all outputs to the parameterized FIG_DIR ---
+        fig1(df, out_dir=FIG_DIR / "individual_plots")
+        fig2_methodology_bav_regions(epochs, pretrain, out_dir=FIG_DIR / "methodology")
+        fig3_v2t_heuristic_validation(df, out_dir=FIG_DIR / "heuristic_validation")
+        fig4_comprehensive_search_space_map(df, epochs, pretrain, out_dir=FIG_DIR / "search_space")
+        fig5_hardware_efficiency_profiles(df, out_dir=FIG_DIR / "hardware_efficiency")
+        fig6_training_curves(out_dir=FIG_DIR / "learning_curves")
+        fig7_convergence_metrics(df, out_dir=FIG_DIR / "convergence")
+        
+        # Keep master summary JSON isolated as well
+        export_master_summary_json(df, out_path=Path(f"./master_results_summary_ep{epochs}_pre{pretrain}.json"))
+        
         logger.info("Script completed.")
     except Exception as e:
+        logger.critical(f"Error: {e}", exc_info=True)
         logger.critical(f"Error: {e}", exc_info=True)
