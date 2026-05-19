@@ -280,26 +280,34 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
 # ========================= FIG 2 ========================= #
 
 def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
-    logger.info(f"Scanning for FIG2 data: ep{epochs}_pre{pretrain}")
+    logger.info(f"Starting FIG2 generation. Target epochs: {epochs}, pretrain: {pretrain}")
     
-    # 1. Use the exact directory structure found by 'find'
+    # 1. Robust Path Discovery: Search specifically for the 'Layer_Statistics' subfolders
+    # Structure: .../epochs{X}_pretrain{Y}/**/Layer_Statistics
+    root_plots_dir = Path("./runs/plots")
     search_pattern = f"**/epochs{epochs}_pretrain{pretrain}/**/Layer_Statistics"
-    stats_dirs = list(Path("./runs/plots").glob(search_pattern))
+    search_paths = list(root_plots_dir.glob(search_pattern))
     
-    if not stats_dirs:
-        logger.error(f"No Layer_Statistics directories found for {search_pattern}")
+    if not search_paths:
+        logger.error(f"No Layer_Statistics directories found matching {search_pattern}")
         return
 
-    for stats_dir in stats_dirs:
-        # 2. Extract Arch/Dataset from parents
-        # Structure: .../runs/plots/{arch}/{dataset}/epochs.../Layer_Statistics
-        dataset = stats_dir.parents[1].name
-        arch = stats_dir.parents[2].name
-        
+    for stats_dir in search_paths:
+        # Extract Architecture and Dataset from the path hierarchy
+        # Pattern: runs/plots/{arch}/{dataset}/epochs.../Layer_Statistics
+        try:
+            dataset = stats_dir.parents[1].name
+            arch = stats_dir.parents[2].name
+        except IndexError:
+            logger.warning(f"Could not infer arch/dataset from path {stats_dir}, using 'unknown'")
+            arch, dataset = "unknown", "unknown"
+            
         stat_files = list(stats_dir.glob("*_layer_stats.csv"))
-        
+        if not stat_files:
+            logger.warning(f"No CSVs found in {stats_dir}")
+            continue
+
         for csv_path in stat_files:
-            logger.info(f"Plotting {arch} ({dataset}) from {csv_path.name}")
             try:
                 layer_df = pd.read_csv(csv_path)
                 if layer_df.empty or 'Variance' not in layer_df.columns:
@@ -326,13 +334,10 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 h_vals.append(h)
                 
             # --- JSON Region Matching ---
-            arch = stats_dir.parents[2].name
-            dataset = stats_dir.parents[1].name
-            
             json_pattern = f"*{arch}*{dataset}*discovered_regions.json"
             json_files = list(Path(".").glob(json_pattern))
-            
             verified_idx_ranges = []
+            
             if json_files:
                 try:
                     with open(json_files[0], 'r') as f:
@@ -349,9 +354,10 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
             x_vals = range(1, len(layers) + 1)
             
-            ax1.plot(x_vals, variances, color='#4A4A4A', marker='o', label=r'Layer Variance ($\sigma_i$)')
-            ax1.plot(x_vals, sigma_bars, color='#ff7f0e', linestyle='--', label=r'Local Mean ($\bar{\sigma}$)')
+            ax1.plot(x_vals, variances, color='#4A4A4A', marker='o', markersize=4, label=r'Layer Variance ($\sigma_i$)')
+            ax1.plot(x_vals, sigma_bars, color='#ff7f0e', linestyle='--', linewidth=2.5, label=r'Local Context Mean ($\bar{\sigma}$)')
             ax1.set_yscale('log')
+            ax1.set_title(f"Dynamic Structural Redundancy Analysis\n{arch} on {dataset.capitalize()}", fontweight='bold')
             ax1.legend(loc='upper right', frameon=False)
             sns.despine(ax=ax1)
 
@@ -363,17 +369,13 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                     final_states[i] = "VETO"
                 else:
                     in_verified = any(s_idx <= i <= e_idx for s_idx, e_idx in verified_idx_ranges)
-                    if in_verified:
-                        final_states[i] = "VERIFIED"
-                    elif h_vals[i] < 0:
-                        final_states[i] = "REJECTED"
-                    else:
-                        final_states[i] = "DANGER"
+                    final_states[i] = "VERIFIED" if in_verified else ("REJECTED" if h_vals[i] < 0 else "DANGER")
 
+            # --- Bar Plot ---
             state_colors = {"VETO": "#999999", "VERIFIED": "#2ca02c", "REJECTED": "#ff7f0e", "DANGER": "#d62728"}
-            bar_colors = [state_colors[s] for s in final_states]
-            ax2.bar(x_vals, h_vals, color=bar_colors, alpha=0.85, edgecolor='black', linewidth=0.5)
+            ax2.bar(x_vals, h_vals, color=[state_colors[s] for s in final_states], alpha=0.85, edgecolor='black', linewidth=0.5)
             ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2)
+            ax2.set_ylim(-1.1, 1.1)
 
             # --- Zone Shading ---
             zones = []
@@ -387,25 +389,19 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
 
             for start, end, state in zones:
                 span_start, span_end = (start + 1) - 0.5, (end + 1) + 0.5
-                if state == "VETO":
-                    ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////')
-                    ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', label="Veto (Depth < 25%)")
-                elif state == "VERIFIED":
-                    ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.10)
-                    ax2.axvspan(span_start, span_end, color='#2ca02c', alpha=0.15, label="Verified")
-                elif state == "REJECTED":
-                    ax1.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.08)
-                    ax2.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.1, label="Rejected")
-                elif state == "DANGER":
-                    ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05)
-                    ax2.axvspan(span_start, span_end, color='#d62728', alpha=0.05, label="Feature Extraction")
+                alpha_val = 0.4 if state == "VETO" else 0.15
+                ax1.axvspan(span_start, span_end, color=state_colors.get(state, 'red'), alpha=alpha_val, edgecolor='none')
+                ax2.axvspan(span_start, span_end, color=state_colors.get(state, 'red'), alpha=alpha_val, label=state)
 
             ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
             plt.tight_layout()
+            
+            # --- Final Save ---
             out_dir.mkdir(parents=True, exist_ok=True)
-            plt.savefig(out_dir / f"{arch}_{dataset}_bav_methodology_regions.png")
+            save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
+            plt.savefig(save_path, bbox_inches='tight')
             plt.close()
-
+            logger.info(f"[FIG2] Saved methodology plot: {save_path}")
 # def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
 #     base_dir = Path("./runs/plots")
     
