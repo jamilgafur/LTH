@@ -1,4 +1,4 @@
-# experiments.py (updated)
+# experiments.py
 
 # Standard libraries
 import os
@@ -9,7 +9,7 @@ from datetime import datetime
 from copy import deepcopy
 from collections import OrderedDict
 import tempfile
-from collapse import collapse_only, _wrap_pools_safe
+import numpy as np
 
 # Third-party libraries
 import torch
@@ -17,10 +17,9 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import torch.nn as nn
-from torchvision import datasets, transforms
+import torch.optim as optim
 from torch.utils.data import DataLoader
 from fvcore.nn import FlopCountAnalysis
-
 
 # Local modules
 from pyPrune.models.Vgg16 import VGG16
@@ -29,14 +28,7 @@ from plots import *
 from diagnostic import *
 from utils import *
 from filemanager import *
-from collapse import collapse_only
-import os
-import glob
-import torch
-import tqdm
-import torch.nn as nn
-import torch.optim as optim
-
+from collapse import collapse_only, _wrap_pools_safe
 from trainer import train_one_epoch
 
 def ensure_dir(directory):
@@ -79,7 +71,6 @@ def safe_update_metrics_json(model_root, exp_name, new_data, base_dir="./runs/me
         print(f"[!] Failed to save metrics JSON: {e}")
         return None
 
-
 def convert_ndarrays_to_lists(obj):
     """
     Recursively convert NumPy arrays to Python lists so JSON can serialize them.
@@ -103,6 +94,7 @@ def convert_ndarrays_to_lists(obj):
         return int(obj)
 
     return obj
+
 # -------------------------
 # Merge All Metrics (Hybrid mode)
 # -------------------------
@@ -140,7 +132,6 @@ def merge_all_metrics(base_dir="./runs/metrics", merged_name="merged_metrics.jso
     print(f"[✓] Merged {len(json_files)} metrics files → {merged_path}")
     return merged_path
 
-
 # -------------------------
 # Helper: normalize collapse_range -> list of 2-tuples
 # -------------------------
@@ -174,7 +165,6 @@ def _make_compression_set(collapse_range):
 
     raise ValueError("collapse_range must be None, a 2-tuple, or a list of 2-tuples")
 
-
 def run_experiment(
     model,
     model_kwargs=None,
@@ -187,17 +177,15 @@ def run_experiment(
     collapse_range=None,
     data_shape=(1, 3, 32, 32),
     save_path="./runs",
-    post_compress_epochs=False,
     quant=False,
 ):
     import os, glob, torch, torch.optim as optim
-    from torch.cuda.amp import GradScaler
 
     # Adjust name for quantization if needed
     if quant:
         exp_name += "_quant"
 
-    print(f"[•] Starting experiment '{exp_name}' in workflow '{workflow}'")
+    print(f"[•] Starting experiment '{exp_name}' in workflow '{workflow}' | Epoch Target: {epochs}")
 
     # 1. Directory Setup
     ckpt_dir = os.path.join(save_path, "checkpoints")
@@ -212,7 +200,7 @@ def run_experiment(
     base_ckpt_name = f"{workflow}_{exp_name}"
 
     # ---------------------------------------------------------
-    # 2. Check for "Final" Completion (NEW ADDITION)
+    # 2. Check for "Final" Completion
     # ---------------------------------------------------------
     final_ckpt_path = os.path.join(ckpt_dir, f"final_{base_ckpt_name}.pt")
     
@@ -220,17 +208,14 @@ def run_experiment(
         print(f"[✓] Experiment '{exp_name}' already completed. Found: {os.path.basename(final_ckpt_path)}")
         print(f"    Skipping training and reloading metrics...")
         
-        # Load the final data to return it (so downstream code doesn't break)
         try:
-            checkpoint = torch.load(final_ckpt_path, map_location=device)
+            checkpoint = torch.load(final_ckpt_path, map_location=device, weights_only=False)
             return checkpoint.get("data", {})
         except Exception as e:
             print(f"[!] Corrupt final checkpoint found ({e}). Restarting experiment...")
-            # If load fails, we fall through and restart/resume as normal
             pass
 
     # 3. Initialize Training Components
-    # These MUST be initialized before loading an epoch checkpoint
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     scaler = torch.amp.GradScaler(device=device.type, enabled=quant)
     
@@ -254,9 +239,8 @@ def run_experiment(
     if existing_ckpts:
         last_ckpt = existing_ckpts[-1]
         print(f"[•] Loading intermediate checkpoint: {last_ckpt}")
-        checkpoint = torch.load(last_ckpt, map_location=device)
+        checkpoint = torch.load(last_ckpt, map_location=device, weights_only=False)
 
-        # Restore structural states
         # Restore structural states
         model.load_state_dict(checkpoint['model_state_dict'], strict=False)
         
@@ -270,8 +254,6 @@ def run_experiment(
                     scaler.load_state_dict(checkpoint['scaler_state_dict'])
                 except RuntimeError as e:
                     print(f"[WARN] Bypassing empty scaler state dict from older checkpoint. Starting fresh scaler.")
-        # if quant and 'scaler_state_dict' in checkpoint:
-        #     scaler.load_state_dict(checkpoint['scaler_state_dict'])
         
         # Restore RNG states (ensures reproducibility on resume)
         torch.set_rng_state(checkpoint['torch_rng_state'].cpu())
@@ -286,7 +268,7 @@ def run_experiment(
         print("[•] No intermediate checkpoint found — starting fresh")
 
     # 6. Training Loop
-    for epoch in range(start_epoch + 1, epochs + 101 if post_compress_epochs else epochs + 1):
+    for epoch in range(start_epoch, epochs):
         print(f"[•] Epoch {epoch}")
 
         # Execute one epoch of training
@@ -298,8 +280,7 @@ def run_experiment(
         all_data["accuracies"].append(acc)
         all_data["losses"].append(avg_loss)
 
-        # Logic for Early Stopping / Best Acc tracking
-        if acc > all_data["best_acc"] + 0.05: # 0.05 threshold
+        if acc > all_data["best_acc"] + 0.05:
             all_data["best_acc"] = acc
             all_data["patience_counter"] = 0
         else:
@@ -327,14 +308,7 @@ def run_experiment(
             if os.path.exists(old_ckpt):
                 os.remove(old_ckpt)
 
-        # Early Stopping Logic (Post-compression phase)
-        if post_compress_epochs and epoch > epochs:
-            if all_data["patience_counter"] >= 5:
-                print(f"[!] Early stopping triggered at epoch {epoch}")
-                break
-
     # 7. Finalization & Diagnostics
-    # We re-use final_ckpt_path defined in Step 2.5
     torch.save({"model_state_dict": model.state_dict(), "data": all_data}, final_ckpt_path)
 
     # Performance Benchmarking
@@ -379,7 +353,6 @@ def run_jf_experiment(
     model_kwargs=None,
     data_shape=None,
     save_path="./runs",
-    post_compress_epochs=False,
     quant=False
 ):
     model_kwargs = model_kwargs or {}
@@ -397,19 +370,17 @@ def run_jf_experiment(
     # 2. Initialize the Base Architecture
     base_model = model_class(**model_kwargs)
     _wrap_pools_safe(base_model)
+    
     # 3. Handle Initialization vs. Resumption
     if not existing_ckpts:
-        # FRESH START: Load initial pretrained weights if they exist
         if model_path_097 and "None" not in model_path_097:
             print(f"[•] Loading initial weights from {model_path_097}")
             ckpt = torch.load(model_path_097, map_location='cpu', weights_only=True)
-            # Use strict=False if the pretrained model has extra/missing layers
             base_model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt['model'], strict=False)
     else:
         print(f"[•] Resumption detected. Architecture will be prepared for checkpoint loading.")
 
     # 4. Apply Collapse Logic 
-    # (Must be done every time to ensure base_model keys match the checkpoint keys)
     compression_set = _make_compression_set(collapse_range)
     if compression_set:
         print(f"[•] Collapsing ranges {compression_set} for {exp_name}")
@@ -435,11 +406,9 @@ def run_jf_experiment(
         exp_name=exp_name,
         data_shape=data_shape,
         save_path=save_path,
-        post_compress_epochs=post_compress_epochs, 
         quant=quant
     )
     return base_model
-
 
 def run_kevin_experiment(
     experiments,
@@ -452,7 +421,6 @@ def run_kevin_experiment(
     model_kwargs=None,
     data_shape=None,
     save_path="./runs",
-    post_compress_epochs=False, 
     quant=False
 ):
     model_kwargs = model_kwargs or {}
@@ -504,7 +472,6 @@ def run_kevin_experiment(
         exp_name=exp_name,
         data_shape=data_shape,
         save_path=save_path,
-        post_compress_epochs=post_compress_epochs,
         quant=quant
     )
     return base_model

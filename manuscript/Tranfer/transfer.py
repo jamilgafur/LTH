@@ -4,8 +4,6 @@ import glob
 import json
 import random
 import argparse
-from manuscript.Tranfer.experiments import merge_all_metrics, safe_update_metrics_json
-from manuscript.Tranfer.experiments import merge_all_metrics
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -15,7 +13,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.backends import cudnn
 import gc
-import json
 from pathlib import Path
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.models.RegNetX import RegNetX_400MF
@@ -23,16 +20,14 @@ from pyPrune.models.ConvNetX import ConvNeXt
 from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
-from pyPrune.pruneMethods.IterativePruner import IterativePruner
-from pyPrune.strategies import MagnitudePruningStrategy
 from experiments import *
 from utils import *
 from plots import *
 from pyPrune.utils import *
 from trainer import train_one_epoch
-import gc  # Needed for cleaning up memory after evaluating models
-from pathlib import Path # The missing piece causing your current error
 from datetime import datetime
+from fvcore.nn import FlopCountAnalysis
+
 # set seed for reproducibility
 seed = 42
 random.seed(seed)
@@ -126,8 +121,6 @@ def get_layer_variances(model, dummy_input):
     def make_hook(name):
         def hook(module, inp, out):
             if isinstance(out, torch.Tensor):
-                # FIX: Removed the batch dimension (0) from the variance calculation
-                # to perfectly align with the run_baseline_pass CSV exporter.
                 variances[name] = out.var(dim=[2, 3]).mean().item() if out.ndim == 4 else out.var().item()
         return hook
     
@@ -173,7 +166,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     # =====================================================================
     rolling_means = []
     for i in range(len(variances)):
-        # Centered Window (Matches formal algorithm)
         start = max(0, i - window_size)
         end = min(len(variances), i + window_size + 1)
         rolling_means.append(np.mean(variances[start:end]))
@@ -198,7 +190,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         layer_name = cnn_layers[i]
         mod = module_dict.get(layer_name)
         
-        # We strictly exclude nn.Linear layers from forming blocks
         is_valid_target = isinstance(mod, torch.nn.Conv2d)
         
         if i < veto_idx or not is_valid_target:
@@ -230,7 +221,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     
     while queue:
         r = queue.pop(0)
-        # Base Case: Discard anything less than 2 layers long
         if len(r) < 2:
             continue
             
@@ -260,7 +250,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             except Exception:
                 new_flops = float('inf')
 
-            # --- UNIVERSAL FAILURE HANDLER ---
             if new_params < base_params and (not check_flops or new_flops < base_flops):
                 print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,}) | FLOPs ({base_flops:,} -> {new_flops:,})")
                 experiment_regions[f"Set_{set_counter}"] = region_tuple
@@ -321,7 +310,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 except Exception:
                     new_flops_combo = float('inf')
 
-                # Monotonic Check
                 if new_params_combo >= current_best_params:
                     raise ValueError(f"Param Inflation: {new_params_combo:,} >= {current_best_params:,}")
                 if check_flops and new_flops_combo >= current_best_flops:
@@ -342,10 +330,10 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 
         if len(safe_combined_regions) > 1:
             experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
-    # add original model as baseline
-    experiment_regions["Baseline Model"] = None
+            
+    # Add control as baseline
+    experiment_regions["Control"] = None
     return experiment_regions
-
 
 # ==============================================================================
 # Helper functions
@@ -611,8 +599,8 @@ def save_and_plot_metric(data, y_col, directory, title_prefix, ylabel, hline_val
 
     sns.set_theme(style="white", context="paper", font_scale=1.2)
     fig, ax = plt.subplots(figsize=(14, 7))
-    df['Color_Group'] = ['Baseline' if exp == 'Original Model' else 'Experiment' for exp in df['Experiment']]
-    palette = {'Baseline': color_base, 'Experiment': color_alt}
+    df['Color_Group'] = ['Control' if exp == 'Control' else 'Experiment' for exp in df['Experiment']]
+    palette = {'Control': color_base, 'Experiment': color_alt}
 
     sns.barplot(data=df, x="Experiment", y=y_col, hue="Color_Group", palette=palette, dodge=False, edgecolor="black", linewidth=0.8, zorder=3, ax=ax)
     ax.legend_.remove()
@@ -657,7 +645,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     dirs = setup_directories(save_root_dir)
     saved_tensors, layer_variances, layer_activations, global_median_var, baseline_probs = run_baseline_pass(model, input_tensor)
 
-    # Use the provided config, or generate dynamically if None is passed
     if exp_config is None:
         device = next(model.parameters()).device
         exp_config = get_dynamic_experiment_config(
@@ -682,27 +669,28 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
         print(f"[!] Failed to process experiments: {e}")
         return pd.DataFrame()
 
-    save_and_plot_metric(plot_data_var, "Relative Variance", dirs["var"], "Relative Activation Variance", "Relative Variance (Multiplier)", 1.0, "1.0x Baseline", 'crimson', 'steelblue', model_name, dataset_name)
+    save_and_plot_metric(plot_data_var, "Relative Variance", dirs["var"], "Relative Activation Variance", "Relative Variance (Multiplier)", 1.0, "1.0x Control", 'crimson', 'steelblue', model_name, dataset_name)
     global_sim_val = plot_data_sim[0]["Block Redundancy"] if plot_data_sim else 0.0
     save_and_plot_metric(plot_data_sim, "Block Redundancy", dirs["sim"], "Feature Redundancy (Cosine Similarity)", "Cosine Similarity (1.0 = Identity)", global_sim_val, "Global Median", 'crimson', 'mediumseagreen', model_name, dataset_name, invert_safe_zone=True)
     save_and_plot_metric(plot_data_kl, "Prediction Shift (KL)", dirs["kl"], "Virtual Bypass Prediction Damage", "KL Divergence (0.0 = Safe | 50.0 = Failed)", 1.0, "Critical Threshold (Approx)", 'crimson', 'teal', model_name, dataset_name)
     global_cscore_val = plot_data_cscore[0]["Collapse Score"] if plot_data_cscore else 1.0
-    save_and_plot_metric(plot_data_cscore, "Collapse Score", dirs["cscore"], "Composite Activational Collapse Score", "C_Score (Higher = Safer to Collapse)", global_cscore_val, "Baseline Architecture Score", 'crimson', 'purple', model_name, dataset_name, invert_safe_zone=True)
+    save_and_plot_metric(plot_data_cscore, "Collapse Score", dirs["cscore"], "Composite Activational Collapse Score", "C_Score (Higher = Safer to Collapse)", global_cscore_val, "Control Architecture Score", 'crimson', 'purple', model_name, dataset_name, invert_safe_zone=True)
 
     return pd.DataFrame(plot_data_cscore)
 
-def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
+def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, experiment_func, save_path, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
     model_class = eval(model_class) if isinstance(model_class, str) else model_class
     if args.JF:
-        return run_jf_experiment({experiment_name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, post_compress_epochs=post_compress_epochs, quant=quant)
+        return run_jf_experiment({experiment_name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain=None, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, quant=quant)
     elif args.Kevin:
-        if experiment_name == "Original Model": epochs = pretrain + epochs
-        return run_kevin_experiment({experiment_name: layers}, model_path_000, train_loader, test_loader, device, epochs, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, post_compress_epochs=post_compress_epochs, quant=quant)
+        return run_kevin_experiment({experiment_name: layers}, model_path_000, train_loader, test_loader, device, epochs, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, quant=quant)
     else: raise ValueError("Specify either --JF or --Kevin.")
 
-def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, post_compress_epochs, experiment_func, quant=False, args=None):
+def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, experiment_func, quant=False, args=None, is_discovery=False):
     
-    save_path = f"{model_class}_{dataset}_{CHECKPOINT_FILES[args.model][dataset][0]}_epochs{epochs}_pretrain{pretrain}_postcompress{post_compress_epochs}"
+    # Differentiate paths by the actual epoch budget used for that specific run type
+    active_epochs = epochs if is_discovery else pretrain
+    save_path = f"{model_class}_{dataset}_{CHECKPOINT_FILES[args.model][dataset][0]}_epochs{active_epochs}_pretrain{pretrain}"
 
     if train_loader is None or test_loader is None:
         train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, args.model)
@@ -711,35 +699,21 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
 
     for name, layers in experiments.items():
         print(f"\n--- Running experiment: {name} ---")
-        run_epochs = epochs
-        if name == "Baseline Model":
-            run_epochs = args.pretrain
-        run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, run_epochs, pretrain, experiment_func, save_path, post_compress_epochs, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
+        
+        # If it's the control (baseline), we use the pretrain budget 
+        run_epochs = pretrain if name == "Control" else active_epochs
+        
+        run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, run_epochs, experiment_func, save_path, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
 
 # ==============================================================================
 # Main Entry Point
 # ==============================================================================
-import os
-import json
-import argparse
-import torch
-
-import os
-import json
-import torch
-from fvcore.nn import FlopCountAnalysis
 
 def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=None, test_loader=None, input_shape=None, device='cpu'):
-    """
-    Self-healing metric recovery: 
-    1. Tries to extract from nested checkpoint dicts.
-    2. Falls back to live evaluation if values are missing or zero.
-    """
     metrics_dir = os.path.join(base_folder, "metrics")
     os.makedirs(metrics_dir, exist_ok=True)
     merged_json_path = os.path.join(metrics_dir, "merged_metrics.json")
 
-    # Load existing JSON or create a fresh dictionary
     if os.path.exists(merged_json_path):
         with open(merged_json_path, 'r') as f:
             try:
@@ -749,11 +723,9 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=No
     else:
         metrics_data = {}
 
-    # If the metric is missing, heal it
     if experiment_name not in metrics_data:
         print(f"[Auto-Heal] Missing JSON entry for '{experiment_name}'. Attempting recovery...")
         
-        # --- Phase 1: Fast Dictionary Extraction ---
         try:
             ckpt = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
             nested = ckpt.get('metrics', ckpt.get('results', ckpt.get('stats', {})))
@@ -766,31 +738,26 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=No
             print(f"[!] Checkpoint load failed, preparing for full live evaluation: {e}")
             acc, params, size_mb, flops = 0.0, 0, 0.0, 0
             
-        # --- Phase 2: Live Evaluation Fallback ---
         if model is not None:
             model.to(device)
             model.eval()
             
-            # Fallback for Params and Size
             if params == 0 or size_mb == 0.0:
                 print("    -> Calculating parameters live...")
                 try:
                     params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-                    size_mb = params * 4 / (1024 ** 2)  # Assuming FP32 (4 bytes per param)
+                    size_mb = params * 4 / (1024 ** 2)
                 except Exception as e:
                     print(f"    [!] Failed live param calculation: {e}")
 
-            # Fallback for FLOPs
             if flops == 0 and input_shape is not None:
                 print("    -> Calculating FLOPs live...")
                 try:
-                    # Generate dummy input to accurately measure FLOPs
                     dummy_input = torch.randn(1, *input_shape[1:]).to(device)
                     flops = FlopCountAnalysis(model, dummy_input).unsupported_ops_warnings(False).total()
                 except Exception as e:
                     print(f"    [!] Failed live FLOP calculation: {e}")
 
-            # Fallback for Accuracy
             if acc == 0.0 and test_loader is not None:
                 print("    -> Calculating accuracy live (this may take a moment)...")
                 correct = 0
@@ -805,7 +772,6 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=No
                 
                 acc = correct / total if total > 0 else 0.0
 
-        # --- Phase 3: Save Recovered Metrics ---
         metrics_data[experiment_name] = {
             "final_accuracy": acc,
             "param_count": params,
@@ -814,7 +780,6 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=No
             "timestamp_recovered": "auto_recovered_live"
         }
         
-        # Save the healed JSON
         try:
             with open(merged_json_path, 'w') as f:
                 json.dump(metrics_data, f, indent=4)
@@ -827,15 +792,12 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=No
 # ==============================================================================
 
 def parse_cli_args():
-    """Extracts and returns command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="RegNetX_400MF", choices=["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet", "ConvNeXt"], help="Model architecture to use")
     parser.add_argument("--dataset", type=str, default="Cifar10", help="Dataset to use")
-    parser.add_argument("--epochs", type=int, default=1, help="Number of epochs to train for")
-    parser.add_argument("--pretrain", type=int, default=10, help="Number of pretraining epochs")
+    parser.add_argument("--epochs", type=int, default=1, help="Number of discovery stage epochs")
+    parser.add_argument("--pretrain", type=int, default=10, help="Number of HPC parallel execution epochs")
     parser.add_argument("--experiment", type=str, default="discover", help="Experiment to run, or 'discover' to generate regions")
-    parser.add_argument("--post_compress_epochs", type=int, default=0, help="Number of post-pruning compression epochs")
-    parser.add_argument("--imp", action="store_false", help="Apply Iterative Magnitude Pruning")
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
     parser.add_argument("--quant", action="store_true", help="Apply Quantization Aware Training")
@@ -843,37 +805,30 @@ def parse_cli_args():
 
 
 def run_discovery_stage(args, device, train_loader, test_loader, model_class, model_kwargs, input_size, model_path_097, model_path_000, json_file):
-    """
-    Handles Phase 1: Model Baseline Training, Evaluation, Probe, and JSON generation.
-    Includes persistent layer variance caching to avoid redundant computation.
-    """
     print(f"\n{'='*60}")
     print(f"[MODE] STAGE 1: DISCOVERY & PRE-FLIGHT PROBE")
     print(f"       Model: {args.model} | Dataset: {args.dataset}")
     print(f"{'='*60}\n")
     
-    # 1. Setup paths for persistent storage
     experiment_id = f"epochs{args.epochs}_pretrain{args.pretrain}"
     plots_root = Path(f"./runs/plots/{args.model}/{args.dataset}/{experiment_id}")
     os.makedirs(plots_root, exist_ok=True)
     variance_file = plots_root / "layer_variances.json"
 
-    # 2. Phase 1: Validating/Training 'Original Model' Baseline
-    print(f"[INFO] Phase 1: Validating/Training 'Original Model' Baseline...")
+    print(f"[INFO] Phase 1: Validating/Training 'Control' Baseline...")
     run_experiments_for_dataset(
-        {"Original Model": None}, args.dataset, model_path_097, model_path_000, 
+        {"Control": None}, args.dataset, model_path_097, model_path_000, 
         train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
-        model_kwargs, args.post_compress_epochs, None, args.quant, args
+        model_kwargs, None, args.quant, args, is_discovery=True
     )
 
-    # 3. Phase 2: Loading Finalized Baseline Weights & Auto-Healing
     print(f"\n[INFO] Phase 2: Loading Finalized Baseline Weights...")
-    save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}_epochs{args.epochs}_pretrain{args.pretrain}_postcompress{args.post_compress_epochs}"
+    save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}_epochs{args.epochs}_pretrain{args.pretrain}"
     
     ckpt_dir = os.path.join(save_path, "checkpoints")
     flag_str = "JF" if args.JF else "Kevin"
     quant_str = "_quant" if args.quant else ""
-    trained_baseline_path = os.path.join(ckpt_dir, f"final_{flag_str}_Original Model{quant_str}.pt")
+    trained_baseline_path = os.path.join(ckpt_dir, f"final_{flag_str}_Control{quant_str}.pt")
     
     model_class_obj = eval(model_class) if isinstance(model_class, str) else model_class
     eval_model = model_class_obj(**model_kwargs).to(device)
@@ -887,7 +842,7 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
             
         auto_recover_metrics(
             checkpoint_path=trained_baseline_path, 
-            experiment_name=f"Original Model{quant_str}", 
+            experiment_name=f"Control{quant_str}", 
             base_folder=save_path,
             model=eval_model,          
             test_loader=test_loader,   
@@ -898,7 +853,6 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
         print(f"[ERROR] Baseline model not found at {trained_baseline_path}. Aborting.")
         return
 
-    # 4. Phase 3: Network Probe with Persistence Check
     if variance_file.exists():
         print(f"[INFO] Found existing layer variances at {variance_file}. Skipping probe.")
         with open(variance_file, 'r') as f:
@@ -910,7 +864,6 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
             json.dump(layer_variances, f, indent=4)
         print(f"[✓] Layer variances saved to {variance_file}")
     
-    # 5. Phase 4: Dynamic Experiment Generation
     dynamic_experiments = get_dynamic_experiment_config(
         model=eval_model,
         cnn_layers=list(layer_variances.keys()),
@@ -927,13 +880,11 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
         exp_config=dynamic_experiments
     )
     
-    # 6. Phase 5: Exporting Configuration Map
     with open(json_file, 'w') as f:
         json.dump(dynamic_experiments, f, indent=4)
     print(f"[✓] Stage 1 Complete. Exported {len(dynamic_experiments)} targets to '{json_file}'.")
 
 def run_hpc_stage(args, device, train_loader, test_loader, model_class, model_kwargs, model_path_097, model_path_000, json_file):
-    """Handles Phase 2: HPC execution of specific targets parsed from the generated JSON map."""
     print(f"\n{'='*60}")
     print(f"[MODE] STAGE 2: HPC EXPERIMENT EXECUTION")
     print(f"       Targeting: '{args.experiment}'")
@@ -957,7 +908,7 @@ def run_hpc_stage(args, device, train_loader, test_loader, model_class, model_kw
     run_experiments_for_dataset(
         {args.experiment: dynamic_experiments[args.experiment]}, args.dataset, model_path_097, model_path_000, 
         train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
-        model_kwargs, args.post_compress_epochs, None, args.quant, args
+        model_kwargs, None, args.quant, args, is_discovery=False
     )
 
 
@@ -972,7 +923,6 @@ def main():
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     print(f"[INFO] Hardware detected: {device.type.upper()} (CUDA Available: {torch.cuda.is_available()})")
 
-    # Initialize shared dependencies
     train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
     
     base_path = CHECKPOINT_BASES[args.model][args.dataset]
@@ -983,7 +933,6 @@ def main():
 
     json_file = f"{args.model}_{args.dataset}_epochs{args.epochs}_pretrain{args.pretrain}_{'JF' if args.JF else 'Kevin'}_discovered_regions.json"
 
-    # Route to appropriate stage
     if args.experiment == "discover":
         run_discovery_stage(
             args, device, train_loader, test_loader, model_class, model_kwargs, 
