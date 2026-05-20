@@ -2,8 +2,8 @@
 
 # --- Input Validation ---
 if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <epochs> <pretrain>"
-    echo "Example: $0 100 200"
+    echo "Usage: $0 <discovery_epochs> <hpc_compute_epochs>"
+    echo "Example: $0 50 100"
     exit 1
 fi
 
@@ -15,13 +15,13 @@ datasets=("tinyimagenet" "Cifar10")
 quant=("True" "False")
 
 echo "=== Submitting Stage 2: Parallel HPC Execution ==="
-echo "    Epochs: $EPOCHS | Pretrain: $PRETRAIN"
+echo "    Discovery Budget (Epochs): $EPOCHS | HPC Target (Pretrain): $PRETRAIN"
 
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do
         for flag in "JF"; do
             
-            # Locate the JSON file created by Stage 1 (Now includes ep and pre)
+            # Locate the JSON file created by Stage 1 
             json_file="${model}_${dataset}_epochs${EPOCHS}_pretrain${PRETRAIN}_${flag}_discovered_regions.json"
             
             if [ ! -f "$json_file" ]; then
@@ -29,7 +29,7 @@ for model in "${models[@]}"; do
                 continue
             fi
 
-            # Read the dynamic experiment names out of the JSON file directly
+            # Read the dynamic experiment names out of the JSON file directly (will inherently include 'Control')
             mapfile -t dynamic_experiments < <(python -c "import json; print('\n'.join(json.load(open('$json_file')).keys()))")
 
             for quant_flag in "${quant[@]}"; do
@@ -43,8 +43,7 @@ for model in "${models[@]}"; do
                     
                 done
             done
+
         done
     done
 done
-
-echo "=== All jobs submitted successfully ==="

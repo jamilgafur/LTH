@@ -44,18 +44,15 @@ if [ "$QUANT" == "True" ]; then
 fi
 
 # --- Run the Python script ---
-echo "Executing: ~/env/lth_env/bin/python transfer.py --model $MODEL --dataset $DATASET --experiment $EXPERIMENT --$FLAG --pretrain $PRETRAIN --epochs $EPOCHS --post_compress_epochs 0 $QUANT_FLAG"
+echo "Executing: ~/env/lth_env/bin/python transfer.py --model $MODEL --dataset $DATASET --experiment \"$EXPERIMENT\" --$FLAG --pretrain $PRETRAIN --epochs $EPOCHS $QUANT_FLAG"
 
 time ~/env/lth_env/bin/python transfer.py \
     --model "$MODEL" \
     --dataset "$DATASET" \
     --experiment "$EXPERIMENT" \
+    --"$FLAG" \
     --pretrain "$PRETRAIN" \
     --epochs "$EPOCHS" \
-    --post_compress_epochs 0 \
-    --"$FLAG" \
-    $QUANT_FLAG \
-    > "$OUTPUT_FILE" 2>&1
+    $QUANT_FLAG > "$OUTPUT_FILE" 2>&1
 
-# append plots to outputfile
-time ~/env/lth_env/bin/python Journal_plot.py --epoch "$EPOCHS" --pretrain "$PRETRAIN" >> "$OUTPUT_FILE" 2>&1
+echo "Job finished."

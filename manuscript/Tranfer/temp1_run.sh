@@ -2,8 +2,8 @@
 
 # --- Input Validation ---
 if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <epochs> <pretrain>"
-    echo "Example: $0 100 200"
+    echo "Usage: $0 <discovery_epochs> <hpc_compute_epochs>"
+    echo "Example: $0 50 100"
     exit 1
 fi
 
@@ -18,14 +18,14 @@ datasets=("tinyimagenet" "Cifar10")
 quant=("False")
 
 echo "=== Submitting Stage 1: Discovery Jobs ==="
-echo "    Epochs: $EPOCHS | Pretrain: $PRETRAIN"
+echo "    Discovery Budget (Epochs): $EPOCHS | HPC Target (Pretrain): $PRETRAIN"
 
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do
         for quant_flag in "${quant[@]}"; do
             for flag in "JF"; do
                 
-                # Submit discovery job. Will train if needed, then dump JSON
+                # Submit discovery job. Will train Control if needed, then dump JSON
                 command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"discover\",FLAG=\"$flag\",QUANT=\"$quant_flag\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\" submit_job.pbs"
                 
                 echo "Executing: $command"
@@ -35,5 +35,3 @@ for model in "${models[@]}"; do
         done
     done
 done
-
-echo "Done. Wait for these jobs to finish and generate the JSON files before running Stage 2."
