@@ -686,11 +686,13 @@ def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwarg
         return run_kevin_experiment({experiment_name: layers}, model_path_000, train_loader, test_loader, device, epochs, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, quant=quant)
     else: raise ValueError("Specify either --JF or --Kevin.")
 
+
 def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, experiment_func, quant=False, args=None, is_discovery=False):
     
-    # Differentiate paths by the actual epoch budget used for that specific run type
     active_epochs = epochs if is_discovery else pretrain
-    save_path = f"{model_class}_{dataset}_{CHECKPOINT_FILES[args.model][dataset][0]}_epochs{active_epochs}_pretrain{pretrain}"
+    
+    # The save path correctly stays locked to the initial epochs budget
+    save_path = f"{model_class}_{dataset}_{CHECKPOINT_FILES[args.model][dataset][0]}_epochs{epochs}_pretrain{pretrain}"
 
     if train_loader is None or test_loader is None:
         train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, args.model)
@@ -699,12 +701,11 @@ def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path
 
     for name, layers in experiments.items():
         print(f"\n--- Running experiment: {name} ---")
+        print(f"    Budget allocated: {active_epochs} epochs")
         
-        # If it's the control (baseline), we use the pretrain budget 
-        run_epochs = pretrain if name == "Control" else active_epochs
+        run_epochs = active_epochs
         
         run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, run_epochs, experiment_func, save_path, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
-
 # ==============================================================================
 # Main Entry Point
 # ==============================================================================
