@@ -812,7 +812,7 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
     print(f"{'='*60}\n")
     
     experiment_id = f"epochs{args.epochs}_pretrain{args.pretrain}"
-    plots_root = Path(f"./runs/plots/{args.model}/{args.dataset}/{experiment_id}")
+    plots_root = Path(os.path.abspath(f"./runs/plots/{args.model}/{args.dataset}/{experiment_id}"))
     os.makedirs(plots_root, exist_ok=True)
     variance_file = plots_root / "layer_variances.json"
 
@@ -861,6 +861,8 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
     else:
         print(f"[INFO] No variance file found. Executing Network Probe...")
         layer_variances = get_layer_variances(eval_model, input_tensor)
+        # create variance file
+
         with open(variance_file, 'w') as f:
             json.dump(layer_variances, f, indent=4)
         print(f"[✓] Layer variances saved to {variance_file}")
