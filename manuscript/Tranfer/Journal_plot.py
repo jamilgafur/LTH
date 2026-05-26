@@ -1,5 +1,8 @@
 # Journal_plot.py
 from __future__ import annotations
+import warnings
+# Suppress tight_layout warnings caused by GridSpec overlaps
+warnings.filterwarnings("ignore", message="This figure includes Axes that are not compatible with tight_layout")
 
 import json
 import re
@@ -119,7 +122,7 @@ def infer_isquant(exp_name: str) -> bool:
 
 def infer_posthoc_or_posttrain(exp_name: str, architecture: str) -> str:
     n = exp_name.lower()
-    if "original" in n or "baseline" in n:
+    if "original" in n or "baseline" in n or "control" in n:
         return "Baseline"
     if "vgg16" in architecture.lower() or "regnetx" in architecture.lower():
         return "Retrained"
@@ -136,16 +139,27 @@ def clean_exp_name(exp_name: str) -> str:
     n = n.replace(" Only", "").replace("()", "") 
     n = n.strip(" -_")
     
-    if "Original" in n or "Baseline" in n: return "Original Model"
+    if "Original" in n or "Baseline" in n or "Control" in n: 
+        if "Continuted" in n: return "Control (Continued)"
+        return "Control Model"
     return n.strip()
 
 def find_baseline(df: pd.DataFrame):
-    mask = (df["exp_name"].str.lower().str.contains("original") | df["exp_name"].str.lower().str.contains("baseline"))
+    # Now correctly includes "control" to match the transfer.py phases
+    mask = (df["exp_name"].str.lower().str.contains("original") | 
+            df["exp_name"].str.lower().str.contains("baseline") |
+            df["exp_name"].str.lower().str.contains("control"))
+            
     b_df = df[mask & (df["is_quantized"] == False)]
     if b_df.empty: b_df = df[mask]
     if b_df.empty: return None
+    
+    # Crucial: If Phase 2 continued control exists, it is the true baseline for Stage 2 comparisons
+    control_cont = b_df[b_df["exp_name"].str.lower().str.contains("continuted")]
+    if not control_cont.empty:
+        return control_cont.mean(numeric_only=True)
+        
     return b_df.mean(numeric_only=True)
-
 
 def load_results() -> pd.DataFrame:
     logger.info(f"Scanning for metrics files matching epochs={epochs}, pretrain={pretrain}")
@@ -390,8 +404,9 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             for start, end, state in zones:
                 span_start, span_end = (start + 1) - 0.5, (end + 1) + 0.5
                 alpha_val = 0.4 if state == "VETO" else 0.15
-                ax1.axvspan(span_start, span_end, color=state_colors.get(state, 'red'), alpha=alpha_val, edgecolor='none')
-                ax2.axvspan(span_start, span_end, color=state_colors.get(state, 'red'), alpha=alpha_val, label=state)
+                # CHANGED 'color' -> 'facecolor'
+                ax1.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, edgecolor='none')
+                ax2.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, label=state)
 
             ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
             plt.tight_layout()
@@ -402,168 +417,6 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             plt.savefig(save_path, bbox_inches='tight')
             plt.close()
             logger.info(f"[FIG2] Saved methodology plot: {save_path}")
-# def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
-#     base_dir = Path("./runs/plots")
-    
-#     # Use glob to find the specific experiment folder matching these epochs/pretrain
-#     # This avoids hardcoding the model/dataset names in the path
-#     pattern = f"**/epochs{epochs}_pretrain{pretrain}"
-#     found_dirs = list(base_dir.glob(pattern))
-    
-#     if not found_dirs:
-#         logger.error(f"Could not find any directories matching {pattern} under {base_dir}")
-#         return
-
-#     # Process each found directory
-#     for stats_dir in found_dirs:
-#         logger.info(f"Scanning for stats in: {stats_dir}")
-        
-#         # Now glob for the files within that specific experiment folder
-#         stat_files = [f for f in stats_dir.glob("*_layer_stats.csv") if "normalized" not in f.name]
-        
-#         if not stat_files:
-#             logger.warning(f"No *_layer_stats.csv found in {stats_dir}")
-#             continue
-
-#         for csv_path in stat_files:
-#             logger.info(f"Processing: {csv_path.name}")
-#             try:
-#                 layer_df = pd.read_csv(csv_path)
-#                 layers = layer_df['Layer'].tolist()
-#                 variances = np.maximum(layer_df['Variance'].values, 1e-6)
-#             except Exception as e:
-#                 logger.error(f"Failed to read CSV {csv_path}: {e}")
-#                 continue
-
-#             # --- Calculation Logic ---
-#             h_vals, sigma_bars = [], []
-#             window_size = 3  
-#             for i, sigma_i in enumerate(variances):
-#                 start = max(0, i - window_size)
-#                 end = min(len(variances), i + window_size + 1)
-#                 local_vars = variances[start:end]
-#                 sigma_bar = np.mean(local_vars) if len(local_vars) > 0 else np.mean(variances)
-#                 sigma_bar = max(sigma_bar, 1e-12)
-#                 sigma_bars.append(sigma_bar)
-#                 diff = sigma_i - sigma_bar
-#                 h = max(diff / sigma_bar, -1.0) if diff < 0 else min(diff / sigma_bar, 1.0)
-#                 h_vals.append(h)
-                
-#             # --- JSON Region Matching ---
-#             # Fixed the glob pattern search to be more robust
-#             parts = csv_path.stem.replace("_layer_stats", "").split("_")
-#             arch, dataset = parts[0], "_".join(parts[1:])
-            
-#             json_pattern = f"*{arch}*{dataset}*discovered_regions.json"
-#             json_files = list(Path(".").glob(json_pattern))
-            
-#             verified_idx_ranges = []
-#             if not json_files:
-#                 logger.debug(f"No JSON regions found for {arch} | {dataset}")
-#             else:
-#                 try:
-#                     with open(json_files[0], 'r') as f:
-#                         config = json.load(f)
-#                     for k, v in config.items():
-#                         if k.startswith("Set_") and isinstance(v, (list, tuple)):
-#                             start_layer, end_layer = v[0], v[-1]
-#                             s_idx = next(idx for idx, n in enumerate(layers) if start_layer == n)
-#                             e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer == n)
-#                             verified_idx_ranges.append((s_idx, e_idx))
-#                 except Exception as e:
-#                     logger.error(f"Error parsing JSON {json_files[0]}: {e}")
-
-#             # --- Plotting ---
-#             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
-            
-#             # FIX 2: Shift X-Axis to 1-based indexing
-#             x_vals = range(1, len(layers) + 1)
-            
-#             ax1.plot(x_vals, variances, color='#4A4A4A', marker='o', markersize=4, linestyle='-', linewidth=1.5, label=r'Layer Variance ($\sigma_i$)')
-#             ax1.plot(x_vals, sigma_bars, color='#ff7f0e', linestyle='--', linewidth=2.5, label=r'Local Context Mean ($\bar{\sigma}$)')
-#             ax1.set_ylabel("Raw Variance (Log)", fontweight='bold', fontsize=12)
-#             ax1.set_yscale('log')
-#             ax1.set_title(f"Dynamic Structural Redundancy Analysis\n{arch} on {dataset.capitalize()}", pad=15, fontweight='bold', fontsize=15, loc='center')
-#             ax1.legend(loc='upper right', frameon=False, fontsize=10)
-#             sns.despine(ax=ax1)
-
-#             veto_idx = int(len(layers) * 0.25)
-#             final_states = ["DANGER"] * len(layers)
-            
-#             for i in range(len(layers)):
-#                 if i < veto_idx:
-#                     final_states[i] = "VETO"
-#                 else:
-#                     in_verified = False
-#                     for s_idx, e_idx in verified_idx_ranges:
-#                         if s_idx <= i <= e_idx:
-#                             in_verified = True
-#                             break
-                    
-#                     if in_verified:
-#                         final_states[i] = "VERIFIED"
-#                     elif h_vals[i] < 0:
-#                         final_states[i] = "REJECTED"
-#                     else:
-#                         final_states[i] = "DANGER"
-
-#             state_colors = {
-#                 "VETO": "#999999",     
-#                 "VERIFIED": "#2ca02c", 
-#                 "REJECTED": "#ff7f0e", 
-#                 "DANGER": "#d62728"    
-#             }
-#             bar_colors = [state_colors[s] for s in final_states]
-
-#             ax2.bar(x_vals, h_vals, color=bar_colors, alpha=0.85, edgecolor='black', linewidth=0.5, label='Relative Local Variance ($h$)')
-            
-#             ax2.set_ylim(-1.1, 1.1)
-#             ax2.set_ylabel(r"Relative Variance ($h$)", fontweight='bold', fontsize=12)
-#             ax2.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=12)
-#             ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2, label='Collapse Threshold (0)')
-
-#             zones = []
-#             if len(final_states) > 0:
-#                 start_idx = 0
-#                 current_state = final_states[0]
-#                 for i in range(1, len(final_states)):
-#                     if final_states[i] != current_state:
-#                         zones.append((start_idx, i - 1, current_state))
-#                         start_idx = i
-#                         current_state = final_states[i]
-#                 zones.append((start_idx, len(final_states) - 1, current_state))
-
-#             for start, end, state in zones:
-#                 # FIX 3: Shift the Background Span Zones to align with 1-based indexing
-#                 span_start, span_end = (start + 1) - 0.5, (end + 1) + 0.5
-                
-#                 if state == "VETO":
-#                     ax1.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='none')
-#                     ax2.axvspan(span_start, span_end, color='#e0e0e0', alpha=0.4, hatch='////', edgecolor='#999999', label="Foundational Veto (Depth < 25%)")
-#                 elif state == "VERIFIED":
-#                     ax1.axvspan(span_start, span_end, color='#2ca02c', alpha=0.10, edgecolor='none')
-#                     ax2.axvspan(span_start, span_end, color='#2ca02c', alpha=0.15, label="Verified Collapse Region (JSON)")
-#                 elif state == "REJECTED":
-#                     ax1.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.08, edgecolor='none')
-#                     ax2.axvspan(span_start, span_end, color='#ff7f0e', alpha=0.1, label="Candidate (Rejected by Compiler)")
-#                 elif state == "DANGER":
-#                     ax1.axvspan(span_start, span_end, color='#d62728', alpha=0.05, edgecolor='none')
-#                     ax2.axvspan(span_start, span_end, color='#d62728', alpha=0.05, label=r"Feature Extraction Region ($h \geq 0$)")
-
-#             handles, labels = ax2.get_legend_handles_labels()
-#             by_label = dict(zip(labels, handles))
-#             by_label = {k: v for k, v in by_label.items() if k}
-#             ax2.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=2, fontsize=10, frameon=False)
-            
-#             sns.despine(ax=ax2)
-#             plt.tight_layout()
-#             save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
-#             print(f"[FIG2] Saving methodology BAV regions plot for {arch} on {dataset} at {save_path}")
-#             plt.savefig(save_path, bbox_inches='tight')
-#             plt.close()
-
-  
-# ========================= FIG 3 ========================= #
 
 # ========================= FIG 3 ========================= #
 
@@ -858,13 +711,14 @@ def fig5_hardware_efficiency_profiles(
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         logger.info(f"[FIG5] Processing Hardware Profiles for {arch}/{dataset}")
         
-        # --- FIX: Explicitly target the specific "Baseline Model" control using the raw exp_name ---
-        baseline_mask = g_metrics['exp_name'].str.lower().str.contains('baseline')
+        # --- FIX: Recognize 'control' as the baseline trigger ---
+        baseline_mask = (g_metrics['exp_name'].str.lower().str.contains('baseline') | 
+                         g_metrics['exp_name'].str.lower().str.contains('control') |
+                         g_metrics['exp_name'].str.lower().str.contains('original'))
         
         if not baseline_mask.any(): 
             logger.warning(f"[FIG5] No true 'Baseline Model' found for {arch}/{dataset}. Skipping.")
             continue
-            
         # Ensure we grab the unquantized version of the baseline model as our control
         baseline_candidates = g_metrics[baseline_mask & (g_metrics['is_quantized'] == False)]
         if not baseline_candidates.empty:
@@ -999,10 +853,6 @@ def fig6_training_curves(
     results_dir: Path = Path("./"),
     out_dir: Path = Path("./figures/learning_curves")
 ):
-    """
-    Scans for merged_metrics.json files and plots validation accuracy 
-    and loss curves for all tracked experiments.
-    """
     out_dir.mkdir(parents=True, exist_ok=True)
     
     logger.info(f"[FIG6] Scanning for metrics files in {results_dir.resolve()} for training curves")
@@ -1016,7 +866,6 @@ def fig6_training_curves(
             return
 
     for p in files:
-        # Utilize the existing parsers from Journal_plot.py
         dataset = infer_dataset_from_path(p)
         if dataset == "unknown" and "tinyimagenet" in str(p).lower(): dataset = "tinyimagenet"
         if dataset == "unknown" and "cifar10" in str(p).lower(): dataset = "cifar10_"
@@ -1028,11 +877,16 @@ def fig6_training_curves(
             with open(p) as f: 
                 raw = json.load(f)
         except Exception as e:
-            logger.error(f"[FIG6] Failed to load JSON {p}: {e}")
             continue
             
         if not raw: continue
         
+        # Identify the Phase 1 Control to act as the branch root
+        base_control_key = next((k for k in raw.keys() if k.lower() == "control" and not infer_isquant(k)), None)
+        base_acc = raw[base_control_key].get("accuracies", []) if base_control_key else []
+        base_loss = raw[base_control_key].get("losses", []) if base_control_key else []
+        base_epochs = len(base_acc)
+
         sns.set_theme(style="whitegrid", context="paper", font_scale=1.2)
         fig, axes = plt.subplots(1, 2, figsize=(16, 6))
         
@@ -1043,32 +897,46 @@ def fig6_training_curves(
             accuracies = data.get("accuracies", [])
             losses = data.get("losses", [])
             
-            # Use the existing global namer to keep legend text clean & consistent
+            is_stage1_control = (exp_name.lower() == "control")
             display_name = clean_exp_name(exp_name)
             if infer_isquant(exp_name):
                 display_name += " (Quant)"
                 
             if accuracies:
-                epochs = range(1, len(accuracies) + 1)
-                axes[0].plot(epochs, accuracies, label=display_name, color=palette[idx], linewidth=2.5, alpha=0.85)
+                if not is_stage1_control and base_epochs > 0:
+                    # Dynamically offset X and prepend the final Y value of the base control
+                    x_acc = [base_epochs] + [base_epochs + x for x in range(1, len(accuracies) + 1)]
+                    y_acc = [base_acc[-1]] + accuracies
+                    # Draw a faint trailing shadow line of the original control for reference
+                    axes[0].plot(range(1, base_epochs + 1), base_acc, color=palette[idx], linewidth=1.5, alpha=0.2, linestyle='--')
+                else:
+                    x_acc = list(range(1, len(accuracies) + 1))
+                    y_acc = accuracies
+                    
+                axes[0].plot(x_acc, y_acc, label=display_name, color=palette[idx], linewidth=2.5, alpha=0.85)
                 has_data = True
                 
             if losses:
-                epochs = range(1, len(losses) + 1)
-                axes[1].plot(epochs, losses, label=display_name, color=palette[idx], linewidth=2.5, alpha=0.85)
+                if not is_stage1_control and base_epochs > 0 and base_loss:
+                    x_loss = [base_epochs] + [base_epochs + x for x in range(1, len(losses) + 1)]
+                    y_loss = [base_loss[-1]] + losses
+                    axes[1].plot(range(1, base_epochs + 1), base_loss, color=palette[idx], linewidth=1.5, alpha=0.2, linestyle='--')
+                else:
+                    x_loss = list(range(1, len(losses) + 1))
+                    y_loss = losses
+                    
+                axes[1].plot(x_loss, y_loss, label=display_name, color=palette[idx], linewidth=2.5, alpha=0.85)
                 has_data = True
                 
         if not has_data:
             plt.close()
             continue
 
-        # --- Formatting Accuracy Subplot ---
         axes[0].set_title(f"Validation Accuracy Over Epochs\n{arch} | {format_dataset_name(dataset)}", fontsize=16, fontweight='bold', pad=15)
         axes[0].set_xlabel("Epochs", fontsize=13, fontweight='bold')
         axes[0].set_ylabel("Accuracy (%)", fontsize=13, fontweight='bold')
         axes[0].legend(loc="lower right", framealpha=0.9, fontsize=11)
         
-        # --- Formatting Loss Subplot ---
         axes[1].set_title(f"Loss Over Epochs\n{arch} | {format_dataset_name(dataset)}", fontsize=16, fontweight='bold', pad=15)
         axes[1].set_xlabel("Epochs", fontsize=13, fontweight='bold')
         axes[1].set_ylabel("Loss", fontsize=13, fontweight='bold')
@@ -1077,14 +945,13 @@ def fig6_training_curves(
         sns.despine(bottom=False, left=False)
         plt.tight_layout()
 
-        # Save utilizing the unified naming convention
         clean_ds = dataset.strip("_")
         save_path = out_dir / f"{arch}_{clean_ds}_training_curves.png"
         
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.close()
-        logger.info(f"[FIG6] Saved training curves for {arch}/{dataset} at {save_path}")
-
+        logger.info(f"[FIG6] Saved sequential training curves for {arch}/{dataset} at {save_path}")
+        
 def export_master_summary_json(df: pd.DataFrame, out_path: Path = Path("./master_results_summary.json")):
     """
     Consolidates the normalized DataFrame into a single, highly readable 
