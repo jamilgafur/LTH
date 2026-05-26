@@ -144,20 +144,6 @@ def clean_exp_name(exp_name: str) -> str:
         return "Control Model"
     return n.strip()
 
-def find_baseline(df: pd.DataFrame):
-    baseline_mask = (df["exp_name"].str.lower().str.contains("baseline") | 
-                 df["exp_name"].str.lower().str.contains("control") | 
-                 df["exp_name"].str.lower().str.contains("original"))
-            
-    b_df = df[baseline_mask & (df["is_quantized"] == False)]
-    if b_df.empty: b_df = df[baseline_mask]
-    if b_df.empty: return None
-    
-    control_cont = b_df[b_df["exp_name"].str.lower().str.contains("continuted")]
-    if not control_cont.empty:
-        return control_cont.iloc[0] # <-- Fix: Just return the row directly
-        
-    return b_df.iloc[0] # <-- Fix: Avoids .mean() dropping columns
 def load_results() -> pd.DataFrame:
     logger.info(f"Scanning for metrics files matching epochs={epochs}, pretrain={pretrain}")
     
@@ -211,6 +197,23 @@ def load_results() -> pd.DataFrame:
     logger.info(f"Successfully parsed {len(rows)} experiment rows.")
     return pd.DataFrame(rows)
 
+def find_baseline(df: pd.DataFrame):
+    # Matches transfer.py phases (including "control")
+    mask = (df["exp_name"].str.lower().str.contains("original") | 
+            df["exp_name"].str.lower().str.contains("baseline") |
+            df["exp_name"].str.lower().str.contains("control"))
+            
+    b_df = df[mask & (df["is_quantized"] == False)]
+    if b_df.empty: b_df = df[mask]
+    if b_df.empty: return None
+    
+    # Crucial: Phase 2 continued control is the true baseline for Stage 2 comparisons
+    control_cont = b_df[b_df["exp_name"].str.lower().str.contains("continuted")]
+    if not control_cont.empty:
+        return control_cont.iloc[0] # Avoids .mean() dropping object columns
+        
+    return b_df.iloc[0] # Avoids .mean() dropping object columns
+
 def normalize(df: pd.DataFrame) -> pd.DataFrame:
     out = []
     for (ds, arch), g in df.groupby(["dataset", "architecture"]):
@@ -223,8 +226,11 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
         b_acc = baseline["accuracy"]
         b_params = baseline["params"]
         
-        # Isolate the baseline curves
-        baseline_mask = g["exp_name"].str.lower().str.contains("baseline")
+        # Isolate the baseline curves with robust mask
+        baseline_mask = (g["exp_name"].str.lower().str.contains("baseline") | 
+                         g["exp_name"].str.lower().str.contains("control") | 
+                         g["exp_name"].str.lower().str.contains("original"))
+                         
         b_df_curves = g[baseline_mask & (g["is_quantized"] == False)]
         if b_df_curves.empty: b_df_curves = g[baseline_mask]
         
@@ -237,7 +243,7 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
                 row["baseline_acc"] = b_acc 
                 row["d_params"] = 100 * (1 - r["params"] / b_params)
                 
-                # --- NEW: Curve Dynamic Math ---
+                # --- Curve Dynamic Math ---
                 r_loss = r.get("loss_curve", [])
                 
                 if len(r_loss) > 5 and len(b_loss_curve) > 5:
@@ -262,7 +268,6 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
     if "acc_curve" in df_out.columns:
         df_out = df_out.drop(columns=["acc_curve", "loss_curve"])
     return df_out
-
 # =========================
 # Figure Generations
 # =========================
@@ -438,7 +443,7 @@ def fig3_v2t_heuristic_validation(
         clean_metrics = g_metrics[g_metrics['posthoc_or_posttrain'].isin(['Collapsed', 'Retrained'])]
         if clean_metrics.empty: continue
 
-        # --- UPDATE: Dynamic Path Resolution ---
+        # --- Dynamic Path Resolution ---
         clean_ds = dataset.strip("_")
         arch_dir = Path(f"./runs/plots/{arch}")
         if not arch_dir.exists(): continue
@@ -450,14 +455,15 @@ def fig3_v2t_heuristic_validation(
         target_dir = ds_dirs[0] / f"epochs{epochs}_pretrain{pretrain}"
         if not target_dir.exists(): continue
 
-        # Scan all CSVs in this specific run to find the one with the Median Variance stats
+        # Scan all CSVs in this specific run to find the one with the Relative Variance stats
         csv_candidates = list(target_dir.rglob("*.csv"))
         df_h = pd.DataFrame()
         
         for c in csv_candidates:
             try:
                 temp_df = pd.read_csv(c)
-                if "Experiment" in temp_df.columns and "Median Variance" in temp_df.columns:
+                # FIX: Changed "Median Variance" to "Relative Variance"
+                if "Experiment" in temp_df.columns and "Relative Variance" in temp_df.columns:
                     df_h = temp_df
                     break
             except Exception: continue
@@ -495,24 +501,26 @@ def fig3_v2t_heuristic_validation(
     # --- Single Path ---
     sp_df = full_df[full_df['Topology'] == 'Single-Path']
     if not sp_df.empty:
-        sns.scatterplot(data=sp_df, x="Median Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"}, s=250, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[0], zorder=3)
-        q1 = sp_df["Median Variance"].quantile(0.3)
+        # FIX: Changed 'Median Variance' to 'Relative Variance'
+        sns.scatterplot(data=sp_df, x="Relative Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"}, s=250, alpha=0.9, edgecolor="black", color="#2ca02c", ax=axes[0], zorder=3)
+        q1 = sp_df["Relative Variance"].quantile(0.3)
         axes[0].axvspan(1e-4, q1, color='#2ca02c', alpha=0.15, zorder=0, label=f"BAV Target: Bounded Growth (<{q1:.1f})")
         axes[0].set_xscale('symlog', linthresh=1e-2)
         axes[0].set_title("Single-Path: Target Bounded Growth", fontsize=16, fontweight='bold', pad=15)
         axes[0].set_ylabel(r"$\Delta$ Accuracy (%) $\rightarrow$ Higher is Better", fontsize=14, fontweight='bold')
-        axes[0].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
+        axes[0].set_xlabel("Relative Activation Variance (SymLog Scale)", fontsize=12)
         axes[0].legend(loc="lower left", framealpha=0.9)
 
     # --- Multi Path ---
     mp_df = full_df[full_df['Topology'] == 'Multi-Path']
     if not mp_df.empty:
-        sns.scatterplot(data=mp_df, x="Median Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"}, s=250, alpha=0.9, edgecolor="black", color="#d62728", ax=axes[1], zorder=3)
-        q1_mp = mp_df["Median Variance"].quantile(0.4)
+        # FIX: Changed 'Median Variance' to 'Relative Variance'
+        sns.scatterplot(data=mp_df, x="Relative Variance", y="d_acc", style="Quantization State", markers={"Unquantized": "o", "Quantized": "X"}, s=250, alpha=0.9, edgecolor="black", color="#d62728", ax=axes[1], zorder=3)
+        q1_mp = mp_df["Relative Variance"].quantile(0.4)
         axes[1].axvspan(1e-4, q1_mp, color='#2ca02c', alpha=0.15, zorder=0, label=f"BAV Target: Variance Valleys (<{q1_mp:.1f})")
         axes[1].set_xscale('symlog', linthresh=1e-2)
         axes[1].set_title("Multi-Path: Target Terminal Stabilization", fontsize=16, fontweight='bold', pad=15)
-        axes[1].set_xlabel("Median Activation Variance (SymLog Scale)", fontsize=12)
+        axes[1].set_xlabel("Relative Activation Variance (SymLog Scale)", fontsize=12)
         axes[1].legend(loc="lower right", framealpha=0.9)
 
     sns.despine()
@@ -520,9 +528,6 @@ def fig3_v2t_heuristic_validation(
     plt.close()
     logger.info(f"[FIG3] Saved V2T heuristic validation map at {out_dir / 'V2T_heuristic_validation_map.png'}")
 # ========================= FIG 4 ========================= #
-
-# ========================= FIG 4 ========================= #
-
 def fig4_comprehensive_search_space_map(
     df: pd.DataFrame,
     epochs: int,
@@ -555,7 +560,7 @@ def fig4_comprehensive_search_space_map(
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         clean_ds = dataset.strip("_").lower()
         
-        # --- UPDATE: Bulletproof Path Discovery for Layer Stats ---
+        # --- Bulletproof Path Discovery for Layer Stats ---
         arch_dir = Path(f"./runs/plots/{arch}")
         if not arch_dir.exists(): continue
         
@@ -576,9 +581,9 @@ def fig4_comprehensive_search_space_map(
         layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
 
-        # --- UPDATE: Robust recursive JSON search ---
-        # Will search everywhere for the JSON tied to this specific run
-        all_jsons = list(Path(".").rglob(f"{arch}*{clean_ds}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
+        # --- FIX: Robust recursive JSON search (Case-Insensitive Match) ---
+        potential_jsons = list(Path(".").rglob(f"{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
+        all_jsons = [p for p in potential_jsons if clean_ds in p.name.lower()]
         
         if not all_jsons: 
             continue
@@ -689,7 +694,6 @@ def fig4_comprehensive_search_space_map(
             plt.close(fig_cand)
 
     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
-    
 # ========================= FIG 5 ========================= #
 def fig5_hardware_efficiency_profiles(
     df: pd.DataFrame,
