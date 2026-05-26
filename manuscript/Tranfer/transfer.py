@@ -907,13 +907,26 @@ def run_hpc_stage(args, device, train_loader, test_loader, model_class, model_kw
         print(f"[ERROR] The requested experiment '{args.experiment}' does not exist in the generated JSON.")
         raise ValueError(f"Experiment '{args.experiment}' not found in {json_file}.")
 
+    # --- FIX: Reconstruct path to the trained Control weights from Discovery Stage ---
+    save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}_epochs{args.epochs}_pretrain{args.pretrain}"
+    ckpt_dir = os.path.join(save_path, "checkpoints")
+    flag_str = "JF" if args.JF else "Kevin"
+    quant_str = "_quant" if args.quant else ""
+    trained_baseline_path = os.path.join(ckpt_dir, f"final_{flag_str}_Control{quant_str}.pt")
+
+    if os.path.exists(trained_baseline_path):
+        print(f"[INFO] Discovered trained baseline from Stage 1: {trained_baseline_path}")
+        print(f"[INFO] Overriding base checkpoint. Collapsing will begin from these trained weights.")
+        model_path_097 = trained_baseline_path
+    else:
+        print(f"[WARN] Trained baseline NOT found at {trained_baseline_path}. Falling back to initial un-finetuned checkpoint.")
+
     print(f"[INFO] Handoff to PyPrune Experiment Framework...")
     run_experiments_for_dataset(
         {args.experiment: dynamic_experiments[args.experiment]}, args.dataset, model_path_097, model_path_000, 
         train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
         model_kwargs, None, args.quant, args, is_discovery=False
     )
-
 
 def main():
     args = parse_cli_args()
