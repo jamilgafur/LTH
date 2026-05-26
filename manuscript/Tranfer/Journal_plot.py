@@ -145,22 +145,19 @@ def clean_exp_name(exp_name: str) -> str:
     return n.strip()
 
 def find_baseline(df: pd.DataFrame):
-    # Now correctly includes "control" to match the transfer.py phases
-    mask = (df["exp_name"].str.lower().str.contains("original") | 
-            df["exp_name"].str.lower().str.contains("baseline") |
-            df["exp_name"].str.lower().str.contains("control"))
+    baseline_mask = (df["exp_name"].str.lower().str.contains("baseline") | 
+                 df["exp_name"].str.lower().str.contains("control") | 
+                 df["exp_name"].str.lower().str.contains("original"))
             
-    b_df = df[mask & (df["is_quantized"] == False)]
-    if b_df.empty: b_df = df[mask]
+    b_df = df[baseline_mask & (df["is_quantized"] == False)]
+    if b_df.empty: b_df = df[baseline_mask]
     if b_df.empty: return None
     
-    # Crucial: If Phase 2 continued control exists, it is the true baseline for Stage 2 comparisons
     control_cont = b_df[b_df["exp_name"].str.lower().str.contains("continuted")]
     if not control_cont.empty:
-        return control_cont.mean(numeric_only=True)
+        return control_cont.iloc[0] # <-- Fix: Just return the row directly
         
-    return b_df.mean(numeric_only=True)
-
+    return b_df.iloc[0] # <-- Fix: Avoids .mean() dropping columns
 def load_results() -> pd.DataFrame:
     logger.info(f"Scanning for metrics files matching epochs={epochs}, pretrain={pretrain}")
     
