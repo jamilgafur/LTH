@@ -883,7 +883,7 @@ def fig6_training_curves(
         if not raw: continue
         
         # Identify the Phase 1 Control to act as the branch root
-        base_control_key = next((k for k in raw.keys() if k.lower() == "control" and not infer_isquant(k)), None)
+        base_control_key = next((k for k in raw.keys() if "control" in k.lower() and "continuted" not in k.lower() and not infer_isquant(k)), None)
         base_acc = raw[base_control_key].get("accuracies", []) if base_control_key else []
         base_loss = raw[base_control_key].get("losses", []) if base_control_key else []
         base_epochs = len(base_acc)
