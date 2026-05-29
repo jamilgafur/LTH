@@ -977,7 +977,8 @@ def export_master_summary_json(df: pd.DataFrame, out_path: Path = Path("./master
             
         for _, row in group.iterrows():
             exp_key = row["exp_name"]
-            
+            if exp_key == "Control":
+                continue
             # Extract and organize the metrics you need for the paper
             summary_dict[arch][clean_ds][exp_key] = {
                 "base_name": row.get("base_name"),
