@@ -900,7 +900,7 @@ def fig6_training_curves(
             accuracies = data.get("accuracies", [])
             losses = data.get("losses", [])
             
-            is_stage1_control = (exp_name.lower() == "control")
+            is_stage1_control = ("control" in exp_name.lower())
             display_name = clean_exp_name(exp_name)
             if infer_isquant(exp_name):
                 display_name += " (Quant)"
