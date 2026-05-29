@@ -852,19 +852,28 @@ def fig5_hardware_efficiency_profiles(
 # ========================= FIG 6 ========================= #
 
 def fig6_training_curves(
+    epochs: int,         # Added required param
+    pretrain: int,       # Added required param
     results_dir: Path = Path("./"),
     out_dir: Path = Path("./figures/learning_curves")
 ):
     out_dir.mkdir(parents=True, exist_ok=True)
     
     logger.info(f"[FIG6] Scanning for metrics files in {results_dir.resolve()} for training curves")
-    files = list(results_dir.rglob("*merged_metrics.json"))
+    all_files = list(results_dir.rglob("*merged_metrics.json"))
+    
+    # --- FIX 1: Filter files to only those matching the current target epochs/pretrain ---
+    files = [
+        p for p in all_files 
+        if f"epochs{epochs}" in str(p) and f"pretrain{pretrain}" in str(p)
+    ]
     
     if not files:
-        if (results_dir / "merged_metrics.json").exists(): 
-            files = [results_dir / "merged_metrics.json"]
+        fallback = results_dir / "merged_metrics.json"
+        if fallback.exists(): 
+            files = [fallback]
         else: 
-            logger.warning("[FIG6] No merged_metrics.json files found for training curves.")
+            logger.warning(f"[FIG6] No merged_metrics.json files found matching epochs={epochs}, pretrain={pretrain}.")
             return
 
     for p in files:
@@ -884,8 +893,14 @@ def fig6_training_curves(
             
         if not raw: continue
         
-        # Identify the Phase 1 Control to act as the branch root
-        base_control_key = next((k for k in raw.keys() if "control" in k.lower() and "continuted" not in k.lower() and not infer_isquant(k)), None)
+        # --- FIX 2: Bulletproof base control selection (avoids broken non-JF Control) ---
+        stage1_controls = [k for k in raw.keys() if "control" in k.lower() and "continuted" not in k.lower() and not infer_isquant(k)]
+        if stage1_controls:
+            # Pick the one with the highest accuracy to guarantee we get the trained Control_JF
+            base_control_key = max(stage1_controls, key=lambda k: raw[k].get("final_accuracy", 0))
+        else:
+            base_control_key = None
+
         base_acc = raw[base_control_key].get("accuracies", []) if base_control_key else []
         base_loss = raw[base_control_key].get("losses", []) if base_control_key else []
         base_epochs = len(base_acc)
@@ -900,17 +915,19 @@ def fig6_training_curves(
             accuracies = data.get("accuracies", [])
             losses = data.get("losses", [])
             
-            is_stage1_control = ("control" in exp_name.lower())
+            # --- FIX 3: Strict equality so "Control (Continued)" does not trigger this ---
+            is_stage1_control = (exp_name == base_control_key)
+            
             display_name = clean_exp_name(exp_name)
             if infer_isquant(exp_name):
                 display_name += " (Quant)"
                 
             if accuracies:
                 if not is_stage1_control and base_epochs > 0:
-                    # Dynamically offset X and prepend the final Y value of the base control
+                    # Shift all Stage 2 experiments
                     x_acc = [base_epochs] + [base_epochs + x for x in range(1, len(accuracies) + 1)]
                     y_acc = [base_acc[-1]] + accuracies
-                    # Draw a faint trailing shadow line of the original control for reference
+                    # Reference shadow
                     axes[0].plot(range(1, base_epochs + 1), base_acc, color=palette[idx], linewidth=1.5, alpha=0.2, linestyle='--')
                 else:
                     x_acc = list(range(1, len(accuracies) + 1))
@@ -1104,7 +1121,7 @@ if __name__ == "__main__":
         fig4_comprehensive_search_space_map(df, epochs, pretrain, out_dir=FIG_DIR / "search_space")
         
         fig5_hardware_efficiency_profiles(df, out_dir=FIG_DIR / "hardware_efficiency")
-        fig6_training_curves(out_dir=FIG_DIR / "learning_curves")
+        fig6_training_curves(epochs, pretrain, out_dir=FIG_DIR / "learning_curves")
         fig7_convergence_metrics(df, out_dir=FIG_DIR / "convergence")
         
         export_master_summary_json(df, out_path=Path(f"./master_results_summary_ep{epochs}_pre{pretrain}.json"))
