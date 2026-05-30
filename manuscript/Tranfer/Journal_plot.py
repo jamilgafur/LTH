@@ -350,9 +350,11 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 h = max(diff / sigma_bars[-1], -1.0) if diff < 0 else min(diff / sigma_bars[-1], 1.0)
                 h_vals.append(h)
                 
-            # --- JSON Region Matching ---
-            json_pattern = f"*{arch}*{dataset}*discovered_regions.json"
-            json_files = list(Path(".").glob(json_pattern))
+            # --- JSON Region Matching (UPDATED: Case-Insensitive & Robust) ---
+            clean_ds = dataset.strip("_").lower()
+            potential_jsons = list(Path(".").rglob(f"*{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
+            json_files = [p for p in potential_jsons if clean_ds in p.name.lower()]
+            
             verified_idx_ranges = []
             
             if json_files:
@@ -361,11 +363,20 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                         config = json.load(f)
                     for k, v in config.items():
                         if k.startswith("Set_") and isinstance(v, (list, tuple)):
-                            s_idx = next(idx for idx, n in enumerate(layers) if v[0] == n)
-                            e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if v[-1] == n)
-                            verified_idx_ranges.append((s_idx, e_idx))
+                            # Handle potential nested lists just in case
+                            start_name = v[0][0] if isinstance(v[0], (list, tuple)) else v[0]
+                            end_name = v[-1][-1] if isinstance(v[-1], (list, tuple)) else v[-1]
+                            
+                            # Catch mismatches per-region so one failure doesn't wipe them all
+                            try:
+                                s_idx = next(idx for idx, n in enumerate(layers) if start_name == n)
+                                e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_name == n)
+                                verified_idx_ranges.append((s_idx, e_idx))
+                            except StopIteration:
+                                logger.warning(f"Could not map region {start_name}->{end_name} to CSV layers for {arch}")
+                                continue
                 except Exception as e:
-                    logger.error(f"Error parsing JSON: {e}")
+                    logger.error(f"Error parsing JSON for {arch}/{dataset}: {e}")
 
             # --- Plotting ---
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
