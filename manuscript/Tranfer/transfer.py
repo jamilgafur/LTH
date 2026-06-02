@@ -147,9 +147,11 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     from utils import count_trainable_params
     from fvcore.nn import FlopCountAnalysis
 
+    print("\n[DEBUG ENTRY] ===== get_dynamic_experiment_config =====")
     device = next(model.parameters()).device
     base_params = count_trainable_params(model)
     module_dict = dict(model.named_modules())
+    print(f"[DEBUG] Base model parameters: {base_params:,}")
 
     # --- Calculate Base FLOPs ---
     dummy_input = torch.randn(1, *input_shape[1:]).to(device)
@@ -158,13 +160,16 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         with torch.no_grad():
             base_flops = FlopCountAnalysis(model, dummy_input).unsupported_ops_warnings(False).total()
         check_flops = True
-    except Exception:
+        print(f"[DEBUG] Base model FLOPs calculated: {base_flops:,}")
+    except Exception as e:
         base_flops = float('inf')
         check_flops = False
+        print(f"[WARN] Failed to calculate base FLOPs: {e}")
 
     # =====================================================================
     # PHASE 1: Calculating the Sliding Window Variance Normalization
     # =====================================================================
+    print(f"[STEP] Phase 1: Calculating Sliding Window Variance Normalization (window={window_size})")
     rolling_means = []
     for i in range(len(variances)):
         start = max(0, i - window_size)
@@ -183,31 +188,60 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     # =====================================================================
     num_layers = len(cnn_layers)
     veto_idx = int(num_layers * veto_fraction)
+    print(f"[STEP] Phase 2: Candidate Selection (Total layers: {num_layers}, Veto threshold index: {veto_idx})")
     
     R_candidates = []
     current_set = []
+    current_top_level = None
     
+    def get_top_level(name):
+        """Extracts the top-level container name (e.g., 'stage4' from 'stage4.inception.conv')"""
+        return name.split('.')[0] if '.' in name else name
+
     for i, h in enumerate(h_values):
         layer_name = cnn_layers[i]
         mod = module_dict.get(layer_name)
         
+        # Include Linear layers to keep blocks contiguous
         is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear))
+        top_level = get_top_level(layer_name)
         
-        if i < veto_idx or not is_valid_target:
+        # Boundary break conditions
+        is_vetoed = i < veto_idx
+        is_boundary_cross = (current_top_level is not None and top_level != current_top_level)
+        
+        if is_vetoed or not is_valid_target or is_boundary_cross:
             if len(current_set) >= 2:
+                print(f"    [DEBUG] Formed candidate group: {current_set[0]} -> {current_set[-1]} (Length: {len(current_set)})")
                 R_candidates.append(current_set)
             current_set = []
+            
+            if is_boundary_cross:
+                print(f"    [DEBUG] Boundary cross detected at '{layer_name}': '{current_top_level}' != '{top_level}'. Resetting group.")
+            
+            # Start fresh if valid but crossed a boundary
+            if not is_vetoed and is_valid_target and h < 0:
+                current_set.append(layer_name)
+                current_top_level = top_level
+            else:
+                current_top_level = None
             continue
 
         if h < 0:
             current_set.append(layer_name)
+            current_top_level = top_level
         else:
             if len(current_set) >= 2:
+                print(f"    [DEBUG] Formed candidate group: {current_set[0]} -> {current_set[-1]} (Length: {len(current_set)})")
                 R_candidates.append(current_set)
             current_set = []
+            current_top_level = None
             
     if len(current_set) >= 2:
+        print(f"    [DEBUG] Formed candidate group: {current_set[0]} -> {current_set[-1]} (Length: {len(current_set)})")
         R_candidates.append(current_set)
+
+    print(f"[DEBUG] Total candidate regions isolated before fracture: {len(R_candidates)}")
 
     # =====================================================================
     # PHASE 3: Collapsable Memory Feasibility & Surrogate Compilation
@@ -251,13 +285,14 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             except Exception:
                 new_flops = float('inf')
 
-            if new_params < base_params and (not check_flops or new_flops < base_flops):
+            # RELAXED LOGIC: Accept if Params OR FLOPs are reduced
+            if new_params < base_params or (check_flops and new_flops < base_flops):
                 print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,}) | FLOPs ({base_flops:,} -> {new_flops:,})")
                 experiment_regions[f"Set_{set_counter}"] = region_tuple
                 R_final.append(region_tuple)
                 set_counter += 1
             else:
-                reason = "Inflated compute" if new_params > base_params else "Backend rejected (Unmodified)"
+                reason = f"Inflated BOTH Params ({base_params:,} -> {new_params:,}) and FLOPs ({base_flops:,} -> {new_flops:,})"
                 print(f"        [X] FAILED TO REDUCE: {reason}. Fracturing block...")
                 mid = len(r) // 2
                 if mid > 0:
@@ -265,7 +300,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     queue.insert(0, r[:mid])
 
         except Exception as e:
-            print(f"        [!] CRASH: Architecture Exception ({type(e).__name__}). Fracturing block...")
+            print(f"        [!] CRASH: Architecture Exception ({type(e).__name__}: {e}). Fracturing block...")
             mid = len(r) // 2
             if mid > 0:
                 queue.insert(0, r[mid:])
@@ -311,11 +346,11 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 except Exception:
                     new_flops_combo = float('inf')
 
-                if new_params_combo >= current_best_params:
-                    raise ValueError(f"Param Inflation: {new_params_combo:,} >= {current_best_params:,}")
-                if check_flops and new_flops_combo >= current_best_flops:
-                    raise ValueError(f"FLOP Inflation: {new_flops_combo:,} >= {current_best_flops:,}")
+                # RELAXED LOGIC: Reject only if BOTH metrics fail to improve vs baseline
+                if new_params_combo >= current_best_params and (not check_flops or new_flops_combo >= current_best_flops):
+                    raise ValueError(f"No improvement: Params {current_best_params:,}->{new_params_combo:,} AND FLOPs {current_best_flops:,}->{new_flops_combo:,}")
                 
+                print(f"        [DEBUG] Combo improved metrics: Params ({current_best_params:,} -> {new_params_combo:,}) | FLOPs ({current_best_flops:,} -> {new_flops_combo:,})")
                 current_best_params = new_params_combo
                 current_best_flops = new_flops_combo
                 safe_combined_regions.append(region_tuple)
@@ -334,6 +369,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             
     # Add control as baseline
     experiment_regions["Control_Continuted"] = None
+    print(f"\n[DEBUG EXIT] ===== get_dynamic_experiment_config complete =====")
     return experiment_regions
 
 # ==============================================================================
