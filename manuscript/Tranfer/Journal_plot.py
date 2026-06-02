@@ -311,12 +311,14 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             dataset = stats_dir.parents[1].name
             arch = stats_dir.parents[2].name
         except IndexError:
+            logger.warning(f"Could not infer arch/dataset from path {stats_dir}, using 'unknown'")
             arch, dataset = "unknown", "unknown"
             
         stat_files = list(stats_dir.glob("*_layer_stats.csv"))
-        if not stat_files: continue
+        if not stat_files:
+            continue
 
-        # --- FIX 1: Robust case-insensitive glob matching for metrics ---
+        # --- FIX 1: Robust case-insensitive glob matching for metrics (Removed bad /metrics/ path) ---
         metrics_data = {}
         base_params, base_flops = None, None
         
@@ -335,21 +337,28 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             try:
                 with open(potential_metrics[0], 'r') as f:
                     metrics_data = json.load(f)
+                # Find baseline to calculate relative reductions
                 for mk, mv in metrics_data.items():
                     if "control" in mk.lower() and "continuted" not in mk.lower() and "quant" not in mk.lower():
                         base_params = mv.get("param_count")
                         base_flops = mv.get("flops")
                         break
-            except Exception: pass
+            except Exception as e:
+                logger.error(f"Error reading metrics JSON for {arch}/{dataset}: {e}")
 
         for csv_path in stat_files:
             try:
                 layer_df = pd.read_csv(csv_path)
-                if layer_df.empty or 'Variance' not in layer_df.columns: continue
+                if layer_df.empty or 'Variance' not in layer_df.columns:
+                    continue
+                    
                 layers = layer_df['Layer'].tolist()
                 variances = np.maximum(layer_df['Variance'].values, 1e-6)
-            except Exception: continue
+            except Exception as e:
+                logger.error(f"Failed to read CSV {csv_path}: {e}")
+                continue
 
+            # --- Calculation Logic ---
             h_vals, sigma_bars = [], []
             window_size = 3  
             for i, sigma_i in enumerate(variances):
@@ -363,6 +372,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 h = max(diff / sigma_bars[-1], -1.0) if diff < 0 else min(diff / sigma_bars[-1], 1.0)
                 h_vals.append(h)
                 
+            # --- JSON Region Matching (UPDATED to safely force numeric evaluation) ---
             potential_jsons = list(Path(".").rglob(f"*{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
             json_files = [p for p in potential_jsons if clean_ds in p.name.lower()]
             
@@ -374,54 +384,57 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                     with open(json_files[0], 'r') as f:
                         config = json.load(f)
                         
-                    # --- FIX 2: Load the new metadata block ---
                     metadata = config.get("__metadata__", {})
                     meta_base_p = metadata.get("base_params")
                     meta_base_f = metadata.get("base_flops")
                     cand_stats = metadata.get("candidates", {})
 
                     for k, v in config.items():
-                        if k == "__metadata__": continue # Skip metadata dict
+                        if k == "__metadata__": continue 
                         
                         if k.startswith("Set_") and isinstance(v, (list, tuple)):
                             start_name = v[0][0] if isinstance(v[0], (list, tuple)) else v[0]
                             end_name = v[-1][-1] if isinstance(v[-1], (list, tuple)) else v[-1]
                             
-                            reduction_label = ""
+                            reduction_label = "Verified"  # Fallback if numbers fail
+                            p_red, f_red = False, False
                             
-                            # Check metadata first (works immediately after discovery)
-                            if k in cand_stats and meta_base_p and meta_base_f:
-                                c_p = cand_stats[k].get("params", meta_base_p)
-                                c_f = cand_stats[k].get("flops", meta_base_f)
-                                p_red = c_p < meta_base_p
-                                f_red = c_f < meta_base_f
-                                
-                            # Fallback to merged_metrics (works after training)
-                            elif k in metrics_data and base_params and base_flops:
-                                c_p = metrics_data[k].get("param_count", base_params)
-                                c_f = metrics_data[k].get("flops", base_flops)
-                                p_red = c_p < base_params
-                                f_red = c_f < base_flops
-                            else:
-                                p_red, f_red = False, False
-                                
-                            if p_red and f_red:
-                                reduction_label = "↓ Params & FLOPs"
-                            elif p_red:
-                                reduction_label = "↓ Params Only"
-                            elif f_red:
-                                reduction_label = "↓ FLOPs Only"
+                            try:
+                                # Fallback 1: Use metadata from the initial discovery run
+                                if k in cand_stats and meta_base_p is not None and meta_base_f is not None:
+                                    c_p = cand_stats[k].get("params", meta_base_p)
+                                    c_f = cand_stats[k].get("flops", meta_base_f)
+                                    p_red = float(c_p) < float(meta_base_p)
+                                    f_red = float(c_f) < float(meta_base_f)
+                                    
+                                # Fallback 2: Use trained metrics from merged_metrics.json
+                                elif k in metrics_data and base_params is not None and base_flops is not None:
+                                    c_p = metrics_data[k].get("param_count", base_params)
+                                    c_f = metrics_data[k].get("flops", base_flops)
+                                    p_red = float(c_p) < float(base_params)
+                                    f_red = float(c_f) < float(base_flops)
+                                    
+                                if p_red and f_red:
+                                    reduction_label = "↓ Params & FLOPs"
+                                elif p_red:
+                                    reduction_label = "↓ Params Only"
+                                elif f_red:
+                                    reduction_label = "↓ FLOPs Only"
+                            except Exception as parse_e:
+                                logger.warning(f"Label math failed for {k}: {parse_e}")
 
                             try:
                                 s_idx = next(idx for idx, n in enumerate(layers) if start_name == n)
                                 e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_name == n)
                                 verified_idx_ranges.append((s_idx, e_idx))
                                 verified_regions.append({"start": s_idx, "end": e_idx, "label": reduction_label})
-                            except StopIteration: continue
+                            except StopIteration:
+                                logger.warning(f"Could not map region {start_name}->{end_name} to CSV layers for {arch}")
+                                continue
                 except Exception as e:
                     logger.error(f"Error parsing JSON for {arch}/{dataset}: {e}")
 
-            # Plotting
+            # --- Plotting ---
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
             x_vals = range(1, len(layers) + 1)
             
@@ -432,20 +445,23 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             ax1.legend(loc='upper right', frameon=False)
             sns.despine(ax=ax1)
 
+            # --- State Logic ---
             veto_idx = int(len(layers) * 0.25)
             final_states = ["DANGER"] * len(layers)
             for i in range(len(layers)):
                 if i < veto_idx:
                     final_states[i] = "VETO"
                 else:
-                    in_verified = any(s_idx <= i <= e_idx for s_idx, e_idx in verified_idx_ranges)
+                    in_verified = any(r["start"] <= i <= r["end"] for r in verified_regions)
                     final_states[i] = "VERIFIED" if in_verified else ("REJECTED" if h_vals[i] < 0 else "DANGER")
 
+            # --- Bar Plot ---
             state_colors = {"VETO": "#999999", "VERIFIED": "#2ca02c", "REJECTED": "#ff7f0e", "DANGER": "#d62728"}
             ax2.bar(x_vals, h_vals, color=[state_colors[s] for s in final_states], alpha=0.85, edgecolor='black', linewidth=0.5)
             ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2)
             ax2.set_ylim(-1.1, 1.1)
 
+            # --- Zone Shading & Annotations ---
             zones = []
             if final_states:
                 start_idx, current_state = 0, final_states[0]
@@ -461,7 +477,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 ax1.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, edgecolor='none')
                 ax2.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, label=state)
 
-            # --- FIX 3: Paint the labels onto the graph ---
+            # --- FIX 3: Paint the labels onto the graph safely ---
             for reg in verified_regions:
                 if reg["label"]:
                     mid_x = (reg["start"] + reg["end"]) / 2.0 + 1 
@@ -472,12 +488,12 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
             plt.tight_layout()
             
+            # --- Final Save ---
             out_dir.mkdir(parents=True, exist_ok=True)
             save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
             plt.savefig(save_path, bbox_inches='tight')
             plt.close()
             logger.info(f"[FIG2] Saved methodology plot: {save_path}")
-
 # ========================= FIG 3 ========================= #
 
 def fig3_v2t_heuristic_validation(
