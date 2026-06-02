@@ -720,7 +720,7 @@ def _collapse_block(
     print(f"\n[INFO] ===== Collapsing block: {start_layer_name} → {end_layer_name} =====")
     print(f"[DEBUG ENTRY] _collapse_block: input_shape={input_shape}, device={device}")
 
-    # Step 1: Locate block
+    # Step 1: Locate block boundaries
     print(f"[STEP 1] Locating block boundaries...")
     info = _locate_and_prepare_block(model, start_layer_name, end_layer_name)
     if debug:
@@ -740,6 +740,10 @@ def _collapse_block(
     x, pre_params = _capture_preblock_activation(
         model, actual_start_path, input_shape, info["conv_layers"], info["layer_type"], device, debug
     )
+    
+    if debug:
+        print(f"[DEBUG] Input activation shape entering block: {tuple(x.shape)}")
+
     # Step 3: Find next linear
     print(f"[STEP 3] Searching for next linear layer after '{end_layer_name}'...")
     next_linear_name, next_linear_mod = _find_next_linear(model, end_layer_name, debug)
@@ -782,7 +786,6 @@ def _collapse_block(
     print(f"[INFO] ✅ Collapse complete for block '{start_layer_name}' → '{end_layer_name}'")
     print(f"[DEBUG EXIT] _collapse_block returning updated model.")
     return model
-
 def _capture_preblock_activation(model, start_layer_name, input_shape, conv_layers, layer_type, device, debug):
     print(f"\n[DEBUG ENTRY] _capture_preblock_activation for '{start_layer_name}'")
     print(f"[DEBUG] Attempting to capture activation using simulation hook...")

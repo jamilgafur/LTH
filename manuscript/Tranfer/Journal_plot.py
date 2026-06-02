@@ -319,7 +319,6 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
         if not stat_files:
             continue
 
-        # --- NEW: Get Baseline Stats directly from the DataFrame (df) ---
         clean_ds = dataset.strip("_").lower()
         df_arch_ds = df[(df['architecture'] == arch) & (df['dataset'].str.lower().str.contains(clean_ds))]
         
@@ -327,8 +326,10 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
         baseline_mask = (df_arch_ds['posthoc_or_posttrain'] == 'Baseline')
         if baseline_mask.any():
             base_row = df_arch_ds[baseline_mask].iloc[0]
-            base_params = base_row.get('params')
-            base_flops = base_row.get('flops')
+            temp_bp = base_row.get('params')
+            temp_bf = base_row.get('flops')
+            if pd.notnull(temp_bp) and temp_bp > 0: base_params = temp_bp
+            if pd.notnull(temp_bf) and temp_bf > 0: base_flops = temp_bf
 
         for csv_path in stat_files:
             try:
@@ -339,7 +340,6 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
                 layers = layer_df['Layer'].tolist()
                 variances = np.maximum(layer_df['Variance'].values, 1e-6)
             except Exception as e:
-                logger.error(f"Failed to read CSV {csv_path}: {e}")
                 continue
 
             # --- Calculation Logic ---
@@ -373,9 +373,8 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
                     meta_base_f = metadata.get("base_flops")
                     cand_stats = metadata.get("candidates", {})
                     
-                    # Fill in baseline fallbacks if df didn't have them
-                    if pd.isna(base_params) and meta_base_p: base_params = meta_base_p
-                    if pd.isna(base_flops) and meta_base_f: base_flops = meta_base_f
+                    if base_params is None and meta_base_p: base_params = meta_base_p
+                    if base_flops is None and meta_base_f: base_flops = meta_base_f
 
                     for k, v in config.items():
                         if k == "__metadata__": continue 
@@ -386,24 +385,27 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
                             
                             c_p, c_f = None, None
                             
-                            # 1. Try to find the candidate's exact params/flops in the dataframe
                             cand_mask = df_arch_ds['exp_name'].str.contains(k) & (df_arch_ds['is_quantized'] == False)
                             if cand_mask.any():
                                 cand_row = df_arch_ds[cand_mask].iloc[0]
-                                c_p = cand_row.get('params')
-                                c_f = cand_row.get('flops')
-                            # 2. Fallback to the discovery metadata
-                            elif k in cand_stats:
-                                c_p = cand_stats[k].get("params")
-                                c_f = cand_stats[k].get("flops")
+                                temp_cp = cand_row.get('params')
+                                temp_cf = cand_row.get('flops')
+                                # FIX: Ignore 0 values from failed training runs
+                                if pd.notnull(temp_cp) and temp_cp > 0: c_p = temp_cp
+                                if pd.notnull(temp_cf) and temp_cf > 0: c_f = temp_cf
+                                
+                            # Fallback to the discovery metadata
+                            if (c_p is None or c_f is None) and k in cand_stats:
+                                c_p = cand_stats[k].get("params", c_p)
+                                c_f = cand_stats[k].get("flops", c_f)
                                 
                             # Evaluate reductions
                             p_red, f_red = False, False
-                            if pd.notnull(c_p) and pd.notnull(base_params): p_red = float(c_p) < float(base_params)
-                            if pd.notnull(c_f) and pd.notnull(base_flops): f_red = float(c_f) < float(base_flops)
+                            if c_p is not None and base_params is not None: p_red = float(c_p) < float(base_params)
+                            if c_f is not None and base_flops is not None: f_red = float(c_f) < float(base_flops)
                             
                             # Assign State and Label
-                            if pd.isnull(c_p) and pd.isnull(c_f):
+                            if c_p is None or c_f is None:
                                 label = "Missing Stats"
                                 state_name = "VERIFIED_NONE"
                             elif p_red and f_red:
@@ -447,22 +449,20 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
                 if i < veto_idx:
                     final_states[i] = "VETO"
                 else:
-                    # Check if the layer belongs to any verified region to apply its specific state
                     matched_region = next((r for r in verified_regions if r["start"] <= i <= r["end"]), None)
                     if matched_region:
                         final_states[i] = matched_region["state_name"]
                     else:
                         final_states[i] = "REJECTED" if h_vals[i] < 0 else "DANGER"
 
-            # --- Expanded Color Dictionary ---
             state_colors = {
-                "VETO": "#999999",            # Grey
-                "REJECTED": "#ff7f0e",        # Orange
-                "DANGER": "#d62728",          # Red
-                "VERIFIED_BOTH": "#2ca02c",   # Green
-                "VERIFIED_PARAMS": "#1f77b4", # Blue
-                "VERIFIED_FLOPS": "#9467bd",  # Purple
-                "VERIFIED_NONE": "#8c564b"    # Brown/Dark Red
+                "VETO": "#999999",            
+                "REJECTED": "#ff7f0e",        
+                "DANGER": "#d62728",          
+                "VERIFIED_BOTH": "#2ca02c",   
+                "VERIFIED_PARAMS": "#1f77b4", 
+                "VERIFIED_FLOPS": "#9467bd",  
+                "VERIFIED_NONE": "#8c564b"    
             }
             
             state_labels = {
@@ -479,7 +479,6 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
             ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2)
             ax2.set_ylim(-1.1, 1.1)
 
-            # --- Zone Shading & Annotations ---
             zones = []
             if final_states:
                 start_idx, current_state = 0, final_states[0]
@@ -493,11 +492,8 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
                 span_start, span_end = (start + 1) - 0.5, (end + 1) + 0.5
                 alpha_val = 0.4 if state == "VETO" else 0.15
                 ax1.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, edgecolor='none')
-                
-                # Add it to ax2 with a label for the legend
                 ax2.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, label=state_labels.get(state, state))
 
-            # --- Paint the labels dynamically matching the zone color ---
             for reg in verified_regions:
                 if reg["label"]:
                     mid_x = (reg["start"] + reg["end"]) / 2.0 + 1 
@@ -507,21 +503,16 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
                              ha='center', va='top', fontsize=10, fontweight='bold', color='white', 
                              bbox=dict(facecolor=bg_color, alpha=0.85, edgecolor='white', linewidth=1, boxstyle='round,pad=0.3'), zorder=10)
 
-            # --- Deduplicate Legend ---
             handles, labels = ax2.get_legend_handles_labels()
             by_label = dict(zip(labels, handles))
-            # Sort the legend so Veto/Danger are first, then the Verified ones
             ax2.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3, frameon=False, fontsize=10)
             
             plt.tight_layout()
-            
-            # --- Final Save ---
             out_dir.mkdir(parents=True, exist_ok=True)
             save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
             plt.savefig(save_path, bbox_inches='tight')
             plt.close()
             logger.info(f"[FIG2] Saved methodology plot: {save_path}")
-
 # ========================= FIG 3 ========================= #
 
 
