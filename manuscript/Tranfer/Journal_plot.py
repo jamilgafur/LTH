@@ -295,7 +295,8 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
 
 
 # ========================= FIG 2 ========================= #
-def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
+
+def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, out_dir=Path("./figures/methodology")):
     logger.info(f"Starting FIG2 generation. Target epochs: {epochs}, pretrain: {pretrain}")
     
     root_plots_dir = Path("./runs/plots")
@@ -318,33 +319,16 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
         if not stat_files:
             continue
 
-        # --- FIX 1: Robust case-insensitive glob matching for metrics (Removed bad /metrics/ path) ---
-        metrics_data = {}
-        base_params, base_flops = None, None
-        
-        all_metrics = list(Path(".").rglob("*merged_metrics.json"))
+        # --- NEW: Get Baseline Stats directly from the DataFrame (df) ---
         clean_ds = dataset.strip("_").lower()
+        df_arch_ds = df[(df['architecture'] == arch) & (df['dataset'].str.lower().str.contains(clean_ds))]
         
-        potential_metrics = [
-            p for p in all_metrics 
-            if arch.lower() in str(p).lower() 
-            and clean_ds in str(p).lower() 
-            and f"epochs{epochs}" in str(p) 
-            and f"pretrain{pretrain}" in str(p)
-        ]
-        
-        if potential_metrics:
-            try:
-                with open(potential_metrics[0], 'r') as f:
-                    metrics_data = json.load(f)
-                # Find baseline to calculate relative reductions
-                for mk, mv in metrics_data.items():
-                    if "control" in mk.lower() and "continuted" not in mk.lower() and "quant" not in mk.lower():
-                        base_params = mv.get("param_count")
-                        base_flops = mv.get("flops")
-                        break
-            except Exception as e:
-                logger.error(f"Error reading metrics JSON for {arch}/{dataset}: {e}")
+        base_params, base_flops = None, None
+        baseline_mask = (df_arch_ds['posthoc_or_posttrain'] == 'Baseline')
+        if baseline_mask.any():
+            base_row = df_arch_ds[baseline_mask].iloc[0]
+            base_params = base_row.get('params')
+            base_flops = base_row.get('flops')
 
         for csv_path in stat_files:
             try:
@@ -372,7 +356,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 h = max(diff / sigma_bars[-1], -1.0) if diff < 0 else min(diff / sigma_bars[-1], 1.0)
                 h_vals.append(h)
                 
-            # --- JSON Region Matching (UPDATED to safely force numeric evaluation) ---
+            # --- JSON Region Matching & Hardware Validation ---
             potential_jsons = list(Path(".").rglob(f"*{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
             json_files = [p for p in potential_jsons if clean_ds in p.name.lower()]
             
@@ -388,6 +372,10 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                     meta_base_p = metadata.get("base_params")
                     meta_base_f = metadata.get("base_flops")
                     cand_stats = metadata.get("candidates", {})
+                    
+                    # Fill in baseline fallbacks if df didn't have them
+                    if pd.isna(base_params) and meta_base_p: base_params = meta_base_p
+                    if pd.isna(base_flops) and meta_base_f: base_flops = meta_base_f
 
                     for k, v in config.items():
                         if k == "__metadata__": continue 
@@ -396,40 +384,47 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                             start_name = v[0][0] if isinstance(v[0], (list, tuple)) else v[0]
                             end_name = v[-1][-1] if isinstance(v[-1], (list, tuple)) else v[-1]
                             
-                            reduction_label = "Verified"  # Fallback if numbers fail
-                            p_red, f_red = False, False
+                            c_p, c_f = None, None
                             
-                            try:
-                                # Fallback 1: Use metadata from the initial discovery run
-                                if k in cand_stats and meta_base_p is not None and meta_base_f is not None:
-                                    c_p = cand_stats[k].get("params", meta_base_p)
-                                    c_f = cand_stats[k].get("flops", meta_base_f)
-                                    p_red = float(c_p) < float(meta_base_p)
-                                    f_red = float(c_f) < float(meta_base_f)
-                                    
-                                # Fallback 2: Use trained metrics from merged_metrics.json
-                                elif k in metrics_data and base_params is not None and base_flops is not None:
-                                    c_p = metrics_data[k].get("param_count", base_params)
-                                    c_f = metrics_data[k].get("flops", base_flops)
-                                    p_red = float(c_p) < float(base_params)
-                                    f_red = float(c_f) < float(base_flops)
-                                    
-                                if p_red and f_red:
-                                    reduction_label = "↓ Params & FLOPs"
-                                elif p_red:
-                                    reduction_label = "↓ Params Only"
-                                elif f_red:
-                                    reduction_label = "↓ FLOPs Only"
-                            except Exception as parse_e:
-                                logger.warning(f"Label math failed for {k}: {parse_e}")
+                            # 1. Try to find the candidate's exact params/flops in the dataframe
+                            cand_mask = df_arch_ds['exp_name'].str.contains(k) & (df_arch_ds['is_quantized'] == False)
+                            if cand_mask.any():
+                                cand_row = df_arch_ds[cand_mask].iloc[0]
+                                c_p = cand_row.get('params')
+                                c_f = cand_row.get('flops')
+                            # 2. Fallback to the discovery metadata
+                            elif k in cand_stats:
+                                c_p = cand_stats[k].get("params")
+                                c_f = cand_stats[k].get("flops")
+                                
+                            # Evaluate reductions
+                            p_red, f_red = False, False
+                            if pd.notnull(c_p) and pd.notnull(base_params): p_red = float(c_p) < float(base_params)
+                            if pd.notnull(c_f) and pd.notnull(base_flops): f_red = float(c_f) < float(base_flops)
+                            
+                            # Assign State and Label
+                            if pd.isnull(c_p) and pd.isnull(c_f):
+                                label = "Missing Stats"
+                                state_name = "VERIFIED_NONE"
+                            elif p_red and f_red:
+                                label = "↓ Params & FLOPs"
+                                state_name = "VERIFIED_BOTH"
+                            elif p_red:
+                                label = "↓ Params Only"
+                                state_name = "VERIFIED_PARAMS"
+                            elif f_red:
+                                label = "↓ FLOPs Only"
+                                state_name = "VERIFIED_FLOPS"
+                            else:
+                                label = "No Reduction"
+                                state_name = "VERIFIED_NONE"
 
                             try:
                                 s_idx = next(idx for idx, n in enumerate(layers) if start_name == n)
                                 e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_name == n)
                                 verified_idx_ranges.append((s_idx, e_idx))
-                                verified_regions.append({"start": s_idx, "end": e_idx, "label": reduction_label})
+                                verified_regions.append({"start": s_idx, "end": e_idx, "label": label, "state_name": state_name})
                             except StopIteration:
-                                logger.warning(f"Could not map region {start_name}->{end_name} to CSV layers for {arch}")
                                 continue
                 except Exception as e:
                     logger.error(f"Error parsing JSON for {arch}/{dataset}: {e}")
@@ -445,18 +440,41 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             ax1.legend(loc='upper right', frameon=False)
             sns.despine(ax=ax1)
 
-            # --- State Logic ---
+            # --- Granular State Logic ---
             veto_idx = int(len(layers) * 0.25)
             final_states = ["DANGER"] * len(layers)
             for i in range(len(layers)):
                 if i < veto_idx:
                     final_states[i] = "VETO"
                 else:
-                    in_verified = any(r["start"] <= i <= r["end"] for r in verified_regions)
-                    final_states[i] = "VERIFIED" if in_verified else ("REJECTED" if h_vals[i] < 0 else "DANGER")
+                    # Check if the layer belongs to any verified region to apply its specific state
+                    matched_region = next((r for r in verified_regions if r["start"] <= i <= r["end"]), None)
+                    if matched_region:
+                        final_states[i] = matched_region["state_name"]
+                    else:
+                        final_states[i] = "REJECTED" if h_vals[i] < 0 else "DANGER"
 
-            # --- Bar Plot ---
-            state_colors = {"VETO": "#999999", "VERIFIED": "#2ca02c", "REJECTED": "#ff7f0e", "DANGER": "#d62728"}
+            # --- Expanded Color Dictionary ---
+            state_colors = {
+                "VETO": "#999999",            # Grey
+                "REJECTED": "#ff7f0e",        # Orange
+                "DANGER": "#d62728",          # Red
+                "VERIFIED_BOTH": "#2ca02c",   # Green
+                "VERIFIED_PARAMS": "#1f77b4", # Blue
+                "VERIFIED_FLOPS": "#9467bd",  # Purple
+                "VERIFIED_NONE": "#8c564b"    # Brown/Dark Red
+            }
+            
+            state_labels = {
+                "VETO": "Veto Zone",
+                "REJECTED": "Low Variance (Rejected)",
+                "DANGER": "High Variance (Danger)",
+                "VERIFIED_BOTH": "Verified (↓ Params & FLOPs)",
+                "VERIFIED_PARAMS": "Verified (↓ Params Only)",
+                "VERIFIED_FLOPS": "Verified (↓ FLOPs Only)",
+                "VERIFIED_NONE": "Verified (No Reduction)"
+            }
+
             ax2.bar(x_vals, h_vals, color=[state_colors[s] for s in final_states], alpha=0.85, edgecolor='black', linewidth=0.5)
             ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2)
             ax2.set_ylim(-1.1, 1.1)
@@ -475,17 +493,26 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 span_start, span_end = (start + 1) - 0.5, (end + 1) + 0.5
                 alpha_val = 0.4 if state == "VETO" else 0.15
                 ax1.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, edgecolor='none')
-                ax2.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, label=state)
+                
+                # Add it to ax2 with a label for the legend
+                ax2.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, label=state_labels.get(state, state))
 
-            # --- FIX 3: Paint the labels onto the graph safely ---
+            # --- Paint the labels dynamically matching the zone color ---
             for reg in verified_regions:
                 if reg["label"]:
                     mid_x = (reg["start"] + reg["end"]) / 2.0 + 1 
+                    bg_color = state_colors[reg["state_name"]]
+                    
                     ax1.text(mid_x, 0.90, reg["label"], transform=ax1.get_xaxis_transform(),
                              ha='center', va='top', fontsize=10, fontweight='bold', color='white', 
-                             bbox=dict(facecolor='#2ca02c', alpha=0.85, edgecolor='none', boxstyle='round,pad=0.3'), zorder=10)
+                             bbox=dict(facecolor=bg_color, alpha=0.85, edgecolor='white', linewidth=1, boxstyle='round,pad=0.3'), zorder=10)
 
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
+            # --- Deduplicate Legend ---
+            handles, labels = ax2.get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            # Sort the legend so Veto/Danger are first, then the Verified ones
+            ax2.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=3, frameon=False, fontsize=10)
+            
             plt.tight_layout()
             
             # --- Final Save ---
@@ -494,7 +521,9 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             plt.savefig(save_path, bbox_inches='tight')
             plt.close()
             logger.info(f"[FIG2] Saved methodology plot: {save_path}")
+
 # ========================= FIG 3 ========================= #
+
 
 def fig3_v2t_heuristic_validation(
     df: pd.DataFrame,
@@ -1216,7 +1245,7 @@ if __name__ == "__main__":
         
         # Consistent dynamic output directories
         fig1(df, out_dir=FIG_DIR / "individual_plots")
-        fig2_methodology_bav_regions(epochs, pretrain, out_dir=FIG_DIR / "methodology")
+        fig2_methodology_bav_regions(df, epochs, pretrain, out_dir=FIG_DIR / "methodology")
         
         # --- UPDATE: Pass epochs and pretrain here ---
         fig3_v2t_heuristic_validation(df, epochs, pretrain, out_dir=FIG_DIR / "heuristic_validation")
