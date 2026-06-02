@@ -1,0 +1,2666 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='InceptionNet', dataset='Cifar10', epochs=3, pretrain=3, experiment='discover', JF=True, Kevin=False, quant=False)
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] Base checkpoint path resolved: None
+
+============================================================
+[MODE] STAGE 1: DISCOVERY & PRE-FLIGHT PROBE
+       Model: InceptionNet | Dataset: Cifar10
+============================================================
+
+[INFO] Phase 1: Validating/Training 'Control' Baseline...
+
+--- Running experiment: Control ---
+    Budget allocated: 3 epochs
+
+=== Running JF experiment ===
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool1' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool1', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool2' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool2', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool3' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool3', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool4' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool4', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool', safe)
+[•] Resumption detected. Architecture will be prepared for checkpoint loading.
+[•] Starting experiment 'Control' in workflow 'JF' | Epoch Target: 3
+[✓] Experiment 'Control' already completed. Found: final_JF_Control.pt
+    Skipping training and reloading metrics...
+
+[INFO] Phase 2: Loading Finalized Baseline Weights...
+[Auto-Heal] Missing JSON entry for 'Control'. Attempting recovery...
+    -> Calculating parameters live...
+    -> Calculating FLOPs live...
+    -> Calculating accuracy live (this may take a moment)...
+/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py:124: UserWarning: var(): degrees of freedom is <= 0. Correction should be strictly less than the reduction factor (input numel divided by output numel). (Triggered internally at /pytorch/aten/src/ATen/native/ReduceOps.cpp:1831.)
+  variances[name] = out.var(dim=[2, 3]).mean().item() if out.ndim == 4 else out.var().item()
+2026-06-01 21:16:13,965 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4a.branch4.0.pool, stage4.inception_4b.branch4.0.pool, stage4.inception_4c.branch4.0.pool, stage4.inception_4d.branch4.0.pool, stage4.inception_4e.branch4.0.pool, stage4.maxpool4.pool, stage5.inception_5a.branch4.0.pool, stage5.inception_5b.branch4.0.pool
+2026-06-01 21:16:16,232 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4b, stage4.inception_4c.branch4.0.pool, stage4.inception_4d.branch4.0.pool, stage4.inception_4e.branch4.0.pool, stage4.maxpool4.pool, stage5.inception_5a.branch4.0.pool, stage5.inception_5b.branch4.0.pool
+2026-06-01 21:16:16,813 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4a.branch4.0.pool, stage4.inception_4b.branch4.0.pool, stage4.inception_4c.branch4.0.pool, stage4.inception_4d.branch4.0.pool, stage4.inception_4e.branch4.0.pool, stage4.maxpool4.pool, stage5.inception_5a.branch4.0.pool, stage5.inception_5b.branch4.0.pool
+2026-06-01 21:16:17,516 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4a.branch4.0.pool, stage4.inception_4b.branch4.0.pool, stage4.inception_4c.branch4.0.pool, stage4.inception_4d.branch4.0.pool, stage4.inception_4e.branch4.0.pool, stage4.maxpool4.pool, stage5.inception_5a.branch4.0.pool, stage5.inception_5b.branch4.0.pool
+2026-06-01 21:16:18,699 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4a.branch4.0.pool, stage4.inception_4b.branch4.0.pool, stage4.inception_4d, stage4.inception_4e.branch4.0.pool, stage4.maxpool4.pool, stage5.inception_5a.branch4.0.pool, stage5.inception_5b.branch4.0.pool
+2026-06-01 21:16:19,300 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4a.branch4.0.pool, stage4.inception_4b.branch4.0.pool, stage4.inception_4c.branch4.0.pool, stage4.inception_4d.branch4.0.pool, stage4.inception_4e.branch4.0.pool, stage4.maxpool4.pool, stage5.inception_5a.branch4.0.pool, stage5.inception_5b.branch4.0.pool
+2026-06-01 21:16:19,869 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4a.branch4.0.pool, stage4.inception_4b.branch4.0.pool, stage4.inception_4c.branch4.0.pool, stage4.inception_4e, stage4.maxpool4.pool, stage5.inception_5a.branch4.0.pool, stage5.inception_5b.branch4.0.pool
+/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py:381: UserWarning: var(): degrees of freedom is <= 0. Correction should be strictly less than the reduction factor (input numel divided by output numel). (Triggered internally at /pytorch/aten/src/ATen/native/ReduceOps.cpp:1831.)
+  act_var = y.var(dim=[2, 3]).mean().item()
+[✓] Successfully healed merged_metrics.json for Control.
+[INFO] No variance file found. Executing Network Probe...
+[✓] Layer variances saved to /old_Users/jgafur/LTH/manuscript/Tranfer/runs/plots/InceptionNet/Cifar10/epochs3_pretrain3/layer_variances.json
+
+[INFO] Phase 3: Evaluating Candidate Regions (with Safe Fracturing)...
+    [STEP] Testing candidate sequence: stage4.inception_4a.branch3.1.conv -> stage4.inception_4b.branch1.conv (Length: 3)
+
+[DEBUG ENTRY] ===== collapse_only invoked =====
+[DEBUG] Configuration: device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Input tracking: model_provided=True, model_weights=None, input_shape=torch.Size([512, 3, 32, 32])
+[STEP] Using provided in-memory model instance (InceptionNet)
+[DEBUG] Calculating initial layer statistics...
+
+Layer-wise zero parameter stats:
+
+stage1.conv1.conv.weight: 0/9408 zeros (0.00%)
+stage1.conv1.bn.weight: 0/64 zeros (0.00%)
+stage1.conv1.bn.bias: 0/64 zeros (0.00%)
+stage2.conv2.conv.weight: 0/4096 zeros (0.00%)
+stage2.conv2.bn.weight: 0/64 zeros (0.00%)
+stage2.conv2.bn.bias: 0/64 zeros (0.00%)
+stage2.conv3.conv.weight: 0/110592 zeros (0.00%)
+stage2.conv3.bn.weight: 0/192 zeros (0.00%)
+stage2.conv3.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3a.branch1.conv.weight: 0/12288 zeros (0.00%)
+stage3.inception_3a.branch1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3a.branch1.bn.bias: 0/64 zeros (0.00%)
+stage3.inception_3a.branch2.0.conv.weight: 0/18432 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.1.conv.weight: 0/110592 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3a.branch3.0.conv.weight: 0/3072 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.1.conv.weight: 0/12800 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.conv.weight: 0/6144 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch1.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.1.conv.weight: 0/221184 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.weight: 0/192 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3b.branch3.0.conv.weight: 0/8192 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.1.conv.weight: 0/76800 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3b.branch4.1.conv.weight: 0/16384 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4a.branch1.conv.weight: 0/92160 zeros (0.00%)
+stage4.inception_4a.branch1.bn.weight: 0/192 zeros (0.00%)
+stage4.inception_4a.branch1.bn.bias: 0/192 zeros (0.00%)
+stage4.inception_4a.branch2.0.conv.weight: 0/46080 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.1.conv.weight: 0/179712 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.weight: 0/208 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.bias: 0/208 zeros (0.00%)
+stage4.inception_4a.branch3.0.conv.weight: 0/7680 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.1.conv.weight: 0/19200 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.weight: 0/48 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.bias: 0/48 zeros (0.00%)
+stage4.inception_4a.branch4.1.conv.weight: 0/30720 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch1.conv.weight: 0/81920 zeros (0.00%)
+stage4.inception_4b.branch1.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4b.branch1.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4b.branch2.0.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.1.conv.weight: 0/225792 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.weight: 0/224 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.bias: 0/224 zeros (0.00%)
+stage4.inception_4b.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch1.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.1.conv.weight: 0/294912 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4c.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch1.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4d.branch1.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4d.branch1.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4d.branch2.0.conv.weight: 0/73728 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.weight: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.bias: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.1.conv.weight: 0/373248 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.weight: 0/288 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.bias: 0/288 zeros (0.00%)
+stage4.inception_4d.branch3.0.conv.weight: 0/16384 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.1.conv.weight: 0/51200 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4e.branch1.conv.weight: 0/135168 zeros (0.00%)
+stage4.inception_4e.branch1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4e.branch1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4e.branch2.0.conv.weight: 0/84480 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage4.inception_4e.branch3.0.conv.weight: 0/16896 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.conv.weight: 0/67584 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch1.conv.weight: 0/212992 zeros (0.00%)
+stage5.inception_5a.branch1.bn.weight: 0/256 zeros (0.00%)
+stage5.inception_5a.branch1.bn.bias: 0/256 zeros (0.00%)
+stage5.inception_5a.branch2.0.conv.weight: 0/133120 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage5.inception_5a.branch3.0.conv.weight: 0/26624 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch1.conv.weight: 0/319488 zeros (0.00%)
+stage5.inception_5b.branch1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.0.conv.weight: 0/159744 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.weight: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.bias: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.1.conv.weight: 0/663552 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch3.0.conv.weight: 0/39936 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.weight: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.bias: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.1.conv.weight: 0/153600 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.bias: 0/128 zeros (0.00%)
+fc.weight: 0/10240 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[DEBUG] Deepcopy completed and set to eval mode on 'cuda:0'.
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added dictionary mapping: test = ('stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch1.conv')
+[DEBUG] Total configured collapse targets: 1
+    [BLOCK TARGET 0] stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch1.conv
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing loop...
+
+[INFO] Processing collapse task 'test': 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch1.conv'
+[DEBUG] Triggering _collapse_block for 'test'...
+
+[INFO] ===== Collapsing block: stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch1.conv =====
+[DEBUG ENTRY] _collapse_block: input_shape=torch.Size([512, 3, 32, 32]), device=cuda:0
+[STEP 1] Locating block boundaries...
+
+[DEBUG ENTRY] _locate_and_prepare_block called.
+[DEBUG] Locating and preparing block: start='stage4.inception_4a.branch3.1.conv', end:'stage4.inception_4b.branch1.conv'
+[DEBUG] Parsed start_parts: ['stage4', 'inception_4a', 'branch3', '1', 'conv']
+[DEBUG] Parsed end_parts: ['stage4', 'inception_4b', 'branch1', 'conv']
+[DEBUG] Calculated LCA path from common parts: 'stage4'
+[DEBUG] Containers resolved → chosen LCA container: 'stage4'
+[DEBUG] Found 6 children in container 'stage4'
+[DEBUG] Searching for start and end indices in named_layers...
+[DEBUG] Found start_idx at 0 (child_name: 'inception_4a', prefix: 'stage4.inception_4a')
+[DEBUG] Found end_idx at 1 (child_name: 'inception_4b', prefix: 'stage4.inception_4b')
+[DEBUG] Both indices found. Breaking search loop.
+[DEBUG] Block slice length: 2
+[DEBUG] Collecting collapsible layers (Conv2d, Linear)...
+[DEBUG] Block composition → 12 Conv2d, 0 Linear (collapse_mode=conv)
+[DEBUG EXIT] _locate_and_prepare_block returning successfully with first_layer='inception_4a', last_layer='inception_4b'
+[DEBUG] Located block with 2 layers
+    [LAYER] inception_4a: InceptionBlock
+    [LAYER] inception_4b: InceptionBlock
+[STEP 2] Capturing activation before start layer 'stage4.inception_4a.branch3.1.conv'...
+
+[DEBUG ENTRY] _capture_preblock_activation for 'stage4.inception_4a.branch3.1.conv'
+[DEBUG] Attempting to capture activation using simulation hook...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'stage4.inception_4a.branch3.1.conv'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cuda:0'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'stage4.inception_4a.branch3.1.conv'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 16, 2, 2])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Successfully captured activation via hook → shape: (512, 16, 2, 2)
+[DEBUG] Total trainable parameters before collapse: 5,991,082
+[DEBUG EXIT] _capture_preblock_activation complete.
+[DEBUG] Input activation shape entering block: (512, 16, 2, 2)
+[STEP 3] Searching for next linear layer after 'stage4.inception_4b.branch1.conv'...
+
+[DEBUG ENTRY] _find_next_linear: Searching for nn.Linear after 'stage4.inception_4b.branch1.conv'...
+[DEBUG] Flattened model into 286 total modules.
+[DEBUG] Searching for exact index of 'stage4.inception_4b.branch1.conv'...
+[DEBUG] Exact layer match found at global index 109: 'stage4.inception_4b.branch1.conv' (Conv2d)
+[DEBUG] Scanning forward from index 110 for next Linear...
+[DEBUG] Found Linear layer ahead: 'fc' (Linear)
+[DEBUG EXIT] Next Linear detected → name='fc', module=Linear(in_features=1024, out_features=10, bias=True)
+[DEBUG] Next linear layer: fc -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[DEBUG ENTRY] _analyze_block_output: Analyzing collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block forward pass: (512, 16, 2, 2)
+[DEBUG] Running synthetic forward pass through original block layers:
+    [DEBUG] Forwarding Layer 1/2: 'inception_4a' (InceptionBlock) | input_shape=(512, 16, 2, 2)
+    [WARN] Forward failed on 'inception_4a': Given groups=1, weight of size [192, 480, 1, 1], expected input[512, 16, 2, 2] to have 480 channels, but got 16 channels instead. Attempting ConvNeXt fallback permutation...
+[WARN] ⚠ Collapse failed for block 'test': Given groups=1, weight of size [192, 480, 1, 1], expected input[512, 16, 2, 2] to have 480 channels, but got 16 channels instead
+
+[STEP] Patching skip connections (handle_skips=True)...
+
+[DEBUG ENTRY] patch_skip_connections: Scanning model for skip-connection blocks...
+[DEBUG EXIT] patch_skip_connections complete. Total blocks patched: 0
+[DEBUG] Skip connections patched successfully globally.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 57 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions across model.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool1' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool1', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool2' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool2', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool3' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool3', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool4' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool4', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool', safe)
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 5,991,082
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total attempted collapse targets: 1
+[DEBUG EXIT] collapse_only returning fully modified model.
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+        [X] FAILED TO REDUCE: Backend rejected (Unmodified). Fracturing block...
+    [STEP] Testing candidate sequence: stage4.inception_4a.branch4.1.conv -> stage4.inception_4b.branch1.conv (Length: 2)
+
+[DEBUG ENTRY] ===== collapse_only invoked =====
+[DEBUG] Configuration: device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Input tracking: model_provided=True, model_weights=None, input_shape=torch.Size([512, 3, 32, 32])
+[STEP] Using provided in-memory model instance (InceptionNet)
+[DEBUG] Calculating initial layer statistics...
+
+Layer-wise zero parameter stats:
+
+stage1.conv1.conv.weight: 0/9408 zeros (0.00%)
+stage1.conv1.bn.weight: 0/64 zeros (0.00%)
+stage1.conv1.bn.bias: 0/64 zeros (0.00%)
+stage2.conv2.conv.weight: 0/4096 zeros (0.00%)
+stage2.conv2.bn.weight: 0/64 zeros (0.00%)
+stage2.conv2.bn.bias: 0/64 zeros (0.00%)
+stage2.conv3.conv.weight: 0/110592 zeros (0.00%)
+stage2.conv3.bn.weight: 0/192 zeros (0.00%)
+stage2.conv3.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3a.branch1.conv.weight: 0/12288 zeros (0.00%)
+stage3.inception_3a.branch1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3a.branch1.bn.bias: 0/64 zeros (0.00%)
+stage3.inception_3a.branch2.0.conv.weight: 0/18432 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.1.conv.weight: 0/110592 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3a.branch3.0.conv.weight: 0/3072 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.1.conv.weight: 0/12800 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.conv.weight: 0/6144 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch1.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.1.conv.weight: 0/221184 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.weight: 0/192 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3b.branch3.0.conv.weight: 0/8192 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.1.conv.weight: 0/76800 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3b.branch4.1.conv.weight: 0/16384 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4a.branch1.conv.weight: 0/92160 zeros (0.00%)
+stage4.inception_4a.branch1.bn.weight: 0/192 zeros (0.00%)
+stage4.inception_4a.branch1.bn.bias: 0/192 zeros (0.00%)
+stage4.inception_4a.branch2.0.conv.weight: 0/46080 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.1.conv.weight: 0/179712 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.weight: 0/208 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.bias: 0/208 zeros (0.00%)
+stage4.inception_4a.branch3.0.conv.weight: 0/7680 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.1.conv.weight: 0/19200 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.weight: 0/48 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.bias: 0/48 zeros (0.00%)
+stage4.inception_4a.branch4.1.conv.weight: 0/30720 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch1.conv.weight: 0/81920 zeros (0.00%)
+stage4.inception_4b.branch1.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4b.branch1.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4b.branch2.0.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.1.conv.weight: 0/225792 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.weight: 0/224 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.bias: 0/224 zeros (0.00%)
+stage4.inception_4b.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch1.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.1.conv.weight: 0/294912 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4c.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch1.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4d.branch1.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4d.branch1.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4d.branch2.0.conv.weight: 0/73728 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.weight: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.bias: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.1.conv.weight: 0/373248 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.weight: 0/288 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.bias: 0/288 zeros (0.00%)
+stage4.inception_4d.branch3.0.conv.weight: 0/16384 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.1.conv.weight: 0/51200 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4e.branch1.conv.weight: 0/135168 zeros (0.00%)
+stage4.inception_4e.branch1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4e.branch1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4e.branch2.0.conv.weight: 0/84480 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage4.inception_4e.branch3.0.conv.weight: 0/16896 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.conv.weight: 0/67584 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch1.conv.weight: 0/212992 zeros (0.00%)
+stage5.inception_5a.branch1.bn.weight: 0/256 zeros (0.00%)
+stage5.inception_5a.branch1.bn.bias: 0/256 zeros (0.00%)
+stage5.inception_5a.branch2.0.conv.weight: 0/133120 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage5.inception_5a.branch3.0.conv.weight: 0/26624 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch1.conv.weight: 0/319488 zeros (0.00%)
+stage5.inception_5b.branch1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.0.conv.weight: 0/159744 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.weight: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.bias: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.1.conv.weight: 0/663552 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch3.0.conv.weight: 0/39936 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.weight: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.bias: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.1.conv.weight: 0/153600 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.bias: 0/128 zeros (0.00%)
+fc.weight: 0/10240 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[DEBUG] Deepcopy completed and set to eval mode on 'cuda:0'.
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added dictionary mapping: test = ('stage4.inception_4a.branch4.1.conv' → 'stage4.inception_4b.branch1.conv')
+[DEBUG] Total configured collapse targets: 1
+    [BLOCK TARGET 0] stage4.inception_4a.branch4.1.conv → stage4.inception_4b.branch1.conv
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing loop...
+
+[INFO] Processing collapse task 'test': 'stage4.inception_4a.branch4.1.conv' → 'stage4.inception_4b.branch1.conv'
+[DEBUG] Triggering _collapse_block for 'test'...
+
+[INFO] ===== Collapsing block: stage4.inception_4a.branch4.1.conv → stage4.inception_4b.branch1.conv =====
+[DEBUG ENTRY] _collapse_block: input_shape=torch.Size([512, 3, 32, 32]), device=cuda:0
+[STEP 1] Locating block boundaries...
+
+[DEBUG ENTRY] _locate_and_prepare_block called.
+[DEBUG] Locating and preparing block: start='stage4.inception_4a.branch4.1.conv', end:'stage4.inception_4b.branch1.conv'
+[DEBUG] Parsed start_parts: ['stage4', 'inception_4a', 'branch4', '1', 'conv']
+[DEBUG] Parsed end_parts: ['stage4', 'inception_4b', 'branch1', 'conv']
+[DEBUG] Calculated LCA path from common parts: 'stage4'
+[DEBUG] Containers resolved → chosen LCA container: 'stage4'
+[DEBUG] Found 6 children in container 'stage4'
+[DEBUG] Searching for start and end indices in named_layers...
+[DEBUG] Found start_idx at 0 (child_name: 'inception_4a', prefix: 'stage4.inception_4a')
+[DEBUG] Found end_idx at 1 (child_name: 'inception_4b', prefix: 'stage4.inception_4b')
+[DEBUG] Both indices found. Breaking search loop.
+[DEBUG] Block slice length: 2
+[DEBUG] Collecting collapsible layers (Conv2d, Linear)...
+[DEBUG] Block composition → 12 Conv2d, 0 Linear (collapse_mode=conv)
+[DEBUG EXIT] _locate_and_prepare_block returning successfully with first_layer='inception_4a', last_layer='inception_4b'
+[DEBUG] Located block with 2 layers
+    [LAYER] inception_4a: InceptionBlock
+    [LAYER] inception_4b: InceptionBlock
+[STEP 2] Capturing activation before start layer 'stage4.inception_4a.branch4.1.conv'...
+
+[DEBUG ENTRY] _capture_preblock_activation for 'stage4.inception_4a.branch4.1.conv'
+[DEBUG] Attempting to capture activation using simulation hook...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'stage4.inception_4a.branch4.1.conv'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cuda:0'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'stage4.inception_4a.branch4.1.conv'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 480, 2, 2])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Successfully captured activation via hook → shape: (512, 480, 2, 2)
+[DEBUG] Total trainable parameters before collapse: 5,991,082
+[DEBUG EXIT] _capture_preblock_activation complete.
+[DEBUG] Input activation shape entering block: (512, 480, 2, 2)
+[STEP 3] Searching for next linear layer after 'stage4.inception_4b.branch1.conv'...
+
+[DEBUG ENTRY] _find_next_linear: Searching for nn.Linear after 'stage4.inception_4b.branch1.conv'...
+[DEBUG] Flattened model into 286 total modules.
+[DEBUG] Searching for exact index of 'stage4.inception_4b.branch1.conv'...
+[DEBUG] Exact layer match found at global index 109: 'stage4.inception_4b.branch1.conv' (Conv2d)
+[DEBUG] Scanning forward from index 110 for next Linear...
+[DEBUG] Found Linear layer ahead: 'fc' (Linear)
+[DEBUG EXIT] Next Linear detected → name='fc', module=Linear(in_features=1024, out_features=10, bias=True)
+[DEBUG] Next linear layer: fc -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[DEBUG ENTRY] _analyze_block_output: Analyzing collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block forward pass: (512, 480, 2, 2)
+[DEBUG] Running synthetic forward pass through original block layers:
+    [DEBUG] Forwarding Layer 1/2: 'inception_4a' (InceptionBlock) | input_shape=(512, 480, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Forwarding Layer 2/2: 'inception_4b' (InceptionBlock) | input_shape=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+[DEBUG] Synthesis complete. Final block output shape: (512, 512, 2, 2)
+[DEBUG] Determined out_channels=512
+[DEBUG] Scanning original block for explicit pooling layers...
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[DEBUG] Comparing spatial dims for Linear compatibility: expected_hw=2, current_hw=4 (HxW=2x2)
+[DEBUG] Suggesting AdaptiveAvgPool2d(1,2) to reconcile linear in_features mismatch.
+[DEBUG] Scanning model globally for shortcut module out_channels...
+[DEBUG EXIT] _analyze_block_output returning dictionary.
+         out_shape=(512, 512, 2, 2)
+         out_channels=512
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 2))
+         shortcut_out_channels=None
+[DEBUG] Block output analysis result:
+    out_shape: (512, 512, 2, 2)
+    out_channels: 512
+    pool_layer: None
+    adaptive_pool_to_use: AdaptiveAvgPool2d(output_size=(1, 2))
+    shortcut_out_channels: None
+    linear_in_features_heuristic: 1024
+[STEP 5] Rebuilding and replacing collapsed block...
+
+[DEBUG ENTRY] _build_and_replace_block for collapsed block 'stage4.inception_4a.branch4.1.conv'
+[DEBUG] Analyzing info dict keys: ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Target device: cuda:0
+[DEBUG] Extracted start_idx=0, end_idx=1, start_container_name='stage4'
+[DEBUG] Replacement target spatial size (HxW): 2x2
+[DEBUG] Replacement conv in_channels=480, out_channels=512
+[DEBUG] Number of original_convs passed in: 12
+[DEBUG] Analyzing first_conv: groups=1, in_channels=480, out_channels=192, kernel_size=(1, 1)
+[DEBUG] Routing condition met for POINTWISE based on first_conv properties.
+[DEBUG] Rebuilding as POINTWISE conv (kernel_size=1, padding=0)
+[DEBUG] Built replacement Sequential:
+Sequential(
+  (conv_1x1): Conv2d(480, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+  (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (relu): ReLU()
+  (adaptive_pool): AdaptiveAvgPool2d(output_size=(2, 2))
+)
+[DEBUG] Replacing children indices 0..1 in container 'stage4'
+
+[DEBUG ENTRY] _replace_layers: Replacing layer indices 0 through 1
+[DEBUG] Replacing layer 0: 'inception_4a' with custom replacement module
+[DEBUG] Subsuming layer 1: 'inception_4b' with SmartIdentity
+[DEBUG] Keeping layer 2: 'inception_4c' (Outside replacement range)
+[DEBUG] Keeping layer 3: 'inception_4d' (Outside replacement range)
+[DEBUG] Keeping layer 4: 'inception_4e' (Outside replacement range)
+[DEBUG] Keeping layer 5: 'maxpool4' (Outside replacement range)
+[DEBUG EXIT] _replace_layers complete. Generated new nn.Sequential container.
+[DEBUG] Updating container and moving model to cuda:0
+
+[DEBUG ENTRY] _update_container: path='stage4'
+[DEBUG] Resolving nested parent object for container path...
+[DEBUG] Assigning to module attribute: 'stage4'
+[DEBUG EXIT] Container update complete for 'stage4'.
+[DEBUG] Params before collapse: 5,991,082
+[DEBUG] Params after  collapse: 5,411,258
+[INFO] ΔParams = +579,824
+[DEBUG] Starting replacement forward validation...
+[DEBUG] Found inserted module 'inception_4a' for validation.
+[DEBUG] Replacement validation OK — output shape (512, 512, 2, 2)
+[STEP] Performing corrective pooling (if needed)...
+
+[STEP] ===== Starting _insert_corrective_pool =====
+[DEBUG] next_linear_name='fc'
+[DEBUG] Simulating input hook to measure actual input shape hitting the linear layer...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'fc'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cuda:0'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'fc'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 1024])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Actual tensor shape entering 'fc': (512, 1024)
+[DEBUG] Flattened size per sample: 1024
+[DEBUG] Locating linear layer module 'fc'...
+[DEBUG] Found next_linear_mod: Linear
+[DEBUG] Linear 'fc' expects in_features=1024
+[INFO] ✅ Shapes match (Current == Expected) — no corrective pooling needed.
+[STEP] Validating downstream after replacement...
+
+[DEBUG ENTRY] _validate_downstream for 'stage4'
+[DEBUG] start_idx=0, device=cuda:0, has_next_linear=True
+[DEBUG] Retrieving target container: 'stage4'
+[DEBUG] Container retrieved. It has 6 immediate children.
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 0: 'inception_4a'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Pushing test tensor of shape (512, 480, 2, 2) through inserted module...
+[DEBUG] Inserted module forward successful, output shape: (512, 512, 2, 2)
+[STEP] Scanning immediate downstream modules (index 1 to 6) for shape or runtime errors...
+[DEBUG] Downstream 'stage4.inception_4b' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'stage4.inception_4c' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'stage4.inception_4d' executed successfully, output shape: (512, 528, 2, 2)
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (512, 832, 2, 2)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (512, 832, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG EXIT] _validate_downstream complete.
+[DEBUG EXIT] Block replacement complete for 'stage4.inception_4a.branch4.1.conv'.
+[INFO] ✅ Collapse complete for block 'stage4.inception_4a.branch4.1.conv' → 'stage4.inception_4b.branch1.conv'
+[DEBUG EXIT] _collapse_block returning updated model.
+[INFO] ✅ Successfully collapsed block 'test' (stage4.inception_4a.branch4.1.conv → stage4.inception_4b.branch1.conv)
+
+[STEP] Patching skip connections (handle_skips=True)...
+
+[DEBUG ENTRY] patch_skip_connections: Scanning model for skip-connection blocks...
+[DEBUG EXIT] patch_skip_connections complete. Total blocks patched: 0
+[DEBUG] Skip connections patched successfully globally.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions across model.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool1' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool1', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool2' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool2', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool3' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool3', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'adaptive_pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'adaptive_pool', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool4' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool4', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool', safe)
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 5,411,258
+[INFO] ΔParams = +579,824 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total attempted collapse targets: 1
+[DEBUG EXIT] collapse_only returning fully modified model.
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+        [X] FAILED TO REDUCE: Backend rejected (Unmodified). Fracturing block...
+    [STEP] Testing candidate sequence: stage4.inception_4b.branch3.1.conv -> stage4.inception_4b.branch4.1.conv (Length: 2)
+
+[DEBUG ENTRY] ===== collapse_only invoked =====
+[DEBUG] Configuration: device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Input tracking: model_provided=True, model_weights=None, input_shape=torch.Size([512, 3, 32, 32])
+[STEP] Using provided in-memory model instance (InceptionNet)
+[DEBUG] Calculating initial layer statistics...
+
+Layer-wise zero parameter stats:
+
+stage1.conv1.conv.weight: 0/9408 zeros (0.00%)
+stage1.conv1.bn.weight: 0/64 zeros (0.00%)
+stage1.conv1.bn.bias: 0/64 zeros (0.00%)
+stage2.conv2.conv.weight: 0/4096 zeros (0.00%)
+stage2.conv2.bn.weight: 0/64 zeros (0.00%)
+stage2.conv2.bn.bias: 0/64 zeros (0.00%)
+stage2.conv3.conv.weight: 0/110592 zeros (0.00%)
+stage2.conv3.bn.weight: 0/192 zeros (0.00%)
+stage2.conv3.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3a.branch1.conv.weight: 0/12288 zeros (0.00%)
+stage3.inception_3a.branch1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3a.branch1.bn.bias: 0/64 zeros (0.00%)
+stage3.inception_3a.branch2.0.conv.weight: 0/18432 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.1.conv.weight: 0/110592 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3a.branch3.0.conv.weight: 0/3072 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.1.conv.weight: 0/12800 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.conv.weight: 0/6144 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch1.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.1.conv.weight: 0/221184 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.weight: 0/192 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3b.branch3.0.conv.weight: 0/8192 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.1.conv.weight: 0/76800 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3b.branch4.1.conv.weight: 0/16384 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4a.branch1.conv.weight: 0/92160 zeros (0.00%)
+stage4.inception_4a.branch1.bn.weight: 0/192 zeros (0.00%)
+stage4.inception_4a.branch1.bn.bias: 0/192 zeros (0.00%)
+stage4.inception_4a.branch2.0.conv.weight: 0/46080 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.1.conv.weight: 0/179712 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.weight: 0/208 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.bias: 0/208 zeros (0.00%)
+stage4.inception_4a.branch3.0.conv.weight: 0/7680 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.1.conv.weight: 0/19200 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.weight: 0/48 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.bias: 0/48 zeros (0.00%)
+stage4.inception_4a.branch4.1.conv.weight: 0/30720 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch1.conv.weight: 0/81920 zeros (0.00%)
+stage4.inception_4b.branch1.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4b.branch1.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4b.branch2.0.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.1.conv.weight: 0/225792 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.weight: 0/224 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.bias: 0/224 zeros (0.00%)
+stage4.inception_4b.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch1.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.1.conv.weight: 0/294912 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4c.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch1.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4d.branch1.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4d.branch1.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4d.branch2.0.conv.weight: 0/73728 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.weight: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.bias: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.1.conv.weight: 0/373248 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.weight: 0/288 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.bias: 0/288 zeros (0.00%)
+stage4.inception_4d.branch3.0.conv.weight: 0/16384 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.1.conv.weight: 0/51200 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4e.branch1.conv.weight: 0/135168 zeros (0.00%)
+stage4.inception_4e.branch1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4e.branch1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4e.branch2.0.conv.weight: 0/84480 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage4.inception_4e.branch3.0.conv.weight: 0/16896 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.conv.weight: 0/67584 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch1.conv.weight: 0/212992 zeros (0.00%)
+stage5.inception_5a.branch1.bn.weight: 0/256 zeros (0.00%)
+stage5.inception_5a.branch1.bn.bias: 0/256 zeros (0.00%)
+stage5.inception_5a.branch2.0.conv.weight: 0/133120 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage5.inception_5a.branch3.0.conv.weight: 0/26624 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch1.conv.weight: 0/319488 zeros (0.00%)
+stage5.inception_5b.branch1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.0.conv.weight: 0/159744 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.weight: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.bias: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.1.conv.weight: 0/663552 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch3.0.conv.weight: 0/39936 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.weight: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.bias: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.1.conv.weight: 0/153600 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.bias: 0/128 zeros (0.00%)
+fc.weight: 0/10240 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[DEBUG] Deepcopy completed and set to eval mode on 'cuda:0'.
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added dictionary mapping: test = ('stage4.inception_4b.branch3.1.conv' → 'stage4.inception_4b.branch4.1.conv')
+[DEBUG] Total configured collapse targets: 1
+    [BLOCK TARGET 0] stage4.inception_4b.branch3.1.conv → stage4.inception_4b.branch4.1.conv
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing loop...
+
+[INFO] Processing collapse task 'test': 'stage4.inception_4b.branch3.1.conv' → 'stage4.inception_4b.branch4.1.conv'
+[DEBUG] Triggering _collapse_block for 'test'...
+
+[INFO] ===== Collapsing block: stage4.inception_4b.branch3.1.conv → stage4.inception_4b.branch4.1.conv =====
+[DEBUG ENTRY] _collapse_block: input_shape=torch.Size([512, 3, 32, 32]), device=cuda:0
+[STEP 1] Locating block boundaries...
+
+[DEBUG ENTRY] _locate_and_prepare_block called.
+[DEBUG] Locating and preparing block: start='stage4.inception_4b.branch3.1.conv', end:'stage4.inception_4b.branch4.1.conv'
+[DEBUG] Parsed start_parts: ['stage4', 'inception_4b', 'branch3', '1', 'conv']
+[DEBUG] Parsed end_parts: ['stage4', 'inception_4b', 'branch4', '1', 'conv']
+[DEBUG] Calculated LCA path from common parts: 'stage4.inception_4b'
+[DEBUG] Containers resolved → chosen LCA container: 'stage4.inception_4b'
+[DEBUG] Found 4 children in container 'stage4.inception_4b'
+[DEBUG] Searching for start and end indices in named_layers...
+[DEBUG] Found start_idx at 2 (child_name: 'branch3', prefix: 'stage4.inception_4b.branch3')
+[DEBUG] Found end_idx at 3 (child_name: 'branch4', prefix: 'stage4.inception_4b.branch4')
+[DEBUG] Both indices found. Breaking search loop.
+[DEBUG] Block slice length: 2
+[WARN] ⚠ Collapse failed for block 'test': [ERROR] Container 'stage4.inception_4b' is InceptionBlock, not nn.Sequential. Slicing multiple parallel branches (like Inception branches) as a sequence is invalid.
+
+[STEP] Patching skip connections (handle_skips=True)...
+
+[DEBUG ENTRY] patch_skip_connections: Scanning model for skip-connection blocks...
+[DEBUG EXIT] patch_skip_connections complete. Total blocks patched: 0
+[DEBUG] Skip connections patched successfully globally.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 57 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions across model.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool1' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool1', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool2' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool2', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool3' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool3', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool4' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool4', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool', safe)
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 5,991,082
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total attempted collapse targets: 1
+[DEBUG EXIT] collapse_only returning fully modified model.
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+        [X] FAILED TO REDUCE: Backend rejected (Unmodified). Fracturing block...
+    [STEP] Testing candidate sequence: stage4.inception_4c.branch3.1.conv -> stage4.inception_4d.branch1.conv (Length: 3)
+
+[DEBUG ENTRY] ===== collapse_only invoked =====
+[DEBUG] Configuration: device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Input tracking: model_provided=True, model_weights=None, input_shape=torch.Size([512, 3, 32, 32])
+[STEP] Using provided in-memory model instance (InceptionNet)
+[DEBUG] Calculating initial layer statistics...
+
+Layer-wise zero parameter stats:
+
+stage1.conv1.conv.weight: 0/9408 zeros (0.00%)
+stage1.conv1.bn.weight: 0/64 zeros (0.00%)
+stage1.conv1.bn.bias: 0/64 zeros (0.00%)
+stage2.conv2.conv.weight: 0/4096 zeros (0.00%)
+stage2.conv2.bn.weight: 0/64 zeros (0.00%)
+stage2.conv2.bn.bias: 0/64 zeros (0.00%)
+stage2.conv3.conv.weight: 0/110592 zeros (0.00%)
+stage2.conv3.bn.weight: 0/192 zeros (0.00%)
+stage2.conv3.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3a.branch1.conv.weight: 0/12288 zeros (0.00%)
+stage3.inception_3a.branch1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3a.branch1.bn.bias: 0/64 zeros (0.00%)
+stage3.inception_3a.branch2.0.conv.weight: 0/18432 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.1.conv.weight: 0/110592 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3a.branch3.0.conv.weight: 0/3072 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.1.conv.weight: 0/12800 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.conv.weight: 0/6144 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch1.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.1.conv.weight: 0/221184 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.weight: 0/192 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3b.branch3.0.conv.weight: 0/8192 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.1.conv.weight: 0/76800 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3b.branch4.1.conv.weight: 0/16384 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4a.branch1.conv.weight: 0/92160 zeros (0.00%)
+stage4.inception_4a.branch1.bn.weight: 0/192 zeros (0.00%)
+stage4.inception_4a.branch1.bn.bias: 0/192 zeros (0.00%)
+stage4.inception_4a.branch2.0.conv.weight: 0/46080 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.1.conv.weight: 0/179712 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.weight: 0/208 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.bias: 0/208 zeros (0.00%)
+stage4.inception_4a.branch3.0.conv.weight: 0/7680 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.1.conv.weight: 0/19200 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.weight: 0/48 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.bias: 0/48 zeros (0.00%)
+stage4.inception_4a.branch4.1.conv.weight: 0/30720 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch1.conv.weight: 0/81920 zeros (0.00%)
+stage4.inception_4b.branch1.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4b.branch1.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4b.branch2.0.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.1.conv.weight: 0/225792 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.weight: 0/224 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.bias: 0/224 zeros (0.00%)
+stage4.inception_4b.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch1.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.1.conv.weight: 0/294912 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4c.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch1.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4d.branch1.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4d.branch1.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4d.branch2.0.conv.weight: 0/73728 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.weight: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.bias: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.1.conv.weight: 0/373248 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.weight: 0/288 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.bias: 0/288 zeros (0.00%)
+stage4.inception_4d.branch3.0.conv.weight: 0/16384 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.1.conv.weight: 0/51200 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4e.branch1.conv.weight: 0/135168 zeros (0.00%)
+stage4.inception_4e.branch1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4e.branch1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4e.branch2.0.conv.weight: 0/84480 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage4.inception_4e.branch3.0.conv.weight: 0/16896 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.conv.weight: 0/67584 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch1.conv.weight: 0/212992 zeros (0.00%)
+stage5.inception_5a.branch1.bn.weight: 0/256 zeros (0.00%)
+stage5.inception_5a.branch1.bn.bias: 0/256 zeros (0.00%)
+stage5.inception_5a.branch2.0.conv.weight: 0/133120 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage5.inception_5a.branch3.0.conv.weight: 0/26624 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch1.conv.weight: 0/319488 zeros (0.00%)
+stage5.inception_5b.branch1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.0.conv.weight: 0/159744 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.weight: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.bias: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.1.conv.weight: 0/663552 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch3.0.conv.weight: 0/39936 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.weight: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.bias: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.1.conv.weight: 0/153600 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.bias: 0/128 zeros (0.00%)
+fc.weight: 0/10240 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[DEBUG] Deepcopy completed and set to eval mode on 'cuda:0'.
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added dictionary mapping: test = ('stage4.inception_4c.branch3.1.conv' → 'stage4.inception_4d.branch1.conv')
+[DEBUG] Total configured collapse targets: 1
+    [BLOCK TARGET 0] stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing loop...
+
+[INFO] Processing collapse task 'test': 'stage4.inception_4c.branch3.1.conv' → 'stage4.inception_4d.branch1.conv'
+[DEBUG] Triggering _collapse_block for 'test'...
+
+[INFO] ===== Collapsing block: stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv =====
+[DEBUG ENTRY] _collapse_block: input_shape=torch.Size([512, 3, 32, 32]), device=cuda:0
+[STEP 1] Locating block boundaries...
+
+[DEBUG ENTRY] _locate_and_prepare_block called.
+[DEBUG] Locating and preparing block: start='stage4.inception_4c.branch3.1.conv', end:'stage4.inception_4d.branch1.conv'
+[DEBUG] Parsed start_parts: ['stage4', 'inception_4c', 'branch3', '1', 'conv']
+[DEBUG] Parsed end_parts: ['stage4', 'inception_4d', 'branch1', 'conv']
+[DEBUG] Calculated LCA path from common parts: 'stage4'
+[DEBUG] Containers resolved → chosen LCA container: 'stage4'
+[DEBUG] Found 6 children in container 'stage4'
+[DEBUG] Searching for start and end indices in named_layers...
+[DEBUG] Found start_idx at 2 (child_name: 'inception_4c', prefix: 'stage4.inception_4c')
+[DEBUG] Found end_idx at 3 (child_name: 'inception_4d', prefix: 'stage4.inception_4d')
+[DEBUG] Both indices found. Breaking search loop.
+[DEBUG] Block slice length: 2
+[DEBUG] Collecting collapsible layers (Conv2d, Linear)...
+[DEBUG] Block composition → 12 Conv2d, 0 Linear (collapse_mode=conv)
+[DEBUG EXIT] _locate_and_prepare_block returning successfully with first_layer='inception_4c', last_layer='inception_4d'
+[DEBUG] Located block with 2 layers
+    [LAYER] inception_4c: InceptionBlock
+    [LAYER] inception_4d: InceptionBlock
+[STEP 2] Capturing activation before start layer 'stage4.inception_4c.branch3.1.conv'...
+
+[DEBUG ENTRY] _capture_preblock_activation for 'stage4.inception_4c.branch3.1.conv'
+[DEBUG] Attempting to capture activation using simulation hook...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'stage4.inception_4c.branch3.1.conv'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cuda:0'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'stage4.inception_4c.branch3.1.conv'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 24, 2, 2])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Successfully captured activation via hook → shape: (512, 24, 2, 2)
+[DEBUG] Total trainable parameters before collapse: 5,991,082
+[DEBUG EXIT] _capture_preblock_activation complete.
+[DEBUG] Input activation shape entering block: (512, 24, 2, 2)
+[STEP 3] Searching for next linear layer after 'stage4.inception_4d.branch1.conv'...
+
+[DEBUG ENTRY] _find_next_linear: Searching for nn.Linear after 'stage4.inception_4d.branch1.conv'...
+[DEBUG] Flattened model into 286 total modules.
+[DEBUG] Searching for exact index of 'stage4.inception_4d.branch1.conv'...
+[DEBUG] Exact layer match found at global index 167: 'stage4.inception_4d.branch1.conv' (Conv2d)
+[DEBUG] Scanning forward from index 168 for next Linear...
+[DEBUG] Found Linear layer ahead: 'fc' (Linear)
+[DEBUG EXIT] Next Linear detected → name='fc', module=Linear(in_features=1024, out_features=10, bias=True)
+[DEBUG] Next linear layer: fc -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[DEBUG ENTRY] _analyze_block_output: Analyzing collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block forward pass: (512, 24, 2, 2)
+[DEBUG] Running synthetic forward pass through original block layers:
+    [DEBUG] Forwarding Layer 1/2: 'inception_4c' (InceptionBlock) | input_shape=(512, 24, 2, 2)
+    [WARN] Forward failed on 'inception_4c': Given groups=1, weight of size [128, 512, 1, 1], expected input[512, 24, 2, 2] to have 512 channels, but got 24 channels instead. Attempting ConvNeXt fallback permutation...
+[WARN] ⚠ Collapse failed for block 'test': Given groups=1, weight of size [128, 512, 1, 1], expected input[512, 24, 2, 2] to have 512 channels, but got 24 channels instead
+
+[STEP] Patching skip connections (handle_skips=True)...
+
+[DEBUG ENTRY] patch_skip_connections: Scanning model for skip-connection blocks...
+[DEBUG EXIT] patch_skip_connections complete. Total blocks patched: 0
+[DEBUG] Skip connections patched successfully globally.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 57 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions across model.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool1' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool1', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool2' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool2', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool3' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool3', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool4' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool4', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool', safe)
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 5,991,082
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total attempted collapse targets: 1
+[DEBUG EXIT] collapse_only returning fully modified model.
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+        [X] FAILED TO REDUCE: Backend rejected (Unmodified). Fracturing block...
+    [STEP] Testing candidate sequence: stage4.inception_4c.branch4.1.conv -> stage4.inception_4d.branch1.conv (Length: 2)
+
+[DEBUG ENTRY] ===== collapse_only invoked =====
+[DEBUG] Configuration: device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Input tracking: model_provided=True, model_weights=None, input_shape=torch.Size([512, 3, 32, 32])
+[STEP] Using provided in-memory model instance (InceptionNet)
+[DEBUG] Calculating initial layer statistics...
+
+Layer-wise zero parameter stats:
+
+stage1.conv1.conv.weight: 0/9408 zeros (0.00%)
+stage1.conv1.bn.weight: 0/64 zeros (0.00%)
+stage1.conv1.bn.bias: 0/64 zeros (0.00%)
+stage2.conv2.conv.weight: 0/4096 zeros (0.00%)
+stage2.conv2.bn.weight: 0/64 zeros (0.00%)
+stage2.conv2.bn.bias: 0/64 zeros (0.00%)
+stage2.conv3.conv.weight: 0/110592 zeros (0.00%)
+stage2.conv3.bn.weight: 0/192 zeros (0.00%)
+stage2.conv3.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3a.branch1.conv.weight: 0/12288 zeros (0.00%)
+stage3.inception_3a.branch1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3a.branch1.bn.bias: 0/64 zeros (0.00%)
+stage3.inception_3a.branch2.0.conv.weight: 0/18432 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.1.conv.weight: 0/110592 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3a.branch3.0.conv.weight: 0/3072 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.1.conv.weight: 0/12800 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.conv.weight: 0/6144 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch1.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.1.conv.weight: 0/221184 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.weight: 0/192 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3b.branch3.0.conv.weight: 0/8192 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.1.conv.weight: 0/76800 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3b.branch4.1.conv.weight: 0/16384 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4a.branch1.conv.weight: 0/92160 zeros (0.00%)
+stage4.inception_4a.branch1.bn.weight: 0/192 zeros (0.00%)
+stage4.inception_4a.branch1.bn.bias: 0/192 zeros (0.00%)
+stage4.inception_4a.branch2.0.conv.weight: 0/46080 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.1.conv.weight: 0/179712 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.weight: 0/208 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.bias: 0/208 zeros (0.00%)
+stage4.inception_4a.branch3.0.conv.weight: 0/7680 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.1.conv.weight: 0/19200 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.weight: 0/48 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.bias: 0/48 zeros (0.00%)
+stage4.inception_4a.branch4.1.conv.weight: 0/30720 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch1.conv.weight: 0/81920 zeros (0.00%)
+stage4.inception_4b.branch1.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4b.branch1.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4b.branch2.0.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.1.conv.weight: 0/225792 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.weight: 0/224 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.bias: 0/224 zeros (0.00%)
+stage4.inception_4b.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch1.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.1.conv.weight: 0/294912 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4c.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch1.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4d.branch1.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4d.branch1.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4d.branch2.0.conv.weight: 0/73728 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.weight: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.bias: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.1.conv.weight: 0/373248 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.weight: 0/288 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.bias: 0/288 zeros (0.00%)
+stage4.inception_4d.branch3.0.conv.weight: 0/16384 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.1.conv.weight: 0/51200 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4e.branch1.conv.weight: 0/135168 zeros (0.00%)
+stage4.inception_4e.branch1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4e.branch1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4e.branch2.0.conv.weight: 0/84480 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage4.inception_4e.branch3.0.conv.weight: 0/16896 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.conv.weight: 0/67584 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch1.conv.weight: 0/212992 zeros (0.00%)
+stage5.inception_5a.branch1.bn.weight: 0/256 zeros (0.00%)
+stage5.inception_5a.branch1.bn.bias: 0/256 zeros (0.00%)
+stage5.inception_5a.branch2.0.conv.weight: 0/133120 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage5.inception_5a.branch3.0.conv.weight: 0/26624 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch1.conv.weight: 0/319488 zeros (0.00%)
+stage5.inception_5b.branch1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.0.conv.weight: 0/159744 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.weight: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.bias: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.1.conv.weight: 0/663552 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch3.0.conv.weight: 0/39936 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.weight: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.bias: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.1.conv.weight: 0/153600 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.bias: 0/128 zeros (0.00%)
+fc.weight: 0/10240 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[DEBUG] Deepcopy completed and set to eval mode on 'cuda:0'.
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added dictionary mapping: test = ('stage4.inception_4c.branch4.1.conv' → 'stage4.inception_4d.branch1.conv')
+[DEBUG] Total configured collapse targets: 1
+    [BLOCK TARGET 0] stage4.inception_4c.branch4.1.conv → stage4.inception_4d.branch1.conv
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing loop...
+
+[INFO] Processing collapse task 'test': 'stage4.inception_4c.branch4.1.conv' → 'stage4.inception_4d.branch1.conv'
+[DEBUG] Triggering _collapse_block for 'test'...
+
+[INFO] ===== Collapsing block: stage4.inception_4c.branch4.1.conv → stage4.inception_4d.branch1.conv =====
+[DEBUG ENTRY] _collapse_block: input_shape=torch.Size([512, 3, 32, 32]), device=cuda:0
+[STEP 1] Locating block boundaries...
+
+[DEBUG ENTRY] _locate_and_prepare_block called.
+[DEBUG] Locating and preparing block: start='stage4.inception_4c.branch4.1.conv', end:'stage4.inception_4d.branch1.conv'
+[DEBUG] Parsed start_parts: ['stage4', 'inception_4c', 'branch4', '1', 'conv']
+[DEBUG] Parsed end_parts: ['stage4', 'inception_4d', 'branch1', 'conv']
+[DEBUG] Calculated LCA path from common parts: 'stage4'
+[DEBUG] Containers resolved → chosen LCA container: 'stage4'
+[DEBUG] Found 6 children in container 'stage4'
+[DEBUG] Searching for start and end indices in named_layers...
+[DEBUG] Found start_idx at 2 (child_name: 'inception_4c', prefix: 'stage4.inception_4c')
+[DEBUG] Found end_idx at 3 (child_name: 'inception_4d', prefix: 'stage4.inception_4d')
+[DEBUG] Both indices found. Breaking search loop.
+[DEBUG] Block slice length: 2
+[DEBUG] Collecting collapsible layers (Conv2d, Linear)...
+[DEBUG] Block composition → 12 Conv2d, 0 Linear (collapse_mode=conv)
+[DEBUG EXIT] _locate_and_prepare_block returning successfully with first_layer='inception_4c', last_layer='inception_4d'
+[DEBUG] Located block with 2 layers
+    [LAYER] inception_4c: InceptionBlock
+    [LAYER] inception_4d: InceptionBlock
+[STEP 2] Capturing activation before start layer 'stage4.inception_4c.branch4.1.conv'...
+
+[DEBUG ENTRY] _capture_preblock_activation for 'stage4.inception_4c.branch4.1.conv'
+[DEBUG] Attempting to capture activation using simulation hook...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'stage4.inception_4c.branch4.1.conv'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cuda:0'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'stage4.inception_4c.branch4.1.conv'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 512, 2, 2])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Successfully captured activation via hook → shape: (512, 512, 2, 2)
+[DEBUG] Total trainable parameters before collapse: 5,991,082
+[DEBUG EXIT] _capture_preblock_activation complete.
+[DEBUG] Input activation shape entering block: (512, 512, 2, 2)
+[STEP 3] Searching for next linear layer after 'stage4.inception_4d.branch1.conv'...
+
+[DEBUG ENTRY] _find_next_linear: Searching for nn.Linear after 'stage4.inception_4d.branch1.conv'...
+[DEBUG] Flattened model into 286 total modules.
+[DEBUG] Searching for exact index of 'stage4.inception_4d.branch1.conv'...
+[DEBUG] Exact layer match found at global index 167: 'stage4.inception_4d.branch1.conv' (Conv2d)
+[DEBUG] Scanning forward from index 168 for next Linear...
+[DEBUG] Found Linear layer ahead: 'fc' (Linear)
+[DEBUG EXIT] Next Linear detected → name='fc', module=Linear(in_features=1024, out_features=10, bias=True)
+[DEBUG] Next linear layer: fc -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[DEBUG ENTRY] _analyze_block_output: Analyzing collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block forward pass: (512, 512, 2, 2)
+[DEBUG] Running synthetic forward pass through original block layers:
+    [DEBUG] Forwarding Layer 1/2: 'inception_4c' (InceptionBlock) | input_shape=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Forwarding Layer 2/2: 'inception_4d' (InceptionBlock) | input_shape=(512, 512, 2, 2)
+        └── output shape: (512, 528, 2, 2)
+[DEBUG] Synthesis complete. Final block output shape: (512, 528, 2, 2)
+[DEBUG] Determined out_channels=528
+[DEBUG] Scanning original block for explicit pooling layers...
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[DEBUG] Comparing spatial dims for Linear compatibility: expected_hw=1, current_hw=4 (HxW=2x2)
+[DEBUG] Suggesting AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[DEBUG] Scanning model globally for shortcut module out_channels...
+[DEBUG EXIT] _analyze_block_output returning dictionary.
+         out_shape=(512, 528, 2, 2)
+         out_channels=528
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] Block output analysis result:
+    out_shape: (512, 528, 2, 2)
+    out_channels: 528
+    pool_layer: None
+    adaptive_pool_to_use: AdaptiveAvgPool2d(output_size=(1, 1))
+    shortcut_out_channels: None
+    linear_in_features_heuristic: 1024
+[STEP 5] Rebuilding and replacing collapsed block...
+
+[DEBUG ENTRY] _build_and_replace_block for collapsed block 'stage4.inception_4c.branch4.1.conv'
+[DEBUG] Analyzing info dict keys: ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Target device: cuda:0
+[DEBUG] Extracted start_idx=2, end_idx=3, start_container_name='stage4'
+[DEBUG] Replacement target spatial size (HxW): 2x2
+[DEBUG] Replacement conv in_channels=512, out_channels=528
+[DEBUG] Number of original_convs passed in: 12
+[DEBUG] Analyzing first_conv: groups=1, in_channels=512, out_channels=128, kernel_size=(1, 1)
+[DEBUG] Routing condition met for POINTWISE based on first_conv properties.
+[DEBUG] Rebuilding as POINTWISE conv (kernel_size=1, padding=0)
+[DEBUG] Built replacement Sequential:
+Sequential(
+  (conv_1x1): Conv2d(512, 528, kernel_size=(1, 1), stride=(1, 1), bias=False)
+  (bn): BatchNorm2d(528, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (relu): ReLU()
+  (adaptive_pool): AdaptiveAvgPool2d(output_size=(2, 2))
+)
+[DEBUG] Replacing children indices 2..3 in container 'stage4'
+
+[DEBUG ENTRY] _replace_layers: Replacing layer indices 2 through 3
+[DEBUG] Keeping layer 0: 'inception_4a' (Outside replacement range)
+[DEBUG] Keeping layer 1: 'inception_4b' (Outside replacement range)
+[DEBUG] Replacing layer 2: 'inception_4c' with custom replacement module
+[DEBUG] Subsuming layer 3: 'inception_4d' with SmartIdentity
+[DEBUG] Keeping layer 4: 'inception_4e' (Outside replacement range)
+[DEBUG] Keeping layer 5: 'maxpool4' (Outside replacement range)
+[DEBUG EXIT] _replace_layers complete. Generated new nn.Sequential container.
+[DEBUG] Updating container and moving model to cuda:0
+
+[DEBUG ENTRY] _update_container: path='stage4'
+[DEBUG] Resolving nested parent object for container path...
+[DEBUG] Assigning to module attribute: 'stage4'
+[DEBUG EXIT] Container update complete for 'stage4'.
+[DEBUG] Params before collapse: 5,991,082
+[DEBUG] Params after  collapse: 5,145,626
+[INFO] ΔParams = +845,456
+[DEBUG] Starting replacement forward validation...
+[DEBUG] Found inserted module 'inception_4c' for validation.
+[DEBUG] Replacement validation OK — output shape (512, 528, 2, 2)
+[STEP] Performing corrective pooling (if needed)...
+
+[STEP] ===== Starting _insert_corrective_pool =====
+[DEBUG] next_linear_name='fc'
+[DEBUG] Simulating input hook to measure actual input shape hitting the linear layer...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'fc'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cuda:0'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'fc'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 1024])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Actual tensor shape entering 'fc': (512, 1024)
+[DEBUG] Flattened size per sample: 1024
+[DEBUG] Locating linear layer module 'fc'...
+[DEBUG] Found next_linear_mod: Linear
+[DEBUG] Linear 'fc' expects in_features=1024
+[INFO] ✅ Shapes match (Current == Expected) — no corrective pooling needed.
+[STEP] Validating downstream after replacement...
+
+[DEBUG ENTRY] _validate_downstream for 'stage4'
+[DEBUG] start_idx=2, device=cuda:0, has_next_linear=True
+[DEBUG] Retrieving target container: 'stage4'
+[DEBUG] Container retrieved. It has 6 immediate children.
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Pushing test tensor of shape (512, 512, 2, 2) through inserted module...
+[DEBUG] Inserted module forward successful, output shape: (512, 528, 2, 2)
+[STEP] Scanning immediate downstream modules (index 3 to 6) for shape or runtime errors...
+[DEBUG] Downstream 'stage4.inception_4d' executed successfully, output shape: (512, 528, 2, 2)
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (512, 832, 2, 2)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (512, 832, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG EXIT] _validate_downstream complete.
+[DEBUG EXIT] Block replacement complete for 'stage4.inception_4c.branch4.1.conv'.
+[INFO] ✅ Collapse complete for block 'stage4.inception_4c.branch4.1.conv' → 'stage4.inception_4d.branch1.conv'
+[DEBUG EXIT] _collapse_block returning updated model.
+[INFO] ✅ Successfully collapsed block 'test' (stage4.inception_4c.branch4.1.conv → stage4.inception_4d.branch1.conv)
+
+[STEP] Patching skip connections (handle_skips=True)...
+
+[DEBUG ENTRY] patch_skip_connections: Scanning model for skip-connection blocks...
+[DEBUG EXIT] patch_skip_connections complete. Total blocks patched: 0
+[DEBUG] Skip connections patched successfully globally.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions across model.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool1' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool1', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool2' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool2', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool3' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool3', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'adaptive_pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'adaptive_pool', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool4' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool4', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool', safe)
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 5,145,626
+[INFO] ΔParams = +845,456 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total attempted collapse targets: 1
+[DEBUG EXIT] collapse_only returning fully modified model.
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+        [X] FAILED TO REDUCE: Backend rejected (Unmodified). Fracturing block...
+    [STEP] Testing candidate sequence: stage4.inception_4d.branch3.1.conv -> stage4.inception_4e.branch1.conv (Length: 3)
+
+[DEBUG ENTRY] ===== collapse_only invoked =====
+[DEBUG] Configuration: device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Input tracking: model_provided=True, model_weights=None, input_shape=torch.Size([512, 3, 32, 32])
+[STEP] Using provided in-memory model instance (InceptionNet)
+[DEBUG] Calculating initial layer statistics...
+
+Layer-wise zero parameter stats:
+
+stage1.conv1.conv.weight: 0/9408 zeros (0.00%)
+stage1.conv1.bn.weight: 0/64 zeros (0.00%)
+stage1.conv1.bn.bias: 0/64 zeros (0.00%)
+stage2.conv2.conv.weight: 0/4096 zeros (0.00%)
+stage2.conv2.bn.weight: 0/64 zeros (0.00%)
+stage2.conv2.bn.bias: 0/64 zeros (0.00%)
+stage2.conv3.conv.weight: 0/110592 zeros (0.00%)
+stage2.conv3.bn.weight: 0/192 zeros (0.00%)
+stage2.conv3.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3a.branch1.conv.weight: 0/12288 zeros (0.00%)
+stage3.inception_3a.branch1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3a.branch1.bn.bias: 0/64 zeros (0.00%)
+stage3.inception_3a.branch2.0.conv.weight: 0/18432 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.1.conv.weight: 0/110592 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3a.branch3.0.conv.weight: 0/3072 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.1.conv.weight: 0/12800 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.conv.weight: 0/6144 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch1.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.1.conv.weight: 0/221184 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.weight: 0/192 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3b.branch3.0.conv.weight: 0/8192 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.1.conv.weight: 0/76800 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3b.branch4.1.conv.weight: 0/16384 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4a.branch1.conv.weight: 0/92160 zeros (0.00%)
+stage4.inception_4a.branch1.bn.weight: 0/192 zeros (0.00%)
+stage4.inception_4a.branch1.bn.bias: 0/192 zeros (0.00%)
+stage4.inception_4a.branch2.0.conv.weight: 0/46080 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.1.conv.weight: 0/179712 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.weight: 0/208 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.bias: 0/208 zeros (0.00%)
+stage4.inception_4a.branch3.0.conv.weight: 0/7680 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.1.conv.weight: 0/19200 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.weight: 0/48 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.bias: 0/48 zeros (0.00%)
+stage4.inception_4a.branch4.1.conv.weight: 0/30720 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch1.conv.weight: 0/81920 zeros (0.00%)
+stage4.inception_4b.branch1.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4b.branch1.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4b.branch2.0.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.1.conv.weight: 0/225792 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.weight: 0/224 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.bias: 0/224 zeros (0.00%)
+stage4.inception_4b.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch1.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.1.conv.weight: 0/294912 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4c.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch1.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4d.branch1.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4d.branch1.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4d.branch2.0.conv.weight: 0/73728 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.weight: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.bias: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.1.conv.weight: 0/373248 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.weight: 0/288 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.bias: 0/288 zeros (0.00%)
+stage4.inception_4d.branch3.0.conv.weight: 0/16384 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.1.conv.weight: 0/51200 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4e.branch1.conv.weight: 0/135168 zeros (0.00%)
+stage4.inception_4e.branch1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4e.branch1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4e.branch2.0.conv.weight: 0/84480 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage4.inception_4e.branch3.0.conv.weight: 0/16896 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.conv.weight: 0/67584 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch1.conv.weight: 0/212992 zeros (0.00%)
+stage5.inception_5a.branch1.bn.weight: 0/256 zeros (0.00%)
+stage5.inception_5a.branch1.bn.bias: 0/256 zeros (0.00%)
+stage5.inception_5a.branch2.0.conv.weight: 0/133120 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage5.inception_5a.branch3.0.conv.weight: 0/26624 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch1.conv.weight: 0/319488 zeros (0.00%)
+stage5.inception_5b.branch1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.0.conv.weight: 0/159744 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.weight: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.bias: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.1.conv.weight: 0/663552 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch3.0.conv.weight: 0/39936 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.weight: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.bias: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.1.conv.weight: 0/153600 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.bias: 0/128 zeros (0.00%)
+fc.weight: 0/10240 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[DEBUG] Deepcopy completed and set to eval mode on 'cuda:0'.
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added dictionary mapping: test = ('stage4.inception_4d.branch3.1.conv' → 'stage4.inception_4e.branch1.conv')
+[DEBUG] Total configured collapse targets: 1
+    [BLOCK TARGET 0] stage4.inception_4d.branch3.1.conv → stage4.inception_4e.branch1.conv
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing loop...
+
+[INFO] Processing collapse task 'test': 'stage4.inception_4d.branch3.1.conv' → 'stage4.inception_4e.branch1.conv'
+[DEBUG] Triggering _collapse_block for 'test'...
+
+[INFO] ===== Collapsing block: stage4.inception_4d.branch3.1.conv → stage4.inception_4e.branch1.conv =====
+[DEBUG ENTRY] _collapse_block: input_shape=torch.Size([512, 3, 32, 32]), device=cuda:0
+[STEP 1] Locating block boundaries...
+
+[DEBUG ENTRY] _locate_and_prepare_block called.
+[DEBUG] Locating and preparing block: start='stage4.inception_4d.branch3.1.conv', end:'stage4.inception_4e.branch1.conv'
+[DEBUG] Parsed start_parts: ['stage4', 'inception_4d', 'branch3', '1', 'conv']
+[DEBUG] Parsed end_parts: ['stage4', 'inception_4e', 'branch1', 'conv']
+[DEBUG] Calculated LCA path from common parts: 'stage4'
+[DEBUG] Containers resolved → chosen LCA container: 'stage4'
+[DEBUG] Found 6 children in container 'stage4'
+[DEBUG] Searching for start and end indices in named_layers...
+[DEBUG] Found start_idx at 3 (child_name: 'inception_4d', prefix: 'stage4.inception_4d')
+[DEBUG] Found end_idx at 4 (child_name: 'inception_4e', prefix: 'stage4.inception_4e')
+[DEBUG] Both indices found. Breaking search loop.
+[DEBUG] Block slice length: 2
+[DEBUG] Collecting collapsible layers (Conv2d, Linear)...
+[DEBUG] Block composition → 12 Conv2d, 0 Linear (collapse_mode=conv)
+[DEBUG EXIT] _locate_and_prepare_block returning successfully with first_layer='inception_4d', last_layer='inception_4e'
+[DEBUG] Located block with 2 layers
+    [LAYER] inception_4d: InceptionBlock
+    [LAYER] inception_4e: InceptionBlock
+[STEP 2] Capturing activation before start layer 'stage4.inception_4d.branch3.1.conv'...
+
+[DEBUG ENTRY] _capture_preblock_activation for 'stage4.inception_4d.branch3.1.conv'
+[DEBUG] Attempting to capture activation using simulation hook...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'stage4.inception_4d.branch3.1.conv'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cuda:0'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'stage4.inception_4d.branch3.1.conv'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 32, 2, 2])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Successfully captured activation via hook → shape: (512, 32, 2, 2)
+[DEBUG] Total trainable parameters before collapse: 5,991,082
+[DEBUG EXIT] _capture_preblock_activation complete.
+[DEBUG] Input activation shape entering block: (512, 32, 2, 2)
+[STEP 3] Searching for next linear layer after 'stage4.inception_4e.branch1.conv'...
+
+[DEBUG ENTRY] _find_next_linear: Searching for nn.Linear after 'stage4.inception_4e.branch1.conv'...
+[DEBUG] Flattened model into 286 total modules.
+[DEBUG] Searching for exact index of 'stage4.inception_4e.branch1.conv'...
+[DEBUG] Exact layer match found at global index 196: 'stage4.inception_4e.branch1.conv' (Conv2d)
+[DEBUG] Scanning forward from index 197 for next Linear...
+[DEBUG] Found Linear layer ahead: 'fc' (Linear)
+[DEBUG EXIT] Next Linear detected → name='fc', module=Linear(in_features=1024, out_features=10, bias=True)
+[DEBUG] Next linear layer: fc -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[DEBUG ENTRY] _analyze_block_output: Analyzing collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block forward pass: (512, 32, 2, 2)
+[DEBUG] Running synthetic forward pass through original block layers:
+    [DEBUG] Forwarding Layer 1/2: 'inception_4d' (InceptionBlock) | input_shape=(512, 32, 2, 2)
+    [WARN] Forward failed on 'inception_4d': Given groups=1, weight of size [112, 512, 1, 1], expected input[512, 32, 2, 2] to have 512 channels, but got 32 channels instead. Attempting ConvNeXt fallback permutation...
+[WARN] ⚠ Collapse failed for block 'test': Given groups=1, weight of size [112, 512, 1, 1], expected input[512, 32, 2, 2] to have 512 channels, but got 32 channels instead
+
+[STEP] Patching skip connections (handle_skips=True)...
+
+[DEBUG ENTRY] patch_skip_connections: Scanning model for skip-connection blocks...
+[DEBUG EXIT] patch_skip_connections complete. Total blocks patched: 0
+[DEBUG] Skip connections patched successfully globally.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 57 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions across model.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool1' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool1', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool2' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool2', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool3' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool3', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool4' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool4', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool', safe)
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 5,991,082
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total attempted collapse targets: 1
+[DEBUG EXIT] collapse_only returning fully modified model.
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+        [X] FAILED TO REDUCE: Backend rejected (Unmodified). Fracturing block...
+    [STEP] Testing candidate sequence: stage4.inception_4d.branch4.1.conv -> stage4.inception_4e.branch1.conv (Length: 2)
+
+[DEBUG ENTRY] ===== collapse_only invoked =====
+[DEBUG] Configuration: device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Input tracking: model_provided=True, model_weights=None, input_shape=torch.Size([512, 3, 32, 32])
+[STEP] Using provided in-memory model instance (InceptionNet)
+[DEBUG] Calculating initial layer statistics...
+
+Layer-wise zero parameter stats:
+
+stage1.conv1.conv.weight: 0/9408 zeros (0.00%)
+stage1.conv1.bn.weight: 0/64 zeros (0.00%)
+stage1.conv1.bn.bias: 0/64 zeros (0.00%)
+stage2.conv2.conv.weight: 0/4096 zeros (0.00%)
+stage2.conv2.bn.weight: 0/64 zeros (0.00%)
+stage2.conv2.bn.bias: 0/64 zeros (0.00%)
+stage2.conv3.conv.weight: 0/110592 zeros (0.00%)
+stage2.conv3.bn.weight: 0/192 zeros (0.00%)
+stage2.conv3.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3a.branch1.conv.weight: 0/12288 zeros (0.00%)
+stage3.inception_3a.branch1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3a.branch1.bn.bias: 0/64 zeros (0.00%)
+stage3.inception_3a.branch2.0.conv.weight: 0/18432 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.1.conv.weight: 0/110592 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3a.branch3.0.conv.weight: 0/3072 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.1.conv.weight: 0/12800 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.conv.weight: 0/6144 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch1.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.1.conv.weight: 0/221184 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.weight: 0/192 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3b.branch3.0.conv.weight: 0/8192 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.1.conv.weight: 0/76800 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3b.branch4.1.conv.weight: 0/16384 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4a.branch1.conv.weight: 0/92160 zeros (0.00%)
+stage4.inception_4a.branch1.bn.weight: 0/192 zeros (0.00%)
+stage4.inception_4a.branch1.bn.bias: 0/192 zeros (0.00%)
+stage4.inception_4a.branch2.0.conv.weight: 0/46080 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.1.conv.weight: 0/179712 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.weight: 0/208 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.bias: 0/208 zeros (0.00%)
+stage4.inception_4a.branch3.0.conv.weight: 0/7680 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.1.conv.weight: 0/19200 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.weight: 0/48 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.bias: 0/48 zeros (0.00%)
+stage4.inception_4a.branch4.1.conv.weight: 0/30720 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch1.conv.weight: 0/81920 zeros (0.00%)
+stage4.inception_4b.branch1.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4b.branch1.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4b.branch2.0.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.1.conv.weight: 0/225792 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.weight: 0/224 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.bias: 0/224 zeros (0.00%)
+stage4.inception_4b.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch1.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.1.conv.weight: 0/294912 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4c.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch1.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4d.branch1.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4d.branch1.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4d.branch2.0.conv.weight: 0/73728 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.weight: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.bias: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.1.conv.weight: 0/373248 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.weight: 0/288 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.bias: 0/288 zeros (0.00%)
+stage4.inception_4d.branch3.0.conv.weight: 0/16384 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.1.conv.weight: 0/51200 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4e.branch1.conv.weight: 0/135168 zeros (0.00%)
+stage4.inception_4e.branch1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4e.branch1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4e.branch2.0.conv.weight: 0/84480 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage4.inception_4e.branch3.0.conv.weight: 0/16896 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.conv.weight: 0/67584 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch1.conv.weight: 0/212992 zeros (0.00%)
+stage5.inception_5a.branch1.bn.weight: 0/256 zeros (0.00%)
+stage5.inception_5a.branch1.bn.bias: 0/256 zeros (0.00%)
+stage5.inception_5a.branch2.0.conv.weight: 0/133120 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage5.inception_5a.branch3.0.conv.weight: 0/26624 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch1.conv.weight: 0/319488 zeros (0.00%)
+stage5.inception_5b.branch1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.0.conv.weight: 0/159744 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.weight: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.bias: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.1.conv.weight: 0/663552 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch3.0.conv.weight: 0/39936 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.weight: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.bias: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.1.conv.weight: 0/153600 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.bias: 0/128 zeros (0.00%)
+fc.weight: 0/10240 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[DEBUG] Deepcopy completed and set to eval mode on 'cuda:0'.
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added dictionary mapping: test = ('stage4.inception_4d.branch4.1.conv' → 'stage4.inception_4e.branch1.conv')
+[DEBUG] Total configured collapse targets: 1
+    [BLOCK TARGET 0] stage4.inception_4d.branch4.1.conv → stage4.inception_4e.branch1.conv
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing loop...
+
+[INFO] Processing collapse task 'test': 'stage4.inception_4d.branch4.1.conv' → 'stage4.inception_4e.branch1.conv'
+[DEBUG] Triggering _collapse_block for 'test'...
+
+[INFO] ===== Collapsing block: stage4.inception_4d.branch4.1.conv → stage4.inception_4e.branch1.conv =====
+[DEBUG ENTRY] _collapse_block: input_shape=torch.Size([512, 3, 32, 32]), device=cuda:0
+[STEP 1] Locating block boundaries...
+
+[DEBUG ENTRY] _locate_and_prepare_block called.
+[DEBUG] Locating and preparing block: start='stage4.inception_4d.branch4.1.conv', end:'stage4.inception_4e.branch1.conv'
+[DEBUG] Parsed start_parts: ['stage4', 'inception_4d', 'branch4', '1', 'conv']
+[DEBUG] Parsed end_parts: ['stage4', 'inception_4e', 'branch1', 'conv']
+[DEBUG] Calculated LCA path from common parts: 'stage4'
+[DEBUG] Containers resolved → chosen LCA container: 'stage4'
+[DEBUG] Found 6 children in container 'stage4'
+[DEBUG] Searching for start and end indices in named_layers...
+[DEBUG] Found start_idx at 3 (child_name: 'inception_4d', prefix: 'stage4.inception_4d')
+[DEBUG] Found end_idx at 4 (child_name: 'inception_4e', prefix: 'stage4.inception_4e')
+[DEBUG] Both indices found. Breaking search loop.
+[DEBUG] Block slice length: 2
+[DEBUG] Collecting collapsible layers (Conv2d, Linear)...
+[DEBUG] Block composition → 12 Conv2d, 0 Linear (collapse_mode=conv)
+[DEBUG EXIT] _locate_and_prepare_block returning successfully with first_layer='inception_4d', last_layer='inception_4e'
+[DEBUG] Located block with 2 layers
+    [LAYER] inception_4d: InceptionBlock
+    [LAYER] inception_4e: InceptionBlock
+[STEP 2] Capturing activation before start layer 'stage4.inception_4d.branch4.1.conv'...
+
+[DEBUG ENTRY] _capture_preblock_activation for 'stage4.inception_4d.branch4.1.conv'
+[DEBUG] Attempting to capture activation using simulation hook...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'stage4.inception_4d.branch4.1.conv'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cuda:0'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'stage4.inception_4d.branch4.1.conv'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 512, 2, 2])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Successfully captured activation via hook → shape: (512, 512, 2, 2)
+[DEBUG] Total trainable parameters before collapse: 5,991,082
+[DEBUG EXIT] _capture_preblock_activation complete.
+[DEBUG] Input activation shape entering block: (512, 512, 2, 2)
+[STEP 3] Searching for next linear layer after 'stage4.inception_4e.branch1.conv'...
+
+[DEBUG ENTRY] _find_next_linear: Searching for nn.Linear after 'stage4.inception_4e.branch1.conv'...
+[DEBUG] Flattened model into 286 total modules.
+[DEBUG] Searching for exact index of 'stage4.inception_4e.branch1.conv'...
+[DEBUG] Exact layer match found at global index 196: 'stage4.inception_4e.branch1.conv' (Conv2d)
+[DEBUG] Scanning forward from index 197 for next Linear...
+[DEBUG] Found Linear layer ahead: 'fc' (Linear)
+[DEBUG EXIT] Next Linear detected → name='fc', module=Linear(in_features=1024, out_features=10, bias=True)
+[DEBUG] Next linear layer: fc -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[DEBUG ENTRY] _analyze_block_output: Analyzing collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block forward pass: (512, 512, 2, 2)
+[DEBUG] Running synthetic forward pass through original block layers:
+    [DEBUG] Forwarding Layer 1/2: 'inception_4d' (InceptionBlock) | input_shape=(512, 512, 2, 2)
+        └── output shape: (512, 528, 2, 2)
+    [DEBUG] Forwarding Layer 2/2: 'inception_4e' (InceptionBlock) | input_shape=(512, 528, 2, 2)
+        └── output shape: (512, 832, 2, 2)
+[DEBUG] Synthesis complete. Final block output shape: (512, 832, 2, 2)
+[DEBUG] Determined out_channels=832
+[DEBUG] Scanning original block for explicit pooling layers...
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[DEBUG] Comparing spatial dims for Linear compatibility: expected_hw=1, current_hw=4 (HxW=2x2)
+[DEBUG] Suggesting AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[DEBUG] Scanning model globally for shortcut module out_channels...
+[DEBUG EXIT] _analyze_block_output returning dictionary.
+         out_shape=(512, 832, 2, 2)
+         out_channels=832
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] Block output analysis result:
+    out_shape: (512, 832, 2, 2)
+    out_channels: 832
+    pool_layer: None
+    adaptive_pool_to_use: AdaptiveAvgPool2d(output_size=(1, 1))
+    shortcut_out_channels: None
+    linear_in_features_heuristic: 1024
+[STEP 5] Rebuilding and replacing collapsed block...
+
+[DEBUG ENTRY] _build_and_replace_block for collapsed block 'stage4.inception_4d.branch4.1.conv'
+[DEBUG] Analyzing info dict keys: ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Target device: cuda:0
+[DEBUG] Extracted start_idx=3, end_idx=4, start_container_name='stage4'
+[DEBUG] Replacement target spatial size (HxW): 2x2
+[DEBUG] Replacement conv in_channels=512, out_channels=832
+[DEBUG] Number of original_convs passed in: 12
+[DEBUG] Analyzing first_conv: groups=1, in_channels=512, out_channels=112, kernel_size=(1, 1)
+[DEBUG] Routing condition met for POINTWISE based on first_conv properties.
+[DEBUG] Rebuilding as POINTWISE conv (kernel_size=1, padding=0)
+[DEBUG] Built replacement Sequential:
+Sequential(
+  (conv_1x1): Conv2d(512, 832, kernel_size=(1, 1), stride=(1, 1), bias=False)
+  (bn): BatchNorm2d(832, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (relu): ReLU()
+  (adaptive_pool): AdaptiveAvgPool2d(output_size=(2, 2))
+)
+[DEBUG] Replacing children indices 3..4 in container 'stage4'
+
+[DEBUG ENTRY] _replace_layers: Replacing layer indices 3 through 4
+[DEBUG] Keeping layer 0: 'inception_4a' (Outside replacement range)
+[DEBUG] Keeping layer 1: 'inception_4b' (Outside replacement range)
+[DEBUG] Keeping layer 2: 'inception_4c' (Outside replacement range)
+[DEBUG] Replacing layer 3: 'inception_4d' with custom replacement module
+[DEBUG] Subsuming layer 4: 'inception_4e' with SmartIdentity
+[DEBUG] Keeping layer 5: 'maxpool4' (Outside replacement range)
+[DEBUG EXIT] _replace_layers complete. Generated new nn.Sequential container.
+[DEBUG] Updating container and moving model to cuda:0
+
+[DEBUG ENTRY] _update_container: path='stage4'
+[DEBUG] Resolving nested parent object for container path...
+[DEBUG] Assigning to module attribute: 'stage4'
+[DEBUG EXIT] Container update complete for 'stage4'.
+[DEBUG] Params before collapse: 5,991,082
+[DEBUG] Params after  collapse: 4,943,274
+[INFO] ΔParams = +1,047,808
+[DEBUG] Starting replacement forward validation...
+[DEBUG] Found inserted module 'inception_4d' for validation.
+[DEBUG] Replacement validation OK — output shape (512, 832, 2, 2)
+[STEP] Performing corrective pooling (if needed)...
+
+[STEP] ===== Starting _insert_corrective_pool =====
+[DEBUG] next_linear_name='fc'
+[DEBUG] Simulating input hook to measure actual input shape hitting the linear layer...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'fc'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cuda:0'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'fc'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 1024])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Actual tensor shape entering 'fc': (512, 1024)
+[DEBUG] Flattened size per sample: 1024
+[DEBUG] Locating linear layer module 'fc'...
+[DEBUG] Found next_linear_mod: Linear
+[DEBUG] Linear 'fc' expects in_features=1024
+[INFO] ✅ Shapes match (Current == Expected) — no corrective pooling needed.
+[STEP] Validating downstream after replacement...
+
+[DEBUG ENTRY] _validate_downstream for 'stage4'
+[DEBUG] start_idx=3, device=cuda:0, has_next_linear=True
+[DEBUG] Retrieving target container: 'stage4'
+[DEBUG] Container retrieved. It has 6 immediate children.
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 3: 'inception_4d'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Pushing test tensor of shape (512, 512, 2, 2) through inserted module...
+[DEBUG] Inserted module forward successful, output shape: (512, 832, 2, 2)
+[STEP] Scanning immediate downstream modules (index 4 to 6) for shape or runtime errors...
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (512, 832, 2, 2)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (512, 832, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG EXIT] _validate_downstream complete.
+[DEBUG EXIT] Block replacement complete for 'stage4.inception_4d.branch4.1.conv'.
+[INFO] ✅ Collapse complete for block 'stage4.inception_4d.branch4.1.conv' → 'stage4.inception_4e.branch1.conv'
+[DEBUG EXIT] _collapse_block returning updated model.
+[INFO] ✅ Successfully collapsed block 'test' (stage4.inception_4d.branch4.1.conv → stage4.inception_4e.branch1.conv)
+
+[STEP] Patching skip connections (handle_skips=True)...
+
+[DEBUG ENTRY] patch_skip_connections: Scanning model for skip-connection blocks...
+[DEBUG EXIT] patch_skip_connections complete. Total blocks patched: 0
+[DEBUG] Skip connections patched successfully globally.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions across model.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool1' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool1', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool2' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool2', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool3' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool3', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'adaptive_pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'adaptive_pool', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'maxpool4' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'maxpool4', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer '0' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, '0', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool', safe)
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 4,943,274
+[INFO] ΔParams = +1,047,808 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total attempted collapse targets: 1
+[DEBUG EXIT] collapse_only returning fully modified model.
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+[WARN] _SafePool: Underflow risk detected! H=2, W=2 vs kernel=3x3
+[INFO] _SafePool: Applying safe adaptive fallback to 2x2
+        [X] FAILED TO REDUCE: Backend rejected (Unmodified). Fracturing block...
+[•] Running Comprehensive Heuristic Analysis for InceptionNet on Cifar10...
+[✓] Stage 1 Complete. Exported 1 targets to 'InceptionNet_Cifar10_epochs3_pretrain3_JF_discovered_regions.json'.

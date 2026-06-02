@@ -1,0 +1,1888 @@
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA driver initialization failed, you might not have a CUDA gpu. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
+  return torch._C._cuda_getDeviceCount() > 0
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='VGG16', dataset='Cifar10', epochs=3, pretrain=3, experiment='discover', JF=True, Kevin=False, quant=False)
+============================================================
+
+[INFO] Hardware detected: CPU (CUDA Available: False)
+Loading CIFAR-10 data...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+Loading CIFAR-10 data...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+2026-06-01 21:11:10,123 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.bn_5, features.bn_6, features.bn_7, features.bn_8, features.bn_9, features.conv_10, features.conv_6, features.conv_7, features.conv_8, features.conv_9, features.pool_3, features.relu_5, features.relu_6, features.relu_7, features.relu_8, features.relu_9
+2026-06-01 21:11:19,457 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.bn_12, features.conv_13, features.relu_12
+2026-06-01 21:11:30,116 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.bn_5, features.bn_6, features.bn_7, features.bn_8, features.bn_9, features.conv_10, features.conv_6, features.conv_7, features.conv_8, features.conv_9, features.pool_3, features.relu_5, features.relu_6, features.relu_7, features.relu_8, features.relu_9
+2026-06-01 21:11:47,113 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.bn_12, features.bn_5, features.bn_6, features.bn_7, features.bn_8, features.bn_9, features.conv_10, features.conv_13, features.conv_6, features.conv_7, features.conv_8, features.conv_9, features.pool_3, features.relu_12, features.relu_5, features.relu_6, features.relu_7, features.relu_8, features.relu_9
+[DEBUG] Base checkpoint path resolved: None
+
+============================================================
+[MODE] STAGE 1: DISCOVERY & PRE-FLIGHT PROBE
+       Model: VGG16 | Dataset: Cifar10
+============================================================
+
+[INFO] Phase 1: Validating/Training 'Control' Baseline...
+
+--- Running experiment: Control ---
+    Budget allocated: 3 epochs
+
+=== Running JF experiment ===
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_1' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_1', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_2' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_2', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_3' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_3', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_4' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_4', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_5' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_5', safe)
+[•] Resumption detected. Architecture will be prepared for checkpoint loading.
+[•] Starting experiment 'Control' in workflow 'JF' | Epoch Target: 3
+[✓] Experiment 'Control' already completed. Found: final_JF_Control.pt
+    Skipping training and reloading metrics...
+
+[INFO] Phase 2: Loading Finalized Baseline Weights...
+[INFO] Found existing layer variances at /old_Users/jgafur/LTH/manuscript/Tranfer/runs/plots/VGG16/Cifar10/epochs3_pretrain3/layer_variances.json. Skipping probe.
+
+[INFO] Phase 3: Evaluating Candidate Regions (with Safe Fracturing)...
+    [STEP] Testing candidate sequence: features.conv_5 -> features.conv_10 (Length: 6)
+
+[DEBUG ENTRY] ===== collapse_only invoked =====
+[DEBUG] Configuration: device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Input tracking: model_provided=True, model_weights=None, input_shape=torch.Size([512, 3, 32, 32])
+[STEP] Using provided in-memory model instance (VGG16)
+[DEBUG] Calculating initial layer statistics...
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 0/64 zeros (0.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 0/64 zeros (0.00%)
+features.conv_3.weight: 0/73728 zeros (0.00%)
+features.conv_3.bias: 0/128 zeros (0.00%)
+features.bn_3.weight: 0/128 zeros (0.00%)
+features.bn_3.bias: 0/128 zeros (0.00%)
+features.conv_4.weight: 0/147456 zeros (0.00%)
+features.conv_4.bias: 0/128 zeros (0.00%)
+features.bn_4.weight: 0/128 zeros (0.00%)
+features.bn_4.bias: 0/128 zeros (0.00%)
+features.conv_5.weight: 0/294912 zeros (0.00%)
+features.conv_5.bias: 0/256 zeros (0.00%)
+features.bn_5.weight: 0/256 zeros (0.00%)
+features.bn_5.bias: 0/256 zeros (0.00%)
+features.conv_6.weight: 0/589824 zeros (0.00%)
+features.conv_6.bias: 0/256 zeros (0.00%)
+features.bn_6.weight: 0/256 zeros (0.00%)
+features.bn_6.bias: 0/256 zeros (0.00%)
+features.conv_7.weight: 0/589824 zeros (0.00%)
+features.conv_7.bias: 0/256 zeros (0.00%)
+features.bn_7.weight: 0/256 zeros (0.00%)
+features.bn_7.bias: 0/256 zeros (0.00%)
+features.conv_8.weight: 0/1179648 zeros (0.00%)
+features.conv_8.bias: 0/512 zeros (0.00%)
+features.bn_8.weight: 0/512 zeros (0.00%)
+features.bn_8.bias: 0/512 zeros (0.00%)
+features.conv_9.weight: 0/2359296 zeros (0.00%)
+features.conv_9.bias: 0/512 zeros (0.00%)
+features.bn_9.weight: 0/512 zeros (0.00%)
+features.bn_9.bias: 0/512 zeros (0.00%)
+features.conv_10.weight: 0/2359296 zeros (0.00%)
+features.conv_10.bias: 0/512 zeros (0.00%)
+features.bn_10.weight: 0/512 zeros (0.00%)
+features.bn_10.bias: 0/512 zeros (0.00%)
+features.conv_11.weight: 0/2359296 zeros (0.00%)
+features.conv_11.bias: 0/512 zeros (0.00%)
+features.bn_11.weight: 0/512 zeros (0.00%)
+features.bn_11.bias: 0/512 zeros (0.00%)
+features.conv_12.weight: 0/2359296 zeros (0.00%)
+features.conv_12.bias: 0/512 zeros (0.00%)
+features.bn_12.weight: 0/512 zeros (0.00%)
+features.bn_12.bias: 0/512 zeros (0.00%)
+features.conv_13.weight: 0/2359296 zeros (0.00%)
+features.conv_13.bias: 0/512 zeros (0.00%)
+features.bn_13.weight: 0/512 zeros (0.00%)
+features.bn_13.bias: 0/512 zeros (0.00%)
+classifier.fc_1.weight: 0/2097152 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc1.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc1.bias: 0/4096 zeros (0.00%)
+classifier.fc_2.weight: 0/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc2.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc2.bias: 0/4096 zeros (0.00%)
+classifier.fc_3.weight: 0/40960 zeros (0.00%)
+classifier.fc_3.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[DEBUG] Deepcopy completed and set to eval mode on 'cpu'.
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added dictionary mapping: test = ('features.conv_5' → 'features.conv_10')
+[DEBUG] Total configured collapse targets: 1
+    [BLOCK TARGET 0] features.conv_5 → features.conv_10
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing loop...
+
+[INFO] Processing collapse task 'test': 'features.conv_5' → 'features.conv_10'
+[DEBUG] Triggering _collapse_block for 'test'...
+
+[INFO] ===== Collapsing block: features.conv_5 → features.conv_10 =====
+[DEBUG ENTRY] _collapse_block: input_shape=torch.Size([512, 3, 32, 32]), device=cpu
+[STEP 1] Locating block boundaries...
+
+[DEBUG ENTRY] _locate_and_prepare_block called.
+[DEBUG] Locating and preparing block: start='features.conv_5', end:'features.conv_10'
+[DEBUG] Parsed start_parts: ['features', 'conv_5']
+[DEBUG] Parsed end_parts: ['features', 'conv_10']
+[DEBUG] Calculated LCA path from common parts: 'features'
+[DEBUG] Containers resolved → chosen LCA container: 'features'
+[DEBUG] Found 44 children in container 'features'
+[DEBUG] Searching for start and end indices in named_layers...
+[DEBUG] Found start_idx at 14 (child_name: 'conv_5', prefix: 'features.conv_5')
+[DEBUG] Found end_idx at 30 (child_name: 'conv_10', prefix: 'features.conv_10')
+[DEBUG] Both indices found. Breaking search loop.
+[DEBUG] Block slice length: 17
+[DEBUG] Collecting collapsible layers (Conv2d, Linear)...
+[DEBUG] Block composition → 6 Conv2d, 0 Linear (collapse_mode=conv)
+[DEBUG EXIT] _locate_and_prepare_block returning successfully with first_layer='conv_5', last_layer='conv_10'
+[DEBUG] Located block with 17 layers
+    [LAYER] conv_5: Conv2d
+    [LAYER] bn_5: BatchNorm2d
+    [LAYER] relu_5: ReLU
+    [LAYER] conv_6: Conv2d
+    [LAYER] bn_6: BatchNorm2d
+    [LAYER] relu_6: ReLU
+    [LAYER] conv_7: Conv2d
+    [LAYER] bn_7: BatchNorm2d
+    [LAYER] relu_7: ReLU
+    [LAYER] pool_3: MaxPool2d
+    [LAYER] conv_8: Conv2d
+    [LAYER] bn_8: BatchNorm2d
+    [LAYER] relu_8: ReLU
+    [LAYER] conv_9: Conv2d
+    [LAYER] bn_9: BatchNorm2d
+    [LAYER] relu_9: ReLU
+    [LAYER] conv_10: Conv2d
+[STEP 2] Capturing activation before start layer 'features.conv_5'...
+
+[DEBUG ENTRY] _capture_preblock_activation for 'features.conv_5'
+[DEBUG] Attempting to capture activation using simulation hook...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'features.conv_5'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cpu'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'features.conv_5'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 128, 8, 8])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Successfully captured activation via hook → shape: (512, 128, 8, 8)
+[DEBUG] Total trainable parameters before collapse: 33,663,050
+[DEBUG EXIT] _capture_preblock_activation complete.
+[DEBUG] Input activation shape entering block: (512, 128, 8, 8)
+[STEP 3] Searching for next linear layer after 'features.conv_10'...
+
+[DEBUG ENTRY] _find_next_linear: Searching for nn.Linear after 'features.conv_10'...
+[DEBUG] Flattened model into 56 total modules.
+[DEBUG] Searching for exact index of 'features.conv_10'...
+[DEBUG] Exact layer match found at global index 32: 'features.conv_10' (Conv2d)
+[DEBUG] Scanning forward from index 33 for next Linear...
+[DEBUG] Found Linear layer ahead: 'classifier.fc_1' (Linear)
+[DEBUG EXIT] Next Linear detected → name='classifier.fc_1', module=Linear(in_features=512, out_features=4096, bias=True)
+[DEBUG] Next linear layer: classifier.fc_1 -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[DEBUG ENTRY] _analyze_block_output: Analyzing collapsed block (17 layers)...
+[DEBUG] Input tensor shape before block forward pass: (512, 128, 8, 8)
+[DEBUG] Running synthetic forward pass through original block layers:
+    [DEBUG] Forwarding Layer 1/17: 'conv_5' (Conv2d) | input_shape=(512, 128, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 2/17: 'bn_5' (BatchNorm2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 3/17: 'relu_5' (ReLU) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 4/17: 'conv_6' (Conv2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 5/17: 'bn_6' (BatchNorm2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 6/17: 'relu_6' (ReLU) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 7/17: 'conv_7' (Conv2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 8/17: 'bn_7' (BatchNorm2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 9/17: 'relu_7' (ReLU) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 10/17: 'pool_3' (MaxPool2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 4, 4)
+    [DEBUG] Forwarding Layer 11/17: 'conv_8' (Conv2d) | input_shape=(512, 256, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 12/17: 'bn_8' (BatchNorm2d) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 13/17: 'relu_8' (ReLU) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 14/17: 'conv_9' (Conv2d) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 15/17: 'bn_9' (BatchNorm2d) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 16/17: 'relu_9' (ReLU) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 17/17: 'conv_10' (Conv2d) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+[DEBUG] Synthesis complete. Final block output shape: (512, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Scanning original block for explicit pooling layers...
+[DEBUG] Detected explicit pool in original block: MaxPool2d
+[DEBUG] Heuristic next linear in_features = 512
+[DEBUG] Comparing spatial dims for Linear compatibility: expected_hw=1, current_hw=16 (HxW=4x4)
+[DEBUG] Suggesting AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[DEBUG] Scanning model globally for shortcut module out_channels...
+[DEBUG EXIT] _analyze_block_output returning dictionary.
+         out_shape=(512, 512, 4, 4)
+         out_channels=512
+         has_pool=True
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] Block output analysis result:
+    out_shape: (512, 512, 4, 4)
+    out_channels: 512
+    pool_layer: MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    adaptive_pool_to_use: AdaptiveAvgPool2d(output_size=(1, 1))
+    shortcut_out_channels: None
+    linear_in_features_heuristic: 512
+[STEP 5] Rebuilding and replacing collapsed block...
+
+[DEBUG ENTRY] _build_and_replace_block for collapsed block 'features.conv_5'
+[DEBUG] Analyzing info dict keys: ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Target device: cpu
+[DEBUG] Extracted start_idx=14, end_idx=30, start_container_name='features'
+[DEBUG] Replacement target spatial size (HxW): 4x4
+[DEBUG] Replacement conv in_channels=128, out_channels=512
+[DEBUG] Number of original_convs passed in: 6
+[DEBUG] Analyzing first_conv: groups=1, in_channels=128, out_channels=256, kernel_size=(3, 3)
+[DEBUG] Rebuilding as POINTWISE conv (kernel_size=1, padding=0)
+[DEBUG] Built replacement Sequential:
+Sequential(
+  (conv_1x1): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+  (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (relu): ReLU()
+  (adaptive_pool): AdaptiveAvgPool2d(output_size=(4, 4))
+)
+[DEBUG] Replacing children indices 14..30 in container 'features'
+
+[DEBUG ENTRY] _replace_layers: Replacing layer indices 14 through 30
+[DEBUG] Keeping layer 0: 'conv_1' (Outside replacement range)
+[DEBUG] Keeping layer 1: 'bn_1' (Outside replacement range)
+[DEBUG] Keeping layer 2: 'relu_1' (Outside replacement range)
+[DEBUG] Keeping layer 3: 'conv_2' (Outside replacement range)
+[DEBUG] Keeping layer 4: 'bn_2' (Outside replacement range)
+[DEBUG] Keeping layer 5: 'relu_2' (Outside replacement range)
+[DEBUG] Keeping layer 6: 'pool_1' (Outside replacement range)
+[DEBUG] Keeping layer 7: 'conv_3' (Outside replacement range)
+[DEBUG] Keeping layer 8: 'bn_3' (Outside replacement range)
+[DEBUG] Keeping layer 9: 'relu_3' (Outside replacement range)
+[DEBUG] Keeping layer 10: 'conv_4' (Outside replacement range)
+[DEBUG] Keeping layer 11: 'bn_4' (Outside replacement range)
+[DEBUG] Keeping layer 12: 'relu_4' (Outside replacement range)
+[DEBUG] Keeping layer 13: 'pool_2' (Outside replacement range)
+[DEBUG] Replacing layer 14: 'conv_5' with custom replacement module
+[DEBUG] Subsuming layer 15: 'bn_5' with SmartIdentity
+[DEBUG] Subsuming layer 16: 'relu_5' with SmartIdentity
+[DEBUG] Subsuming layer 17: 'conv_6' with SmartIdentity
+[DEBUG] Subsuming layer 18: 'bn_6' with SmartIdentity
+[DEBUG] Subsuming layer 19: 'relu_6' with SmartIdentity
+[DEBUG] Subsuming layer 20: 'conv_7' with SmartIdentity
+[DEBUG] Subsuming layer 21: 'bn_7' with SmartIdentity
+[DEBUG] Subsuming layer 22: 'relu_7' with SmartIdentity
+[DEBUG] Subsuming layer 23: 'pool_3' with SmartIdentity
+[DEBUG] Subsuming layer 24: 'conv_8' with SmartIdentity
+[DEBUG] Subsuming layer 25: 'bn_8' with SmartIdentity
+[DEBUG] Subsuming layer 26: 'relu_8' with SmartIdentity
+[DEBUG] Subsuming layer 27: 'conv_9' with SmartIdentity
+[DEBUG] Subsuming layer 28: 'bn_9' with SmartIdentity
+[DEBUG] Subsuming layer 29: 'relu_9' with SmartIdentity
+[DEBUG] Subsuming layer 30: 'conv_10' with SmartIdentity
+[DEBUG] Keeping layer 31: 'bn_10' (Outside replacement range)
+[DEBUG] Keeping layer 32: 'relu_10' (Outside replacement range)
+[DEBUG] Keeping layer 33: 'pool_4' (Outside replacement range)
+[DEBUG] Keeping layer 34: 'conv_11' (Outside replacement range)
+[DEBUG] Keeping layer 35: 'bn_11' (Outside replacement range)
+[DEBUG] Keeping layer 36: 'relu_11' (Outside replacement range)
+[DEBUG] Keeping layer 37: 'conv_12' (Outside replacement range)
+[DEBUG] Keeping layer 38: 'bn_12' (Outside replacement range)
+[DEBUG] Keeping layer 39: 'relu_12' (Outside replacement range)
+[DEBUG] Keeping layer 40: 'conv_13' (Outside replacement range)
+[DEBUG] Keeping layer 41: 'bn_13' (Outside replacement range)
+[DEBUG] Keeping layer 42: 'relu_13' (Outside replacement range)
+[DEBUG] Keeping layer 43: 'pool_5' (Outside replacement range)
+[DEBUG EXIT] _replace_layers complete. Generated new nn.Sequential container.
+[DEBUG] Updating container and moving model to cpu
+
+[DEBUG ENTRY] _update_container: path='features'
+[DEBUG] Resolving nested parent object for container path...
+[DEBUG] Assigning to module attribute: 'features'
+[DEBUG EXIT] Container update complete for 'features'.
+[DEBUG] Params before collapse: 33,663,050
+[DEBUG] Params after  collapse: 26,350,922
+[INFO] ΔParams = +7,312,128
+[DEBUG] Starting replacement forward validation...
+[DEBUG] Found inserted module 'conv_5' for validation.
+[DEBUG] Replacement validation OK — output shape (512, 512, 4, 4)
+[STEP] Performing corrective pooling (if needed)...
+
+[STEP] ===== Starting _insert_corrective_pool =====
+[DEBUG] next_linear_name='classifier.fc_1'
+[DEBUG] Simulating input hook to measure actual input shape hitting the linear layer...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'classifier.fc_1'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cpu'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'classifier.fc_1'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 512])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Actual tensor shape entering 'classifier.fc_1': (512, 512)
+[DEBUG] Flattened size per sample: 512
+[DEBUG] Locating linear layer module 'classifier.fc_1'...
+[DEBUG] Found next_linear_mod: Linear
+[DEBUG] Linear 'classifier.fc_1' expects in_features=512
+[INFO] ✅ Shapes match (Current == Expected) — no corrective pooling needed.
+[STEP] Validating downstream after replacement...
+
+[DEBUG ENTRY] _validate_downstream for 'features'
+[DEBUG] start_idx=14, device=cpu, has_next_linear=True
+[DEBUG] Retrieving target container: 'features'
+[DEBUG] Container retrieved. It has 44 immediate children.
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 14: 'conv_5'
+[STEP] Validating inserted module 'Sequential' at index 14...
+[DEBUG] Pushing test tensor of shape (512, 128, 8, 8) through inserted module...
+[DEBUG] Inserted module forward successful, output shape: (512, 512, 4, 4)
+[STEP] Scanning immediate downstream modules (index 15 to 44) for shape or runtime errors...
+[DEBUG] Downstream 'features.bn_5' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_5' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_3' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_4' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (512, 512, 1, 1)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG EXIT] _validate_downstream complete.
+[DEBUG EXIT] Block replacement complete for 'features.conv_5'.
+[INFO] ✅ Collapse complete for block 'features.conv_5' → 'features.conv_10'
+[DEBUG EXIT] _collapse_block returning updated model.
+[INFO] ✅ Successfully collapsed block 'test' (features.conv_5 → features.conv_10)
+
+[STEP] Patching skip connections (handle_skips=True)...
+
+[DEBUG ENTRY] patch_skip_connections: Scanning model for skip-connection blocks...
+[DEBUG EXIT] patch_skip_connections complete. Total blocks patched: 0
+[DEBUG] Skip connections patched successfully globally.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 10 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions across model.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_1' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_1', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_2' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_2', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'adaptive_pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'adaptive_pool', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_4' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_4', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_5' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_5', safe)
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 26,350,922
+[INFO] ΔParams = +7,312,128 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total attempted collapse targets: 1
+[DEBUG EXIT] collapse_only returning fully modified model.
+        [✓] ACCEPTED: Params (33,663,050 -> 26,350,922) | FLOPs (332,681,216 -> 148,099,072)
+    [STEP] Testing candidate sequence: features.conv_12 -> features.conv_13 (Length: 2)
+
+[DEBUG ENTRY] ===== collapse_only invoked =====
+[DEBUG] Configuration: device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Input tracking: model_provided=True, model_weights=None, input_shape=torch.Size([512, 3, 32, 32])
+[STEP] Using provided in-memory model instance (VGG16)
+[DEBUG] Calculating initial layer statistics...
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 0/64 zeros (0.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 0/64 zeros (0.00%)
+features.conv_3.weight: 0/73728 zeros (0.00%)
+features.conv_3.bias: 0/128 zeros (0.00%)
+features.bn_3.weight: 0/128 zeros (0.00%)
+features.bn_3.bias: 0/128 zeros (0.00%)
+features.conv_4.weight: 0/147456 zeros (0.00%)
+features.conv_4.bias: 0/128 zeros (0.00%)
+features.bn_4.weight: 0/128 zeros (0.00%)
+features.bn_4.bias: 0/128 zeros (0.00%)
+features.conv_5.weight: 0/294912 zeros (0.00%)
+features.conv_5.bias: 0/256 zeros (0.00%)
+features.bn_5.weight: 0/256 zeros (0.00%)
+features.bn_5.bias: 0/256 zeros (0.00%)
+features.conv_6.weight: 0/589824 zeros (0.00%)
+features.conv_6.bias: 0/256 zeros (0.00%)
+features.bn_6.weight: 0/256 zeros (0.00%)
+features.bn_6.bias: 0/256 zeros (0.00%)
+features.conv_7.weight: 0/589824 zeros (0.00%)
+features.conv_7.bias: 0/256 zeros (0.00%)
+features.bn_7.weight: 0/256 zeros (0.00%)
+features.bn_7.bias: 0/256 zeros (0.00%)
+features.conv_8.weight: 0/1179648 zeros (0.00%)
+features.conv_8.bias: 0/512 zeros (0.00%)
+features.bn_8.weight: 0/512 zeros (0.00%)
+features.bn_8.bias: 0/512 zeros (0.00%)
+features.conv_9.weight: 0/2359296 zeros (0.00%)
+features.conv_9.bias: 0/512 zeros (0.00%)
+features.bn_9.weight: 0/512 zeros (0.00%)
+features.bn_9.bias: 0/512 zeros (0.00%)
+features.conv_10.weight: 0/2359296 zeros (0.00%)
+features.conv_10.bias: 0/512 zeros (0.00%)
+features.bn_10.weight: 0/512 zeros (0.00%)
+features.bn_10.bias: 0/512 zeros (0.00%)
+features.conv_11.weight: 0/2359296 zeros (0.00%)
+features.conv_11.bias: 0/512 zeros (0.00%)
+features.bn_11.weight: 0/512 zeros (0.00%)
+features.bn_11.bias: 0/512 zeros (0.00%)
+features.conv_12.weight: 0/2359296 zeros (0.00%)
+features.conv_12.bias: 0/512 zeros (0.00%)
+features.bn_12.weight: 0/512 zeros (0.00%)
+features.bn_12.bias: 0/512 zeros (0.00%)
+features.conv_13.weight: 0/2359296 zeros (0.00%)
+features.conv_13.bias: 0/512 zeros (0.00%)
+features.bn_13.weight: 0/512 zeros (0.00%)
+features.bn_13.bias: 0/512 zeros (0.00%)
+classifier.fc_1.weight: 0/2097152 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc1.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc1.bias: 0/4096 zeros (0.00%)
+classifier.fc_2.weight: 0/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc2.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc2.bias: 0/4096 zeros (0.00%)
+classifier.fc_3.weight: 0/40960 zeros (0.00%)
+classifier.fc_3.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[DEBUG] Deepcopy completed and set to eval mode on 'cpu'.
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added dictionary mapping: test = ('features.conv_12' → 'features.conv_13')
+[DEBUG] Total configured collapse targets: 1
+    [BLOCK TARGET 0] features.conv_12 → features.conv_13
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing loop...
+
+[INFO] Processing collapse task 'test': 'features.conv_12' → 'features.conv_13'
+[DEBUG] Triggering _collapse_block for 'test'...
+
+[INFO] ===== Collapsing block: features.conv_12 → features.conv_13 =====
+[DEBUG ENTRY] _collapse_block: input_shape=torch.Size([512, 3, 32, 32]), device=cpu
+[STEP 1] Locating block boundaries...
+
+[DEBUG ENTRY] _locate_and_prepare_block called.
+[DEBUG] Locating and preparing block: start='features.conv_12', end:'features.conv_13'
+[DEBUG] Parsed start_parts: ['features', 'conv_12']
+[DEBUG] Parsed end_parts: ['features', 'conv_13']
+[DEBUG] Calculated LCA path from common parts: 'features'
+[DEBUG] Containers resolved → chosen LCA container: 'features'
+[DEBUG] Found 44 children in container 'features'
+[DEBUG] Searching for start and end indices in named_layers...
+[DEBUG] Found start_idx at 37 (child_name: 'conv_12', prefix: 'features.conv_12')
+[DEBUG] Found end_idx at 40 (child_name: 'conv_13', prefix: 'features.conv_13')
+[DEBUG] Both indices found. Breaking search loop.
+[DEBUG] Block slice length: 4
+[DEBUG] Collecting collapsible layers (Conv2d, Linear)...
+[DEBUG] Block composition → 2 Conv2d, 0 Linear (collapse_mode=conv)
+[DEBUG EXIT] _locate_and_prepare_block returning successfully with first_layer='conv_12', last_layer='conv_13'
+[DEBUG] Located block with 4 layers
+    [LAYER] conv_12: Conv2d
+    [LAYER] bn_12: BatchNorm2d
+    [LAYER] relu_12: ReLU
+    [LAYER] conv_13: Conv2d
+[STEP 2] Capturing activation before start layer 'features.conv_12'...
+
+[DEBUG ENTRY] _capture_preblock_activation for 'features.conv_12'
+[DEBUG] Attempting to capture activation using simulation hook...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'features.conv_12'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cpu'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'features.conv_12'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 512, 2, 2])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Successfully captured activation via hook → shape: (512, 512, 2, 2)
+[DEBUG] Total trainable parameters before collapse: 33,663,050
+[DEBUG EXIT] _capture_preblock_activation complete.
+[DEBUG] Input activation shape entering block: (512, 512, 2, 2)
+[STEP 3] Searching for next linear layer after 'features.conv_13'...
+
+[DEBUG ENTRY] _find_next_linear: Searching for nn.Linear after 'features.conv_13'...
+[DEBUG] Flattened model into 56 total modules.
+[DEBUG] Searching for exact index of 'features.conv_13'...
+[DEBUG] Exact layer match found at global index 42: 'features.conv_13' (Conv2d)
+[DEBUG] Scanning forward from index 43 for next Linear...
+[DEBUG] Found Linear layer ahead: 'classifier.fc_1' (Linear)
+[DEBUG EXIT] Next Linear detected → name='classifier.fc_1', module=Linear(in_features=512, out_features=4096, bias=True)
+[DEBUG] Next linear layer: classifier.fc_1 -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[DEBUG ENTRY] _analyze_block_output: Analyzing collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block forward pass: (512, 512, 2, 2)
+[DEBUG] Running synthetic forward pass through original block layers:
+    [DEBUG] Forwarding Layer 1/4: 'conv_12' (Conv2d) | input_shape=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Forwarding Layer 2/4: 'bn_12' (BatchNorm2d) | input_shape=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Forwarding Layer 3/4: 'relu_12' (ReLU) | input_shape=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Forwarding Layer 4/4: 'conv_13' (Conv2d) | input_shape=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+[DEBUG] Synthesis complete. Final block output shape: (512, 512, 2, 2)
+[DEBUG] Determined out_channels=512
+[DEBUG] Scanning original block for explicit pooling layers...
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 512
+[DEBUG] Comparing spatial dims for Linear compatibility: expected_hw=1, current_hw=4 (HxW=2x2)
+[DEBUG] Suggesting AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[DEBUG] Scanning model globally for shortcut module out_channels...
+[DEBUG EXIT] _analyze_block_output returning dictionary.
+         out_shape=(512, 512, 2, 2)
+         out_channels=512
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] Block output analysis result:
+    out_shape: (512, 512, 2, 2)
+    out_channels: 512
+    pool_layer: None
+    adaptive_pool_to_use: AdaptiveAvgPool2d(output_size=(1, 1))
+    shortcut_out_channels: None
+    linear_in_features_heuristic: 512
+[STEP 5] Rebuilding and replacing collapsed block...
+
+[DEBUG ENTRY] _build_and_replace_block for collapsed block 'features.conv_12'
+[DEBUG] Analyzing info dict keys: ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Target device: cpu
+[DEBUG] Extracted start_idx=37, end_idx=40, start_container_name='features'
+[DEBUG] Replacement target spatial size (HxW): 2x2
+[DEBUG] Replacement conv in_channels=512, out_channels=512
+[DEBUG] Number of original_convs passed in: 2
+[DEBUG] Analyzing first_conv: groups=1, in_channels=512, out_channels=512, kernel_size=(3, 3)
+[DEBUG] Rebuilding as POINTWISE conv (kernel_size=1, padding=0)
+[DEBUG] Built replacement Sequential:
+Sequential(
+  (conv_1x1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+  (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (relu): ReLU()
+  (adaptive_pool): AdaptiveAvgPool2d(output_size=(2, 2))
+)
+[DEBUG] Replacing children indices 37..40 in container 'features'
+
+[DEBUG ENTRY] _replace_layers: Replacing layer indices 37 through 40
+[DEBUG] Keeping layer 0: 'conv_1' (Outside replacement range)
+[DEBUG] Keeping layer 1: 'bn_1' (Outside replacement range)
+[DEBUG] Keeping layer 2: 'relu_1' (Outside replacement range)
+[DEBUG] Keeping layer 3: 'conv_2' (Outside replacement range)
+[DEBUG] Keeping layer 4: 'bn_2' (Outside replacement range)
+[DEBUG] Keeping layer 5: 'relu_2' (Outside replacement range)
+[DEBUG] Keeping layer 6: 'pool_1' (Outside replacement range)
+[DEBUG] Keeping layer 7: 'conv_3' (Outside replacement range)
+[DEBUG] Keeping layer 8: 'bn_3' (Outside replacement range)
+[DEBUG] Keeping layer 9: 'relu_3' (Outside replacement range)
+[DEBUG] Keeping layer 10: 'conv_4' (Outside replacement range)
+[DEBUG] Keeping layer 11: 'bn_4' (Outside replacement range)
+[DEBUG] Keeping layer 12: 'relu_4' (Outside replacement range)
+[DEBUG] Keeping layer 13: 'pool_2' (Outside replacement range)
+[DEBUG] Keeping layer 14: 'conv_5' (Outside replacement range)
+[DEBUG] Keeping layer 15: 'bn_5' (Outside replacement range)
+[DEBUG] Keeping layer 16: 'relu_5' (Outside replacement range)
+[DEBUG] Keeping layer 17: 'conv_6' (Outside replacement range)
+[DEBUG] Keeping layer 18: 'bn_6' (Outside replacement range)
+[DEBUG] Keeping layer 19: 'relu_6' (Outside replacement range)
+[DEBUG] Keeping layer 20: 'conv_7' (Outside replacement range)
+[DEBUG] Keeping layer 21: 'bn_7' (Outside replacement range)
+[DEBUG] Keeping layer 22: 'relu_7' (Outside replacement range)
+[DEBUG] Keeping layer 23: 'pool_3' (Outside replacement range)
+[DEBUG] Keeping layer 24: 'conv_8' (Outside replacement range)
+[DEBUG] Keeping layer 25: 'bn_8' (Outside replacement range)
+[DEBUG] Keeping layer 26: 'relu_8' (Outside replacement range)
+[DEBUG] Keeping layer 27: 'conv_9' (Outside replacement range)
+[DEBUG] Keeping layer 28: 'bn_9' (Outside replacement range)
+[DEBUG] Keeping layer 29: 'relu_9' (Outside replacement range)
+[DEBUG] Keeping layer 30: 'conv_10' (Outside replacement range)
+[DEBUG] Keeping layer 31: 'bn_10' (Outside replacement range)
+[DEBUG] Keeping layer 32: 'relu_10' (Outside replacement range)
+[DEBUG] Keeping layer 33: 'pool_4' (Outside replacement range)
+[DEBUG] Keeping layer 34: 'conv_11' (Outside replacement range)
+[DEBUG] Keeping layer 35: 'bn_11' (Outside replacement range)
+[DEBUG] Keeping layer 36: 'relu_11' (Outside replacement range)
+[DEBUG] Replacing layer 37: 'conv_12' with custom replacement module
+[DEBUG] Subsuming layer 38: 'bn_12' with SmartIdentity
+[DEBUG] Subsuming layer 39: 'relu_12' with SmartIdentity
+[DEBUG] Subsuming layer 40: 'conv_13' with SmartIdentity
+[DEBUG] Keeping layer 41: 'bn_13' (Outside replacement range)
+[DEBUG] Keeping layer 42: 'relu_13' (Outside replacement range)
+[DEBUG] Keeping layer 43: 'pool_5' (Outside replacement range)
+[DEBUG EXIT] _replace_layers complete. Generated new nn.Sequential container.
+[DEBUG] Updating container and moving model to cpu
+
+[DEBUG ENTRY] _update_container: path='features'
+[DEBUG] Resolving nested parent object for container path...
+[DEBUG] Assigning to module attribute: 'features'
+[DEBUG EXIT] Container update complete for 'features'.
+[DEBUG] Params before collapse: 33,663,050
+[DEBUG] Params after  collapse: 29,205,578
+[INFO] ΔParams = +4,457,472
+[DEBUG] Starting replacement forward validation...
+[DEBUG] Found inserted module 'conv_12' for validation.
+[DEBUG] Replacement validation OK — output shape (512, 512, 2, 2)
+[STEP] Performing corrective pooling (if needed)...
+
+[STEP] ===== Starting _insert_corrective_pool =====
+[DEBUG] next_linear_name='classifier.fc_1'
+[DEBUG] Simulating input hook to measure actual input shape hitting the linear layer...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'classifier.fc_1'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cpu'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'classifier.fc_1'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 512])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Actual tensor shape entering 'classifier.fc_1': (512, 512)
+[DEBUG] Flattened size per sample: 512
+[DEBUG] Locating linear layer module 'classifier.fc_1'...
+[DEBUG] Found next_linear_mod: Linear
+[DEBUG] Linear 'classifier.fc_1' expects in_features=512
+[INFO] ✅ Shapes match (Current == Expected) — no corrective pooling needed.
+[STEP] Validating downstream after replacement...
+
+[DEBUG ENTRY] _validate_downstream for 'features'
+[DEBUG] start_idx=37, device=cpu, has_next_linear=True
+[DEBUG] Retrieving target container: 'features'
+[DEBUG] Container retrieved. It has 44 immediate children.
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 37: 'conv_12'
+[STEP] Validating inserted module 'Sequential' at index 37...
+[DEBUG] Pushing test tensor of shape (512, 512, 2, 2) through inserted module...
+[DEBUG] Inserted module forward successful, output shape: (512, 512, 2, 2)
+[STEP] Scanning immediate downstream modules (index 38 to 44) for shape or runtime errors...
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (512, 512, 1, 1)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG EXIT] _validate_downstream complete.
+[DEBUG EXIT] Block replacement complete for 'features.conv_12'.
+[INFO] ✅ Collapse complete for block 'features.conv_12' → 'features.conv_13'
+[DEBUG EXIT] _collapse_block returning updated model.
+[INFO] ✅ Successfully collapsed block 'test' (features.conv_12 → features.conv_13)
+
+[STEP] Patching skip connections (handle_skips=True)...
+
+[DEBUG ENTRY] patch_skip_connections: Scanning model for skip-connection blocks...
+[DEBUG EXIT] patch_skip_connections complete. Total blocks patched: 0
+[DEBUG] Skip connections patched successfully globally.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 14 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions across model.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_1' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_1', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_2' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_2', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_3' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_3', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_4' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_4', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'adaptive_pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'adaptive_pool', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_5' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_5', safe)
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 29,205,578
+[INFO] ΔParams = +4,457,472 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total attempted collapse targets: 1
+[DEBUG EXIT] collapse_only returning fully modified model.
+        [✓] ACCEPTED: Params (33,663,050 -> 29,205,578) | FLOPs (332,681,216 -> 314,857,472)
+
+[INFO] Phase 4: Validating 'Dynamic_Region_All_Combined' (Greedy Integration)...
+
+[DEBUG ENTRY] ===== collapse_only invoked =====
+[DEBUG] Configuration: device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Input tracking: model_provided=True, model_weights=None, input_shape=torch.Size([512, 3, 32, 32])
+[STEP] Using provided in-memory model instance (VGG16)
+[DEBUG] Calculating initial layer statistics...
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 0/64 zeros (0.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 0/64 zeros (0.00%)
+features.conv_3.weight: 0/73728 zeros (0.00%)
+features.conv_3.bias: 0/128 zeros (0.00%)
+features.bn_3.weight: 0/128 zeros (0.00%)
+features.bn_3.bias: 0/128 zeros (0.00%)
+features.conv_4.weight: 0/147456 zeros (0.00%)
+features.conv_4.bias: 0/128 zeros (0.00%)
+features.bn_4.weight: 0/128 zeros (0.00%)
+features.bn_4.bias: 0/128 zeros (0.00%)
+features.conv_5.weight: 0/294912 zeros (0.00%)
+features.conv_5.bias: 0/256 zeros (0.00%)
+features.bn_5.weight: 0/256 zeros (0.00%)
+features.bn_5.bias: 0/256 zeros (0.00%)
+features.conv_6.weight: 0/589824 zeros (0.00%)
+features.conv_6.bias: 0/256 zeros (0.00%)
+features.bn_6.weight: 0/256 zeros (0.00%)
+features.bn_6.bias: 0/256 zeros (0.00%)
+features.conv_7.weight: 0/589824 zeros (0.00%)
+features.conv_7.bias: 0/256 zeros (0.00%)
+features.bn_7.weight: 0/256 zeros (0.00%)
+features.bn_7.bias: 0/256 zeros (0.00%)
+features.conv_8.weight: 0/1179648 zeros (0.00%)
+features.conv_8.bias: 0/512 zeros (0.00%)
+features.bn_8.weight: 0/512 zeros (0.00%)
+features.bn_8.bias: 0/512 zeros (0.00%)
+features.conv_9.weight: 0/2359296 zeros (0.00%)
+features.conv_9.bias: 0/512 zeros (0.00%)
+features.bn_9.weight: 0/512 zeros (0.00%)
+features.bn_9.bias: 0/512 zeros (0.00%)
+features.conv_10.weight: 0/2359296 zeros (0.00%)
+features.conv_10.bias: 0/512 zeros (0.00%)
+features.bn_10.weight: 0/512 zeros (0.00%)
+features.bn_10.bias: 0/512 zeros (0.00%)
+features.conv_11.weight: 0/2359296 zeros (0.00%)
+features.conv_11.bias: 0/512 zeros (0.00%)
+features.bn_11.weight: 0/512 zeros (0.00%)
+features.bn_11.bias: 0/512 zeros (0.00%)
+features.conv_12.weight: 0/2359296 zeros (0.00%)
+features.conv_12.bias: 0/512 zeros (0.00%)
+features.bn_12.weight: 0/512 zeros (0.00%)
+features.bn_12.bias: 0/512 zeros (0.00%)
+features.conv_13.weight: 0/2359296 zeros (0.00%)
+features.conv_13.bias: 0/512 zeros (0.00%)
+features.bn_13.weight: 0/512 zeros (0.00%)
+features.bn_13.bias: 0/512 zeros (0.00%)
+classifier.fc_1.weight: 0/2097152 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc1.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc1.bias: 0/4096 zeros (0.00%)
+classifier.fc_2.weight: 0/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc2.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc2.bias: 0/4096 zeros (0.00%)
+classifier.fc_3.weight: 0/40960 zeros (0.00%)
+classifier.fc_3.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[DEBUG] Deepcopy completed and set to eval mode on 'cpu'.
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added dictionary mapping: comb_0 = ('features.conv_5' → 'features.conv_10')
+[DEBUG] Total configured collapse targets: 1
+    [BLOCK TARGET 0] features.conv_5 → features.conv_10
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing loop...
+
+[INFO] Processing collapse task 'comb_0': 'features.conv_5' → 'features.conv_10'
+[DEBUG] Triggering _collapse_block for 'comb_0'...
+
+[INFO] ===== Collapsing block: features.conv_5 → features.conv_10 =====
+[DEBUG ENTRY] _collapse_block: input_shape=torch.Size([512, 3, 32, 32]), device=cpu
+[STEP 1] Locating block boundaries...
+
+[DEBUG ENTRY] _locate_and_prepare_block called.
+[DEBUG] Locating and preparing block: start='features.conv_5', end:'features.conv_10'
+[DEBUG] Parsed start_parts: ['features', 'conv_5']
+[DEBUG] Parsed end_parts: ['features', 'conv_10']
+[DEBUG] Calculated LCA path from common parts: 'features'
+[DEBUG] Containers resolved → chosen LCA container: 'features'
+[DEBUG] Found 44 children in container 'features'
+[DEBUG] Searching for start and end indices in named_layers...
+[DEBUG] Found start_idx at 14 (child_name: 'conv_5', prefix: 'features.conv_5')
+[DEBUG] Found end_idx at 30 (child_name: 'conv_10', prefix: 'features.conv_10')
+[DEBUG] Both indices found. Breaking search loop.
+[DEBUG] Block slice length: 17
+[DEBUG] Collecting collapsible layers (Conv2d, Linear)...
+[DEBUG] Block composition → 6 Conv2d, 0 Linear (collapse_mode=conv)
+[DEBUG EXIT] _locate_and_prepare_block returning successfully with first_layer='conv_5', last_layer='conv_10'
+[DEBUG] Located block with 17 layers
+    [LAYER] conv_5: Conv2d
+    [LAYER] bn_5: BatchNorm2d
+    [LAYER] relu_5: ReLU
+    [LAYER] conv_6: Conv2d
+    [LAYER] bn_6: BatchNorm2d
+    [LAYER] relu_6: ReLU
+    [LAYER] conv_7: Conv2d
+    [LAYER] bn_7: BatchNorm2d
+    [LAYER] relu_7: ReLU
+    [LAYER] pool_3: MaxPool2d
+    [LAYER] conv_8: Conv2d
+    [LAYER] bn_8: BatchNorm2d
+    [LAYER] relu_8: ReLU
+    [LAYER] conv_9: Conv2d
+    [LAYER] bn_9: BatchNorm2d
+    [LAYER] relu_9: ReLU
+    [LAYER] conv_10: Conv2d
+[STEP 2] Capturing activation before start layer 'features.conv_5'...
+
+[DEBUG ENTRY] _capture_preblock_activation for 'features.conv_5'
+[DEBUG] Attempting to capture activation using simulation hook...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'features.conv_5'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cpu'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'features.conv_5'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 128, 8, 8])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Successfully captured activation via hook → shape: (512, 128, 8, 8)
+[DEBUG] Total trainable parameters before collapse: 33,663,050
+[DEBUG EXIT] _capture_preblock_activation complete.
+[DEBUG] Input activation shape entering block: (512, 128, 8, 8)
+[STEP 3] Searching for next linear layer after 'features.conv_10'...
+
+[DEBUG ENTRY] _find_next_linear: Searching for nn.Linear after 'features.conv_10'...
+[DEBUG] Flattened model into 56 total modules.
+[DEBUG] Searching for exact index of 'features.conv_10'...
+[DEBUG] Exact layer match found at global index 32: 'features.conv_10' (Conv2d)
+[DEBUG] Scanning forward from index 33 for next Linear...
+[DEBUG] Found Linear layer ahead: 'classifier.fc_1' (Linear)
+[DEBUG EXIT] Next Linear detected → name='classifier.fc_1', module=Linear(in_features=512, out_features=4096, bias=True)
+[DEBUG] Next linear layer: classifier.fc_1 -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[DEBUG ENTRY] _analyze_block_output: Analyzing collapsed block (17 layers)...
+[DEBUG] Input tensor shape before block forward pass: (512, 128, 8, 8)
+[DEBUG] Running synthetic forward pass through original block layers:
+    [DEBUG] Forwarding Layer 1/17: 'conv_5' (Conv2d) | input_shape=(512, 128, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 2/17: 'bn_5' (BatchNorm2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 3/17: 'relu_5' (ReLU) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 4/17: 'conv_6' (Conv2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 5/17: 'bn_6' (BatchNorm2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 6/17: 'relu_6' (ReLU) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 7/17: 'conv_7' (Conv2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 8/17: 'bn_7' (BatchNorm2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 9/17: 'relu_7' (ReLU) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 10/17: 'pool_3' (MaxPool2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 4, 4)
+    [DEBUG] Forwarding Layer 11/17: 'conv_8' (Conv2d) | input_shape=(512, 256, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 12/17: 'bn_8' (BatchNorm2d) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 13/17: 'relu_8' (ReLU) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 14/17: 'conv_9' (Conv2d) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 15/17: 'bn_9' (BatchNorm2d) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 16/17: 'relu_9' (ReLU) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 17/17: 'conv_10' (Conv2d) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+[DEBUG] Synthesis complete. Final block output shape: (512, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Scanning original block for explicit pooling layers...
+[DEBUG] Detected explicit pool in original block: MaxPool2d
+[DEBUG] Heuristic next linear in_features = 512
+[DEBUG] Comparing spatial dims for Linear compatibility: expected_hw=1, current_hw=16 (HxW=4x4)
+[DEBUG] Suggesting AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[DEBUG] Scanning model globally for shortcut module out_channels...
+[DEBUG EXIT] _analyze_block_output returning dictionary.
+         out_shape=(512, 512, 4, 4)
+         out_channels=512
+         has_pool=True
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] Block output analysis result:
+    out_shape: (512, 512, 4, 4)
+    out_channels: 512
+    pool_layer: MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    adaptive_pool_to_use: AdaptiveAvgPool2d(output_size=(1, 1))
+    shortcut_out_channels: None
+    linear_in_features_heuristic: 512
+[STEP 5] Rebuilding and replacing collapsed block...
+
+[DEBUG ENTRY] _build_and_replace_block for collapsed block 'features.conv_5'
+[DEBUG] Analyzing info dict keys: ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Target device: cpu
+[DEBUG] Extracted start_idx=14, end_idx=30, start_container_name='features'
+[DEBUG] Replacement target spatial size (HxW): 4x4
+[DEBUG] Replacement conv in_channels=128, out_channels=512
+[DEBUG] Number of original_convs passed in: 6
+[DEBUG] Analyzing first_conv: groups=1, in_channels=128, out_channels=256, kernel_size=(3, 3)
+[DEBUG] Rebuilding as POINTWISE conv (kernel_size=1, padding=0)
+[DEBUG] Built replacement Sequential:
+Sequential(
+  (conv_1x1): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+  (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (relu): ReLU()
+  (adaptive_pool): AdaptiveAvgPool2d(output_size=(4, 4))
+)
+[DEBUG] Replacing children indices 14..30 in container 'features'
+
+[DEBUG ENTRY] _replace_layers: Replacing layer indices 14 through 30
+[DEBUG] Keeping layer 0: 'conv_1' (Outside replacement range)
+[DEBUG] Keeping layer 1: 'bn_1' (Outside replacement range)
+[DEBUG] Keeping layer 2: 'relu_1' (Outside replacement range)
+[DEBUG] Keeping layer 3: 'conv_2' (Outside replacement range)
+[DEBUG] Keeping layer 4: 'bn_2' (Outside replacement range)
+[DEBUG] Keeping layer 5: 'relu_2' (Outside replacement range)
+[DEBUG] Keeping layer 6: 'pool_1' (Outside replacement range)
+[DEBUG] Keeping layer 7: 'conv_3' (Outside replacement range)
+[DEBUG] Keeping layer 8: 'bn_3' (Outside replacement range)
+[DEBUG] Keeping layer 9: 'relu_3' (Outside replacement range)
+[DEBUG] Keeping layer 10: 'conv_4' (Outside replacement range)
+[DEBUG] Keeping layer 11: 'bn_4' (Outside replacement range)
+[DEBUG] Keeping layer 12: 'relu_4' (Outside replacement range)
+[DEBUG] Keeping layer 13: 'pool_2' (Outside replacement range)
+[DEBUG] Replacing layer 14: 'conv_5' with custom replacement module
+[DEBUG] Subsuming layer 15: 'bn_5' with SmartIdentity
+[DEBUG] Subsuming layer 16: 'relu_5' with SmartIdentity
+[DEBUG] Subsuming layer 17: 'conv_6' with SmartIdentity
+[DEBUG] Subsuming layer 18: 'bn_6' with SmartIdentity
+[DEBUG] Subsuming layer 19: 'relu_6' with SmartIdentity
+[DEBUG] Subsuming layer 20: 'conv_7' with SmartIdentity
+[DEBUG] Subsuming layer 21: 'bn_7' with SmartIdentity
+[DEBUG] Subsuming layer 22: 'relu_7' with SmartIdentity
+[DEBUG] Subsuming layer 23: 'pool_3' with SmartIdentity
+[DEBUG] Subsuming layer 24: 'conv_8' with SmartIdentity
+[DEBUG] Subsuming layer 25: 'bn_8' with SmartIdentity
+[DEBUG] Subsuming layer 26: 'relu_8' with SmartIdentity
+[DEBUG] Subsuming layer 27: 'conv_9' with SmartIdentity
+[DEBUG] Subsuming layer 28: 'bn_9' with SmartIdentity
+[DEBUG] Subsuming layer 29: 'relu_9' with SmartIdentity
+[DEBUG] Subsuming layer 30: 'conv_10' with SmartIdentity
+[DEBUG] Keeping layer 31: 'bn_10' (Outside replacement range)
+[DEBUG] Keeping layer 32: 'relu_10' (Outside replacement range)
+[DEBUG] Keeping layer 33: 'pool_4' (Outside replacement range)
+[DEBUG] Keeping layer 34: 'conv_11' (Outside replacement range)
+[DEBUG] Keeping layer 35: 'bn_11' (Outside replacement range)
+[DEBUG] Keeping layer 36: 'relu_11' (Outside replacement range)
+[DEBUG] Keeping layer 37: 'conv_12' (Outside replacement range)
+[DEBUG] Keeping layer 38: 'bn_12' (Outside replacement range)
+[DEBUG] Keeping layer 39: 'relu_12' (Outside replacement range)
+[DEBUG] Keeping layer 40: 'conv_13' (Outside replacement range)
+[DEBUG] Keeping layer 41: 'bn_13' (Outside replacement range)
+[DEBUG] Keeping layer 42: 'relu_13' (Outside replacement range)
+[DEBUG] Keeping layer 43: 'pool_5' (Outside replacement range)
+[DEBUG EXIT] _replace_layers complete. Generated new nn.Sequential container.
+[DEBUG] Updating container and moving model to cpu
+
+[DEBUG ENTRY] _update_container: path='features'
+[DEBUG] Resolving nested parent object for container path...
+[DEBUG] Assigning to module attribute: 'features'
+[DEBUG EXIT] Container update complete for 'features'.
+[DEBUG] Params before collapse: 33,663,050
+[DEBUG] Params after  collapse: 26,350,922
+[INFO] ΔParams = +7,312,128
+[DEBUG] Starting replacement forward validation...
+[DEBUG] Found inserted module 'conv_5' for validation.
+[DEBUG] Replacement validation OK — output shape (512, 512, 4, 4)
+[STEP] Performing corrective pooling (if needed)...
+
+[STEP] ===== Starting _insert_corrective_pool =====
+[DEBUG] next_linear_name='classifier.fc_1'
+[DEBUG] Simulating input hook to measure actual input shape hitting the linear layer...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'classifier.fc_1'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cpu'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'classifier.fc_1'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 512])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Actual tensor shape entering 'classifier.fc_1': (512, 512)
+[DEBUG] Flattened size per sample: 512
+[DEBUG] Locating linear layer module 'classifier.fc_1'...
+[DEBUG] Found next_linear_mod: Linear
+[DEBUG] Linear 'classifier.fc_1' expects in_features=512
+[INFO] ✅ Shapes match (Current == Expected) — no corrective pooling needed.
+[STEP] Validating downstream after replacement...
+
+[DEBUG ENTRY] _validate_downstream for 'features'
+[DEBUG] start_idx=14, device=cpu, has_next_linear=True
+[DEBUG] Retrieving target container: 'features'
+[DEBUG] Container retrieved. It has 44 immediate children.
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 14: 'conv_5'
+[STEP] Validating inserted module 'Sequential' at index 14...
+[DEBUG] Pushing test tensor of shape (512, 128, 8, 8) through inserted module...
+[DEBUG] Inserted module forward successful, output shape: (512, 512, 4, 4)
+[STEP] Scanning immediate downstream modules (index 15 to 44) for shape or runtime errors...
+[DEBUG] Downstream 'features.bn_5' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_5' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_3' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_4' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (512, 512, 1, 1)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG EXIT] _validate_downstream complete.
+[DEBUG EXIT] Block replacement complete for 'features.conv_5'.
+[INFO] ✅ Collapse complete for block 'features.conv_5' → 'features.conv_10'
+[DEBUG EXIT] _collapse_block returning updated model.
+[INFO] ✅ Successfully collapsed block 'comb_0' (features.conv_5 → features.conv_10)
+
+[STEP] Patching skip connections (handle_skips=True)...
+
+[DEBUG ENTRY] patch_skip_connections: Scanning model for skip-connection blocks...
+[DEBUG EXIT] patch_skip_connections complete. Total blocks patched: 0
+[DEBUG] Skip connections patched successfully globally.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 10 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions across model.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_1' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_1', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_2' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_2', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'adaptive_pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'adaptive_pool', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_4' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_4', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_5' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_5', safe)
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 26,350,922
+[INFO] ΔParams = +7,312,128 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total attempted collapse targets: 1
+[DEBUG EXIT] collapse_only returning fully modified model.
+        [+] Merged safely: features.conv_5 -> features.conv_10
+
+[DEBUG ENTRY] ===== collapse_only invoked =====
+[DEBUG] Configuration: device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Input tracking: model_provided=True, model_weights=None, input_shape=torch.Size([512, 3, 32, 32])
+[STEP] Using provided in-memory model instance (VGG16)
+[DEBUG] Calculating initial layer statistics...
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 0/64 zeros (0.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 0/64 zeros (0.00%)
+features.conv_3.weight: 0/73728 zeros (0.00%)
+features.conv_3.bias: 0/128 zeros (0.00%)
+features.bn_3.weight: 0/128 zeros (0.00%)
+features.bn_3.bias: 0/128 zeros (0.00%)
+features.conv_4.weight: 0/147456 zeros (0.00%)
+features.conv_4.bias: 0/128 zeros (0.00%)
+features.bn_4.weight: 0/128 zeros (0.00%)
+features.bn_4.bias: 0/128 zeros (0.00%)
+features.conv_5.weight: 0/294912 zeros (0.00%)
+features.conv_5.bias: 0/256 zeros (0.00%)
+features.bn_5.weight: 0/256 zeros (0.00%)
+features.bn_5.bias: 0/256 zeros (0.00%)
+features.conv_6.weight: 0/589824 zeros (0.00%)
+features.conv_6.bias: 0/256 zeros (0.00%)
+features.bn_6.weight: 0/256 zeros (0.00%)
+features.bn_6.bias: 0/256 zeros (0.00%)
+features.conv_7.weight: 0/589824 zeros (0.00%)
+features.conv_7.bias: 0/256 zeros (0.00%)
+features.bn_7.weight: 0/256 zeros (0.00%)
+features.bn_7.bias: 0/256 zeros (0.00%)
+features.conv_8.weight: 0/1179648 zeros (0.00%)
+features.conv_8.bias: 0/512 zeros (0.00%)
+features.bn_8.weight: 0/512 zeros (0.00%)
+features.bn_8.bias: 0/512 zeros (0.00%)
+features.conv_9.weight: 0/2359296 zeros (0.00%)
+features.conv_9.bias: 0/512 zeros (0.00%)
+features.bn_9.weight: 0/512 zeros (0.00%)
+features.bn_9.bias: 0/512 zeros (0.00%)
+features.conv_10.weight: 0/2359296 zeros (0.00%)
+features.conv_10.bias: 0/512 zeros (0.00%)
+features.bn_10.weight: 0/512 zeros (0.00%)
+features.bn_10.bias: 0/512 zeros (0.00%)
+features.conv_11.weight: 0/2359296 zeros (0.00%)
+features.conv_11.bias: 0/512 zeros (0.00%)
+features.bn_11.weight: 0/512 zeros (0.00%)
+features.bn_11.bias: 0/512 zeros (0.00%)
+features.conv_12.weight: 0/2359296 zeros (0.00%)
+features.conv_12.bias: 0/512 zeros (0.00%)
+features.bn_12.weight: 0/512 zeros (0.00%)
+features.bn_12.bias: 0/512 zeros (0.00%)
+features.conv_13.weight: 0/2359296 zeros (0.00%)
+features.conv_13.bias: 0/512 zeros (0.00%)
+features.bn_13.weight: 0/512 zeros (0.00%)
+features.bn_13.bias: 0/512 zeros (0.00%)
+classifier.fc_1.weight: 0/2097152 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc1.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc1.bias: 0/4096 zeros (0.00%)
+classifier.fc_2.weight: 0/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc2.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc2.bias: 0/4096 zeros (0.00%)
+classifier.fc_3.weight: 0/40960 zeros (0.00%)
+classifier.fc_3.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[DEBUG] Deepcopy completed and set to eval mode on 'cpu'.
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 2 entries.
+    [DEBUG] Added dictionary mapping: comb_0 = ('features.conv_5' → 'features.conv_10')
+    [DEBUG] Added dictionary mapping: comb_1 = ('features.conv_12' → 'features.conv_13')
+[DEBUG] Total configured collapse targets: 2
+    [BLOCK TARGET 0] features.conv_5 → features.conv_10
+    [BLOCK TARGET 1] features.conv_12 → features.conv_13
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing loop...
+
+[INFO] Processing collapse task 'comb_0': 'features.conv_5' → 'features.conv_10'
+[DEBUG] Triggering _collapse_block for 'comb_0'...
+
+[INFO] ===== Collapsing block: features.conv_5 → features.conv_10 =====
+[DEBUG ENTRY] _collapse_block: input_shape=torch.Size([512, 3, 32, 32]), device=cpu
+[STEP 1] Locating block boundaries...
+
+[DEBUG ENTRY] _locate_and_prepare_block called.
+[DEBUG] Locating and preparing block: start='features.conv_5', end:'features.conv_10'
+[DEBUG] Parsed start_parts: ['features', 'conv_5']
+[DEBUG] Parsed end_parts: ['features', 'conv_10']
+[DEBUG] Calculated LCA path from common parts: 'features'
+[DEBUG] Containers resolved → chosen LCA container: 'features'
+[DEBUG] Found 44 children in container 'features'
+[DEBUG] Searching for start and end indices in named_layers...
+[DEBUG] Found start_idx at 14 (child_name: 'conv_5', prefix: 'features.conv_5')
+[DEBUG] Found end_idx at 30 (child_name: 'conv_10', prefix: 'features.conv_10')
+[DEBUG] Both indices found. Breaking search loop.
+[DEBUG] Block slice length: 17
+[DEBUG] Collecting collapsible layers (Conv2d, Linear)...
+[DEBUG] Block composition → 6 Conv2d, 0 Linear (collapse_mode=conv)
+[DEBUG EXIT] _locate_and_prepare_block returning successfully with first_layer='conv_5', last_layer='conv_10'
+[DEBUG] Located block with 17 layers
+    [LAYER] conv_5: Conv2d
+    [LAYER] bn_5: BatchNorm2d
+    [LAYER] relu_5: ReLU
+    [LAYER] conv_6: Conv2d
+    [LAYER] bn_6: BatchNorm2d
+    [LAYER] relu_6: ReLU
+    [LAYER] conv_7: Conv2d
+    [LAYER] bn_7: BatchNorm2d
+    [LAYER] relu_7: ReLU
+    [LAYER] pool_3: MaxPool2d
+    [LAYER] conv_8: Conv2d
+    [LAYER] bn_8: BatchNorm2d
+    [LAYER] relu_8: ReLU
+    [LAYER] conv_9: Conv2d
+    [LAYER] bn_9: BatchNorm2d
+    [LAYER] relu_9: ReLU
+    [LAYER] conv_10: Conv2d
+[STEP 2] Capturing activation before start layer 'features.conv_5'...
+
+[DEBUG ENTRY] _capture_preblock_activation for 'features.conv_5'
+[DEBUG] Attempting to capture activation using simulation hook...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'features.conv_5'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cpu'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'features.conv_5'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 128, 8, 8])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Successfully captured activation via hook → shape: (512, 128, 8, 8)
+[DEBUG] Total trainable parameters before collapse: 33,663,050
+[DEBUG EXIT] _capture_preblock_activation complete.
+[DEBUG] Input activation shape entering block: (512, 128, 8, 8)
+[STEP 3] Searching for next linear layer after 'features.conv_10'...
+
+[DEBUG ENTRY] _find_next_linear: Searching for nn.Linear after 'features.conv_10'...
+[DEBUG] Flattened model into 56 total modules.
+[DEBUG] Searching for exact index of 'features.conv_10'...
+[DEBUG] Exact layer match found at global index 32: 'features.conv_10' (Conv2d)
+[DEBUG] Scanning forward from index 33 for next Linear...
+[DEBUG] Found Linear layer ahead: 'classifier.fc_1' (Linear)
+[DEBUG EXIT] Next Linear detected → name='classifier.fc_1', module=Linear(in_features=512, out_features=4096, bias=True)
+[DEBUG] Next linear layer: classifier.fc_1 -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[DEBUG ENTRY] _analyze_block_output: Analyzing collapsed block (17 layers)...
+[DEBUG] Input tensor shape before block forward pass: (512, 128, 8, 8)
+[DEBUG] Running synthetic forward pass through original block layers:
+    [DEBUG] Forwarding Layer 1/17: 'conv_5' (Conv2d) | input_shape=(512, 128, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 2/17: 'bn_5' (BatchNorm2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 3/17: 'relu_5' (ReLU) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 4/17: 'conv_6' (Conv2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 5/17: 'bn_6' (BatchNorm2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 6/17: 'relu_6' (ReLU) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 7/17: 'conv_7' (Conv2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 8/17: 'bn_7' (BatchNorm2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 9/17: 'relu_7' (ReLU) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 8, 8)
+    [DEBUG] Forwarding Layer 10/17: 'pool_3' (MaxPool2d) | input_shape=(512, 256, 8, 8)
+        └── output shape: (512, 256, 4, 4)
+    [DEBUG] Forwarding Layer 11/17: 'conv_8' (Conv2d) | input_shape=(512, 256, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 12/17: 'bn_8' (BatchNorm2d) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 13/17: 'relu_8' (ReLU) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 14/17: 'conv_9' (Conv2d) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 15/17: 'bn_9' (BatchNorm2d) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 16/17: 'relu_9' (ReLU) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+    [DEBUG] Forwarding Layer 17/17: 'conv_10' (Conv2d) | input_shape=(512, 512, 4, 4)
+        └── output shape: (512, 512, 4, 4)
+[DEBUG] Synthesis complete. Final block output shape: (512, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Scanning original block for explicit pooling layers...
+[DEBUG] Detected explicit pool in original block: MaxPool2d
+[DEBUG] Heuristic next linear in_features = 512
+[DEBUG] Comparing spatial dims for Linear compatibility: expected_hw=1, current_hw=16 (HxW=4x4)
+[DEBUG] Suggesting AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[DEBUG] Scanning model globally for shortcut module out_channels...
+[DEBUG EXIT] _analyze_block_output returning dictionary.
+         out_shape=(512, 512, 4, 4)
+         out_channels=512
+         has_pool=True
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] Block output analysis result:
+    out_shape: (512, 512, 4, 4)
+    out_channels: 512
+    pool_layer: MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    adaptive_pool_to_use: AdaptiveAvgPool2d(output_size=(1, 1))
+    shortcut_out_channels: None
+    linear_in_features_heuristic: 512
+[STEP 5] Rebuilding and replacing collapsed block...
+
+[DEBUG ENTRY] _build_and_replace_block for collapsed block 'features.conv_5'
+[DEBUG] Analyzing info dict keys: ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Target device: cpu
+[DEBUG] Extracted start_idx=14, end_idx=30, start_container_name='features'
+[DEBUG] Replacement target spatial size (HxW): 4x4
+[DEBUG] Replacement conv in_channels=128, out_channels=512
+[DEBUG] Number of original_convs passed in: 6
+[DEBUG] Analyzing first_conv: groups=1, in_channels=128, out_channels=256, kernel_size=(3, 3)
+[DEBUG] Rebuilding as POINTWISE conv (kernel_size=1, padding=0)
+[DEBUG] Built replacement Sequential:
+Sequential(
+  (conv_1x1): Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+  (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (relu): ReLU()
+  (adaptive_pool): AdaptiveAvgPool2d(output_size=(4, 4))
+)
+[DEBUG] Replacing children indices 14..30 in container 'features'
+
+[DEBUG ENTRY] _replace_layers: Replacing layer indices 14 through 30
+[DEBUG] Keeping layer 0: 'conv_1' (Outside replacement range)
+[DEBUG] Keeping layer 1: 'bn_1' (Outside replacement range)
+[DEBUG] Keeping layer 2: 'relu_1' (Outside replacement range)
+[DEBUG] Keeping layer 3: 'conv_2' (Outside replacement range)
+[DEBUG] Keeping layer 4: 'bn_2' (Outside replacement range)
+[DEBUG] Keeping layer 5: 'relu_2' (Outside replacement range)
+[DEBUG] Keeping layer 6: 'pool_1' (Outside replacement range)
+[DEBUG] Keeping layer 7: 'conv_3' (Outside replacement range)
+[DEBUG] Keeping layer 8: 'bn_3' (Outside replacement range)
+[DEBUG] Keeping layer 9: 'relu_3' (Outside replacement range)
+[DEBUG] Keeping layer 10: 'conv_4' (Outside replacement range)
+[DEBUG] Keeping layer 11: 'bn_4' (Outside replacement range)
+[DEBUG] Keeping layer 12: 'relu_4' (Outside replacement range)
+[DEBUG] Keeping layer 13: 'pool_2' (Outside replacement range)
+[DEBUG] Replacing layer 14: 'conv_5' with custom replacement module
+[DEBUG] Subsuming layer 15: 'bn_5' with SmartIdentity
+[DEBUG] Subsuming layer 16: 'relu_5' with SmartIdentity
+[DEBUG] Subsuming layer 17: 'conv_6' with SmartIdentity
+[DEBUG] Subsuming layer 18: 'bn_6' with SmartIdentity
+[DEBUG] Subsuming layer 19: 'relu_6' with SmartIdentity
+[DEBUG] Subsuming layer 20: 'conv_7' with SmartIdentity
+[DEBUG] Subsuming layer 21: 'bn_7' with SmartIdentity
+[DEBUG] Subsuming layer 22: 'relu_7' with SmartIdentity
+[DEBUG] Subsuming layer 23: 'pool_3' with SmartIdentity
+[DEBUG] Subsuming layer 24: 'conv_8' with SmartIdentity
+[DEBUG] Subsuming layer 25: 'bn_8' with SmartIdentity
+[DEBUG] Subsuming layer 26: 'relu_8' with SmartIdentity
+[DEBUG] Subsuming layer 27: 'conv_9' with SmartIdentity
+[DEBUG] Subsuming layer 28: 'bn_9' with SmartIdentity
+[DEBUG] Subsuming layer 29: 'relu_9' with SmartIdentity
+[DEBUG] Subsuming layer 30: 'conv_10' with SmartIdentity
+[DEBUG] Keeping layer 31: 'bn_10' (Outside replacement range)
+[DEBUG] Keeping layer 32: 'relu_10' (Outside replacement range)
+[DEBUG] Keeping layer 33: 'pool_4' (Outside replacement range)
+[DEBUG] Keeping layer 34: 'conv_11' (Outside replacement range)
+[DEBUG] Keeping layer 35: 'bn_11' (Outside replacement range)
+[DEBUG] Keeping layer 36: 'relu_11' (Outside replacement range)
+[DEBUG] Keeping layer 37: 'conv_12' (Outside replacement range)
+[DEBUG] Keeping layer 38: 'bn_12' (Outside replacement range)
+[DEBUG] Keeping layer 39: 'relu_12' (Outside replacement range)
+[DEBUG] Keeping layer 40: 'conv_13' (Outside replacement range)
+[DEBUG] Keeping layer 41: 'bn_13' (Outside replacement range)
+[DEBUG] Keeping layer 42: 'relu_13' (Outside replacement range)
+[DEBUG] Keeping layer 43: 'pool_5' (Outside replacement range)
+[DEBUG EXIT] _replace_layers complete. Generated new nn.Sequential container.
+[DEBUG] Updating container and moving model to cpu
+
+[DEBUG ENTRY] _update_container: path='features'
+[DEBUG] Resolving nested parent object for container path...
+[DEBUG] Assigning to module attribute: 'features'
+[DEBUG EXIT] Container update complete for 'features'.
+[DEBUG] Params before collapse: 33,663,050
+[DEBUG] Params after  collapse: 26,350,922
+[INFO] ΔParams = +7,312,128
+[DEBUG] Starting replacement forward validation...
+[DEBUG] Found inserted module 'conv_5' for validation.
+[DEBUG] Replacement validation OK — output shape (512, 512, 4, 4)
+[STEP] Performing corrective pooling (if needed)...
+
+[STEP] ===== Starting _insert_corrective_pool =====
+[DEBUG] next_linear_name='classifier.fc_1'
+[DEBUG] Simulating input hook to measure actual input shape hitting the linear layer...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'classifier.fc_1'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cpu'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'classifier.fc_1'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 512])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Actual tensor shape entering 'classifier.fc_1': (512, 512)
+[DEBUG] Flattened size per sample: 512
+[DEBUG] Locating linear layer module 'classifier.fc_1'...
+[DEBUG] Found next_linear_mod: Linear
+[DEBUG] Linear 'classifier.fc_1' expects in_features=512
+[INFO] ✅ Shapes match (Current == Expected) — no corrective pooling needed.
+[STEP] Validating downstream after replacement...
+
+[DEBUG ENTRY] _validate_downstream for 'features'
+[DEBUG] start_idx=14, device=cpu, has_next_linear=True
+[DEBUG] Retrieving target container: 'features'
+[DEBUG] Container retrieved. It has 44 immediate children.
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 14: 'conv_5'
+[STEP] Validating inserted module 'Sequential' at index 14...
+[DEBUG] Pushing test tensor of shape (512, 128, 8, 8) through inserted module...
+[DEBUG] Inserted module forward successful, output shape: (512, 512, 4, 4)
+[STEP] Scanning immediate downstream modules (index 15 to 44) for shape or runtime errors...
+[DEBUG] Downstream 'features.bn_5' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_5' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_3' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_4' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (512, 512, 1, 1)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG EXIT] _validate_downstream complete.
+[DEBUG EXIT] Block replacement complete for 'features.conv_5'.
+[INFO] ✅ Collapse complete for block 'features.conv_5' → 'features.conv_10'
+[DEBUG EXIT] _collapse_block returning updated model.
+[INFO] ✅ Successfully collapsed block 'comb_0' (features.conv_5 → features.conv_10)
+
+[INFO] Processing collapse task 'comb_1': 'features.conv_12' → 'features.conv_13'
+[DEBUG] Triggering _collapse_block for 'comb_1'...
+
+[INFO] ===== Collapsing block: features.conv_12 → features.conv_13 =====
+[DEBUG ENTRY] _collapse_block: input_shape=torch.Size([512, 3, 32, 32]), device=cpu
+[STEP 1] Locating block boundaries...
+
+[DEBUG ENTRY] _locate_and_prepare_block called.
+[DEBUG] Locating and preparing block: start='features.conv_12', end:'features.conv_13'
+[DEBUG] Parsed start_parts: ['features', 'conv_12']
+[DEBUG] Parsed end_parts: ['features', 'conv_13']
+[DEBUG] Calculated LCA path from common parts: 'features'
+[DEBUG] Containers resolved → chosen LCA container: 'features'
+[DEBUG] Found 44 children in container 'features'
+[DEBUG] Searching for start and end indices in named_layers...
+[DEBUG] Found start_idx at 37 (child_name: 'conv_12', prefix: 'features.conv_12')
+[DEBUG] Found end_idx at 40 (child_name: 'conv_13', prefix: 'features.conv_13')
+[DEBUG] Both indices found. Breaking search loop.
+[DEBUG] Block slice length: 4
+[DEBUG] Collecting collapsible layers (Conv2d, Linear)...
+[DEBUG] Block composition → 2 Conv2d, 0 Linear (collapse_mode=conv)
+[DEBUG EXIT] _locate_and_prepare_block returning successfully with first_layer='conv_12', last_layer='conv_13'
+[DEBUG] Located block with 4 layers
+    [LAYER] conv_12: Conv2d
+    [LAYER] bn_12: BatchNorm2d
+    [LAYER] relu_12: ReLU
+    [LAYER] conv_13: Conv2d
+[STEP 2] Capturing activation before start layer 'features.conv_12'...
+
+[DEBUG ENTRY] _capture_preblock_activation for 'features.conv_12'
+[DEBUG] Attempting to capture activation using simulation hook...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'features.conv_12'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cpu'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'features.conv_12'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 512, 2, 2])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Successfully captured activation via hook → shape: (512, 512, 2, 2)
+[DEBUG] Total trainable parameters before collapse: 26,350,922
+[DEBUG EXIT] _capture_preblock_activation complete.
+[DEBUG] Input activation shape entering block: (512, 512, 2, 2)
+[STEP 3] Searching for next linear layer after 'features.conv_13'...
+
+[DEBUG ENTRY] _find_next_linear: Searching for nn.Linear after 'features.conv_13'...
+[DEBUG] Flattened model into 60 total modules.
+[DEBUG] Searching for exact index of 'features.conv_13'...
+[DEBUG] Exact layer match found at global index 46: 'features.conv_13' (Conv2d)
+[DEBUG] Scanning forward from index 47 for next Linear...
+[DEBUG] Found Linear layer ahead: 'classifier.fc_1' (Linear)
+[DEBUG EXIT] Next Linear detected → name='classifier.fc_1', module=Linear(in_features=512, out_features=4096, bias=True)
+[DEBUG] Next linear layer: classifier.fc_1 -> Linear
+[STEP 4] Analyzing block output characteristics...
+
+[DEBUG ENTRY] _analyze_block_output: Analyzing collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block forward pass: (512, 512, 2, 2)
+[DEBUG] Running synthetic forward pass through original block layers:
+    [DEBUG] Forwarding Layer 1/4: 'conv_12' (Conv2d) | input_shape=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Forwarding Layer 2/4: 'bn_12' (BatchNorm2d) | input_shape=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Forwarding Layer 3/4: 'relu_12' (ReLU) | input_shape=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+    [DEBUG] Forwarding Layer 4/4: 'conv_13' (Conv2d) | input_shape=(512, 512, 2, 2)
+        └── output shape: (512, 512, 2, 2)
+[DEBUG] Synthesis complete. Final block output shape: (512, 512, 2, 2)
+[DEBUG] Determined out_channels=512
+[DEBUG] Scanning original block for explicit pooling layers...
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 512
+[DEBUG] Comparing spatial dims for Linear compatibility: expected_hw=1, current_hw=4 (HxW=2x2)
+[DEBUG] Suggesting AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[DEBUG] Scanning model globally for shortcut module out_channels...
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG] SmartIdentity blocking attribute request for 'shortcut'
+[DEBUG EXIT] _analyze_block_output returning dictionary.
+         out_shape=(512, 512, 2, 2)
+         out_channels=512
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] Block output analysis result:
+    out_shape: (512, 512, 2, 2)
+    out_channels: 512
+    pool_layer: None
+    adaptive_pool_to_use: AdaptiveAvgPool2d(output_size=(1, 1))
+    shortcut_out_channels: None
+    linear_in_features_heuristic: 512
+[STEP 5] Rebuilding and replacing collapsed block...
+
+[DEBUG ENTRY] _build_and_replace_block for collapsed block 'features.conv_12'
+[DEBUG] Analyzing info dict keys: ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Target device: cpu
+[DEBUG] Extracted start_idx=37, end_idx=40, start_container_name='features'
+[DEBUG] Replacement target spatial size (HxW): 2x2
+[DEBUG] Replacement conv in_channels=512, out_channels=512
+[DEBUG] Number of original_convs passed in: 2
+[DEBUG] Analyzing first_conv: groups=1, in_channels=512, out_channels=512, kernel_size=(3, 3)
+[DEBUG] Rebuilding as POINTWISE conv (kernel_size=1, padding=0)
+[DEBUG] Built replacement Sequential:
+Sequential(
+  (conv_1x1): Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+  (bn): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+  (relu): ReLU()
+  (adaptive_pool): AdaptiveAvgPool2d(output_size=(2, 2))
+)
+[DEBUG] Replacing children indices 37..40 in container 'features'
+
+[DEBUG ENTRY] _replace_layers: Replacing layer indices 37 through 40
+[DEBUG] Keeping layer 0: 'conv_1' (Outside replacement range)
+[DEBUG] Keeping layer 1: 'bn_1' (Outside replacement range)
+[DEBUG] Keeping layer 2: 'relu_1' (Outside replacement range)
+[DEBUG] Keeping layer 3: 'conv_2' (Outside replacement range)
+[DEBUG] Keeping layer 4: 'bn_2' (Outside replacement range)
+[DEBUG] Keeping layer 5: 'relu_2' (Outside replacement range)
+[DEBUG] Keeping layer 6: 'pool_1' (Outside replacement range)
+[DEBUG] Keeping layer 7: 'conv_3' (Outside replacement range)
+[DEBUG] Keeping layer 8: 'bn_3' (Outside replacement range)
+[DEBUG] Keeping layer 9: 'relu_3' (Outside replacement range)
+[DEBUG] Keeping layer 10: 'conv_4' (Outside replacement range)
+[DEBUG] Keeping layer 11: 'bn_4' (Outside replacement range)
+[DEBUG] Keeping layer 12: 'relu_4' (Outside replacement range)
+[DEBUG] Keeping layer 13: 'pool_2' (Outside replacement range)
+[DEBUG] Keeping layer 14: 'conv_5' (Outside replacement range)
+[DEBUG] Keeping layer 15: 'bn_5' (Outside replacement range)
+[DEBUG] Keeping layer 16: 'relu_5' (Outside replacement range)
+[DEBUG] Keeping layer 17: 'conv_6' (Outside replacement range)
+[DEBUG] Keeping layer 18: 'bn_6' (Outside replacement range)
+[DEBUG] Keeping layer 19: 'relu_6' (Outside replacement range)
+[DEBUG] Keeping layer 20: 'conv_7' (Outside replacement range)
+[DEBUG] Keeping layer 21: 'bn_7' (Outside replacement range)
+[DEBUG] Keeping layer 22: 'relu_7' (Outside replacement range)
+[DEBUG] Keeping layer 23: 'pool_3' (Outside replacement range)
+[DEBUG] Keeping layer 24: 'conv_8' (Outside replacement range)
+[DEBUG] Keeping layer 25: 'bn_8' (Outside replacement range)
+[DEBUG] Keeping layer 26: 'relu_8' (Outside replacement range)
+[DEBUG] Keeping layer 27: 'conv_9' (Outside replacement range)
+[DEBUG] Keeping layer 28: 'bn_9' (Outside replacement range)
+[DEBUG] Keeping layer 29: 'relu_9' (Outside replacement range)
+[DEBUG] Keeping layer 30: 'conv_10' (Outside replacement range)
+[DEBUG] Keeping layer 31: 'bn_10' (Outside replacement range)
+[DEBUG] Keeping layer 32: 'relu_10' (Outside replacement range)
+[DEBUG] Keeping layer 33: 'pool_4' (Outside replacement range)
+[DEBUG] Keeping layer 34: 'conv_11' (Outside replacement range)
+[DEBUG] Keeping layer 35: 'bn_11' (Outside replacement range)
+[DEBUG] Keeping layer 36: 'relu_11' (Outside replacement range)
+[DEBUG] Replacing layer 37: 'conv_12' with custom replacement module
+[DEBUG] Subsuming layer 38: 'bn_12' with SmartIdentity
+[DEBUG] Subsuming layer 39: 'relu_12' with SmartIdentity
+[DEBUG] Subsuming layer 40: 'conv_13' with SmartIdentity
+[DEBUG] Keeping layer 41: 'bn_13' (Outside replacement range)
+[DEBUG] Keeping layer 42: 'relu_13' (Outside replacement range)
+[DEBUG] Keeping layer 43: 'pool_5' (Outside replacement range)
+[DEBUG EXIT] _replace_layers complete. Generated new nn.Sequential container.
+[DEBUG] Updating container and moving model to cpu
+
+[DEBUG ENTRY] _update_container: path='features'
+[DEBUG] Resolving nested parent object for container path...
+[DEBUG] Assigning to module attribute: 'features'
+[DEBUG EXIT] Container update complete for 'features'.
+[DEBUG] Params before collapse: 26,350,922
+[DEBUG] Params after  collapse: 21,893,450
+[INFO] ΔParams = +4,457,472
+[DEBUG] Starting replacement forward validation...
+[DEBUG] Found inserted module 'conv_5' for validation.
+[WARN] Replacement forward validation failed: Given groups=1, weight of size [512, 128, 1, 1], expected input[512, 512, 2, 2] to have 128 channels, but got 512 channels instead
+[STEP] Performing corrective pooling (if needed)...
+
+[STEP] ===== Starting _insert_corrective_pool =====
+[DEBUG] next_linear_name='classifier.fc_1'
+[DEBUG] Simulating input hook to measure actual input shape hitting the linear layer...
+
+[DEBUG ENTRY] _simulate_input_hook for target 'classifier.fc_1'
+[DEBUG] Created dummy_input of shape torch.Size([512, 3, 32, 32]) on device 'cpu'
+[DEBUG] Successfully located target_module for hook registration.
+[DEBUG] Hook registered on 'classifier.fc_1'. Running dummy forward pass...
+[DEBUG] Forward hook triggered! Captured input of shape torch.Size([512, 512])
+[DEBUG] Forward pass complete. Hook removed.
+[DEBUG EXIT] _simulate_input_hook returning captured tensor.
+[DEBUG] Actual tensor shape entering 'classifier.fc_1': (512, 512)
+[DEBUG] Flattened size per sample: 512
+[DEBUG] Locating linear layer module 'classifier.fc_1'...
+[DEBUG] Found next_linear_mod: Linear
+[DEBUG] Linear 'classifier.fc_1' expects in_features=512
+[INFO] ✅ Shapes match (Current == Expected) — no corrective pooling needed.
+[STEP] Validating downstream after replacement...
+
+[DEBUG ENTRY] _validate_downstream for 'features'
+[DEBUG] start_idx=37, device=cpu, has_next_linear=True
+[DEBUG] Retrieving target container: 'features'
+[DEBUG] Container retrieved. It has 44 immediate children.
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 14: 'conv_5'
+[STEP] Validating inserted module 'Sequential' at index 14...
+[DEBUG] Pushing test tensor of shape (512, 512, 2, 2) through inserted module...
+[WARN] Forward pass through inserted module failed: Given groups=1, weight of size [512, 128, 1, 1], expected input[512, 512, 2, 2] to have 128 channels, but got 512 channels instead
+[DEBUG EXIT] Block replacement complete for 'features.conv_12'.
+[INFO] ✅ Collapse complete for block 'features.conv_12' → 'features.conv_13'
+[DEBUG EXIT] _collapse_block returning updated model.
+[INFO] ✅ Successfully collapsed block 'comb_1' (features.conv_12 → features.conv_13)
+
+[STEP] Patching skip connections (handle_skips=True)...
+
+[DEBUG ENTRY] patch_skip_connections: Scanning model for skip-connection blocks...
+[DEBUG EXIT] patch_skip_connections complete. Total blocks patched: 0
+[DEBUG] Skip connections patched successfully globally.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 9 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions across model.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_1' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_1', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_2' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_2', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'adaptive_pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'adaptive_pool', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_4' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_4', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'adaptive_pool' (AdaptiveAvgPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'adaptive_pool', safe)
+[DEBUG] _wrap_pools_safe: Found target pooling layer 'pool_5' (MaxPool2d). Wrapping with _SafePool...
+    [DEBUG] Successfully replaced via setattr(parent, 'pool_5', safe)
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 21,893,450
+[INFO] ΔParams = +11,769,600 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total attempted collapse targets: 2
+[DEBUG EXIT] collapse_only returning fully modified model.
+        [+] Merged safely: features.conv_12 -> features.conv_13
+[•] Running Comprehensive Heuristic Analysis for VGG16 on Cifar10...
+[✓] Stage 1 Complete. Exported 4 targets to 'VGG16_Cifar10_epochs3_pretrain3_JF_discovered_regions.json'.
+21:12:46 [INFO] Scanning for metrics files matching epochs=3, pretrain=3
+21:13:28 [INFO] Successfully parsed 91 experiment rows.
+21:13:29 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__accuracy.png
+21:13:29 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__params.png
+21:13:30 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__flops.png
+21:13:30 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__memory.png
+21:13:30 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__accuracy.png
+21:13:31 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__params.png
+21:13:31 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__flops.png
+21:13:32 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__memory.png
+21:13:32 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_accuracy.png
+21:13:33 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_params.png
+21:13:33 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_flops.png
+21:13:34 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_memory.png
+21:13:34 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__accuracy.png
+21:13:35 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__params.png
+21:13:35 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__flops.png
+21:13:36 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__memory.png
+21:13:36 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__accuracy.png
+21:13:36 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__params.png
+21:13:37 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__flops.png
+21:13:37 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__memory.png
+21:13:38 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_accuracy.png
+21:13:39 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_params.png
+21:13:39 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_flops.png
+21:13:40 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_memory.png
+21:13:40 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__accuracy.png
+21:13:41 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__params.png
+21:13:41 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__flops.png
+21:13:42 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__memory.png
+21:13:42 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__accuracy.png
+21:13:43 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__params.png
+21:13:43 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__flops.png
+21:13:44 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__memory.png
+21:13:44 [INFO] [FIG1] Saved accuracy plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_accuracy.png
+21:13:44 [INFO] [FIG1] Saved params plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_params.png
+21:13:45 [INFO] [FIG1] Saved flops plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_flops.png
+21:13:45 [INFO] [FIG1] Saved memory plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_memory.png
+21:13:46 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__accuracy.png
+21:13:47 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__params.png
+21:13:47 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__flops.png
+21:13:48 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__memory.png
+21:13:49 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__accuracy.png
+21:13:49 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__params.png
+21:13:50 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__flops.png
+21:13:51 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__memory.png
+21:13:51 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__accuracy.png
+21:13:52 [INFO] [FIG1] Saved params plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__params.png
+21:13:52 [INFO] [FIG1] Saved flops plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__flops.png
+21:13:53 [INFO] [FIG1] Saved memory plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__memory.png
+21:13:53 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__accuracy.png
+21:13:54 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__params.png
+21:13:54 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__flops.png
+21:13:54 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__memory.png
+21:13:55 [INFO] [FIG1] Saved accuracy plot for VGG16/tinyimagenet at figures_ep3_pre3/individual_plots/VGG16_tinyimagenet_accuracy.png
+21:13:55 [INFO] [FIG1] Saved params plot for VGG16/tinyimagenet at figures_ep3_pre3/individual_plots/VGG16_tinyimagenet_params.png
+21:13:56 [INFO] [FIG1] Saved flops plot for VGG16/tinyimagenet at figures_ep3_pre3/individual_plots/VGG16_tinyimagenet_flops.png
+21:13:56 [INFO] [FIG1] Saved memory plot for VGG16/tinyimagenet at figures_ep3_pre3/individual_plots/VGG16_tinyimagenet_memory.png
+21:13:57 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__accuracy.png
+21:13:57 [INFO] [FIG1] Saved params plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__params.png
+21:13:58 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__flops.png
+21:13:58 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__memory.png
+21:13:58 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__accuracy.png
+21:13:59 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__params.png
+21:13:59 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__flops.png
+21:14:00 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__memory.png
+21:14:00 [INFO] Starting FIG2 generation. Target epochs: 3, pretrain: 3
+21:14:03 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/ConvNeXt_Cifar10_bav_methodology_regions.png
+21:14:04 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/ConvNeXt_Cifar100_bav_methodology_regions.png
+21:14:06 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_tinyimagenet_bav_methodology_regions.png
+21:14:07 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_Cifar10_bav_methodology_regions.png
+21:14:09 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_Cifar100_bav_methodology_regions.png
+21:14:10 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/MobileNet_Cifar10_bav_methodology_regions.png
+21:14:12 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/MobileNet_Cifar100_bav_methodology_regions.png
+21:14:13 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/RegNetX_400MF_Cifar10_bav_methodology_regions.png
+21:14:15 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/RegNetX_400MF_Cifar100_bav_methodology_regions.png
+21:14:16 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/InceptionNet_Cifar100_bav_methodology_regions.png
+21:14:17 [DEBUG] [FIG3] No valid variance CSV found for InceptionNet/tinyimagenet
+21:14:26 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+21:14:26 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar100_
+21:14:26 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar100_
+21:14:26 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar100_
+21:14:26 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar100_
+21:14:27 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/hardware_efficiency/RegNetX_400MF_cifar100__hardware_profile.png
+21:14:27 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar100_
+21:14:27 [INFO] [FIG5] Saved hardware profile plot for VGG16/cifar100_ at figures_ep3_pre3/hardware_efficiency/VGG16_cifar100__hardware_profile.png
+21:14:27 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar100_
+21:14:27 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
+21:14:27 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
+21:14:27 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
+21:14:27 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
+21:14:28 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/hardware_efficiency/RegNetX_400MF_cifar10__hardware_profile.png
+21:14:28 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
+21:14:28 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar10_
+21:14:28 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/tinyimagenet
+21:14:28 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
+21:14:28 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/tinyimagenet at figures_ep3_pre3/hardware_efficiency/InceptionNet_tinyimagenet_hardware_profile.png
+21:14:28 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/tinyimagenet
+21:14:28 [INFO] [FIG5] Processing Hardware Profiles for VGG16/tinyimagenet
+21:14:29 [INFO] [FIG5] Saved unified best_candidates plot at figures_ep3_pre3/hardware_efficiency/unified_best_candidates.png
+21:14:30 [INFO] [FIG5] Saved unified worst_candidates plot at figures_ep3_pre3/hardware_efficiency/unified_worst_candidates.png
+21:14:30 [INFO] [FIG5] Saved global trade-off scatter plot at figures_ep3_pre3/hardware_efficiency/global_tradeoff_scatter.png
+21:14:30 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+21:14:30 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
+21:14:31 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar10_training_curves.png
+21:14:32 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar100_training_curves.png
+21:14:34 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar100_training_curves.png
+21:14:34 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at figures_ep3_pre3/learning_curves/MobileNet_cifar100_training_curves.png
+21:14:36 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar10_training_curves.png
+21:14:36 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar10_training_curves.png
+21:14:37 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at figures_ep3_pre3/learning_curves/ConvNeXt_tinyimagenet_training_curves.png
+21:14:39 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at figures_ep3_pre3/learning_curves/InceptionNet_tinyimagenet_training_curves.png
+21:14:40 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar100_training_curves.png
+21:14:40 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar100_training_curves.png
+21:14:41 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar10_training_curves.png
+21:14:42 [INFO] [FIG6] Saved sequential training curves for VGG16/tinyimagenet at figures_ep3_pre3/learning_curves/VGG16_tinyimagenet_training_curves.png
+21:14:43 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar100_training_curves.png
+21:14:44 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at figures_ep3_pre3/learning_curves/MobileNet_cifar10_training_curves.png
+21:14:45 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep3_pre3/learning_curves/VGG16_cifar10_training_curves.png
+21:14:46 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at figures_ep3_pre3/learning_curves/MobileNet_tinyimagenet_training_curves.png
+21:14:47 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar10_training_curves.png
+21:14:48 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at figures_ep3_pre3/learning_curves/MobileNet_cifar100_training_curves.png
+21:14:49 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar100_training_curves.png
+21:14:50 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at figures_ep3_pre3/learning_curves/MobileNet_cifar10_training_curves.png
+21:14:51 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at figures_ep3_pre3/learning_curves/VGG16_cifar100_training_curves.png
+21:14:52 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar100_training_curves.png
+21:14:53 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at figures_ep3_pre3/learning_curves/VGG16_cifar100_training_curves.png
+21:14:54 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar10_training_curves.png
+21:14:55 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep3_pre3/learning_curves/VGG16_cifar10_training_curves.png
+21:14:56 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar10_training_curves.png
+21:14:57 [INFO] [FIG7] Saved convergence metrics plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/convergence/RegNetX_400MF_cifar100_convergence_metrics.png
+21:14:58 [INFO] [FIG7] Saved convergence metrics plot for VGG16/cifar100_ at figures_ep3_pre3/convergence/VGG16_cifar100_convergence_metrics.png
+21:14:58 [INFO] [FIG7] Saved convergence metrics plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/convergence/RegNetX_400MF_cifar10_convergence_metrics.png
+21:14:59 [INFO] [FIG7] Saved convergence metrics plot for InceptionNet/tinyimagenet at figures_ep3_pre3/convergence/InceptionNet_tinyimagenet_convergence_metrics.png
+21:14:59 [INFO] [SUMMARY] Generating master lookup JSON...
+21:14:59 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/master_results_summary_ep3_pre3.json
+21:14:59 [INFO] Script completed.
