@@ -620,37 +620,52 @@ def patch_skip_connections(model: nn.Module):
     Patches module forwards to robustly handle residual connections.
     If the collapsed block output shape differs from the shortcut, 
     this attempts to spatially align the shortcut instead of severing the connection.
+    Now supports both ResNet/RegNet (shortcut/block) and Xception (skip/rep) topologies.
     """
-    print(f"\n[DEBUG ENTRY] patch_skip_connections: Scanning model for ResNet/ConvNeXt style blocks...")
+    print(f"\n[DEBUG ENTRY] patch_skip_connections: Scanning model for skip-connection blocks...")
     model._bypassed_residuals = 0
     patch_count = 0
 
     for name, module in model.named_modules():
         # FIX: Explicitly ignore SmartIdentity to prevent false positive patches
-        if isinstance(module, SmartIdentity):
-            # print(f"[DEBUG] Skipping SmartIdentity module: '{name}'") # Intentionally commented out to avoid spam, but useful if needed
+        # Using class name string check to avoid circular import issues if SmartIdentity is elsewhere
+        if type(module).__name__ == "SmartIdentity":
+            # print(f"[DEBUG] Skipping SmartIdentity module: '{name}'") # Intentionally commented out to avoid spam
             continue
             
-        # Look for ResNet/ConvNeXt style blocks with 'shortcut' and 'block'
-        if hasattr(module, 'shortcut') and isinstance(module.shortcut, nn.Module) and hasattr(module, 'block'):
-            print(f"[DEBUG] Found residual candidate module: '{name}' (has shortcut and block)")
+        # 1. Check for ResNet/RegNet style blocks with 'shortcut' and 'block'
+        has_res = hasattr(module, 'shortcut') and isinstance(module.shortcut, nn.Module) and hasattr(module, 'block')
+        
+        # 2. Check for Xception style blocks with 'skip' and 'rep'
+        has_xcep = hasattr(module, 'skip') and isinstance(module.skip, nn.Module) and hasattr(module, 'rep')
+        
+        if has_res or has_xcep:
+            shortcut_attr = 'shortcut' if has_res else 'skip'
+            block_attr = 'block' if has_res else 'rep'
+            
+            print(f"[DEBUG] Found residual candidate module: '{name}' (using attrs: {shortcut_attr} / {block_attr})")
             
             # Save original forward if not already patched
             if not hasattr(module, '_orig_forward'):
                 module._orig_forward = getattr(module, 'forward')
                 print(f"[DEBUG] Backed up original forward method for '{name}'.")
                 
-            def make_patched_forward(mod_name):
+            # Factory function to capture loop variables safely
+            def make_patched_forward(mod_name, sc_attr, blk_attr):
                 def new_forward(self, x):
                     # print(f"[DEBUG FORWARD] '{mod_name}' - Input shape: {tuple(x.shape)}")
                     
+                    # Dynamically fetch the child modules based on the detected topology
+                    main_block = getattr(self, blk_attr)
+                    shortcut_block = getattr(self, sc_attr)
+                    
                     # 1. Run the (potentially collapsed) main block
-                    out = self.block(x)
+                    out = main_block(x)
                     # print(f"[DEBUG FORWARD] '{mod_name}' - Main block output shape: {tuple(out.shape)}")
                     
                     # 2. Run the shortcut
                     try:
-                        sc = self.shortcut(x)
+                        sc = shortcut_block(x)
                         # print(f"[DEBUG FORWARD] '{mod_name}' - Shortcut output shape: {tuple(sc.shape)}")
                     except Exception as e:
                         # Fallback if shortcut itself fails
@@ -670,7 +685,6 @@ def patch_skip_connections(model: nn.Module):
                         # Case B: Channel Mismatch
                         # If channels still don't match after spatial fix, we unfortunately
                         # cannot add them without a learned 1x1 conv. We must bypass.
-                        # (However, collapse.py usually preserves channel counts, so this is rare)
                         if out.shape[1] != sc.shape[1]:
                             print(f"[WARN FORWARD] '{mod_name}' - Irreconcilable channel mismatch (out:{out.shape[1]} vs sc:{sc.shape[1]}). Bypassing residual.")
                             model._bypassed_residuals += 1
@@ -681,13 +695,12 @@ def patch_skip_connections(model: nn.Module):
                     return F.relu(out + sc)
                 return new_forward
 
-            # Apply the patch
-            module.forward = make_patched_forward(name).__get__(module)
+            # Apply the patch using our factory method to bind the correct attribute names
+            module.forward = make_patched_forward(name, shortcut_attr, block_attr).__get__(module)
             patch_count += 1
-            print(f"[PATCH] Patched residual block forward (with spatial align): {name}")
+            print(f"[PATCH] Patched residual block forward (with spatial align): '{name}' [{shortcut_attr}/{block_attr}]")
 
     print(f"[DEBUG EXIT] patch_skip_connections complete. Total blocks patched: {patch_count}")
-
 # -----------------------------------------------------------------------------
 # Core collapse of a single block (simple replacement)
 # -----------------------------------------------------------------------------
