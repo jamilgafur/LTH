@@ -728,9 +728,10 @@ def _collapse_block(
         for n, l in info["full_block"]:
             print(f"    [LAYER] {n}: {type(l).__name__}")
 
+    # FIX: Re-route capture hook to the top-level LCA child to prevent deep-branch shape mismatches
     # Step 2: Capture activation entering the start layer
-    lca_path = info["container_name"]
-    first_child_name = info["first_layer_name"]
+    lca_path = info.get("container_name", "")
+    first_child_name = info.get("first_layer_name", "")
     actual_start_path = f"{lca_path}.{first_child_name}" if lca_path else first_child_name
     
     if debug:
@@ -739,9 +740,6 @@ def _collapse_block(
     x, pre_params = _capture_preblock_activation(
         model, actual_start_path, input_shape, info["conv_layers"], info["layer_type"], device, debug
     )
-    if debug:
-        print(f"[DEBUG] Input activation shape entering block: {tuple(x.shape)}")
-
     # Step 3: Find next linear
     print(f"[STEP 3] Searching for next linear layer after '{end_layer_name}'...")
     next_linear_name, next_linear_mod = _find_next_linear(model, end_layer_name, debug)
