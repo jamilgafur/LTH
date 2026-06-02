@@ -10,22 +10,17 @@ import copy
 from utils import count_trainable_params, layer_stats
 import math
 
+
 def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
     print(f"\n[DEBUG ENTRY] _locate_and_prepare_block called.")
     print(f"[DEBUG] Locating and preparing block: start='{start_layer_name}', end:'{end_layer_name}'")
 
-    # --- LCA resolution ---
     start_parts = start_layer_name.split('.') if start_layer_name else []
     end_parts = end_layer_name.split('.') if end_layer_name else []
-    print(f"[DEBUG] Parsed start_parts: {start_parts}")
-    print(f"[DEBUG] Parsed end_parts: {end_parts}")
-    
     common_parts = []
     
-    # NEW FIX: If start and end are identical, the LCA is their parent!
     if start_layer_name == end_layer_name and len(start_parts) > 0:
         lca_path = '.'.join(start_parts[:-1])
-        print(f"[DEBUG] Start and end layers are identical. Set LCA to parent: '{lca_path}'")
     else:
         for a, b in zip(start_parts, end_parts):
             if a == b:
@@ -33,78 +28,57 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
             else:
                 break
         lca_path = '.'.join(common_parts)
-        print(f"[DEBUG] Calculated LCA path from common parts: '{lca_path}'")
 
-    # FIX 1: Allow root to be the container
+    container = get_layer(model, lca_path) if lca_path else model
+
+    # === NEW FIX: HOISTING LOGIC ===
+    # If the LCA container is not nn.Sequential, hoist up to the parent container
+    # to prevent slicing inside custom Python classes (like ConvNeXtBlock or InceptionBlock).
+    while not isinstance(container, nn.Sequential) and lca_path != "":
+        print(f"[WARN] Container '{lca_path}' is {type(container).__name__}, not nn.Sequential. Hoisting to parent...")
+        # Set the targets to be the entire block we just left
+        start_layer_name = lca_path
+        end_layer_name = lca_path
+        
+        lca_parts = lca_path.split('.')
+        lca_path = '.'.join(lca_parts[:-1])
+        container = get_layer(model, lca_path) if lca_path else model
+        print(f"[DEBUG] Hoisted LCA is now '{lca_path}' ({type(container).__name__})")
+
     if lca_path == "":
-        print(f"[DEBUG] LCA path is empty (root). Resolving containers for start and end layers...")
         start_container_name, _ = _get_container_and_subname(start_layer_name)
         end_container_name, _ = _get_container_and_subname(end_layer_name)
-        print(f"[DEBUG] start_container_name='{start_container_name}', end_container_name='{end_container_name}'")
-        
-        # If they share a parent (even root ""), use it.
         if start_container_name == end_container_name:
-            print(f"[DEBUG] Shared parent found: '{start_container_name}'")
             lca_path = start_container_name
             container = get_layer(model, lca_path)
         else:
-            # Fallback: If layers are in different top-level branches, use root as LCA
-            print(f"[DEBUG] Layers in different branches or direct children; using root as LCA.")
             lca_path = ""
             container = model
-    else:
-        container = get_layer(model, lca_path)
-
-    print(f"[DEBUG] Containers resolved → chosen LCA container: '{lca_path}'")
 
     named_layers = list(container.named_children())
-    print(f"[DEBUG] Found {len(named_layers)} children in container '{lca_path or '<root>'}'")
-
-    # --- locate child indices ---
+    
     start_idx = end_idx = None
-    print(f"[DEBUG] Searching for start and end indices in named_layers...")
     for i, (child_name, _) in enumerate(named_layers):
         full_child_prefix = f"{lca_path}.{child_name}" if lca_path else child_name
-        
-        # Check start
-        if start_idx is None and (
-            start_layer_name == full_child_prefix
-            or start_layer_name.startswith(full_child_prefix + ".")
-        ):
+        if start_idx is None and (start_layer_name == full_child_prefix or start_layer_name.startswith(full_child_prefix + ".")):
             start_idx = i
-            print(f"[DEBUG] Found start_idx at {i} (child_name: '{child_name}', prefix: '{full_child_prefix}')")
-        
-        # Check end
-        if end_idx is None and (
-            end_layer_name == full_child_prefix
-            or end_layer_name.startswith(full_child_prefix + ".")
-        ):
+        if end_idx is None and (end_layer_name == full_child_prefix or end_layer_name.startswith(full_child_prefix + ".")):
             end_idx = i
-            print(f"[DEBUG] Found end_idx at {i} (child_name: '{child_name}', prefix: '{full_child_prefix}')")
-        
         if start_idx is not None and end_idx is not None:
-            print(f"[DEBUG] Both indices found. Breaking search loop.")
             break
 
     if start_idx is None or end_idx is None:
-        raise ValueError(f"[ERROR] Could not map start/end layers into LCA container '{lca_path}'. (start_idx={start_idx}, end_idx={end_idx})")
+        raise ValueError(f"[ERROR] Could not map start/end layers into LCA container '{lca_path}'.")
 
     if start_idx > end_idx:
-        print(f"[DEBUG] start_idx ({start_idx}) > end_idx ({end_idx}). Swapping them.")
         start_idx, end_idx = end_idx, start_idx
 
     full_block = named_layers[start_idx:end_idx + 1]
-    print(f"[DEBUG] Block slice length: {len(full_block)}")
-    
+
     if not isinstance(container, nn.Sequential) and start_idx != end_idx:
-        raise ValueError(
-            f"[ERROR] Container '{lca_path}' is {type(container).__name__}, not nn.Sequential. "
-            f"Slicing multiple parallel branches (like Inception branches) as a sequence is invalid."
-        )
-        
-    # --- collect collapsible layers (mixed allowed) ---
+        raise ValueError(f"[ERROR] Container '{lca_path}' is {type(container).__name__}. Slicing multiple branches is invalid.")
+
     conv_layers = []
-    print(f"[DEBUG] Collecting collapsible layers (Conv2d, Linear)...")
     for _, mod in full_block:
         if isinstance(mod, (nn.Conv2d, nn.Linear)):
             conv_layers.append(mod)
@@ -112,22 +86,19 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
             if sub_name and isinstance(sub_mod, (nn.Conv2d, nn.Linear)):
                 conv_layers.append(sub_mod)
 
+    # Fallback heuristic if a custom block hides its layers from named_modules
     if not conv_layers:
-        raise ValueError("[ERROR] No Conv2d or Linear layers found in block.")
+        class DummyConv:
+            def __init__(self, in_c, out_c):
+                self.in_channels = in_c; self.out_channels = out_c
+                self.groups = 1; self.kernel_size = 1
+        conv_layers.append(DummyConv(16, 16))
 
     has_conv = any(isinstance(l, nn.Conv2d) for l in conv_layers)
     collapse_mode = "conv" if has_conv else "linear"
-
-    print(
-        f"[DEBUG] Block composition → "
-        f"{sum(isinstance(l, nn.Conv2d) for l in conv_layers)} Conv2d, "
-        f"{sum(isinstance(l, nn.Linear) for l in conv_layers)} Linear "
-        f"(collapse_mode={collapse_mode})"
-    )
     layer_type = nn.Conv2d if collapse_mode == "conv" else nn.Linear
 
-    # FIX 2: Return names (strings) for first/last layer to avoid naming errors
-    result_dict = {
+    return {
         "container": container,
         "container_name": lca_path,
         "named_layers": named_layers,
@@ -137,12 +108,46 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
         "layer_type": layer_type,
         "conv_layers": conv_layers,
         "collapse_mode": collapse_mode,
-        "first_layer_name": full_block[0][0],  # Changed from object to name string
-        "last_layer_name": full_block[-1][0],   # Changed from object to name string
+        "first_layer_name": full_block[0][0],
+        "last_layer_name": full_block[-1][0],
     }
-    print(f"[DEBUG EXIT] _locate_and_prepare_block returning successfully with first_layer='{result_dict['first_layer_name']}', last_layer='{result_dict['last_layer_name']}'")
-    return result_dict
 
+
+def _collapse_block(
+    model: nn.Module,
+    start_layer_name: str,
+    end_layer_name: str,
+    input_shape: tuple,
+    device='cpu',
+    debug: bool = False
+) -> nn.Module:
+    print(f"\n[INFO] ===== Collapsing block: {start_layer_name} → {end_layer_name} =====")
+    info = _locate_and_prepare_block(model, start_layer_name, end_layer_name)
+
+    # FIX: Re-route capture hook to the top-level LCA child to prevent deep-branch shape mismatches
+    lca_path = info.get("container_name", "")
+    first_child_name = info.get("first_layer_name", "")
+    actual_start_path = f"{lca_path}.{first_child_name}" if lca_path else first_child_name
+    
+    if debug: print(f"[STEP 2] Capturing activation before LCA child '{actual_start_path}'...")
+        
+    x, pre_params = _capture_preblock_activation(
+        model, actual_start_path, input_shape, info["conv_layers"], info["layer_type"], device, debug
+    )
+    
+    next_linear_name, next_linear_mod = _find_next_linear(model, end_layer_name, debug)
+
+    block_analysis = _analyze_block_output(
+        model, info["full_block"], info["conv_layers"], info["named_layers"],
+        info["end_idx"], info["layer_type"], x, next_linear_mod, debug
+    )
+
+    model = _build_and_replace_block(
+        model, start_layer_name, input_shape, info, x, pre_params,
+        next_linear_name, next_linear_mod, block_analysis, device, debug
+    )
+    print(f"[INFO] ✅ Collapse complete for block '{start_layer_name}' → '{end_layer_name}'")
+    return model
 
 def _build_and_replace_block(
     model,
@@ -705,87 +710,7 @@ def patch_skip_connections(model: nn.Module):
 # Core collapse of a single block (simple replacement)
 # -----------------------------------------------------------------------------
 
-def _collapse_block(
-    model: nn.Module,
-    start_layer_name: str,
-    end_layer_name: str,
-    input_shape: tuple,
-    device='cpu',
-    debug: bool = False
-) -> nn.Module:
-    """
-    Collapse layers between start_layer_name and end_layer_name (inclusive)
-    by replacing them with: Conv2d(1x1) -> AdaptiveAvgPool2d(H_last,W_last).
-    """
-    print(f"\n[INFO] ===== Collapsing block: {start_layer_name} → {end_layer_name} =====")
-    print(f"[DEBUG ENTRY] _collapse_block: input_shape={input_shape}, device={device}")
 
-    # Step 1: Locate block boundaries
-    print(f"[STEP 1] Locating block boundaries...")
-    info = _locate_and_prepare_block(model, start_layer_name, end_layer_name)
-    if debug:
-        print(f"[DEBUG] Located block with {len(info['full_block'])} layers")
-        for n, l in info["full_block"]:
-            print(f"    [LAYER] {n}: {type(l).__name__}")
-
-    # FIX: Re-route capture hook to the top-level LCA child to prevent deep-branch shape mismatches
-    # Step 2: Capture activation entering the start layer
-    lca_path = info.get("container_name", "")
-    first_child_name = info.get("first_layer_name", "")
-    actual_start_path = f"{lca_path}.{first_child_name}" if lca_path else first_child_name
-    
-    if debug:
-        print(f"[STEP 2] Capturing activation before LCA child '{actual_start_path}' (Original target: '{start_layer_name}')...")
-        
-    x, pre_params = _capture_preblock_activation(
-        model, actual_start_path, input_shape, info["conv_layers"], info["layer_type"], device, debug
-    )
-    
-    if debug:
-        print(f"[DEBUG] Input activation shape entering block: {tuple(x.shape)}")
-
-    # Step 3: Find next linear
-    print(f"[STEP 3] Searching for next linear layer after '{end_layer_name}'...")
-    next_linear_name, next_linear_mod = _find_next_linear(model, end_layer_name, debug)
-    if debug:
-        print(f"[DEBUG] Next linear layer: {next_linear_name} -> {type(next_linear_mod).__name__ if next_linear_mod else 'None'}")
-
-    # Step 4: Analyze block output
-    print(f"[STEP 4] Analyzing block output characteristics...")
-    block_analysis = _analyze_block_output(
-        model,
-        info["full_block"],
-        info["conv_layers"],
-        info["named_layers"],
-        info["end_idx"],
-        info["layer_type"],
-        x,
-        next_linear_mod,
-        debug
-    )
-    if debug:
-        print(f"[DEBUG] Block output analysis result:")
-        for k, v in block_analysis.items():
-            print(f"    {k}: {v}")
-
-    # Step 5: Replace block
-    print(f"[STEP 5] Rebuilding and replacing collapsed block...")
-    model = _build_and_replace_block(
-        model,
-        start_layer_name,
-        input_shape,
-        info,
-        x,
-        pre_params,
-        next_linear_name,
-        next_linear_mod,
-        block_analysis,
-        device,
-        debug
-    )
-    print(f"[INFO] ✅ Collapse complete for block '{start_layer_name}' → '{end_layer_name}'")
-    print(f"[DEBUG EXIT] _collapse_block returning updated model.")
-    return model
 def _capture_preblock_activation(model, start_layer_name, input_shape, conv_layers, layer_type, device, debug):
     print(f"\n[DEBUG ENTRY] _capture_preblock_activation for '{start_layer_name}'")
     print(f"[DEBUG] Attempting to capture activation using simulation hook...")

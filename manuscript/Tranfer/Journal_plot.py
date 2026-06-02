@@ -304,7 +304,6 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
     search_paths = list(root_plots_dir.glob(search_pattern))
     
     if not search_paths:
-        logger.error(f"No Layer_Statistics directories found matching {search_pattern}")
         return
 
     for stats_dir in search_paths:
@@ -312,12 +311,10 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
             dataset = stats_dir.parents[1].name
             arch = stats_dir.parents[2].name
         except IndexError:
-            logger.warning(f"Could not infer arch/dataset from path {stats_dir}, using 'unknown'")
             arch, dataset = "unknown", "unknown"
             
         stat_files = list(stats_dir.glob("*_layer_stats.csv"))
-        if not stat_files:
-            continue
+        if not stat_files: continue
 
         clean_ds = dataset.strip("_").lower()
         df_arch_ds = df[(df['architecture'] == arch) & (df['dataset'].str.lower().str.contains(clean_ds))]
@@ -326,23 +323,17 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
         baseline_mask = (df_arch_ds['posthoc_or_posttrain'] == 'Baseline')
         if baseline_mask.any():
             base_row = df_arch_ds[baseline_mask].iloc[0]
-            temp_bp = base_row.get('params')
-            temp_bf = base_row.get('flops')
-            if pd.notnull(temp_bp) and temp_bp > 0: base_params = temp_bp
-            if pd.notnull(temp_bf) and temp_bf > 0: base_flops = temp_bf
+            if pd.notnull(base_row.get('params')): base_params = base_row.get('params')
+            if pd.notnull(base_row.get('flops')): base_flops = base_row.get('flops')
 
         for csv_path in stat_files:
             try:
                 layer_df = pd.read_csv(csv_path)
-                if layer_df.empty or 'Variance' not in layer_df.columns:
-                    continue
-                    
+                if layer_df.empty or 'Variance' not in layer_df.columns: continue
                 layers = layer_df['Layer'].tolist()
                 variances = np.maximum(layer_df['Variance'].values, 1e-6)
-            except Exception as e:
-                continue
+            except Exception: continue
 
-            # --- Calculation Logic ---
             h_vals, sigma_bars = [], []
             window_size = 3  
             for i, sigma_i in enumerate(variances):
@@ -356,7 +347,6 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
                 h = max(diff / sigma_bars[-1], -1.0) if diff < 0 else min(diff / sigma_bars[-1], 1.0)
                 h_vals.append(h)
                 
-            # --- JSON Region Matching & Hardware Validation ---
             potential_jsons = list(Path(".").rglob(f"*{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
             json_files = [p for p in potential_jsons if clean_ds in p.name.lower()]
             
@@ -385,53 +375,41 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
                             
                             c_p, c_f = None, None
                             
-                            cand_mask = df_arch_ds['exp_name'].str.contains(k) & (df_arch_ds['is_quantized'] == False)
+                            # FIX 1: Robust Startswith matching to handle "_JF" tags
+                            cand_mask = df_arch_ds['exp_name'].fillna("").str.startswith(k) & (df_arch_ds['is_quantized'] == False)
                             if cand_mask.any():
                                 cand_row = df_arch_ds[cand_mask].iloc[0]
-                                temp_cp = cand_row.get('params')
-                                temp_cf = cand_row.get('flops')
-                                # FIX: Ignore 0 values from failed training runs
-                                if pd.notnull(temp_cp) and temp_cp > 0: c_p = temp_cp
-                                if pd.notnull(temp_cf) and temp_cf > 0: c_f = temp_cf
+                                if pd.notnull(cand_row.get('params')) and cand_row.get('params') > 0: c_p = cand_row.get('params')
+                                if pd.notnull(cand_row.get('flops')) and cand_row.get('flops') > 0: c_f = cand_row.get('flops')
                                 
-                            # Fallback to the discovery metadata
                             if (c_p is None or c_f is None) and k in cand_stats:
                                 c_p = cand_stats[k].get("params", c_p)
                                 c_f = cand_stats[k].get("flops", c_f)
                                 
-                            # Evaluate reductions
                             p_red, f_red = False, False
-                            if c_p is not None and base_params is not None: p_red = float(c_p) < float(base_params)
-                            if c_f is not None and base_flops is not None: f_red = float(c_f) < float(base_flops)
+                            if pd.notnull(c_p) and pd.notnull(base_params): p_red = float(c_p) < float(base_params)
+                            if pd.notnull(c_f) and pd.notnull(base_flops): f_red = float(c_f) < float(base_flops)
                             
-                            # Assign State and Label
-                            if c_p is None or c_f is None:
-                                label = "Missing Stats"
-                                state_name = "VERIFIED_NONE"
+                            if pd.isnull(c_p) and pd.isnull(c_f):
+                                label, state_name = "Missing Stats", "VERIFIED_NONE"
                             elif p_red and f_red:
-                                label = "↓ Params & FLOPs"
-                                state_name = "VERIFIED_BOTH"
+                                label, state_name = "↓ Params & FLOPs", "VERIFIED_BOTH"
                             elif p_red:
-                                label = "↓ Params Only"
-                                state_name = "VERIFIED_PARAMS"
+                                label, state_name = "↓ Params Only", "VERIFIED_PARAMS"
                             elif f_red:
-                                label = "↓ FLOPs Only"
-                                state_name = "VERIFIED_FLOPS"
+                                label, state_name = "↓ FLOPs Only", "VERIFIED_FLOPS"
                             else:
-                                label = "No Reduction"
-                                state_name = "VERIFIED_NONE"
+                                label, state_name = "No Reduction", "VERIFIED_NONE"
 
                             try:
                                 s_idx = next(idx for idx, n in enumerate(layers) if start_name == n)
                                 e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_name == n)
                                 verified_idx_ranges.append((s_idx, e_idx))
                                 verified_regions.append({"start": s_idx, "end": e_idx, "label": label, "state_name": state_name})
-                            except StopIteration:
-                                continue
+                            except StopIteration: continue
                 except Exception as e:
                     logger.error(f"Error parsing JSON for {arch}/{dataset}: {e}")
 
-            # --- Plotting ---
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
             x_vals = range(1, len(layers) + 1)
             
@@ -442,7 +420,6 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
             ax1.legend(loc='upper right', frameon=False)
             sns.despine(ax=ax1)
 
-            # --- Granular State Logic ---
             veto_idx = int(len(layers) * 0.25)
             final_states = ["DANGER"] * len(layers)
             for i in range(len(layers)):
@@ -456,23 +433,15 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
                         final_states[i] = "REJECTED" if h_vals[i] < 0 else "DANGER"
 
             state_colors = {
-                "VETO": "#999999",            
-                "REJECTED": "#ff7f0e",        
-                "DANGER": "#d62728",          
-                "VERIFIED_BOTH": "#2ca02c",   
-                "VERIFIED_PARAMS": "#1f77b4", 
-                "VERIFIED_FLOPS": "#9467bd",  
-                "VERIFIED_NONE": "#8c564b"    
+                "VETO": "#999999", "REJECTED": "#ff7f0e", "DANGER": "#d62728",          
+                "VERIFIED_BOTH": "#2ca02c", "VERIFIED_PARAMS": "#1f77b4", 
+                "VERIFIED_FLOPS": "#9467bd", "VERIFIED_NONE": "#8c564b"    
             }
             
             state_labels = {
-                "VETO": "Veto Zone",
-                "REJECTED": "Low Variance (Rejected)",
-                "DANGER": "High Variance (Danger)",
-                "VERIFIED_BOTH": "Verified (↓ Params & FLOPs)",
-                "VERIFIED_PARAMS": "Verified (↓ Params Only)",
-                "VERIFIED_FLOPS": "Verified (↓ FLOPs Only)",
-                "VERIFIED_NONE": "Verified (No Reduction)"
+                "VETO": "Veto Zone", "REJECTED": "Low Variance (Rejected)", "DANGER": "High Variance (Danger)",
+                "VERIFIED_BOTH": "Verified (↓ Params & FLOPs)", "VERIFIED_PARAMS": "Verified (↓ Params Only)",
+                "VERIFIED_FLOPS": "Verified (↓ FLOPs Only)", "VERIFIED_NONE": "Verified (No Reduction)"
             }
 
             ax2.bar(x_vals, h_vals, color=[state_colors[s] for s in final_states], alpha=0.85, edgecolor='black', linewidth=0.5)
@@ -498,7 +467,6 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
                 if reg["label"]:
                     mid_x = (reg["start"] + reg["end"]) / 2.0 + 1 
                     bg_color = state_colors[reg["state_name"]]
-                    
                     ax1.text(mid_x, 0.90, reg["label"], transform=ax1.get_xaxis_transform(),
                              ha='center', va='top', fontsize=10, fontweight='bold', color='white', 
                              bbox=dict(facecolor=bg_color, alpha=0.85, edgecolor='white', linewidth=1, boxstyle='round,pad=0.3'), zorder=10)
@@ -513,6 +481,7 @@ def fig2_methodology_bav_regions(df: pd.DataFrame, epochs: int, pretrain: int, o
             plt.savefig(save_path, bbox_inches='tight')
             plt.close()
             logger.info(f"[FIG2] Saved methodology plot: {save_path}")
+
 # ========================= FIG 3 ========================= #
 
 
