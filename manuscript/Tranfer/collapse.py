@@ -729,9 +729,15 @@ def _collapse_block(
             print(f"    [LAYER] {n}: {type(l).__name__}")
 
     # Step 2: Capture activation entering the start layer
-    print(f"[STEP 2] Capturing activation before start layer '{start_layer_name}'...")
+    lca_path = info["container_name"]
+    first_child_name = info["first_layer_name"]
+    actual_start_path = f"{lca_path}.{first_child_name}" if lca_path else first_child_name
+    
+    if debug:
+        print(f"[STEP 2] Capturing activation before LCA child '{actual_start_path}' (Original target: '{start_layer_name}')...")
+        
     x, pre_params = _capture_preblock_activation(
-        model, start_layer_name, input_shape, info["conv_layers"], info["layer_type"], device, debug
+        model, actual_start_path, input_shape, info["conv_layers"], info["layer_type"], device, debug
     )
     if debug:
         print(f"[DEBUG] Input activation shape entering block: {tuple(x.shape)}")

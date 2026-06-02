@@ -190,7 +190,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         layer_name = cnn_layers[i]
         mod = module_dict.get(layer_name)
         
-        is_valid_target = isinstance(mod, torch.nn.Conv2d)
+        is_valid_target = isinstance(mod, torch.nn.Conv2d, torch.nn.Linear) 
         
         if i < veto_idx or not is_valid_target:
             if len(current_set) >= 2:
