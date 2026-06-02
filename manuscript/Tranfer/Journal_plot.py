@@ -295,12 +295,9 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
 
 
 # ========================= FIG 2 ========================= #
-
 def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
     logger.info(f"Starting FIG2 generation. Target epochs: {epochs}, pretrain: {pretrain}")
     
-    # 1. Robust Path Discovery: Search specifically for the 'Layer_Statistics' subfolders
-    # Structure: .../epochs{X}_pretrain{Y}/**/Layer_Statistics
     root_plots_dir = Path("./runs/plots")
     search_pattern = f"**/epochs{epochs}_pretrain{pretrain}/**/Layer_Statistics"
     search_paths = list(root_plots_dir.glob(search_pattern))
@@ -310,51 +307,49 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
         return
 
     for stats_dir in search_paths:
-        # Extract Architecture and Dataset from the path hierarchy
-        # Pattern: runs/plots/{arch}/{dataset}/epochs.../Layer_Statistics
         try:
             dataset = stats_dir.parents[1].name
             arch = stats_dir.parents[2].name
         except IndexError:
-            logger.warning(f"Could not infer arch/dataset from path {stats_dir}, using 'unknown'")
             arch, dataset = "unknown", "unknown"
             
         stat_files = list(stats_dir.glob("*_layer_stats.csv"))
-        if not stat_files:
-            logger.warning(f"No CSVs found in {stats_dir}")
-            continue
+        if not stat_files: continue
 
-        # --- NEW: Locate and read the merged_metrics.json for Hardware Stats ---
+        # --- FIX 1: Robust case-insensitive glob matching for metrics ---
         metrics_data = {}
         base_params, base_flops = None, None
-        potential_metrics = list(Path(".").rglob(f"*{arch}*{dataset}*epochs{epochs}_pretrain{pretrain}*/metrics/merged_metrics.json"))
+        
+        all_metrics = list(Path(".").rglob("*merged_metrics.json"))
+        clean_ds = dataset.strip("_").lower()
+        
+        potential_metrics = [
+            p for p in all_metrics 
+            if arch.lower() in str(p).lower() 
+            and clean_ds in str(p).lower() 
+            and f"epochs{epochs}" in str(p) 
+            and f"pretrain{pretrain}" in str(p)
+        ]
         
         if potential_metrics:
             try:
                 with open(potential_metrics[0], 'r') as f:
                     metrics_data = json.load(f)
-                # Find baseline to calculate relative reductions
                 for mk, mv in metrics_data.items():
                     if "control" in mk.lower() and "continuted" not in mk.lower() and "quant" not in mk.lower():
                         base_params = mv.get("param_count")
                         base_flops = mv.get("flops")
                         break
-            except Exception as e:
-                logger.error(f"Error reading metrics JSON for {arch}/{dataset}: {e}")
+            except Exception: pass
 
         for csv_path in stat_files:
             try:
                 layer_df = pd.read_csv(csv_path)
-                if layer_df.empty or 'Variance' not in layer_df.columns:
-                    continue
-                    
+                if layer_df.empty or 'Variance' not in layer_df.columns: continue
                 layers = layer_df['Layer'].tolist()
                 variances = np.maximum(layer_df['Variance'].values, 1e-6)
-            except Exception as e:
-                logger.error(f"Failed to read CSV {csv_path}: {e}")
-                continue
+            except Exception: continue
 
-            # --- Calculation Logic ---
             h_vals, sigma_bars = [], []
             window_size = 3  
             for i, sigma_i in enumerate(variances):
@@ -368,49 +363,65 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 h = max(diff / sigma_bars[-1], -1.0) if diff < 0 else min(diff / sigma_bars[-1], 1.0)
                 h_vals.append(h)
                 
-            # --- JSON Region Matching (UPDATED to Include Hardware Labels) ---
-            clean_ds = dataset.strip("_").lower()
             potential_jsons = list(Path(".").rglob(f"*{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
             json_files = [p for p in potential_jsons if clean_ds in p.name.lower()]
             
+            verified_idx_ranges = []
             verified_regions = []
             
             if json_files:
                 try:
                     with open(json_files[0], 'r') as f:
                         config = json.load(f)
+                        
+                    # --- FIX 2: Load the new metadata block ---
+                    metadata = config.get("__metadata__", {})
+                    meta_base_p = metadata.get("base_params")
+                    meta_base_f = metadata.get("base_flops")
+                    cand_stats = metadata.get("candidates", {})
+
                     for k, v in config.items():
+                        if k == "__metadata__": continue # Skip metadata dict
+                        
                         if k.startswith("Set_") and isinstance(v, (list, tuple)):
                             start_name = v[0][0] if isinstance(v[0], (list, tuple)) else v[0]
                             end_name = v[-1][-1] if isinstance(v[-1], (list, tuple)) else v[-1]
                             
-                            # Determine what this specific candidate reduced
                             reduction_label = ""
-                            if k in metrics_data and base_params and base_flops:
+                            
+                            # Check metadata first (works immediately after discovery)
+                            if k in cand_stats and meta_base_p and meta_base_f:
+                                c_p = cand_stats[k].get("params", meta_base_p)
+                                c_f = cand_stats[k].get("flops", meta_base_f)
+                                p_red = c_p < meta_base_p
+                                f_red = c_f < meta_base_f
+                                
+                            # Fallback to merged_metrics (works after training)
+                            elif k in metrics_data and base_params and base_flops:
                                 c_p = metrics_data[k].get("param_count", base_params)
                                 c_f = metrics_data[k].get("flops", base_flops)
-                                
                                 p_red = c_p < base_params
                                 f_red = c_f < base_flops
+                            else:
+                                p_red, f_red = False, False
                                 
-                                if p_red and f_red:
-                                    reduction_label = "↓ Params & FLOPs"
-                                elif p_red:
-                                    reduction_label = "↓ Params Only"
-                                elif f_red:
-                                    reduction_label = "↓ FLOPs Only"
+                            if p_red and f_red:
+                                reduction_label = "↓ Params & FLOPs"
+                            elif p_red:
+                                reduction_label = "↓ Params Only"
+                            elif f_red:
+                                reduction_label = "↓ FLOPs Only"
 
                             try:
                                 s_idx = next(idx for idx, n in enumerate(layers) if start_name == n)
                                 e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_name == n)
+                                verified_idx_ranges.append((s_idx, e_idx))
                                 verified_regions.append({"start": s_idx, "end": e_idx, "label": reduction_label})
-                            except StopIteration:
-                                logger.warning(f"Could not map region {start_name}->{end_name} to CSV layers for {arch}")
-                                continue
+                            except StopIteration: continue
                 except Exception as e:
                     logger.error(f"Error parsing JSON for {arch}/{dataset}: {e}")
 
-            # --- Plotting ---
+            # Plotting
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
             x_vals = range(1, len(layers) + 1)
             
@@ -421,23 +432,20 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             ax1.legend(loc='upper right', frameon=False)
             sns.despine(ax=ax1)
 
-            # --- State Logic ---
             veto_idx = int(len(layers) * 0.25)
             final_states = ["DANGER"] * len(layers)
             for i in range(len(layers)):
                 if i < veto_idx:
                     final_states[i] = "VETO"
                 else:
-                    in_verified = any(r["start"] <= i <= r["end"] for r in verified_regions)
+                    in_verified = any(s_idx <= i <= e_idx for s_idx, e_idx in verified_idx_ranges)
                     final_states[i] = "VERIFIED" if in_verified else ("REJECTED" if h_vals[i] < 0 else "DANGER")
 
-            # --- Bar Plot ---
             state_colors = {"VETO": "#999999", "VERIFIED": "#2ca02c", "REJECTED": "#ff7f0e", "DANGER": "#d62728"}
             ax2.bar(x_vals, h_vals, color=[state_colors[s] for s in final_states], alpha=0.85, edgecolor='black', linewidth=0.5)
             ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2)
             ax2.set_ylim(-1.1, 1.1)
 
-            # --- Zone Shading & Annotations ---
             zones = []
             if final_states:
                 start_idx, current_state = 0, final_states[0]
@@ -453,10 +461,10 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 ax1.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, edgecolor='none')
                 ax2.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, label=state)
 
-            # --- NEW: Overlay Hardware Reduction Labels on the Plot ---
+            # --- FIX 3: Paint the labels onto the graph ---
             for reg in verified_regions:
                 if reg["label"]:
-                    mid_x = (reg["start"] + reg["end"]) / 2.0 + 1 # +1 because x_vals start at index 1
+                    mid_x = (reg["start"] + reg["end"]) / 2.0 + 1 
                     ax1.text(mid_x, 0.90, reg["label"], transform=ax1.get_xaxis_transform(),
                              ha='center', va='top', fontsize=10, fontweight='bold', color='white', 
                              bbox=dict(facecolor='#2ca02c', alpha=0.85, edgecolor='none', boxstyle='round,pad=0.3'), zorder=10)
@@ -464,12 +472,12 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
             plt.tight_layout()
             
-            # --- Final Save ---
             out_dir.mkdir(parents=True, exist_ok=True)
             save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
             plt.savefig(save_path, bbox_inches='tight')
             plt.close()
             logger.info(f"[FIG2] Saved methodology plot: {save_path}")
+
 # ========================= FIG 3 ========================= #
 
 def fig3_v2t_heuristic_validation(
@@ -578,6 +586,7 @@ def fig3_v2t_heuristic_validation(
     plt.close()
     logger.info(f"[FIG3] Saved V2T heuristic validation map at {out_dir / 'V2T_heuristic_validation_map.png'}")
 # ========================= FIG 4 ========================= #
+
 def fig4_comprehensive_search_space_map(
     df: pd.DataFrame,
     epochs: int,
@@ -609,6 +618,7 @@ def fig4_comprehensive_search_space_map(
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         clean_ds = dataset.strip("_").lower()
+        logger.info(f"[FIG4] Processing Search Space Map for {arch} / {dataset}")
         
         # --- Bulletproof Path Discovery for Layer Stats ---
         arch_dir = Path(f"./runs/plots/{arch}")
@@ -632,28 +642,45 @@ def fig4_comprehensive_search_space_map(
         layers = layer_df['Layer'].tolist()
 
         # --- FIX: Robust recursive JSON search (Case-Insensitive Match) ---
-        potential_jsons = list(Path(".").rglob(f"{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
+        potential_jsons = list(Path(".").rglob(f"*{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
         all_jsons = [p for p in potential_jsons if clean_ds in p.name.lower()]
         
         if not all_jsons: 
+            logger.debug(f"    [FIG4] No JSON regions found for {arch}/{dataset}. Skipping.")
             continue
             
         try:
             with open(all_jsons[0], 'r') as f:
                 model_exps = json.load(f)
-        except Exception: continue
+        except Exception as e: 
+            logger.error(f"    [FIG4] Failed to load JSON {all_jsons[0]}: {e}")
+            continue
+            
         if not model_exps: continue
+
+        # --- NEW: Extract Metadata for Pre-training Sidebar Values ---
+        metadata = model_exps.get("__metadata__", {})
+        meta_base_p = metadata.get("base_params")
+        meta_base_f = metadata.get("base_flops")
+        cand_stats = metadata.get("candidates", {})
 
         baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
         if baseline_mask.any():
             base_row = g_metrics[baseline_mask].iloc[0]
             base_p, base_f, base_m = base_row.get('params', np.nan), base_row.get('flops', np.nan), base_row.get('memory', np.nan)
-        else: base_p = base_f = base_m = np.nan
+        else: 
+            # If no trained baseline, fall back to metadata base values
+            base_p = meta_base_p if meta_base_p else np.nan
+            base_f = meta_base_f if meta_base_f else np.nan
+            base_m = np.nan
 
         for is_quant_target in [False, True]:
             valid_exps = []
             
             for exp_name, ranges in model_exps.items():
+                if exp_name == "__metadata__": 
+                    continue  # FIX: skip the metadata block during plotting iteration
+                
                 cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
                 
                 if "Original" in cleaned_name or "Baseline" in cleaned_name:
@@ -666,12 +693,21 @@ def fig4_comprehensive_search_space_map(
                     p_red = 100 * (1 - exp_results.get('params', np.nan) / base_p) if pd.notnull(base_p) else np.nan
                     f_red = 100 * (1 - exp_results.get('flops', np.nan) / base_f) if pd.notnull(base_f) else np.nan
                     m_red = 100 * (1 - exp_results.get('memory', np.nan) / base_m) if pd.notnull(base_m) else np.nan
-                    
-                    if p_red <= 0 and f_red <= 0:
-                        continue 
                 else:
                     exp_results = {'d_acc': np.nan}
                     p_red, f_red, m_red = np.nan, np.nan, np.nan
+                    
+                    # --- NEW: Fallback to metadata if the model hasn't been trained yet ---
+                    if exp_name in cand_stats and pd.notnull(base_p) and pd.notnull(base_f):
+                        c_p = cand_stats[exp_name].get("params", base_p)
+                        c_f = cand_stats[exp_name].get("flops", base_f)
+                        p_red = 100 * (1 - c_p / base_p) if base_p > 0 else np.nan
+                        f_red = 100 * (1 - c_f / base_f) if base_f > 0 else np.nan
+                        logger.debug(f"    [FIG4] Pulled stats from metadata for {exp_name}: P={p_red:.1f}%, F={f_red:.1f}%")
+                        
+                # RELAXED LOGIC: Accept if AT LEAST ONE metric is reduced
+                if p_red <= 0 and f_red <= 0:
+                    continue 
                         
                 valid_exps.append((exp_name, ranges, exp_results, cleaned_name, p_red, f_red, m_red))
                     
@@ -742,8 +778,10 @@ def fig4_comprehensive_search_space_map(
             cand_save_path = out_dir / f"{arch}_{dataset}_candidates_sidebar_{file_suffix}.png"
             fig_cand.savefig(cand_save_path, bbox_inches='tight')
             plt.close(fig_cand)
+            logger.info(f"    [FIG4] Saved search space map: {cand_save_path}")
 
     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
+    
 # ========================= FIG 5 ========================= #
 def fig5_hardware_efficiency_profiles(
     df: pd.DataFrame,
