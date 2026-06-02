@@ -324,6 +324,24 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             logger.warning(f"No CSVs found in {stats_dir}")
             continue
 
+        # --- NEW: Locate and read the merged_metrics.json for Hardware Stats ---
+        metrics_data = {}
+        base_params, base_flops = None, None
+        potential_metrics = list(Path(".").rglob(f"*{arch}*{dataset}*epochs{epochs}_pretrain{pretrain}*/metrics/merged_metrics.json"))
+        
+        if potential_metrics:
+            try:
+                with open(potential_metrics[0], 'r') as f:
+                    metrics_data = json.load(f)
+                # Find baseline to calculate relative reductions
+                for mk, mv in metrics_data.items():
+                    if "control" in mk.lower() and "continuted" not in mk.lower() and "quant" not in mk.lower():
+                        base_params = mv.get("param_count")
+                        base_flops = mv.get("flops")
+                        break
+            except Exception as e:
+                logger.error(f"Error reading metrics JSON for {arch}/{dataset}: {e}")
+
         for csv_path in stat_files:
             try:
                 layer_df = pd.read_csv(csv_path)
@@ -350,12 +368,12 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 h = max(diff / sigma_bars[-1], -1.0) if diff < 0 else min(diff / sigma_bars[-1], 1.0)
                 h_vals.append(h)
                 
-            # --- JSON Region Matching (UPDATED: Case-Insensitive & Robust) ---
+            # --- JSON Region Matching (UPDATED to Include Hardware Labels) ---
             clean_ds = dataset.strip("_").lower()
             potential_jsons = list(Path(".").rglob(f"*{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
             json_files = [p for p in potential_jsons if clean_ds in p.name.lower()]
             
-            verified_idx_ranges = []
+            verified_regions = []
             
             if json_files:
                 try:
@@ -363,15 +381,29 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                         config = json.load(f)
                     for k, v in config.items():
                         if k.startswith("Set_") and isinstance(v, (list, tuple)):
-                            # Handle potential nested lists just in case
                             start_name = v[0][0] if isinstance(v[0], (list, tuple)) else v[0]
                             end_name = v[-1][-1] if isinstance(v[-1], (list, tuple)) else v[-1]
                             
-                            # Catch mismatches per-region so one failure doesn't wipe them all
+                            # Determine what this specific candidate reduced
+                            reduction_label = ""
+                            if k in metrics_data and base_params and base_flops:
+                                c_p = metrics_data[k].get("param_count", base_params)
+                                c_f = metrics_data[k].get("flops", base_flops)
+                                
+                                p_red = c_p < base_params
+                                f_red = c_f < base_flops
+                                
+                                if p_red and f_red:
+                                    reduction_label = "↓ Params & FLOPs"
+                                elif p_red:
+                                    reduction_label = "↓ Params Only"
+                                elif f_red:
+                                    reduction_label = "↓ FLOPs Only"
+
                             try:
                                 s_idx = next(idx for idx, n in enumerate(layers) if start_name == n)
                                 e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_name == n)
-                                verified_idx_ranges.append((s_idx, e_idx))
+                                verified_regions.append({"start": s_idx, "end": e_idx, "label": reduction_label})
                             except StopIteration:
                                 logger.warning(f"Could not map region {start_name}->{end_name} to CSV layers for {arch}")
                                 continue
@@ -396,7 +428,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 if i < veto_idx:
                     final_states[i] = "VETO"
                 else:
-                    in_verified = any(s_idx <= i <= e_idx for s_idx, e_idx in verified_idx_ranges)
+                    in_verified = any(r["start"] <= i <= r["end"] for r in verified_regions)
                     final_states[i] = "VERIFIED" if in_verified else ("REJECTED" if h_vals[i] < 0 else "DANGER")
 
             # --- Bar Plot ---
@@ -405,7 +437,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2)
             ax2.set_ylim(-1.1, 1.1)
 
-            # --- Zone Shading ---
+            # --- Zone Shading & Annotations ---
             zones = []
             if final_states:
                 start_idx, current_state = 0, final_states[0]
@@ -418,9 +450,16 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             for start, end, state in zones:
                 span_start, span_end = (start + 1) - 0.5, (end + 1) + 0.5
                 alpha_val = 0.4 if state == "VETO" else 0.15
-                # CHANGED 'color' -> 'facecolor'
                 ax1.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, edgecolor='none')
                 ax2.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, label=state)
+
+            # --- NEW: Overlay Hardware Reduction Labels on the Plot ---
+            for reg in verified_regions:
+                if reg["label"]:
+                    mid_x = (reg["start"] + reg["end"]) / 2.0 + 1 # +1 because x_vals start at index 1
+                    ax1.text(mid_x, 0.90, reg["label"], transform=ax1.get_xaxis_transform(),
+                             ha='center', va='top', fontsize=10, fontweight='bold', color='white', 
+                             bbox=dict(facecolor='#2ca02c', alpha=0.85, edgecolor='none', boxstyle='round,pad=0.3'), zorder=10)
 
             ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
             plt.tight_layout()
@@ -431,7 +470,6 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             plt.savefig(save_path, bbox_inches='tight')
             plt.close()
             logger.info(f"[FIG2] Saved methodology plot: {save_path}")
-
 # ========================= FIG 3 ========================= #
 
 def fig3_v2t_heuristic_validation(
@@ -629,7 +667,7 @@ def fig4_comprehensive_search_space_map(
                     f_red = 100 * (1 - exp_results.get('flops', np.nan) / base_f) if pd.notnull(base_f) else np.nan
                     m_red = 100 * (1 - exp_results.get('memory', np.nan) / base_m) if pd.notnull(base_m) else np.nan
                     
-                    if p_red < -0.1 or f_red < -0.1 or m_red < -0.1:
+                    if p_red <= 0 and f_red <= 0:
                         continue 
                 else:
                     exp_results = {'d_acc': np.nan}
@@ -755,9 +793,8 @@ def fig5_hardware_efficiency_profiles(
         candidates['Memory Reduced (%)'] = 100 * (1 - (candidates['memory'] / base_memory))
         
         # --- STRICT FILTER: Reject inflated hardware profiles ---
-        candidates = candidates[(candidates['Params Reduced (%)'] >= 0) & 
-                                (candidates['FLOPs Reduced (%)'] >= 0) & 
-                                (candidates['Memory Reduced (%)'] >= 0)]
+        candidates = candidates[(candidates['Params Reduced (%)'] > 0) | 
+                                (candidates['FLOPs Reduced (%)'] > 0)]
                                 
         if candidates.empty: continue
         
