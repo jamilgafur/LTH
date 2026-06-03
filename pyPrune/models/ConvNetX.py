@@ -85,23 +85,31 @@ class ConvNeXt(nn.Module):
         # ---------------------------------------------------
         # Stages & Downsampling
         # ---------------------------------------------------
-        self.stages = nn.ModuleList()
-        self.downsample_layers = nn.ModuleList()
-
-        # The stem handles the first downsample, so we only need 3 more between stages
+        # Build lists of modules first
+        downsample_layers = []
         for i in range(3):
             downsample_layer = nn.Sequential(
                 LayerNorm2d(dims[i]), # CRITICAL: LayerNorm before downsampling
                 nn.Conv2d(dims[i], dims[i+1], kernel_size=2, stride=2)
             )
-            self.downsample_layers.append(downsample_layer)
+            downsample_layers.append(downsample_layer)
 
-        # Build the 4 ConvNeXt stages
+        stages = []
         for i in range(4):
             stage = nn.Sequential(
                 *[ConvNeXtBlock(dims[i]) for _ in range(depths[i])]
             )
-            self.stages.append(stage)
+            stages.append(stage)
+
+        # THE FIX: Pack them sequentially into a single container
+        features = []
+        for i in range(4):
+            features.append(stages[i])
+            if i < 3:
+                features.append(downsample_layers[i])
+                
+        # Register them as a single continuous block
+        self.features = nn.Sequential(*features)
 
         # ---------------------------------------------------
         # Classifier
@@ -126,11 +134,7 @@ class ConvNeXt(nn.Module):
                 dummy = one_batch[:1]
 
             x = self.stem(dummy)
-            for i in range(4):
-                x = self.stages[i](x)
-                if i < 3:
-                    x = self.downsample_layers[i](x)
-                    
+            x = self.features(x) # <--- Replaced loop with flattened container
             x = self.avgpool(x)
             self.fc_input_size = x.view(1, -1).size(1)
 
@@ -139,12 +143,7 @@ class ConvNeXt(nn.Module):
 
     def forward(self, x):
         x = self.stem(x)
-        
-        for i in range(4):
-            x = self.stages[i](x)
-            if i < 3:
-                x = self.downsample_layers[i](x)
-                
+        x = self.features(x) # <--- Replaced loop with flattened container
         x = self.avgpool(x)
         
         # Flatten and apply the final LayerNorm (requires NHWC shape for nn.LayerNorm)
