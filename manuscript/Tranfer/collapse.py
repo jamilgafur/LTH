@@ -10,15 +10,15 @@ import copy
 from utils import count_trainable_params, layer_stats
 import math
 
-def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
-    print(f"[DEBUG] Locating and preparing block: start='{start_layer_name}', end:'{end_layer_name}'")
 
-    # --- LCA resolution ---
+
+def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
+    print(f"[DEBUG] [LCA] Locating block boundaries: '{start_layer_name}' -> '{end_layer_name}'")
+
     start_parts = start_layer_name.split('.') if start_layer_name else []
     end_parts = end_layer_name.split('.') if end_layer_name else []
     common_parts = []
     
-    # NEW FIX: If start and end are identical, the LCA is their parent!
     if start_layer_name == end_layer_name and len(start_parts) > 0:
         lca_path = '.'.join(start_parts[:-1])
     else:
@@ -29,64 +29,46 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
                 break
         lca_path = '.'.join(common_parts)
 
-    # FIX 1: Allow root to be the container
     if lca_path == "":
         start_container_name, _ = _get_container_and_subname(start_layer_name)
         end_container_name, _ = _get_container_and_subname(end_layer_name)
-        
-        # If they share a parent (even root ""), use it.
         if start_container_name == end_container_name:
             lca_path = start_container_name
             container = get_layer(model, lca_path)
         else:
-            # Fallback: If layers are in different top-level branches, use root as LCA
-            print(f"[DEBUG] Layers in different branches or direct children; using root as LCA.")
             lca_path = ""
             container = model
     else:
         container = get_layer(model, lca_path)
 
-    print(f"[DEBUG] Containers resolved → chosen LCA container: '{lca_path}'")
-
+    print(f"[DEBUG] [LCA] Resolved Container: '{lca_path}' | Type: {type(container).__name__}")
     named_layers = list(container.named_children())
-    print(f"[DEBUG] Found {len(named_layers)} children in container '{lca_path or '<root>'}'")
 
-    # --- locate child indices ---
     start_idx = end_idx = None
     for i, (child_name, _) in enumerate(named_layers):
         full_child_prefix = f"{lca_path}.{child_name}" if lca_path else child_name
-        
-        # Check start
-        if start_idx is None and (
-            start_layer_name == full_child_prefix
-            or start_layer_name.startswith(full_child_prefix + ".")
-        ):
+        if start_idx is None and (start_layer_name == full_child_prefix or start_layer_name.startswith(full_child_prefix + ".")):
             start_idx = i
-        
-        # Check end
-        if end_idx is None and (
-            end_layer_name == full_child_prefix
-            or end_layer_name.startswith(full_child_prefix + ".")
-        ):
+        if end_idx is None and (end_layer_name == full_child_prefix or end_layer_name.startswith(full_child_prefix + ".")):
             end_idx = i
-        
         if start_idx is not None and end_idx is not None:
             break
 
     if start_idx is None or end_idx is None:
         raise ValueError(f"[ERROR] Could not map start/end layers into LCA container '{lca_path}'.")
-
     if start_idx > end_idx:
         start_idx, end_idx = end_idx, start_idx
 
     full_block = named_layers[start_idx:end_idx + 1]
-    print(f"[DEBUG] Block slice length: {len(full_block)}")
-    if not isinstance(container, nn.Sequential) and start_idx != end_idx:
+    
+    # FIX: Dynamically allow the root model class to be sliced!
+    safe_sequential_classes = ("Sequential", "SeparableConv2d", "ModuleList", type(model).__name__)
+    if type(container).__name__ not in safe_sequential_classes and start_idx != end_idx and lca_path != "":
         raise ValueError(
-            f"[ERROR] Container '{lca_path}' is {type(container).__name__}, not nn.Sequential. "
-            f"Slicing multiple parallel branches (like Inception branches) as a sequence is invalid."
+            f"[ERROR] Container '{lca_path}' is {type(container).__name__}, not Sequential. "
+            f"Slicing parallel branches directly is invalid."
         )
-    # --- collect collapsible layers (mixed allowed) ---
+
     conv_layers = []
     for _, mod in full_block:
         if isinstance(mod, (nn.Conv2d, nn.Linear)):
@@ -95,21 +77,9 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
             if sub_name and isinstance(sub_mod, (nn.Conv2d, nn.Linear)):
                 conv_layers.append(sub_mod)
 
-    if not conv_layers:
-        raise ValueError("[ERROR] No Conv2d or Linear layers found in block.")
-
-    has_conv = any(isinstance(l, nn.Conv2d) for l in conv_layers)
-    collapse_mode = "conv" if has_conv else "linear"
-
-    print(
-        f"[DEBUG] Block composition → "
-        f"{sum(isinstance(l, nn.Conv2d) for l in conv_layers)} Conv2d, "
-        f"{sum(isinstance(l, nn.Linear) for l in conv_layers)} Linear "
-        f"(collapse_mode={collapse_mode})"
-    )
+    collapse_mode = "conv" if any(isinstance(l, nn.Conv2d) for l in conv_layers) else "linear"
     layer_type = nn.Conv2d if collapse_mode == "conv" else nn.Linear
 
-    # FIX 2: Return names (strings) for first/last layer to avoid naming errors
     return {
         "container": container,
         "container_name": lca_path,
@@ -120,9 +90,11 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
         "layer_type": layer_type,
         "conv_layers": conv_layers,
         "collapse_mode": collapse_mode,
-        "first_layer_name": full_block[0][0],  # Changed from object to name string
-        "last_layer_name": full_block[-1][0],   # Changed from object to name string
+        "first_layer_name": full_block[0][0],
+        "last_layer_name": full_block[-1][0],
     }
+
+
 def _build_and_replace_block(
     model,
     start_layer_name,
@@ -137,10 +109,12 @@ def _build_and_replace_block(
     debug,
 ):
     if debug:
-        print(f"\n[STEP] Building replacement for collapsed block '{start_layer_name}'") 
-        print(f"[DEBUG] Analyzing info dict keys: {list(info.keys())}") 
-        print(f"[DEBUG] Target device: {device}") 
-
+        print(f"\n{'='*60}")
+        print(f"[STEP] COLLAPSE REPLACEMENT INIT: '{start_layer_name}'")
+        print(f"{'='*60}")
+        print(f"[DEBUG] Target device    : {device}")
+        print(f"[DEBUG] Info keys found  : {list(info.keys())}")
+        
     named_layers = info["named_layers"] 
     # Prefer the container determined by the locator (LCA).
     start_container_name = info.get("container_name") 
@@ -152,26 +126,30 @@ def _build_and_replace_block(
     out_channels = block_analysis.get("out_channels") 
 
     if out_shape is None or out_channels is None: 
-        raise RuntimeError("[ERROR] block_analysis missing required out_shape/out_channels") 
+        raise RuntimeError(f"[ERROR] block_analysis missing required keys. Found: {list(block_analysis.keys())}") 
 
     target_H, target_W = (out_shape[-2], out_shape[-1]) if len(out_shape) >= 4 else (1, 1) 
-    if debug:
-        print(f"[DEBUG] Replacement target spatial size (HxW): {target_H}x{target_W}") 
-
+    
     if x is None or x.ndim < 2: 
-        raise RuntimeError("[ERROR] Invalid captured activation `x`.") 
+        raise RuntimeError(f"[ERROR] Invalid captured activation `x`. Shape found: {getattr(x, 'shape', None)}") 
     in_channels = int(x.shape[1]) 
+
     if debug:
-        print(f"[DEBUG] Replacement conv in_channels={in_channels}, out_channels={out_channels}") 
+        print(f"[DEBUG] Container Name   : '{start_container_name}'")
+        print(f"[DEBUG] Layer Indices    : {start_idx} -> {end_idx}")
+        print(f"[DEBUG] Spatial Target   : H={target_H} x W={target_W}")
+        print(f"[DEBUG] Channel Mapping  : {in_channels} (in) -> {out_channels} (out)")
 
     # -------- INTELLIGENT ROUTING LOGIC --------
     original_convs = info.get("conv_layers", [])
-    
     is_depthwise = False
     target_kernel_size = 1
     
     if original_convs:
         first_conv = original_convs[0]
+        if debug:
+            print(f"[DEBUG] Analyzing original conv: {first_conv.__class__.__name__} (groups={first_conv.groups}, in={first_conv.in_channels}, out={first_conv.out_channels})")
+            
         if first_conv.groups == first_conv.in_channels and first_conv.in_channels == first_conv.out_channels:
             if in_channels == out_channels:
                 is_depthwise = True
@@ -182,12 +160,14 @@ def _build_and_replace_block(
             is_depthwise = False
             
     if is_depthwise:
-        if debug: print(f"[DEBUG] Rebuilding as DEPTHWISE conv (kernel_size={target_kernel_size})")
+        if debug: 
+            print(f"[DEBUG] ➔ Strategy: DEPTHWISE Conv (kernel_size={target_kernel_size})")
         padding = target_kernel_size // 2 
         conv = nn.Conv2d(in_channels, out_channels, kernel_size=target_kernel_size, stride=1, padding=padding, groups=in_channels, bias=False)
         conv_name = "conv_dw"
     else:
-        if debug: print(f"[DEBUG] Rebuilding as POINTWISE conv (kernel_size=1)")
+        if debug: 
+            print(f"[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)")
         conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False)
         conv_name = "conv_1x1"
     # -----------------------------------------------
@@ -202,13 +182,26 @@ def _build_and_replace_block(
         ("relu", relu), 
         ("adaptive_pool", pool), 
     ]))
-    if debug: print(f"[DEBUG] Built replacement Sequential:\n{replacement}") 
+    
+    if debug: 
+        print(f"\n[DEBUG] Built replacement module:")
+        for name, layer in replacement.named_children():
+            print(f"        - {name}: {layer}")
 
-    if debug: print(f"[DEBUG] Replacing children indices {start_idx}..{end_idx} in container '{start_container_name or '<root>'}'") 
+    # =========================================================
+    # THE FIX: Explicitly passing info.get("container")
+    # =========================================================
+    if debug: 
+        print(f"\n[STEP] Patching container '{start_container_name or '<root>'}'...") 
     
     updated_container = _replace_layers( 
-            named_layers, start_idx, end_idx, replacement, 
-            start_name=info["first_layer_name"], end_name=info["last_layer_name"], 
+            named_layers, 
+            start_idx, 
+            end_idx, 
+            replacement, 
+            start_name=info["first_layer_name"], 
+            end_name=info["last_layer_name"],
+            container=info.get("container") # CRITICAL FIX: Preserves custom forward logic
         )
         
     _update_container(model, start_container_name, updated_container) 
@@ -216,10 +209,17 @@ def _build_and_replace_block(
 
     post_params = count_trainable_params(model) 
     if debug:
-        print(f"[DEBUG] Params before collapse: {pre_params:,}") 
-        print(f"[DEBUG] Params after  collapse: {post_params:,}") 
-        print(f"[INFO] ΔParams = {pre_params - post_params:+,}") 
+        print(f"\n[INFO] --- Parameter Delta ---")
+        print(f"[INFO] Pre-collapse  : {pre_params:,}") 
+        print(f"[INFO] Post-collapse : {post_params:,}") 
+        print(f"[INFO] Net Change    : {post_params - pre_params:+,}") 
 
+    if post_params > pre_params: 
+        print(f"[WARN] ⚠ Collapsed block INCREASED parameter count. Check collapse policy or routing logic.") 
+
+    # =========================================================
+    # REPLACEMENT VALIDATION
+    # =========================================================
     try:
         dev = next((p.device for p in model.parameters()), torch.device('cpu')) 
         rep_module = get_layer(model, start_container_name) 
@@ -237,216 +237,39 @@ def _build_and_replace_block(
             with torch.no_grad(): 
                 test_x = x.clone().to(dev) 
                 out = child(test_x) 
-                if debug: print(f"[DEBUG] Replacement validation OK — output shape {tuple(out.shape)}") 
+                if debug: 
+                    print(f"[DEBUG] ✓ Replacement local validation OK. Output shape: {tuple(out.shape)}") 
         else:
-            print(f"[WARN] Could not find inserted collapsed module for validation.") 
+            print(f"[WARN] Could not locate the inserted collapsed module for local validation.") 
     except Exception as e:
-        print(f"[WARN] Replacement forward validation failed: {e}") 
+        print(f"[ERROR] Replacement forward validation failed!\n       Exception: {str(e)}") 
             
-
     # =========================================================
-    # FIX: Run Corrective Pooling BEFORE downstream validation
+    # CORRECTIVE POOLING & DOWNSTREAM VALIDATION
     # =========================================================
     try:
         if debug:
-            print(f"[STEP] Performing corrective pooling (if needed)...") 
+            print(f"\n[STEP] Evaluating corrective pooling necessity...") 
         model = _insert_corrective_pool(model, next_linear_name, input_shape, debug) 
     except Exception as e:
-        print(f"[WARN] Corrective pool insertion failed: {e}") 
+        print(f"[ERROR] Corrective pool insertion failed: {str(e)}") 
             
-
     try:
         if debug:
-            print(f"[STEP] Validating downstream after replacement...") 
+            print(f"[STEP] Triggering downstream validation...") 
         _validate_downstream(model, start_container_name, start_idx, x, input_shape, next_linear_name, next_linear_mod, device, debug) 
+        if debug:
+            print(f"[DEBUG] ✓ Downstream validation successful.")
     except Exception as e:
-        print(f"[WARN] Downstream validation failed: {e}") 
+        print(f"[ERROR] Downstream validation failed!\n       Exception: {str(e)}") 
             
-    # =========================================================
-
-    if post_params > pre_params: 
-        print(f"[WARN] ⚠ Collapsed block increased parameter count — investigate collapse policy.") 
-            
-
-    if debug: print(f"[RESULT] Block replacement complete for '{start_layer_name}'.") 
+    if debug: 
+        print(f"{'='*60}")
+        print(f"[RESULT] Block replacement complete for '{start_layer_name}'.") 
+        print(f"{'='*60}\n")
 
     return model
 
-# def _build_and_replace_block(
-#     model,
-#     start_layer_name,
-#     input_shape,
-#     info,
-#     x,
-#     pre_params,
-#     next_linear_name,
-#     next_linear_mod,
-#     block_analysis,
-#     device,
-#     debug,
-# ):
-#     if debug:
-#         print(f"\n[STEP] Building replacement for collapsed block '{start_layer_name}'") #
-#         print(f"[DEBUG] Analyzing info dict keys: {list(info.keys())}") #
-#         print(f"[DEBUG] Target device: {device}") #
-
-#     named_layers = info["named_layers"] #
-#     # Prefer the container determined by the locator (LCA).
-#     start_container_name = info.get("container_name") #
-#     if start_container_name is None: #
-#         # Fallback only if not in info (should be there now)
-#         start_container_name = _get_container_and_subname(start_layer_name)[0] #
-        
-#     start_idx, end_idx = info["start_idx"], info["end_idx"] #
-#     out_shape = block_analysis.get("out_shape") #
-#     out_channels = block_analysis.get("out_channels") #
-
-#     if out_shape is None or out_channels is None: #
-#         raise RuntimeError("[ERROR] block_analysis missing required out_shape/out_channels") #
-
-#     target_H, target_W = (out_shape[-2], out_shape[-1]) if len(out_shape) >= 4 else (1, 1) #
-#     if debug:
-#         print(f"[DEBUG] Replacement target spatial size (HxW): {target_H}x{target_W}") #
-
-#     if x is None or x.ndim < 2: #
-#         raise RuntimeError("[ERROR] Invalid captured activation `x`.") #
-#     in_channels = int(x.shape[1]) #
-#     if debug:
-#         print(f"[DEBUG] Replacement conv in_channels={in_channels}, out_channels={out_channels}") #
-
-#     # -------- NEW INTELLIGENT ROUTING LOGIC --------
-#     original_convs = info.get("conv_layers", [])
-    
-#     is_depthwise = False
-#     target_kernel_size = 1
-    
-#     if original_convs:
-#         # Inspect the first convolution in the block being collapsed
-#         first_conv = original_convs[0]
-        
-#         # Check if the original layer was depthwise
-#         # A true depthwise conv has groups == in_channels == out_channels
-#         if first_conv.groups == first_conv.in_channels and first_conv.in_channels == first_conv.out_channels:
-#             # We can only safely replace with depthwise if our calculated replacement
-#             # channels also match (in_channels == out_channels)
-#             if in_channels == out_channels:
-#                 is_depthwise = True
-#                 # Preserve the original spatial kernel size (e.g., 3x3 or 5x5) for depthwise
-#                 target_kernel_size = first_conv.kernel_size[0] if isinstance(first_conv.kernel_size, tuple) else first_conv.kernel_size
-                
-#         # Check if it was explicitly a pointwise (1x1, groups=1)
-#         elif first_conv.kernel_size == (1, 1) or first_conv.kernel_size == 1:
-#             target_kernel_size = 1 # Force pointwise
-#             is_depthwise = False
-            
-#     # Build the specific convolution type
-#     if is_depthwise:
-#         if debug:
-#             print(f"[DEBUG] Rebuilding as DEPTHWISE conv (kernel_size={target_kernel_size})")
-        
-#         padding = target_kernel_size // 2 # Keep spatial dimensions identical before the pool
-#         conv = nn.Conv2d(in_channels, out_channels, kernel_size=target_kernel_size, 
-#                          stride=1, padding=padding, groups=in_channels, bias=False)
-#         conv_name = "conv_dw"
-#     else:
-#         if debug:
-#             print(f"[DEBUG] Rebuilding as POINTWISE conv (kernel_size=1)")
-            
-#         conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, 
-#                          stride=1, padding=0, bias=False)
-#         conv_name = "conv_1x1"
-#     # -----------------------------------------------
-
-#     bn = nn.BatchNorm2d(out_channels)  #
-#     relu = nn.ReLU(inplace=False) #
-#     pool = nn.AdaptiveAvgPool2d((target_H, target_W)) #
-
-#     replacement = nn.Sequential(OrderedDict([
-#         (conv_name, conv),
-#         ("bn", bn), #
-#         ("relu", relu), #
-#         ("adaptive_pool", pool), #
-#     ]))
-#     if debug:
-#         print(f"[DEBUG] Built replacement Sequential:\n{replacement}") #
-
-#     if debug:
-#         print(f"[DEBUG] Replacing children indices {start_idx}..{end_idx} in container '{start_container_name or '<root>'}'") #
-    
-#     # FIX: Use string names for start_name/end_name
-#     updated_container = _replace_layers( #
-#             named_layers, #
-#             start_idx, #
-#             end_idx, #
-#             replacement, #
-#             start_name=info["first_layer_name"], # passed as string #
-#             end_name=info["last_layer_name"],    # passed as string #
-#         )
-        
-#     _update_container(model, start_container_name, updated_container) #
-#     model.to(device) #
-
-#     post_params = count_trainable_params(model) #
-#     if debug:
-#         print(f"[DEBUG] Params before collapse: {pre_params:,}") #
-#         print(f"[DEBUG] Params after  collapse: {post_params:,}") #
-#         print(f"[INFO] ΔParams = {pre_params - post_params:+,}") #
-
-#     try:
-#         dev = next((p.device for p in model.parameters()), torch.device('cpu')) #
-#         rep_module = get_layer(model, start_container_name) #
-#         child = None #
-        
-#         # Validation search: look inside the container for the new collapsed module
-#         # Note: If start_container_name is root (""), rep_module is model
-#         for nm, m in rep_module.named_children(): #
-#             # UPDATED: We now check for 'conv_name' (either conv_1x1 or conv_dw) instead of a hardcoded string
-#             if nm.startswith("collapsed_") or (isinstance(m, nn.Sequential) and conv_name in dict(m.named_children())):
-#                 child = m #
-#                 break #
-        
-#         # Fallback: if we just replaced a specific index in a Sequential
-#         if child is None and isinstance(updated_container, nn.Sequential) and start_container_name != "": #
-#              # This path is risky if updated_container isn't attached yet, 
-#              # but we called _update_container above, so it should be fine.
-#              pass  #
-
-#         if child is not None: #
-#             with torch.no_grad(): #
-#                 test_x = x.clone().to(dev) #
-#                 out = child(test_x) #
-#                 if debug:
-#                     print(f"[DEBUG] Replacement validation OK — output shape {tuple(out.shape)}") #
-#         else:
-#             print(f"[WARN] Could not find inserted collapsed module for validation.") #
-#     except Exception as e:
-#         print(f"[WARN] Replacement forward validation failed: {e}") #
-#             #
-        
-#     try:
-#         if debug:
-#             print(f"[STEP] Validating downstream after replacement...") #
-#         _validate_downstream(model, start_container_name, start_idx, x, input_shape, next_linear_name, next_linear_mod, device, debug) #
-#     except Exception as e:
-#         print(f"[WARN] Downstream validation failed: {e}") #
-#             #
-        
-#     try:
-#         if debug:
-#             print(f"[STEP] Performing corrective pooling (if needed)...") #
-#         model = _insert_corrective_pool(model, next_linear_name, input_shape, debug) #
-#     except Exception as e:
-#         print(f"[WARN] Corrective pool insertion failed: {e}") #
-#             #
-
-#     if post_params > pre_params: #
-#         print(f"[WARN] ⚠ Collapsed block increased parameter count — investigate collapse policy.") #
-#             #
-
-#     if debug:
-#         print(f"[RESULT] Block replacement complete for '{start_layer_name}'.") #
-
-#     return model #
 
 # -----------------------------------------------------------------------------
 # Utilities
@@ -491,193 +314,160 @@ def disable_inplace_relu(model: nn.Module):
     if replaced:
         print(f"[INFO] Replaced {replaced} in-place ReLU(s) with out-of-place variants.")
 
-def _simulate_input_hook(model: nn.Module, target_layer_path: str, input_shape: Tuple[int, ...], device='cpu') -> Tuple[torch.Tensor, torch.Tensor]:
-    """
-    Run a single forward with a dummy input and capture the activation that is
-    the *input to* the target layer (registered as forward hook on the target layer).
-    Returns (dummy_input, captured_activation).
-    """
+def _simulate_input_output_hooks(model: nn.Module, start_layer_path: str, end_layer_path: str, input_shape: Tuple[int, ...], device='cpu'):
     model.eval()
     model.to(device)
     dummy_input = torch.randn(input_shape).to(device)
 
-    target_module = get_layer(model, target_layer_path)
+    start_module = get_layer(model, start_layer_path)
+    end_module = get_layer(model, end_layer_path)
 
     captured = {}
-    def hook(module, inp, out):
-        # store a detached copy of the input to the target module
-        captured['in'] = inp[0].detach()
-    handle = target_module.register_forward_hook(hook)
+    def hook_in(module, inp, out):
+        if 'in' not in captured:
+            captured['in'] = inp[0].detach()
+            
+    def hook_out(module, inp, out):
+        # Handle cases where output is a tuple
+        captured['out'] = out.detach() if isinstance(out, torch.Tensor) else out[0].detach()
+
+    h1 = start_module.register_forward_hook(hook_in)
+    h2 = end_module.register_forward_hook(hook_out)
+    
     try:
         with torch.no_grad():
             model(dummy_input)
     finally:
-        handle.remove()
-    if 'in' not in captured:
-        raise RuntimeError(f"Failed to capture activation at {target_layer_path}.")
-    return dummy_input, captured['in']
+        h1.remove()
+        h2.remove()
+        
+    if 'in' not in captured or 'out' not in captured:
+        raise RuntimeError(f"Failed to capture activations for {start_layer_path} -> {end_layer_path}.")
+        
+    return captured['in'], captured['out']
+
+def _capture_preblock_activation(model, start_layer_name, end_layer_name, input_shape, conv_layers, layer_type, device, debug):
+    print(f"[DEBUG] Capturing I/O hooks for '{start_layer_name}' -> '{end_layer_name}'...")
+    try:
+        x_in, y_out = _simulate_input_output_hooks(model, start_layer_name, end_layer_name, input_shape, device)
+        if debug:
+            print(f"[DEBUG] Captured input shape: {tuple(x_in.shape)}, output shape: {tuple(y_out.shape)}")
+    except Exception as e:
+        print(f"[WARN] Hook failed: {e}. Cannot reliably collapse parallel block without valid I/O.")
+        raise e
+        
+    pre_params = count_trainable_params(model)
+    return x_in, y_out, pre_params
 
 class SmartIdentity(nn.Module):
-    """A robust Identity replacement that safely absorbs nested attribute calls."""
+    """
+    A robust Identity replacement that safely absorbs nested attribute calls,
+    while explicitly blocking structural attributes to protect FLOP tracers.
+    """
+    def __init__(self):
+        super().__init__()
+        # Dummy attributes so it registers visually as a spatial layer
+        self.kernel_size = (1, 1)
+        self.stride = (1, 1)
+        self.padding = (0, 0)
+
     def forward(self, x, *args, **kwargs):
+        # Prevent 2D flattened tensors from crashing downstream Conv2d variance probes
+        if isinstance(x, torch.Tensor) and x.ndim == 2:
+            x = x.unsqueeze(-1).unsqueeze(-1)
         return x
         
     def __getattr__(self, name):
-        # Prevent intercepting PyTorch internal methods
         if name.startswith('_'):
             return super().__getattr__(name)
             
-        # FIX: Stop falsely claiming architectural attributes used by patching logic
-        if name in ['shortcut', 'block']:
+        # STRICT BLACKLIST: Force tracers to treat this as an empty pass-through
+        forbidden_attrs = {
+            'shortcut', 'block', 'weight', 'bias', 
+            'in_channels', 'out_channels', 'groups', 
+            'shape', 'size', 'dim', 'ndim', 'out_features', 'in_features'
+        }
+        if name in forbidden_attrs:
             raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
             
-        return self # Return self to absorb chained calls like .inception_4a(x)
+        # Safely absorb topology chains (e.g., identity.inception_4a(x) -> identity(x))
+        return self
     
-def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=None, end_name=None):
-    """Replace a slice of layers, using SmartIdentity for subsumed layers."""
-    new_layers = OrderedDict()
-
-    for i, (name, mod) in enumerate(named_layers):
-        if i < start_idx or i > end_idx:
-            new_layers[name] = mod
-        elif i == start_idx:
-            new_layers[name] = replacement
-        else:
-            # FIX: Use SmartIdentity so hardcoded forward passes don't crash
-            new_layers[name] = SmartIdentity()
-
-    return nn.Sequential(new_layers)
+def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=None, end_name=None, container=None):
+    if isinstance(container, nn.Sequential) or container is None:
+        new_layers = OrderedDict()
+        for i, (name, mod) in enumerate(named_layers):
+            if i < start_idx or i > end_idx:
+                new_layers[name] = mod
+            elif i == start_idx:
+                new_layers[name] = replacement
+            else:
+                new_layers[name] = SmartIdentity()
+        return nn.Sequential(new_layers)
+    else:
+        # In-place patch for complex parallel containers (Inception, ConvNeXt)
+        for i, (name, mod) in enumerate(named_layers):
+            if i == start_idx:
+                setattr(container, name, replacement)
+            elif start_idx < i <= end_idx:
+                setattr(container, name, SmartIdentity())
+        return container
+    
 def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
-    """
-    Insert AdaptiveAvgPool2d only when a true spatial -> flattened mismatch exists.
-    Uses a forward hook to measure the ACTUAL tensor shape entering the linear layer.
-    """
-
-    if debug:
-        print(f"\n[STEP] ===== Starting _insert_corrective_pool =====")
-        print(f"[DEBUG] next_linear_name='{next_linear_name}'")
-
     if not next_linear_name:
-        if debug:
-            print("[INFO] No next linear layer specified — skipping.")
         return model
 
-    # 1. ConvNeXt SAFETY
     if ".pwconv" in next_linear_name:
-        if debug:
-            print("[INFO] Detected ConvNeXt pwconv — skipping corrective pooling.")
         return model
 
-    # 2. Capture ACTUAL input shape to the linear layer
-    # We use the existing _simulate_input_hook to run a dummy pass and see what hits the linear layer
     try:
         device = next((p.device for p in model.parameters()), torch.device('cpu'))
-        # input_shape here is the MODEL input (e.g., 1, 3, 32, 32)
-        _, actual_input = _simulate_input_hook(model, next_linear_name, input_shape, device=device)
+        x_in, _ = _simulate_input_output_hooks(model, next_linear_name, next_linear_name, input_shape, device=device)
         
-        # Flattened size per batch item (N, C, H, W) -> C*H*W
-        current_features = actual_input[0].numel() 
-        current_shape = actual_input.shape # e.g. [1, 728, 1, 1]
-        
+        # FIX: Use x_in[0] to calculate features per sample, completely ignoring batch size
+        current_features = x_in[0].numel() 
+        current_shape = x_in.shape
         if debug:
-            print(f"[DEBUG] Actual tensor shape entering '{next_linear_name}': {tuple(current_shape)}")
-            print(f"[DEBUG] Flattened size per sample: {current_features}")
-            
+            print(f"[DEBUG] [POOL] Target Linear: '{next_linear_name}'")
+            print(f"[DEBUG] [POOL] Entering shape: {tuple(current_shape)} | Flat size: {current_features}")
     except Exception as e:
-        print(f"[WARN] Failed to simulate forward pass for corrective pool check: {e}")
+        if debug: print(f"[WARN] Pool check hook failed: {e}")
         return model
 
-    # 3. Get Linear layer expectations
-    next_linear_mod = None
-    next_linear_parent = None
-    next_linear_parent_name = None
-    next_linear_child_name = None
-
-    # Locate module and parent
-    for name, mod in model.named_modules():
-        if name == next_linear_name:
-            next_linear_mod = mod
-            break
-            
+    next_linear_mod = get_layer(model, next_linear_name)
     if not isinstance(next_linear_mod, nn.Linear):
-        if debug:
-            print(f"[INFO] Target '{next_linear_name}' is not nn.Linear — skipping.")
         return model
         
     in_features = next_linear_mod.in_features
-    if debug:
-        print(f"[DEBUG] Linear '{next_linear_name}' expects in_features={in_features}")
-
-    # 4. Compare and Decide
     if current_features == in_features:
-        if debug:
-            print("[INFO] ✅ Shapes match (Current == Expected) — no corrective pooling needed.")
+        if debug: print("[INFO] ✅ Pool check: Shapes match seamlessly.")
         return model
 
-    # 5. Calculate Pooling logic (if mismatch exists)
-    # Assume NCHW layout for calculation
     if len(current_shape) < 4:
-         if debug:
-            print("[WARN] Input is already flattened but size mismatches. Cannot fix with pooling.")
-         return model
+        return model
 
     C = current_shape[1]
     if in_features % C != 0:
-        if debug:
-            print(f"[WARN] in_features ({in_features}) not divisible by channels ({C}) — unsafe to pool.")
         return model
 
     expected_hw = in_features // C
     target_hw = int(round(expected_hw ** 0.5))
 
     if target_hw * target_hw != expected_hw:
-        if debug:
-             print(f"[WARN] Target spatial area {expected_hw} is not square — skipping.")
         return model
 
-    if debug:
-        print(f"[INFO] 🛠 Mismatch detected! Inserting AdaptiveAvgPool2d({target_hw}, {target_hw})")
+    if debug: print(f"[INFO] 🛠 Mismatch! Wrapping '{next_linear_name}' with AdaptiveAvgPool2d({target_hw}, {target_hw})")
 
-    # 6. Insert the pool
-    # Locate parent container again to perform insertion
+    # Safe in-place module replacement
     for parent_name, parent_mod in model.named_modules():
         for child_name, child_mod in parent_mod.named_children():
             if child_mod is next_linear_mod:
-                next_linear_parent = parent_mod
-                next_linear_parent_name = parent_name
-                next_linear_child_name = child_name
-                break
-        if next_linear_parent is not None:
-            break
-
-    corrective_pool = nn.AdaptiveAvgPool2d((target_hw, target_hw))
-    
-    new_children = OrderedDict()
-    inserted = False
-    for name, mod in next_linear_parent.named_children():
-        if name == next_linear_child_name and not inserted:
-            new_children["corrective_pool"] = corrective_pool
-            inserted = True
-        new_children[name] = mod
-
-    # Apply update
-    if isinstance(next_linear_parent, nn.Sequential):
-        new_parent = nn.Sequential(new_children)
-    else:
-        new_parent = nn.Sequential(new_children)
-
-    # Update the model with the new parent container
-    if next_linear_parent_name == "":
-        # Special handling if the linear layer is a direct child of the root model
-        setattr(model, next_linear_child_name, nn.Sequential(
-            corrective_pool,
-            next_linear_mod
-        ))
-    else:
-        _update_container(model, next_linear_parent_name, new_parent)
-
-    if debug:
-        print("[RESULT] Corrective pooling inserted successfully.")
+                wrapped_linear = nn.Sequential(
+                    nn.AdaptiveAvgPool2d((target_hw, target_hw)),
+                    next_linear_mod
+                )
+                setattr(parent_mod, child_name, wrapped_linear)
+                return model
 
     return model
 
@@ -714,60 +504,85 @@ def _update_container(model: nn.Module, container_path: str, new_container: nn.M
 # -----------------------------------------------------------------------------
 # Skip connection patcher
 # -----------------------------------------------------------------------------
+
 def patch_skip_connections(model: nn.Module):
-    """
-    Patches module forwards to robustly handle residual connections.
-    If the collapsed block output shape differs from the shortcut, 
-    this attempts to spatially align the shortcut instead of severing the connection.
-    """
-    model._bypassed_residuals = 0
+    model._bypassed_residuals = getattr(model, '_bypassed_residuals', 0)
 
     for name, module in model.named_modules():
-        # FIX: Explicitly ignore SmartIdentity to prevent false positive patches
-        if isinstance(module, SmartIdentity):
-            continue
+        if isinstance(module, SmartIdentity): continue
             
-        # Look for ResNet/ConvNeXt style blocks with 'shortcut' and 'block'
+        # 1. Standard ResNet/RegNetX
         if hasattr(module, 'shortcut') and isinstance(module.shortcut, nn.Module) and hasattr(module, 'block'):
-            
-            # Save original forward if not already patched
-            if not hasattr(module, '_orig_forward'):
-                module._orig_forward = getattr(module, 'forward')
-                
+            if not hasattr(module, '_orig_forward'): module._orig_forward = getattr(module, 'forward')
             def make_patched_forward(mod_name):
                 def new_forward(self, x):
-                    # 1. Run the (potentially collapsed) main block
                     out = self.block(x)
-                    
-                    # 2. Run the shortcut
-                    try:
-                        sc = self.shortcut(x)
-                    except Exception:
-                        # Fallback if shortcut itself fails
-                        return F.relu(out)
-
-                    # 3. CRITICAL FIX: Align shapes instead of giving up
+                    try: sc = self.shortcut(x)
+                    except Exception: return F.relu(out)
                     if out.shape != sc.shape:
-                        # Case A: Spatial Mismatch (e.g., 16x16 vs 32x32)
-                        # We use adaptive pooling on the SHORTCUT to match the OUTPUT
-                        if out.shape[2:] != sc.shape[2:]:
-                            sc = F.adaptive_avg_pool2d(sc, out.shape[2:])
-                        
-                        # Case B: Channel Mismatch
-                        # If channels still don't match after spatial fix, we unfortunately
-                        # cannot add them without a learned 1x1 conv. We must bypass.
-                        # (However, collapse.py usually preserves channel counts, so this is rare)
-                        if out.shape[1] != sc.shape[1]:
-                            model._bypassed_residuals += 1
-                            return F.relu(out)
-
-                    # 4. Add residual
+                        if out.shape[2:] != sc.shape[2:]: sc = F.adaptive_avg_pool2d(sc, out.shape[2:])
+                        if out.shape[1] != sc.shape[1]: model._bypassed_residuals += 1; return F.relu(out)
                     return F.relu(out + sc)
                 return new_forward
-
-            # Apply the patch
             module.forward = make_patched_forward(name).__get__(module)
-            print(f"[PATCH] Patched residual block forward (with spatial align): {name}")
+
+        # 2. ConvNeXtBlock
+        elif module.__class__.__name__ == "ConvNeXtBlock":
+            if not hasattr(module, '_orig_forward'): module._orig_forward = getattr(module, 'forward')
+            def make_convnext_forward():
+                def new_forward(self, x):
+                    residual = x
+                    out = self.dwconv(x)
+                    if out.ndim == 4: out = out.permute(0, 2, 3, 1) # NCHW -> NHWC
+                    out = self.norm(out)
+                    out = self.pwconv1(out)
+                    out = self.act(out)
+                    out = self.pwconv2(out)
+                    if self.gamma is not None: out = self.gamma * out
+                    if out.ndim == 4: out = out.permute(0, 3, 1, 2) # NHWC -> NCHW
+                    
+                    if out.shape != residual.shape:
+                        if out.shape[2:] != residual.shape[2:]: residual = F.adaptive_avg_pool2d(residual, out.shape[2:])
+                        if out.shape[1] != residual.shape[1]: return out
+                    return out + residual
+                return new_forward
+            module.forward = make_convnext_forward().__get__(module)
+
+        # 3. InceptionBlock
+        elif module.__class__.__name__ == "InceptionBlock":
+            if not hasattr(module, '_orig_forward'): module._orig_forward = getattr(module, 'forward')
+            def make_inception_forward():
+                def new_forward(self, x):
+                    o1, o2, o3, o4 = self.branch1(x), self.branch2(x), self.branch3(x), self.branch4(x)
+                    outs = [o1, o2, o3, o4]
+                    outs_4d = [o for o in outs if o.ndim == 4]
+                    if not outs_4d: return torch.cat(outs, dim=1)
+                    
+                    min_h = min(o.shape[2] for o in outs_4d)
+                    min_w = min(o.shape[3] for o in outs_4d)
+                    
+                    aligned = []
+                    for o in outs:
+                        if o.ndim == 4 and (o.shape[2] > min_h or o.shape[3] > min_w):
+                            aligned.append(F.adaptive_avg_pool2d(o, (min_h, min_w)))
+                        else: aligned.append(o)
+                    return torch.cat(aligned, dim=1)
+                return new_forward
+            module.forward = make_inception_forward().__get__(module)
+
+        # 4. XceptionBlock
+        elif module.__class__.__name__ == "XceptionBlock":
+            if not hasattr(module, '_orig_forward'): module._orig_forward = getattr(module, 'forward')
+            def make_xception_forward():
+                def new_forward(self, x):
+                    sc = self.skip(x)
+                    out = self.rep(x)
+                    if out.shape != sc.shape:
+                        if out.shape[2:] != sc.shape[2:]: sc = F.adaptive_avg_pool2d(sc, out.shape[2:])
+                        if out.shape[1] != sc.shape[1]: return out
+                    return out + sc
+                return new_forward
+            module.forward = make_xception_forward().__get__(module)
 # -----------------------------------------------------------------------------
 # Core collapse of a single block (simple replacement)
 # -----------------------------------------------------------------------------
@@ -784,32 +599,60 @@ def _collapse_block(
     Collapse layers between start_layer_name and end_layer_name (inclusive)
     by replacing them with: Conv2d(1x1) -> AdaptiveAvgPool2d(H_last,W_last).
     """
-    print(f"\n[INFO] ===== Collapsing block: {start_layer_name} → {end_layer_name} =====")
+    print(f"\n[INFO] {'='*20} Collapsing Block {'='*20}")
+    print(f"[INFO] Start Target : {start_layer_name}")
+    print(f"[INFO] End Target   : {end_layer_name}")
+    if debug:
+        print(f"[DEBUG] Target Device Allocation: {device}")
 
     # Step 1: Locate block
-    print(f"[STEP 1] Locating block boundaries...")
+    print(f"\n[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...")
     info = _locate_and_prepare_block(model, start_layer_name, end_layer_name)
+    
     if debug:
-        print(f"[DEBUG] Located block with {len(info['full_block'])} layers")
+        print(f"[DEBUG] --- LCA Resolution Results ---")
+        print(f"[DEBUG] Container Path  : '{info.get('container_name', '<root>')}'")
+        print(f"[DEBUG] Container Type  : {type(info['container']).__name__}")
+        print(f"[DEBUG] Slice Indices   : {info['start_idx']} to {info['end_idx']}")
+        print(f"[DEBUG] Captured Layers : {len(info['full_block'])} total")
         for n, l in info["full_block"]:
-            print(f"    [LAYER] {n}: {l}")
+            print(f"    [LAYER MAP] {n} -> {type(l).__name__}")
 
-    # Step 2: Capture activation entering the start layer
-    print(f"[STEP 2] Capturing activation before start layer '{start_layer_name}'...")
-    x, pre_params = _capture_preblock_activation(
-        model, start_layer_name, input_shape, info["conv_layers"], info["layer_type"], device, debug
-    )
+    # =========================================================
+    # THE CRITICAL FIX: Align capture hooks to the LCA container boundaries
+    # =========================================================
+    lca_start_name = f"{info['container_name']}.{info['first_layer_name']}" if info['container_name'] else info['first_layer_name']
+    lca_end_name = f"{info['container_name']}.{info['last_layer_name']}" if info['container_name'] else info['last_layer_name']
+
+    # Step 2: Capture activation entering the LCA boundaries
+    print(f"\n[STEP 2] Simulating Forward Pass & Capturing LCA Activations...")
     if debug:
-        print(f"[DEBUG] Input activation shape entering block: {tuple(x.shape)}")
+        print(f"[DEBUG] Hooking Start Node : '{lca_start_name}'")
+        print(f"[DEBUG] Hooking End Node   : '{lca_end_name}'")
+        print(f"[DEBUG] Dummy Input Shape  : {input_shape}")
+        
+    x, y_out, pre_params = _capture_preblock_activation( 
+        model, lca_start_name, lca_end_name, input_shape, info["conv_layers"], info["layer_type"], device, debug
+    ) 
+    # =========================================================
+
+    if debug:
+        print(f"[DEBUG] --- Activation Capture Success ---")
+        print(f"[DEBUG] Input (x) shape entering LCA   : {tuple(x.shape)}")
+        print(f"[DEBUG] Output (y) shape exiting LCA   : {tuple(y_out.shape)}")
+        print(f"[DEBUG] Pre-collapse Parameter Count   : {pre_params:,}")
 
     # Step 3: Find next linear
-    print(f"[STEP 3] Searching for next linear layer after '{end_layer_name}'...")
+    print(f"\n[STEP 3] Probing graph for downstream classifier after '{end_layer_name}'...")
     next_linear_name, next_linear_mod = _find_next_linear(model, end_layer_name, debug)
+    
     if debug:
-        print(f"[DEBUG] Next linear layer: {next_linear_name} -> {type(next_linear_mod).__name__ if next_linear_mod else 'None'}")
+        print(f"[DEBUG] --- Downstream Probe Results ---")
+        print(f"[DEBUG] Next Linear Name : '{next_linear_name}'")
+        print(f"[DEBUG] Next Linear Type : {type(next_linear_mod).__name__ if next_linear_mod else 'None'}")
 
     # Step 4: Analyze block output
-    print(f"[STEP 4] Analyzing block output characteristics...")
+    print(f"\n[STEP 4] Analyzing topological characteristics for replacement...")
     block_analysis = _analyze_block_output(
         model,
         info["full_block"],
@@ -818,16 +661,18 @@ def _collapse_block(
         info["end_idx"],
         info["layer_type"],
         x,
+        y_out,  
         next_linear_mod,
         debug
     )
+    
     if debug:
-        print(f"[DEBUG] Block output analysis result:")
+        print(f"[DEBUG] --- Feature Map Strategy ---")
         for k, v in block_analysis.items():
-            print(f"    {k}: {v}")
+            print(f"    - {k:<25}: {v}")
 
     # Step 5: Replace block
-    print(f"[STEP 5] Rebuilding and replacing collapsed block...")
+    print(f"\n[STEP 5] Synthesizing surrogate block and fusing into computational graph...")
     model = _build_and_replace_block(
         model,
         start_layer_name,
@@ -841,34 +686,10 @@ def _collapse_block(
         device,
         debug
     )
-    print(f"[INFO] ✅ Collapse complete for block '{start_layer_name}' → '{end_layer_name}'")
+    
+    print(f"\n[INFO] ✅ Framework successfully merged '{start_layer_name}' → '{end_layer_name}'")
 
     return model
-
-def _capture_preblock_activation(model, start_layer_name, input_shape, conv_layers, layer_type, device, debug):
-    print(f"[DEBUG] Attempting to capture activation before '{start_layer_name}' using simulation hook...")
-    try:
-        dummy_input, x = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
-        if debug:
-            print(f"[DEBUG] Successfully captured activation → shape: {tuple(x.shape)}")
-    except Exception as e:
-        print(f"[WARN] Hook failed: {e}")
-        print(f"[WARN] Falling back to dummy tensor initialization.")
-        if layer_type == nn.Conv2d:
-            in_ch = conv_layers[0].in_channels if hasattr(conv_layers[0], 'in_channels') else input_shape[1]
-            H, W = input_shape[-2], input_shape[-1]
-            x = torch.randn(1, in_ch, H, W, device=device)
-        else:
-            in_feat = conv_layers[0].in_features if hasattr(conv_layers[0], 'in_features') else input_shape[1]
-            x = torch.randn(1, in_feat, device=device)
-        print(f"[DEBUG] Created fallback tensor of shape {tuple(x.shape)}")
-
-    pre_params = count_trainable_params(model)
-    if debug:
-        print(f"[DEBUG] Total trainable parameters before collapse: {pre_params:,}")
-
-    print(f"[DEBUG] Activation capture complete.")
-    return x, pre_params
 
 def _find_next_linear(model, end_layer_name, debug):
     if debug:
@@ -923,49 +744,25 @@ def _find_next_linear(model, end_layer_name, debug):
     return next_linear_name, next_linear_mod
 
 def _analyze_block_output(
-    model,
-    full_block,
-    conv_layers,
-    named_layers,
-    end_idx,
-    layer_type,
-    x,
-    next_linear_mod,
-    debug,
+    model, full_block, conv_layers, named_layers, end_idx, layer_type, x, y_out, next_linear_mod, debug
 ):
     if debug:
         print(f"\n[STEP] Analyzing output of collapsed block ({len(full_block)} layers)...")
         print(f"[DEBUG] Input tensor shape before block: {tuple(x.shape)}")
         print(f"[DEBUG] Running forward pass through block layers:")
 
-    with torch.no_grad():
-        y = x.clone()
-        for idx, (name, layer) in enumerate(full_block):
-            if debug:
-                print(
-                    f"    [DEBUG] Layer {idx+1}/{len(full_block)}: "
-                    f"{name} ({layer.__class__.__name__}) input={tuple(y.shape)}"
-                )
-            try:
-                y = layer(y)
-            except RuntimeError as e:
-                # If a layer fails, try a NHWC/NCHW permute fallback for ConvNeXt
-                if "shape" in str(e).lower() and y.ndim == 4:
-                    try:
-                        y = layer(y.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
-                    except:
-                        raise RuntimeError(f"Layer '{name}' forward failed. Topology may be non-sequential.")
-                else:
-                    raise e
-            if debug:
-                print(f"        └── output shape: {tuple(y.shape)}")
+    out_shape = tuple(y_out.shape)
+    out_channels = y_out.shape[1] if y_out.ndim >= 2 else None
 
+    if debug:
+        print(f"[DEBUG] Final block output shape (via hook): {out_shape}")
+        print(f"[DEBUG] Determined out_channels={out_channels}")
     # --- Ground-truth output characteristics ---
-    out_shape = tuple(y.shape)
+    out_shape = tuple(y_out.shape)
 
     # 🔧 CRITICAL FIX:
     # Infer channels from actual tensor, not from layer attributes
-    out_channels = y.shape[1] if y.ndim >= 2 else None
+    out_channels = y_out.shape[1] if y_out.ndim >= 2 else None
 
     if debug:
         print(f"[DEBUG] Final block output shape: {out_shape}")
