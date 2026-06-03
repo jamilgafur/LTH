@@ -113,10 +113,8 @@ def _build_and_replace_block(
         print(f"[STEP] COLLAPSE REPLACEMENT INIT: '{start_layer_name}'")
         print(f"{'='*60}")
         print(f"[DEBUG] Target device    : {device}")
-        print(f"[DEBUG] Info keys found  : {list(info.keys())}")
         
     named_layers = info["named_layers"] 
-    # Prefer the container determined by the locator (LCA).
     start_container_name = info.get("container_name") 
     if start_container_name is None: 
         start_container_name = _get_container_and_subname(start_layer_name)[0] 
@@ -132,65 +130,71 @@ def _build_and_replace_block(
     
     if x is None or x.ndim < 2: 
         raise RuntimeError(f"[ERROR] Invalid captured activation `x`. Shape found: {getattr(x, 'shape', None)}") 
+    
     in_channels = int(x.shape[1]) 
+    in_H, in_W = (x.shape[-2], x.shape[-1]) if x.ndim >= 4 else (1, 1)
 
     if debug:
         print(f"[DEBUG] Container Name   : '{start_container_name}'")
         print(f"[DEBUG] Layer Indices    : {start_idx} -> {end_idx}")
-        print(f"[DEBUG] Spatial Target   : H={target_H} x W={target_W}")
+        print(f"[DEBUG] Spatial Target   : H={target_H} x W={target_W} (Input: H={in_H} x W={in_W})")
         print(f"[DEBUG] Channel Mapping  : {in_channels} (in) -> {out_channels} (out)")
 
     # -------- INTELLIGENT ROUTING LOGIC --------
     original_convs = info.get("conv_layers", [])
-    is_depthwise = False
-    target_kernel_size = 1
     
-    if original_convs:
-        first_conv = original_convs[0]
-        if debug:
-            print(f"[DEBUG] Analyzing original conv: {first_conv.__class__.__name__} (groups={first_conv.groups}, in={first_conv.in_channels}, out={first_conv.out_channels})")
-            
-        if first_conv.groups == first_conv.in_channels and first_conv.in_channels == first_conv.out_channels:
-            if in_channels == out_channels:
-                is_depthwise = True
-                target_kernel_size = first_conv.kernel_size[0] if isinstance(first_conv.kernel_size, tuple) else first_conv.kernel_size
-                
-        elif first_conv.kernel_size == (1, 1) or first_conv.kernel_size == 1:
-            target_kernel_size = 1 
-            is_depthwise = False
-            
-    if is_depthwise:
+    # [STRATEGY 1: ZERO-PARAMETER IDENTITY PATCH]
+    if in_channels == out_channels and in_H == target_H and in_W == target_W:
         if debug: 
-            print(f"[DEBUG] ➔ Strategy: DEPTHWISE Conv (kernel_size={target_kernel_size})")
-        padding = target_kernel_size // 2 
-        conv = nn.Conv2d(in_channels, out_channels, kernel_size=target_kernel_size, stride=1, padding=padding, groups=in_channels, bias=False)
-        conv_name = "conv_dw"
+            print(f"[DEBUG] ➔ Strategy: ZERO-PARAMETER IDENTITY (Perfect channel & spatial match)")
+        
+        conv_name = "collapsed_identity"
+        replacement = nn.Sequential(OrderedDict([
+            (conv_name, nn.Identity())
+        ]))
+        
+    # [STRATEGY 2: STANDARD COMPRESSION PATCH]
     else:
-        if debug: 
-            print(f"[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)")
-        conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False)
-        conv_name = "conv_1x1"
+        is_depthwise = False
+        target_kernel_size = 1
+        
+        if original_convs:
+            first_conv = original_convs[0]
+            if first_conv.groups == first_conv.in_channels and first_conv.in_channels == first_conv.out_channels:
+                if in_channels == out_channels:
+                    is_depthwise = True
+                    target_kernel_size = first_conv.kernel_size[0] if isinstance(first_conv.kernel_size, tuple) else first_conv.kernel_size
+            elif first_conv.kernel_size == (1, 1) or first_conv.kernel_size == 1:
+                target_kernel_size = 1 
+                is_depthwise = False
+                
+        if is_depthwise:
+            if debug: print(f"[DEBUG] ➔ Strategy: DEPTHWISE Conv (kernel_size={target_kernel_size})")
+            padding = target_kernel_size // 2 
+            conv = nn.Conv2d(in_channels, out_channels, kernel_size=target_kernel_size, stride=1, padding=padding, groups=in_channels, bias=False)
+            conv_name = "conv_dw"
+        else:
+            if debug: print(f"[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)")
+            conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False)
+            conv_name = "conv_1x1"
+
+        bn = nn.BatchNorm2d(out_channels)  
+        relu = nn.ReLU(inplace=False) 
+        pool = nn.AdaptiveAvgPool2d((target_H, target_W)) 
+
+        replacement = nn.Sequential(OrderedDict([
+            (conv_name, conv),
+            ("bn", bn), 
+            ("relu", relu), 
+            ("adaptive_pool", pool), 
+        ]))
     # -----------------------------------------------
-
-    bn = nn.BatchNorm2d(out_channels)  
-    relu = nn.ReLU(inplace=False) 
-    pool = nn.AdaptiveAvgPool2d((target_H, target_W)) 
-
-    replacement = nn.Sequential(OrderedDict([
-        (conv_name, conv),
-        ("bn", bn), 
-        ("relu", relu), 
-        ("adaptive_pool", pool), 
-    ]))
     
     if debug: 
         print(f"\n[DEBUG] Built replacement module:")
         for name, layer in replacement.named_children():
             print(f"        - {name}: {layer}")
 
-    # =========================================================
-    # THE FIX: Explicitly passing info.get("container")
-    # =========================================================
     if debug: 
         print(f"\n[STEP] Patching container '{start_container_name or '<root>'}'...") 
     
@@ -201,7 +205,7 @@ def _build_and_replace_block(
             replacement, 
             start_name=info["first_layer_name"], 
             end_name=info["last_layer_name"],
-            container=info.get("container") # CRITICAL FIX: Preserves custom forward logic
+            container=info.get("container") 
         )
         
     _update_container(model, start_container_name, updated_container) 
@@ -212,7 +216,7 @@ def _build_and_replace_block(
         print(f"\n[INFO] --- Parameter Delta ---")
         print(f"[INFO] Pre-collapse  : {pre_params:,}") 
         print(f"[INFO] Post-collapse : {post_params:,}") 
-        print(f"[INFO] Net Change    : {post_params - pre_params:+,}") 
+        print(f"[INFO] Net Change    : {post_params - pre_params:+,}") # Fixed math display
 
     if post_params > pre_params: 
         print(f"[WARN] ⚠ Collapsed block INCREASED parameter count. Check collapse policy or routing logic.") 
@@ -269,7 +273,6 @@ def _build_and_replace_block(
         print(f"{'='*60}\n")
 
     return model
-
 
 # -----------------------------------------------------------------------------
 # Utilities
