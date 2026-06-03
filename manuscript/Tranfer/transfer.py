@@ -250,13 +250,14 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             except Exception:
                 new_flops = float('inf')
 
-            if new_params < base_params and (not check_flops or new_flops < base_flops):
+            # UPDATE: Accept if params decrease OR flops decrease
+            if new_params < base_params or (check_flops and new_flops < base_flops):
                 print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,}) | FLOPs ({base_flops:,} -> {new_flops:,})")
                 experiment_regions[f"Set_{set_counter}"] = region_tuple
                 R_final.append(region_tuple)
                 set_counter += 1
             else:
-                reason = "Inflated compute" if new_params > base_params else "Backend rejected (Unmodified)"
+                reason = "Neither Params nor FLOPs decreased"
                 print(f"        [X] FAILED TO REDUCE: {reason}. Fracturing block...")
                 mid = len(r) // 2
                 if mid > 0:
@@ -310,10 +311,12 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 except Exception:
                     new_flops_combo = float('inf')
 
-                if new_params_combo >= current_best_params:
-                    raise ValueError(f"Param Inflation: {new_params_combo:,} >= {current_best_params:,}")
-                if check_flops and new_flops_combo >= current_best_flops:
-                    raise ValueError(f"FLOP Inflation: {new_flops_combo:,} >= {current_best_flops:,}")
+                # UPDATE: Throw error ONLY if neither params nor flops show a reduction 
+                param_decreased = new_params_combo < current_best_params
+                flop_decreased = check_flops and new_flops_combo < current_best_flops
+                
+                if not (param_decreased or flop_decreased):
+                    raise ValueError(f"Neither Params nor FLOPs decreased: Params ({new_params_combo:,} vs {current_best_params:,}), FLOPs ({new_flops_combo:,} vs {current_best_flops:,})")
                 
                 current_best_params = new_params_combo
                 current_best_flops = new_flops_combo
@@ -334,7 +337,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     # Add control as baseline
     experiment_regions["Control_Continuted"] = None
     return experiment_regions
-
 # ==============================================================================
 # Helper functions
 # ==============================================================================
