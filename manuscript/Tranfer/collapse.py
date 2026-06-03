@@ -372,14 +372,18 @@ class SmartIdentity(nn.Module):
     while explicitly blocking structural attributes to protect FLOP tracers.
     """
     def forward(self, x, *args, **kwargs):
+        # Ensure spatial dimensions are preserved for downstream variance hooks 
+        # to prevent IndexError: Dimension out of range
+        if isinstance(x, torch.Tensor) and x.ndim == 2:
+            x = x.unsqueeze(-1).unsqueeze(-1)
         return x
         
     def __getattr__(self, name):
-        # 1. Prevent intercepting PyTorch internal methods
+        # Prevent intercepting PyTorch internal methods
         if name.startswith('_'):
             return super().__getattr__(name)
             
-        # 2. Explicitly forbid architectural/math attributes
+        # Explicitly forbid architectural/math attributes
         # This prevents fvcore and PyTorch hooks from doing math on 'self'
         forbidden_attrs = {
             'shortcut', 'block', 'weight', 'bias', 
@@ -390,8 +394,9 @@ class SmartIdentity(nn.Module):
         if name in forbidden_attrs:
             raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
             
-        # 3. Return self to safely absorb chained topology calls (e.g., .inception_4a(x))
+        # Return self to safely absorb chained topology calls
         return self
+
 def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=None, end_name=None, container=None):
     if isinstance(container, nn.Sequential) or container is None:
         new_layers = OrderedDict()
@@ -434,13 +439,12 @@ def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
         return model
 
     # 2. Capture ACTUAL input shape to the linear layer
-    # We use the existing _simulate_input_hook to run a dummy pass and see what hits the linear layer
     try:
         device = next((p.device for p in model.parameters()), torch.device('cpu'))
-        # Pass the linear layer as both start and end to just get the 'in' tensor
         x_in, _ = _simulate_input_output_hooks(model, next_linear_name, next_linear_name, input_shape, device=device)
         
-        current_features = x_in.numel() 
+        # FIX 1: Use x_in[0] to calculate features per sample, ignoring batch size
+        current_features = x_in[0].numel() 
         current_shape = x_in.shape
         if debug:
             print(f"[DEBUG] Actual tensor shape entering '{next_linear_name}': {tuple(current_shape)}")
@@ -456,7 +460,6 @@ def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
     next_linear_parent_name = None
     next_linear_child_name = None
 
-    # Locate module and parent
     for name, mod in model.named_modules():
         if name == next_linear_name:
             next_linear_mod = mod
@@ -478,7 +481,6 @@ def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
         return model
 
     # 5. Calculate Pooling logic (if mismatch exists)
-    # Assume NCHW layout for calculation
     if len(current_shape) < 4:
          if debug:
             print("[WARN] Input is already flattened but size mismatches. Cannot fix with pooling.")
@@ -502,7 +504,6 @@ def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
         print(f"[INFO] 🛠 Mismatch detected! Inserting AdaptiveAvgPool2d({target_hw}, {target_hw})")
 
     # 6. Insert the pool
-    # Locate parent container again to perform insertion
     for parent_name, parent_mod in model.named_modules():
         for child_name, child_mod in parent_mod.named_children():
             if child_mod is next_linear_mod:
@@ -515,29 +516,31 @@ def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
 
     corrective_pool = nn.AdaptiveAvgPool2d((target_hw, target_hw))
     
-    new_children = OrderedDict()
-    inserted = False
-    for name, mod in next_linear_parent.named_children():
-        if name == next_linear_child_name and not inserted:
-            new_children["corrective_pool"] = corrective_pool
-            inserted = True
-        new_children[name] = mod
-
-    # Apply update
+    # FIX 2: Safely route insertion based on parent container type
     if isinstance(next_linear_parent, nn.Sequential):
-        new_parent = nn.Sequential(new_children)
-    else:
+        new_children = OrderedDict()
+        inserted = False
+        for name, mod in next_linear_parent.named_children():
+            if name == next_linear_child_name and not inserted:
+                new_children["corrective_pool"] = corrective_pool
+                inserted = True
+            new_children[name] = mod
+
         new_parent = nn.Sequential(new_children)
 
-    # Update the model with the new parent container
-    if next_linear_parent_name == "":
-        # Special handling if the linear layer is a direct child of the root model
-        setattr(model, next_linear_child_name, nn.Sequential(
+        if next_linear_parent_name == "":
+            for n, m in new_children.items():
+                setattr(model, n, m)
+        else:
+            _update_container(model, next_linear_parent_name, new_parent)
+            
+    else:
+        # If parent is a custom class, wrap the linear layer itself directly
+        wrapped_linear = nn.Sequential(
             corrective_pool,
             next_linear_mod
-        ))
-    else:
-        _update_container(model, next_linear_parent_name, new_parent)
+        )
+        setattr(next_linear_parent, next_linear_child_name, wrapped_linear)
 
     if debug:
         print("[RESULT] Corrective pooling inserted successfully.")
