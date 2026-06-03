@@ -83,8 +83,11 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
     full_block = named_layers[start_idx:end_idx + 1]
     print(f"[DEBUG] Block slice length: {len(full_block)}")
     
-    safe_sequential_classes = ("Sequential", "SeparableConv2d")
-    if type(container).__name__ not in safe_sequential_classes and start_idx != end_idx:
+    # FIX: Dynamically whitelist the root model class so cross-stage collapsing is permitted
+    safe_sequential_classes = ("Sequential", "SeparableConv2d", type(model).__name__)
+    
+    # Also whitelist generic ModuleList if custom architectures use it at the root
+    if type(container).__name__ not in safe_sequential_classes and start_idx != end_idx and lca_path != "":
         raise ValueError(
             f"[ERROR] Container '{lca_path}' is {type(container).__name__}, not nn.Sequential. "
             f"Slicing multiple parallel branches (like Inception branches) as a sequence is invalid."
