@@ -491,31 +491,50 @@ def disable_inplace_relu(model: nn.Module):
     if replaced:
         print(f"[INFO] Replaced {replaced} in-place ReLU(s) with out-of-place variants.")
 
-def _simulate_input_hook(model: nn.Module, target_layer_path: str, input_shape: Tuple[int, ...], device='cpu') -> Tuple[torch.Tensor, torch.Tensor]:
-    """
-    Run a single forward with a dummy input and capture the activation that is
-    the *input to* the target layer (registered as forward hook on the target layer).
-    Returns (dummy_input, captured_activation).
-    """
+def _simulate_input_output_hooks(model: nn.Module, start_layer_path: str, end_layer_path: str, input_shape: Tuple[int, ...], device='cpu'):
     model.eval()
     model.to(device)
     dummy_input = torch.randn(input_shape).to(device)
 
-    target_module = get_layer(model, target_layer_path)
+    start_module = get_layer(model, start_layer_path)
+    end_module = get_layer(model, end_layer_path)
 
     captured = {}
-    def hook(module, inp, out):
-        # store a detached copy of the input to the target module
-        captured['in'] = inp[0].detach()
-    handle = target_module.register_forward_hook(hook)
+    def hook_in(module, inp, out):
+        if 'in' not in captured:
+            captured['in'] = inp[0].detach()
+            
+    def hook_out(module, inp, out):
+        # Handle cases where output is a tuple
+        captured['out'] = out.detach() if isinstance(out, torch.Tensor) else out[0].detach()
+
+    h1 = start_module.register_forward_hook(hook_in)
+    h2 = end_module.register_forward_hook(hook_out)
+    
     try:
         with torch.no_grad():
             model(dummy_input)
     finally:
-        handle.remove()
-    if 'in' not in captured:
-        raise RuntimeError(f"Failed to capture activation at {target_layer_path}.")
-    return dummy_input, captured['in']
+        h1.remove()
+        h2.remove()
+        
+    if 'in' not in captured or 'out' not in captured:
+        raise RuntimeError(f"Failed to capture activations for {start_layer_path} -> {end_layer_path}.")
+        
+    return captured['in'], captured['out']
+
+def _capture_preblock_activation(model, start_layer_name, end_layer_name, input_shape, conv_layers, layer_type, device, debug):
+    print(f"[DEBUG] Capturing I/O hooks for '{start_layer_name}' -> '{end_layer_name}'...")
+    try:
+        x_in, y_out = _simulate_input_output_hooks(model, start_layer_name, end_layer_name, input_shape, device)
+        if debug:
+            print(f"[DEBUG] Captured input shape: {tuple(x_in.shape)}, output shape: {tuple(y_out.shape)}")
+    except Exception as e:
+        print(f"[WARN] Hook failed: {e}. Cannot reliably collapse parallel block without valid I/O.")
+        raise e
+        
+    pre_params = count_trainable_params(model)
+    return x_in, y_out, pre_params
 
 class SmartIdentity(nn.Module):
     """A robust Identity replacement that safely absorbs nested attribute calls."""
@@ -533,20 +552,26 @@ class SmartIdentity(nn.Module):
             
         return self # Return self to absorb chained calls like .inception_4a(x)
     
-def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=None, end_name=None):
-    """Replace a slice of layers, using SmartIdentity for subsumed layers."""
-    new_layers = OrderedDict()
-
-    for i, (name, mod) in enumerate(named_layers):
-        if i < start_idx or i > end_idx:
-            new_layers[name] = mod
-        elif i == start_idx:
-            new_layers[name] = replacement
-        else:
-            # FIX: Use SmartIdentity so hardcoded forward passes don't crash
-            new_layers[name] = SmartIdentity()
-
-    return nn.Sequential(new_layers)
+def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=None, end_name=None, container=None):
+    if isinstance(container, nn.Sequential) or container is None:
+        new_layers = OrderedDict()
+        for i, (name, mod) in enumerate(named_layers):
+            if i < start_idx or i > end_idx:
+                new_layers[name] = mod
+            elif i == start_idx:
+                new_layers[name] = replacement
+            else:
+                new_layers[name] = SmartIdentity()
+        return nn.Sequential(new_layers)
+    else:
+        # In-place patch for complex parallel containers (Inception, ConvNeXt)
+        for i, (name, mod) in enumerate(named_layers):
+            if i == start_idx:
+                setattr(container, name, replacement)
+            elif start_idx < i <= end_idx:
+                setattr(container, name, SmartIdentity())
+        return container
+    
 def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
     """
     Insert AdaptiveAvgPool2d only when a true spatial -> flattened mismatch exists.
@@ -572,13 +597,11 @@ def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
     # We use the existing _simulate_input_hook to run a dummy pass and see what hits the linear layer
     try:
         device = next((p.device for p in model.parameters()), torch.device('cpu'))
-        # input_shape here is the MODEL input (e.g., 1, 3, 32, 32)
-        _, actual_input = _simulate_input_hook(model, next_linear_name, input_shape, device=device)
+        # Pass the linear layer as both start and end to just get the 'in' tensor
+        x_in, _ = _simulate_input_output_hooks(model, next_linear_name, next_linear_name, input_shape, device=device)
         
-        # Flattened size per batch item (N, C, H, W) -> C*H*W
-        current_features = actual_input[0].numel() 
-        current_shape = actual_input.shape # e.g. [1, 728, 1, 1]
-        
+        current_features = x_in.numel() 
+        current_shape = x_in.shape
         if debug:
             print(f"[DEBUG] Actual tensor shape entering '{next_linear_name}': {tuple(current_shape)}")
             print(f"[DEBUG] Flattened size per sample: {current_features}")
@@ -714,60 +737,85 @@ def _update_container(model: nn.Module, container_path: str, new_container: nn.M
 # -----------------------------------------------------------------------------
 # Skip connection patcher
 # -----------------------------------------------------------------------------
+
 def patch_skip_connections(model: nn.Module):
-    """
-    Patches module forwards to robustly handle residual connections.
-    If the collapsed block output shape differs from the shortcut, 
-    this attempts to spatially align the shortcut instead of severing the connection.
-    """
-    model._bypassed_residuals = 0
+    model._bypassed_residuals = getattr(model, '_bypassed_residuals', 0)
 
     for name, module in model.named_modules():
-        # FIX: Explicitly ignore SmartIdentity to prevent false positive patches
-        if isinstance(module, SmartIdentity):
-            continue
+        if isinstance(module, SmartIdentity): continue
             
-        # Look for ResNet/ConvNeXt style blocks with 'shortcut' and 'block'
+        # 1. Standard ResNet/RegNetX
         if hasattr(module, 'shortcut') and isinstance(module.shortcut, nn.Module) and hasattr(module, 'block'):
-            
-            # Save original forward if not already patched
-            if not hasattr(module, '_orig_forward'):
-                module._orig_forward = getattr(module, 'forward')
-                
+            if not hasattr(module, '_orig_forward'): module._orig_forward = getattr(module, 'forward')
             def make_patched_forward(mod_name):
                 def new_forward(self, x):
-                    # 1. Run the (potentially collapsed) main block
                     out = self.block(x)
-                    
-                    # 2. Run the shortcut
-                    try:
-                        sc = self.shortcut(x)
-                    except Exception:
-                        # Fallback if shortcut itself fails
-                        return F.relu(out)
-
-                    # 3. CRITICAL FIX: Align shapes instead of giving up
+                    try: sc = self.shortcut(x)
+                    except Exception: return F.relu(out)
                     if out.shape != sc.shape:
-                        # Case A: Spatial Mismatch (e.g., 16x16 vs 32x32)
-                        # We use adaptive pooling on the SHORTCUT to match the OUTPUT
-                        if out.shape[2:] != sc.shape[2:]:
-                            sc = F.adaptive_avg_pool2d(sc, out.shape[2:])
-                        
-                        # Case B: Channel Mismatch
-                        # If channels still don't match after spatial fix, we unfortunately
-                        # cannot add them without a learned 1x1 conv. We must bypass.
-                        # (However, collapse.py usually preserves channel counts, so this is rare)
-                        if out.shape[1] != sc.shape[1]:
-                            model._bypassed_residuals += 1
-                            return F.relu(out)
-
-                    # 4. Add residual
+                        if out.shape[2:] != sc.shape[2:]: sc = F.adaptive_avg_pool2d(sc, out.shape[2:])
+                        if out.shape[1] != sc.shape[1]: model._bypassed_residuals += 1; return F.relu(out)
                     return F.relu(out + sc)
                 return new_forward
-
-            # Apply the patch
             module.forward = make_patched_forward(name).__get__(module)
-            print(f"[PATCH] Patched residual block forward (with spatial align): {name}")
+
+        # 2. ConvNeXtBlock
+        elif module.__class__.__name__ == "ConvNeXtBlock":
+            if not hasattr(module, '_orig_forward'): module._orig_forward = getattr(module, 'forward')
+            def make_convnext_forward():
+                def new_forward(self, x):
+                    residual = x
+                    out = self.dwconv(x)
+                    if out.ndim == 4: out = out.permute(0, 2, 3, 1) # NCHW -> NHWC
+                    out = self.norm(out)
+                    out = self.pwconv1(out)
+                    out = self.act(out)
+                    out = self.pwconv2(out)
+                    if self.gamma is not None: out = self.gamma * out
+                    if out.ndim == 4: out = out.permute(0, 3, 1, 2) # NHWC -> NCHW
+                    
+                    if out.shape != residual.shape:
+                        if out.shape[2:] != residual.shape[2:]: residual = F.adaptive_avg_pool2d(residual, out.shape[2:])
+                        if out.shape[1] != residual.shape[1]: return out
+                    return out + residual
+                return new_forward
+            module.forward = make_convnext_forward().__get__(module)
+
+        # 3. InceptionBlock
+        elif module.__class__.__name__ == "InceptionBlock":
+            if not hasattr(module, '_orig_forward'): module._orig_forward = getattr(module, 'forward')
+            def make_inception_forward():
+                def new_forward(self, x):
+                    o1, o2, o3, o4 = self.branch1(x), self.branch2(x), self.branch3(x), self.branch4(x)
+                    outs = [o1, o2, o3, o4]
+                    outs_4d = [o for o in outs if o.ndim == 4]
+                    if not outs_4d: return torch.cat(outs, dim=1)
+                    
+                    min_h = min(o.shape[2] for o in outs_4d)
+                    min_w = min(o.shape[3] for o in outs_4d)
+                    
+                    aligned = []
+                    for o in outs:
+                        if o.ndim == 4 and (o.shape[2] > min_h or o.shape[3] > min_w):
+                            aligned.append(F.adaptive_avg_pool2d(o, (min_h, min_w)))
+                        else: aligned.append(o)
+                    return torch.cat(aligned, dim=1)
+                return new_forward
+            module.forward = make_inception_forward().__get__(module)
+
+        # 4. XceptionBlock
+        elif module.__class__.__name__ == "XceptionBlock":
+            if not hasattr(module, '_orig_forward'): module._orig_forward = getattr(module, 'forward')
+            def make_xception_forward():
+                def new_forward(self, x):
+                    sc = self.skip(x)
+                    out = self.rep(x)
+                    if out.shape != sc.shape:
+                        if out.shape[2:] != sc.shape[2:]: sc = F.adaptive_avg_pool2d(sc, out.shape[2:])
+                        if out.shape[1] != sc.shape[1]: return out
+                    return out + sc
+                return new_forward
+            module.forward = make_xception_forward().__get__(module)
 # -----------------------------------------------------------------------------
 # Core collapse of a single block (simple replacement)
 # -----------------------------------------------------------------------------
@@ -794,11 +842,11 @@ def _collapse_block(
         for n, l in info["full_block"]:
             print(f"    [LAYER] {n}: {l}")
 
-    # Step 2: Capture activation entering the start layer
+     # Step 2: Capture activation entering the start layer
     print(f"[STEP 2] Capturing activation before start layer '{start_layer_name}'...")
-    x, pre_params = _capture_preblock_activation(
-        model, start_layer_name, input_shape, info["conv_layers"], info["layer_type"], device, debug
-    )
+    x, y_out, pre_params = _capture_preblock_activation( # <--- Added y_out
+        model, start_layer_name, end_layer_name, input_shape, info["conv_layers"], info["layer_type"], device, debug
+    ) 
     if debug:
         print(f"[DEBUG] Input activation shape entering block: {tuple(x.shape)}")
 
@@ -818,6 +866,7 @@ def _collapse_block(
         info["end_idx"],
         info["layer_type"],
         x,
+        y_out,  
         next_linear_mod,
         debug
     )
@@ -845,30 +894,6 @@ def _collapse_block(
 
     return model
 
-def _capture_preblock_activation(model, start_layer_name, input_shape, conv_layers, layer_type, device, debug):
-    print(f"[DEBUG] Attempting to capture activation before '{start_layer_name}' using simulation hook...")
-    try:
-        dummy_input, x = _simulate_input_hook(model, start_layer_name, input_shape, device=device)
-        if debug:
-            print(f"[DEBUG] Successfully captured activation → shape: {tuple(x.shape)}")
-    except Exception as e:
-        print(f"[WARN] Hook failed: {e}")
-        print(f"[WARN] Falling back to dummy tensor initialization.")
-        if layer_type == nn.Conv2d:
-            in_ch = conv_layers[0].in_channels if hasattr(conv_layers[0], 'in_channels') else input_shape[1]
-            H, W = input_shape[-2], input_shape[-1]
-            x = torch.randn(1, in_ch, H, W, device=device)
-        else:
-            in_feat = conv_layers[0].in_features if hasattr(conv_layers[0], 'in_features') else input_shape[1]
-            x = torch.randn(1, in_feat, device=device)
-        print(f"[DEBUG] Created fallback tensor of shape {tuple(x.shape)}")
-
-    pre_params = count_trainable_params(model)
-    if debug:
-        print(f"[DEBUG] Total trainable parameters before collapse: {pre_params:,}")
-
-    print(f"[DEBUG] Activation capture complete.")
-    return x, pre_params
 
 def _find_next_linear(model, end_layer_name, debug):
     if debug:
@@ -923,49 +948,25 @@ def _find_next_linear(model, end_layer_name, debug):
     return next_linear_name, next_linear_mod
 
 def _analyze_block_output(
-    model,
-    full_block,
-    conv_layers,
-    named_layers,
-    end_idx,
-    layer_type,
-    x,
-    next_linear_mod,
-    debug,
+    model, full_block, conv_layers, named_layers, end_idx, layer_type, x, y_out, next_linear_mod, debug
 ):
     if debug:
         print(f"\n[STEP] Analyzing output of collapsed block ({len(full_block)} layers)...")
         print(f"[DEBUG] Input tensor shape before block: {tuple(x.shape)}")
         print(f"[DEBUG] Running forward pass through block layers:")
 
-    with torch.no_grad():
-        y = x.clone()
-        for idx, (name, layer) in enumerate(full_block):
-            if debug:
-                print(
-                    f"    [DEBUG] Layer {idx+1}/{len(full_block)}: "
-                    f"{name} ({layer.__class__.__name__}) input={tuple(y.shape)}"
-                )
-            try:
-                y = layer(y)
-            except RuntimeError as e:
-                # If a layer fails, try a NHWC/NCHW permute fallback for ConvNeXt
-                if "shape" in str(e).lower() and y.ndim == 4:
-                    try:
-                        y = layer(y.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
-                    except:
-                        raise RuntimeError(f"Layer '{name}' forward failed. Topology may be non-sequential.")
-                else:
-                    raise e
-            if debug:
-                print(f"        └── output shape: {tuple(y.shape)}")
+    out_shape = tuple(y_out.shape)
+    out_channels = y_out.shape[1] if y_out.ndim >= 2 else None
 
+    if debug:
+        print(f"[DEBUG] Final block output shape (via hook): {out_shape}")
+        print(f"[DEBUG] Determined out_channels={out_channels}")
     # --- Ground-truth output characteristics ---
-    out_shape = tuple(y.shape)
+    out_shape = tuple(y_out.shape)
 
     # 🔧 CRITICAL FIX:
     # Infer channels from actual tensor, not from layer attributes
-    out_channels = y.shape[1] if y.ndim >= 2 else None
+    out_channels = y_out.shape[1] if y_out.ndim >= 2 else None
 
     if debug:
         print(f"[DEBUG] Final block output shape: {out_shape}")
