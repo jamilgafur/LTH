@@ -10,6 +10,7 @@ import copy
 from utils import count_trainable_params, layer_stats
 import math
 
+
 def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
     print(f"[DEBUG] Locating and preparing block: start='{start_layer_name}', end:'{end_layer_name}'")
 
@@ -81,11 +82,14 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
 
     full_block = named_layers[start_idx:end_idx + 1]
     print(f"[DEBUG] Block slice length: {len(full_block)}")
-    if not isinstance(container, nn.Sequential) and start_idx != end_idx:
+    
+    safe_sequential_classes = ("Sequential", "SeparableConv2d")
+    if type(container).__name__ not in safe_sequential_classes and start_idx != end_idx:
         raise ValueError(
             f"[ERROR] Container '{lca_path}' is {type(container).__name__}, not nn.Sequential. "
             f"Slicing multiple parallel branches (like Inception branches) as a sequence is invalid."
         )
+        
     # --- collect collapsible layers (mixed allowed) ---
     conv_layers = []
     for _, mod in full_block:
@@ -120,9 +124,10 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
         "layer_type": layer_type,
         "conv_layers": conv_layers,
         "collapse_mode": collapse_mode,
-        "first_layer_name": full_block[0][0],  # Changed from object to name string
-        "last_layer_name": full_block[-1][0],   # Changed from object to name string
+        "first_layer_name": full_block[0][0],  
+        "last_layer_name": full_block[-1][0],   
     }
+
 def _build_and_replace_block(
     model,
     start_layer_name,
