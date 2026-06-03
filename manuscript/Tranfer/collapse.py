@@ -366,9 +366,25 @@ def _capture_preblock_activation(model, start_layer_name, end_layer_name, input_
     pre_params = count_trainable_params(model)
     return x_in, y_out, pre_params
 
+
 class SmartIdentity(nn.Module):
-    """A robust Identity replacement that safely absorbs nested attribute calls."""
+    """
+    A robust Identity replacement that safely absorbs nested attribute calls,
+    while mimicking a spatial layer to prevent fvcore/JIT tracers and 
+    dimensionality hooks from crashing when layers like 'pointwise' are bypassed.
+    """
+    def __init__(self):
+        super().__init__()
+        # Add dummy attributes so fvcore/tracers still recognize it as a valid convolutional node
+        self.kernel_size = (1, 1)
+        self.stride = (1, 1)
+        self.padding = (0, 0)
+
     def forward(self, x, *args, **kwargs):
+        # Ensure spatial dimensions are preserved for downstream variance hooks 
+        # to prevent IndexError: Dimension out of range
+        if isinstance(x, torch.Tensor) and x.ndim == 2:
+            x = x.unsqueeze(-1).unsqueeze(-1)
         return x
         
     def __getattr__(self, name):
@@ -381,7 +397,8 @@ class SmartIdentity(nn.Module):
             raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
             
         return self # Return self to absorb chained calls like .inception_4a(x)
-    
+
+
 def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=None, end_name=None, container=None):
     if isinstance(container, nn.Sequential) or container is None:
         new_layers = OrderedDict()
