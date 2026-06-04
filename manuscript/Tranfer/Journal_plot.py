@@ -311,7 +311,6 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
 
     for stats_dir in search_paths:
         # Extract Architecture and Dataset from the path hierarchy
-        # Pattern: runs/plots/{arch}/{dataset}/epochs.../Layer_Statistics
         try:
             dataset = stats_dir.parents[1].name
             arch = stats_dir.parents[2].name
@@ -332,7 +331,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                     
                 layers = layer_df['Layer'].tolist()
                 variances = np.maximum(layer_df['Variance'].values, 1e-6)
-                logger.debug(f"[FIG2] Successfully loaded {len(layers)} layers from {csv_path.name}")
+                logger.debug(f"[FIG2] Successfully loaded {len(layers)} micro-layers from {csv_path.name}")
             except Exception as e:
                 logger.error(f"Failed to read CSV {csv_path}: {e}")
                 continue
@@ -340,9 +339,9 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             # --- Calculation Logic ---
             h_vals, sigma_bars = [], []
             
-            # FIX 1: Widen the window size proportionally to the network depth.
+            # Widen the window size proportionally to the network depth.
             # This prevents the baseline from adapting instantaneously, allowing 
-            # contiguous valleys to be fully visualized as negative bars.
+            # contiguous micro-layers in a valley to all be visualized as negative bars.
             window_size = max(5, int(len(variances) * 0.15))
             logger.debug(f"[FIG2] Set dynamic moving average window size to {window_size} for {arch}")
             
@@ -357,7 +356,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 h = max(diff / sigma_bars[-1], -1.0) if diff < 0 else min(diff / sigma_bars[-1], 1.0)
                 h_vals.append(h)
                 
-            # --- JSON Region Matching (UPDATED: Deep Search & Disjoint Range Fix) ---
+            # --- JSON Region Matching (Deep Search & Disjoint Range Fix) ---
             clean_ds = dataset.strip("_").lower()
             potential_jsons = list(Path(".").rglob(f"*{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
             json_files = [p for p in potential_jsons if clean_ds in p.name.lower()]
@@ -370,8 +369,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                     with open(json_files[0], 'r') as f:
                         config = json.load(f)
                     
-                    # FIX 2: Recursively search for 'Set_' keys in case they are nested 
-                    # under an experiment name (e.g., {"ConvNeXt_Run": {"Set_0": [...]}})
+                    # Recursively search for 'Set_' keys in case they are nested 
                     def extract_regions(d):
                         regions = []
                         if isinstance(d, dict):
@@ -386,7 +384,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                     logger.debug(f"[FIG2] Extracted regions from JSON: {extracted_regions}")
                     
                     for v in extracted_regions:
-                        # Handle list of pairs (e.g., disjoint ranges like [["block1", "block2"], ["block4", "block5"]])
+                        # Handle list of pairs (e.g., disjoint ranges)
                         if isinstance(v[0], (list, tuple)):
                             for sub_v in v:
                                 s_name, e_name = sub_v[0], sub_v[-1]
@@ -398,7 +396,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                                     logger.warning(f"[FIG2] Failed to map nested region {s_name}->{e_name} to CSV indices.")
                                     continue
                         else:
-                            # Handle standard flat lists (e.g., ["block1", "block2"])
+                            # Handle standard flat lists
                             s_name, e_name = v[0], v[-1]
                             try:
                                 s_idx = next(idx for idx, n in enumerate(layers) if s_name == n)
@@ -408,7 +406,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                                 logger.warning(f"[FIG2] Failed to map flat region {s_name}->{e_name} to CSV indices.")
                                 continue
                                 
-                    logger.info(f"[FIG2] Final verified index ranges for {arch}: {verified_idx_ranges}")
+                    logger.info(f"[FIG2] Final verified micro-layer index ranges for {arch}: {verified_idx_ranges}")
                             
                 except Exception as e:
                     logger.error(f"Error parsing JSON for {arch}/{dataset}: {e}")
@@ -419,20 +417,14 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
             x_vals = range(1, len(layers) + 1)
             
-            # FIX 3: Dynamic terminology based on architecture
-            block_archs = ["ConvNeXt", "RegNetX_400MF", "MobileNet", "InceptionNet", "XceptionNet"]
-            is_block_based = arch in block_archs
-            x_label = "Network Depth (Macro-Blocks)" if is_block_based else "Network Depth (Individual Layers)"
+            # Explicitly state Micro-Layers for all architectures
+            x_label = "Network Depth (Micro-Layers)"
             
             ax1.plot(x_vals, variances, color='#4A4A4A', marker='o', markersize=4, label=r'Layer Variance ($\sigma_i$)')
             ax1.plot(x_vals, sigma_bars, color='#ff7f0e', linestyle='--', linewidth=2.5, label=r'Local Context Mean ($\bar{\sigma}$)')
             ax1.set_yscale('log')
             
-            # Clarify the methodology in the title for block-based networks
             title_str = f"Dynamic Structural Redundancy Analysis\n{arch} on {dataset.capitalize()}"
-            if is_block_based:
-                title_str += "\n(Note: Units represent aggregate macro-blocks containing multiple micro-layers)"
-                
             ax1.set_title(title_str, fontweight='bold', fontsize=14)
             ax1.legend(loc='upper right', frameon=False)
             sns.despine(ax=ax1)
@@ -451,7 +443,11 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
 
             # --- Bar Plot ---
             state_colors = {"VETO": "#999999", "VERIFIED": "#2ca02c", "REJECTED": "#ff7f0e", "DANGER": "#d62728"}
-            ax2.bar(x_vals, h_vals, color=[state_colors[s] for s in final_states], alpha=0.85, edgecolor='black', linewidth=0.5)
+            
+            # Widened line width slightly so micro-layers are more visible
+            bar_width = max(0.5, 120 / max(len(layers), 1))
+            ax2.bar(x_vals, h_vals, color=[state_colors[s] for s in final_states], alpha=0.85, edgecolor='black', linewidth=bar_width)
+            
             ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2)
             ax2.set_ylim(-1.1, 1.1)
 
@@ -476,7 +472,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             by_label = dict(zip(labels, handles))
             ax2.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
             
-            # FIX 4: Explicitly apply the dynamic x-axis label before tight_layout
+            # Explicitly apply the dynamic x-axis label before tight_layout
             ax2.set_xlabel(x_label, fontweight='bold', fontsize=12)
             plt.tight_layout()
             
