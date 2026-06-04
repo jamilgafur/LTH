@@ -674,8 +674,12 @@ def fig4_comprehensive_search_space_map(
             ax_heur.set_ylim(y_limits)
             ax_heur.set_yticks(range(len(valid_exps)))
             
+            # Dynamic terminology check
+            block_archs = ["ConvNeXt", "RegNetX_400MF", "MobileNet", "InceptionNet", "XceptionNet"]
+            x_label = "Network Depth (Macro-Blocks)" if arch in block_archs else "Network Depth (Individual Layers)"
+            
             ax_heur.set_yticklabels([e[3] if e[1] is not None else f"{e[3]} (Control)" for e in valid_exps], fontsize=11, fontweight='bold')
-            ax_heur.set_xlabel("Network Depth (Layer Index)", fontweight='bold', fontsize=11)
+            ax_heur.set_xlabel(x_label, fontweight='bold', fontsize=11)
             ax_heur.set_title(f"Structural Candidates & Hardware Reductions", loc='left', pad=25, fontsize=14, fontweight='bold')
             sns.despine(ax=ax_heur)
 
