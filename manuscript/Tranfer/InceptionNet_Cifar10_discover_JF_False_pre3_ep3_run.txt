@@ -9,3 +9,2052 @@ Loading CIFAR-10 data for InceptionNet...
 CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 Loading CIFAR-10 data for InceptionNet...
 CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+2026-06-03 20:16:54,790 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4a.branch4.0.pool, stage4.inception_4b.branch4.0.pool, stage4.inception_4c.branch4.0.pool, stage4.inception_4d.branch4.0.pool, stage4.inception_4e.branch4.0.pool, stage4.maxpool4.pool, stage5.inception_5a.branch4.0.pool, stage5.inception_5b.branch4.0.pool
+2026-06-03 20:16:55,393 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4a.branch4.0.pool, stage4.inception_4b.branch4.0.pool, stage4.inception_4c.branch4.0.pool, stage4.inception_4d.branch4.0.pool, stage4.inception_4e.branch4.0.pool, stage4.maxpool4.pool, stage5.inception_5a.branch4.0.pool, stage5.inception_5b.branch4.0.pool
+2026-06-03 20:16:56,097 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4a.branch4.0.pool, stage4.inception_4b.branch4.0.pool, stage4.inception_4d, stage4.inception_4e.branch4.0.pool, stage4.maxpool4.pool, stage5.inception_5a.branch4.0.pool, stage5.inception_5b.branch4.0.pool
+2026-06-03 20:16:56,675 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4a.branch4.0.pool, stage4.inception_4b.branch4.0.pool, stage4.inception_4c.branch4.0.pool, stage4.inception_4e, stage4.maxpool4.pool, stage5.inception_5a.branch4.0.pool, stage5.inception_5b.branch4.0.pool
+2026-06-03 20:16:57,294 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4a.branch4.0.pool, stage4.inception_4b.branch4.0.pool, stage4.inception_4d, stage4.inception_4e.branch4.0.pool, stage4.maxpool4.pool, stage5.inception_5a.branch4.0.pool, stage5.inception_5b.branch4.0.pool
+2026-06-03 20:16:57,953 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4a.branch4.0.pool, stage4.inception_4b.branch4.0.pool, stage4.inception_4e, stage4.maxpool4.pool, stage5.inception_5a.branch4.0.pool, stage5.inception_5b.branch4.0.pool
+/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py:383: UserWarning: var(): degrees of freedom is <= 0. Correction should be strictly less than the reduction factor (input numel divided by output numel). (Triggered internally at /pytorch/aten/src/ATen/native/ReduceOps.cpp:1831.)
+  act_var = y.var(dim=[2, 3]).mean().item()
+[DEBUG] Base checkpoint path resolved: None
+
+============================================================
+[MODE] STAGE 1: DISCOVERY & PRE-FLIGHT PROBE
+       Model: InceptionNet | Dataset: Cifar10
+============================================================
+
+[INFO] Phase 1: Validating/Training 'Control' Baseline...
+
+--- Running experiment: Control ---
+    Budget allocated: 3 epochs
+
+=== Running JF experiment ===
+[•] Resumption detected. Architecture will be prepared for checkpoint loading.
+[•] Starting experiment 'Control' in workflow 'JF' | Epoch Target: 3
+[✓] Experiment 'Control' already completed. Found: final_JF_Control.pt
+    Skipping training and reloading metrics...
+
+[INFO] Phase 2: Loading Finalized Baseline Weights...
+[INFO] Found existing layer variances at /old_Users/jgafur/LTH/manuscript/Tranfer/runs/plots/InceptionNet/Cifar10/epochs3_pretrain3/layer_variances.json. Skipping probe.
+
+[INFO] Phase 3: Evaluating Candidate Regions (with Safe Fracturing)...
+    [STEP] Testing candidate sequence: stage4.inception_4a.branch3.1.conv -> stage4.inception_4a.branch4.1.conv (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (InceptionNet)
+
+Layer-wise zero parameter stats:
+
+stage1.conv1.conv.weight: 0/9408 zeros (0.00%)
+stage1.conv1.bn.weight: 0/64 zeros (0.00%)
+stage1.conv1.bn.bias: 0/64 zeros (0.00%)
+stage2.conv2.conv.weight: 0/4096 zeros (0.00%)
+stage2.conv2.bn.weight: 0/64 zeros (0.00%)
+stage2.conv2.bn.bias: 0/64 zeros (0.00%)
+stage2.conv3.conv.weight: 0/110592 zeros (0.00%)
+stage2.conv3.bn.weight: 0/192 zeros (0.00%)
+stage2.conv3.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3a.branch1.conv.weight: 0/12288 zeros (0.00%)
+stage3.inception_3a.branch1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3a.branch1.bn.bias: 0/64 zeros (0.00%)
+stage3.inception_3a.branch2.0.conv.weight: 0/18432 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.1.conv.weight: 0/110592 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3a.branch3.0.conv.weight: 0/3072 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.1.conv.weight: 0/12800 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.conv.weight: 0/6144 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch1.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.1.conv.weight: 0/221184 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.weight: 0/192 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3b.branch3.0.conv.weight: 0/8192 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.1.conv.weight: 0/76800 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3b.branch4.1.conv.weight: 0/16384 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4a.branch1.conv.weight: 0/92160 zeros (0.00%)
+stage4.inception_4a.branch1.bn.weight: 0/192 zeros (0.00%)
+stage4.inception_4a.branch1.bn.bias: 0/192 zeros (0.00%)
+stage4.inception_4a.branch2.0.conv.weight: 0/46080 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.1.conv.weight: 0/179712 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.weight: 0/208 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.bias: 0/208 zeros (0.00%)
+stage4.inception_4a.branch3.0.conv.weight: 0/7680 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.1.conv.weight: 0/19200 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.weight: 0/48 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.bias: 0/48 zeros (0.00%)
+stage4.inception_4a.branch4.1.conv.weight: 0/30720 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch1.conv.weight: 0/81920 zeros (0.00%)
+stage4.inception_4b.branch1.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4b.branch1.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4b.branch2.0.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.1.conv.weight: 0/225792 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.weight: 0/224 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.bias: 0/224 zeros (0.00%)
+stage4.inception_4b.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch1.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.1.conv.weight: 0/294912 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4c.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch1.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4d.branch1.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4d.branch1.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4d.branch2.0.conv.weight: 0/73728 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.weight: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.bias: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.1.conv.weight: 0/373248 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.weight: 0/288 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.bias: 0/288 zeros (0.00%)
+stage4.inception_4d.branch3.0.conv.weight: 0/16384 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.1.conv.weight: 0/51200 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4e.branch1.conv.weight: 0/135168 zeros (0.00%)
+stage4.inception_4e.branch1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4e.branch1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4e.branch2.0.conv.weight: 0/84480 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage4.inception_4e.branch3.0.conv.weight: 0/16896 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.conv.weight: 0/67584 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch1.conv.weight: 0/212992 zeros (0.00%)
+stage5.inception_5a.branch1.bn.weight: 0/256 zeros (0.00%)
+stage5.inception_5a.branch1.bn.bias: 0/256 zeros (0.00%)
+stage5.inception_5a.branch2.0.conv.weight: 0/133120 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage5.inception_5a.branch3.0.conv.weight: 0/26624 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch1.conv.weight: 0/319488 zeros (0.00%)
+stage5.inception_5b.branch1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.0.conv.weight: 0/159744 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.weight: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.bias: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.1.conv.weight: 0/663552 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch3.0.conv.weight: 0/39936 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.weight: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.bias: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.1.conv.weight: 0/153600 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.bias: 0/128 zeros (0.00%)
+fc.weight: 0/10240 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4a.branch3.1.conv', 'stage4.inception_4a.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4a.branch3.1.conv
+[INFO] End Target   : stage4.inception_4a.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4a.branch3.1.conv' -> 'stage4.inception_4a.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4a' | Type: InceptionBlock
+[WARN] ⚠ Collapse failed for block 'test': [ERROR] Container 'stage4.inception_4a' is InceptionBlock, not Sequential. Slicing parallel branches directly is invalid.
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 57 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 5,991,082
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE: Neither Params nor FLOPs decreased. Fracturing block...
+    [STEP] Testing candidate sequence: stage4.inception_4b.branch3.1.conv -> stage4.inception_4b.branch4.1.conv (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (InceptionNet)
+
+Layer-wise zero parameter stats:
+
+stage1.conv1.conv.weight: 0/9408 zeros (0.00%)
+stage1.conv1.bn.weight: 0/64 zeros (0.00%)
+stage1.conv1.bn.bias: 0/64 zeros (0.00%)
+stage2.conv2.conv.weight: 0/4096 zeros (0.00%)
+stage2.conv2.bn.weight: 0/64 zeros (0.00%)
+stage2.conv2.bn.bias: 0/64 zeros (0.00%)
+stage2.conv3.conv.weight: 0/110592 zeros (0.00%)
+stage2.conv3.bn.weight: 0/192 zeros (0.00%)
+stage2.conv3.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3a.branch1.conv.weight: 0/12288 zeros (0.00%)
+stage3.inception_3a.branch1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3a.branch1.bn.bias: 0/64 zeros (0.00%)
+stage3.inception_3a.branch2.0.conv.weight: 0/18432 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.1.conv.weight: 0/110592 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3a.branch3.0.conv.weight: 0/3072 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.1.conv.weight: 0/12800 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.conv.weight: 0/6144 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch1.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.1.conv.weight: 0/221184 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.weight: 0/192 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3b.branch3.0.conv.weight: 0/8192 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.1.conv.weight: 0/76800 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3b.branch4.1.conv.weight: 0/16384 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4a.branch1.conv.weight: 0/92160 zeros (0.00%)
+stage4.inception_4a.branch1.bn.weight: 0/192 zeros (0.00%)
+stage4.inception_4a.branch1.bn.bias: 0/192 zeros (0.00%)
+stage4.inception_4a.branch2.0.conv.weight: 0/46080 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.1.conv.weight: 0/179712 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.weight: 0/208 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.bias: 0/208 zeros (0.00%)
+stage4.inception_4a.branch3.0.conv.weight: 0/7680 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.1.conv.weight: 0/19200 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.weight: 0/48 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.bias: 0/48 zeros (0.00%)
+stage4.inception_4a.branch4.1.conv.weight: 0/30720 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch1.conv.weight: 0/81920 zeros (0.00%)
+stage4.inception_4b.branch1.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4b.branch1.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4b.branch2.0.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.1.conv.weight: 0/225792 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.weight: 0/224 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.bias: 0/224 zeros (0.00%)
+stage4.inception_4b.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch1.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.1.conv.weight: 0/294912 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4c.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch1.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4d.branch1.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4d.branch1.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4d.branch2.0.conv.weight: 0/73728 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.weight: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.bias: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.1.conv.weight: 0/373248 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.weight: 0/288 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.bias: 0/288 zeros (0.00%)
+stage4.inception_4d.branch3.0.conv.weight: 0/16384 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.1.conv.weight: 0/51200 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4e.branch1.conv.weight: 0/135168 zeros (0.00%)
+stage4.inception_4e.branch1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4e.branch1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4e.branch2.0.conv.weight: 0/84480 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage4.inception_4e.branch3.0.conv.weight: 0/16896 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.conv.weight: 0/67584 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch1.conv.weight: 0/212992 zeros (0.00%)
+stage5.inception_5a.branch1.bn.weight: 0/256 zeros (0.00%)
+stage5.inception_5a.branch1.bn.bias: 0/256 zeros (0.00%)
+stage5.inception_5a.branch2.0.conv.weight: 0/133120 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage5.inception_5a.branch3.0.conv.weight: 0/26624 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch1.conv.weight: 0/319488 zeros (0.00%)
+stage5.inception_5b.branch1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.0.conv.weight: 0/159744 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.weight: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.bias: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.1.conv.weight: 0/663552 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch3.0.conv.weight: 0/39936 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.weight: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.bias: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.1.conv.weight: 0/153600 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.bias: 0/128 zeros (0.00%)
+fc.weight: 0/10240 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (stage4.inception_4b.branch3.1.conv → stage4.inception_4b.branch4.1.conv)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] stage4.inception_4b.branch3.1.conv → stage4.inception_4b.branch4.1.conv
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': stage4.inception_4b.branch3.1.conv → stage4.inception_4b.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4b.branch3.1.conv', 'stage4.inception_4b.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4b.branch3.1.conv
+[INFO] End Target   : stage4.inception_4b.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4b.branch3.1.conv' -> 'stage4.inception_4b.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4b' | Type: InceptionBlock
+[WARN] ⚠ Collapse failed for block 'test': [ERROR] Container 'stage4.inception_4b' is InceptionBlock, not Sequential. Slicing parallel branches directly is invalid.
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 57 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 5,991,082
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE: Neither Params nor FLOPs decreased. Fracturing block...
+    [STEP] Testing candidate sequence: stage4.inception_4c.branch3.1.conv -> stage4.inception_4d.branch1.conv (Length: 3)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (InceptionNet)
+
+Layer-wise zero parameter stats:
+
+stage1.conv1.conv.weight: 0/9408 zeros (0.00%)
+stage1.conv1.bn.weight: 0/64 zeros (0.00%)
+stage1.conv1.bn.bias: 0/64 zeros (0.00%)
+stage2.conv2.conv.weight: 0/4096 zeros (0.00%)
+stage2.conv2.bn.weight: 0/64 zeros (0.00%)
+stage2.conv2.bn.bias: 0/64 zeros (0.00%)
+stage2.conv3.conv.weight: 0/110592 zeros (0.00%)
+stage2.conv3.bn.weight: 0/192 zeros (0.00%)
+stage2.conv3.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3a.branch1.conv.weight: 0/12288 zeros (0.00%)
+stage3.inception_3a.branch1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3a.branch1.bn.bias: 0/64 zeros (0.00%)
+stage3.inception_3a.branch2.0.conv.weight: 0/18432 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.1.conv.weight: 0/110592 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3a.branch3.0.conv.weight: 0/3072 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.1.conv.weight: 0/12800 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.conv.weight: 0/6144 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch1.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.1.conv.weight: 0/221184 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.weight: 0/192 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3b.branch3.0.conv.weight: 0/8192 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.1.conv.weight: 0/76800 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3b.branch4.1.conv.weight: 0/16384 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4a.branch1.conv.weight: 0/92160 zeros (0.00%)
+stage4.inception_4a.branch1.bn.weight: 0/192 zeros (0.00%)
+stage4.inception_4a.branch1.bn.bias: 0/192 zeros (0.00%)
+stage4.inception_4a.branch2.0.conv.weight: 0/46080 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.1.conv.weight: 0/179712 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.weight: 0/208 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.bias: 0/208 zeros (0.00%)
+stage4.inception_4a.branch3.0.conv.weight: 0/7680 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.1.conv.weight: 0/19200 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.weight: 0/48 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.bias: 0/48 zeros (0.00%)
+stage4.inception_4a.branch4.1.conv.weight: 0/30720 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch1.conv.weight: 0/81920 zeros (0.00%)
+stage4.inception_4b.branch1.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4b.branch1.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4b.branch2.0.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.1.conv.weight: 0/225792 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.weight: 0/224 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.bias: 0/224 zeros (0.00%)
+stage4.inception_4b.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch1.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.1.conv.weight: 0/294912 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4c.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch1.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4d.branch1.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4d.branch1.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4d.branch2.0.conv.weight: 0/73728 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.weight: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.bias: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.1.conv.weight: 0/373248 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.weight: 0/288 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.bias: 0/288 zeros (0.00%)
+stage4.inception_4d.branch3.0.conv.weight: 0/16384 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.1.conv.weight: 0/51200 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4e.branch1.conv.weight: 0/135168 zeros (0.00%)
+stage4.inception_4e.branch1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4e.branch1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4e.branch2.0.conv.weight: 0/84480 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage4.inception_4e.branch3.0.conv.weight: 0/16896 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.conv.weight: 0/67584 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch1.conv.weight: 0/212992 zeros (0.00%)
+stage5.inception_5a.branch1.bn.weight: 0/256 zeros (0.00%)
+stage5.inception_5a.branch1.bn.bias: 0/256 zeros (0.00%)
+stage5.inception_5a.branch2.0.conv.weight: 0/133120 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage5.inception_5a.branch3.0.conv.weight: 0/26624 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch1.conv.weight: 0/319488 zeros (0.00%)
+stage5.inception_5b.branch1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.0.conv.weight: 0/159744 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.weight: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.bias: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.1.conv.weight: 0/663552 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch3.0.conv.weight: 0/39936 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.weight: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.bias: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.1.conv.weight: 0/153600 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.bias: 0/128 zeros (0.00%)
+fc.weight: 0/10240 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv
+[STEP] Calling _collapse_block('stage4.inception_4c.branch3.1.conv', 'stage4.inception_4d.branch1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4c.branch3.1.conv
+[INFO] End Target   : stage4.inception_4d.branch1.conv
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.1.conv' -> 'stage4.inception_4d.branch1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 2 to 3
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] inception_4c -> InceptionBlock
+    [LAYER MAP] inception_4d -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4c'
+[DEBUG] Hooking End Node   : 'stage4.inception_4d'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4c' -> 'stage4.inception_4d'...
+[DEBUG] Captured input shape: (512, 512, 2, 2), output shape: (512, 528, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 512, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 528, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 5,991,082
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4d.branch1.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4d.branch1.conv'...
+[DEBUG] Exact layer match found at index 167: stage4.inception_4d.branch1.conv (Conv2d)
+[DEBUG] Scanning forward from index 168 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=1024, out_features=10, bias=True))
+[RESULT] Next Linear detected → name='fc', module=Linear(in_features=1024, out_features=10, bias=True)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (512, 512, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 528, 2, 2)
+[DEBUG] Determined out_channels=528
+[DEBUG] Final block output shape: (512, 528, 2, 2)
+[DEBUG] Determined out_channels=528
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(512, 528, 2, 2)
+         out_channels=528
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 528, 2, 2)
+    - out_channels             : 528
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 1))
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4c.branch3.1.conv'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 2 -> 3
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 512 (in) -> 528 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=512, out=128)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module:
+        - conv_1x1: Conv2d(512, 528, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(528, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 5,991,082
+[INFO] Post-collapse : 5,145,626
+[INFO] Net Change    : -845,456
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 528, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=2, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (512, 528, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.inception_4d' executed successfully, output shape: (512, 528, 2, 2)
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (512, 832, 2, 2)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (512, 832, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4c.branch3.1.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.1.conv' → 'stage4.inception_4d.branch1.conv'
+[INFO] ✅ Successfully collapsed block 'test' (stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 5,145,626
+[INFO] ΔParams = +845,456 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [✓] ACCEPTED: Params (5,991,082 -> 5,145,626) | FLOPs (32,421,472 -> 36,530,368)
+    [STEP] Testing candidate sequence: stage4.inception_4d.branch3.1.conv -> stage4.inception_4e.branch1.conv (Length: 3)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (InceptionNet)
+
+Layer-wise zero parameter stats:
+
+stage1.conv1.conv.weight: 0/9408 zeros (0.00%)
+stage1.conv1.bn.weight: 0/64 zeros (0.00%)
+stage1.conv1.bn.bias: 0/64 zeros (0.00%)
+stage2.conv2.conv.weight: 0/4096 zeros (0.00%)
+stage2.conv2.bn.weight: 0/64 zeros (0.00%)
+stage2.conv2.bn.bias: 0/64 zeros (0.00%)
+stage2.conv3.conv.weight: 0/110592 zeros (0.00%)
+stage2.conv3.bn.weight: 0/192 zeros (0.00%)
+stage2.conv3.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3a.branch1.conv.weight: 0/12288 zeros (0.00%)
+stage3.inception_3a.branch1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3a.branch1.bn.bias: 0/64 zeros (0.00%)
+stage3.inception_3a.branch2.0.conv.weight: 0/18432 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.1.conv.weight: 0/110592 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3a.branch3.0.conv.weight: 0/3072 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.1.conv.weight: 0/12800 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.conv.weight: 0/6144 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch1.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.1.conv.weight: 0/221184 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.weight: 0/192 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3b.branch3.0.conv.weight: 0/8192 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.1.conv.weight: 0/76800 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3b.branch4.1.conv.weight: 0/16384 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4a.branch1.conv.weight: 0/92160 zeros (0.00%)
+stage4.inception_4a.branch1.bn.weight: 0/192 zeros (0.00%)
+stage4.inception_4a.branch1.bn.bias: 0/192 zeros (0.00%)
+stage4.inception_4a.branch2.0.conv.weight: 0/46080 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.1.conv.weight: 0/179712 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.weight: 0/208 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.bias: 0/208 zeros (0.00%)
+stage4.inception_4a.branch3.0.conv.weight: 0/7680 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.1.conv.weight: 0/19200 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.weight: 0/48 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.bias: 0/48 zeros (0.00%)
+stage4.inception_4a.branch4.1.conv.weight: 0/30720 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch1.conv.weight: 0/81920 zeros (0.00%)
+stage4.inception_4b.branch1.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4b.branch1.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4b.branch2.0.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.1.conv.weight: 0/225792 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.weight: 0/224 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.bias: 0/224 zeros (0.00%)
+stage4.inception_4b.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch1.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.1.conv.weight: 0/294912 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4c.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch1.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4d.branch1.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4d.branch1.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4d.branch2.0.conv.weight: 0/73728 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.weight: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.bias: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.1.conv.weight: 0/373248 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.weight: 0/288 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.bias: 0/288 zeros (0.00%)
+stage4.inception_4d.branch3.0.conv.weight: 0/16384 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.1.conv.weight: 0/51200 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4e.branch1.conv.weight: 0/135168 zeros (0.00%)
+stage4.inception_4e.branch1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4e.branch1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4e.branch2.0.conv.weight: 0/84480 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage4.inception_4e.branch3.0.conv.weight: 0/16896 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.conv.weight: 0/67584 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch1.conv.weight: 0/212992 zeros (0.00%)
+stage5.inception_5a.branch1.bn.weight: 0/256 zeros (0.00%)
+stage5.inception_5a.branch1.bn.bias: 0/256 zeros (0.00%)
+stage5.inception_5a.branch2.0.conv.weight: 0/133120 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage5.inception_5a.branch3.0.conv.weight: 0/26624 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch1.conv.weight: 0/319488 zeros (0.00%)
+stage5.inception_5b.branch1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.0.conv.weight: 0/159744 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.weight: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.bias: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.1.conv.weight: 0/663552 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch3.0.conv.weight: 0/39936 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.weight: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.bias: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.1.conv.weight: 0/153600 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.bias: 0/128 zeros (0.00%)
+fc.weight: 0/10240 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (stage4.inception_4d.branch3.1.conv → stage4.inception_4e.branch1.conv)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] stage4.inception_4d.branch3.1.conv → stage4.inception_4e.branch1.conv
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': stage4.inception_4d.branch3.1.conv → stage4.inception_4e.branch1.conv
+[STEP] Calling _collapse_block('stage4.inception_4d.branch3.1.conv', 'stage4.inception_4e.branch1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4d.branch3.1.conv
+[INFO] End Target   : stage4.inception_4e.branch1.conv
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4d.branch3.1.conv' -> 'stage4.inception_4e.branch1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 4
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] inception_4d -> InceptionBlock
+    [LAYER MAP] inception_4e -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4d'
+[DEBUG] Hooking End Node   : 'stage4.inception_4e'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4d' -> 'stage4.inception_4e'...
+[DEBUG] Captured input shape: (512, 512, 2, 2), output shape: (512, 832, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 512, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 832, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 5,991,082
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4e.branch1.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4e.branch1.conv'...
+[DEBUG] Exact layer match found at index 196: stage4.inception_4e.branch1.conv (Conv2d)
+[DEBUG] Scanning forward from index 197 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=1024, out_features=10, bias=True))
+[RESULT] Next Linear detected → name='fc', module=Linear(in_features=1024, out_features=10, bias=True)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (512, 512, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 832, 2, 2)
+[DEBUG] Determined out_channels=832
+[DEBUG] Final block output shape: (512, 832, 2, 2)
+[DEBUG] Determined out_channels=832
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(512, 832, 2, 2)
+         out_channels=832
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 832, 2, 2)
+    - out_channels             : 832
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 1))
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4d.branch3.1.conv'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 3 -> 4
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 512 (in) -> 832 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=512, out=112)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module:
+        - conv_1x1: Conv2d(512, 832, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(832, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 5,991,082
+[INFO] Post-collapse : 4,943,274
+[INFO] Net Change    : -1,047,808
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 832, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=3, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 3: 'inception_4d'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 832, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (512, 832, 2, 2)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (512, 832, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4d.branch3.1.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.1.conv' → 'stage4.inception_4e.branch1.conv'
+[INFO] ✅ Successfully collapsed block 'test' (stage4.inception_4d.branch3.1.conv → stage4.inception_4e.branch1.conv)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 4,943,274
+[INFO] ΔParams = +1,047,808 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [✓] ACCEPTED: Params (5,991,082 -> 4,943,274) | FLOPs (32,421,472 -> 35,722,112)
+
+[INFO] Phase 4: Validating 'Dynamic_Region_All_Combined' (Greedy Integration)...
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (InceptionNet)
+
+Layer-wise zero parameter stats:
+
+stage1.conv1.conv.weight: 0/9408 zeros (0.00%)
+stage1.conv1.bn.weight: 0/64 zeros (0.00%)
+stage1.conv1.bn.bias: 0/64 zeros (0.00%)
+stage2.conv2.conv.weight: 0/4096 zeros (0.00%)
+stage2.conv2.bn.weight: 0/64 zeros (0.00%)
+stage2.conv2.bn.bias: 0/64 zeros (0.00%)
+stage2.conv3.conv.weight: 0/110592 zeros (0.00%)
+stage2.conv3.bn.weight: 0/192 zeros (0.00%)
+stage2.conv3.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3a.branch1.conv.weight: 0/12288 zeros (0.00%)
+stage3.inception_3a.branch1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3a.branch1.bn.bias: 0/64 zeros (0.00%)
+stage3.inception_3a.branch2.0.conv.weight: 0/18432 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.1.conv.weight: 0/110592 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3a.branch3.0.conv.weight: 0/3072 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.1.conv.weight: 0/12800 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.conv.weight: 0/6144 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch1.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.1.conv.weight: 0/221184 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.weight: 0/192 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3b.branch3.0.conv.weight: 0/8192 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.1.conv.weight: 0/76800 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3b.branch4.1.conv.weight: 0/16384 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4a.branch1.conv.weight: 0/92160 zeros (0.00%)
+stage4.inception_4a.branch1.bn.weight: 0/192 zeros (0.00%)
+stage4.inception_4a.branch1.bn.bias: 0/192 zeros (0.00%)
+stage4.inception_4a.branch2.0.conv.weight: 0/46080 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.1.conv.weight: 0/179712 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.weight: 0/208 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.bias: 0/208 zeros (0.00%)
+stage4.inception_4a.branch3.0.conv.weight: 0/7680 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.1.conv.weight: 0/19200 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.weight: 0/48 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.bias: 0/48 zeros (0.00%)
+stage4.inception_4a.branch4.1.conv.weight: 0/30720 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch1.conv.weight: 0/81920 zeros (0.00%)
+stage4.inception_4b.branch1.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4b.branch1.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4b.branch2.0.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.1.conv.weight: 0/225792 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.weight: 0/224 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.bias: 0/224 zeros (0.00%)
+stage4.inception_4b.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch1.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.1.conv.weight: 0/294912 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4c.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch1.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4d.branch1.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4d.branch1.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4d.branch2.0.conv.weight: 0/73728 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.weight: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.bias: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.1.conv.weight: 0/373248 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.weight: 0/288 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.bias: 0/288 zeros (0.00%)
+stage4.inception_4d.branch3.0.conv.weight: 0/16384 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.1.conv.weight: 0/51200 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4e.branch1.conv.weight: 0/135168 zeros (0.00%)
+stage4.inception_4e.branch1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4e.branch1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4e.branch2.0.conv.weight: 0/84480 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage4.inception_4e.branch3.0.conv.weight: 0/16896 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.conv.weight: 0/67584 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch1.conv.weight: 0/212992 zeros (0.00%)
+stage5.inception_5a.branch1.bn.weight: 0/256 zeros (0.00%)
+stage5.inception_5a.branch1.bn.bias: 0/256 zeros (0.00%)
+stage5.inception_5a.branch2.0.conv.weight: 0/133120 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage5.inception_5a.branch3.0.conv.weight: 0/26624 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch1.conv.weight: 0/319488 zeros (0.00%)
+stage5.inception_5b.branch1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.0.conv.weight: 0/159744 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.weight: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.bias: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.1.conv.weight: 0/663552 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch3.0.conv.weight: 0/39936 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.weight: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.bias: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.1.conv.weight: 0/153600 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.bias: 0/128 zeros (0.00%)
+fc.weight: 0/10240 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: comb_0 = (stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'comb_0': stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv
+[STEP] Calling _collapse_block('stage4.inception_4c.branch3.1.conv', 'stage4.inception_4d.branch1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4c.branch3.1.conv
+[INFO] End Target   : stage4.inception_4d.branch1.conv
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.1.conv' -> 'stage4.inception_4d.branch1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 2 to 3
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] inception_4c -> InceptionBlock
+    [LAYER MAP] inception_4d -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4c'
+[DEBUG] Hooking End Node   : 'stage4.inception_4d'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4c' -> 'stage4.inception_4d'...
+[DEBUG] Captured input shape: (512, 512, 2, 2), output shape: (512, 528, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 512, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 528, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 5,991,082
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4d.branch1.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4d.branch1.conv'...
+[DEBUG] Exact layer match found at index 167: stage4.inception_4d.branch1.conv (Conv2d)
+[DEBUG] Scanning forward from index 168 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=1024, out_features=10, bias=True))
+[RESULT] Next Linear detected → name='fc', module=Linear(in_features=1024, out_features=10, bias=True)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (512, 512, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 528, 2, 2)
+[DEBUG] Determined out_channels=528
+[DEBUG] Final block output shape: (512, 528, 2, 2)
+[DEBUG] Determined out_channels=528
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(512, 528, 2, 2)
+         out_channels=528
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 528, 2, 2)
+    - out_channels             : 528
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 1))
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4c.branch3.1.conv'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 2 -> 3
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 512 (in) -> 528 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=512, out=128)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module:
+        - conv_1x1: Conv2d(512, 528, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(528, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 5,991,082
+[INFO] Post-collapse : 5,145,626
+[INFO] Net Change    : -845,456
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 528, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=2, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (512, 528, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.inception_4d' executed successfully, output shape: (512, 528, 2, 2)
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (512, 832, 2, 2)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (512, 832, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4c.branch3.1.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.1.conv' → 'stage4.inception_4d.branch1.conv'
+[INFO] ✅ Successfully collapsed block 'comb_0' (stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 5,145,626
+[INFO] ΔParams = +845,456 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [+] Merged safely: stage4.inception_4c.branch3.1.conv -> stage4.inception_4d.branch1.conv
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (InceptionNet)
+
+Layer-wise zero parameter stats:
+
+stage1.conv1.conv.weight: 0/9408 zeros (0.00%)
+stage1.conv1.bn.weight: 0/64 zeros (0.00%)
+stage1.conv1.bn.bias: 0/64 zeros (0.00%)
+stage2.conv2.conv.weight: 0/4096 zeros (0.00%)
+stage2.conv2.bn.weight: 0/64 zeros (0.00%)
+stage2.conv2.bn.bias: 0/64 zeros (0.00%)
+stage2.conv3.conv.weight: 0/110592 zeros (0.00%)
+stage2.conv3.bn.weight: 0/192 zeros (0.00%)
+stage2.conv3.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3a.branch1.conv.weight: 0/12288 zeros (0.00%)
+stage3.inception_3a.branch1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3a.branch1.bn.bias: 0/64 zeros (0.00%)
+stage3.inception_3a.branch2.0.conv.weight: 0/18432 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3a.branch2.1.conv.weight: 0/110592 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3a.branch2.1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3a.branch3.0.conv.weight: 0/3072 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage3.inception_3a.branch3.1.conv.weight: 0/12800 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch3.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.conv.weight: 0/6144 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3a.branch4.1.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch1.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch1.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch1.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.conv.weight: 0/32768 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage3.inception_3b.branch2.1.conv.weight: 0/221184 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.weight: 0/192 zeros (0.00%)
+stage3.inception_3b.branch2.1.bn.bias: 0/192 zeros (0.00%)
+stage3.inception_3b.branch3.0.conv.weight: 0/8192 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage3.inception_3b.branch3.1.conv.weight: 0/76800 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.weight: 0/96 zeros (0.00%)
+stage3.inception_3b.branch3.1.bn.bias: 0/96 zeros (0.00%)
+stage3.inception_3b.branch4.1.conv.weight: 0/16384 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage3.inception_3b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4a.branch1.conv.weight: 0/92160 zeros (0.00%)
+stage4.inception_4a.branch1.bn.weight: 0/192 zeros (0.00%)
+stage4.inception_4a.branch1.bn.bias: 0/192 zeros (0.00%)
+stage4.inception_4a.branch2.0.conv.weight: 0/46080 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.weight: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.0.bn.bias: 0/96 zeros (0.00%)
+stage4.inception_4a.branch2.1.conv.weight: 0/179712 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.weight: 0/208 zeros (0.00%)
+stage4.inception_4a.branch2.1.bn.bias: 0/208 zeros (0.00%)
+stage4.inception_4a.branch3.0.conv.weight: 0/7680 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.weight: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.0.bn.bias: 0/16 zeros (0.00%)
+stage4.inception_4a.branch3.1.conv.weight: 0/19200 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.weight: 0/48 zeros (0.00%)
+stage4.inception_4a.branch3.1.bn.bias: 0/48 zeros (0.00%)
+stage4.inception_4a.branch4.1.conv.weight: 0/30720 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4a.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch1.conv.weight: 0/81920 zeros (0.00%)
+stage4.inception_4b.branch1.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4b.branch1.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4b.branch2.0.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.0.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4b.branch2.1.conv.weight: 0/225792 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.weight: 0/224 zeros (0.00%)
+stage4.inception_4b.branch2.1.bn.bias: 0/224 zeros (0.00%)
+stage4.inception_4b.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4b.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4b.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch1.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.conv.weight: 0/65536 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.0.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4c.branch2.1.conv.weight: 0/294912 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4c.branch2.1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4c.branch3.0.conv.weight: 0/12288 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.weight: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.0.bn.bias: 0/24 zeros (0.00%)
+stage4.inception_4c.branch3.1.conv.weight: 0/38400 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4c.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch1.conv.weight: 0/57344 zeros (0.00%)
+stage4.inception_4d.branch1.bn.weight: 0/112 zeros (0.00%)
+stage4.inception_4d.branch1.bn.bias: 0/112 zeros (0.00%)
+stage4.inception_4d.branch2.0.conv.weight: 0/73728 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.weight: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.0.bn.bias: 0/144 zeros (0.00%)
+stage4.inception_4d.branch2.1.conv.weight: 0/373248 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.weight: 0/288 zeros (0.00%)
+stage4.inception_4d.branch2.1.bn.bias: 0/288 zeros (0.00%)
+stage4.inception_4d.branch3.0.conv.weight: 0/16384 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4d.branch3.1.conv.weight: 0/51200 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch3.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.conv.weight: 0/32768 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.weight: 0/64 zeros (0.00%)
+stage4.inception_4d.branch4.1.bn.bias: 0/64 zeros (0.00%)
+stage4.inception_4e.branch1.conv.weight: 0/135168 zeros (0.00%)
+stage4.inception_4e.branch1.bn.weight: 0/256 zeros (0.00%)
+stage4.inception_4e.branch1.bn.bias: 0/256 zeros (0.00%)
+stage4.inception_4e.branch2.0.conv.weight: 0/84480 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage4.inception_4e.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage4.inception_4e.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage4.inception_4e.branch3.0.conv.weight: 0/16896 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage4.inception_4e.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.conv.weight: 0/67584 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage4.inception_4e.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch1.conv.weight: 0/212992 zeros (0.00%)
+stage5.inception_5a.branch1.bn.weight: 0/256 zeros (0.00%)
+stage5.inception_5a.branch1.bn.bias: 0/256 zeros (0.00%)
+stage5.inception_5a.branch2.0.conv.weight: 0/133120 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.weight: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.0.bn.bias: 0/160 zeros (0.00%)
+stage5.inception_5a.branch2.1.conv.weight: 0/460800 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.weight: 0/320 zeros (0.00%)
+stage5.inception_5a.branch2.1.bn.bias: 0/320 zeros (0.00%)
+stage5.inception_5a.branch3.0.conv.weight: 0/26624 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.weight: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.0.bn.bias: 0/32 zeros (0.00%)
+stage5.inception_5a.branch3.1.conv.weight: 0/102400 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5a.branch4.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch1.conv.weight: 0/319488 zeros (0.00%)
+stage5.inception_5b.branch1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.0.conv.weight: 0/159744 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.weight: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.0.bn.bias: 0/192 zeros (0.00%)
+stage5.inception_5b.branch2.1.conv.weight: 0/663552 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.weight: 0/384 zeros (0.00%)
+stage5.inception_5b.branch2.1.bn.bias: 0/384 zeros (0.00%)
+stage5.inception_5b.branch3.0.conv.weight: 0/39936 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.weight: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.0.bn.bias: 0/48 zeros (0.00%)
+stage5.inception_5b.branch3.1.conv.weight: 0/153600 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch3.1.bn.bias: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.conv.weight: 0/106496 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.weight: 0/128 zeros (0.00%)
+stage5.inception_5b.branch4.1.bn.bias: 0/128 zeros (0.00%)
+fc.weight: 0/10240 zeros (0.00%)
+fc.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 2 entries.
+    [DEBUG] Added mapping: comb_0 = (stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv)
+    [DEBUG] Added mapping: comb_1 = (stage4.inception_4d.branch3.1.conv → stage4.inception_4e.branch1.conv)
+[DEBUG] Total collapse targets: 2
+    [BLOCK 0] stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv
+    [BLOCK 1] stage4.inception_4d.branch3.1.conv → stage4.inception_4e.branch1.conv
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'comb_0': stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv
+[STEP] Calling _collapse_block('stage4.inception_4c.branch3.1.conv', 'stage4.inception_4d.branch1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4c.branch3.1.conv
+[INFO] End Target   : stage4.inception_4d.branch1.conv
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.1.conv' -> 'stage4.inception_4d.branch1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 2 to 3
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] inception_4c -> InceptionBlock
+    [LAYER MAP] inception_4d -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4c'
+[DEBUG] Hooking End Node   : 'stage4.inception_4d'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4c' -> 'stage4.inception_4d'...
+[DEBUG] Captured input shape: (512, 512, 2, 2), output shape: (512, 528, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 512, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 528, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 5,991,082
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4d.branch1.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4d.branch1.conv'...
+[DEBUG] Exact layer match found at index 167: stage4.inception_4d.branch1.conv (Conv2d)
+[DEBUG] Scanning forward from index 168 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=1024, out_features=10, bias=True))
+[RESULT] Next Linear detected → name='fc', module=Linear(in_features=1024, out_features=10, bias=True)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (512, 512, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 528, 2, 2)
+[DEBUG] Determined out_channels=528
+[DEBUG] Final block output shape: (512, 528, 2, 2)
+[DEBUG] Determined out_channels=528
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(512, 528, 2, 2)
+         out_channels=528
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 528, 2, 2)
+    - out_channels             : 528
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 1))
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4c.branch3.1.conv'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 2 -> 3
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 512 (in) -> 528 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=512, out=128)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module:
+        - conv_1x1: Conv2d(512, 528, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(528, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 5,991,082
+[INFO] Post-collapse : 5,145,626
+[INFO] Net Change    : -845,456
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 528, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=2, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (512, 528, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.inception_4d' executed successfully, output shape: (512, 528, 2, 2)
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (512, 832, 2, 2)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (512, 832, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4c.branch3.1.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.1.conv' → 'stage4.inception_4d.branch1.conv'
+[INFO] ✅ Successfully collapsed block 'comb_0' (stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'comb_1': stage4.inception_4d.branch3.1.conv → stage4.inception_4e.branch1.conv
+[STEP] Calling _collapse_block('stage4.inception_4d.branch3.1.conv', 'stage4.inception_4e.branch1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4d.branch3.1.conv
+[INFO] End Target   : stage4.inception_4e.branch1.conv
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4d.branch3.1.conv' -> 'stage4.inception_4e.branch1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 4
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] inception_4d -> SmartIdentity
+    [LAYER MAP] inception_4e -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4d'
+[DEBUG] Hooking End Node   : 'stage4.inception_4e'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4d' -> 'stage4.inception_4e'...
+[DEBUG] Captured input shape: (512, 528, 2, 2), output shape: (512, 832, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 528, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 832, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 5,145,626
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4e.branch1.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4e.branch1.conv'...
+[DEBUG] Exact layer match found at index 144: stage4.inception_4e.branch1.conv (Conv2d)
+[DEBUG] Scanning forward from index 145 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=1024, out_features=10, bias=True))
+[RESULT] Next Linear detected → name='fc', module=Linear(in_features=1024, out_features=10, bias=True)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (512, 528, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 832, 2, 2)
+[DEBUG] Determined out_channels=832
+[DEBUG] Final block output shape: (512, 832, 2, 2)
+[DEBUG] Determined out_channels=832
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(512, 832, 2, 2)
+         out_channels=832
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 832, 2, 2)
+    - out_channels             : 832
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 1))
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4d.branch3.1.conv'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 3 -> 4
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 528 (in) -> 832 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=528, out=256)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module:
+        - conv_1x1: Conv2d(528, 832, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(832, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 5,145,626
+[INFO] Post-collapse : 4,717,210
+[INFO] Net Change    : -428,416
+[ERROR] Replacement forward validation failed!
+       Exception: Given groups=1, weight of size [528, 512, 1, 1], expected input[512, 528, 2, 2] to have 512 channels, but got 528 channels instead
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=3, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[WARN] Forward pass through inserted module failed: Given groups=1, weight of size [528, 512, 1, 1], expected input[512, 528, 2, 2] to have 512 channels, but got 528 channels instead
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4d.branch3.1.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.1.conv' → 'stage4.inception_4e.branch1.conv'
+[INFO] ✅ Successfully collapsed block 'comb_1' (stage4.inception_4d.branch3.1.conv → stage4.inception_4e.branch1.conv)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 4,717,210
+[INFO] ΔParams = +1,273,872 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 2
+        [+] Merged safely: stage4.inception_4d.branch3.1.conv -> stage4.inception_4e.branch1.conv
+[•] Running Comprehensive Heuristic Analysis for InceptionNet on Cifar10...
+[✓] Stage 1 Complete. Exported 4 targets to 'InceptionNet_Cifar10_epochs3_pretrain3_JF_discovered_regions.json'.
+20:17:08 [INFO] Scanning for metrics files matching epochs=3, pretrain=3
+20:17:08 [INFO] Successfully parsed 88 experiment rows.
+20:17:09 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__accuracy.png
+20:17:09 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__params.png
+20:17:09 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__flops.png
+20:17:10 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__memory.png
+20:17:10 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__accuracy.png
+20:17:11 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__params.png
+20:17:11 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__flops.png
+20:17:11 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__memory.png
+20:17:12 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_accuracy.png
+20:17:12 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_params.png
+20:17:12 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_flops.png
+20:17:13 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_memory.png
+20:17:13 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__accuracy.png
+20:17:14 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__params.png
+20:17:14 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__flops.png
+20:17:14 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__memory.png
+20:17:15 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__accuracy.png
+20:17:15 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__params.png
+20:17:16 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__flops.png
+20:17:16 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__memory.png
+20:17:17 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_accuracy.png
+20:17:17 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_params.png
+20:17:18 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_flops.png
+20:17:18 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_memory.png
+20:17:18 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__accuracy.png
+20:17:19 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__params.png
+20:17:19 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__flops.png
+20:17:20 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__memory.png
+20:17:20 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__accuracy.png
+20:17:21 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__params.png
+20:17:21 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__flops.png
+20:17:21 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__memory.png
+20:17:22 [INFO] [FIG1] Saved accuracy plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_accuracy.png
+20:17:22 [INFO] [FIG1] Saved params plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_params.png
+20:17:23 [INFO] [FIG1] Saved flops plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_flops.png
+20:17:23 [INFO] [FIG1] Saved memory plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_memory.png
+20:17:24 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__accuracy.png
+20:17:24 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__params.png
+20:17:25 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__flops.png
+20:17:25 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__memory.png
+20:17:26 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__accuracy.png
+20:17:26 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__params.png
+20:17:27 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__flops.png
+20:17:27 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__memory.png
+20:17:28 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__accuracy.png
+20:17:28 [INFO] [FIG1] Saved params plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__params.png
+20:17:29 [INFO] [FIG1] Saved flops plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__flops.png
+20:17:29 [INFO] [FIG1] Saved memory plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__memory.png
+20:17:29 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__accuracy.png
+20:17:30 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__params.png
+20:17:30 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__flops.png
+20:17:31 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__memory.png
+20:17:31 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__accuracy.png
+20:17:31 [INFO] [FIG1] Saved params plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__params.png
+20:17:32 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__flops.png
+20:17:32 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__memory.png
+20:17:33 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__accuracy.png
+20:17:33 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__params.png
+20:17:33 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__flops.png
+20:17:34 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__memory.png
+20:17:34 [INFO] Starting FIG2 generation. Target epochs: 3, pretrain: 3
+20:17:34 [DEBUG] [FIG2] Successfully loaded 72 micro-layers from RegNetX_400MF_Cifar10_layer_stats.csv
+20:17:34 [DEBUG] [FIG2] Set dynamic moving average window size to 10 for RegNetX_400MF
+20:17:34 [DEBUG] [FIG2] Found corresponding discovered regions JSON: RegNetX_400MF_Cifar10_epochs3_pretrain3_JF_discovered_regions.json
+20:17:34 [DEBUG] [FIG2] Extracted regions from JSON: [['stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.conv3'], ['stage3.stage3_block3.block.conv2', 'stage3.stage3_block3.block.conv3'], ['stage3.stage3_block4.block.conv2', 'stage3.stage3_block4.block.conv3'], ['stage3.stage3_block5.block.conv2', 'stage3.stage3_block5.block.conv3']]
+20:17:34 [INFO] [FIG2] Final verified micro-layer index ranges for RegNetX_400MF: [(20, 21), (23, 24), (26, 27), (29, 30)]
+20:17:34 [DEBUG] [FIG2] Final state counts for RegNetX_400MF: VETO=18, VERIFIED=8, REJECTED=1, DANGER=45
+20:17:35 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/RegNetX_400MF_Cifar10_bav_methodology_regions.png
+20:17:35 [DEBUG] [FIG2] Successfully loaded 16 micro-layers from VGG16_Cifar10_layer_stats.csv
+20:17:35 [DEBUG] [FIG2] Set dynamic moving average window size to 5 for VGG16
+20:17:35 [DEBUG] [FIG2] Found corresponding discovered regions JSON: VGG16_Cifar10_epochs3_pretrain3_JF_discovered_regions.json
+20:17:35 [DEBUG] [FIG2] Extracted regions from JSON: [['features.conv_5', 'features.conv_10'], ['features.conv_12', 'features.conv_13']]
+20:17:35 [INFO] [FIG2] Final verified micro-layer index ranges for VGG16: [(4, 9), (11, 12)]
+20:17:35 [DEBUG] [FIG2] Final state counts for VGG16: VETO=4, VERIFIED=8, REJECTED=3, DANGER=1
+20:17:36 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_Cifar10_bav_methodology_regions.png
+20:17:36 [DEBUG] [FIG2] Successfully loaded 58 micro-layers from InceptionNet_Cifar10_layer_stats.csv
+20:17:36 [DEBUG] [FIG2] Set dynamic moving average window size to 8 for InceptionNet
+20:17:36 [DEBUG] [FIG2] Found corresponding discovered regions JSON: InceptionNet_Cifar10_epochs3_pretrain3_JF_discovered_regions.json
+20:17:36 [DEBUG] [FIG2] Extracted regions from JSON: [['stage4.inception_4c.branch3.1.conv', 'stage4.inception_4d.branch1.conv'], ['stage4.inception_4d.branch3.1.conv', 'stage4.inception_4e.branch1.conv']]
+20:17:36 [INFO] [FIG2] Final verified micro-layer index ranges for InceptionNet: [(31, 33), (37, 39)]
+20:17:37 [DEBUG] [FIG2] Final state counts for InceptionNet: VETO=14, VERIFIED=6, REJECTED=7, DANGER=31
+20:17:38 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/InceptionNet_Cifar10_bav_methodology_regions.png
+20:17:38 [DEBUG] [FIG2] Successfully loaded 28 micro-layers from MobileNet_Cifar10_layer_stats.csv
+20:17:38 [DEBUG] [FIG2] Set dynamic moving average window size to 5 for MobileNet
+20:17:38 [DEBUG] [FIG2] Found corresponding discovered regions JSON: MobileNet_Cifar10_epochs3_pretrain3_JF_discovered_regions.json
+20:17:38 [DEBUG] [FIG2] Extracted regions from JSON: []
+20:17:38 [INFO] [FIG2] Final verified micro-layer index ranges for MobileNet: []
+20:17:38 [DEBUG] [FIG2] Final state counts for MobileNet: VETO=7, VERIFIED=0, REJECTED=6, DANGER=15
+20:17:39 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/MobileNet_Cifar10_bav_methodology_regions.png
+20:17:39 [DEBUG] [FIG2] Successfully loaded 59 micro-layers from ConvNeXt_Cifar10_layer_stats.csv
+20:17:39 [DEBUG] [FIG2] Set dynamic moving average window size to 8 for ConvNeXt
+20:17:39 [DEBUG] [FIG2] Found corresponding discovered regions JSON: ConvNeXt_Cifar10_epochs3_pretrain3_JF_discovered_regions.json
+20:17:39 [DEBUG] [FIG2] Extracted regions from JSON: [['features.3.1', 'features.4.0.dwconv']]
+20:17:39 [INFO] [FIG2] Final verified micro-layer index ranges for ConvNeXt: [(20, 21)]
+20:17:39 [DEBUG] [FIG2] Final state counts for ConvNeXt: VETO=14, VERIFIED=2, REJECTED=10, DANGER=33
+20:17:40 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/ConvNeXt_Cifar10_bav_methodology_regions.png
+20:17:40 [DEBUG] [FIG2] Successfully loaded 75 micro-layers from XceptionNet_Cifar10_layer_stats.csv
+20:17:40 [DEBUG] [FIG2] Set dynamic moving average window size to 11 for XceptionNet
+20:17:40 [DEBUG] [FIG2] Found corresponding discovered regions JSON: XceptionNet_Cifar10_epochs3_pretrain3_JF_discovered_regions.json
+20:17:40 [DEBUG] [FIG2] Extracted regions from JSON: [['middle_flow.0.rep.4.depthwise', 'middle_flow.0.rep.7.pointwise'], ['middle_flow.1.rep.4.depthwise', 'middle_flow.1.rep.7.pointwise'], ['middle_flow.2.rep.4.depthwise', 'middle_flow.2.rep.7.pointwise'], ['middle_flow.3.rep.4.depthwise', 'middle_flow.3.rep.7.pointwise'], ['middle_flow.4.rep.4.depthwise', 'middle_flow.4.rep.7.pointwise'], ['middle_flow.5.rep.4.depthwise', 'middle_flow.5.rep.7.pointwise'], ['middle_flow.6.rep.4.depthwise', 'middle_flow.6.rep.7.pointwise']]
+20:17:40 [INFO] [FIG2] Final verified micro-layer index ranges for XceptionNet: [(19, 22), (25, 28), (31, 34), (37, 40), (43, 46), (49, 52), (55, 58)]
+20:17:40 [DEBUG] [FIG2] Final state counts for XceptionNet: VETO=18, VERIFIED=28, REJECTED=0, DANGER=29
+20:17:41 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/XceptionNet_Cifar10_bav_methodology_regions.png
+20:17:47 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+20:17:47 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar100_
+20:17:47 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar100_
+20:17:47 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar100_
+20:17:47 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar100_
+20:17:47 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/hardware_efficiency/RegNetX_400MF_cifar100__hardware_profile.png
+20:17:47 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar100_
+20:17:48 [INFO] [FIG5] Saved hardware profile plot for VGG16/cifar100_ at figures_ep3_pre3/hardware_efficiency/VGG16_cifar100__hardware_profile.png
+20:17:48 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar100_
+20:17:48 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
+20:17:48 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
+20:17:48 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
+20:17:48 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
+20:17:48 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/hardware_efficiency/RegNetX_400MF_cifar10__hardware_profile.png
+20:17:48 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
+20:17:48 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar10_
+20:17:48 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/tinyimagenet
+20:17:48 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
+20:17:49 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/tinyimagenet at figures_ep3_pre3/hardware_efficiency/InceptionNet_tinyimagenet_hardware_profile.png
+20:17:49 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/tinyimagenet
+20:17:49 [INFO] [FIG5] Saved unified best_candidates plot at figures_ep3_pre3/hardware_efficiency/unified_best_candidates.png
+20:17:50 [INFO] [FIG5] Saved unified worst_candidates plot at figures_ep3_pre3/hardware_efficiency/unified_worst_candidates.png
+20:17:50 [INFO] [FIG5] Saved global trade-off scatter plot at figures_ep3_pre3/hardware_efficiency/global_tradeoff_scatter.png
+20:17:50 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+20:17:50 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
+20:17:51 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar10_training_curves.png
+20:17:52 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar10_training_curves.png
+20:17:53 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar10_training_curves.png
+20:17:54 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar10_training_curves.png
+20:17:54 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at figures_ep3_pre3/learning_curves/MobileNet_tinyimagenet_training_curves.png
+20:17:55 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at figures_ep3_pre3/learning_curves/ConvNeXt_tinyimagenet_training_curves.png
+20:17:56 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar100_training_curves.png
+20:17:57 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar10_training_curves.png
