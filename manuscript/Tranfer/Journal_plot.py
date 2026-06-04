@@ -332,13 +332,20 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                     
                 layers = layer_df['Layer'].tolist()
                 variances = np.maximum(layer_df['Variance'].values, 1e-6)
+                logger.debug(f"[FIG2] Successfully loaded {len(layers)} layers from {csv_path.name}")
             except Exception as e:
                 logger.error(f"Failed to read CSV {csv_path}: {e}")
                 continue
 
             # --- Calculation Logic ---
             h_vals, sigma_bars = [], []
-            window_size = 3  
+            
+            # FIX 1: Widen the window size proportionally to the network depth.
+            # This prevents the baseline from adapting instantaneously, allowing 
+            # contiguous valleys to be fully visualized as negative bars.
+            window_size = max(5, int(len(variances) * 0.15))
+            logger.debug(f"[FIG2] Set dynamic moving average window size to {window_size} for {arch}")
+            
             for i, sigma_i in enumerate(variances):
                 start = max(0, i - window_size)
                 end = min(len(variances), i + window_size + 1)
@@ -350,7 +357,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 h = max(diff / sigma_bars[-1], -1.0) if diff < 0 else min(diff / sigma_bars[-1], 1.0)
                 h_vals.append(h)
                 
-            # --- JSON Region Matching (UPDATED: Case-Insensitive & Robust) ---
+            # --- JSON Region Matching (UPDATED: Deep Search & Disjoint Range Fix) ---
             clean_ds = dataset.strip("_").lower()
             potential_jsons = list(Path(".").rglob(f"*{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
             json_files = [p for p in potential_jsons if clean_ds in p.name.lower()]
@@ -358,34 +365,75 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             verified_idx_ranges = []
             
             if json_files:
+                logger.debug(f"[FIG2] Found corresponding discovered regions JSON: {json_files[0].name}")
                 try:
                     with open(json_files[0], 'r') as f:
                         config = json.load(f)
-                    for k, v in config.items():
-                        if k.startswith("Set_") and isinstance(v, (list, tuple)):
-                            # Handle potential nested lists just in case
-                            start_name = v[0][0] if isinstance(v[0], (list, tuple)) else v[0]
-                            end_name = v[-1][-1] if isinstance(v[-1], (list, tuple)) else v[-1]
-                            
-                            # Catch mismatches per-region so one failure doesn't wipe them all
+                    
+                    # FIX 2: Recursively search for 'Set_' keys in case they are nested 
+                    # under an experiment name (e.g., {"ConvNeXt_Run": {"Set_0": [...]}})
+                    def extract_regions(d):
+                        regions = []
+                        if isinstance(d, dict):
+                            for k, v in d.items():
+                                if k.startswith("Set_") and isinstance(v, (list, tuple)):
+                                    regions.append(v)
+                                else:
+                                    regions.extend(extract_regions(v))
+                        return regions
+                        
+                    extracted_regions = extract_regions(config)
+                    logger.debug(f"[FIG2] Extracted regions from JSON: {extracted_regions}")
+                    
+                    for v in extracted_regions:
+                        # Handle list of pairs (e.g., disjoint ranges like [["block1", "block2"], ["block4", "block5"]])
+                        if isinstance(v[0], (list, tuple)):
+                            for sub_v in v:
+                                s_name, e_name = sub_v[0], sub_v[-1]
+                                try:
+                                    s_idx = next(idx for idx, n in enumerate(layers) if s_name == n)
+                                    e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if e_name == n)
+                                    verified_idx_ranges.append((s_idx, e_idx))
+                                except StopIteration:
+                                    logger.warning(f"[FIG2] Failed to map nested region {s_name}->{e_name} to CSV indices.")
+                                    continue
+                        else:
+                            # Handle standard flat lists (e.g., ["block1", "block2"])
+                            s_name, e_name = v[0], v[-1]
                             try:
-                                s_idx = next(idx for idx, n in enumerate(layers) if start_name == n)
-                                e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_name == n)
+                                s_idx = next(idx for idx, n in enumerate(layers) if s_name == n)
+                                e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if e_name == n)
                                 verified_idx_ranges.append((s_idx, e_idx))
                             except StopIteration:
-                                logger.warning(f"Could not map region {start_name}->{end_name} to CSV layers for {arch}")
+                                logger.warning(f"[FIG2] Failed to map flat region {s_name}->{e_name} to CSV indices.")
                                 continue
+                                
+                    logger.info(f"[FIG2] Final verified index ranges for {arch}: {verified_idx_ranges}")
+                            
                 except Exception as e:
                     logger.error(f"Error parsing JSON for {arch}/{dataset}: {e}")
+            else:
+                logger.debug(f"[FIG2] No discovered regions JSON found for {arch} on {dataset}.")
 
             # --- Plotting ---
             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
             x_vals = range(1, len(layers) + 1)
             
+            # FIX 3: Dynamic terminology based on architecture
+            block_archs = ["ConvNeXt", "RegNetX_400MF", "MobileNet", "InceptionNet", "XceptionNet"]
+            is_block_based = arch in block_archs
+            x_label = "Network Depth (Macro-Blocks)" if is_block_based else "Network Depth (Individual Layers)"
+            
             ax1.plot(x_vals, variances, color='#4A4A4A', marker='o', markersize=4, label=r'Layer Variance ($\sigma_i$)')
             ax1.plot(x_vals, sigma_bars, color='#ff7f0e', linestyle='--', linewidth=2.5, label=r'Local Context Mean ($\bar{\sigma}$)')
             ax1.set_yscale('log')
-            ax1.set_title(f"Dynamic Structural Redundancy Analysis\n{arch} on {dataset.capitalize()}", fontweight='bold')
+            
+            # Clarify the methodology in the title for block-based networks
+            title_str = f"Dynamic Structural Redundancy Analysis\n{arch} on {dataset.capitalize()}"
+            if is_block_based:
+                title_str += "\n(Note: Units represent aggregate macro-blocks containing multiple micro-layers)"
+                
+            ax1.set_title(title_str, fontweight='bold', fontsize=14)
             ax1.legend(loc='upper right', frameon=False)
             sns.despine(ax=ax1)
 
@@ -398,6 +446,8 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 else:
                     in_verified = any(s_idx <= i <= e_idx for s_idx, e_idx in verified_idx_ranges)
                     final_states[i] = "VERIFIED" if in_verified else ("REJECTED" if h_vals[i] < 0 else "DANGER")
+
+            logger.debug(f"[FIG2] Final state counts for {arch}: VETO={final_states.count('VETO')}, VERIFIED={final_states.count('VERIFIED')}, REJECTED={final_states.count('REJECTED')}, DANGER={final_states.count('DANGER')}")
 
             # --- Bar Plot ---
             state_colors = {"VETO": "#999999", "VERIFIED": "#2ca02c", "REJECTED": "#ff7f0e", "DANGER": "#d62728"}
@@ -418,11 +468,16 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             for start, end, state in zones:
                 span_start, span_end = (start + 1) - 0.5, (end + 1) + 0.5
                 alpha_val = 0.4 if state == "VETO" else 0.15
-                # CHANGED 'color' -> 'facecolor'
                 ax1.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, edgecolor='none')
                 ax2.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, label=state)
 
-            ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
+            # Filter duplicate labels from the legend loop
+            handles, labels = ax2.get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            ax2.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
+            
+            # FIX 4: Explicitly apply the dynamic x-axis label before tight_layout
+            ax2.set_xlabel(x_label, fontweight='bold', fontsize=12)
             plt.tight_layout()
             
             # --- Final Save ---
@@ -431,6 +486,142 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             plt.savefig(save_path, bbox_inches='tight')
             plt.close()
             logger.info(f"[FIG2] Saved methodology plot: {save_path}")
+
+# def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
+#     logger.info(f"Starting FIG2 generation. Target epochs: {epochs}, pretrain: {pretrain}")
+    
+#     # 1. Robust Path Discovery: Search specifically for the 'Layer_Statistics' subfolders
+#     # Structure: .../epochs{X}_pretrain{Y}/**/Layer_Statistics
+#     root_plots_dir = Path("./runs/plots")
+#     search_pattern = f"**/epochs{epochs}_pretrain{pretrain}/**/Layer_Statistics"
+#     search_paths = list(root_plots_dir.glob(search_pattern))
+    
+#     if not search_paths:
+#         logger.error(f"No Layer_Statistics directories found matching {search_pattern}")
+#         return
+
+#     for stats_dir in search_paths:
+#         # Extract Architecture and Dataset from the path hierarchy
+#         # Pattern: runs/plots/{arch}/{dataset}/epochs.../Layer_Statistics
+#         try:
+#             dataset = stats_dir.parents[1].name
+#             arch = stats_dir.parents[2].name
+#         except IndexError:
+#             logger.warning(f"Could not infer arch/dataset from path {stats_dir}, using 'unknown'")
+#             arch, dataset = "unknown", "unknown"
+            
+#         stat_files = list(stats_dir.glob("*_layer_stats.csv"))
+#         if not stat_files:
+#             logger.warning(f"No CSVs found in {stats_dir}")
+#             continue
+
+#         for csv_path in stat_files:
+#             try:
+#                 layer_df = pd.read_csv(csv_path)
+#                 if layer_df.empty or 'Variance' not in layer_df.columns:
+#                     continue
+                    
+#                 layers = layer_df['Layer'].tolist()
+#                 variances = np.maximum(layer_df['Variance'].values, 1e-6)
+#             except Exception as e:
+#                 logger.error(f"Failed to read CSV {csv_path}: {e}")
+#                 continue
+
+#             # --- Calculation Logic ---
+#             h_vals, sigma_bars = [], []
+#             window_size = 3  
+#             for i, sigma_i in enumerate(variances):
+#                 start = max(0, i - window_size)
+#                 end = min(len(variances), i + window_size + 1)
+#                 local_vars = variances[start:end]
+#                 sigma_bar = np.mean(local_vars) if len(local_vars) > 0 else np.mean(variances)
+#                 sigma_bars.append(max(sigma_bar, 1e-12))
+                
+#                 diff = sigma_i - sigma_bars[-1]
+#                 h = max(diff / sigma_bars[-1], -1.0) if diff < 0 else min(diff / sigma_bars[-1], 1.0)
+#                 h_vals.append(h)
+                
+#             # --- JSON Region Matching (UPDATED: Case-Insensitive & Robust) ---
+#             clean_ds = dataset.strip("_").lower()
+#             potential_jsons = list(Path(".").rglob(f"*{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
+#             json_files = [p for p in potential_jsons if clean_ds in p.name.lower()]
+            
+#             verified_idx_ranges = []
+            
+#             if json_files:
+#                 try:
+#                     with open(json_files[0], 'r') as f:
+#                         config = json.load(f)
+#                     for k, v in config.items():
+#                         if k.startswith("Set_") and isinstance(v, (list, tuple)):
+#                             # Handle potential nested lists just in case
+#                             start_name = v[0][0] if isinstance(v[0], (list, tuple)) else v[0]
+#                             end_name = v[-1][-1] if isinstance(v[-1], (list, tuple)) else v[-1]
+                            
+#                             # Catch mismatches per-region so one failure doesn't wipe them all
+#                             try:
+#                                 s_idx = next(idx for idx, n in enumerate(layers) if start_name == n)
+#                                 e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_name == n)
+#                                 verified_idx_ranges.append((s_idx, e_idx))
+#                             except StopIteration:
+#                                 logger.warning(f"Could not map region {start_name}->{end_name} to CSV layers for {arch}")
+#                                 continue
+#                 except Exception as e:
+#                     logger.error(f"Error parsing JSON for {arch}/{dataset}: {e}")
+
+#             # --- Plotting ---
+#             fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
+#             x_vals = range(1, len(layers) + 1)
+            
+#             ax1.plot(x_vals, variances, color='#4A4A4A', marker='o', markersize=4, label=r'Layer Variance ($\sigma_i$)')
+#             ax1.plot(x_vals, sigma_bars, color='#ff7f0e', linestyle='--', linewidth=2.5, label=r'Local Context Mean ($\bar{\sigma}$)')
+#             ax1.set_yscale('log')
+#             ax1.set_title(f"Dynamic Structural Redundancy Analysis\n{arch} on {dataset.capitalize()}", fontweight='bold')
+#             ax1.legend(loc='upper right', frameon=False)
+#             sns.despine(ax=ax1)
+
+#             # --- State Logic ---
+#             veto_idx = int(len(layers) * 0.25)
+#             final_states = ["DANGER"] * len(layers)
+#             for i in range(len(layers)):
+#                 if i < veto_idx:
+#                     final_states[i] = "VETO"
+#                 else:
+#                     in_verified = any(s_idx <= i <= e_idx for s_idx, e_idx in verified_idx_ranges)
+#                     final_states[i] = "VERIFIED" if in_verified else ("REJECTED" if h_vals[i] < 0 else "DANGER")
+
+#             # --- Bar Plot ---
+#             state_colors = {"VETO": "#999999", "VERIFIED": "#2ca02c", "REJECTED": "#ff7f0e", "DANGER": "#d62728"}
+#             ax2.bar(x_vals, h_vals, color=[state_colors[s] for s in final_states], alpha=0.85, edgecolor='black', linewidth=0.5)
+#             ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2)
+#             ax2.set_ylim(-1.1, 1.1)
+
+#             # --- Zone Shading ---
+#             zones = []
+#             if final_states:
+#                 start_idx, current_state = 0, final_states[0]
+#                 for i in range(1, len(final_states)):
+#                     if final_states[i] != current_state:
+#                         zones.append((start_idx, i - 1, current_state))
+#                         start_idx, current_state = i, final_states[i]
+#                 zones.append((start_idx, len(final_states) - 1, current_state))
+
+#             for start, end, state in zones:
+#                 span_start, span_end = (start + 1) - 0.5, (end + 1) + 0.5
+#                 alpha_val = 0.4 if state == "VETO" else 0.15
+#                 # CHANGED 'color' -> 'facecolor'
+#                 ax1.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, edgecolor='none')
+#                 ax2.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, label=state)
+
+#             ax2.legend(loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
+#             plt.tight_layout()
+            
+#             # --- Final Save ---
+#             out_dir.mkdir(parents=True, exist_ok=True)
+#             save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
+#             plt.savefig(save_path, bbox_inches='tight')
+#             plt.close()
+#             logger.info(f"[FIG2] Saved methodology plot: {save_path}")
 
 # ========================= FIG 3 ========================= #
 
