@@ -6,3 +6,108 @@
 
 [INFO] Hardware detected: CPU (CUDA Available: False)
 Loading CIFAR-10 data for XceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+Loading CIFAR-10 data for XceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] Base checkpoint path resolved: None
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Control_Continuted'
+============================================================
+
+[INFO] Validating JSON configuration map at: XceptionNet_Cifar10_epochs10_pretrain10_JF_discovered_regions.json
+[DEBUG] Loaded 9 configurations from map.
+[WARN] Trained baseline NOT found at XceptionNet_Cifar10_None_epochs10_pretrain10/checkpoints/final_JF_Control_quant.pt. Falling back to initial un-finetuned checkpoint.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Control_Continuted ---
+    Budget allocated: 10 epochs
+
+=== Running JF experiment ===
+[•] Starting experiment 'Control_Continuted_quant' in workflow 'JF' | Epoch Target: 10
+[•] No intermediate checkpoint found — starting fresh
+[•] Epoch 0
+Training:   0%|          | 0/98 [00:00<?, ?it/s]/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/amp/autocast_mode.py:266: UserWarning: User provided device_type of 'cuda', but CUDA is not available. Disabling
+  warnings.warn(
+Training:   0%|          | 0/98 [00:18<?, ?it/s, loss=2.3542, acc=7.23%]Training:   1%|          | 1/98 [00:18<30:21, 18.78s/it, loss=2.3542, acc=7.23%]Training:   1%|          | 1/98 [00:36<30:21, 18.78s/it, loss=2.6372, acc=10.84%]Training:   2%|▏         | 2/98 [00:36<29:20, 18.34s/it, loss=2.6372, acc=10.84%]                                                                                 Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 966, in <module>
+    main()
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 960, in main
+    run_hpc_stage(
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 927, in run_hpc_stage
+    run_experiments_for_dataset(
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 710, in run_experiments_for_dataset
+    run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, run_epochs, experiment_func, save_path, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 686, in run_jf_or_kevin_experiment
+    return run_jf_experiment({experiment_name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain=None, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, quant=quant)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 398, in run_jf_experiment
+    data = run_experiment(
+           ^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 275, in run_experiment
+    avg_loss, acc = train_one_epoch(
+                    ^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/trainer.py", line 45, in train_one_epoch
+    scaler.scale(loss).backward()
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/_tensor.py", line 626, in backward
+    torch.autograd.backward(
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/autograd/__init__.py", line 347, in backward
+    _engine_run_backward(
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/autograd/graph.py", line 823, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 9193) is killed by signal: Killed. 
+21:03:44 [INFO] Scanning for metrics files matching epochs=10, pretrain=10
+21:03:44 [INFO] Successfully parsed 11 experiment rows.
+21:03:53 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at figures_ep10_pre10/individual_plots/ConvNeXt_cifar10__accuracy.png
+21:04:29 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at figures_ep10_pre10/individual_plots/ConvNeXt_cifar10__params.png
+21:04:43 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at figures_ep10_pre10/individual_plots/ConvNeXt_cifar10__flops.png
+21:05:25 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at figures_ep10_pre10/individual_plots/ConvNeXt_cifar10__memory.png
+21:06:04 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at figures_ep10_pre10/individual_plots/InceptionNet_cifar10__accuracy.png
+21:06:11 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at figures_ep10_pre10/individual_plots/InceptionNet_cifar10__params.png
+21:06:20 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at figures_ep10_pre10/individual_plots/InceptionNet_cifar10__flops.png
+21:06:35 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at figures_ep10_pre10/individual_plots/InceptionNet_cifar10__memory.png
+21:06:44 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at figures_ep10_pre10/individual_plots/MobileNet_cifar10__accuracy.png
+21:06:51 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at figures_ep10_pre10/individual_plots/MobileNet_cifar10__params.png
+21:06:59 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at figures_ep10_pre10/individual_plots/MobileNet_cifar10__flops.png
+21:07:00 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at figures_ep10_pre10/individual_plots/MobileNet_cifar10__memory.png
+21:07:07 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at figures_ep10_pre10/individual_plots/RegNetX_400MF_cifar10__accuracy.png
+21:07:07 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at figures_ep10_pre10/individual_plots/RegNetX_400MF_cifar10__params.png
+21:07:08 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at figures_ep10_pre10/individual_plots/RegNetX_400MF_cifar10__flops.png
+21:07:08 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at figures_ep10_pre10/individual_plots/RegNetX_400MF_cifar10__memory.png
+21:07:09 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at figures_ep10_pre10/individual_plots/VGG16_cifar10__accuracy.png
+21:07:09 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at figures_ep10_pre10/individual_plots/VGG16_cifar10__params.png
+21:07:10 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at figures_ep10_pre10/individual_plots/VGG16_cifar10__flops.png
+21:07:10 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at figures_ep10_pre10/individual_plots/VGG16_cifar10__memory.png
+21:07:18 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at figures_ep10_pre10/individual_plots/XceptionNet_cifar10__accuracy.png
+21:07:18 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at figures_ep10_pre10/individual_plots/XceptionNet_cifar10__params.png
+21:07:37 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at figures_ep10_pre10/individual_plots/XceptionNet_cifar10__flops.png
+21:07:37 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at figures_ep10_pre10/individual_plots/XceptionNet_cifar10__memory.png
+21:07:37 [INFO] Starting FIG2 generation. Target epochs: 10, pretrain: 10
+21:07:45 [INFO] [FIG2] Saved methodology plot: figures_ep10_pre10/methodology/XceptionNet_Cifar10_bav_methodology_regions.png
+21:07:46 [INFO] [FIG2] Saved methodology plot: figures_ep10_pre10/methodology/InceptionNet_Cifar10_bav_methodology_regions.png
+21:07:48 [INFO] [FIG2] Saved methodology plot: figures_ep10_pre10/methodology/RegNetX_400MF_Cifar10_bav_methodology_regions.png
+21:07:50 [INFO] [FIG2] Saved methodology plot: figures_ep10_pre10/methodology/ConvNeXt_Cifar10_bav_methodology_regions.png
+21:07:51 [INFO] [FIG2] Saved methodology plot: figures_ep10_pre10/methodology/MobileNet_Cifar10_bav_methodology_regions.png
+21:07:56 [INFO] [FIG2] Saved methodology plot: figures_ep10_pre10/methodology/VGG16_Cifar10_bav_methodology_regions.png
+21:08:02 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+21:08:02 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
+21:08:02 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
+21:08:02 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
+21:08:02 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
+21:08:02 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
+21:08:02 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar10_
+21:08:02 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+21:08:02 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
+21:08:04 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep10_pre10/learning_curves/VGG16_cifar10_training_curves.png
+21:08:05 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep10_pre10/learning_curves/RegNetX_400MF_cifar10_training_curves.png
+21:08:05 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at figures_ep10_pre10/learning_curves/MobileNet_cifar10_training_curves.png
+21:08:06 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at figures_ep10_pre10/learning_curves/InceptionNet_cifar10_training_curves.png
+21:08:07 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at figures_ep10_pre10/learning_curves/ConvNeXt_cifar10_training_curves.png
+21:08:08 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at figures_ep10_pre10/learning_curves/XceptionNet_cifar10_training_curves.png
+21:08:08 [INFO] [SUMMARY] Generating master lookup JSON...
+21:08:08 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/master_results_summary_ep10_pre10.json
+21:08:08 [INFO] Script completed.
