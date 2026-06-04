@@ -1,12 +1,10 @@
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA driver initialization failed, you might not have a CUDA gpu. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
-  return torch._C._cuda_getDeviceCount() > 0
 
 ============================================================
 [INIT] PyPrune Transfer Learning Framework
 [INIT] Arguments: Namespace(model='XceptionNet', dataset='Cifar10', epochs=3, pretrain=3, experiment='Dynamic_Region_All_Combined', JF=True, Kevin=False, quant=True)
 ============================================================
 
-[INFO] Hardware detected: CPU (CUDA Available: False)
+[INFO] Hardware detected: CUDA (CUDA Available: True)
 Loading CIFAR-10 data for XceptionNet...
 CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 Loading CIFAR-10 data for XceptionNet...
@@ -27,10 +25,11 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
     Budget allocated: 3 epochs
 
 === Running JF experiment ===
+[•] Resumption detected. Architecture will be prepared for checkpoint loading.
 [•] Collapsing ranges [('middle_flow.0.rep.4.depthwise', 'middle_flow.0.rep.7.pointwise'), ('middle_flow.1.rep.4.depthwise', 'middle_flow.1.rep.7.pointwise'), ('middle_flow.2.rep.4.depthwise', 'middle_flow.2.rep.7.pointwise'), ('middle_flow.3.rep.4.depthwise', 'middle_flow.3.rep.7.pointwise'), ('middle_flow.4.rep.4.depthwise', 'middle_flow.4.rep.7.pointwise'), ('middle_flow.5.rep.4.depthwise', 'middle_flow.5.rep.7.pointwise'), ('middle_flow.6.rep.4.depthwise', 'middle_flow.6.rep.7.pointwise')] for Dynamic_Region_All_Combined
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (XceptionNet)
 
 Layer-wise zero parameter stats:
@@ -220,7 +219,7 @@ None
 [INFO] ==================== Collapsing Block ====================
 [INFO] Start Target : middle_flow.0.rep.4.depthwise
 [INFO] End Target   : middle_flow.0.rep.7.pointwise
-[DEBUG] Target Device Allocation: cpu
+[DEBUG] Target Device Allocation: cuda
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
 [DEBUG] [LCA] Locating block boundaries: 'middle_flow.0.rep.4.depthwise' -> 'middle_flow.0.rep.7.pointwise'
@@ -289,7 +288,7 @@ None
 ============================================================
 [STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.0.rep.4.depthwise'
 ============================================================
-[DEBUG] Target device    : cpu
+[DEBUG] Target device    : cuda
 [DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
 [DEBUG] Container Name   : 'middle_flow.0.rep'
 [DEBUG] Layer Indices    : 4 -> 7
@@ -319,7 +318,7 @@ None
 [STEP] Triggering downstream validation...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.0.rep' =====
-[DEBUG] start_idx=4, device=cpu, has_next_linear=True
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.0.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -350,7 +349,7 @@ None
 [INFO] ==================== Collapsing Block ====================
 [INFO] Start Target : middle_flow.1.rep.4.depthwise
 [INFO] End Target   : middle_flow.1.rep.7.pointwise
-[DEBUG] Target Device Allocation: cpu
+[DEBUG] Target Device Allocation: cuda
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
 [DEBUG] [LCA] Locating block boundaries: 'middle_flow.1.rep.4.depthwise' -> 'middle_flow.1.rep.7.pointwise'
@@ -419,7 +418,7 @@ None
 ============================================================
 [STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.1.rep.4.depthwise'
 ============================================================
-[DEBUG] Target device    : cpu
+[DEBUG] Target device    : cuda
 [DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
 [DEBUG] Container Name   : 'middle_flow.1.rep'
 [DEBUG] Layer Indices    : 4 -> 7
@@ -449,7 +448,7 @@ None
 [STEP] Triggering downstream validation...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.1.rep' =====
-[DEBUG] start_idx=4, device=cpu, has_next_linear=True
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.1.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -479,7 +478,7 @@ None
 [INFO] ==================== Collapsing Block ====================
 [INFO] Start Target : middle_flow.2.rep.4.depthwise
 [INFO] End Target   : middle_flow.2.rep.7.pointwise
-[DEBUG] Target Device Allocation: cpu
+[DEBUG] Target Device Allocation: cuda
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
 [DEBUG] [LCA] Locating block boundaries: 'middle_flow.2.rep.4.depthwise' -> 'middle_flow.2.rep.7.pointwise'
@@ -548,7 +547,7 @@ None
 ============================================================
 [STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.2.rep.4.depthwise'
 ============================================================
-[DEBUG] Target device    : cpu
+[DEBUG] Target device    : cuda
 [DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
 [DEBUG] Container Name   : 'middle_flow.2.rep'
 [DEBUG] Layer Indices    : 4 -> 7
@@ -578,7 +577,7 @@ None
 [STEP] Triggering downstream validation...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.2.rep' =====
-[DEBUG] start_idx=4, device=cpu, has_next_linear=True
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.2.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -608,7 +607,7 @@ None
 [INFO] ==================== Collapsing Block ====================
 [INFO] Start Target : middle_flow.3.rep.4.depthwise
 [INFO] End Target   : middle_flow.3.rep.7.pointwise
-[DEBUG] Target Device Allocation: cpu
+[DEBUG] Target Device Allocation: cuda
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
 [DEBUG] [LCA] Locating block boundaries: 'middle_flow.3.rep.4.depthwise' -> 'middle_flow.3.rep.7.pointwise'
@@ -677,7 +676,7 @@ None
 ============================================================
 [STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.3.rep.4.depthwise'
 ============================================================
-[DEBUG] Target device    : cpu
+[DEBUG] Target device    : cuda
 [DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
 [DEBUG] Container Name   : 'middle_flow.3.rep'
 [DEBUG] Layer Indices    : 4 -> 7
@@ -707,7 +706,7 @@ None
 [STEP] Triggering downstream validation...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.3.rep' =====
-[DEBUG] start_idx=4, device=cpu, has_next_linear=True
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.3.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -737,7 +736,7 @@ None
 [INFO] ==================== Collapsing Block ====================
 [INFO] Start Target : middle_flow.4.rep.4.depthwise
 [INFO] End Target   : middle_flow.4.rep.7.pointwise
-[DEBUG] Target Device Allocation: cpu
+[DEBUG] Target Device Allocation: cuda
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
 [DEBUG] [LCA] Locating block boundaries: 'middle_flow.4.rep.4.depthwise' -> 'middle_flow.4.rep.7.pointwise'
@@ -806,7 +805,7 @@ None
 ============================================================
 [STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.4.rep.4.depthwise'
 ============================================================
-[DEBUG] Target device    : cpu
+[DEBUG] Target device    : cuda
 [DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
 [DEBUG] Container Name   : 'middle_flow.4.rep'
 [DEBUG] Layer Indices    : 4 -> 7
@@ -836,7 +835,7 @@ None
 [STEP] Triggering downstream validation...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.4.rep' =====
-[DEBUG] start_idx=4, device=cpu, has_next_linear=True
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.4.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -866,7 +865,7 @@ None
 [INFO] ==================== Collapsing Block ====================
 [INFO] Start Target : middle_flow.5.rep.4.depthwise
 [INFO] End Target   : middle_flow.5.rep.7.pointwise
-[DEBUG] Target Device Allocation: cpu
+[DEBUG] Target Device Allocation: cuda
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
 [DEBUG] [LCA] Locating block boundaries: 'middle_flow.5.rep.4.depthwise' -> 'middle_flow.5.rep.7.pointwise'
@@ -935,7 +934,7 @@ None
 ============================================================
 [STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.5.rep.4.depthwise'
 ============================================================
-[DEBUG] Target device    : cpu
+[DEBUG] Target device    : cuda
 [DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
 [DEBUG] Container Name   : 'middle_flow.5.rep'
 [DEBUG] Layer Indices    : 4 -> 7
@@ -965,7 +964,7 @@ None
 [STEP] Triggering downstream validation...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.5.rep' =====
-[DEBUG] start_idx=4, device=cpu, has_next_linear=True
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.5.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -995,7 +994,7 @@ None
 [INFO] ==================== Collapsing Block ====================
 [INFO] Start Target : middle_flow.6.rep.4.depthwise
 [INFO] End Target   : middle_flow.6.rep.7.pointwise
-[DEBUG] Target Device Allocation: cpu
+[DEBUG] Target Device Allocation: cuda
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
 [DEBUG] [LCA] Locating block boundaries: 'middle_flow.6.rep.4.depthwise' -> 'middle_flow.6.rep.7.pointwise'
@@ -1064,7 +1063,7 @@ None
 ============================================================
 [STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.6.rep.4.depthwise'
 ============================================================
-[DEBUG] Target device    : cpu
+[DEBUG] Target device    : cuda
 [DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
 [DEBUG] Container Name   : 'middle_flow.6.rep'
 [DEBUG] Layer Indices    : 4 -> 7
@@ -1094,7 +1093,7 @@ None
 [STEP] Triggering downstream validation...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.6.rep' =====
-[DEBUG] start_idx=4, device=cpu, has_next_linear=True
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.6.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -1127,208 +1126,133 @@ None
 [INFO] ΔParams = +7,465,640 (expected ≤ 0)
 [RESULT] ✅ collapse_only complete. Total collapsed blocks: 7
 [•] Starting experiment 'Dynamic_Region_All_Combined_quant' in workflow 'JF' | Epoch Target: 3
-[•] No intermediate checkpoint found — starting fresh
-[•] Epoch 0
-Training:   0%|          | 0/98 [00:00<?, ?it/s]/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/amp/autocast_mode.py:266: UserWarning: User provided device_type of 'cuda', but CUDA is not available. Disabling
-  warnings.warn(
-Training:   0%|          | 0/98 [00:19<?, ?it/s, loss=2.3434, acc=9.96%]Training:   1%|          | 1/98 [00:19<31:16, 19.35s/it, loss=2.3434, acc=9.96%]Training:   1%|          | 1/98 [00:38<31:16, 19.35s/it, loss=2.6795, acc=13.48%]Training:   2%|▏         | 2/98 [00:38<30:40, 19.18s/it, loss=2.6795, acc=13.48%]Training:   2%|▏         | 2/98 [00:54<30:40, 19.18s/it, loss=2.7307, acc=14.00%]Training:   3%|▎         | 3/98 [00:54<27:58, 17.67s/it, loss=2.7307, acc=14.00%]Training:   3%|▎         | 3/98 [01:08<27:58, 17.67s/it, loss=2.3328, acc=15.28%]Training:   4%|▍         | 4/98 [01:08<25:44, 16.43s/it, loss=2.3328, acc=15.28%]Training:   4%|▍         | 4/98 [01:26<25:44, 16.43s/it, loss=2.1748, acc=16.17%]Training:   5%|▌         | 5/98 [01:26<26:10, 16.89s/it, loss=2.1748, acc=16.17%]Training:   5%|▌         | 5/98 [01:40<26:10, 16.89s/it, loss=2.1522, acc=16.80%]Training:   6%|▌         | 6/98 [01:40<24:35, 16.04s/it, loss=2.1522, acc=16.80%]Training:   6%|▌         | 6/98 [01:55<24:35, 16.04s/it, loss=2.0198, acc=17.44%]Training:   7%|▋         | 7/98 [01:55<23:47, 15.69s/it, loss=2.0198, acc=17.44%]Training:   7%|▋         | 7/98 [02:09<23:47, 15.69s/it, loss=2.0096, acc=18.60%]Training:   8%|▊         | 8/98 [02:09<22:41, 15.13s/it, loss=2.0096, acc=18.60%]Training:   8%|▊         | 8/98 [02:23<22:41, 15.13s/it, loss=2.0516, acc=19.42%]Training:   9%|▉         | 9/98 [02:23<21:53, 14.75s/it, loss=2.0516, acc=19.42%]Training:   9%|▉         | 9/98 [02:37<21:53, 14.75s/it, loss=1.8851, acc=20.45%]Training:  10%|█         | 10/98 [02:37<21:12, 14.46s/it, loss=1.8851, acc=20.45%]Training:  10%|█         | 10/98 [02:51<21:12, 14.46s/it, loss=1.8872, acc=20.97%]Training:  11%|█         | 11/98 [02:51<20:41, 14.27s/it, loss=1.8872, acc=20.97%]Training:  11%|█         | 11/98 [03:05<20:41, 14.27s/it, loss=1.8619, acc=21.61%]Training:  12%|█▏        | 12/98 [03:05<20:16, 14.15s/it, loss=1.8619, acc=21.61%]Training:  12%|█▏        | 12/98 [03:19<20:16, 14.15s/it, loss=1.7788, acc=22.52%]Training:  13%|█▎        | 13/98 [03:19<19:55, 14.07s/it, loss=1.7788, acc=22.52%]Training:  13%|█▎        | 13/98 [03:32<19:55, 14.07s/it, loss=1.7697, acc=23.41%]Training:  14%|█▍        | 14/98 [03:32<19:32, 13.96s/it, loss=1.7697, acc=23.41%]Training:  14%|█▍        | 14/98 [03:47<19:32, 13.96s/it, loss=1.7977, acc=24.17%]Training:  15%|█▌        | 15/98 [03:47<19:27, 14.07s/it, loss=1.7977, acc=24.17%]Training:  15%|█▌        | 15/98 [04:01<19:27, 14.07s/it, loss=1.7838, acc=24.82%]Training:  16%|█▋        | 16/98 [04:01<19:10, 14.04s/it, loss=1.7838, acc=24.82%]Training:  16%|█▋        | 16/98 [04:15<19:10, 14.04s/it, loss=1.7952, acc=25.33%]Training:  17%|█▋        | 17/98 [04:15<19:02, 14.11s/it, loss=1.7952, acc=25.33%]Training:  17%|█▋        | 17/98 [04:29<19:02, 14.11s/it, loss=1.6767, acc=25.95%]Training:  18%|█▊        | 18/98 [04:29<18:48, 14.11s/it, loss=1.6767, acc=25.95%]Training:  18%|█▊        | 18/98 [04:43<18:48, 14.11s/it, loss=1.8335, acc=26.33%]Training:  19%|█▉        | 19/98 [04:43<18:37, 14.14s/it, loss=1.8335, acc=26.33%]Training:  19%|█▉        | 19/98 [04:57<18:37, 14.14s/it, loss=1.7511, acc=26.65%]Training:  20%|██        | 20/98 [04:57<18:22, 14.14s/it, loss=1.7511, acc=26.65%]Training:  20%|██        | 20/98 [05:11<18:22, 14.14s/it, loss=1.6439, acc=27.15%]Training:  21%|██▏       | 21/98 [05:11<18:04, 14.09s/it, loss=1.6439, acc=27.15%]Training:  21%|██▏       | 21/98 [05:25<18:04, 14.09s/it, loss=1.6437, acc=27.70%]Training:  22%|██▏       | 22/98 [05:25<17:45, 14.03s/it, loss=1.6437, acc=27.70%]Training:  22%|██▏       | 22/98 [05:39<17:45, 14.03s/it, loss=1.6220, acc=28.25%]Training:  23%|██▎       | 23/98 [05:39<17:25, 13.94s/it, loss=1.6220, acc=28.25%]Training:  23%|██▎       | 23/98 [05:53<17:25, 13.94s/it, loss=1.7246, acc=28.56%]Training:  24%|██▍       | 24/98 [05:53<17:07, 13.89s/it, loss=1.7246, acc=28.56%]Training:  24%|██▍       | 24/98 [06:06<17:07, 13.89s/it, loss=1.6153, acc=28.99%]Training:  26%|██▌       | 25/98 [06:06<16:48, 13.81s/it, loss=1.6153, acc=28.99%]Training:  26%|██▌       | 25/98 [06:20<16:48, 13.81s/it, loss=1.6196, acc=29.36%]Training:  27%|██▋       | 26/98 [06:20<16:28, 13.72s/it, loss=1.6196, acc=29.36%]Training:  27%|██▋       | 26/98 [06:33<16:28, 13.72s/it, loss=1.7048, acc=29.56%]Training:  28%|██▊       | 27/98 [06:33<16:11, 13.68s/it, loss=1.7048, acc=29.56%]Training:  28%|██▊       | 27/98 [06:47<16:11, 13.68s/it, loss=1.6165, acc=29.88%]Training:  29%|██▊       | 28/98 [06:47<15:52, 13.61s/it, loss=1.6165, acc=29.88%]Training:  29%|██▊       | 28/98 [07:01<15:52, 13.61s/it, loss=1.6269, acc=30.21%]Training:  30%|██▉       | 29/98 [07:01<15:41, 13.64s/it, loss=1.6269, acc=30.21%]Training:  30%|██▉       | 29/98 [07:14<15:41, 13.64s/it, loss=1.6453, acc=30.46%]Training:  31%|███       | 30/98 [07:14<15:24, 13.60s/it, loss=1.6453, acc=30.46%]Training:  31%|███       | 30/98 [07:27<15:24, 13.60s/it, loss=1.6020, acc=30.65%]Training:  32%|███▏      | 31/98 [07:27<15:05, 13.52s/it, loss=1.6020, acc=30.65%]Training:  32%|███▏      | 31/98 [07:41<15:05, 13.52s/it, loss=1.6587, acc=30.93%]Training:  33%|███▎      | 32/98 [07:41<14:52, 13.52s/it, loss=1.6587, acc=30.93%]Training:  33%|███▎      | 32/98 [07:54<14:52, 13.52s/it, loss=1.6564, acc=31.14%]Training:  34%|███▎      | 33/98 [07:54<14:34, 13.45s/it, loss=1.6564, acc=31.14%]Training:  34%|███▎      | 33/98 [08:08<14:34, 13.45s/it, loss=1.5214, acc=31.45%]Training:  35%|███▍      | 34/98 [08:08<14:22, 13.47s/it, loss=1.5214, acc=31.45%]Training:  35%|███▍      | 34/98 [08:21<14:22, 13.47s/it, loss=1.5279, acc=31.69%]Training:  36%|███▌      | 35/98 [08:21<14:08, 13.47s/it, loss=1.5279, acc=31.69%]Training:  36%|███▌      | 35/98 [08:35<14:08, 13.47s/it, loss=1.5724, acc=31.96%]Training:  37%|███▋      | 36/98 [08:35<13:55, 13.48s/it, loss=1.5724, acc=31.96%]Training:  37%|███▋      | 36/98 [08:48<13:55, 13.48s/it, loss=1.5706, acc=32.17%]Training:  38%|███▊      | 37/98 [08:48<13:42, 13.49s/it, loss=1.5706, acc=32.17%]Training:  38%|███▊      | 37/98 [09:02<13:42, 13.49s/it, loss=1.6209, acc=32.42%]Training:  39%|███▉      | 38/98 [09:02<13:28, 13.48s/it, loss=1.6209, acc=32.42%]Training:  39%|███▉      | 38/98 [09:15<13:28, 13.48s/it, loss=1.6194, acc=32.61%]Training:  40%|███▉      | 39/98 [09:15<13:14, 13.47s/it, loss=1.6194, acc=32.61%]Training:  40%|███▉      | 39/98 [09:29<13:14, 13.47s/it, loss=1.5980, acc=32.77%]Training:  41%|████      | 40/98 [09:29<13:02, 13.49s/it, loss=1.5980, acc=32.77%]Training:  41%|████      | 40/98 [09:43<13:02, 13.49s/it, loss=1.5713, acc=33.01%]Training:  42%|████▏     | 41/98 [09:43<12:55, 13.61s/it, loss=1.5713, acc=33.01%]Training:  42%|████▏     | 41/98 [09:56<12:55, 13.61s/it, loss=1.5558, acc=33.23%]Training:  43%|████▎     | 42/98 [09:56<12:45, 13.67s/it, loss=1.5558, acc=33.23%]Training:  43%|████▎     | 42/98 [10:10<12:45, 13.67s/it, loss=1.6495, acc=33.36%]Training:  44%|████▍     | 43/98 [10:10<12:30, 13.65s/it, loss=1.6495, acc=33.36%]Training:  44%|████▍     | 43/98 [10:24<12:30, 13.65s/it, loss=1.5138, acc=33.58%]Training:  45%|████▍     | 44/98 [10:24<12:15, 13.62s/it, loss=1.5138, acc=33.58%]Training:  45%|████▍     | 44/98 [10:37<12:15, 13.62s/it, loss=1.5077, acc=33.78%]Training:  46%|████▌     | 45/98 [10:37<11:57, 13.54s/it, loss=1.5077, acc=33.78%]Training:  46%|████▌     | 45/98 [10:50<11:57, 13.54s/it, loss=1.5503, acc=33.92%]Training:  47%|████▋     | 46/98 [10:50<11:42, 13.51s/it, loss=1.5503, acc=33.92%]Training:  47%|████▋     | 46/98 [11:04<11:42, 13.51s/it, loss=1.6155, acc=34.02%]Training:  48%|████▊     | 47/98 [11:04<11:31, 13.56s/it, loss=1.6155, acc=34.02%]Training:  48%|████▊     | 47/98 [11:17<11:31, 13.56s/it, loss=1.5470, acc=34.20%]Training:  49%|████▉     | 48/98 [11:17<11:16, 13.53s/it, loss=1.5470, acc=34.20%]Training:  49%|████▉     | 48/98 [11:31<11:16, 13.53s/it, loss=1.4959, acc=34.45%]Training:  50%|█████     | 49/98 [11:31<11:03, 13.54s/it, loss=1.4959, acc=34.45%]Training:  50%|█████     | 49/98 [11:45<11:03, 13.54s/it, loss=1.6219, acc=34.54%]Training:  51%|█████     | 50/98 [11:45<10:52, 13.60s/it, loss=1.6219, acc=34.54%]Training:  51%|█████     | 50/98 [11:58<10:52, 13.60s/it, loss=1.5885, acc=34.71%]Training:  52%|█████▏    | 51/98 [11:58<10:39, 13.61s/it, loss=1.5885, acc=34.71%]Training:  52%|█████▏    | 51/98 [12:12<10:39, 13.61s/it, loss=1.4412, acc=34.94%]Training:  53%|█████▎    | 52/98 [12:12<10:24, 13.57s/it, loss=1.4412, acc=34.94%]Training:  53%|█████▎    | 52/98 [12:25<10:24, 13.57s/it, loss=1.4684, acc=35.12%]Training:  54%|█████▍    | 53/98 [12:25<10:07, 13.51s/it, loss=1.4684, acc=35.12%]Training:  54%|█████▍    | 53/98 [12:39<10:07, 13.51s/it, loss=1.5177, acc=35.27%]Training:  55%|█████▌    | 54/98 [12:39<09:56, 13.57s/it, loss=1.5177, acc=35.27%]Training:  55%|█████▌    | 54/98 [12:52<09:56, 13.57s/it, loss=1.4195, acc=35.49%]Training:  56%|█████▌    | 55/98 [12:52<09:43, 13.56s/it, loss=1.4195, acc=35.49%]Training:  56%|█████▌    | 55/98 [13:06<09:43, 13.56s/it, loss=1.5842, acc=35.65%]Training:  57%|█████▋    | 56/98 [13:06<09:31, 13.60s/it, loss=1.5842, acc=35.65%]Training:  57%|█████▋    | 56/98 [13:20<09:31, 13.60s/it, loss=1.3820, acc=35.89%]Training:  58%|█████▊    | 57/98 [13:20<09:17, 13.60s/it, loss=1.3820, acc=35.89%]Training:  58%|█████▊    | 57/98 [13:33<09:17, 13.60s/it, loss=1.4157, acc=36.06%]Training:  59%|█████▉    | 58/98 [13:33<09:05, 13.63s/it, loss=1.4157, acc=36.06%]Training:  59%|█████▉    | 58/98 [13:47<09:05, 13.63s/it, loss=1.3934, acc=36.24%]Training:  60%|██████    | 59/98 [13:47<08:51, 13.62s/it, loss=1.3934, acc=36.24%]Training:  60%|██████    | 59/98 [14:01<08:51, 13.62s/it, loss=1.5473, acc=36.38%]Training:  61%|██████    | 60/98 [14:01<08:36, 13.58s/it, loss=1.5473, acc=36.38%]Training:  61%|██████    | 60/98 [14:15<08:36, 13.58s/it, loss=1.5732, acc=36.47%]Training:  62%|██████▏   | 61/98 [14:15<08:26, 13.69s/it, loss=1.5732, acc=36.47%]Training:  62%|██████▏   | 61/98 [14:29<08:26, 13.69s/it, loss=1.3815, acc=36.70%]Training:  63%|██████▎   | 62/98 [14:29<08:16, 13.78s/it, loss=1.3815, acc=36.70%]Training:  63%|██████▎   | 62/98 [14:42<08:16, 13.78s/it, loss=1.5042, acc=36.80%]Training:  64%|██████▍   | 63/98 [14:42<08:03, 13.81s/it, loss=1.5042, acc=36.80%]Training:  64%|██████▍   | 63/98 [14:56<08:03, 13.81s/it, loss=1.4230, acc=36.99%]Training:  65%|██████▌   | 64/98 [14:56<07:51, 13.86s/it, loss=1.4230, acc=36.99%]Training:  65%|██████▌   | 64/98 [15:10<07:51, 13.86s/it, loss=1.4164, acc=37.17%]Training:  66%|██████▋   | 65/98 [15:10<07:38, 13.90s/it, loss=1.4164, acc=37.17%]Training:  66%|██████▋   | 65/98 [15:24<07:38, 13.90s/it, loss=1.4927, acc=37.29%]Training:  67%|██████▋   | 66/98 [15:25<07:28, 14.00s/it, loss=1.4927, acc=37.29%]Training:  67%|██████▋   | 66/98 [15:39<07:28, 14.00s/it, loss=1.4727, acc=37.37%]Training:  68%|██████▊   | 67/98 [15:39<07:13, 13.99s/it, loss=1.4727, acc=37.37%]Training:  68%|██████▊   | 67/98 [15:52<07:13, 13.99s/it, loss=1.4981, acc=37.50%]Training:  69%|██████▉   | 68/98 [15:52<06:58, 13.96s/it, loss=1.4981, acc=37.50%]Training:  69%|██████▉   | 68/98 [16:06<06:58, 13.96s/it, loss=1.4255, acc=37.65%]Training:  70%|███████   | 69/98 [16:06<06:42, 13.90s/it, loss=1.4255, acc=37.65%]Training:  70%|███████   | 69/98 [16:20<06:42, 13.90s/it, loss=1.4564, acc=37.77%]Training:  71%|███████▏  | 70/98 [16:20<06:28, 13.87s/it, loss=1.4564, acc=37.77%]Training:  71%|███████▏  | 70/98 [16:34<06:28, 13.87s/it, loss=1.4281, acc=37.91%]Training:  72%|███████▏  | 71/98 [16:34<06:14, 13.86s/it, loss=1.4281, acc=37.91%]Training:  72%|███████▏  | 71/98 [16:48<06:14, 13.86s/it, loss=1.4437, acc=38.05%]Training:  73%|███████▎  | 72/98 [16:48<06:00, 13.85s/it, loss=1.4437, acc=38.05%]Training:  73%|███████▎  | 72/98 [17:02<06:00, 13.85s/it, loss=1.3756, acc=38.21%]Training:  74%|███████▍  | 73/98 [17:02<05:46, 13.85s/it, loss=1.3756, acc=38.21%]Training:  74%|███████▍  | 73/98 [17:15<05:46, 13.85s/it, loss=1.4424, acc=38.34%]Training:  76%|███████▌  | 74/98 [17:15<05:32, 13.84s/it, loss=1.4424, acc=38.34%]Training:  76%|███████▌  | 74/98 [17:29<05:32, 13.84s/it, loss=1.3429, acc=38.53%]Training:  77%|███████▋  | 75/98 [17:29<05:18, 13.86s/it, loss=1.3429, acc=38.53%]Training:  77%|███████▋  | 75/98 [17:43<05:18, 13.86s/it, loss=1.3148, acc=38.69%]Training:  78%|███████▊  | 76/98 [17:43<05:04, 13.86s/it, loss=1.3148, acc=38.69%]Training:  78%|███████▊  | 76/98 [17:57<05:04, 13.86s/it, loss=1.4400, acc=38.78%]Training:  79%|███████▊  | 77/98 [17:57<04:51, 13.87s/it, loss=1.4400, acc=38.78%]Training:  79%|███████▊  | 77/98 [18:11<04:51, 13.87s/it, loss=1.3900, acc=38.91%]Training:  80%|███████▉  | 78/98 [18:11<04:37, 13.85s/it, loss=1.3900, acc=38.91%]Training:  80%|███████▉  | 78/98 [18:25<04:37, 13.85s/it, loss=1.3566, acc=39.07%]Training:  81%|████████  | 79/98 [18:25<04:22, 13.82s/it, loss=1.3566, acc=39.07%]Training:  81%|████████  | 79/98 [18:38<04:22, 13.82s/it, loss=1.3681, acc=39.21%]Training:  82%|████████▏ | 80/98 [18:38<04:07, 13.77s/it, loss=1.3681, acc=39.21%]Training:  82%|████████▏ | 80/98 [18:52<04:07, 13.77s/it, loss=1.4332, acc=39.29%]Training:  83%|████████▎ | 81/98 [18:52<03:54, 13.80s/it, loss=1.4332, acc=39.29%]Training:  83%|████████▎ | 81/98 [19:06<03:54, 13.80s/it, loss=1.4213, acc=39.41%]Training:  84%|████████▎ | 82/98 [19:06<03:40, 13.75s/it, loss=1.4213, acc=39.41%]Training:  84%|████████▎ | 82/98 [19:19<03:40, 13.75s/it, loss=1.3851, acc=39.50%]Training:  85%|████████▍ | 83/98 [19:19<03:25, 13.71s/it, loss=1.3851, acc=39.50%]Training:  85%|████████▍ | 83/98 [19:33<03:25, 13.71s/it, loss=1.4173, acc=39.61%]Training:  86%|████████▌ | 84/98 [19:33<03:12, 13.74s/it, loss=1.4173, acc=39.61%]Training:  86%|████████▌ | 84/98 [19:47<03:12, 13.74s/it, loss=1.3904, acc=39.69%]Training:  87%|████████▋ | 85/98 [19:47<02:58, 13.74s/it, loss=1.3904, acc=39.69%]Training:  87%|████████▋ | 85/98 [20:01<02:58, 13.74s/it, loss=1.3444, acc=39.83%]Training:  88%|████████▊ | 86/98 [20:01<02:45, 13.76s/it, loss=1.3444, acc=39.83%]Training:  88%|████████▊ | 86/98 [20:15<02:45, 13.76s/it, loss=1.3324, acc=39.96%]Training:  89%|████████▉ | 87/98 [20:15<02:31, 13.80s/it, loss=1.3324, acc=39.96%]Training:  89%|████████▉ | 87/98 [20:28<02:31, 13.80s/it, loss=1.4304, acc=40.03%]Training:  90%|████████▉ | 88/98 [20:28<02:18, 13.81s/it, loss=1.4304, acc=40.03%]Training:  90%|████████▉ | 88/98 [20:42<02:18, 13.81s/it, loss=1.4362, acc=40.10%]Training:  91%|█████████ | 89/98 [20:42<02:04, 13.79s/it, loss=1.4362, acc=40.10%]Training:  91%|█████████ | 89/98 [20:56<02:04, 13.79s/it, loss=1.3538, acc=40.20%]Training:  92%|█████████▏| 90/98 [20:56<01:50, 13.80s/it, loss=1.3538, acc=40.20%]Training:  92%|█████████▏| 90/98 [21:10<01:50, 13.80s/it, loss=1.3884, acc=40.31%]Training:  93%|█████████▎| 91/98 [21:10<01:36, 13.72s/it, loss=1.3884, acc=40.31%]Training:  93%|█████████▎| 91/98 [21:23<01:36, 13.72s/it, loss=1.3228, acc=40.41%]Training:  94%|█████████▍| 92/98 [21:23<01:22, 13.68s/it, loss=1.3228, acc=40.41%]Training:  94%|█████████▍| 92/98 [21:36<01:22, 13.68s/it, loss=1.3278, acc=40.50%]Training:  95%|█████████▍| 93/98 [21:36<01:07, 13.59s/it, loss=1.3278, acc=40.50%]Training:  95%|█████████▍| 93/98 [21:50<01:07, 13.59s/it, loss=1.3889, acc=40.61%]Training:  96%|█████████▌| 94/98 [21:50<00:54, 13.59s/it, loss=1.3889, acc=40.61%]Training:  96%|█████████▌| 94/98 [22:04<00:54, 13.59s/it, loss=1.2939, acc=40.73%]Training:  97%|█████████▋| 95/98 [22:04<00:40, 13.59s/it, loss=1.2939, acc=40.73%]Training:  97%|█████████▋| 95/98 [22:17<00:40, 13.59s/it, loss=1.3938, acc=40.84%]Training:  98%|█████████▊| 96/98 [22:17<00:27, 13.57s/it, loss=1.3938, acc=40.84%]Training:  98%|█████████▊| 96/98 [22:31<00:27, 13.57s/it, loss=1.3788, acc=40.93%]Training:  99%|█████████▉| 97/98 [22:31<00:13, 13.55s/it, loss=1.3788, acc=40.93%]Training:  99%|█████████▉| 97/98 [22:40<00:13, 13.55s/it, loss=1.3188, acc=40.99%]Training: 100%|██████████| 98/98 [22:40<00:00, 12.22s/it, loss=1.3188, acc=40.99%]                                                                                  [•] Epoch 1
-Training:   0%|          | 0/98 [00:00<?, ?it/s]Training:   0%|          | 0/98 [00:29<?, ?it/s, loss=1.2843, acc=51.56%]Training:   1%|          | 1/98 [00:29<47:10, 29.18s/it, loss=1.2843, acc=51.56%]                                                                                 Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 966, in <module>
-    main()
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 960, in main
-    run_hpc_stage(
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 927, in run_hpc_stage
-    run_experiments_for_dataset(
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 710, in run_experiments_for_dataset
-    run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, run_epochs, experiment_func, save_path, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 686, in run_jf_or_kevin_experiment
-    return run_jf_experiment({experiment_name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain=None, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, quant=quant)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 398, in run_jf_experiment
-    data = run_experiment(
-           ^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 275, in run_experiment
-    avg_loss, acc = train_one_epoch(
-                    ^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/trainer.py", line 36, in train_one_epoch
-    preds = model(xb)
-            ^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/pyPrune/models/XceptionNet.py", line 175, in forward
-    x = self.block1(x)
-        ^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/collapse.py", line 579, in new_forward
-    out = self.rep(x)
-          ^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/container.py", line 250, in forward
-    input = module(input)
-            ^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/pyPrune/models/XceptionNet.py", line 16, in forward
-    x = self.pointwise(x)
-        ^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 554, in forward
-    return self._conv_forward(input, self.weight, self.bias)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 549, in _conv_forward
-    return F.conv2d(
-           ^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
-    _error_if_any_worker_fails()
-RuntimeError: DataLoader worker (pid 24802) is killed by signal: Killed. 
-21:26:25 [INFO] Scanning for metrics files matching epochs=3, pretrain=3
-21:26:26 [INFO] Successfully parsed 127 experiment rows.
-21:26:26 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__accuracy.png
-21:26:27 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__params.png
-21:26:27 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__flops.png
-21:26:28 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__memory.png
-21:26:28 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__accuracy.png
-21:26:29 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__params.png
-21:26:29 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__flops.png
-21:26:30 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__memory.png
-21:26:30 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_accuracy.png
-21:26:30 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_params.png
-21:26:31 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_flops.png
-21:26:31 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_memory.png
-21:26:32 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__accuracy.png
-21:26:32 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__params.png
-21:26:33 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__flops.png
-21:26:33 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__memory.png
-21:26:34 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__accuracy.png
-21:26:34 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__params.png
-21:26:35 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__flops.png
-21:26:35 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__memory.png
-21:26:36 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_accuracy.png
-21:26:37 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_params.png
-21:26:37 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_flops.png
-21:26:38 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_memory.png
-21:26:38 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__accuracy.png
-21:26:39 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__params.png
-21:26:39 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__flops.png
-21:26:40 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__memory.png
-21:26:40 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__accuracy.png
-21:26:40 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__params.png
-21:26:41 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__flops.png
-21:26:41 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__memory.png
-21:26:42 [INFO] [FIG1] Saved accuracy plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_accuracy.png
-21:26:42 [INFO] [FIG1] Saved params plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_params.png
-21:26:43 [INFO] [FIG1] Saved flops plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_flops.png
-21:26:43 [INFO] [FIG1] Saved memory plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_memory.png
-21:26:44 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__accuracy.png
-21:26:44 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__params.png
-21:26:45 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__flops.png
-21:26:46 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__memory.png
-21:26:46 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__accuracy.png
-21:26:47 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__params.png
-21:26:48 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__flops.png
-21:26:48 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__memory.png
-21:26:49 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__accuracy.png
-21:26:49 [INFO] [FIG1] Saved params plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__params.png
-21:26:50 [INFO] [FIG1] Saved flops plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__flops.png
-21:26:50 [INFO] [FIG1] Saved memory plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__memory.png
-21:26:51 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__accuracy.png
-21:26:51 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__params.png
-21:26:52 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__flops.png
-21:26:53 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__memory.png
-21:26:53 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__accuracy.png
-21:26:54 [INFO] [FIG1] Saved params plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__params.png
-21:26:54 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__flops.png
-21:26:54 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__memory.png
-21:26:55 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__accuracy.png
-21:26:56 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__params.png
-21:26:56 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__flops.png
-21:26:57 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__memory.png
-21:26:57 [INFO] Starting FIG2 generation. Target epochs: 3, pretrain: 3
-21:26:59 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/XceptionNet_Cifar10_bav_methodology_regions.png
-21:27:01 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/InceptionNet_Cifar10_bav_methodology_regions.png
-21:27:02 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/RegNetX_400MF_Cifar10_bav_methodology_regions.png
-21:27:04 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/ConvNeXt_Cifar10_bav_methodology_regions.png
-21:27:05 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/MobileNet_Cifar10_bav_methodology_regions.png
-21:27:07 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_Cifar10_bav_methodology_regions.png
-21:27:13 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
-21:27:13 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar100_
-21:27:13 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar100_
-21:27:13 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar100_
-21:27:13 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar100_
-21:27:13 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/hardware_efficiency/RegNetX_400MF_cifar100__hardware_profile.png
-21:27:13 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar100_
-21:27:14 [INFO] [FIG5] Saved hardware profile plot for VGG16/cifar100_ at figures_ep3_pre3/hardware_efficiency/VGG16_cifar100__hardware_profile.png
-21:27:14 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar100_
-21:27:14 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
-21:27:14 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar10_ at figures_ep3_pre3/hardware_efficiency/ConvNeXt_cifar10__hardware_profile.png
-21:27:14 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
-21:27:15 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/cifar10_ at figures_ep3_pre3/hardware_efficiency/InceptionNet_cifar10__hardware_profile.png
-21:27:15 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
-21:27:15 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
-21:27:16 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/hardware_efficiency/RegNetX_400MF_cifar10__hardware_profile.png
-21:27:16 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
-21:27:16 [INFO] [FIG5] Saved hardware profile plot for VGG16/cifar10_ at figures_ep3_pre3/hardware_efficiency/VGG16_cifar10__hardware_profile.png
-21:27:16 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar10_
-21:27:17 [INFO] [FIG5] Saved hardware profile plot for XceptionNet/cifar10_ at figures_ep3_pre3/hardware_efficiency/XceptionNet_cifar10__hardware_profile.png
-21:27:17 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/tinyimagenet
-21:27:17 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
-21:27:17 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/tinyimagenet at figures_ep3_pre3/hardware_efficiency/InceptionNet_tinyimagenet_hardware_profile.png
-21:27:17 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/tinyimagenet
-21:27:18 [INFO] [FIG5] Saved unified best_candidates plot at figures_ep3_pre3/hardware_efficiency/unified_best_candidates.png
-21:27:19 [INFO] [FIG5] Saved unified worst_candidates plot at figures_ep3_pre3/hardware_efficiency/unified_worst_candidates.png
-21:27:20 [INFO] [FIG5] Saved global trade-off scatter plot at figures_ep3_pre3/hardware_efficiency/global_tradeoff_scatter.png
-21:27:20 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
-21:27:20 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
-21:27:21 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar10_training_curves.png
-21:27:22 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar10_training_curves.png
-21:27:23 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar10_training_curves.png
-21:27:24 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar10_training_curves.png
-21:27:25 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at figures_ep3_pre3/learning_curves/MobileNet_tinyimagenet_training_curves.png
-21:27:26 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at figures_ep3_pre3/learning_curves/ConvNeXt_tinyimagenet_training_curves.png
-21:27:27 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar100_training_curves.png
-21:27:28 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar10_training_curves.png
-21:27:29 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep3_pre3/learning_curves/VGG16_cifar10_training_curves.png
-21:27:30 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at figures_ep3_pre3/learning_curves/MobileNet_cifar100_training_curves.png
-21:27:31 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar10_training_curves.png
-21:27:32 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at figures_ep3_pre3/learning_curves/InceptionNet_tinyimagenet_training_curves.png
-21:27:33 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar10_training_curves.png
-21:27:34 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep3_pre3/learning_curves/VGG16_cifar10_training_curves.png
-21:27:35 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar100_training_curves.png
-21:27:36 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar100_training_curves.png
-21:27:37 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at figures_ep3_pre3/learning_curves/VGG16_cifar100_training_curves.png
-21:27:38 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar100_training_curves.png
-21:27:39 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at figures_ep3_pre3/learning_curves/MobileNet_cifar10_training_curves.png
-21:27:40 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at figures_ep3_pre3/learning_curves/MobileNet_cifar10_training_curves.png
-21:27:41 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar10_training_curves.png
-21:27:42 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep3_pre3/learning_curves/VGG16_cifar10_training_curves.png
-21:27:43 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar10_training_curves.png
-21:27:44 [INFO] [FIG7] Saved convergence metrics plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/convergence/RegNetX_400MF_cifar100_convergence_metrics.png
-21:27:45 [INFO] [FIG7] Saved convergence metrics plot for VGG16/cifar100_ at figures_ep3_pre3/convergence/VGG16_cifar100_convergence_metrics.png
-21:27:46 [INFO] [FIG7] Saved convergence metrics plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/convergence/RegNetX_400MF_cifar10_convergence_metrics.png
-21:27:46 [INFO] [FIG7] Saved convergence metrics plot for InceptionNet/tinyimagenet at figures_ep3_pre3/convergence/InceptionNet_tinyimagenet_convergence_metrics.png
-21:27:46 [INFO] [SUMMARY] Generating master lookup JSON...
-21:27:46 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/master_results_summary_ep3_pre3.json
-21:27:46 [INFO] Script completed.
+[✓] Experiment 'Dynamic_Region_All_Combined_quant' already completed. Found: final_JF_Dynamic_Region_All_Combined_quant.pt
+    Skipping training and reloading metrics...
+09:45:51 [INFO] Scanning for metrics files matching epochs=3, pretrain=3
+09:45:51 [INFO] Successfully parsed 140 experiment rows.
+09:45:52 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__accuracy.png
+09:45:53 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__params.png
+09:45:53 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__flops.png
+09:45:53 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__memory.png
+09:45:54 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__accuracy.png
+09:45:54 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__params.png
+09:45:55 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__flops.png
+09:45:55 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__memory.png
+09:45:56 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_accuracy.png
+09:45:56 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_params.png
+09:45:56 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_flops.png
+09:45:57 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_memory.png
+09:45:57 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__accuracy.png
+09:45:57 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__params.png
+09:45:58 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__flops.png
+09:45:58 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__memory.png
+09:45:59 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__accuracy.png
+09:45:59 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__params.png
+09:46:00 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__flops.png
+09:46:00 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__memory.png
+09:46:01 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_accuracy.png
+09:46:01 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_params.png
+09:46:02 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_flops.png
+09:46:03 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_memory.png
+09:46:03 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__accuracy.png
+09:46:03 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__params.png
+09:46:04 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__flops.png
+09:46:04 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__memory.png
+09:46:05 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__accuracy.png
+09:46:05 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__params.png
+09:46:05 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__flops.png
+09:46:06 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__memory.png
+09:46:06 [INFO] [FIG1] Saved accuracy plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_accuracy.png
+09:46:07 [INFO] [FIG1] Saved params plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_params.png
+09:46:07 [INFO] [FIG1] Saved flops plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_flops.png
+09:46:07 [INFO] [FIG1] Saved memory plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_memory.png
+09:46:08 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__accuracy.png
+09:46:08 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__params.png
+09:46:09 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__flops.png
+09:46:10 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__memory.png
+09:46:10 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__accuracy.png
+09:46:11 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__params.png
+09:46:11 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__flops.png
+09:46:12 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__memory.png
+09:46:12 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__accuracy.png
+09:46:13 [INFO] [FIG1] Saved params plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__params.png
+09:46:13 [INFO] [FIG1] Saved flops plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__flops.png
+09:46:14 [INFO] [FIG1] Saved memory plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__memory.png
+09:46:14 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__accuracy.png
+09:46:15 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__params.png
+09:46:15 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__flops.png
+09:46:16 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__memory.png
+09:46:16 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__accuracy.png
+09:46:16 [INFO] [FIG1] Saved params plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__params.png
+09:46:17 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__flops.png
+09:46:17 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__memory.png
+09:46:18 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__accuracy.png
+09:46:19 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__params.png
+09:46:19 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__flops.png
+09:46:20 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__memory.png
+09:46:20 [INFO] Starting FIG2 generation. Target epochs: 3, pretrain: 3
+09:46:21 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/XceptionNet_Cifar10_bav_methodology_regions.png
+09:46:23 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/InceptionNet_Cifar10_bav_methodology_regions.png
+09:46:24 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/RegNetX_400MF_Cifar10_bav_methodology_regions.png
+09:46:26 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/ConvNeXt_Cifar10_bav_methodology_regions.png
+09:46:27 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/MobileNet_Cifar10_bav_methodology_regions.png
+09:46:28 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_Cifar10_bav_methodology_regions.png
+09:46:34 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+09:46:34 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar100_
+09:46:34 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar100_
+09:46:34 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar100_
+09:46:34 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar100_
+09:46:35 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/hardware_efficiency/RegNetX_400MF_cifar100__hardware_profile.png
+09:46:35 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar100_
+09:46:35 [INFO] [FIG5] Saved hardware profile plot for VGG16/cifar100_ at figures_ep3_pre3/hardware_efficiency/VGG16_cifar100__hardware_profile.png
+09:46:35 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar100_
+09:46:35 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
+09:46:35 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar10_ at figures_ep3_pre3/hardware_efficiency/ConvNeXt_cifar10__hardware_profile.png
+09:46:35 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
+09:46:36 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/cifar10_ at figures_ep3_pre3/hardware_efficiency/InceptionNet_cifar10__hardware_profile.png
+09:46:36 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
+09:46:36 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
+09:46:37 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/hardware_efficiency/RegNetX_400MF_cifar10__hardware_profile.png
+09:46:37 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
+09:46:37 [INFO] [FIG5] Saved hardware profile plot for VGG16/cifar10_ at figures_ep3_pre3/hardware_efficiency/VGG16_cifar10__hardware_profile.png
+09:46:37 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar10_
+09:46:38 [INFO] [FIG5] Saved hardware profile plot for XceptionNet/cifar10_ at figures_ep3_pre3/hardware_efficiency/XceptionNet_cifar10__hardware_profile.png
+09:46:38 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/tinyimagenet
+09:46:38 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
+09:46:38 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/tinyimagenet at figures_ep3_pre3/hardware_efficiency/InceptionNet_tinyimagenet_hardware_profile.png
+09:46:38 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/tinyimagenet
+09:46:39 [INFO] [FIG5] Saved unified best_candidates plot at figures_ep3_pre3/hardware_efficiency/unified_best_candidates.png
+09:46:40 [INFO] [FIG5] Saved unified worst_candidates plot at figures_ep3_pre3/hardware_efficiency/unified_worst_candidates.png
+09:46:40 [INFO] [FIG5] Saved global trade-off scatter plot at figures_ep3_pre3/hardware_efficiency/global_tradeoff_scatter.png
+09:46:40 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+09:46:40 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
+09:46:42 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar10_training_curves.png
+09:46:43 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar10_training_curves.png
+09:46:43 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar10_training_curves.png
+09:46:44 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar10_training_curves.png
+09:46:45 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at figures_ep3_pre3/learning_curves/MobileNet_tinyimagenet_training_curves.png
+09:46:46 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at figures_ep3_pre3/learning_curves/ConvNeXt_tinyimagenet_training_curves.png
+09:46:47 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar100_training_curves.png
+09:46:48 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar10_training_curves.png
+09:46:49 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep3_pre3/learning_curves/VGG16_cifar10_training_curves.png
+09:46:49 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at figures_ep3_pre3/learning_curves/MobileNet_cifar100_training_curves.png
+09:46:50 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar10_training_curves.png
+09:46:51 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at figures_ep3_pre3/learning_curves/InceptionNet_tinyimagenet_training_curves.png
+09:46:52 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar10_training_curves.png
+09:46:53 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep3_pre3/learning_curves/VGG16_cifar10_training_curves.png
+09:46:54 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar100_training_curves.png
+09:46:55 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar100_training_curves.png
+09:46:56 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at figures_ep3_pre3/learning_curves/VGG16_cifar100_training_curves.png
+09:46:57 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar100_training_curves.png
+09:46:58 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at figures_ep3_pre3/learning_curves/MobileNet_cifar10_training_curves.png
+09:46:58 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at figures_ep3_pre3/learning_curves/MobileNet_cifar10_training_curves.png
+09:46:59 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar10_training_curves.png
+09:47:01 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep3_pre3/learning_curves/VGG16_cifar10_training_curves.png
+09:47:02 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar10_training_curves.png
+09:47:02 [INFO] [FIG7] Saved convergence metrics plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/convergence/RegNetX_400MF_cifar100_convergence_metrics.png
+09:47:03 [INFO] [FIG7] Saved convergence metrics plot for VGG16/cifar100_ at figures_ep3_pre3/convergence/VGG16_cifar100_convergence_metrics.png
+09:47:04 [INFO] [FIG7] Saved convergence metrics plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/convergence/RegNetX_400MF_cifar10_convergence_metrics.png
+09:47:04 [INFO] [FIG7] Saved convergence metrics plot for InceptionNet/tinyimagenet at figures_ep3_pre3/convergence/InceptionNet_tinyimagenet_convergence_metrics.png
+09:47:04 [INFO] [SUMMARY] Generating master lookup JSON...
+09:47:04 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/master_results_summary_ep3_pre3.json
+09:47:04 [INFO] Script completed.
