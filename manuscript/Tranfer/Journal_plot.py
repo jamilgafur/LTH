@@ -296,6 +296,7 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
 
 # ========================= FIG 2 ========================= #
 
+
 def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
     logger.info(f"Starting FIG2 generation. Target epochs: {epochs}, pretrain: {pretrain}")
     
@@ -511,7 +512,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
         logger.info(f"[FIG2] Saved methodology plot: {save_path}")
-        
+
 # ========================= FIG 3 ========================= #
 
 def fig3_v2t_heuristic_validation(
