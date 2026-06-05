@@ -973,31 +973,25 @@ def _validate_downstream(
 # -----------------------------------------------------------------------------
 
 def collapse_only(
-    model: Optional[nn.Module] = None,
-    model_weights_1: Optional[str] = None,
-    compression_set: Optional[Sequence[Tuple[str, str]]] = None,
-    model_class: Optional[type] = None,
-    model_kwargs: Optional[Dict[str, Any]] = None,
-    input_shape: Tuple[int, ...] = (1, 3, 32, 32),
-    device: str = 'cpu',
-    safe_param_reduction: bool = True,
-    handle_skips: bool = True,
-    debug: bool = True,
-    dry_run: bool = False
-) -> nn.Module:
+    model=None,
+    model_weights_1=None,
+    compression_set=None,
+    model_class=None,
+    model_kwargs=None,
+    input_shape=(1, 3, 32, 32),
+    device='cpu',
+    safe_param_reduction=True,
+    handle_skips=True,
+    debug=True,
+    dry_run=False
+):
 
     print(f"\n[STEP] ===== Starting collapse_only process =====")
 
-    # ------------------------------------------------------------------
-    # Load model if needed
-    # ------------------------------------------------------------------
     if model is None:
-        assert model_class is not None
         model = model_class(**(model_kwargs or {}))
-
         if model_weights_1:
-            state_dict = torch.load(model_weights_1, map_location=device)
-            model.load_state_dict(state_dict)
+            model.load_state_dict(torch.load(model_weights_1, map_location=device))
 
     model = model.to(device).eval()
 
@@ -1006,72 +1000,44 @@ def collapse_only(
 
     disable_inplace_relu(model)
 
-    # ------------------------------------------------------------------
-    # Utility: estimate parameters of block
-    # ------------------------------------------------------------------
+    # -------------------------------
+    # PARAM ESTIMATION
+    # -------------------------------
     def estimate_block_params(layers):
         total = 0
+        eqs = []
         for l in layers:
             if isinstance(l, nn.Conv2d):
                 k = l.kernel_size[0]
-                total += l.in_channels * l.out_channels * (k * k)
-        return total
+                val = l.in_channels * l.out_channels * (k * k)
+                eqs.append(f"{l.in_channels}×{l.out_channels}×{k}²={val}")
+                total += val
+        return total, " + ".join(eqs)
 
-    # ------------------------------------------------------------------
-    # Utility: find rank for low-rank collapse
-    # ------------------------------------------------------------------
+    # -------------------------------
+    # RANK SELECTION
+    # -------------------------------
     def choose_rank(Cin, Cout):
-        # Safe universal rule (works across architectures)
         r = min(Cin, Cout)
-
-        # Aggressive compression cap
         r = min(r // 4, 64)
-
-        # Never go below 1
         return max(1, r)
 
-    # ------------------------------------------------------------------
-    # Build replacement (FULL or LOW-RANK)
-    # ------------------------------------------------------------------
-    def build_replacement(Cin, Cout, force_low_rank=False):
-
-        if force_low_rank:
-            r = choose_rank(Cin, Cout)
-
-            if debug:
-                print(f"[INFO] Using LOW-RANK collapse: {Cin} → {r} → {Cout}")
-
-            return nn.Sequential(
-                nn.Conv2d(Cin, r, kernel_size=1, bias=False),
-                nn.ReLU(inplace=False),
-                nn.Conv2d(r, Cout, kernel_size=1, bias=False),
-            )
-
-        else:
-            if debug:
-                print(f"[INFO] Using FULL collapse: {Cin} → {Cout}")
-
-            return nn.Conv2d(Cin, Cout, kernel_size=1, bias=False)
-
-    # ------------------------------------------------------------------
-    # Process each block
-    # ------------------------------------------------------------------
+    # -------------------------------
+    # PROCESS BLOCKS
+    # -------------------------------
     for (start_layer, end_layer) in compression_set:
 
-        print(f"\n[INFO] Attempting collapse: {start_layer} → {end_layer}")
+        print("\n" + "="*80)
+        print(f"[TARGET] Collapse block: {start_layer} → {end_layer}")
+        print("="*80)
 
-        # Locate layers
         container_path, _ = _get_container_and_subname(start_layer)
         container = get_layer(model, container_path) if container_path else model
-
         named_layers = list(container.named_children())
 
-        start_idx = None
-        end_idx = None
-
+        start_idx, end_idx = None, None
         for i, (name, _) in enumerate(named_layers):
             full_name = f"{container_path}.{name}" if container_path else name
-
             if full_name == start_layer:
                 start_idx = i
             if full_name == end_layer:
@@ -1083,9 +1049,6 @@ def collapse_only(
 
         block = [mod for _, mod in named_layers[start_idx:end_idx+1]]
 
-        # ------------------------------------------------------------------
-        # Extract channel dimensions
-        # ------------------------------------------------------------------
         first_conv = next((l for l in block if isinstance(l, nn.Conv2d)), None)
         last_conv = next((l for l in reversed(block) if isinstance(l, nn.Conv2d)), None)
 
@@ -1096,31 +1059,97 @@ def collapse_only(
         Cin = first_conv.in_channels
         Cout = last_conv.out_channels
 
-        # ------------------------------------------------------------------
-        # Estimate parameters
-        # ------------------------------------------------------------------
-        original_params = estimate_block_params(block)
+        # -------------------------------
+        # ORIGINAL PARAMS
+        # -------------------------------
+        original_params, original_eq = estimate_block_params(block)
+
+        # -------------------------------
+        # FULL COLLAPSE
+        # -------------------------------
         full_params = Cin * Cout
+        full_eq = f"{Cin} × {Cout} = {full_params:,}"
 
-        if debug:
-            print(f"[DEBUG] Original params: {original_params}")
-            print(f"[DEBUG] Full collapse params: {full_params}")
+        # -------------------------------
+        # LOW-RANK COLLAPSE
+        # -------------------------------
+        r = choose_rank(Cin, Cout)
+        low_rank_params = Cin * r + r * Cout
+        low_rank_eq = f"{Cin}×{r} + {r}×{Cout} = {Cin*r:,} + {r*Cout:,} = {low_rank_params:,}"
 
-        # ------------------------------------------------------------------
-        # Decide collapse type
-        # ------------------------------------------------------------------
-        force_low_rank = False
+        # -------------------------------
+        # SURROGATE ANALYSIS (🔥 NEW)
+        # -------------------------------
+        expansion_ratio = Cout / Cin
+        compression_ratio = original_params / full_params if full_params > 0 else 0
+        break_even_r = int((Cin * Cout) / (Cin + Cout)) if (Cin + Cout) > 0 else 1
 
-        if safe_param_reduction and full_params > original_params:
-            force_low_rank = True
-            if debug:
-                print("[INFO] Full collapse would increase params → switching to LOW-RANK")
+        print(f"[SHAPE] Cin={Cin}, Cout={Cout}")
+        print(f"[STRUCTURE] Expansion ratio (Cout/Cin) = {expansion_ratio:.3f}")
+        print()
 
-        replacement = build_replacement(Cin, Cout, force_low_rank)
+        print("[ORIGINAL BLOCK]")
+        print(f"Equation: {original_eq}")
+        print(f"Total params: {original_params:,}")
+        print()
 
-        # ------------------------------------------------------------------
-        # Replace block
-        # ------------------------------------------------------------------
+        print("[FULL COLLAPSE]")
+        print(f"Equation: {full_eq}")
+        print(f"Params: {full_params:,}")
+        print(f"Δ vs Original: {original_params - full_params:,}")
+        print()
+
+        print("[LOW-RANK COLLAPSE]")
+        print(f"Rank r = {r}")
+        print(f"Equation: {low_rank_eq}")
+        print(f"Params: {low_rank_params:,}")
+        print(f"Δ vs Original: {original_params - low_rank_params:,}")
+        print(f"Δ vs Full: {full_params - low_rank_params:,}")
+        print()
+
+        print("[THEORETICAL ANALYSIS]")
+        print(f"Break-even rank (FULL vs LOW-RANK): r* ≈ {break_even_r}")
+        print(f"Compression ratio (orig/full): {compression_ratio:.3f}")
+        print()
+
+        # -------------------------------
+        # DECISION
+        # -------------------------------
+        if full_params < original_params:
+            decision = "FULL"
+            classification = "COMPRESSIVE ✅"
+        elif low_rank_params < original_params:
+            decision = "LOW_RANK"
+            classification = "LOW-RANK COMPRESSIVE ✅"
+        elif low_rank_params < full_params:
+            decision = "LOW_RANK"
+            classification = "LOW-RANK EXPANSIVE ⚠️"
+        else:
+            decision = "SKIP"
+            classification = "DANGEROUS ❌"
+
+        print(f"[DECISION] {decision}")
+        print(f"[CLASSIFICATION] {classification}")
+
+        if decision == "SKIP":
+            print("[ACTION] Skipping block — no safe collapse possible")
+            continue
+
+        # -------------------------------
+        # BUILD REPLACEMENT
+        # -------------------------------
+        if decision == "FULL":
+            replacement = nn.Conv2d(Cin, Cout, kernel_size=1, bias=False)
+        else:
+            replacement = nn.Sequential(
+                nn.Conv2d(Cin, r, kernel_size=1, bias=False),
+                nn.ReLU(inplace=False),
+                nn.Conv2d(r, Cout, kernel_size=1, bias=False)
+            )
+
+        # -------------------------------
+        # APPLY
+        # -------------------------------
         new_container = _replace_layers(
             named_layers,
             start_idx,
@@ -1131,52 +1160,27 @@ def collapse_only(
             container=container
         )
 
-        # Update model
         if container_path:
             _update_container(model, container_path, new_container)
         else:
             model = new_container
 
-        # ------------------------------------------------------------------
-        # Validate forward pass (crucial)
-        # ------------------------------------------------------------------
+        # -------------------------------
+        # VALIDATION
+        # -------------------------------
         try:
             dummy = torch.randn(input_shape).to(device)
             with torch.no_grad():
                 model(dummy)
 
-            if debug:
-                print("[SUCCESS] Collapse validated")
+            print("[VERIFY] Forward pass ✅ SUCCESS")
 
         except Exception as e:
-            print(f"[ERROR] Collapse broke model → reverting: {str(e)}")
-
-            # fallback to low-rank if not already used
-            if not force_low_rank:
-                print("[INFO] Retrying with LOW-RANK fallback")
-
-                replacement = build_replacement(Cin, Cout, True)
-
-                new_container = _replace_layers(
-                    named_layers,
-                    start_idx,
-                    end_idx,
-                    replacement,
-                    start_layer,
-                    end_layer,
-                    container=container
-                )
-
-                if container_path:
-                    _update_container(model, container_path, new_container)
-                else:
-                    model = new_container
-
-            else:
-                print("[WARN] Already low-rank → skipping block entirely")
+            print(f"[FAIL] Forward pass ❌: {e}")
+            print("[ACTION] Reverting block")
 
     return model
-# -----------------------------------------------------------------------------
+
 # -----------------------------------------------------------------------------
 # Safe pooling wrapper (prevents underflow crashes)
 # -----------------------------------------------------------------------------
