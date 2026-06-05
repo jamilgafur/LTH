@@ -85,7 +85,7 @@ DIAGNOSTICS_DIR = Path(f"./diagnostics_ep{epochs}_pre{pretrain}")
 for d in [FIG_DIR, TABLE_DIR, DIAGNOSTICS_DIR]:
     d.mkdir(parents=True, exist_ok=True)
     
-DATASET_ORDER = ["cifar10_", "cifar100_", "tinyimagenet", "imagenet", "ConvNeXt"]
+DATASET_ORDER = ["cifar100_", "cifar10_", "tinyimagenet", "imagenet", "ConvNeXt"]
 
 # =========================
 # Data Loading & Utilities
