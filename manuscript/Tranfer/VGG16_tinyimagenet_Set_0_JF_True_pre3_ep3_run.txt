@@ -1,0 +1,264 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='VGG16', dataset='tinyimagenet', epochs=3, pretrain=3, experiment='Set_0', JF=True, Kevin=False, quant=True)
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading Tiny ImageNet data...
+Loading Tiny ImageNet data...
+[DEBUG] Base checkpoint path resolved: ../structured_study/pruning_checkpoints/Vgg16_datasettinyimagenet_pretrain10_finetune30_steps21_batch128_devicecuda_strategy_magnitude/
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Set_0'
+============================================================
+
+[INFO] Validating JSON configuration map at: VGG16_tinyimagenet_epochs3_pretrain3_JF_discovered_regions.json
+[DEBUG] Loaded 2 configurations from map.
+[WARN] Trained baseline NOT found at VGG16_tinyimagenet_None_epochs3_pretrain3/checkpoints/final_JF_Control_quant.pt. Falling back to initial un-finetuned checkpoint.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Set_0 ---
+    Budget allocated: 3 epochs
+
+=== Running JF experiment ===
+[•] Collapsing ranges [('features.conv_10', 'features.conv_13')] for Set_0
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 64/64 zeros (100.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 64/64 zeros (100.00%)
+features.conv_3.weight: 0/73728 zeros (0.00%)
+features.conv_3.bias: 0/128 zeros (0.00%)
+features.bn_3.weight: 0/128 zeros (0.00%)
+features.bn_3.bias: 128/128 zeros (100.00%)
+features.conv_4.weight: 0/147456 zeros (0.00%)
+features.conv_4.bias: 0/128 zeros (0.00%)
+features.bn_4.weight: 0/128 zeros (0.00%)
+features.bn_4.bias: 128/128 zeros (100.00%)
+features.conv_5.weight: 0/294912 zeros (0.00%)
+features.conv_5.bias: 0/256 zeros (0.00%)
+features.bn_5.weight: 0/256 zeros (0.00%)
+features.bn_5.bias: 256/256 zeros (100.00%)
+features.conv_6.weight: 0/589824 zeros (0.00%)
+features.conv_6.bias: 0/256 zeros (0.00%)
+features.bn_6.weight: 0/256 zeros (0.00%)
+features.bn_6.bias: 256/256 zeros (100.00%)
+features.conv_7.weight: 0/589824 zeros (0.00%)
+features.conv_7.bias: 0/256 zeros (0.00%)
+features.bn_7.weight: 0/256 zeros (0.00%)
+features.bn_7.bias: 256/256 zeros (100.00%)
+features.conv_8.weight: 0/1179648 zeros (0.00%)
+features.conv_8.bias: 0/512 zeros (0.00%)
+features.bn_8.weight: 0/512 zeros (0.00%)
+features.bn_8.bias: 512/512 zeros (100.00%)
+features.conv_9.weight: 0/2359296 zeros (0.00%)
+features.conv_9.bias: 0/512 zeros (0.00%)
+features.bn_9.weight: 0/512 zeros (0.00%)
+features.bn_9.bias: 512/512 zeros (100.00%)
+features.conv_10.weight: 0/2359296 zeros (0.00%)
+features.conv_10.bias: 0/512 zeros (0.00%)
+features.bn_10.weight: 0/512 zeros (0.00%)
+features.bn_10.bias: 512/512 zeros (100.00%)
+features.conv_11.weight: 0/2359296 zeros (0.00%)
+features.conv_11.bias: 0/512 zeros (0.00%)
+features.bn_11.weight: 0/512 zeros (0.00%)
+features.bn_11.bias: 512/512 zeros (100.00%)
+features.conv_12.weight: 0/2359296 zeros (0.00%)
+features.conv_12.bias: 0/512 zeros (0.00%)
+features.bn_12.weight: 0/512 zeros (0.00%)
+features.bn_12.bias: 512/512 zeros (100.00%)
+features.conv_13.weight: 0/2359296 zeros (0.00%)
+features.conv_13.bias: 0/512 zeros (0.00%)
+features.bn_13.weight: 0/512 zeros (0.00%)
+features.bn_13.bias: 512/512 zeros (100.00%)
+classifier.fc_1.weight: 2/8388608 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc1.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc1.bias: 4096/4096 zeros (100.00%)
+classifier.fc_2.weight: 1/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc2.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc2.bias: 4096/4096 zeros (100.00%)
+classifier.fc_3.weight: 0/819200 zeros (0.00%)
+classifier.fc_3.bias: 0/200 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 1 pairs.
+    [DEBUG] Added mapping: collapse_0 = (features.conv_10 → features.conv_13)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_10 → features.conv_13
+[INFO] Model parameter count before collapsing: 40,732,936
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': features.conv_10 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_10', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_10
+[INFO] End Target   : features.conv_13
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_10' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 30 to 40
+[DEBUG] Captured Layers : 11 total
+    [LAYER MAP] conv_10 -> Conv2d
+    [LAYER MAP] bn_10 -> BatchNorm2d
+    [LAYER MAP] relu_10 -> ReLU
+    [LAYER MAP] pool_4 -> _SafePool
+    [LAYER MAP] conv_11 -> Conv2d
+    [LAYER MAP] bn_11 -> BatchNorm2d
+    [LAYER MAP] relu_11 -> ReLU
+    [LAYER MAP] conv_12 -> Conv2d
+    [LAYER MAP] bn_12 -> BatchNorm2d
+    [LAYER MAP] relu_12 -> ReLU
+    [LAYER MAP] conv_13 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_10'
+[DEBUG] Hooking End Node   : 'features.conv_13'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.conv_10' -> 'features.conv_13'...
+[DEBUG] Captured input shape: (64, 512, 8, 8), output shape: (64, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 512, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (64, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 40,732,936
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_13'...
+[DEBUG] Exact layer match found at index 46: features.conv_13 (Conv2d)
+[DEBUG] Scanning forward from index 47 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=2048, out_features=4096, bias=True))
+[RESULT] Next Linear detected → name='classifier.fc_1', module=Linear(in_features=2048, out_features=4096, bias=True)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'classifier.fc_1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (11 layers)...
+[DEBUG] Input tensor shape before block: (64, 512, 8, 8)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[DEBUG] Comparing spatial dims: expected_hw=4, current_hw=16 (HxW=4x4)
+[DEBUG] Suggest AdaptiveAvgPool2d(2,2) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(64, 512, 4, 4)
+         out_channels=512
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(2, 2))
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 512, 4, 4)
+    - out_channels             : 512
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(2, 2))
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.conv_10'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 30 -> 40
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 512 (in) -> 512 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=512, out=512)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module:
+        - conv_1x1: Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 40,732,936
+[INFO] Post-collapse : 31,553,800
+[INFO] Net Change    : -9,179,136
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 512, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'classifier.fc_1'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=30, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 30: 'conv_10'
+[STEP] Validating inserted module 'Sequential' at index 30...
+[DEBUG] Inserted module forward successful, output shape: (64, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'features.bn_10' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_10' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_4' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (64, 512, 2, 2)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.conv_10'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.conv_10' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_10 → features.conv_13)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 12 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 40,732,936
+[INFO] Parameters after : 31,553,800
+[INFO] ΔParams = +9,179,136 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+[•] Starting experiment 'Set_0_quant' in workflow 'JF' | Epoch Target: 3
+[•] No intermediate checkpoint found — starting fresh
+[•] Epoch 0
+Training:   0%|          | 0/1563 [00:00<?, ?it/s]Training:   0%|          | 0/1563 [00:03<?, ?it/s, loss=5.4373, acc=1.56%]Training:   0%|          | 1/1563 [00:03<1:37:36,  3.75s/it, loss=5.4373, acc=1.56%]Training:   0%|          | 1/1563 [00:05<1:37:36,  3.75s/it, loss=5.7824, acc=0.78%]Training:   0%|          | 2/1563 [00:05<1:12:33,  2.79s/it, loss=5.7824, acc=0.78%]Training:   0%|          | 2/1563 [00:07<1:12:33,  2.79s/it, loss=5.8562, acc=0.52%]Training:   0%|          | 3/1563 [00:07<1:04:38,  2.49s/it, loss=5.8562, acc=0.52%]Training:   0%|          | 3/1563 [00:09<1:04:38,  2.49s/it, loss=6.1588, acc=0.39%]Training:   0%|          | 4/1563 [00:09<57:31,  2.21s/it, loss=6.1588, acc=0.39%]  Training:   0%|          | 4/1563 [00:36<57:31,  2.21s/it, loss=6.2701, acc=0.31%]Training:   0%|          | 5/1563 [00:36<4:45:20, 10.99s/it, loss=6.2701, acc=0.31%]Training:   0%|          | 5/1563 [00:41<4:45:20, 10.99s/it, loss=6.2004, acc=0.52%]Training:   0%|          | 6/1563 [00:41<3:51:13,  8.91s/it, loss=6.2004, acc=0.52%]Training:   0%|          | 6/1563 [00:43<3:51:13,  8.91s/it, loss=6.7535, acc=0.45%]Training:   0%|          | 7/1563 [00:43<2:53:54,  6.71s/it, loss=6.7535, acc=0.45%]Training:   0%|          | 7/1563 [00:45<2:53:54,  6.71s/it, loss=6.4757, acc=0.59%]Training:   1%|          | 8/1563 [00:45<2:15:29,  5.23s/it, loss=6.4757, acc=0.59%]Training:   1%|          | 8/1563 [00:46<2:15:29,  5.23s/it, loss=5.6427, acc=0.87%]Training:   1%|          | 9/1563 [00:46<1:45:26,  4.07s/it, loss=5.6427, acc=0.87%]Training:   1%|          | 9/1563 [00:48<1:45:26,  4.07s/it, loss=6.3370, acc=0.78%]Training:   1%|          | 10/1563 [00:48<1:25:18,  3.30s/it, loss=6.3370, acc=0.78%]Training:   1%|          | 10/1563 [00:49<1:25:18,  3.30s/it, loss=6.3943, acc=0.85%]Training:   1%|          | 11/1563 [00:49<1:09:07,  2.67s/it, loss=6.3943, acc=0.85%]Training:   1%|          | 11/1563 [00:51<1:09:07,  2.67s/it, loss=6.4553, acc=0.78%]Training:   1%|          | 12/1563 [00:51<1:04:29,  2.49s/it, loss=6.4553, acc=0.78%]Training:   1%|          | 12/1563 [00:53<1:04:29,  2.49s/it, loss=6.2308, acc=0.72%]Training:   1%|          | 13/1563 [00:53<55:54,  2.16s/it, loss=6.2308, acc=0.72%]  Training:   1%|          | 13/1563 [00:56<55:54,  2.16s/it, loss=6.5392, acc=0.67%]Training:   1%|          | 14/1563 [00:56<1:02:14,  2.41s/it, loss=6.5392, acc=0.67%]Training:   1%|          | 14/1563 [00:59<1:02:14,  2.41s/it, loss=6.2987, acc=0.62%]Training:   1%|          | 15/1563 [00:59<1:05:24,  2.54s/it, loss=6.2987, acc=0.62%]Training:   1%|          | 15/1563 [01:02<1:05:24,  2.54s/it, loss=6.2625, acc=0.68%]Training:   1%|          | 16/1563 [01:02<1:13:00,  2.83s/it, loss=6.2625, acc=0.68%]Training:   1%|          | 16/1563 [01:05<1:13:00,  2.83s/it, loss=6.2773, acc=0.74%]Training:   1%|          | 17/1563 [01:05<1:13:24,  2.85s/it, loss=6.2773, acc=0.74%]Training:   1%|          | 17/1563 [01:10<1:13:24,  2.85s/it, loss=6.3459, acc=0.78%]Training:   1%|          | 18/1563 [01:10<1:28:07,  3.42s/it, loss=6.3459, acc=0.78%]Training:   1%|          | 18/1563 [01:12<1:28:07,  3.42s/it, loss=6.3983, acc=0.82%]Training:   1%|          | 19/1563 [01:12<1:18:56,  3.07s/it, loss=6.3983, acc=0.82%]Training:   1%|          | 19/1563 [01:14<1:18:56,  3.07s/it, loss=6.5682, acc=0.78%]Training:   1%|▏         | 20/1563 [01:14<1:09:31,  2.70s/it, loss=6.5682, acc=0.78%]Training:   1%|▏         | 20/1563 [01:16<1:09:31,  2.70s/it, loss=5.9147, acc=0.74%]Training:   1%|▏         | 21/1563 [01:16<1:02:10,  2.42s/it, loss=5.9147, acc=0.74%]Training:   1%|▏         | 21/1563 [01:17<1:02:10,  2.42s/it, loss=6.0910, acc=0.71%]Training:   1%|▏         | 22/1563 [01:17<56:57,  2.22s/it, loss=6.0910, acc=0.71%]  Training:   1%|▏         | 22/1563 [01:19<56:57,  2.22s/it, loss=5.8340, acc=0.75%]Training:   1%|▏         | 23/1563 [01:19<49:45,  1.94s/it, loss=5.8340, acc=0.75%]Training:   1%|▏         | 23/1563 [01:21<49:45,  1.94s/it, loss=6.4415, acc=0.78%]Training:   2%|▏         | 24/1563 [01:21<49:52,  1.94s/it, loss=6.4415, acc=0.78%]Training:   2%|▏         | 24/1563 [01:22<49:52,  1.94s/it, loss=6.4263, acc=0.75%]Training:   2%|▏         | 25/1563 [01:22<47:03,  1.84s/it, loss=6.4263, acc=0.75%]Training:   2%|▏         | 25/1563 [01:24<47:03,  1.84s/it, loss=6.4792, acc=0.72%]Training:   2%|▏         | 26/1563 [01:24<44:29,  1.74s/it, loss=6.4792, acc=0.72%]Training:   2%|▏         | 26/1563 [01:25<44:29,  1.74s/it, loss=5.9968, acc=0.75%]Training:   2%|▏         | 27/1563 [01:25<42:19,  1.65s/it, loss=5.9968, acc=0.75%]Training:   2%|▏         | 27/1563 [01:28<42:19,  1.65s/it, loss=6.0483, acc=0.84%]Training:   2%|▏         | 28/1563 [01:28<49:42,  1.94s/it, loss=6.0483, acc=0.84%]Training:   2%|▏         | 28/1563 [01:31<49:42,  1.94s/it, loss=6.2933, acc=0.86%]Training:   2%|▏         | 29/1563 [01:31<1:01:00,  2.39s/it, loss=6.2933, acc=0.86%]Training:   2%|▏         | 29/1563 [01:33<1:01:00,  2.39s/it, loss=5.7893, acc=0.89%]Training:   2%|▏         | 30/1563 [01:33<56:17,  2.20s/it, loss=5.7893, acc=0.89%]  Training:   2%|▏         | 30/1563 [01:35<56:17,  2.20s/it, loss=6.6709, acc=0.86%]Training:   2%|▏         | 31/1563 [01:35<55:16,  2.16s/it, loss=6.6709, acc=0.86%]Training:   2%|▏         | 31/1563 [01:38<55:16,  2.16s/it, loss=6.2570, acc=0.83%]Training:   2%|▏         | 32/1563 [01:38<1:02:58,  2.47s/it, loss=6.2570, acc=0.83%]Training:   2%|▏         | 32/1563 [01:42<1:02:58,  2.47s/it, loss=5.9667, acc=0.85%]Training:   2%|▏         | 33/1563 [01:43<1:18:54,  3.09s/it, loss=5.9667, acc=0.85%]Training:   2%|▏         | 33/1563 [01:44<1:18:54,  3.09s/it, loss=5.8039, acc=0.83%]Training:   2%|▏         | 34/1563 [01:44<1:06:50,  2.62s/it, loss=5.8039, acc=0.83%]Training:   2%|▏         | 34/1563 [01:47<1:06:50,  2.62s/it, loss=5.7020, acc=0.85%]Training:   2%|▏         | 35/1563 [01:47<1:08:06,  2.67s/it, loss=5.7020, acc=0.85%]Training:   2%|▏         | 35/1563 [01:49<1:08:06,  2.67s/it, loss=6.2323, acc=0.82%]Training:   2%|▏         | 36/1563 [01:49<1:01:08,  2.40s/it, loss=6.2323, acc=0.82%]Training:   2%|▏         | 36/1563 [01:51<1:01:08,  2.40s/it, loss=5.8281, acc=0.80%]Training:   2%|▏         | 37/1563 [01:51<57:52,  2.28s/it, loss=5.8281, acc=0.80%]  Training:   2%|▏         | 37/1563 [01:53<57:52,  2.28s/it, loss=5.7292, acc=0.82%]Training:   2%|▏         | 38/1563 [01:53<54:54,  2.16s/it, loss=5.7292, acc=0.82%]Training:   2%|▏         | 38/1563 [01:55<54:54,  2.16s/it, loss=5.4918, acc=0.88%]Training:   2%|▏         | 39/1563 [01:55<54:27,  2.14s/it, loss=5.4918, acc=0.88%]Training:   2%|▏         | 39/1563 [02:02<54:27,  2.14s/it, loss=5.3538, acc=0.86%]Training:   3%|▎         | 40/1563 [02:02<1:34:28,  3.72s/it, loss=5.3538, acc=0.86%]Training:   3%|▎         | 40/1563 [02:04<1:34:28,  3.72s/it, loss=5.8064, acc=0.88%]Training:   3%|▎         | 41/1563 [02:04<1:20:43,  3.18s/it, loss=5.8064, acc=0.88%]Training:   3%|▎         | 41/1563 [02:06<1:20:43,  3.18s/it, loss=5.8293, acc=0.89%]Training:   3%|▎         | 42/1563 [02:06<1:08:40,  2.71s/it, loss=5.8293, acc=0.89%]Training:   3%|▎         | 42/1563 [02:09<1:08:40,  2.71s/it, loss=5.7242, acc=0.87%]Training:   3%|▎         | 43/1563 [02:09<1:12:10,  2.85s/it, loss=5.7242, acc=0.87%]Training:   3%|▎         | 43/1563 [02:10<1:12:10,  2.85s/it, loss=5.8743, acc=0.85%]Training:   3%|▎         | 44/1563 [02:10<1:02:16,  2.46s/it, loss=5.8743, acc=0.85%]Training:   3%|▎         | 44/1563 [02:13<1:02:16,  2.46s/it, loss=5.7711, acc=0.83%]Training:   3%|▎         | 45/1563 [02:13<1:02:28,  2.47s/it, loss=5.7711, acc=0.83%]Training:   3%|▎         | 45/1563 [02:15<1:02:28,  2.47s/it, loss=5.9790, acc=0.88%]Training:   3%|▎         | 46/1563 [02:15<58:13,  2.30s/it, loss=5.9790, acc=0.88%]  Training:   3%|▎         | 46/1563 [02:19<58:13,  2.30s/it, loss=6.1338, acc=0.93%]Training:   3%|▎         | 47/1563 [02:19<1:10:35,  2.79s/it, loss=6.1338, acc=0.93%]Training:   3%|▎         | 47/1563 [02:38<1:10:35,  2.79s/it, loss=5.9193, acc=0.91%]Training:   3%|▎         | 48/1563 [02:38<3:17:33,  7.82s/it, loss=5.9193, acc=0.91%]Training:   3%|▎         | 48/1563 [02:42<3:17:33,  7.82s/it, loss=6.0550, acc=0.92%]Training:   3%|▎         | 49/1563 [02:42<2:48:43,  6.69s/it, loss=6.0550, acc=0.92%]Training:   3%|▎         | 49/1563 [02:46<2:48:43,  6.69s/it, loss=6.2475, acc=0.91%]Training:   3%|▎         | 50/1563 [02:46<2:25:30,  5.77s/it, loss=6.2475, acc=0.91%]Training:   3%|▎         | 50/1563 [02:52<2:25:30,  5.77s/it, loss=5.7080, acc=0.89%]Training:   3%|▎         | 51/1563 [02:52<2:24:07,  5.72s/it, loss=5.7080, acc=0.89%]Training:   3%|▎         | 51/1563 [02:56<2:24:07,  5.72s/it, loss=5.8501, acc=0.87%]Training:   3%|▎         | 52/1563 [02:56<2:11:40,  5.23s/it, loss=5.8501, acc=0.87%]Training:   3%|▎         | 52/1563 [03:00<2:11:40,  5.23s/it, loss=5.6650, acc=0.85%]Training:   3%|▎         | 53/1563 [03:00<2:01:10,  4.81s/it, loss=5.6650, acc=0.85%]Training:   3%|▎         | 53/1563 [03:02<2:01:10,  4.81s/it, loss=5.6234, acc=0.87%]Training:   3%|▎         | 54/1563 [03:02<1:45:43,  4.20s/it, loss=5.6234, acc=0.87%]Training:   3%|▎         | 54/1563 [03:05<1:45:43,  4.20s/it, loss=5.3788, acc=0.85%]Training:   4%|▎         | 55/1563 [03:05<1:35:58,  3.82s/it, loss=5.3788, acc=0.85%]Training:   4%|▎         | 55/1563 [03:15<1:35:58,  3.82s/it, loss=5.5848, acc=0.84%]Training:   4%|▎         | 56/1563 [03:15<2:21:16,  5.62s/it, loss=5.5848, acc=0.84%]Training:   4%|▎         | 56/1563 [03:19<2:21:16,  5.62s/it, loss=5.7442, acc=0.82%]Training:   4%|▎         | 57/1563 [03:19<2:06:34,  5.04s/it, loss=5.7442, acc=0.82%]Training:   4%|▎         | 57/1563 [03:21<2:06:34,  5.04s/it, loss=5.9689, acc=0.81%]Training:   4%|▎         | 58/1563 [03:21<1:42:03,  4.07s/it, loss=5.9689, acc=0.81%]Training:   4%|▎         | 58/1563 [03:23<1:42:03,  4.07s/it, loss=5.7150, acc=0.82%]Training:   4%|▍         | 59/1563 [03:23<1:29:31,  3.57s/it, loss=5.7150, acc=0.82%]Training:   4%|▍         | 59/1563 [03:27<1:29:31,  3.57s/it, loss=5.8179, acc=0.83%]Training:   4%|▍         | 60/1563 [03:27<1:30:52,  3.63s/it, loss=5.8179, acc=0.83%]Training:   4%|▍         | 60/1563 [03:31<1:30:52,  3.63s/it, loss=6.0978, acc=0.85%]Training:   4%|▍         | 61/1563 [03:31<1:34:19,  3.77s/it, loss=6.0978, acc=0.85%]Training:   4%|▍         | 61/1563 [03:33<1:34:19,  3.77s/it, loss=5.4394, acc=0.83%]Training:   4%|▍         | 62/1563 [03:33<1:23:28,  3.34s/it, loss=5.4394, acc=0.83%]Training:   4%|▍         | 62/1563 [03:35<1:23:28,  3.34s/it, loss=5.5493, acc=0.82%]Training:   4%|▍         | 63/1563 [03:35<1:13:45,  2.95s/it, loss=5.5493, acc=0.82%]Training:   4%|▍         | 63/1563 [03:38<1:13:45,  2.95s/it, loss=5.7615, acc=0.81%]Training:   4%|▍         | 64/1563 [03:38<1:12:28,  2.90s/it, loss=5.7615, acc=0.81%]Training:   4%|▍         | 64/1563 [03:40<1:12:28,  2.90s/it, loss=5.6970, acc=0.79%]Training:   4%|▍         | 65/1563 [03:40<1:09:02,  2.77s/it, loss=5.6970, acc=0.79%]Training:   4%|▍         | 65/1563 [03:42<1:09:02,  2.77s/it, loss=5.5489, acc=0.80%]Training:   4%|▍         | 66/1563 [03:42<1:00:50,  2.44s/it, loss=5.5489, acc=0.80%]Training:   4%|▍         | 66/1563 [03:52<1:00:50,  2.44s/it, loss=5.5469, acc=0.79%]Training:   4%|▍         | 67/1563 [03:52<1:53:51,  4.57s/it, loss=5.5469, acc=0.79%]Training:   4%|▍         | 67/1563 [03:54<1:53:51,  4.57s/it, loss=5.7956, acc=0.87%]Training:   4%|▍         | 68/1563 [03:54<1:35:05,  3.82s/it, loss=5.7956, acc=0.87%]Training:   4%|▍         | 68/1563 [03:59<1:35:05,  3.82s/it, loss=5.4947, acc=0.86%]Training:   4%|▍         | 69/1563 [03:59<1:42:31,  4.12s/it, loss=5.4947, acc=0.86%]Training:   4%|▍         | 69/1563 [04:05<1:42:31,  4.12s/it, loss=5.5004, acc=0.85%]Training:   4%|▍         | 70/1563 [04:05<1:58:21,  4.76s/it, loss=5.5004, acc=0.85%]Training:   4%|▍         | 70/1563 [04:08<1:58:21,  4.76s/it, loss=5.5072, acc=0.88%]Training:   5%|▍         | 71/1563 [04:08<1:47:32,  4.32s/it, loss=5.5072, acc=0.88%]Training:   5%|▍         | 71/1563 [04:12<1:47:32,  4.32s/it, loss=5.1794, acc=0.89%]Training:   5%|▍         | 72/1563 [04:12<1:41:08,  4.07s/it, loss=5.1794, acc=0.89%]Training:   5%|▍         | 72/1563 [04:15<1:41:08,  4.07s/it, loss=5.6796, acc=0.92%]Training:   5%|▍         | 73/1563 [04:15<1:35:16,  3.84s/it, loss=5.6796, acc=0.92%]Training:   5%|▍         | 73/1563 [04:16<1:35:16,  3.84s/it, loss=6.5344, acc=0.91%]Training:   5%|▍         | 74/1563 [04:16<1:18:26,  3.16s/it, loss=6.5344, acc=0.91%]Training:   5%|▍         | 74/1563 [04:19<1:18:26,  3.16s/it, loss=5.9273, acc=0.90%]Training:   5%|▍         | 75/1563 [04:19<1:12:46,  2.93s/it, loss=5.9273, acc=0.90%]Training:   5%|▍         | 75/1563 [04:21<1:12:46,  2.93s/it, loss=5.5425, acc=0.88%]Training:   5%|▍         | 76/1563 [04:21<1:04:59,  2.62s/it, loss=5.5425, acc=0.88%]Training:   5%|▍         | 76/1563 [04:33<1:04:59,  2.62s/it, loss=5.7782, acc=0.89%]Training:   5%|▍         | 77/1563 [04:33<2:15:37,  5.48s/it, loss=5.7782, acc=0.89%]Training:   5%|▍         | 77/1563 [04:39<2:15:37,  5.48s/it, loss=5.6826, acc=0.88%]Training:   5%|▍         | 78/1563 [04:39<2:21:48,  5.73s/it, loss=5.6826, acc=0.88%]Training:   5%|▍         | 78/1563 [04:45<2:21:48,  5.73s/it, loss=5.5816, acc=0.91%]Training:   5%|▌         | 79/1563 [04:45<2:18:52,  5.61s/it, loss=5.5816, acc=0.91%]Training:   5%|▌         | 79/1563 [04:50<2:18:52,  5.61s/it, loss=5.6626, acc=0.90%]Training:   5%|▌         | 80/1563 [04:50<2:20:50,  5.70s/it, loss=5.6626, acc=0.90%]Training:   5%|▌         | 80/1563 [04:53<2:20:50,  5.70s/it, loss=5.7258, acc=0.89%]Training:   5%|▌         | 81/1563 [04:53<1:56:18,  4.71s/it, loss=5.7258, acc=0.89%]Training:   5%|▌         | 81/1563 [04:56<1:56:18,  4.71s/it, loss=5.6528, acc=0.88%]Training:   5%|▌         | 82/1563 [04:56<1:42:37,  4.16s/it, loss=5.6528, acc=0.88%]Training:   5%|▌         | 82/1563 [05:01<1:42:37,  4.16s/it, loss=5.4080, acc=0.88%]Training:   5%|▌         | 83/1563 [05:01<1:49:16,  4.43s/it, loss=5.4080, acc=0.88%]Training:   5%|▌         | 83/1563 [05:20<1:49:16,  4.43s/it, loss=6.2690, acc=0.87%]Training:   5%|▌         | 84/1563 [05:20<3:37:23,  8.82s/it, loss=6.2690, acc=0.87%]Training:   5%|▌         | 84/1563 [05:31<3:37:23,  8.82s/it, loss=5.9692, acc=0.90%]Training:   5%|▌         | 85/1563 [05:31<3:53:54,  9.50s/it, loss=5.9692, acc=0.90%]Training:   5%|▌         | 85/1563 [05:37<3:53:54,  9.50s/it, loss=5.6031, acc=0.93%]Training:   6%|▌         | 86/1563 [05:37<3:27:05,  8.41s/it, loss=5.6031, acc=0.93%]Training:   6%|▌         | 86/1563 [05:48<3:27:05,  8.41s/it, loss=6.2403, acc=0.92%]Training:   6%|▌         | 87/1563 [05:48<3:49:55,  9.35s/it, loss=6.2403, acc=0.92%]Training:   6%|▌         | 87/1563 [06:04<3:49:55,  9.35s/it, loss=5.5017, acc=0.91%]Training:   6%|▌         | 88/1563 [06:04<4:33:21, 11.12s/it, loss=5.5017, acc=0.91%]Training:   6%|▌         | 88/1563 [06:13<4:33:21, 11.12s/it, loss=5.7196, acc=0.90%]Training:   6%|▌         | 89/1563 [06:13<4:22:01, 10.67s/it, loss=5.7196, acc=0.90%]Training:   6%|▌         | 89/1563 [06:32<4:22:01, 10.67s/it, loss=5.8638, acc=0.90%]Training:   6%|▌         | 90/1563 [06:32<5:24:29, 13.22s/it, loss=5.8638, acc=0.90%]Training:   6%|▌         | 90/1563 [06:57<5:24:29, 13.22s/it, loss=5.7659, acc=0.89%]Training:   6%|▌         | 91/1563 [06:57<6:51:14, 16.76s/it, loss=5.7659, acc=0.89%]Training:   6%|▌         | 91/1563 [07:07<6:51:14, 16.76s/it, loss=5.6397, acc=0.92%]Training:   6%|▌         | 92/1563 [07:07<5:57:00, 14.56s/it, loss=5.6397, acc=0.92%]Training:   6%|▌         | 92/1563 [07:15<5:57:00, 14.56s/it, loss=5.9919, acc=0.91%]Training:   6%|▌         | 93/1563 [07:15<5:06:39, 12.52s/it, loss=5.9919, acc=0.91%]Training:   6%|▌         | 93/1563 [07:18<5:06:39, 12.52s/it, loss=5.8465, acc=0.90%]Training:   6%|▌         | 94/1563 [07:18<4:01:45,  9.87s/it, loss=5.8465, acc=0.90%]Training:   6%|▌         | 94/1563 [07:30<4:01:45,  9.87s/it, loss=5.8155, acc=0.90%]Training:   6%|▌         | 95/1563 [07:30<4:13:17, 10.35s/it, loss=5.8155, acc=0.90%]Training:   6%|▌         | 95/1563 [07:43<4:13:17, 10.35s/it, loss=5.8934, acc=0.91%]Training:   6%|▌         | 96/1563 [07:43<4:34:56, 11.25s/it, loss=5.8934, acc=0.91%]Training:   6%|▌         | 96/1563 [07:46<4:34:56, 11.25s/it, loss=6.1214, acc=0.93%]Training:   6%|▌         | 97/1563 [07:46<3:34:10,  8.77s/it, loss=6.1214, acc=0.93%]Training:   6%|▌         | 97/1563 [07:48<3:34:10,  8.77s/it, loss=5.8267, acc=0.92%]Training:   6%|▋         | 98/1563 [07:48<2:45:16,  6.77s/it, loss=5.8267, acc=0.92%]Training:   6%|▋         | 98/1563 [07:50<2:45:16,  6.77s/it, loss=5.8594, acc=0.92%]Training:   6%|▋         | 99/1563 [07:50<2:07:50,  5.24s/it, loss=5.8594, acc=0.92%]Training:   6%|▋         | 99/1563 [07:52<2:07:50,  5.24s/it, loss=5.4626, acc=0.91%]Training:   6%|▋         | 100/1563 [07:52<1:41:23,  4.16s/it, loss=5.4626, acc=0.91%]Training:   6%|▋         | 100/1563 [07:54<1:41:23,  4.16s/it, loss=5.3776, acc=0.90%]Training:   6%|▋         | 101/1563 [07:54<1:27:29,  3.59s/it, loss=5.3776, acc=0.90%]Training:   6%|▋         | 101/1563 [07:55<1:27:29,  3.59s/it, loss=6.0043, acc=0.90%]Training:   7%|▋         | 102/1563 [07:55<1:12:16,  2.97s/it, loss=6.0043, acc=0.90%]Training:   7%|▋         | 102/1563 [07:58<1:12:16,  2.97s/it, loss=5.6834, acc=0.90%]Training:   7%|▋         | 103/1563 [07:58<1:13:42,  3.03s/it, loss=5.6834, acc=0.90%]Training:   7%|▋         | 103/1563 [08:01<1:13:42,  3.03s/it, loss=5.7976, acc=0.89%]Training:   7%|▋         | 104/1563 [08:01<1:10:59,  2.92s/it, loss=5.7976, acc=0.89%]Training:   7%|▋         | 104/1563 [08:03<1:10:59,  2.92s/it, loss=5.9529, acc=0.92%]Training:   7%|▋         | 105/1563 [08:03<59:57,  2.47s/it, loss=5.9529, acc=0.92%]  Training:   7%|▋         | 105/1563 [08:08<59:57,  2.47s/it, loss=5.9735, acc=0.93%]Training:   7%|▋         | 106/1563 [08:08<1:22:35,  3.40s/it, loss=5.9735, acc=0.93%]Training:   7%|▋         | 106/1563 [08:20<1:22:35,  3.40s/it, loss=5.3799, acc=0.92%]Training:   7%|▋         | 107/1563 [08:20<2:22:01,  5.85s/it, loss=5.3799, acc=0.92%]Training:   7%|▋         | 107/1563 [08:25<2:22:01,  5.85s/it, loss=5.9748, acc=0.93%]Training:   7%|▋         | 108/1563 [08:26<2:22:04,  5.86s/it, loss=5.9748, acc=0.93%]Training:   7%|▋         | 108/1563 [08:27<2:22:04,  5.86s/it, loss=6.1015, acc=0.93%]Training:   7%|▋         | 109/1563 [08:27<1:50:49,  4.57s/it, loss=6.1015, acc=0.93%]Training:   7%|▋         | 109/1563 [08:29<1:50:49,  4.57s/it, loss=5.3276, acc=0.92%]Training:   7%|▋         | 110/1563 [08:29<1:28:43,  3.66s/it, loss=5.3276, acc=0.92%]Training:   7%|▋         | 110/1563 [08:31<1:28:43,  3.66s/it, loss=5.3799, acc=0.91%]Training:   7%|▋         | 111/1563 [08:31<1:17:18,  3.19s/it, loss=5.3799, acc=0.91%]Training:   7%|▋         | 111/1563 [08:32<1:17:18,  3.19s/it, loss=5.5131, acc=0.91%]Training:   7%|▋         | 112/1563 [08:32<1:01:11,  2.53s/it, loss=5.5131, acc=0.91%]Training:   7%|▋         | 112/1563 [08:33<1:01:11,  2.53s/it, loss=5.9094, acc=0.91%]Training:   7%|▋         | 113/1563 [08:33<48:18,  2.00s/it, loss=5.9094, acc=0.91%]  Training:   7%|▋         | 113/1563 [08:35<48:18,  2.00s/it, loss=5.5522, acc=0.90%]Training:   7%|▋         | 114/1563 [08:35<48:19,  2.00s/it, loss=5.5522, acc=0.90%]Training:   7%|▋         | 114/1563 [08:39<48:19,  2.00s/it, loss=5.2567, acc=0.91%]Training:   7%|▋         | 115/1563 [08:39<1:06:37,  2.76s/it, loss=5.2567, acc=0.91%]Training:   7%|▋         | 115/1563 [08:51<1:06:37,  2.76s/it, loss=5.7117, acc=0.92%]Training:   7%|▋         | 116/1563 [08:51<2:11:22,  5.45s/it, loss=5.7117, acc=0.92%]Training:   7%|▋         | 116/1563 [09:14<2:11:22,  5.45s/it, loss=5.3189, acc=0.91%]Training:   7%|▋         | 117/1563 [09:14<4:21:06, 10.83s/it, loss=5.3189, acc=0.91%]Training:   7%|▋         | 117/1563 [09:30<4:21:06, 10.83s/it, loss=5.7159, acc=0.93%]Training:   8%|▊         | 118/1563 [09:30<4:56:00, 12.29s/it, loss=5.7159, acc=0.93%]Training:   8%|▊         | 118/1563 [09:36<4:56:00, 12.29s/it, loss=5.9418, acc=0.92%]Training:   8%|▊         | 119/1563 [09:36<4:09:17, 10.36s/it, loss=5.9418, acc=0.92%]Training:   8%|▊         | 119/1563 [09:45<4:09:17, 10.36s/it, loss=5.1674, acc=0.94%]Training:   8%|▊         | 120/1563 [09:45<4:03:32, 10.13s/it, loss=5.1674, acc=0.94%]Training:   8%|▊         | 120/1563 [10:02<4:03:32, 10.13s/it, loss=5.7102, acc=0.94%]Training:   8%|▊         | 121/1563 [10:02<4:53:35, 12.22s/it, loss=5.7102, acc=0.94%]Training:   8%|▊         | 121/1563 [10:21<4:53:35, 12.22s/it, loss=5.3758, acc=0.93%]Training:   8%|▊         | 122/1563 [10:21<5:41:21, 14.21s/it, loss=5.3758, acc=0.93%]Training:   8%|▊         | 122/1563 [10:22<5:41:21, 14.21s/it, loss=5.3828, acc=0.95%]Training:   8%|▊         | 123/1563 [10:22<4:07:27, 10.31s/it, loss=5.3828, acc=0.95%]Training:   8%|▊         | 123/1563 [10:23<4:07:27, 10.31s/it, loss=5.3608, acc=0.97%]Training:   8%|▊         | 124/1563 [10:23<2:58:59,  7.46s/it, loss=5.3608, acc=0.97%]Training:   8%|▊         | 124/1563 [10:25<2:58:59,  7.46s/it, loss=5.8195, acc=0.96%]Training:   8%|▊         | 125/1563 [10:25<2:15:52,  5.67s/it, loss=5.8195, acc=0.96%]Training:   8%|▊         | 125/1563 [10:28<2:15:52,  5.67s/it, loss=5.3654, acc=0.97%]Training:   8%|▊         | 126/1563 [10:28<1:57:37,  4.91s/it, loss=5.3654, acc=0.97%]Training:   8%|▊         | 126/1563 [10:34<1:57:37,  4.91s/it, loss=6.0467, acc=0.97%]Training:   8%|▊         | 127/1563 [10:34<2:08:45,  5.38s/it, loss=6.0467, acc=0.97%]Training:   8%|▊         | 127/1563 [10:40<2:08:45,  5.38s/it, loss=6.0075, acc=1.00%]Training:   8%|▊         | 128/1563 [10:40<2:13:20,  5.58s/it, loss=6.0075, acc=1.00%]Training:   8%|▊         | 128/1563 [10:41<2:13:20,  5.58s/it, loss=5.6852, acc=0.99%]Training:   8%|▊         | 129/1563 [10:41<1:35:28,  4.00s/it, loss=5.6852, acc=0.99%]Training:   8%|▊         | 129/1563 [10:44<1:35:28,  4.00s/it, loss=5.1503, acc=1.01%]Training:   8%|▊         | 130/1563 [10:44<1:27:45,  3.67s/it, loss=5.1503, acc=1.01%]Training:   8%|▊         | 130/1563 [10:52<1:27:45,  3.67s/it, loss=5.2631, acc=1.04%]Training:   8%|▊         | 131/1563 [10:52<2:03:26,  5.17s/it, loss=5.2631, acc=1.04%]Training:   8%|▊         | 131/1563 [11:28<2:03:26,  5.17s/it, loss=5.7148, acc=1.03%]Training:   8%|▊         | 132/1563 [11:28<5:42:31, 14.36s/it, loss=5.7148, acc=1.03%]Training:   8%|▊         | 132/1563 [11:34<5:42:31, 14.36s/it, loss=5.6860, acc=1.03%]Training:   9%|▊         | 133/1563 [11:34<4:39:26, 11.72s/it, loss=5.6860, acc=1.03%]Training:   9%|▊         | 133/1563 [11:35<4:39:26, 11.72s/it, loss=5.7038, acc=1.04%]Training:   9%|▊         | 134/1563 [11:35<3:21:50,  8.47s/it, loss=5.7038, acc=1.04%]Training:   9%|▊         | 134/1563 [11:36<3:21:50,  8.47s/it, loss=5.7027, acc=1.04%]Training:   9%|▊         | 135/1563 [11:36<2:27:44,  6.21s/it, loss=5.7027, acc=1.04%]Training:   9%|▊         | 135/1563 [11:37<2:27:44,  6.21s/it, loss=5.2388, acc=1.03%]Training:   9%|▊         | 136/1563 [11:37<1:51:17,  4.68s/it, loss=5.2388, acc=1.03%]Training:   9%|▊         | 136/1563 [11:38<1:51:17,  4.68s/it, loss=5.6238, acc=1.03%]Training:   9%|▉         | 137/1563 [11:38<1:24:10,  3.54s/it, loss=5.6238, acc=1.03%]Training:   9%|▉         | 137/1563 [11:38<1:24:10,  3.54s/it, loss=6.2705, acc=1.03%]Training:   9%|▉         | 138/1563 [11:38<1:04:24,  2.71s/it, loss=6.2705, acc=1.03%]Training:   9%|▉         | 138/1563 [11:39<1:04:24,  2.71s/it, loss=5.9199, acc=1.03%]Training:   9%|▉         | 139/1563 [11:39<51:08,  2.15s/it, loss=5.9199, acc=1.03%]  Training:   9%|▉         | 139/1563 [11:41<51:08,  2.15s/it, loss=6.1046, acc=1.07%]Training:   9%|▉         | 140/1563 [11:41<48:38,  2.05s/it, loss=6.1046, acc=1.07%]Training:   9%|▉         | 140/1563 [11:42<48:38,  2.05s/it, loss=6.0106, acc=1.07%]Training:   9%|▉         | 141/1563 [11:42<43:02,  1.82s/it, loss=6.0106, acc=1.07%]Training:   9%|▉         | 141/1563 [11:46<43:02,  1.82s/it, loss=5.6482, acc=1.09%]Training:   9%|▉         | 142/1563 [11:46<53:49,  2.27s/it, loss=5.6482, acc=1.09%]Training:   9%|▉         | 142/1563 [11:46<53:49,  2.27s/it, loss=6.0271, acc=1.08%]Training:   9%|▉         | 143/1563 [11:48<55:38,  2.35s/it, loss=6.0271, acc=1.08%]Training:   9%|▉         | 143/1563 [11:48<55:38,  2.35s/it, loss=6.0083, acc=1.07%]Training:   9%|▉         | 143/1563 [11:51<55:38,  2.35s/it, loss=5.4353, acc=1.07%]Training:   9%|▉         | 145/1563 [11:51<46:52,  1.98s/it, loss=5.4353, acc=1.07%]Training:   9%|▉         | 145/1563 [11:55<46:52,  1.98s/it, loss=5.5134, acc=1.07%]Training:   9%|▉         | 146/1563 [11:55<1:00:04,  2.54s/it, loss=5.5134, acc=1.07%]Training:   9%|▉         | 146/1563 [12:03<1:00:04,  2.54s/it, loss=5.5467, acc=1.06%]Training:   9%|▉         | 147/1563 [12:03<1:28:59,  3.77s/it, loss=5.5467, acc=1.06%]Training:   9%|▉         | 147/1563 [12:09<1:28:59,  3.77s/it, loss=5.3906, acc=1.07%]Training:   9%|▉         | 148/1563 [12:09<1:47:35,  4.56s/it, loss=5.3906, acc=1.07%]Training:   9%|▉         | 148/1563 [12:10<1:47:35,  4.56s/it, loss=5.4901, acc=1.06%]Training:  10%|▉         | 149/1563 [12:10<1:24:25,  3.58s/it, loss=5.4901, acc=1.06%]Training:  10%|▉         | 149/1563 [12:11<1:24:25,  3.58s/it, loss=5.2082, acc=1.06%]Training:  10%|▉         | 150/1563 [12:11<1:03:16,  2.69s/it, loss=5.2082, acc=1.06%]Training:  10%|▉         | 150/1563 [12:12<1:03:16,  2.69s/it, loss=6.1915, acc=1.06%]Training:  10%|▉         | 151/1563 [12:12<52:38,  2.24s/it, loss=6.1915, acc=1.06%]  Training:  10%|▉         | 151/1563 [12:13<52:38,  2.24s/it, loss=6.0723, acc=1.05%]Training:  10%|▉         | 152/1563 [12:13<43:18,  1.84s/it, loss=6.0723, acc=1.05%]Training:  10%|▉         | 152/1563 [12:17<43:18,  1.84s/it, loss=5.1989, acc=1.04%]Training:  10%|▉         | 153/1563 [12:17<1:02:11,  2.65s/it, loss=5.1989, acc=1.04%]Training:  10%|▉         | 153/1563 [12:29<1:02:11,  2.65s/it, loss=6.1601, acc=1.06%]Training:  10%|▉         | 154/1563 [12:29<2:01:47,  5.19s/it, loss=6.1601, acc=1.06%]Training:  10%|▉         | 154/1563 [12:29<2:01:47,  5.19s/it, loss=5.5343, acc=1.05%]Training:  10%|▉         | 155/1563 [12:29<1:30:27,  3.86s/it, loss=5.5343, acc=1.05%]Training:  10%|▉         | 155/1563 [12:30<1:30:27,  3.86s/it, loss=5.4934, acc=1.07%]Training:  10%|▉         | 156/1563 [12:30<1:08:26,  2.92s/it, loss=5.4934, acc=1.07%]Training:  10%|▉         | 156/1563 [12:31<1:08:26,  2.92s/it, loss=5.2394, acc=1.07%]Training:  10%|█         | 157/1563 [12:31<53:46,  2.29s/it, loss=5.2394, acc=1.07%]  Training:  10%|█         | 157/1563 [12:32<53:46,  2.29s/it, loss=5.9229, acc=1.08%]Training:  10%|█         | 158/1563 [12:32<41:42,  1.78s/it, loss=5.9229, acc=1.08%]Training:  10%|█         | 158/1563 [12:32<41:42,  1.78s/it, loss=5.2637, acc=1.08%]Training:  10%|█         | 159/1563 [12:32<34:11,  1.46s/it, loss=5.2637, acc=1.08%]Training:  10%|█         | 159/1563 [12:33<34:11,  1.46s/it, loss=5.3661, acc=1.07%]Training:  10%|█         | 160/1563 [12:33<28:17,  1.21s/it, loss=5.3661, acc=1.07%]Training:  10%|█         | 160/1563 [12:34<28:17,  1.21s/it, loss=5.4725, acc=1.08%]Training:  10%|█         | 161/1563 [12:34<24:22,  1.04s/it, loss=5.4725, acc=1.08%]Training:  10%|█         | 161/1563 [12:34<24:22,  1.04s/it, loss=5.8568, acc=1.07%]Training:  10%|█         | 162/1563 [12:34<22:48,  1.02it/s, loss=5.8568, acc=1.07%]Training:  10%|█         | 162/1563 [12:35<22:48,  1.02it/s, loss=6.0800, acc=1.10%]Training:  10%|█         | 163/1563 [12:35<19:43,  1.18it/s, loss=6.0800, acc=1.10%]Training:  10%|█         | 163/1563 [12:36<19:43,  1.18it/s, loss=5.8977, acc=1.11%]Training:  10%|█         | 164/1563 [12:36<20:57,  1.11it/s, loss=5.8977, acc=1.11%]Training:  10%|█         | 164/1563 [12:54<20:57,  1.11it/s, loss=6.2672, acc=1.12%]Training:  11%|█         | 165/1563 [12:54<2:20:24,  6.03s/it, loss=6.2672, acc=1.12%]Training:  11%|█         | 165/1563 [13:04<2:20:24,  6.03s/it, loss=5.3807, acc=1.11%]Training:  11%|█         | 166/1563 [13:04<2:45:41,  7.12s/it, loss=5.3807, acc=1.11%]Training:  11%|█         | 166/1563 [13:05<2:45:41,  7.12s/it, loss=5.7202, acc=1.10%]Training:  11%|█         | 167/1563 [13:05<2:04:26,  5.35s/it, loss=5.7202, acc=1.10%]Training:  11%|█         | 167/1563 [13:05<2:04:26,  5.35s/it, loss=5.9612, acc=1.11%]Training:  11%|█         | 168/1563 [13:05<1:31:59,  3.96s/it, loss=5.9612, acc=1.11%]Training:  11%|█         | 168/1563 [13:06<1:31:59,  3.96s/it, loss=5.4670, acc=1.10%]Training:  11%|█         | 169/1563 [13:06<1:09:19,  2.98s/it, loss=5.4670, acc=1.10%]Training:  11%|█         | 169/1563 [13:07<1:09:19,  2.98s/it, loss=5.1466, acc=1.10%]Training:  11%|█         | 170/1563 [13:07<54:15,  2.34s/it, loss=5.1466, acc=1.10%]  Training:  11%|█         | 170/1563 [13:08<54:15,  2.34s/it, loss=6.2388, acc=1.11%]Training:  11%|█         | 171/1563 [13:08<43:06,  1.86s/it, loss=6.2388, acc=1.11%]Training:  11%|█         | 171/1563 [13:09<43:06,  1.86s/it, loss=6.4592, acc=1.10%]Training:  11%|█         | 172/1563 [13:09<36:03,  1.56s/it, loss=6.4592, acc=1.10%]Training:  11%|█         | 172/1563 [13:09<36:03,  1.56s/it, loss=5.6389, acc=1.11%]Training:  11%|█         | 173/1563 [13:09<30:33,  1.32s/it, loss=5.6389, acc=1.11%]Training:  11%|█         | 173/1563 [13:10<30:33,  1.32s/it, loss=6.1386, acc=1.11%]Training:  11%|█         | 174/1563 [13:10<27:16,  1.18s/it, loss=6.1386, acc=1.11%]Training:  11%|█         | 174/1563 [13:11<27:16,  1.18s/it, loss=5.8423, acc=1.12%]Training:  11%|█         | 175/1563 [13:11<25:30,  1.10s/it, loss=5.8423, acc=1.12%]Training:  11%|█         | 175/1563 [13:12<25:30,  1.10s/it, loss=5.5988, acc=1.12%]Training:  11%|█▏        | 176/1563 [13:12<23:05,  1.00it/s, loss=5.5988, acc=1.12%]Training:  11%|█▏        | 176/1563 [13:12<23:05,  1.00it/s, loss=5.8657, acc=1.11%]Training:  11%|█▏        | 177/1563 [13:12<20:07,  1.15it/s, loss=5.8657, acc=1.11%]Training:  11%|█▏        | 177/1563 [13:13<20:07,  1.15it/s, loss=6.3152, acc=1.11%]Training:  11%|█▏        | 178/1563 [13:13<20:36,  1.12it/s, loss=6.3152, acc=1.11%]Training:  11%|█▏        | 178/1563 [13:14<20:36,  1.12it/s, loss=5.9820, acc=1.12%]Training:  11%|█▏        | 179/1563 [13:14<18:31,  1.24it/s, loss=5.9820, acc=1.12%]Training:  11%|█▏        | 179/1563 [13:15<18:31,  1.24it/s, loss=6.4383, acc=1.11%]Training:  12%|█▏        | 180/1563 [13:15<18:22,  1.25it/s, loss=6.4383, acc=1.11%]Training:  12%|█▏        | 180/1563 [13:15<18:22,  1.25it/s, loss=6.3601, acc=1.10%]Training:  12%|█▏        | 181/1563 [13:15<16:46,  1.37it/s, loss=6.3601, acc=1.10%]Training:  12%|█▏        | 181/1563 [13:16<16:46,  1.37it/s, loss=6.1664, acc=1.10%]Training:  12%|█▏        | 182/1563 [13:16<14:28,  1.59it/s, loss=6.1664, acc=1.10%]Training:  12%|█▏        | 182/1563 [13:17<14:28,  1.59it/s, loss=5.9714, acc=1.09%]Training:  12%|█▏        | 183/1563 [13:17<21:50,  1.05it/s, loss=5.9714, acc=1.09%]Training:  12%|█▏        | 183/1563 [13:18<21:50,  1.05it/s, loss=5.7537, acc=1.10%]Training:  12%|█▏        | 184/1563 [13:18<22:03,  1.04it/s, loss=5.7537, acc=1.10%]Training:  12%|█▏        | 184/1563 [13:19<22:03,  1.04it/s, loss=6.0572, acc=1.11%]Training:  12%|█▏        | 185/1563 [13:19<19:44,  1.16it/s, loss=6.0572, acc=1.11%]Training:  12%|█▏        | 185/1563 [13:20<19:44,  1.16it/s, loss=5.6008, acc=1.12%]Training:  12%|█▏        | 186/1563 [13:20<20:18,  1.13it/s, loss=5.6008, acc=1.12%]Training:  12%|█▏        | 186/1563 [13:25<20:18,  1.13it/s, loss=5.8064, acc=1.11%]Training:  12%|█▏        | 187/1563 [13:25<46:12,  2.02s/it, loss=5.8064, acc=1.11%]Training:  12%|█▏        | 187/1563 [13:27<46:12,  2.02s/it, loss=5.7842, acc=1.11%]Training:  12%|█▏        | 188/1563 [13:27<50:55,  2.22s/it, loss=5.7842, acc=1.11%]

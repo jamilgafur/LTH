@@ -1,0 +1,418 @@
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
+  return torch._C._cuda_getDeviceCount() > 0
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='VGG16', dataset='Cifar10', epochs=3, pretrain=3, experiment='Dynamic_Region_All_Combined', JF=True, Kevin=False, quant=False)
+============================================================
+
+[INFO] Hardware detected: CPU (CUDA Available: False)
+Loading CIFAR-10 data...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+Loading CIFAR-10 data...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] Base checkpoint path resolved: None
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Dynamic_Region_All_Combined'
+============================================================
+
+[INFO] Validating JSON configuration map at: VGG16_Cifar10_epochs3_pretrain3_JF_discovered_regions.json
+[DEBUG] Loaded 4 configurations from map.
+[INFO] Discovered trained baseline from Stage 1: VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs3_pretrain3/checkpoints/final_JF_Control.pt
+[INFO] Overriding base checkpoint. Collapsing will begin from these trained weights.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Dynamic_Region_All_Combined ---
+    Budget allocated: 3 epochs
+
+=== Running JF experiment ===
+[•] Loading initial weights from VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs3_pretrain3/checkpoints/final_JF_Control.pt
+[•] Collapsing ranges [('features.conv_5', 'features.conv_10'), ('features.conv_12', 'features.conv_13')] for Dynamic_Region_All_Combined
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+features.conv_1.weight: 0/1728 zeros (0.00%)
+features.conv_1.bias: 0/64 zeros (0.00%)
+features.bn_1.weight: 0/64 zeros (0.00%)
+features.bn_1.bias: 0/64 zeros (0.00%)
+features.conv_2.weight: 0/36864 zeros (0.00%)
+features.conv_2.bias: 0/64 zeros (0.00%)
+features.bn_2.weight: 0/64 zeros (0.00%)
+features.bn_2.bias: 0/64 zeros (0.00%)
+features.conv_3.weight: 0/73728 zeros (0.00%)
+features.conv_3.bias: 0/128 zeros (0.00%)
+features.bn_3.weight: 0/128 zeros (0.00%)
+features.bn_3.bias: 0/128 zeros (0.00%)
+features.conv_4.weight: 0/147456 zeros (0.00%)
+features.conv_4.bias: 0/128 zeros (0.00%)
+features.bn_4.weight: 0/128 zeros (0.00%)
+features.bn_4.bias: 0/128 zeros (0.00%)
+features.conv_5.weight: 0/294912 zeros (0.00%)
+features.conv_5.bias: 0/256 zeros (0.00%)
+features.bn_5.weight: 0/256 zeros (0.00%)
+features.bn_5.bias: 0/256 zeros (0.00%)
+features.conv_6.weight: 0/589824 zeros (0.00%)
+features.conv_6.bias: 0/256 zeros (0.00%)
+features.bn_6.weight: 0/256 zeros (0.00%)
+features.bn_6.bias: 0/256 zeros (0.00%)
+features.conv_7.weight: 0/589824 zeros (0.00%)
+features.conv_7.bias: 0/256 zeros (0.00%)
+features.bn_7.weight: 0/256 zeros (0.00%)
+features.bn_7.bias: 0/256 zeros (0.00%)
+features.conv_8.weight: 0/1179648 zeros (0.00%)
+features.conv_8.bias: 0/512 zeros (0.00%)
+features.bn_8.weight: 0/512 zeros (0.00%)
+features.bn_8.bias: 0/512 zeros (0.00%)
+features.conv_9.weight: 0/2359296 zeros (0.00%)
+features.conv_9.bias: 0/512 zeros (0.00%)
+features.bn_9.weight: 0/512 zeros (0.00%)
+features.bn_9.bias: 0/512 zeros (0.00%)
+features.conv_10.weight: 0/2359296 zeros (0.00%)
+features.conv_10.bias: 0/512 zeros (0.00%)
+features.bn_10.weight: 0/512 zeros (0.00%)
+features.bn_10.bias: 0/512 zeros (0.00%)
+features.conv_11.weight: 0/2359296 zeros (0.00%)
+features.conv_11.bias: 0/512 zeros (0.00%)
+features.bn_11.weight: 0/512 zeros (0.00%)
+features.bn_11.bias: 0/512 zeros (0.00%)
+features.conv_12.weight: 0/2359296 zeros (0.00%)
+features.conv_12.bias: 0/512 zeros (0.00%)
+features.bn_12.weight: 0/512 zeros (0.00%)
+features.bn_12.bias: 0/512 zeros (0.00%)
+features.conv_13.weight: 0/2359296 zeros (0.00%)
+features.conv_13.bias: 0/512 zeros (0.00%)
+features.bn_13.weight: 0/512 zeros (0.00%)
+features.bn_13.bias: 0/512 zeros (0.00%)
+classifier.fc_1.weight: 0/2097152 zeros (0.00%)
+classifier.fc_1.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc1.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc1.bias: 0/4096 zeros (0.00%)
+classifier.fc_2.weight: 0/16777216 zeros (0.00%)
+classifier.fc_2.bias: 0/4096 zeros (0.00%)
+classifier.bn_fc2.weight: 0/4096 zeros (0.00%)
+classifier.bn_fc2.bias: 0/4096 zeros (0.00%)
+classifier.fc_3.weight: 0/40960 zeros (0.00%)
+classifier.fc_3.bias: 0/10 zeros (0.00%)
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 2 pairs.
+    [DEBUG] Added mapping: collapse_0 = (features.conv_5 → features.conv_10)
+    [DEBUG] Added mapping: collapse_1 = (features.conv_12 → features.conv_13)
+[DEBUG] Total collapse targets: 2
+    [BLOCK 0] features.conv_5 → features.conv_10
+    [BLOCK 1] features.conv_12 → features.conv_13
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': features.conv_5 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_5', 'features.conv_10')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_5
+[INFO] End Target   : features.conv_10
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 14 to 30
+[DEBUG] Captured Layers : 17 total
+    [LAYER MAP] conv_5 -> Conv2d
+    [LAYER MAP] bn_5 -> BatchNorm2d
+    [LAYER MAP] relu_5 -> ReLU
+    [LAYER MAP] conv_6 -> Conv2d
+    [LAYER MAP] bn_6 -> BatchNorm2d
+    [LAYER MAP] relu_6 -> ReLU
+    [LAYER MAP] conv_7 -> Conv2d
+    [LAYER MAP] bn_7 -> BatchNorm2d
+    [LAYER MAP] relu_7 -> ReLU
+    [LAYER MAP] pool_3 -> _SafePool
+    [LAYER MAP] conv_8 -> Conv2d
+    [LAYER MAP] bn_8 -> BatchNorm2d
+    [LAYER MAP] relu_8 -> ReLU
+    [LAYER MAP] conv_9 -> Conv2d
+    [LAYER MAP] bn_9 -> BatchNorm2d
+    [LAYER MAP] relu_9 -> ReLU
+    [LAYER MAP] conv_10 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_5'
+[DEBUG] Hooking End Node   : 'features.conv_10'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_10'...
+[DEBUG] Captured input shape: (512, 128, 8, 8), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 128, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_10'...
+[DEBUG] Exact layer match found at index 35: features.conv_10 (Conv2d)
+[DEBUG] Scanning forward from index 36 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[RESULT] Next Linear detected → name='classifier.fc_1', module=Linear(in_features=512, out_features=4096, bias=True)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'classifier.fc_1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (17 layers)...
+[DEBUG] Input tensor shape before block: (512, 128, 8, 8)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (512, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 512
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=16 (HxW=4x4)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(512, 512, 4, 4)
+         out_channels=512
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 512, 4, 4)
+    - out_channels             : 512
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 1))
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 512
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.conv_5'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 14 -> 30
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 128 (in) -> 512 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=128, out=256)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module:
+        - conv_1x1: Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 33,663,050
+[INFO] Post-collapse : 26,350,922
+[INFO] Net Change    : -7,312,128
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 512, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'classifier.fc_1'
+[DEBUG] [POOL] Entering shape: (512, 512) | Flat size: 512
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=14, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 14: 'conv_5'
+[STEP] Validating inserted module 'Sequential' at index 14...
+[DEBUG] Inserted module forward successful, output shape: (512, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'features.bn_5' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_5' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_3' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_4' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (512, 512, 1, 1)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.conv_5'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.conv_5' → 'features.conv_10'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_5 → features.conv_10)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 10 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_1': features.conv_12 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_12', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_12
+[INFO] End Target   : features.conv_13
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_12' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 37 to 40
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv_12 -> Conv2d
+    [LAYER MAP] bn_12 -> BatchNorm2d
+    [LAYER MAP] relu_12 -> ReLU
+    [LAYER MAP] conv_13 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_12'
+[DEBUG] Hooking End Node   : 'features.conv_13'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_12' -> 'features.conv_13'...
+[DEBUG] Captured input shape: (512, 512, 2, 2), output shape: (512, 512, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 512, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 26,350,922
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_13'...
+[DEBUG] Exact layer match found at index 49: features.conv_13 (Conv2d)
+[DEBUG] Scanning forward from index 50 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[RESULT] Next Linear detected → name='classifier.fc_1', module=Linear(in_features=512, out_features=4096, bias=True)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'classifier.fc_1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 512, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 512, 2, 2)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (512, 512, 2, 2)
+[DEBUG] Determined out_channels=512
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 512
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(512, 512, 2, 2)
+         out_channels=512
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 512, 2, 2)
+    - out_channels             : 512
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 1))
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 512
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.conv_12'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 37 -> 40
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 512 (in) -> 512 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=512, out=512)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module:
+        - conv_1x1: Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 26,350,922
+[INFO] Post-collapse : 21,893,450
+[INFO] Net Change    : -4,457,472
+[ERROR] Replacement forward validation failed!
+       Exception: Given groups=1, weight of size [512, 128, 1, 1], expected input[512, 512, 2, 2] to have 128 channels, but got 512 channels instead
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'classifier.fc_1'
+[DEBUG] [POOL] Entering shape: (512, 512) | Flat size: 512
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=37, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 14: 'conv_5'
+[STEP] Validating inserted module 'Sequential' at index 14...
+[WARN] Forward pass through inserted module failed: Given groups=1, weight of size [512, 128, 1, 1], expected input[512, 512, 2, 2] to have 128 channels, but got 512 channels instead
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.conv_12'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 21,893,450
+[INFO] ΔParams = +11,769,600 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 2
+[•] Starting experiment 'Dynamic_Region_All_Combined' in workflow 'JF' | Epoch Target: 3
+[•] No intermediate checkpoint found — starting fresh
+[•] Epoch 0
+Training:   0%|          | 0/98 [00:00<?, ?it/s]Training:   0%|          | 0/98 [00:10<?, ?it/s, loss=3.1944, acc=16.21%]Training:   1%|          | 1/98 [00:10<16:42, 10.34s/it, loss=3.1944, acc=16.21%]Training:   1%|          | 1/98 [00:18<16:42, 10.34s/it, loss=2.3506, acc=20.80%]Training:   2%|▏         | 2/98 [00:18<14:05,  8.81s/it, loss=2.3506, acc=20.80%]Training:   2%|▏         | 2/98 [00:25<14:05,  8.81s/it, loss=1.9499, acc=23.70%]Training:   3%|▎         | 3/98 [00:25<13:13,  8.35s/it, loss=1.9499, acc=23.70%]Training:   3%|▎         | 3/98 [00:33<13:13,  8.35s/it, loss=1.9062, acc=25.39%]Training:   4%|▍         | 4/98 [00:33<12:42,  8.11s/it, loss=1.9062, acc=25.39%]Training:   4%|▍         | 4/98 [00:41<12:42,  8.11s/it, loss=1.7404, acc=26.72%]Training:   5%|▌         | 5/98 [00:41<12:22,  7.98s/it, loss=1.7404, acc=26.72%]Training:   5%|▌         | 5/98 [00:49<12:22,  7.98s/it, loss=1.8013, acc=27.93%]Training:   6%|▌         | 6/98 [00:49<12:08,  7.91s/it, loss=1.8013, acc=27.93%]Training:   6%|▌         | 6/98 [00:56<12:08,  7.91s/it, loss=1.6274, acc=29.69%]Training:   7%|▋         | 7/98 [00:56<11:55,  7.87s/it, loss=1.6274, acc=29.69%]Training:   7%|▋         | 7/98 [01:04<11:55,  7.87s/it, loss=1.6274, acc=30.81%]Training:   8%|▊         | 8/98 [01:04<11:52,  7.92s/it, loss=1.6274, acc=30.81%]Training:   8%|▊         | 8/98 [01:12<11:52,  7.92s/it, loss=1.4911, acc=32.27%]Training:   9%|▉         | 9/98 [01:12<11:40,  7.87s/it, loss=1.4911, acc=32.27%]Training:   9%|▉         | 9/98 [01:20<11:40,  7.87s/it, loss=1.5779, acc=33.24%]Training:  10%|█         | 10/98 [01:20<11:29,  7.84s/it, loss=1.5779, acc=33.24%]Training:  10%|█         | 10/98 [01:28<11:29,  7.84s/it, loss=1.5733, acc=34.11%]Training:  11%|█         | 11/98 [01:28<11:20,  7.82s/it, loss=1.5733, acc=34.11%]Training:  11%|█         | 11/98 [01:35<11:20,  7.82s/it, loss=1.4219, acc=35.21%]Training:  12%|█▏        | 12/98 [01:36<11:10,  7.80s/it, loss=1.4219, acc=35.21%]Training:  12%|█▏        | 12/98 [01:43<11:10,  7.80s/it, loss=1.5376, acc=35.94%]Training:  13%|█▎        | 13/98 [01:43<11:02,  7.79s/it, loss=1.5376, acc=35.94%]Training:  13%|█▎        | 13/98 [01:51<11:02,  7.79s/it, loss=1.4762, acc=36.64%]Training:  14%|█▍        | 14/98 [01:51<10:54,  7.79s/it, loss=1.4762, acc=36.64%]Training:  14%|█▍        | 14/98 [01:59<10:54,  7.79s/it, loss=1.4551, acc=37.11%]Training:  15%|█▌        | 15/98 [01:59<10:46,  7.78s/it, loss=1.4551, acc=37.11%]Training:  15%|█▌        | 15/98 [02:07<10:46,  7.78s/it, loss=1.3490, acc=37.77%]Training:  16%|█▋        | 16/98 [02:07<10:38,  7.79s/it, loss=1.3490, acc=37.77%]Training:  16%|█▋        | 16/98 [02:14<10:38,  7.79s/it, loss=1.3848, acc=38.50%]Training:  17%|█▋        | 17/98 [02:14<10:29,  7.77s/it, loss=1.3848, acc=38.50%]Training:  17%|█▋        | 17/98 [02:22<10:29,  7.77s/it, loss=1.3524, acc=39.06%]Training:  18%|█▊        | 18/98 [02:22<10:22,  7.78s/it, loss=1.3524, acc=39.06%]Training:  18%|█▊        | 18/98 [02:30<10:22,  7.78s/it, loss=1.4296, acc=39.54%]Training:  19%|█▉        | 19/98 [02:30<10:14,  7.78s/it, loss=1.4296, acc=39.54%]Training:  19%|█▉        | 19/98 [02:38<10:14,  7.78s/it, loss=1.3351, acc=40.12%]Training:  20%|██        | 20/98 [02:38<10:09,  7.82s/it, loss=1.3351, acc=40.12%]Training:  20%|██        | 20/98 [02:46<10:09,  7.82s/it, loss=1.3739, acc=40.64%]Training:  21%|██▏       | 21/98 [02:46<10:02,  7.83s/it, loss=1.3739, acc=40.64%]Training:  21%|██▏       | 21/98 [02:54<10:02,  7.83s/it, loss=1.3949, acc=40.95%]Training:  22%|██▏       | 22/98 [02:54<09:56,  7.85s/it, loss=1.3949, acc=40.95%]Training:  22%|██▏       | 22/98 [03:01<09:56,  7.85s/it, loss=1.3252, acc=41.39%]Training:  23%|██▎       | 23/98 [03:01<09:49,  7.86s/it, loss=1.3252, acc=41.39%]Training:  23%|██▎       | 23/98 [03:09<09:49,  7.86s/it, loss=1.2874, acc=41.79%]Training:  24%|██▍       | 24/98 [03:09<09:41,  7.86s/it, loss=1.2874, acc=41.79%]Training:  24%|██▍       | 24/98 [03:17<09:41,  7.86s/it, loss=1.3120, acc=42.26%]Training:  26%|██▌       | 25/98 [03:17<09:34,  7.86s/it, loss=1.3120, acc=42.26%]Training:  26%|██▌       | 25/98 [03:25<09:34,  7.86s/it, loss=1.3961, acc=42.52%]Training:  27%|██▋       | 26/98 [03:25<09:30,  7.92s/it, loss=1.3961, acc=42.52%]Training:  27%|██▋       | 26/98 [03:33<09:30,  7.92s/it, loss=1.2602, acc=43.01%]Training:  28%|██▊       | 27/98 [03:33<09:18,  7.87s/it, loss=1.2602, acc=43.01%]Training:  28%|██▊       | 27/98 [03:41<09:18,  7.87s/it, loss=1.2825, acc=43.37%]Training:  29%|██▊       | 28/98 [03:41<09:07,  7.83s/it, loss=1.2825, acc=43.37%]Training:  29%|██▊       | 28/98 [03:49<09:07,  7.83s/it, loss=1.1849, acc=43.88%]Training:  30%|██▉       | 29/98 [03:49<08:59,  7.81s/it, loss=1.1849, acc=43.88%]Training:  30%|██▉       | 29/98 [03:56<08:59,  7.81s/it, loss=1.3153, acc=44.12%]Training:  31%|███       | 30/98 [03:56<08:49,  7.79s/it, loss=1.3153, acc=44.12%]Training:  31%|███       | 30/98 [04:04<08:49,  7.79s/it, loss=1.2397, acc=44.51%]Training:  32%|███▏      | 31/98 [04:04<08:44,  7.83s/it, loss=1.2397, acc=44.51%]Training:  32%|███▏      | 31/98 [04:12<08:44,  7.83s/it, loss=1.2304, acc=44.83%]Training:  33%|███▎      | 32/98 [04:12<08:37,  7.84s/it, loss=1.2304, acc=44.83%]Training:  33%|███▎      | 32/98 [04:20<08:37,  7.84s/it, loss=1.1505, acc=45.16%]Training:  34%|███▎      | 33/98 [04:21<08:49,  8.14s/it, loss=1.1505, acc=45.16%]Training:  34%|███▎      | 33/98 [04:29<08:49,  8.14s/it, loss=1.2869, acc=45.42%]Training:  35%|███▍      | 34/98 [04:29<08:32,  8.01s/it, loss=1.2869, acc=45.42%]Training:  35%|███▍      | 34/98 [04:36<08:32,  8.01s/it, loss=1.1656, acc=45.67%]Training:  36%|███▌      | 35/98 [04:36<08:19,  7.94s/it, loss=1.1656, acc=45.67%]Training:  36%|███▌      | 35/98 [04:44<08:19,  7.94s/it, loss=1.2167, acc=45.91%]Training:  37%|███▋      | 36/98 [04:44<08:09,  7.89s/it, loss=1.2167, acc=45.91%]Training:  37%|███▋      | 36/98 [04:52<08:09,  7.89s/it, loss=1.2289, acc=46.21%]Training:  38%|███▊      | 37/98 [04:52<07:59,  7.86s/it, loss=1.2289, acc=46.21%]Training:  38%|███▊      | 37/98 [05:00<07:59,  7.86s/it, loss=1.1410, acc=46.49%]Training:  39%|███▉      | 38/98 [05:00<07:50,  7.84s/it, loss=1.1410, acc=46.49%]Training:  39%|███▉      | 38/98 [05:08<07:50,  7.84s/it, loss=1.0660, acc=46.82%]Training:  40%|███▉      | 39/98 [05:08<07:41,  7.82s/it, loss=1.0660, acc=46.82%]Training:  40%|███▉      | 39/98 [05:15<07:41,  7.82s/it, loss=1.1105, acc=47.09%]Training:  41%|████      | 40/98 [05:24<09:58, 10.32s/it, loss=1.1105, acc=47.09%]Training:  41%|████      | 40/98 [05:32<09:58, 10.32s/it, loss=1.1983, acc=47.34%]Training:  42%|████▏     | 41/98 [05:32<09:09,  9.63s/it, loss=1.1983, acc=47.34%]Training:  42%|████▏     | 41/98 [05:40<09:09,  9.63s/it, loss=1.1273, acc=47.66%]Training:  43%|████▎     | 42/98 [05:40<08:29,  9.10s/it, loss=1.1273, acc=47.66%]Training:  43%|████▎     | 42/98 [05:47<08:29,  9.10s/it, loss=1.0937, acc=47.92%]Training:  44%|████▍     | 43/98 [05:47<07:59,  8.72s/it, loss=1.0937, acc=47.92%]Training:  44%|████▍     | 43/98 [05:55<07:59,  8.72s/it, loss=1.0107, acc=48.23%]Training:  45%|████▍     | 44/98 [05:55<07:36,  8.46s/it, loss=1.0107, acc=48.23%]Training:  45%|████▍     | 44/98 [06:03<07:36,  8.46s/it, loss=1.0910, acc=48.50%]Training:  46%|████▌     | 45/98 [06:03<07:18,  8.28s/it, loss=1.0910, acc=48.50%]Training:  46%|████▌     | 45/98 [06:11<07:18,  8.28s/it, loss=1.1608, acc=48.77%]Training:  47%|████▋     | 46/98 [06:11<07:02,  8.13s/it, loss=1.1608, acc=48.77%]Training:  47%|████▋     | 46/98 [06:19<07:02,  8.13s/it, loss=1.1291, acc=49.02%]Training:  48%|████▊     | 47/98 [06:19<06:49,  8.04s/it, loss=1.1291, acc=49.02%]Training:  48%|████▊     | 47/98 [06:27<06:49,  8.04s/it, loss=1.0771, acc=49.32%]Training:  49%|████▉     | 48/98 [06:27<06:39,  7.98s/it, loss=1.0771, acc=49.32%]Training:  49%|████▉     | 48/98 [06:34<06:39,  7.98s/it, loss=1.1000, acc=49.59%]Training:  50%|█████     | 49/98 [06:34<06:29,  7.94s/it, loss=1.1000, acc=49.59%]Training:  50%|█████     | 49/98 [06:42<06:29,  7.94s/it, loss=1.1136, acc=49.82%]Training:  51%|█████     | 50/98 [06:42<06:19,  7.90s/it, loss=1.1136, acc=49.82%]Training:  51%|█████     | 50/98 [06:50<06:19,  7.90s/it, loss=1.1848, acc=49.98%]Training:  52%|█████▏    | 51/98 [06:55<07:18,  9.33s/it, loss=1.1848, acc=49.98%]Training:  52%|█████▏    | 51/98 [07:03<07:18,  9.33s/it, loss=1.0806, acc=50.23%]Training:  53%|█████▎    | 52/98 [07:03<06:48,  8.88s/it, loss=1.0806, acc=50.23%]Training:  53%|█████▎    | 52/98 [07:11<06:48,  8.88s/it, loss=1.2029, acc=50.35%]Training:  54%|█████▍    | 53/98 [07:11<06:26,  8.58s/it, loss=1.2029, acc=50.35%]Training:  54%|█████▍    | 53/98 [07:18<06:26,  8.58s/it, loss=1.1032, acc=50.57%]Training:  55%|█████▌    | 54/98 [07:26<07:47, 10.63s/it, loss=1.1032, acc=50.57%]Training:  55%|█████▌    | 54/98 [07:34<07:47, 10.63s/it, loss=1.0885, acc=50.75%]Training:  56%|█████▌    | 55/98 [07:36<07:28, 10.43s/it, loss=1.0885, acc=50.75%]Training:  56%|█████▌    | 55/98 [07:44<07:28, 10.43s/it, loss=1.1434, acc=50.85%]Training:  57%|█████▋    | 56/98 [07:44<06:44,  9.64s/it, loss=1.1434, acc=50.85%]Training:  57%|█████▋    | 56/98 [07:52<06:44,  9.64s/it, loss=1.1471, acc=51.01%]Training:  58%|█████▊    | 57/98 [07:54<06:46,  9.92s/it, loss=1.1471, acc=51.01%]Training:  58%|█████▊    | 57/98 [08:02<06:46,  9.92s/it, loss=1.1423, acc=51.16%]Training:  59%|█████▉    | 58/98 [08:05<06:49, 10.23s/it, loss=1.1423, acc=51.16%]Training:  59%|█████▉    | 58/98 [08:13<06:49, 10.23s/it, loss=1.0944, acc=51.34%]Training:  60%|██████    | 59/98 [08:13<06:12,  9.54s/it, loss=1.0944, acc=51.34%]Training:  60%|██████    | 59/98 [08:21<06:12,  9.54s/it, loss=1.0259, acc=51.56%]Training:  61%|██████    | 60/98 [08:21<05:44,  9.07s/it, loss=1.0259, acc=51.56%]Training:  61%|██████    | 60/98 [08:29<05:44,  9.07s/it, loss=1.0730, acc=51.69%]Training:  62%|██████▏   | 61/98 [08:29<05:24,  8.76s/it, loss=1.0730, acc=51.69%]Training:  62%|██████▏   | 61/98 [08:37<05:24,  8.76s/it, loss=1.1183, acc=51.85%]Training:  63%|██████▎   | 62/98 [08:37<05:05,  8.48s/it, loss=1.1183, acc=51.85%]Training:  63%|██████▎   | 62/98 [08:45<05:05,  8.48s/it, loss=1.0964, acc=52.02%]Training:  64%|██████▍   | 63/98 [08:45<04:50,  8.29s/it, loss=1.0964, acc=52.02%]Training:  64%|██████▍   | 63/98 [08:53<04:50,  8.29s/it, loss=1.1449, acc=52.15%]Training:  65%|██████▌   | 64/98 [08:53<04:36,  8.12s/it, loss=1.1449, acc=52.15%]Training:  65%|██████▌   | 64/98 [09:00<04:36,  8.12s/it, loss=1.0346, acc=52.33%]Training:  66%|██████▋   | 65/98 [09:01<04:33,  8.29s/it, loss=1.0346, acc=52.33%]Training:  66%|██████▋   | 65/98 [09:09<04:33,  8.29s/it, loss=1.0488, acc=52.47%]Training:  67%|██████▋   | 66/98 [09:09<04:19,  8.11s/it, loss=1.0488, acc=52.47%]Training:  67%|██████▋   | 66/98 [09:17<04:19,  8.11s/it, loss=1.0168, acc=52.64%]Training:  68%|██████▊   | 67/98 [09:17<04:09,  8.05s/it, loss=1.0168, acc=52.64%]Training:  68%|██████▊   | 67/98 [09:25<04:09,  8.05s/it, loss=1.0779, acc=52.83%]Training:  69%|██████▉   | 68/98 [09:25<04:00,  8.00s/it, loss=1.0779, acc=52.83%]Training:  69%|██████▉   | 68/98 [09:33<04:00,  8.00s/it, loss=0.9907, acc=52.99%]Training:  70%|███████   | 69/98 [09:33<03:50,  7.96s/it, loss=0.9907, acc=52.99%]Training:  70%|███████   | 69/98 [09:41<03:50,  7.96s/it, loss=1.0264, acc=53.15%]Training:  71%|███████▏  | 70/98 [09:41<03:42,  7.94s/it, loss=1.0264, acc=53.15%]Training:  71%|███████▏  | 70/98 [09:48<03:42,  7.94s/it, loss=1.0822, acc=53.25%]Training:  72%|███████▏  | 71/98 [09:48<03:34,  7.93s/it, loss=1.0822, acc=53.25%]Training:  72%|███████▏  | 71/98 [09:56<03:34,  7.93s/it, loss=0.9743, acc=53.42%]Training:  73%|███████▎  | 72/98 [09:56<03:25,  7.91s/it, loss=0.9743, acc=53.42%]Training:  73%|███████▎  | 72/98 [10:04<03:25,  7.91s/it, loss=1.0458, acc=53.51%]Training:  74%|███████▍  | 73/98 [10:04<03:17,  7.90s/it, loss=1.0458, acc=53.51%]Training:  74%|███████▍  | 73/98 [10:12<03:17,  7.90s/it, loss=1.0217, acc=53.66%]Training:  76%|███████▌  | 74/98 [10:12<03:09,  7.89s/it, loss=1.0217, acc=53.66%]Training:  76%|███████▌  | 74/98 [10:20<03:09,  7.89s/it, loss=0.9800, acc=53.82%]Training:  77%|███████▋  | 75/98 [10:20<03:01,  7.89s/it, loss=0.9800, acc=53.82%]Training:  77%|███████▋  | 75/98 [10:28<03:01,  7.89s/it, loss=0.8692, acc=54.03%]Training:  78%|███████▊  | 76/98 [10:28<02:53,  7.86s/it, loss=0.8692, acc=54.03%]Training:  78%|███████▊  | 76/98 [10:36<02:53,  7.86s/it, loss=1.0593, acc=54.18%]Training:  79%|███████▊  | 77/98 [10:37<02:54,  8.30s/it, loss=1.0593, acc=54.18%]Training:  79%|███████▊  | 77/98 [10:45<02:54,  8.30s/it, loss=1.0321, acc=54.29%]Training:  80%|███████▉  | 78/98 [10:45<02:43,  8.19s/it, loss=1.0321, acc=54.29%]Training:  80%|███████▉  | 78/98 [10:53<02:43,  8.19s/it, loss=1.0242, acc=54.43%]Training:  81%|████████  | 79/98 [10:53<02:34,  8.11s/it, loss=1.0242, acc=54.43%]Training:  81%|████████  | 79/98 [11:01<02:34,  8.11s/it, loss=0.9991, acc=54.57%]Training:  82%|████████▏ | 80/98 [11:01<02:24,  8.04s/it, loss=0.9991, acc=54.57%]Training:  82%|████████▏ | 80/98 [11:09<02:24,  8.04s/it, loss=1.0631, acc=54.64%]Training:  83%|████████▎ | 81/98 [11:09<02:15,  7.99s/it, loss=1.0631, acc=54.64%]Training:  83%|████████▎ | 81/98 [11:17<02:15,  7.99s/it, loss=0.9999, acc=54.76%]Training:  84%|████████▎ | 82/98 [11:17<02:07,  7.95s/it, loss=0.9999, acc=54.76%]Training:  84%|████████▎ | 82/98 [11:24<02:07,  7.95s/it, loss=0.8756, acc=54.90%]Training:  85%|████████▍ | 83/98 [11:24<01:59,  7.94s/it, loss=0.8756, acc=54.90%]Training:  85%|████████▍ | 83/98 [11:32<01:59,  7.94s/it, loss=1.0213, acc=54.98%]Training:  86%|████████▌ | 84/98 [11:32<01:50,  7.92s/it, loss=1.0213, acc=54.98%]Training:  86%|████████▌ | 84/98 [11:40<01:50,  7.92s/it, loss=1.0589, acc=55.08%]Training:  87%|████████▋ | 85/98 [11:40<01:42,  7.90s/it, loss=1.0589, acc=55.08%]Training:  87%|████████▋ | 85/98 [11:48<01:42,  7.90s/it, loss=0.9122, acc=55.23%]Training:  88%|████████▊ | 86/98 [11:48<01:34,  7.89s/it, loss=0.9122, acc=55.23%]Training:  88%|████████▊ | 86/98 [11:56<01:34,  7.89s/it, loss=1.0072, acc=55.31%]Training:  89%|████████▉ | 87/98 [11:56<01:26,  7.88s/it, loss=1.0072, acc=55.31%]Training:  89%|████████▉ | 87/98 [12:04<01:26,  7.88s/it, loss=0.9733, acc=55.44%]Training:  90%|████████▉ | 88/98 [12:04<01:18,  7.87s/it, loss=0.9733, acc=55.44%]
