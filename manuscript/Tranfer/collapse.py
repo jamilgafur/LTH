@@ -971,216 +971,165 @@ def _validate_downstream(
 # -----------------------------------------------------------------------------
 # Top-level multi-block collapse function (flexible API)
 # -----------------------------------------------------------------------------
-
 def collapse_only(
-    model=None,
-    model_weights_1=None,
-    compression_set=None,
-    model_class=None,
-    model_kwargs=None,
-    input_shape=(1, 3, 32, 32),
-    device='cpu',
-    safe_param_reduction=True,
-    handle_skips=True,
-    debug=True,
-    dry_run=False
-):
-
+    model: Optional[nn.Module] = None,
+    model_weights_1: Optional[str] = None,
+    compression_set: Optional[Sequence[Tuple[str, str]]] = None,
+    model_class: Optional[type] = None,
+    model_kwargs: Optional[Dict[str, Any]] = None,
+    input_shape: Tuple[int, ...] = (1, 3, 32, 32),
+    device: str = 'cpu',
+    safe_param_reduction: bool = True,
+    handle_skips: bool = True,
+    debug: bool = True,
+    dry_run: bool = False
+) -> nn.Module:
+    """
+    Top-level API to collapse multiple blocks with the simple replacement policy.
+    """
     print(f"\n[STEP] ===== Starting collapse_only process =====")
+    print(f"[DEBUG] Device={device}, dry_run={dry_run}, handle_skips={handle_skips}, safe_param_reduction={safe_param_reduction}")
 
+    # Load or use provided model
     if model is None:
-        model = model_class(**(model_kwargs or {}))
-        if model_weights_1:
-            model.load_state_dict(torch.load(model_weights_1, map_location=device))
+        print(f"[STEP] Loading model from disk...")
+        if not (model_weights_1 and model_class):
+            raise ValueError("[ERROR] Must provide either an instantiated `model` or (`model_weights_1` + `model_class`).")
 
-    model = model.to(device).eval()
-
-    if handle_skips:
-        patch_skip_connections(model)
-
-    disable_inplace_relu(model)
-
-    # -------------------------------
-    # PARAM ESTIMATION
-    # -------------------------------
-    def estimate_block_params(layers):
-        total = 0
-        eqs = []
-        for l in layers:
-            if isinstance(l, nn.Conv2d):
-                k = l.kernel_size[0]
-                val = l.in_channels * l.out_channels * (k * k)
-                eqs.append(f"{l.in_channels}×{l.out_channels}×{k}²={val}")
-                total += val
-        return total, " + ".join(eqs)
-
-    # -------------------------------
-    # RANK SELECTION
-    # -------------------------------
-    def choose_rank(Cin, Cout):
-        r = min(Cin, Cout)
-        r = min(r // 4, 64)
-        return max(1, r)
-
-    # -------------------------------
-    # PROCESS BLOCKS
-    # -------------------------------
-    for (start_layer, end_layer) in compression_set:
-
-        print("\n" + "="*80)
-        print(f"[TARGET] Collapse block: {start_layer} → {end_layer}")
-        print("="*80)
-
-        container_path, _ = _get_container_and_subname(start_layer)
-        container = get_layer(model, container_path) if container_path else model
-        named_layers = list(container.named_children())
-
-        start_idx, end_idx = None, None
-        for i, (name, _) in enumerate(named_layers):
-            full_name = f"{container_path}.{name}" if container_path else name
-            if full_name == start_layer:
-                start_idx = i
-            if full_name == end_layer:
-                end_idx = i
-
-        if start_idx is None or end_idx is None:
-            print("[WARN] Could not locate block — skipping")
-            continue
-
-        block = [mod for _, mod in named_layers[start_idx:end_idx+1]]
-
-        first_conv = next((l for l in block if isinstance(l, nn.Conv2d)), None)
-        last_conv = next((l for l in reversed(block) if isinstance(l, nn.Conv2d)), None)
-
-        if first_conv is None or last_conv is None:
-            print("[WARN] No valid conv structure — skipping")
-            continue
-
-        Cin = first_conv.in_channels
-        Cout = last_conv.out_channels
-
-        # -------------------------------
-        # ORIGINAL PARAMS
-        # -------------------------------
-        original_params, original_eq = estimate_block_params(block)
-
-        # -------------------------------
-        # FULL COLLAPSE
-        # -------------------------------
-        full_params = Cin * Cout
-        full_eq = f"{Cin} × {Cout} = {full_params:,}"
-
-        # -------------------------------
-        # LOW-RANK COLLAPSE
-        # -------------------------------
-        r = choose_rank(Cin, Cout)
-        low_rank_params = Cin * r + r * Cout
-        low_rank_eq = f"{Cin}×{r} + {r}×{Cout} = {Cin*r:,} + {r*Cout:,} = {low_rank_params:,}"
-
-        # -------------------------------
-        # SURROGATE ANALYSIS (🔥 NEW)
-        # -------------------------------
-        expansion_ratio = Cout / Cin
-        compression_ratio = original_params / full_params if full_params > 0 else 0
-        break_even_r = int((Cin * Cout) / (Cin + Cout)) if (Cin + Cout) > 0 else 1
-
-        print(f"[SHAPE] Cin={Cin}, Cout={Cout}")
-        print(f"[STRUCTURE] Expansion ratio (Cout/Cin) = {expansion_ratio:.3f}")
-        print()
-
-        print("[ORIGINAL BLOCK]")
-        print(f"Equation: {original_eq}")
-        print(f"Total params: {original_params:,}")
-        print()
-
-        print("[FULL COLLAPSE]")
-        print(f"Equation: {full_eq}")
-        print(f"Params: {full_params:,}")
-        print(f"Δ vs Original: {original_params - full_params:,}")
-        print()
-
-        print("[LOW-RANK COLLAPSE]")
-        print(f"Rank r = {r}")
-        print(f"Equation: {low_rank_eq}")
-        print(f"Params: {low_rank_params:,}")
-        print(f"Δ vs Original: {original_params - low_rank_params:,}")
-        print(f"Δ vs Full: {full_params - low_rank_params:,}")
-        print()
-
-        print("[THEORETICAL ANALYSIS]")
-        print(f"Break-even rank (FULL vs LOW-RANK): r* ≈ {break_even_r}")
-        print(f"Compression ratio (orig/full): {compression_ratio:.3f}")
-        print()
-
-        # -------------------------------
-        # DECISION
-        # -------------------------------
-        if full_params < original_params:
-            decision = "FULL"
-            classification = "COMPRESSIVE ✅"
-        elif low_rank_params < original_params:
-            decision = "LOW_RANK"
-            classification = "LOW-RANK COMPRESSIVE ✅"
-        elif low_rank_params < full_params:
-            decision = "LOW_RANK"
-            classification = "LOW-RANK EXPANSIVE ⚠️"
-        else:
-            decision = "SKIP"
-            classification = "DANGEROUS ❌"
-
-        print(f"[DECISION] {decision}")
-        print(f"[CLASSIFICATION] {classification}")
-
-        if decision == "SKIP":
-            print("[ACTION] Skipping block — no safe collapse possible")
-            continue
-
-        # -------------------------------
-        # BUILD REPLACEMENT
-        # -------------------------------
-        if decision == "FULL":
-            replacement = nn.Conv2d(Cin, Cout, kernel_size=1, bias=False)
-        else:
-            replacement = nn.Sequential(
-                nn.Conv2d(Cin, r, kernel_size=1, bias=False),
-                nn.ReLU(inplace=False),
-                nn.Conv2d(r, Cout, kernel_size=1, bias=False)
-            )
-
-        # -------------------------------
-        # APPLY
-        # -------------------------------
-        new_container = _replace_layers(
-            named_layers,
-            start_idx,
-            end_idx,
-            replacement,
-            start_layer,
-            end_layer,
-            container=container
-        )
-
-        if container_path:
-            _update_container(model, container_path, new_container)
-        else:
-            model = new_container
-
-        # -------------------------------
-        # VALIDATION
-        # -------------------------------
+        model_kwargs = model_kwargs or {}
+        print(f"[INFO] Instantiating model from class '{model_class.__name__}' with kwargs={model_kwargs}")
         try:
-            dummy = torch.randn(input_shape).to(device)
-            with torch.no_grad():
-                model(dummy)
-
-            print("[VERIFY] Forward pass ✅ SUCCESS")
-
+            model = model_class(**model_kwargs)
         except Exception as e:
-            print(f"[FAIL] Forward pass ❌: {e}")
-            print("[ACTION] Reverting block")
+            raise RuntimeError(f"[ERROR] Failed to instantiate model class {model_class}: {e}")
 
+        print(f"[INFO] Loading weights from file: {model_weights_1}")
+        try:
+            chk = torch.load(model_weights_1, map_location=device)
+            state = chk.get('model', chk) if isinstance(chk, dict) else chk
+            model.load_state_dict(state)
+            print(f"[INFO] Weights successfully loaded.")
+        except Exception as e:
+            raise RuntimeError(f"[ERROR] Failed to load model weights: {e}")
+    else:
+        print(f"[STEP] Using provided in-memory model instance ({model.__class__.__name__})")
+
+    # Inspect model
+    if debug:
+        try:
+            print(f"[DEBUG] Model layer statistics before collapse:\n{layer_stats(model)}")
+        except Exception as e:
+            print(f"[WARN] layer_stats() failed: {e}")
+
+    # Make a deep copy to avoid modifying the original model
+    print(f"[STEP] Creating deepcopy of model for safe modification...")
+    model = deepcopy(model).to(device)
+    model.eval()
+
+    # Normalize compression_set
+    print(f"[STEP] Parsing compression set...")
+    if compression_set is None:
+        print("[WARN] compression_set is None or empty; skipping collapse.")
+        return model
+
+    collapse_map = {}
+    if isinstance(compression_set, dict):
+        if debug:
+            print(f"[DEBUG] Detected compression_set as dict with {len(compression_set)} entries.")
+        for k, v in compression_set.items():
+            start, end = v
+            if isinstance(start, tuple):
+                start = start[0]
+            if isinstance(end, tuple):
+                end = end[0]
+            collapse_map[k] = (start, end)
+            if debug:
+                print(f"    [DEBUG] Added mapping: {k} = ({start} → {end})")
+    else:
+        if debug:
+            print(f"[DEBUG] Detected compression_set as sequence with {len(compression_set)} pairs.")
+        for i, pair in enumerate(compression_set):
+            start, end = pair
+            if isinstance(start, tuple):
+                start = start[0]
+            if isinstance(end, tuple):
+                end = end[0]
+            collapse_map[f"collapse_{i}"] = (start, end)
+            if debug:
+                print(f"    [DEBUG] Added mapping: collapse_{i} = ({start} → {end})")
+
+    # Store collapsed blocks for reference
+    model._collapsed_blocks = list(collapse_map.values())
+    if debug:
+        print(f"[DEBUG] Total collapse targets: {len(model._collapsed_blocks)}")
+        for idx, (s, e) in enumerate(model._collapsed_blocks):
+            print(f"    [BLOCK {idx}] {s} → {e}")
+
+    # Track parameters
+    pre_total = count_trainable_params(model)
+    print(f"[INFO] Model parameter count before collapsing: {pre_total:,}")
+
+    # Process each block in sequence
+    print(f"[STEP] Beginning block-wise collapsing...")
+    for name, (start, end) in collapse_map.items():
+        print(f"\n[INFO] Processing collapse task '{name}': {start} → {end}")
+        if dry_run:
+            print("[INFO] dry_run enabled; skipping actual modification for this block.")
+            continue
+
+        try:
+            print(f"[STEP] Calling _collapse_block('{start}', '{end}')")
+            model = _collapse_block(model, start, end, input_shape, device=device, debug=debug)
+            print(f"[INFO] ✅ Successfully collapsed block '{name}' ({start} → {end})")
+        except Exception as e:
+            print(f"[WARN] ⚠ Collapse failed for block '{name}': {e}")
+               
+
+        if handle_skips:
+            print(f"[STEP] Patching skip connections (if any)...")
+            try:
+                patch_skip_connections(model)
+                if debug:
+                    print(f"[DEBUG] Skip connections patched successfully.")
+            except Exception as e:
+                print(f"[WARN] Failed to patch skip connections: {e}")
+
+        print(f"[STEP] Disabling in-place ReLUs for autograd safety...")
+        try:
+            disable_inplace_relu(model)
+            if debug:
+                print(f"[DEBUG] In-place ReLUs converted to out-of-place versions.")
+        except Exception as e:
+            print(f"[WARN] Failed to disable in-place ReLUs: {e}")
+
+    # Safe wrapping of pooling layers
+    print(f"\n[STEP] Wrapping pooling layers safely...")
+    try:
+        _wrap_pools_safe(model)
+        if debug:
+            print("[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.")
+    except Exception as e:
+        print(f"[WARN] Failed to wrap pools safely: {e}")
+
+    # Post-collapse summary
+    post_total = count_trainable_params(model)
+    print(f"\n[STEP] ===== Collapse summary =====")
+    print(f"[INFO] Parameters before: {pre_total:,}")
+    print(f"[INFO] Parameters after : {post_total:,}")
+    delta = pre_total - post_total
+    print(f"[INFO] ΔParams = {delta:+,} (expected ≤ 0)")
+
+    if post_total > pre_total:
+        print(f"[WARN] ⚠ Model gained parameters after collapsing! Investigate collapse policy or replacement logic.")
+
+    if safe_param_reduction and delta < 0:
+        print(f"[WARN] ⚠ Parameter count increased when safe_param_reduction=True — collapse may have failed silently.")
+
+    print(f"[RESULT] ✅ collapse_only complete. Total collapsed blocks: {len(collapse_map)}")
     return model
 
+
+# -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # Safe pooling wrapper (prevents underflow crashes)
 # -----------------------------------------------------------------------------

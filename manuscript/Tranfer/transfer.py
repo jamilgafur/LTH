@@ -136,144 +136,207 @@ def get_layer_variances(model, dummy_input):
         h.remove()
         
     return variances
-
-def get_dynamic_experiment_config(
-    model,
-    cnn_layers,
-    variances,
-    input_shape=(1, 3, 224, 224),
-    window_size=3,
-    veto_fraction=0.25
-):
+    
+def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=3, veto_fraction=0.25):
     import numpy as np
+    import copy
+    import torch
+    import gc
+    from collapse import collapse_only
+    from utils import count_trainable_params
+    from fvcore.nn import FlopCountAnalysis
 
-    print("\n" + "="*100)
-    print("[STAGE] DYNAMIC EXPERIMENT CONFIG")
-    print("="*100)
+    device = next(model.parameters()).device
+    base_params = count_trainable_params(model)
+    module_dict = dict(model.named_modules())
 
-    # --------------------------------------------------
-    # STEP 1: Raw layer stats
-    # --------------------------------------------------
-    print("\n[LAYER VARIANCE TRACE]")
-    for i, (layer, var) in enumerate(zip(cnn_layers, variances)):
-        print(f"[{i:03d}] {layer:<50} VAR={var:.6e}")
+    # --- Calculate Base FLOPs ---
+    dummy_input = torch.randn(1, *input_shape[1:]).to(device)
+    model.eval()
+    try:
+        with torch.no_grad():
+            base_flops = FlopCountAnalysis(model, dummy_input).unsupported_ops_warnings(False).total()
+        check_flops = True
+    except Exception:
+        base_flops = float('inf')
+        check_flops = False
 
-    # --------------------------------------------------
-    # STEP 2: Compute local context mean
-    # --------------------------------------------------
-    variances = np.array(variances)
-    local_mean = np.convolve(variances, np.ones(window_size)/window_size, mode='same')
-
-    print("\n[LOCAL CONTEXT MEAN]")
-    for i in range(len(local_mean)):
-        print(f"[{i:03d}] μ_local={local_mean[i]:.6e}")
-
-    # --------------------------------------------------
-    # STEP 3: Classify layers
-    # --------------------------------------------------
-    labels = []
-
-    print("\n[CLASSIFICATION PER LAYER]")
+    # =====================================================================
+    # PHASE 1: Calculating the Sliding Window Variance Normalization
+    # =====================================================================
+    rolling_means = []
     for i in range(len(variances)):
-        v = variances[i]
-        m = local_mean[i]
-
-        if v < 1e-6:
-            label = "VETO"
-        elif v < 0.5 * m:
-            label = "REJECTED"
-        elif v < m:
-            label = "DANGER"
+        start = max(0, i - window_size)
+        end = min(len(variances), i + window_size + 1)
+        rolling_means.append(np.mean(variances[start:end]))
+        
+    h_values = []
+    for var, mean_var in zip(variances, rolling_means):
+        if var - mean_var < 0:
+            h_values.append(max((var - mean_var) / mean_var, -1.0))
         else:
-            label = "VERIFIED"
+            h_values.append(min((var - mean_var) / mean_var, 1.0))
 
-        labels.append(label)
+    # =====================================================================
+    # PHASE 2: Ensure Multi-Layer Collapsing (Candidate Selection)
+    # =====================================================================
+    num_layers = len(cnn_layers)
+    veto_idx = int(num_layers * veto_fraction)
+    
+    R_candidates = []
+    current_set = []
+    
+    for i, h in enumerate(h_values):
+        layer_name = cnn_layers[i]
+        mod = module_dict.get(layer_name)
+        
+        is_valid_target = isinstance(mod, torch.nn.Conv2d)
+        
+        if i < veto_idx or not is_valid_target:
+            if len(current_set) >= 2:
+                R_candidates.append(current_set)
+            current_set = []
+            continue
 
-        print(
-            f"[{i:03d}] VAR={v:.3e} | μ={m:.3e} | "
-            f"ratio={v/(m+1e-9):.3f} → {label}"
-        )
+        if h < 0:
+            current_set.append(layer_name)
+        else:
+            if len(current_set) >= 2:
+                R_candidates.append(current_set)
+            current_set = []
+            
+    if len(current_set) >= 2:
+        R_candidates.append(current_set)
 
-    # --------------------------------------------------
-    # STEP 4: Build regions
-    # --------------------------------------------------
-    print("\n[REGION FORMATION]")
-    regions = []
+    # =====================================================================
+    # PHASE 3: Collapsable Memory Feasibility & Surrogate Compilation
+    # =====================================================================
+    experiment_regions = {}
+    set_counter = 0
+    R_final = []
 
-    start = 0
-    current_label = labels[0]
+    print(f"\n[INFO] Phase 3: Evaluating Candidate Regions (with Safe Fracturing)...")
+    
+    queue = R_candidates.copy()
+    
+    while queue:
+        r = queue.pop(0)
+        if len(r) < 2:
+            continue
+            
+        start_name = r[0]
+        end_name = r[-1]
+        region_tuple = (start_name, end_name)
+        
+        try:
+            print(f"    [STEP] Testing candidate sequence: {start_name} -> {end_name} (Length: {len(r)})")
+            test_model = copy.deepcopy(model).to(device)
+            
+            collapsed_model = collapse_only(
+                model=test_model,
+                compression_set={"test": region_tuple},
+                input_shape=input_shape,
+                device=device,
+                dry_run=False 
+            )
+            
+            collapsed_model.eval()
+            with torch.no_grad():
+                _ = collapsed_model(dummy_input)
 
-    for i in range(1, len(labels)):
-        if labels[i] != current_label:
-            regions.append((start, i-1, current_label))
-            start = i
-            current_label = labels[i]
+            new_params = count_trainable_params(collapsed_model)
+            try:
+                new_flops = FlopCountAnalysis(collapsed_model, dummy_input).unsupported_ops_warnings(False).total()
+            except Exception:
+                new_flops = float('inf')
 
-    regions.append((start, len(labels)-1, current_label))
+            # UPDATE: Accept if params decrease OR flops decrease
+            if new_params < base_params or (check_flops and new_flops < base_flops):
+                print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,}) | FLOPs ({base_flops:,} -> {new_flops:,})")
+                experiment_regions[f"Set_{set_counter}"] = region_tuple
+                R_final.append(region_tuple)
+                set_counter += 1
+            else:
+                reason = "Neither Params nor FLOPs decreased"
+                print(f"        [X] FAILED TO REDUCE: {reason}. Fracturing block...")
+                mid = len(r) // 2
+                if mid > 0:
+                    queue.insert(0, r[mid:])
+                    queue.insert(0, r[:mid])
 
-    # Log regions
-    for (s, e, label) in regions:
-        print(
-            f"[REGION] {label:<10} | "
-            f"{s:03d} → {e:03d} | "
-            f"len={e-s+1:02d} | "
-            f"{cnn_layers[s]} → {cnn_layers[e]}"
-        )
+        except Exception as e:
+            print(f"        [!] CRASH: Architecture Exception ({type(e).__name__}). Fracturing block...")
+            mid = len(r) // 2
+            if mid > 0:
+                queue.insert(0, r[mid:])
+                queue.insert(0, r[:mid])
+        finally:
+            if 'test_model' in locals(): del test_model
+            if 'collapsed_model' in locals(): del collapsed_model
+            gc.collect()
+            if torch.cuda.is_available(): torch.cuda.empty_cache()
 
-    # --------------------------------------------------
-    # STEP 5: FILTERING (THIS WAS YOUR MAIN ISSUE)
-    # --------------------------------------------------
-    print("\n[FILTERING REGIONS]")
+    # =====================================================================
+    # PHASE 4: Validating Dynamic Region All Combined (Greedy Integration)
+    # =====================================================================
+    if len(R_final) > 1:
+        print(f"\n[INFO] Phase 4: Validating 'Dynamic_Region_All_Combined' (Greedy Integration)...")
+        safe_combined_regions = []
+        
+        current_best_params = base_params
+        current_best_flops = base_flops
+        
+        for region_tuple in R_final:
+            candidate_combo = safe_combined_regions + [region_tuple]
+            
+            try:
+                test_model = copy.deepcopy(model).to(device)
+                combo_dict = {f"comb_{i}": reg for i, reg in enumerate(candidate_combo)}
+                
+                collapsed_combined = collapse_only(
+                    model=test_model,
+                    compression_set=combo_dict,
+                    input_shape=input_shape,
+                    device=device,
+                    dry_run=False 
+                )
+                
+                collapsed_combined.eval()
+                with torch.no_grad():
+                    _ = collapsed_combined(dummy_input)
+                    
+                new_params_combo = count_trainable_params(collapsed_combined)
+                try:
+                    new_flops_combo = FlopCountAnalysis(collapsed_combined, dummy_input).unsupported_ops_warnings(False).total()
+                except Exception:
+                    new_flops_combo = float('inf')
 
-    selected = []
-
-    for (s, e, label) in regions:
-        length = e - s + 1
-
-        decision = "REJECT ❌"
-
-        # 🔥 FIX: allow DANGER through
-        if label in ["VERIFIED", "DANGER"]:
-            decision = "SELECT ✅"
-            selected.append((cnn_layers[s], cnn_layers[e]))
-
-        print(
-            f"[FILTER] {label:<10} | "
-            f"{s:03d}→{e:03d} | "
-            f"len={length:02d} | "
-            f"decision={decision}"
-        )
-
-    # --------------------------------------------------
-    # STEP 6: FORCE DEBUG CASE (if nothing selected)
-    # --------------------------------------------------
-    if len(selected) == 0 and len(regions) > 0:
-        print("\n[FORCE] No valid regions → selecting largest region")
-
-        largest = max(regions, key=lambda r: r[1] - r[0])
-        s, e, label = largest
-
-        selected.append((cnn_layers[s], cnn_layers[e]))
-
-        print(
-            f"[FORCED] {cnn_layers[s]} → {cnn_layers[e]} "
-            f"(label={label}, len={e-s+1})"
-        )
-
-    # --------------------------------------------------
-    # FINAL OUTPUT
-    # --------------------------------------------------
-    print("\n[FINAL COMPRESSION SET]")
-    if not selected:
-        print("[WARNING] EMPTY ❌")
-
-    for i, (s, e) in enumerate(selected):
-        print(f"[{i:02d}] {s} → {e}")
-
-    print("="*100 + "\n")
-
-    return selected
-
+                # UPDATE: Throw error ONLY if neither params nor flops show a reduction 
+                param_decreased = new_params_combo < current_best_params
+                flop_decreased = check_flops and new_flops_combo < current_best_flops
+                
+                if not (param_decreased or flop_decreased):
+                    raise ValueError(f"Neither Params nor FLOPs decreased: Params ({new_params_combo:,} vs {current_best_params:,}), FLOPs ({new_flops_combo:,} vs {current_best_flops:,})")
+                
+                current_best_params = new_params_combo
+                current_best_flops = new_flops_combo
+                safe_combined_regions.append(region_tuple)
+                print(f"        [+] Merged safely: {region_tuple[0]} -> {region_tuple[1]}")
+                
+            except Exception as e:
+                print(f"        [-] Merge rejected: Adding {region_tuple[0]} -> {region_tuple[1]} broke constraint ({type(e).__name__}: {e})")
+            finally:
+                if 'test_model' in locals(): del test_model
+                if 'collapsed_combined' in locals(): del collapsed_combined
+                gc.collect()
+                if torch.cuda.is_available(): torch.cuda.empty_cache()
+                
+        if len(safe_combined_regions) > 1:
+            experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
+            
+    # Add control as baseline
+    experiment_regions["Control_Continuted"] = None
+    return experiment_regions
 # ==============================================================================
 # Helper functions
 # ==============================================================================
@@ -626,65 +689,25 @@ def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwarg
     else: raise ValueError("Specify either --JF or --Kevin.")
 
 
+def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, experiment_func, quant=False, args=None, is_discovery=False):
+    
+    active_epochs = epochs if is_discovery else pretrain
+    
+    # The save path correctly stays locked to the initial epochs budget
+    save_path = f"{model_class}_{dataset}_{CHECKPOINT_FILES[args.model][dataset][0]}_epochs{epochs}_pretrain{pretrain}"
 
-def run_experiments_for_dataset(
-    experiments,
-    dataset,
-    model_path_097,
-    model_path_000,
-    train_loader,
-    test_loader,
-    device,
-    epochs,
-    pretrain,
-    model_class,
-    model_kwargs,
-    experiment_func,
-    quant=False,
-    args=None,
-    is_discovery=False
-):
+    if train_loader is None or test_loader is None:
+        train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, args.model)
+    else:
+        input_size = model_kwargs['one_batch'].shape
 
-    print("\n" + "="*100)
-    print("[STAGE] RUN EXPERIMENTS FOR DATASET")
-    print("="*100)
-
-    for exp_name, layer_pairs in experiments.items():
-
-        print("\n" + "-"*80)
-        print(f"[EXPERIMENT] {exp_name}")
-        print("-"*80)
-
-        if not layer_pairs:
-            print("[WARNING] No compression regions passed ❌")
-        else:
-            print(f"[INFO] {len(layer_pairs)} regions selected:")
-            for i, (s, e) in enumerate(layer_pairs):
-                print(f"  [{i:02d}] {s} → {e}")
-
-        # 🔥 IMPORTANT VISIBILITY
-        print("\n[PASSING TO COLLAPSE]")
-        for (s, e) in layer_pairs:
-            print(f"  → COLLAPSE {s} → {e}")
-
-        # Actual experiment call
-        run_jf_or_kevin_experiment(
-            exp_name,
-            layer_pairs,
-            model_class,
-            model_kwargs,
-            input_size=None,
-            epochs=epochs,
-            experiment_func=experiment_func,
-            save_path=None,
-            quant=quant,
-            model_path_097=model_path_097,
-            model_path_000=model_path_000,
-            train_loader=train_loader,
-            test_loader=test_loader,
-            device=device,
-            args=args
-        )
+    for name, layers in experiments.items():
+        print(f"\n--- Running experiment: {name} ---")
+        print(f"    Budget allocated: {active_epochs} epochs")
+        
+        run_epochs = active_epochs
+        
+        run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, run_epochs, experiment_func, save_path, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
 # ==============================================================================
 # Main Entry Point
 # ==============================================================================
