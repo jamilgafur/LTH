@@ -270,11 +270,11 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 current_set.append(layer_name)
             else:
                 # [FIX] Capture singletons or orphans temporarily for potential absorption
-                if len(current_set) >= 1: 
+                if len(current_set) >= 2: 
                     R_candidates_raw.append(current_set)
                 current_set = []
                 
-        if len(current_set) >= 1:
+        if len(current_set) >= 2:
             R_candidates_raw.append(current_set)
 
         # Phase 2B: LCA Expansion with Absorption
