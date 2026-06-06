@@ -47,3 +47,1287 @@ Saved memory plot to VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs3_pre
     -> Calculating parameters live...
     -> Calculating FLOPs live...
     -> Calculating accuracy live (this may take a moment)...
+[✓] Successfully healed merged_metrics.json for Control.
+[INFO] No variance file found. Executing Network Probe...
+[✓] Layer variances saved to /old_Users/jgafur/LTH/manuscript/Tranfer/runs/plots/VGG16/Cifar10/epochs3_pretrain3/layer_variances.json
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 33,663,050 | Base FLOPs: 332,681,216
+
+[DEBUG] --- Phase 2A: Scanning 16 layers for Raw Candidates ---
+  [Scan] Layer 00 (features.conv_1) -> SKIPPED (In Veto Region)
+  [Scan] Layer 01 (features.conv_2) -> SKIPPED (In Veto Region)
+  [Scan] Layer 02 (features.conv_3) -> SKIPPED (In Veto Region)
+  [Scan] Layer 03 (features.conv_4) -> SKIPPED (In Veto Region)
+  [Scan] Layer 04 (features.conv_5) -> ADDED (Negative var: -0.0663)
+  [Scan] Layer 05 (features.conv_6) -> ADDED (Negative var: -0.1519)
+  [Scan] Layer 06 (features.conv_7) -> ADDED (Negative var: -0.3056)
+  [Scan] Layer 07 (features.conv_8) -> ADDED (Negative var: -0.6256)
+  [Scan] Layer 08 (features.conv_9) -> ADDED (Negative var: -0.6412)
+  [Scan] Layer 09 (features.conv_10) -> ADDED (Negative var: -0.5898)
+  [Scan] Layer 10 (features.conv_11) -> CUT (Positive var: 1.0000)
+  [Scan] Layer 11 (features.conv_12) -> ADDED (Negative var: -0.2753)
+  [Scan] Layer 12 (features.conv_13) -> ADDED (Negative var: -0.3871)
+  [Scan] Layer 13 (classifier.fc_1) -> SKIPPED (Classifier/Invalid Type)
+  [Scan] Layer 14 (classifier.fc_2) -> SKIPPED (Classifier/Invalid Type)
+  [Scan] Layer 15 (classifier.fc_3) -> SKIPPED (Classifier/Invalid Type)
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+
+[DEBUG] Evaluating raw fragment: features.conv_5 -> features.conv_10 (Length: 6)
+    [Iter 1] Bounds: features.conv_5 -> features.conv_10
+    [Iter 1] LCA: 'features' | Valid LCA: True | Len: 6
+    [Iter 1] -> Success! Safe to slice. Stopping expansion.
+[DEBUG] [+] Finalized expanded candidate: features.conv_5 -> features.conv_10
+
+[DEBUG] Evaluating raw fragment: features.conv_12 -> features.conv_13 (Length: 2)
+    [Iter 1] Bounds: features.conv_12 -> features.conv_13
+    [Iter 1] LCA: 'features' | Valid LCA: True | Len: 2
+    [Iter 1] -> Success! Safe to slice. Stopping expansion.
+[DEBUG] [+] Finalized expanded candidate: features.conv_12 -> features.conv_13
+
+[INFO] Phase 3: Evaluating 2 Candidate Regions (with Smart Boundary Shaving)...
+    [STEP] Testing candidate sequence: features.conv_5 -> features.conv_10 (Length: 6)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_5 → features.conv_10)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_5 → features.conv_10
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_5 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_5', 'features.conv_10')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_5
+[INFO] End Target   : features.conv_10
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 14 to 30
+[DEBUG] Captured Layers : 17 total
+    [LAYER MAP] conv_5 -> Conv2d
+    [LAYER MAP] bn_5 -> BatchNorm2d
+    [LAYER MAP] relu_5 -> ReLU
+    [LAYER MAP] conv_6 -> Conv2d
+    [LAYER MAP] bn_6 -> BatchNorm2d
+    [LAYER MAP] relu_6 -> ReLU
+    [LAYER MAP] conv_7 -> Conv2d
+    [LAYER MAP] bn_7 -> BatchNorm2d
+    [LAYER MAP] relu_7 -> ReLU
+    [LAYER MAP] pool_3 -> MaxPool2d
+    [LAYER MAP] conv_8 -> Conv2d
+    [LAYER MAP] bn_8 -> BatchNorm2d
+    [LAYER MAP] relu_8 -> ReLU
+    [LAYER MAP] conv_9 -> Conv2d
+    [LAYER MAP] bn_9 -> BatchNorm2d
+    [LAYER MAP] relu_9 -> ReLU
+    [LAYER MAP] conv_10 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_5'
+[DEBUG] Hooking End Node   : 'features.conv_10'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_10'...
+[DEBUG] Captured input shape: (512, 128, 8, 8), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 128, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_10'...
+[DEBUG] Exact layer match found at index 32: features.conv_10 (Conv2d)
+[DEBUG] Scanning forward from index 33 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_12 -> features.conv_13 (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_12 → features.conv_13)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_12 → features.conv_13
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_12 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_12', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_12
+[INFO] End Target   : features.conv_13
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_12' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 37 to 40
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv_12 -> Conv2d
+    [LAYER MAP] bn_12 -> BatchNorm2d
+    [LAYER MAP] relu_12 -> ReLU
+    [LAYER MAP] conv_13 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_12'
+[DEBUG] Hooking End Node   : 'features.conv_13'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_12' -> 'features.conv_13'...
+[DEBUG] Captured input shape: (512, 512, 2, 2), output shape: (512, 512, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 512, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_13'...
+[DEBUG] Exact layer match found at index 42: features.conv_13 (Conv2d)
+[DEBUG] Scanning forward from index 43 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_6 -> features.conv_10 (Length: 5)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_6 → features.conv_10)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_6 → features.conv_10
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_6 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_6', 'features.conv_10')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_6
+[INFO] End Target   : features.conv_10
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_6' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 17 to 30
+[DEBUG] Captured Layers : 14 total
+    [LAYER MAP] conv_6 -> Conv2d
+    [LAYER MAP] bn_6 -> BatchNorm2d
+    [LAYER MAP] relu_6 -> ReLU
+    [LAYER MAP] conv_7 -> Conv2d
+    [LAYER MAP] bn_7 -> BatchNorm2d
+    [LAYER MAP] relu_7 -> ReLU
+    [LAYER MAP] pool_3 -> MaxPool2d
+    [LAYER MAP] conv_8 -> Conv2d
+    [LAYER MAP] bn_8 -> BatchNorm2d
+    [LAYER MAP] relu_8 -> ReLU
+    [LAYER MAP] conv_9 -> Conv2d
+    [LAYER MAP] bn_9 -> BatchNorm2d
+    [LAYER MAP] relu_9 -> ReLU
+    [LAYER MAP] conv_10 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_6'
+[DEBUG] Hooking End Node   : 'features.conv_10'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_6' -> 'features.conv_10'...
+[DEBUG] Captured input shape: (512, 256, 8, 8), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 256, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_10'...
+[DEBUG] Exact layer match found at index 32: features.conv_10 (Conv2d)
+[DEBUG] Scanning forward from index 33 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_5 -> features.conv_9 (Length: 5)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_5 → features.conv_9)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_5 → features.conv_9
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_5 → features.conv_9
+[STEP] Calling _collapse_block('features.conv_5', 'features.conv_9')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_5
+[INFO] End Target   : features.conv_9
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_9'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 14 to 27
+[DEBUG] Captured Layers : 14 total
+    [LAYER MAP] conv_5 -> Conv2d
+    [LAYER MAP] bn_5 -> BatchNorm2d
+    [LAYER MAP] relu_5 -> ReLU
+    [LAYER MAP] conv_6 -> Conv2d
+    [LAYER MAP] bn_6 -> BatchNorm2d
+    [LAYER MAP] relu_6 -> ReLU
+    [LAYER MAP] conv_7 -> Conv2d
+    [LAYER MAP] bn_7 -> BatchNorm2d
+    [LAYER MAP] relu_7 -> ReLU
+    [LAYER MAP] pool_3 -> MaxPool2d
+    [LAYER MAP] conv_8 -> Conv2d
+    [LAYER MAP] bn_8 -> BatchNorm2d
+    [LAYER MAP] relu_8 -> ReLU
+    [LAYER MAP] conv_9 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_5'
+[DEBUG] Hooking End Node   : 'features.conv_9'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_9'...
+[DEBUG] Captured input shape: (512, 128, 8, 8), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 128, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_9'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_9'...
+[DEBUG] Exact layer match found at index 29: features.conv_9 (Conv2d)
+[DEBUG] Scanning forward from index 30 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_7 -> features.conv_10 (Length: 4)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_7 → features.conv_10)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_7 → features.conv_10
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_7 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_7', 'features.conv_10')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_7
+[INFO] End Target   : features.conv_10
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_7' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 20 to 30
+[DEBUG] Captured Layers : 11 total
+    [LAYER MAP] conv_7 -> Conv2d
+    [LAYER MAP] bn_7 -> BatchNorm2d
+    [LAYER MAP] relu_7 -> ReLU
+    [LAYER MAP] pool_3 -> MaxPool2d
+    [LAYER MAP] conv_8 -> Conv2d
+    [LAYER MAP] bn_8 -> BatchNorm2d
+    [LAYER MAP] relu_8 -> ReLU
+    [LAYER MAP] conv_9 -> Conv2d
+    [LAYER MAP] bn_9 -> BatchNorm2d
+    [LAYER MAP] relu_9 -> ReLU
+    [LAYER MAP] conv_10 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_7'
+[DEBUG] Hooking End Node   : 'features.conv_10'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_7' -> 'features.conv_10'...
+[DEBUG] Captured input shape: (512, 256, 8, 8), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 256, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_10'...
+[DEBUG] Exact layer match found at index 32: features.conv_10 (Conv2d)
+[DEBUG] Scanning forward from index 33 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_6 -> features.conv_9 (Length: 4)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_6 → features.conv_9)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_6 → features.conv_9
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_6 → features.conv_9
+[STEP] Calling _collapse_block('features.conv_6', 'features.conv_9')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_6
+[INFO] End Target   : features.conv_9
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_6' -> 'features.conv_9'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 17 to 27
+[DEBUG] Captured Layers : 11 total
+    [LAYER MAP] conv_6 -> Conv2d
+    [LAYER MAP] bn_6 -> BatchNorm2d
+    [LAYER MAP] relu_6 -> ReLU
+    [LAYER MAP] conv_7 -> Conv2d
+    [LAYER MAP] bn_7 -> BatchNorm2d
+    [LAYER MAP] relu_7 -> ReLU
+    [LAYER MAP] pool_3 -> MaxPool2d
+    [LAYER MAP] conv_8 -> Conv2d
+    [LAYER MAP] bn_8 -> BatchNorm2d
+    [LAYER MAP] relu_8 -> ReLU
+    [LAYER MAP] conv_9 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_6'
+[DEBUG] Hooking End Node   : 'features.conv_9'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_6' -> 'features.conv_9'...
+[DEBUG] Captured input shape: (512, 256, 8, 8), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 256, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_9'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_9'...
+[DEBUG] Exact layer match found at index 29: features.conv_9 (Conv2d)
+[DEBUG] Scanning forward from index 30 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_5 -> features.conv_8 (Length: 4)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_5 → features.conv_8)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_5 → features.conv_8
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_5 → features.conv_8
+[STEP] Calling _collapse_block('features.conv_5', 'features.conv_8')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_5
+[INFO] End Target   : features.conv_8
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_8'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 14 to 24
+[DEBUG] Captured Layers : 11 total
+    [LAYER MAP] conv_5 -> Conv2d
+    [LAYER MAP] bn_5 -> BatchNorm2d
+    [LAYER MAP] relu_5 -> ReLU
+    [LAYER MAP] conv_6 -> Conv2d
+    [LAYER MAP] bn_6 -> BatchNorm2d
+    [LAYER MAP] relu_6 -> ReLU
+    [LAYER MAP] conv_7 -> Conv2d
+    [LAYER MAP] bn_7 -> BatchNorm2d
+    [LAYER MAP] relu_7 -> ReLU
+    [LAYER MAP] pool_3 -> MaxPool2d
+    [LAYER MAP] conv_8 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_5'
+[DEBUG] Hooking End Node   : 'features.conv_8'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_8'...
+[DEBUG] Captured input shape: (512, 128, 8, 8), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 128, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_8'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_8'...
+[DEBUG] Exact layer match found at index 26: features.conv_8 (Conv2d)
+[DEBUG] Scanning forward from index 27 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_8 -> features.conv_10 (Length: 3)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_8 → features.conv_10)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_8 → features.conv_10
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_8 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_8', 'features.conv_10')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_8
+[INFO] End Target   : features.conv_10
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_8' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 24 to 30
+[DEBUG] Captured Layers : 7 total
+    [LAYER MAP] conv_8 -> Conv2d
+    [LAYER MAP] bn_8 -> BatchNorm2d
+    [LAYER MAP] relu_8 -> ReLU
+    [LAYER MAP] conv_9 -> Conv2d
+    [LAYER MAP] bn_9 -> BatchNorm2d
+    [LAYER MAP] relu_9 -> ReLU
+    [LAYER MAP] conv_10 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_8'
+[DEBUG] Hooking End Node   : 'features.conv_10'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_8' -> 'features.conv_10'...
+[DEBUG] Captured input shape: (512, 256, 4, 4), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 256, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_10'...
+[DEBUG] Exact layer match found at index 32: features.conv_10 (Conv2d)
+[DEBUG] Scanning forward from index 33 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_7 -> features.conv_9 (Length: 3)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_7 → features.conv_9)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_7 → features.conv_9
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_7 → features.conv_9
+[STEP] Calling _collapse_block('features.conv_7', 'features.conv_9')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_7
+[INFO] End Target   : features.conv_9
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_7' -> 'features.conv_9'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 20 to 27
+[DEBUG] Captured Layers : 8 total
+    [LAYER MAP] conv_7 -> Conv2d
+    [LAYER MAP] bn_7 -> BatchNorm2d
+    [LAYER MAP] relu_7 -> ReLU
+    [LAYER MAP] pool_3 -> MaxPool2d
+    [LAYER MAP] conv_8 -> Conv2d
+    [LAYER MAP] bn_8 -> BatchNorm2d
+    [LAYER MAP] relu_8 -> ReLU
+    [LAYER MAP] conv_9 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_7'
+[DEBUG] Hooking End Node   : 'features.conv_9'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_7' -> 'features.conv_9'...
+[DEBUG] Captured input shape: (512, 256, 8, 8), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 256, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_9'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_9'...
+[DEBUG] Exact layer match found at index 29: features.conv_9 (Conv2d)
+[DEBUG] Scanning forward from index 30 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_6 -> features.conv_8 (Length: 3)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_6 → features.conv_8)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_6 → features.conv_8
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_6 → features.conv_8
+[STEP] Calling _collapse_block('features.conv_6', 'features.conv_8')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_6
+[INFO] End Target   : features.conv_8
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_6' -> 'features.conv_8'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 17 to 24
+[DEBUG] Captured Layers : 8 total
+    [LAYER MAP] conv_6 -> Conv2d
+    [LAYER MAP] bn_6 -> BatchNorm2d
+    [LAYER MAP] relu_6 -> ReLU
+    [LAYER MAP] conv_7 -> Conv2d
+    [LAYER MAP] bn_7 -> BatchNorm2d
+    [LAYER MAP] relu_7 -> ReLU
+    [LAYER MAP] pool_3 -> MaxPool2d
+    [LAYER MAP] conv_8 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_6'
+[DEBUG] Hooking End Node   : 'features.conv_8'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_6' -> 'features.conv_8'...
+[DEBUG] Captured input shape: (512, 256, 8, 8), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 256, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_8'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_8'...
+[DEBUG] Exact layer match found at index 26: features.conv_8 (Conv2d)
+[DEBUG] Scanning forward from index 27 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_5 -> features.conv_7 (Length: 3)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_5 → features.conv_7)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_5 → features.conv_7
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_5 → features.conv_7
+[STEP] Calling _collapse_block('features.conv_5', 'features.conv_7')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_5
+[INFO] End Target   : features.conv_7
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_7'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 14 to 20
+[DEBUG] Captured Layers : 7 total
+    [LAYER MAP] conv_5 -> Conv2d
+    [LAYER MAP] bn_5 -> BatchNorm2d
+    [LAYER MAP] relu_5 -> ReLU
+    [LAYER MAP] conv_6 -> Conv2d
+    [LAYER MAP] bn_6 -> BatchNorm2d
+    [LAYER MAP] relu_6 -> ReLU
+    [LAYER MAP] conv_7 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_5'
+[DEBUG] Hooking End Node   : 'features.conv_7'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_7'...
+[DEBUG] Captured input shape: (512, 128, 8, 8), output shape: (512, 256, 8, 8)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 128, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 256, 8, 8)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_7'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_7'...
+[DEBUG] Exact layer match found at index 22: features.conv_7 (Conv2d)
+[DEBUG] Scanning forward from index 23 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_9 -> features.conv_10 (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_9 → features.conv_10)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_9 → features.conv_10
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_9 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_9', 'features.conv_10')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_9
+[INFO] End Target   : features.conv_10
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_9' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 27 to 30
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv_9 -> Conv2d
+    [LAYER MAP] bn_9 -> BatchNorm2d
+    [LAYER MAP] relu_9 -> ReLU
+    [LAYER MAP] conv_10 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_9'
+[DEBUG] Hooking End Node   : 'features.conv_10'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_9' -> 'features.conv_10'...
+[DEBUG] Captured input shape: (512, 512, 4, 4), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 512, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_10'...
+[DEBUG] Exact layer match found at index 32: features.conv_10 (Conv2d)
+[DEBUG] Scanning forward from index 33 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_8 -> features.conv_9 (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_8 → features.conv_9)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_8 → features.conv_9
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_8 → features.conv_9
+[STEP] Calling _collapse_block('features.conv_8', 'features.conv_9')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_8
+[INFO] End Target   : features.conv_9
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_8' -> 'features.conv_9'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 24 to 27
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv_8 -> Conv2d
+    [LAYER MAP] bn_8 -> BatchNorm2d
+    [LAYER MAP] relu_8 -> ReLU
+    [LAYER MAP] conv_9 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_8'
+[DEBUG] Hooking End Node   : 'features.conv_9'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_8' -> 'features.conv_9'...
+[DEBUG] Captured input shape: (512, 256, 4, 4), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 256, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_9'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_9'...
+[DEBUG] Exact layer match found at index 29: features.conv_9 (Conv2d)
+[DEBUG] Scanning forward from index 30 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_7 -> features.conv_8 (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_7 → features.conv_8)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_7 → features.conv_8
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_7 → features.conv_8
+[STEP] Calling _collapse_block('features.conv_7', 'features.conv_8')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_7
+[INFO] End Target   : features.conv_8
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_7' -> 'features.conv_8'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 20 to 24
+[DEBUG] Captured Layers : 5 total
+    [LAYER MAP] conv_7 -> Conv2d
+    [LAYER MAP] bn_7 -> BatchNorm2d
+    [LAYER MAP] relu_7 -> ReLU
+    [LAYER MAP] pool_3 -> MaxPool2d
+    [LAYER MAP] conv_8 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_7'
+[DEBUG] Hooking End Node   : 'features.conv_8'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_7' -> 'features.conv_8'...
+[DEBUG] Captured input shape: (512, 256, 8, 8), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 256, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_8'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_8'...
+[DEBUG] Exact layer match found at index 26: features.conv_8 (Conv2d)
+[DEBUG] Scanning forward from index 27 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_6 -> features.conv_7 (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_6 → features.conv_7)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_6 → features.conv_7
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_6 → features.conv_7
+[STEP] Calling _collapse_block('features.conv_6', 'features.conv_7')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_6
+[INFO] End Target   : features.conv_7
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_6' -> 'features.conv_7'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 17 to 20
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv_6 -> Conv2d
+    [LAYER MAP] bn_6 -> BatchNorm2d
+    [LAYER MAP] relu_6 -> ReLU
+    [LAYER MAP] conv_7 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_6'
+[DEBUG] Hooking End Node   : 'features.conv_7'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_6' -> 'features.conv_7'...
+[DEBUG] Captured input shape: (512, 256, 8, 8), output shape: (512, 256, 8, 8)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 256, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 256, 8, 8)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_7'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_7'...
+[DEBUG] Exact layer match found at index 22: features.conv_7 (Conv2d)
+[DEBUG] Scanning forward from index 23 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+    [STEP] Testing candidate sequence: features.conv_5 -> features.conv_6 (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.conv_5 → features.conv_6)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.conv_5 → features.conv_6
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_5 → features.conv_6
+[STEP] Calling _collapse_block('features.conv_5', 'features.conv_6')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_5
+[INFO] End Target   : features.conv_6
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_6'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 14 to 17
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv_5 -> Conv2d
+    [LAYER MAP] bn_5 -> BatchNorm2d
+    [LAYER MAP] relu_5 -> ReLU
+    [LAYER MAP] conv_6 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_5'
+[DEBUG] Hooking End Node   : 'features.conv_6'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_6'...
+[DEBUG] Captured input shape: (512, 128, 8, 8), output shape: (512, 256, 8, 8)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 128, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 256, 8, 8)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_6'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_6'...
+[DEBUG] Exact layer match found at index 19: features.conv_6 (Conv2d)
+[DEBUG] Scanning forward from index 20 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[WARN] ⚠ Collapse failed for block 'test': too many values to unpack (expected 2)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 15 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 33,663,050
+[INFO] ΔParams = +0 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [X] FAILED TO REDUCE. Shaving block boundaries...
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[•] Running Comprehensive Heuristic Analysis for VGG16 on Cifar10...
+[!] Failed to process experiments: too many values to unpack (expected 2)
+[✓] Stage 1 Complete. Exported 2 targets to 'VGG16_Cifar10_epochs3_pretrain3_JF_discovered_regions.json'.
