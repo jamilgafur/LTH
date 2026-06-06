@@ -229,17 +229,19 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear)) and not is_classifier
         
         if i < veto_idx or not is_valid_target:
-            if len(current_set) >= 2: R_candidates_raw.append(current_set)
+            if len(current_set) >= 1: # [FIX] Relaxed to >= 1 to catch isolated trailing fragments before expansion
+                R_candidates_raw.append(current_set)
             current_set = []
             continue
 
         if h < 0:
             current_set.append(layer_name)
         else:
-            if len(current_set) >= 2: R_candidates_raw.append(current_set)
+            if len(current_set) >= 1: # [FIX] Relaxed to >= 1
+                R_candidates_raw.append(current_set)
             current_set = []
             
-    if len(current_set) >= 2:
+    if len(current_set) >= 1: # [FIX] Guarantee the tail is captured
         R_candidates_raw.append(current_set)
 
     # --- ENFORCE STRUCTURAL LCA EXPANSION (Checking BOTH ends simultaneously) ---
@@ -252,7 +254,8 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             lca_path = get_lca_path(cnn_layers[start_idx], cnn_layers[end_idx])
             lca_mod = module_dict.get(lca_path) if lca_path else model
             
-            if is_valid_lca(lca_mod):
+            # [FIX] Force expansion if length is < 2, even if LCA is valid, to ensure minimum viable collapse size
+            if is_valid_lca(lca_mod) and (end_idx - start_idx + 1) >= 2:
                 break 
                 
             expanded_fwd = False
@@ -266,7 +269,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     expanded_fwd = True
             
             # Expand Backward (Independent of Forward)
-            if start_idx > 0:
+            if start_idx > 0 and start_idx - 1 >= veto_idx: # [FIX] Ensure backward expansion respects veto region
                 prev_layer = cnn_layers[start_idx - 1]
                 if not any(term in prev_layer.lower() for term in ['classifier', 'fc', 'aux']):
                     start_idx -= 1
