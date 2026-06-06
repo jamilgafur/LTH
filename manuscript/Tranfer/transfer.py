@@ -152,11 +152,28 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     print(f"[DEBUG] {'='*40}")
 
     device = next(model.parameters()).device
-    base_params = count_trainable_params(model)
     module_dict = dict(model.named_modules())
-    print(f"[DEBUG] Base model parameters : {base_params:,}")
 
-    # --- Structural Helpers ---
+    # =====================================================================
+    # HELPER 1: Base Metrics Calculation
+    # =====================================================================
+    def get_base_metrics():
+        base_params = count_trainable_params(model)
+        dummy_input = torch.randn(1, *input_shape[1:]).to(device)
+        model.eval()
+        try:
+            with torch.no_grad():
+                base_flops = FlopCountAnalysis(model, dummy_input).unsupported_ops_warnings(False).total()
+            check_flops = True
+        except Exception as e:
+            base_flops = float('inf')
+            check_flops = False
+            print(f"[WARN] Failed to calculate base FLOPs: {e}")
+        return base_params, base_flops, check_flops, dummy_input
+
+    # =====================================================================
+    # HELPER 2: Structural Validity & LCA Logic
+    # =====================================================================
     def get_lca_path(start_name, end_name):
         start_parts = start_name.split('.') if start_name else []
         end_parts = end_name.split('.') if end_name else []
@@ -164,10 +181,8 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         if start_name == end_name and len(start_parts) > 0:
             return '.'.join(start_parts[:-1])
         for a, b in zip(start_parts, end_parts):
-            if a == b:
-                common.append(a)
-            else:
-                break
+            if a == b: common.append(a)
+            else: break
         return '.'.join(common)
 
     def is_valid_lca(lca_mod):
@@ -175,226 +190,226 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         if isinstance(lca_mod, (torch.nn.Sequential, torch.nn.ModuleList)): return True
         mod_name = type(lca_mod).__name__
         invalid_blocks = ['ConvNeXtBlock', 'XBlock', 'InceptionBlock', 'XceptionBlock', 'DepthwiseSeparableConv', 'BasicConv2d', 'Bottleneck', 'BasicBlock']
-        if mod_name in invalid_blocks:
-            return False
+        if mod_name in invalid_blocks: return False
         return True
 
-    # --- Calculate Base FLOPs ---
-    dummy_input = torch.randn(1, *input_shape[1:]).to(device)
-    model.eval()
-    try:
-        with torch.no_grad():
-            base_flops = FlopCountAnalysis(model, dummy_input).unsupported_ops_warnings(False).total()
-        check_flops = True
-        print(f"[DEBUG] Base model FLOPs      : {base_flops:,}")
-    except Exception as e:
-        base_flops = float('inf')
-        check_flops = False
-        print(f"[WARN] Failed to calculate base FLOPs: {e}")
-
     # =====================================================================
-    # PHASE 1: Calculating the Sliding Window Variance Normalization
+    # HELPER 3: Phase 1 & 2 - Variance Normalization & Expansion
     # =====================================================================
-    print(f"\n[INFO] Phase 1: Calculating Sliding Window Variance Normalization...")
-    rolling_means = []
-    for i in range(len(variances)):
-        start = max(0, i - window_size)
-        end = min(len(variances), i + window_size + 1)
-        rolling_means.append(np.mean(variances[start:end]))
-        
-    h_values = []
-    for var, mean_var in zip(variances, rolling_means):
-        if var - mean_var < 0:
-            h_values.append(max((var - mean_var) / mean_var, -1.0))
-        else:
-            h_values.append(min((var - mean_var) / mean_var, 1.0))
+    def extract_and_expand_candidates():
+        # Phase 1: Rolling Variance
+        rolling_means = []
+        for i in range(len(variances)):
+            start = max(0, i - window_size)
+            end = min(len(variances), i + window_size + 1)
+            rolling_means.append(np.mean(variances[start:end]))
             
-    print(f"[DEBUG] -> Variance profile calculated. Min(h): {min(h_values):.4f}, Max(h): {max(h_values):.4f}")
+        h_values = []
+        for var, mean_var in zip(variances, rolling_means):
+            if var - mean_var < 0: h_values.append(max((var - mean_var) / mean_var, -1.0))
+            else: h_values.append(min((var - mean_var) / mean_var, 1.0))
 
-    # =====================================================================
-    # PHASE 2: Candidate Selection & Structural LCA Expansion
-    # =====================================================================
-    print(f"\n[INFO] Phase 2: Candidate Selection (Filtering & LCA Expansion)...")
-    num_layers = len(cnn_layers)
-    veto_idx = int(num_layers * veto_fraction)
-    
-    R_candidates_raw = []
-    current_set = []
-    
-    for i, h in enumerate(h_values):
-        layer_name = cnn_layers[i]
-        mod = module_dict.get(layer_name)
+        num_layers = len(cnn_layers)
+        veto_idx = int(num_layers * veto_fraction)
         
-        is_classifier = any(term in layer_name.lower() for term in ['classifier', 'fc', 'aux'])
-        is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear)) and not is_classifier
+        R_candidates_raw = []
+        current_set = []
         
-        if i < veto_idx or not is_valid_target:
-            if len(current_set) >= 1: # [FIX] Relaxed to >= 1 to catch isolated trailing fragments before expansion
-                R_candidates_raw.append(current_set)
-            current_set = []
-            continue
-
-        if h < 0:
-            current_set.append(layer_name)
-        else:
-            if len(current_set) >= 1: # [FIX] Relaxed to >= 1
-                R_candidates_raw.append(current_set)
-            current_set = []
+        print(f"\n[DEBUG] --- Phase 2A: Scanning {num_layers} layers for Raw Candidates ---")
+        for i, h in enumerate(h_values):
+            layer_name = cnn_layers[i]
+            mod = module_dict.get(layer_name)
             
-    if len(current_set) >= 1: # [FIX] Guarantee the tail is captured
-        R_candidates_raw.append(current_set)
-
-    # --- ENFORCE STRUCTURAL LCA EXPANSION (Checking BOTH ends simultaneously) ---
-    R_candidates = []
-    for r in R_candidates_raw:
-        start_idx = cnn_layers.index(r[0])
-        end_idx = cnn_layers.index(r[-1])
-        
-        while True:
-            lca_path = get_lca_path(cnn_layers[start_idx], cnn_layers[end_idx])
-            lca_mod = module_dict.get(lca_path) if lca_path else model
+            is_classifier = any(term in layer_name.lower() for term in ['classifier', 'fc', 'aux'])
+            is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear)) and not is_classifier
             
-            # [FIX] Force expansion if length is < 2, even if LCA is valid, to ensure minimum viable collapse size
-            if is_valid_lca(lca_mod) and (end_idx - start_idx + 1) >= 2:
-                break 
+            if i < veto_idx:
+                print(f"  [Scan] Layer {i:02d} ({layer_name}) -> SKIPPED (In Veto Region)")
+                if len(current_set) >= 1: R_candidates_raw.append(current_set)
+                current_set = []
+                continue
                 
-            expanded_fwd = False
-            expanded_bwd = False
-            
-            # Expand Forward
-            if end_idx + 1 < len(cnn_layers):
-                next_layer = cnn_layers[end_idx + 1]
-                if not any(term in next_layer.lower() for term in ['classifier', 'fc', 'aux']):
-                    end_idx += 1
-                    expanded_fwd = True
-            
-            # Expand Backward (Independent of Forward)
-            if start_idx > 0 and start_idx - 1 >= veto_idx: # [FIX] Ensure backward expansion respects veto region
-                prev_layer = cnn_layers[start_idx - 1]
-                if not any(term in prev_layer.lower() for term in ['classifier', 'fc', 'aux']):
-                    start_idx -= 1
-                    expanded_bwd = True
-                    
-            if not (expanded_fwd or expanded_bwd):
-                break # Trapped, give up and let Phase 3 catch it
-        
-        expanded_r = cnn_layers[start_idx : end_idx + 1]
-        if expanded_r not in R_candidates and len(expanded_r) >= 2:
-            R_candidates.append(expanded_r)
+            if not is_valid_target:
+                print(f"  [Scan] Layer {i:02d} ({layer_name}) -> SKIPPED (Classifier/Invalid Type)")
+                if len(current_set) >= 1: R_candidates_raw.append(current_set)
+                current_set = []
+                continue
 
-    print(f"[DEBUG] Phase 2 Complete. Expanded into {len(R_candidates)} structurally valid regions.")
-
-    # =====================================================================
-    # PHASE 3: Collapsable Memory Feasibility & Surrogate Compilation
-    # =====================================================================
-    experiment_regions = {}
-    set_counter = 0
-    R_final = []
-    
-    # [FIX] Memory set to prevent exponential duplication from overlapping shave windows
-    tested_regions = set()
-
-    print(f"\n[INFO] Phase 3: Evaluating Candidate Regions (with Smart Boundary Shaving)...")
-    
-    queue = R_candidates.copy()
-    
-    while queue:
-        r = queue.pop(0) # BFS extraction
-        if len(r) < 2:
-            continue
-            
-        start_name = r[0]
-        end_name = r[-1]
-        region_tuple = (start_name, end_name)
-        
-        if region_tuple in tested_regions:
-            continue
-        tested_regions.add(region_tuple)
-        
-        # [FIX] Fast-fail & Heal fragments trapped inside indivisible blocks
-        lca_path = get_lca_path(start_name, end_name)
-        lca_mod = module_dict.get(lca_path) if lca_path else model
-        if not is_valid_lca(lca_mod):
-            print(f"    [HEAL] Fragment '{start_name}' -> '{end_name}' is trapped inside LCA '{lca_path}'. Shaving boundaries...")
-            if len(r) > 2:
-                queue.append(r[1:])   # Shave left end
-                queue.append(r[:-1])  # Shave right end
-            continue
-        
-        try:
-            print(f"    [STEP] Testing candidate sequence: {start_name} -> {end_name} (Length: {len(r)})")
-            test_model = copy.deepcopy(model).to(device)
-            
-            collapsed_model = collapse_only(
-                model=test_model,
-                compression_set={"test": region_tuple},
-                input_shape=input_shape,
-                device=device,
-                dry_run=False 
-            )
-            
-            collapsed_model.eval()
-            with torch.no_grad():
-                _ = collapsed_model(dummy_input)
-
-            new_params = count_trainable_params(collapsed_model)
-            try:
-                new_flops = FlopCountAnalysis(collapsed_model, dummy_input).unsupported_ops_warnings(False).total()
-            except Exception:
-                new_flops = float('inf')
-
-            if new_params < base_params or (check_flops and new_flops < base_flops):
-                print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,}) | FLOPs ({base_flops:,} -> {new_flops:,})")
-                experiment_regions[f"Set_{set_counter}"] = region_tuple
-                R_final.append(region_tuple)
-                set_counter += 1
+            if h < 0:
+                print(f"  [Scan] Layer {i:02d} ({layer_name}) -> ADDED (Negative var: {h:.4f})")
+                current_set.append(layer_name)
             else:
-                reason = "Neither Params nor FLOPs decreased"
-                print(f"        [X] FAILED TO REDUCE: {reason}. Shaving block boundaries...")
+                print(f"  [Scan] Layer {i:02d} ({layer_name}) -> CUT (Positive var: {h:.4f})")
+                if len(current_set) >= 1: R_candidates_raw.append(current_set)
+                current_set = []
+                
+        if len(current_set) >= 1:
+            print(f"  [Scan] Appending final trailing set.")
+            R_candidates_raw.append(current_set)
+
+        # Phase 2B: LCA Expansion
+        R_candidates = []
+        print(f"\n[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---")
+        for r in R_candidates_raw:
+            start_idx = cnn_layers.index(r[0])
+            end_idx = cnn_layers.index(r[-1])
+            print(f"\n[DEBUG] Evaluating raw fragment: {r[0]} -> {r[-1]} (Length: {len(r)})")
+            
+            iteration = 0
+            while True:
+                iteration += 1
+                lca_path = get_lca_path(cnn_layers[start_idx], cnn_layers[end_idx])
+                lca_mod = module_dict.get(lca_path) if lca_path else model
+                valid_lca = is_valid_lca(lca_mod)
+                current_len = (end_idx - start_idx + 1)
+                
+                print(f"    [Iter {iteration}] Bounds: {cnn_layers[start_idx]} -> {cnn_layers[end_idx]}")
+                print(f"    [Iter {iteration}] LCA: '{lca_path}' | Valid LCA: {valid_lca} | Len: {current_len}")
+                
+                if valid_lca and current_len >= 2:
+                    print(f"    [Iter {iteration}] -> Success! Safe to slice. Stopping expansion.")
+                    break 
+                    
+                expanded_fwd = False
+                expanded_bwd = False
+                
+                # Expand Forward
+                if end_idx + 1 < len(cnn_layers):
+                    next_layer = cnn_layers[end_idx + 1]
+                    if not any(term in next_layer.lower() for term in ['classifier', 'fc', 'aux']):
+                        print(f"    [Iter {iteration}] -> Expanding FORWARD to include '{next_layer}'")
+                        end_idx += 1
+                        expanded_fwd = True
+                    else:
+                        print(f"    [Iter {iteration}] -> Forward blocked by classifier/blacklist.")
+                else:
+                    print(f"    [Iter {iteration}] -> Forward blocked: Reached absolute end of network.")
+                
+                # Expand Backward
+                if start_idx > 0 and start_idx - 1 >= veto_idx:
+                    prev_layer = cnn_layers[start_idx - 1]
+                    if not any(term in prev_layer.lower() for term in ['classifier', 'fc', 'aux']):
+                        print(f"    [Iter {iteration}] -> Expanding BACKWARD to include '{prev_layer}'")
+                        start_idx -= 1
+                        expanded_bwd = True
+                    else:
+                        print(f"    [Iter {iteration}] -> Backward blocked by classifier/blacklist.")
+                else:
+                    print(f"    [Iter {iteration}] -> Backward blocked: Hit veto region boundary.")
+                        
+                if not (expanded_fwd or expanded_bwd):
+                    print(f"    [Iter {iteration}] -> TRAPPED! Cannot expand further in either direction.")
+                    break 
+            
+            expanded_r = cnn_layers[start_idx : end_idx + 1]
+            if expanded_r not in R_candidates and len(expanded_r) >= 2:
+                print(f"[DEBUG] [+] Finalized expanded candidate: {expanded_r[0]} -> {expanded_r[-1]}")
+                R_candidates.append(expanded_r)
+            else:
+                print(f"[DEBUG] [-] Discarded fragment (Length < 2 or Duplicate of existing region).")
+
+        return R_candidates
+
+    # =====================================================================
+    # HELPER 4: Phase 3 - Surrogate Compilation & BFS Shaving
+    # =====================================================================
+    def evaluate_candidates(R_candidates, base_params, base_flops, check_flops, dummy_input):
+        experiment_regions = {}
+        set_counter = 0
+        R_final = []
+        tested_regions = set()
+        
+        queue = R_candidates.copy()
+        
+        while queue:
+            r = queue.pop(0) 
+            if len(r) < 2: continue
+                
+            start_name = r[0]
+            end_name = r[-1]
+            region_tuple = (start_name, end_name)
+            
+            if region_tuple in tested_regions: continue
+            tested_regions.add(region_tuple)
+            
+            lca_path = get_lca_path(start_name, end_name)
+            lca_mod = module_dict.get(lca_path) if lca_path else model
+            if not is_valid_lca(lca_mod):
+                print(f"    [HEAL] Fragment '{start_name}' -> '{end_name}' trapped inside indivisible LCA '{lca_path}'. Shaving boundaries...")
                 if len(r) > 2:
-                    # [FIX] BFS Shaving explores all combinations without breaking the split area
                     queue.append(r[1:])
                     queue.append(r[:-1])
-
-        except Exception as e:
-            print(f"        [!] CRASH: Architecture Exception ({type(e).__name__}: {e}). Shaving block boundaries...")
-            if len(r) > 2:
-                queue.append(r[1:])
-                queue.append(r[:-1])
-        finally:
-            if 'test_model' in locals(): del test_model
-            if 'collapsed_model' in locals(): del collapsed_model
-            gc.collect()
-            if torch.cuda.is_available(): torch.cuda.empty_cache()
-
-    # =====================================================================
-    # PHASE 4: Validating Dynamic Region All Combined (Greedy Integration)
-    # =====================================================================
-    if len(R_final) > 1:
-        print(f"\n[INFO] Phase 4: Validating 'Dynamic_Region_All_Combined' (Greedy Integration)...")
-        safe_combined_regions = []
-        
-        current_best_params = base_params
-        current_best_flops = base_flops
-        
-        for region_tuple in R_final:
-            candidate_combo = safe_combined_regions + [region_tuple]
+                continue
             
             try:
+                print(f"    [STEP] Testing candidate sequence: {start_name} -> {end_name} (Length: {len(r)})")
                 test_model = copy.deepcopy(model).to(device)
-                combo_dict = {f"comb_{i}": reg for i, reg in enumerate(candidate_combo)}
                 
-                collapsed_combined = collapse_only(
+                collapsed_model = collapse_only(
                     model=test_model,
-                    compression_set=combo_dict,
+                    compression_set={"test": region_tuple},
                     input_shape=input_shape,
                     device=device,
                     dry_run=False 
                 )
                 
+                collapsed_model.eval()
+                with torch.no_grad(): _ = collapsed_model(dummy_input)
+
+                new_params = count_trainable_params(collapsed_model)
+                try:
+                    new_flops = FlopCountAnalysis(collapsed_model, dummy_input).unsupported_ops_warnings(False).total()
+                except Exception:
+                    new_flops = float('inf')
+
+                if new_params < base_params or (check_flops and new_flops < base_flops):
+                    print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,}) | FLOPs ({base_flops:,} -> {new_flops:,})")
+                    experiment_regions[f"Set_{set_counter}"] = region_tuple
+                    R_final.append(region_tuple)
+                    set_counter += 1
+                else:
+                    print(f"        [X] FAILED TO REDUCE. Shaving block boundaries...")
+                    if len(r) > 2:
+                        queue.append(r[1:])
+                        queue.append(r[:-1])
+
+            except Exception as e:
+                print(f"        [!] CRASH ({type(e).__name__}: {e}). Shaving block boundaries...")
+                if len(r) > 2:
+                    queue.append(r[1:])
+                    queue.append(r[:-1])
+            finally:
+                if 'test_model' in locals(): del test_model
+                if 'collapsed_model' in locals(): del collapsed_model
+                gc.collect()
+                if torch.cuda.is_available(): torch.cuda.empty_cache()
+                
+        return experiment_regions, R_final
+
+    # =====================================================================
+    # HELPER 5: Phase 4 - Greedy Integration
+    # =====================================================================
+    def greedy_integration(R_final, experiment_regions, base_params, base_flops, check_flops, dummy_input):
+        if len(R_final) <= 1: return experiment_regions
+        
+        print(f"\n[INFO] Phase 4: Validating 'Dynamic_Region_All_Combined' (Greedy Integration)...")
+        safe_combined_regions = []
+        current_best_params = base_params
+        current_best_flops = base_flops
+        
+        for region_tuple in R_final:
+            candidate_combo = safe_combined_regions + [region_tuple]
+            try:
+                test_model = copy.deepcopy(model).to(device)
+                combo_dict = {f"comb_{i}": reg for i, reg in enumerate(candidate_combo)}
+                
+                collapsed_combined = collapse_only(
+                    model=test_model, compression_set=combo_dict,
+                    input_shape=input_shape, device=device, dry_run=False 
+                )
+                
                 collapsed_combined.eval()
-                with torch.no_grad():
-                    _ = collapsed_combined(dummy_input)
+                with torch.no_grad(): _ = collapsed_combined(dummy_input)
                     
                 new_params_combo = count_trainable_params(collapsed_combined)
                 try:
@@ -406,19 +421,15 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 flop_decreased = check_flops and new_flops_combo < current_best_flops
                 
                 if not (param_decreased or flop_decreased):
-                    raise ValueError(f"Diminishing returns. Params ({new_params_combo:,} >= {current_best_params:,}) & FLOPs ({new_flops_combo:,} >= {current_best_flops:,})")
+                    raise ValueError(f"Diminishing returns.")
                 
                 print(f"        [+] Merged safely: {region_tuple[0]} -> {region_tuple[1]}")
-                print(f"            -> Running Params: {current_best_params:,} -> {new_params_combo:,}")
-                print(f"            -> Running FLOPs : {current_best_flops:,} -> {new_flops_combo:,}")
-                
                 current_best_params = new_params_combo
                 current_best_flops = new_flops_combo
                 safe_combined_regions.append(region_tuple)
                 
             except Exception as e:
-                # This naturally catches any overlapping regions generated by the BFS shave loop!
-                print(f"        [-] Merge rejected: Adding {region_tuple[0]} -> {region_tuple[1]} broke constraint ({type(e).__name__})")
+                print(f"        [-] Merge rejected: Adding {region_tuple[0]} -> {region_tuple[1]} broke constraint")
             finally:
                 if 'test_model' in locals(): del test_model
                 if 'collapsed_combined' in locals(): del collapsed_combined
@@ -428,10 +439,29 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         if len(safe_combined_regions) > 1:
             experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
             
-    # Add control as baseline
+        return experiment_regions
+
+    # =====================================================================
+    # MAIN EXECUTION FLOW
+    # =====================================================================
+    base_params, base_flops, check_flops, dummy_input = get_base_metrics()
+    print(f"[DEBUG] Base model parameters: {base_params:,} | Base FLOPs: {base_flops:,}")
+    
+    # 1. Fetch Expanded Targets
+    R_candidates = extract_and_expand_candidates()
+    
+    # 2. Evaluate and Compile (Shaving applied automatically on fail)
+    print(f"\n[INFO] Phase 3: Evaluating {len(R_candidates)} Candidate Regions (with Smart Boundary Shaving)...")
+    experiment_regions, R_final = evaluate_candidates(R_candidates, base_params, base_flops, check_flops, dummy_input)
+    
+    # 3. Combine safe targets together
+    experiment_regions = greedy_integration(R_final, experiment_regions, base_params, base_flops, check_flops, dummy_input)
+    
+    # Add Control
     experiment_regions["Control_Continuted"] = None
     print(f"\n[DEBUG] === Finished Dynamic Config Generator ===")
     return experiment_regions
+
 # ==============================================================================
 # Helper functions
 # ==============================================================================
