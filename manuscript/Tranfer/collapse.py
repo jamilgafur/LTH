@@ -172,22 +172,49 @@ def _build_and_replace_block(
         conv_name = "conv_1x1"
     # -----------------------------------------------
 
-    bn = nn.BatchNorm2d(out_channels)  
-    relu = nn.ReLU(inplace=False) 
+
+    model_type = type(model).__name__.lower()
+    
+    # ConvNeXt uses LayerNorm2d (channels-first) and GELU. 
+    if "convnext" in model_type:
+        # Define a quick inline LayerNorm2d helper for ConvNeXt
+        class SurrogateLayerNorm2d(nn.Module):
+            def __init__(self, dim, eps=1e-6):
+                super().__init__()
+                self.weight = nn.Parameter(torch.ones(dim))
+                self.bias = nn.Parameter(torch.zeros(dim))
+                self.eps = eps
+            def forward(self, x):
+                u = x.mean(1, keepdim=True)
+                s = (x - u).pow(2).mean(1, keepdim=True)
+                x = (x - u) / torch.sqrt(s + self.eps)
+                return self.weight[:, None, None] * x + self.bias[:, None, None]
+                
+        norm_layer = SurrogateLayerNorm2d(out_channels)
+        act_layer = nn.GELU()
+        norm_name = "layernorm"
+        act_name = "gelu"
+        
+    else:
+        # VGG, ResNet, MobileNet, Xception, RegNetX default to BN/ReLU
+        norm_layer = nn.BatchNorm2d(out_channels)  
+        act_layer = nn.ReLU(inplace=False) 
+        norm_name = "bn"
+        act_name = "relu"
+        
     pool = nn.AdaptiveAvgPool2d((target_H, target_W)) 
 
     replacement = nn.Sequential(OrderedDict([
         (conv_name, conv),
-        ("bn", bn), 
-        ("relu", relu), 
+        (norm_name, norm_layer), 
+        (act_name, act_layer), 
         ("adaptive_pool", pool), 
     ]))
     
     if debug: 
-        print(f"\n[DEBUG] Built replacement module:")
+        print(f"\n[DEBUG] Built replacement module for {model_type}:")
         for name, layer in replacement.named_children():
             print(f"        - {name}: {layer}")
-
     # =========================================================
     # THE FIX: Explicitly passing info.get("container")
     # =========================================================
@@ -393,8 +420,12 @@ class SmartIdentity(nn.Module):
         # Safely absorb topology chains (e.g., identity.inception_4a(x) -> identity(x))
         return self
     
+
 def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=None, end_name=None, container=None):
-    if isinstance(container, nn.Sequential) or container is None:
+    # [FIX] Treat SmartIdentity exactly like an nn.Sequential for slicing purposes
+    is_sequential_like = isinstance(container, nn.Sequential) or type(container).__name__ == 'SmartIdentity' or container is None
+    
+    if is_sequential_like:
         new_layers = OrderedDict()
         for i, (name, mod) in enumerate(named_layers):
             if i < start_idx or i > end_idx:
@@ -412,7 +443,6 @@ def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=No
             elif start_idx < i <= end_idx:
                 setattr(container, name, SmartIdentity())
         return container
-    
 def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
     if not next_linear_name:
         return model
@@ -714,34 +744,26 @@ def _find_next_linear(model, end_layer_name, debug):
 
     next_linear_name = None
     next_linear_mod = None
+    
     if idx_end_global is not None:
         if debug:
             print(f"[DEBUG] Scanning forward from index {idx_end_global + 1} for next Linear...")
         for j in range(idx_end_global + 1, len(modules_list)):
             n, m = modules_list[j]
+            # ONLY grab the linear if it's explicitly downstream
             if isinstance(m, nn.Linear):
                 next_linear_name, next_linear_mod = n, m
                 if debug:
                     print(f"[DEBUG] Found Linear layer ahead: {n} ({m})")
                 break
 
+    # [FIX]: REMOVE the global fallback loop. If we don't find a linear layer downstream, 
+    # we return None so the block doesn't hallucinate a spatial size from the stem.
     if next_linear_mod is None:
         if debug:
-            print(f"[DEBUG] No Linear found after {end_layer_name}. Searching globally...")
-        for n, m in modules_list:
-            if isinstance(m, nn.Linear):
-                next_linear_name, next_linear_mod = n, m
-                if debug:
-                    print(f"[DEBUG] Global fallback Linear found: {n} ({m})")
-                break
-
-    if next_linear_mod is None:
-        print(f"[WARN] No Linear layer found in model after '{end_layer_name}'")
-
-    if debug:
-        print(f"[RESULT] Next Linear detected → name='{next_linear_name}', module={next_linear_mod}")
-
-    return next_linear_name, next_linear_mod
+            print(f"[DEBUG] No downstream Linear found after {end_layer_name}. Disabling adaptive pooling heuristic.")
+            
+    return next_linear_name
 
 def _analyze_block_output(
     model, full_block, conv_layers, named_layers, end_idx, layer_type, x, y_out, next_linear_mod, debug
@@ -941,7 +963,7 @@ def _validate_downstream(
                 safe = nn.Identity()
                 print(f"[INFO] Replaced with Identity() to bypass invalid operation.")
 
-            if isinstance(container, nn.Sequential):
+            if isinstance(container, nn.Sequential) or type(container).__name__ == 'SmartIdentity':
                 new_od = OrderedDict()
                 for j, (n2, m2) in enumerate(children):
                     new_od[n2] = safe if n2 == nm else m2
@@ -956,7 +978,7 @@ def _validate_downstream(
         if t.ndim >= 4 and (t.shape[-2] == 0 or t.shape[-1] == 0):
             print(f"[WARN] Module '{start_container_name}.{nm}' produced zero spatial dimensions. Wrapping with _SafePool.")
             safe = _SafePool(mod)
-            if isinstance(container, nn.Sequential):
+            if isinstance(container, nn.Sequential) or type(container).__name__ == 'SmartIdentity':
                 new_od = OrderedDict()
                 for j, (n2, m2) in enumerate(children):
                     new_od[n2] = safe if n2 == nm else m2
