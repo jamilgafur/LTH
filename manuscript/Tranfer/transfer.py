@@ -155,6 +155,29 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     module_dict = dict(model.named_modules())
     print(f"[DEBUG] Base model parameters : {base_params:,}")
 
+    # --- Structural Helpers ---
+    def get_lca_path(start_name, end_name):
+        start_parts = start_name.split('.') if start_name else []
+        end_parts = end_name.split('.') if end_name else []
+        common = []
+        if start_name == end_name and len(start_parts) > 0:
+            return '.'.join(start_parts[:-1])
+        for a, b in zip(start_parts, end_parts):
+            if a == b:
+                common.append(a)
+            else:
+                break
+        return '.'.join(common)
+
+    def is_valid_lca(lca_mod):
+        if lca_mod is None: return True
+        if isinstance(lca_mod, (torch.nn.Sequential, torch.nn.ModuleList)): return True
+        mod_name = type(lca_mod).__name__
+        invalid_blocks = ['ConvNeXtBlock', 'XBlock', 'InceptionBlock', 'XceptionBlock', 'DepthwiseSeparableConv', 'BasicConv2d', 'Bottleneck', 'BasicBlock']
+        if mod_name in invalid_blocks:
+            return False
+        return True
+
     # --- Calculate Base FLOPs ---
     dummy_input = torch.randn(1, *input_shape[1:]).to(device)
     model.eval()
@@ -188,59 +211,72 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     print(f"[DEBUG] -> Variance profile calculated. Min(h): {min(h_values):.4f}, Max(h): {max(h_values):.4f}")
 
     # =====================================================================
-    # PHASE 2: Ensure Multi-Layer Collapsing (Candidate Selection)
+    # PHASE 2: Candidate Selection & Structural LCA Expansion
     # =====================================================================
-    print(f"\n[INFO] Phase 2: Candidate Selection (Filtering & Contiguous Block Detection)...")
+    print(f"\n[INFO] Phase 2: Candidate Selection (Filtering & LCA Expansion)...")
     num_layers = len(cnn_layers)
     veto_idx = int(num_layers * veto_fraction)
-    print(f"[DEBUG] Total probe layers: {num_layers}. Veto index (first {veto_fraction*100}%): {veto_idx}")
     
-    R_candidates = []
+    R_candidates_raw = []
     current_set = []
     
     for i, h in enumerate(h_values):
         layer_name = cnn_layers[i]
         mod = module_dict.get(layer_name)
         
-        # [FIX] Allow Conv2d and Linear (for ConvNeXt pointwise), but strictly 
-        # blacklist classifier/FC heads to prevent 1D vs 2D tensor crashes during collapse.
         is_classifier = any(term in layer_name.lower() for term in ['classifier', 'fc', 'aux'])
         is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear)) and not is_classifier
         
-        # 1. Check Veto Region
-        if i < veto_idx:
-            # Uncomment to see every skipped layer:
-            # print(f"[DEBUG] Layer '{layer_name}' skipped (in veto region).")
-            if len(current_set) >= 2:
-                R_candidates.append(current_set)
-                print(f"[DEBUG] -> Appended candidate set of length {len(current_set)} (Fractured by Veto)")
-            current_set = []
-            continue
-            
-        # 2. Check Valid Target (The Linear / Classifier Trap)
-        if not is_valid_target:
-            reason = "Classifier/FC Blacklist" if is_classifier else f"Invalid Type ({type(mod).__name__})"
-            print(f"[DEBUG] Layer '{layer_name}' skipped ({reason}). Breaking contiguous block.")
-            if len(current_set) >= 2:
-                R_candidates.append(current_set)
-                print(f"[DEBUG] -> Appended candidate set of length {len(current_set)} (Fractured by Architecture constraint)")
+        if i < veto_idx or not is_valid_target:
+            if len(current_set) >= 2: R_candidates_raw.append(current_set)
             current_set = []
             continue
 
-        # 3. Process Negative Variance
         if h < 0:
             current_set.append(layer_name)
         else:
-            if len(current_set) >= 2:
-                R_candidates.append(current_set)
-                print(f"[DEBUG] -> Appended candidate set of length {len(current_set)} (Fractured by Positive Variance)")
+            if len(current_set) >= 2: R_candidates_raw.append(current_set)
             current_set = []
             
     if len(current_set) >= 2:
-        R_candidates.append(current_set)
-        print(f"[DEBUG] -> Appended final candidate set of length {len(current_set)}")
+        R_candidates_raw.append(current_set)
 
-    print(f"[DEBUG] Phase 2 Complete. Found {len(R_candidates)} distinct candidate regions for collapse.")
+    # --- ENFORCE STRUCTURAL LCA EXPANSION ---
+    R_candidates = []
+    for r in R_candidates_raw:
+        start_idx = cnn_layers.index(r[0])
+        end_idx = cnn_layers.index(r[-1])
+        
+        while True:
+            lca_path = get_lca_path(cnn_layers[start_idx], cnn_layers[end_idx])
+            lca_mod = module_dict.get(lca_path) if lca_path else model
+            
+            if is_valid_lca(lca_mod):
+                break # Safe to slice!
+                
+            expanded = False
+            # Expand Forward
+            if end_idx + 1 < len(cnn_layers):
+                next_layer = cnn_layers[end_idx + 1]
+                if not any(term in next_layer.lower() for term in ['classifier', 'fc', 'aux']):
+                    end_idx += 1
+                    expanded = True
+            
+            # Expand Backward
+            if not expanded and start_idx > 0:
+                prev_layer = cnn_layers[start_idx - 1]
+                if not any(term in prev_layer.lower() for term in ['classifier', 'fc', 'aux']):
+                    start_idx -= 1
+                    expanded = True
+                    
+            if not expanded:
+                break # Trapped, give up and let Phase 3 catch it
+        
+        expanded_r = cnn_layers[start_idx : end_idx + 1]
+        if expanded_r not in R_candidates and len(expanded_r) >= 2:
+            R_candidates.append(expanded_r)
+
+    print(f"[DEBUG] Phase 2 Complete. Expanded into {len(R_candidates)} structurally valid regions.")
 
     # =====================================================================
     # PHASE 3: Collapsable Memory Feasibility & Surrogate Compilation
@@ -256,11 +292,18 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     while queue:
         r = queue.pop(0)
         if len(r) < 2:
-            print(f"[DEBUG] Discarding block fragment of length {len(r)}")
             continue
             
         start_name = r[0]
         end_name = r[-1]
+        
+        # Fast-fail fragments trapped inside indivisible blocks after fracturing
+        lca_path = get_lca_path(start_name, end_name)
+        lca_mod = module_dict.get(lca_path) if lca_path else model
+        if not is_valid_lca(lca_mod):
+            print(f"    [SKIP] Fragment '{start_name}' -> '{end_name}' is trapped inside indivisible LCA '{lca_path}'. Discarding.")
+            continue
+            
         region_tuple = (start_name, end_name)
         
         try:
@@ -285,7 +328,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             except Exception:
                 new_flops = float('inf')
 
-            # UPDATE: Accept if params decrease OR flops decrease
             if new_params < base_params or (check_flops and new_flops < base_flops):
                 print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,}) | FLOPs ({base_flops:,} -> {new_flops:,})")
                 experiment_regions[f"Set_{set_counter}"] = region_tuple
@@ -294,9 +336,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             else:
                 reason = "Neither Params nor FLOPs decreased"
                 print(f"        [X] FAILED TO REDUCE: {reason}.")
-                print(f"        [DEBUG] -> Params: {base_params:,} -> {new_params:,}")
-                print(f"        [DEBUG] -> FLOPs : {base_flops:,} -> {new_flops:,}")
-                print(f"        [DEBUG] -> Fracturing block into halves to search for efficiencies...")
                 mid = len(r) // 2
                 if mid > 0:
                     queue.insert(0, r[mid:])
@@ -304,7 +343,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
 
         except Exception as e:
             print(f"        [!] CRASH: Architecture Exception ({type(e).__name__}: {e})")
-            print(f"        [DEBUG] -> Fracturing block at mid-point to isolate bad geometry...")
             mid = len(r) // 2
             if mid > 0:
                 queue.insert(0, r[mid:])
@@ -325,10 +363,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         current_best_params = base_params
         current_best_flops = base_flops
         
-        print(f"[DEBUG] Starting greedy integration with Base Params: {current_best_params:,} | Base FLOPs: {current_best_flops:,}")
-        
         for region_tuple in R_final:
-            print(f"    [STEP] Attempting to greedily merge: {region_tuple[0]} -> {region_tuple[1]}")
             candidate_combo = safe_combined_regions + [region_tuple]
             
             try:
@@ -353,7 +388,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 except Exception:
                     new_flops_combo = float('inf')
 
-                # UPDATE: Throw error ONLY if neither params nor flops show a reduction 
                 param_decreased = new_params_combo < current_best_params
                 flop_decreased = check_flops and new_flops_combo < current_best_flops
                 
@@ -377,10 +411,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 if torch.cuda.is_available(): torch.cuda.empty_cache()
                 
         if len(safe_combined_regions) > 1:
-            print(f"[DEBUG] Successfully built combined region with {len(safe_combined_regions)} distinct targets.")
             experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
-        else:
-            print(f"[DEBUG] Greedy integration yielded <= 1 region. Discarding combined config.")
             
     # Add control as baseline
     experiment_regions["Control_Continuted"] = None
