@@ -51,3 +51,238 @@ Saved memory plot to MobileNet_Cifar10_None_epochs3_pretrain3/plots/Control_memo
 features.12
 /old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py:536: UserWarning: var(): degrees of freedom is <= 0. Correction should be strictly less than the reduction factor (input numel divided by output numel). (Triggered internally at /pytorch/aten/src/ATen/native/ReduceOps.cpp:1831.)
   act_var = y.var(dim=[2, 3]).mean().item()
+[✓] Successfully healed merged_metrics.json for Control.
+[INFO] No variance file found. Executing Network Probe...
+[✓] Layer variances saved to /old_Users/jgafur/LTH/manuscript/Tranfer/runs/plots/MobileNet/Cifar10/epochs3_pretrain3/layer_variances.json
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 3,217,226 | Base FLOPs: 11,803,136
+
+[DEBUG] --- Phase 2A: Scanning 28 layers for Raw Candidates ---
+  [Scan] 000 | stem.conv1                     | Status: Veto
+  [Scan] 001 | features.0.depthwise.0         | Status: Veto
+  [Scan] 002 | features.0.pointwise.0         | Status: Veto
+  [Scan] 003 | features.1.depthwise.0         | Status: Veto
+  [Scan] 004 | features.1.pointwise.0         | Status: Veto
+  [Scan] 005 | features.2.depthwise.0         | Status: Veto
+  [Scan] 006 | features.2.pointwise.0         | Status: Veto
+  [Scan] 007 | features.3.depthwise.0         | Status: Active
+  [Scan] 008 | features.3.pointwise.0         | Status: Rejected (Positive Variance)
+  [Scan] 009 | features.4.depthwise.0         | Status: Active
+  [Scan] 010 | features.4.pointwise.0         | Status: Rejected (Positive Variance)
+  [Scan] 011 | features.5.depthwise.0         | Status: Active
+  [Scan] 012 | features.5.pointwise.0         | Status: Rejected (Positive Variance)
+  [Scan] 013 | features.6.depthwise.0         | Status: Active
+  [Scan] 014 | features.6.pointwise.0         | Status: Rejected (Positive Variance)
+  [Scan] 015 | features.7.depthwise.0         | Status: Active
+  [Scan] 016 | features.7.pointwise.0         | Status: Rejected (Positive Variance)
+  [Scan] 017 | features.8.depthwise.0         | Status: Active
+  [Scan] 018 | features.8.pointwise.0         | Status: Rejected (Positive Variance)
+  [Scan] 019 | features.9.depthwise.0         | Status: Active
+  [Scan] 020 | features.9.pointwise.0         | Status: Rejected (Positive Variance)
+  [Scan] 021 | features.10.depthwise.0        | Status: Active
+  [Scan] 022 | features.10.pointwise.0        | Status: Rejected (Positive Variance)
+  [Scan] 023 | features.11.depthwise.0        | Status: Active
+  [Scan] 024 | features.11.pointwise.0        | Status: Active
+  [Scan] 025 | features.12.depthwise.0        | Status: Active
+  [Scan] 026 | features.12.pointwise.0        | Status: Rejected (Positive Variance)
+  [Scan] 027 | fc                             | Status: Rejected (Architecture/Classifier)
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [-] Discarded/Marked as Gap: features.3.depthwise.0
+[DEBUG] [-] Discarded/Marked as Gap: features.4.depthwise.0
+[DEBUG] [-] Discarded/Marked as Gap: features.5.depthwise.0
+[DEBUG] [-] Discarded/Marked as Gap: features.6.depthwise.0
+[DEBUG] [-] Discarded/Marked as Gap: features.7.depthwise.0
+[DEBUG] [-] Discarded/Marked as Gap: features.8.depthwise.0
+[DEBUG] [-] Discarded/Marked as Gap: features.9.depthwise.0
+[DEBUG] [-] Discarded/Marked as Gap: features.10.depthwise.0
+[DEBUG] [+] Finalized expanded candidate: features.11.depthwise.0 -> features.12.depthwise.0
+
+[INFO] Phase 3: Evaluating 1 Candidate Regions (with Smart Boundary Shaving)...
+    [STEP] Testing candidate sequence: features.11.depthwise.0 -> features.12.depthwise.0 (Length: 3)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (MobileNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+    [DEBUG] Added mapping: test = (features.11.depthwise.0 → features.12.depthwise.0)
+[DEBUG] Total collapse targets: 1
+    [BLOCK 0] features.11.depthwise.0 → features.12.depthwise.0
+[INFO] Model parameter count before collapsing: 3,217,226
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.11.depthwise.0 → features.12.depthwise.0
+[STEP] Calling _collapse_block('features.11.depthwise.0', 'features.12.depthwise.0')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.11.depthwise.0
+[INFO] End Target   : features.12.depthwise.0
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.11.depthwise.0' -> 'features.12.depthwise.0'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 11 to 12
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] 11 -> DepthwiseSeparableConv
+    [LAYER MAP] 12 -> DepthwiseSeparableConv
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.11'
+[DEBUG] Hooking End Node   : 'features.12'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.11' -> 'features.12'...
+[DEBUG] Captured input shape: (512, 512, 2, 2), output shape: (512, 1024, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 512, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 1024, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 3,217,226
+
+[STEP 3] Probing graph for downstream classifier after 'features.12.depthwise.0'...
+
+[STEP] Searching for next nn.Linear after 'features.12.depthwise.0'...
+[DEBUG] Exact layer match found at index 116: features.12.depthwise.0 (Conv2d)
+[DEBUG] Scanning forward from index 117 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=1024, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (512, 512, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 1024, 1, 1)
+[DEBUG] Determined out_channels=1024
+[DEBUG] Final block output shape: (512, 1024, 1, 1)
+[DEBUG] Determined out_channels=1024
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=1 (HxW=1x1)
+[RESULT] Block analysis complete:
+         out_shape=(512, 1024, 1, 1)
+         out_channels=1024
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 1024, 1, 1)
+    - out_channels             : 1024
+    - pool_layer               : None
+    - adaptive_pool_to_use     : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.11.depthwise.0'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 11 -> 12
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 512 (in) -> 1024 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=512, in=512, out=512)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for mobilenet:
+        - conv_1x1: Conv2d(512, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 3,217,226
+[INFO] Post-collapse : 2,149,706
+[INFO] Net Change    : -1,067,520
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 1024, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=11, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 11: '11'
+[STEP] Validating inserted module 'Sequential' at index 11...
+[DEBUG] Inserted module forward successful, output shape: (512, 1024, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'features.12' executed successfully, output shape: (512, 1024, 1, 1)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.11.depthwise.0'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.11.depthwise.0' → 'features.12.depthwise.0'
+[INFO] ✅ Successfully collapsed block 'test' (features.11.depthwise.0 → features.12.depthwise.0)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 3,217,226
+[INFO] Parameters after : 2,149,706
+[INFO] ΔParams = +1,067,520 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [✓] ACCEPTED: Params (3,217,226 -> 2,149,706) | FLOPs (11,803,136 -> 12,318,720)
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[•] Running Comprehensive Heuristic Analysis for MobileNet on Cifar10...
+[!] Failed to process experiments: too many values to unpack (expected 2)
+[✓] Stage 1 Complete. Exported 3 targets to 'MobileNet_Cifar10_epochs3_pretrain3_JF_discovered_regions.json'.
+10:57:47 [INFO] Scanning for metrics files matching epochs=3, pretrain=3
+10:57:47 [INFO] Successfully parsed 7 experiment rows.
+10:57:48 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__accuracy.png
+10:57:48 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__params.png
+10:57:49 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__flops.png
+10:57:49 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__memory.png
+10:57:49 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__accuracy.png
+10:57:50 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__params.png
+10:57:50 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__flops.png
+10:57:51 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__memory.png
+10:57:51 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__accuracy.png
+10:57:52 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__params.png
+10:57:52 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__flops.png
+10:57:53 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__memory.png
+10:57:53 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__accuracy.png
+10:57:53 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__params.png
+10:57:54 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__flops.png
+10:57:54 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__memory.png
+10:57:54 [INFO] Starting FIG2 generation. Target epochs: 3, pretrain: 3
+10:57:56 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/MobileNet_Cifar10_bav_methodology_regions.png
+10:57:57 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/MobileNet_Cifar100_bav_methodology_regions.png
+10:57:57 [CRITICAL] Error: too many values to unpack (expected 2)
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py", line 1217, in <module>
+    fig4_comprehensive_search_space_map(df, epochs, pretrain, out_dir=FIG_DIR / "search_space")
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py", line 747, in fig4_comprehensive_search_space_map
+    for start_layer, end_layer in ranges:
+        ^^^^^^^^^^^^^^^^^^^^^^
+ValueError: too many values to unpack (expected 2)
