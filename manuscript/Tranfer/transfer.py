@@ -222,7 +222,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             
         return True
 
-    # =====================================================================
+   # =====================================================================
     # HELPER 3: Phase 1 & 2 - Variance Normalization & Expansion
     # =====================================================================
     def extract_and_expand_candidates():
@@ -253,87 +253,67 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             is_classifier = any(term in layer_name.lower() for term in ['classifier', 'fc', 'aux'])
             is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear)) and not is_classifier
             
-            # Categorization Logic
-            if i < veto_idx:
-                status = "Veto"
-            elif not is_valid_target:
-                status = "Rejected (Architecture/Classifier)"
-            elif h >= 0:
-                status = "Rejected (Positive Variance)"
-            else:
-                status = "Active"
+            if i < veto_idx: status = "Veto"
+            elif not is_valid_target: status = "Rejected"
+            elif h >= 0: status = "Rejected"
+            else: status = "Active"
                 
             status_map[layer_name] = status
-            print(f"  [Scan] {i:03d} | {layer_name:<30} | Status: {status}")
             
             if status == "Active":
                 current_set.append(layer_name)
             else:
-                # [FIX] Capture singletons or orphans temporarily for potential absorption
+                # [FIX] Only append if the set is a valid collapse candidate (>= 2)
                 if len(current_set) >= 2: 
                     R_candidates_raw.append(current_set)
+                else:
+                    # Mark orphans as Gaps so they don't get lost
+                    for orphan in current_set: status_map[orphan] = "Gap"
                 current_set = []
                 
         if len(current_set) >= 2:
             R_candidates_raw.append(current_set)
+        else:
+            for orphan in current_set: status_map[orphan] = "Gap"
 
-        # Phase 2B: LCA Expansion with Absorption
+        # Phase 2B: LCA Expansion with strict length enforcement
         R_candidates = []
-        last_successful_candidate = None
-
         print(f"\n[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---")
         for r in R_candidates_raw:
-            # [FIX] Absorption: If singleton, try to merge with previous instead of creating a new set
-            if len(r) == 1 and last_successful_candidate is not None:
-                # Attempt to attach the singleton to the end of the last candidate
-                proposed_r = last_successful_candidate + r
-                # Check if this new extended set is structurally valid
-                start_idx = cnn_layers.index(proposed_r[0])
-                end_idx = cnn_layers.index(proposed_r[-1])
-                # If valid, update R_candidates and skip the standalone singleton
-                # (Validation logic follows below)
-            
             start_idx = cnn_layers.index(r[0])
             end_idx = cnn_layers.index(r[-1])
             
             # Expand until valid LCA is found or trapped
+            trapped = False
             while True:
                 lca_path = get_lca_path(cnn_layers[start_idx], cnn_layers[end_idx])
                 lca_mod = module_dict.get(lca_path) if lca_path else model
-                valid_lca = is_valid_lca(lca_mod)
-                current_len = (end_idx - start_idx + 1)
                 
-                # Success check
-                if valid_lca and current_len >= 2:
+                if is_valid_lca(lca_mod) and (end_idx - start_idx + 1) >= 2:
                     break 
                     
-                # Expansion logic
                 expanded = False
-                # Forward
+                # Try forward then backward expansion
                 if end_idx + 1 < len(cnn_layers) and status_map.get(cnn_layers[end_idx+1]) == "Active":
-                    end_idx += 1
-                    expanded = True
-                # Backward
+                    end_idx += 1; expanded = True
                 elif start_idx > 0 and start_idx - 1 >= veto_idx and status_map.get(cnn_layers[start_idx-1]) == "Active":
-                    start_idx -= 1
-                    expanded = True
+                    start_idx -= 1; expanded = True
                         
                 if not expanded:
-                    # [FIX] Mark as Gap if it fails to expand into a valid structure
-                    for idx in range(start_idx, end_idx + 1):
-                        status_map[cnn_layers[idx]] = "Gap"
+                    trapped = True
                     break 
             
-            expanded_r = cnn_layers[start_idx : end_idx + 1]
-            
-            if expanded_r not in R_candidates and len(expanded_r) >= 2:
-                print(f"[DEBUG] [+] Finalized expanded candidate: {expanded_r[0]} -> {expanded_r[-1]}")
-                R_candidates.append(expanded_r)
-                last_successful_candidate = expanded_r
+            if not trapped:
+                expanded_r = cnn_layers[start_idx : end_idx + 1]
+                if expanded_r not in R_candidates and len(expanded_r) >= 2:
+                    print(f"[DEBUG] [+] Finalized expanded candidate: {expanded_r[0]} -> {expanded_r[-1]}")
+                    R_candidates.append(expanded_r)
             else:
-                print(f"[DEBUG] [-] Discarded/Marked as Gap: {r[0]}")
+                print(f"[DEBUG] [-] Trapped region: {r[0]}. Marking as Gap.")
+                for idx in range(start_idx, end_idx + 1): status_map[cnn_layers[idx]] = "Gap"
 
         return R_candidates, status_map
+
     # =====================================================================
     # HELPER 4: Phase 3 - Surrogate Compilation & BFS Shaving
     # =====================================================================
@@ -347,9 +327,8 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         
         while queue:
             r = queue.pop(0) 
-            # [FIX] Absolutely enforce len >= 2 during shaving loop
-            if len(r) < 2: 
-                continue
+            # [FIX] Strict size enforcement: Ignore anything that got shaved below size 2
+            if len(r) < 2: continue
                 
             start_name = r[0]
             end_name = r[-1]
@@ -358,17 +337,8 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             if region_tuple in tested_regions: continue
             tested_regions.add(region_tuple)
             
-            lca_path = get_lca_path(start_name, end_name)
-            lca_mod = module_dict.get(lca_path) if lca_path else model
-            if not is_valid_lca(lca_mod):
-                print(f"    [HEAL] Fragment '{start_name}' -> '{end_name}' trapped inside indivisible LCA '{lca_path}'. Shaving boundaries...")
-                if len(r) > 2:
-                    queue.append(r[1:])
-                    queue.append(r[:-1])
-                continue
-            
             try:
-                print(f"    [STEP] Testing candidate sequence: {start_name} -> {end_name} (Length: {len(r)})")
+                print(f"    [STEP] Testing sequence: {start_name} -> {end_name} (Length: {len(r)})")
                 test_model = copy.deepcopy(model).to(device)
                 
                 collapsed_model = collapse_only(
@@ -389,21 +359,21 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     new_flops = float('inf')
 
                 if new_params < base_params or (check_flops and new_flops < base_flops):
-                    print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,}) | FLOPs ({base_flops:,} -> {new_flops:,})")
+                    print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,})")
                     experiment_regions[f"Set_{set_counter}"] = region_tuple
                     R_final.append(region_tuple)
                     set_counter += 1
                 else:
-                    print(f"        [X] FAILED TO REDUCE. Shaving block boundaries...")
+                    print(f"        [X] FAILED TO REDUCE. Shaving...")
+                    # Shave and put back only if resulting set >= 2
                     if len(r) > 2:
-                        queue.append(r[1:])
-                        queue.append(r[:-1])
+                        left_shaved = r[1:]
+                        right_shaved = r[:-1]
+                        if len(left_shaved) >= 2: queue.append(left_shaved)
+                        if len(right_shaved) >= 2: queue.append(right_shaved)
 
             except Exception as e:
-                print(f"        [!] CRASH ({type(e).__name__}: {e}). Shaving block boundaries...")
-                if len(r) > 2:
-                    queue.append(r[1:])
-                    queue.append(r[:-1])
+                print(f"        [!] CRASH ({type(e).__name__}: {e}).")
             finally:
                 if 'test_model' in locals(): del test_model
                 if 'collapsed_model' in locals(): del collapsed_model
@@ -411,7 +381,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 if torch.cuda.is_available(): torch.cuda.empty_cache()
                 
         return experiment_regions, R_final
-
+    
     # =====================================================================
     # HELPER 5: Phase 4 - Greedy Integration
     # =====================================================================
