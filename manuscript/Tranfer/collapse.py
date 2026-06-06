@@ -763,7 +763,7 @@ def _find_next_linear(model, end_layer_name, debug):
         if debug:
             print(f"[DEBUG] No downstream Linear found after {end_layer_name}. Disabling adaptive pooling heuristic.")
             
-    return next_linear_name
+    return next_linear_name, next_linear_mod
 
 def _analyze_block_output(
     model, full_block, conv_layers, named_layers, end_idx, layer_type, x, y_out, next_linear_mod, debug
