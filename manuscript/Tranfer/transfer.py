@@ -113,30 +113,51 @@ CHECKPOINT_FILES = {
 # ==============================================================================
 # Dynamic Collapse Logic
 # ==============================================================================
+
 def get_layer_variances(model, dummy_input):
-    """Minimal hook to capture the variance of each layer's activations."""
+    """
+    Enhanced hook to capture variance. 
+    Handles 1x1 spatial dimensions to prevent NaN.
+    """
     variances = {}
     hooks = []
     
     def make_hook(name):
         def hook(module, inp, out):
             if isinstance(out, torch.Tensor):
-                variances[name] = out.var(dim=[2, 3]).mean().item() if out.ndim == 4 else out.var().item()
+                # Check if we have spatial dimensions (NCHW) and if they are > 1x1
+                if out.ndim == 4:
+                    if out.shape[2] > 1 and out.shape[3] > 1:
+                        # Standard spatial variance
+                        variances[name] = out.var(dim=[2, 3]).mean().item()
+                    else:
+                        # Fallback for 1x1 tensors: calculate variance across channel dim (dim=1)
+                        # This avoids the degrees of freedom <= 0 error.
+                        variances[name] = out.var(dim=1).mean().item()
+                else:
+                    # Non-spatial (e.g., Linear layer output)
+                    variances[name] = out.var().item()
+            return None
         return hook
     
+    # Register hooks
     for name, module in model.named_modules():
         if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear)):
             hooks.append(module.register_forward_hook(make_hook(name)))
             
+    # Run probe
     model.eval()
     with torch.no_grad():
-        model(dummy_input)
+        try:
+            model(dummy_input)
+        except Exception as e:
+            print(f"[ERROR] Variance probe failed: {e}")
         
+    # Cleanup
     for h in hooks:
         h.remove()
         
     return variances
-
 
 def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=3, veto_fraction=0.25):
     import numpy as np
