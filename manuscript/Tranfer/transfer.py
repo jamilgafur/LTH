@@ -136,7 +136,8 @@ def get_layer_variances(model, dummy_input):
         h.remove()
         
     return variances
-    
+
+
 def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=3, veto_fraction=0.25):
     import numpy as np
     import copy
@@ -241,7 +242,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     if len(current_set) >= 2:
         R_candidates_raw.append(current_set)
 
-    # --- ENFORCE STRUCTURAL LCA EXPANSION ---
+    # --- ENFORCE STRUCTURAL LCA EXPANSION (Checking BOTH ends simultaneously) ---
     R_candidates = []
     for r in R_candidates_raw:
         start_idx = cnn_layers.index(r[0])
@@ -252,24 +253,26 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             lca_mod = module_dict.get(lca_path) if lca_path else model
             
             if is_valid_lca(lca_mod):
-                break # Safe to slice!
+                break 
                 
-            expanded = False
+            expanded_fwd = False
+            expanded_bwd = False
+            
             # Expand Forward
             if end_idx + 1 < len(cnn_layers):
                 next_layer = cnn_layers[end_idx + 1]
                 if not any(term in next_layer.lower() for term in ['classifier', 'fc', 'aux']):
                     end_idx += 1
-                    expanded = True
+                    expanded_fwd = True
             
-            # Expand Backward
-            if not expanded and start_idx > 0:
+            # Expand Backward (Independent of Forward)
+            if start_idx > 0:
                 prev_layer = cnn_layers[start_idx - 1]
                 if not any(term in prev_layer.lower() for term in ['classifier', 'fc', 'aux']):
                     start_idx -= 1
-                    expanded = True
+                    expanded_bwd = True
                     
-            if not expanded:
+            if not (expanded_fwd or expanded_bwd):
                 break # Trapped, give up and let Phase 3 catch it
         
         expanded_r = cnn_layers[start_idx : end_idx + 1]
@@ -284,27 +287,36 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     experiment_regions = {}
     set_counter = 0
     R_final = []
+    
+    # [FIX] Memory set to prevent exponential duplication from overlapping shave windows
+    tested_regions = set()
 
-    print(f"\n[INFO] Phase 3: Evaluating Candidate Regions (with Safe Fracturing)...")
+    print(f"\n[INFO] Phase 3: Evaluating Candidate Regions (with Smart Boundary Shaving)...")
     
     queue = R_candidates.copy()
     
     while queue:
-        r = queue.pop(0)
+        r = queue.pop(0) # BFS extraction
         if len(r) < 2:
             continue
             
         start_name = r[0]
         end_name = r[-1]
+        region_tuple = (start_name, end_name)
         
-        # Fast-fail fragments trapped inside indivisible blocks after fracturing
+        if region_tuple in tested_regions:
+            continue
+        tested_regions.add(region_tuple)
+        
+        # [FIX] Fast-fail & Heal fragments trapped inside indivisible blocks
         lca_path = get_lca_path(start_name, end_name)
         lca_mod = module_dict.get(lca_path) if lca_path else model
         if not is_valid_lca(lca_mod):
-            print(f"    [SKIP] Fragment '{start_name}' -> '{end_name}' is trapped inside indivisible LCA '{lca_path}'. Discarding.")
+            print(f"    [HEAL] Fragment '{start_name}' -> '{end_name}' is trapped inside LCA '{lca_path}'. Shaving boundaries...")
+            if len(r) > 2:
+                queue.append(r[1:])   # Shave left end
+                queue.append(r[:-1])  # Shave right end
             continue
-            
-        region_tuple = (start_name, end_name)
         
         try:
             print(f"    [STEP] Testing candidate sequence: {start_name} -> {end_name} (Length: {len(r)})")
@@ -335,18 +347,17 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 set_counter += 1
             else:
                 reason = "Neither Params nor FLOPs decreased"
-                print(f"        [X] FAILED TO REDUCE: {reason}.")
-                mid = len(r) // 2
-                if mid > 0:
-                    queue.insert(0, r[mid:])
-                    queue.insert(0, r[:mid])
+                print(f"        [X] FAILED TO REDUCE: {reason}. Shaving block boundaries...")
+                if len(r) > 2:
+                    # [FIX] BFS Shaving explores all combinations without breaking the split area
+                    queue.append(r[1:])
+                    queue.append(r[:-1])
 
         except Exception as e:
-            print(f"        [!] CRASH: Architecture Exception ({type(e).__name__}: {e})")
-            mid = len(r) // 2
-            if mid > 0:
-                queue.insert(0, r[mid:])
-                queue.insert(0, r[:mid])
+            print(f"        [!] CRASH: Architecture Exception ({type(e).__name__}: {e}). Shaving block boundaries...")
+            if len(r) > 2:
+                queue.append(r[1:])
+                queue.append(r[:-1])
         finally:
             if 'test_model' in locals(): del test_model
             if 'collapsed_model' in locals(): del collapsed_model
@@ -403,7 +414,8 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 safe_combined_regions.append(region_tuple)
                 
             except Exception as e:
-                print(f"        [-] Merge rejected: Adding {region_tuple[0]} -> {region_tuple[1]} broke constraint ({type(e).__name__}: {e})")
+                # This naturally catches any overlapping regions generated by the BFS shave loop!
+                print(f"        [-] Merge rejected: Adding {region_tuple[0]} -> {region_tuple[1]} broke constraint ({type(e).__name__})")
             finally:
                 if 'test_model' in locals(): del test_model
                 if 'collapsed_combined' in locals(): del collapsed_combined
