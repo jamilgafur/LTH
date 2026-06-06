@@ -210,8 +210,16 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         if lca_mod is None: return True
         if isinstance(lca_mod, (torch.nn.Sequential, torch.nn.ModuleList)): return True
         mod_name = type(lca_mod).__name__
-        invalid_blocks = ['ConvNeXtBlock', 'XBlock', 'InceptionBlock', 'XceptionBlock', 'DepthwiseSeparableConv', 'BasicConv2d', 'Bottleneck', 'BasicBlock']
-        if mod_name in invalid_blocks: return False
+        
+        # [FIX] Use explicit whitelist for safe slicing containers
+        allowed_types = ['Sequential', 'ModuleList', 'OrderedDict', 'SmartIdentity', 'XBlock', 'ConvNeXtBlock']
+        if mod_name in allowed_types: 
+            return True
+            
+        # If it has children and isn't whitelisted, it's likely an indivisible block
+        if hasattr(lca_mod, 'children') and list(lca_mod.children()):
+            return False
+            
         return True
 
     # =====================================================================
@@ -235,6 +243,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         
         R_candidates_raw = []
         current_set = []
+        status_map = {}
         
         print(f"\n[DEBUG] --- Phase 2A: Scanning {num_layers} layers for Raw Candidates ---")
         for i, h in enumerate(h_values):
@@ -244,25 +253,26 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             is_classifier = any(term in layer_name.lower() for term in ['classifier', 'fc', 'aux'])
             is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear)) and not is_classifier
             
+            # [FIX] Build comprehensive status map for precise expansion rules
             if i < veto_idx:
+                status_map[layer_name] = "Veto"
                 print(f"  [Scan] Layer {i:02d} ({layer_name}) -> SKIPPED (In Veto Region)")
                 if len(current_set) >= 1: R_candidates_raw.append(current_set)
                 current_set = []
-                continue
-                
-            if not is_valid_target:
+            elif not is_valid_target:
+                status_map[layer_name] = "Rejected"
                 print(f"  [Scan] Layer {i:02d} ({layer_name}) -> SKIPPED (Classifier/Invalid Type)")
                 if len(current_set) >= 1: R_candidates_raw.append(current_set)
                 current_set = []
-                continue
-
-            if h < 0:
-                print(f"  [Scan] Layer {i:02d} ({layer_name}) -> ADDED (Negative var: {h:.4f})")
-                current_set.append(layer_name)
-            else:
+            elif h >= 0:
+                status_map[layer_name] = "Rejected"
                 print(f"  [Scan] Layer {i:02d} ({layer_name}) -> CUT (Positive var: {h:.4f})")
                 if len(current_set) >= 1: R_candidates_raw.append(current_set)
                 current_set = []
+            else:
+                status_map[layer_name] = "Active"
+                print(f"  [Scan] Layer {i:02d} ({layer_name}) -> ADDED (Negative var: {h:.4f})")
+                current_set.append(layer_name)
                 
         if len(current_set) >= 1:
             print(f"  [Scan] Appending final trailing set.")
@@ -287,6 +297,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 print(f"    [Iter {iteration}] Bounds: {cnn_layers[start_idx]} -> {cnn_layers[end_idx]}")
                 print(f"    [Iter {iteration}] LCA: '{lca_path}' | Valid LCA: {valid_lca} | Len: {current_len}")
                 
+                # [FIX] Force expansion if length < 2, even if LCA is technically valid
                 if valid_lca and current_len >= 2:
                     print(f"    [Iter {iteration}] -> Success! Safe to slice. Stopping expansion.")
                     break 
@@ -294,7 +305,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 expanded_fwd = False
                 expanded_bwd = False
                 
-                # Expand Forward
+                # Expand Forward (Only if next layer isn't a classifier)
                 if end_idx + 1 < len(cnn_layers):
                     next_layer = cnn_layers[end_idx + 1]
                     if not any(term in next_layer.lower() for term in ['classifier', 'fc', 'aux']):
@@ -306,7 +317,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 else:
                     print(f"    [Iter {iteration}] -> Forward blocked: Reached absolute end of network.")
                 
-                # Expand Backward
+                # Expand Backward (Only if we aren't in Veto)
                 if start_idx > 0 and start_idx - 1 >= veto_idx:
                     prev_layer = cnn_layers[start_idx - 1]
                     if not any(term in prev_layer.lower() for term in ['classifier', 'fc', 'aux']):
@@ -323,13 +334,15 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     break 
             
             expanded_r = cnn_layers[start_idx : end_idx + 1]
+            
+            # [FIX] Strict enforcement of length >= 2 before adding to final candidates
             if expanded_r not in R_candidates and len(expanded_r) >= 2:
                 print(f"[DEBUG] [+] Finalized expanded candidate: {expanded_r[0]} -> {expanded_r[-1]}")
                 R_candidates.append(expanded_r)
             else:
                 print(f"[DEBUG] [-] Discarded fragment (Length < 2 or Duplicate of existing region).")
 
-        return R_candidates
+        return R_candidates, status_map
 
     # =====================================================================
     # HELPER 4: Phase 3 - Surrogate Compilation & BFS Shaving
@@ -344,7 +357,9 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         
         while queue:
             r = queue.pop(0) 
-            if len(r) < 2: continue
+            # [FIX] Absolutely enforce len >= 2 during shaving loop
+            if len(r) < 2: 
+                continue
                 
             start_name = r[0]
             end_name = r[-1]
@@ -468,8 +483,8 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     base_params, base_flops, check_flops, dummy_input = get_base_metrics()
     print(f"[DEBUG] Base model parameters: {base_params:,} | Base FLOPs: {base_flops:,}")
     
-    # 1. Fetch Expanded Targets
-    R_candidates = extract_and_expand_candidates()
+    # 1. Fetch Expanded Targets and Status Map
+    R_candidates, status_map = extract_and_expand_candidates()
     
     # 2. Evaluate and Compile (Shaving applied automatically on fail)
     print(f"\n[INFO] Phase 3: Evaluating {len(R_candidates)} Candidate Regions (with Smart Boundary Shaving)...")
@@ -478,11 +493,13 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     # 3. Combine safe targets together
     experiment_regions = greedy_integration(R_final, experiment_regions, base_params, base_flops, check_flops, dummy_input)
     
+    # [FIX] Attach the generated status_map to the return dictionary so transfer.py can write it to CSV
+    experiment_regions["Status_Map"] = status_map
+    
     # Add Control
     experiment_regions["Control_Continuted"] = None
     print(f"\n[DEBUG] === Finished Dynamic Config Generator ===")
     return experiment_regions
-
 # ==============================================================================
 # Helper functions
 # ==============================================================================
