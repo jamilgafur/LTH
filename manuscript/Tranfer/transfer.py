@@ -304,10 +304,15 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     break 
             
             if not trapped:
+                # Phase 2B: Final sanity check before adding to queue
                 expanded_r = cnn_layers[start_idx : end_idx + 1]
-                if expanded_r not in R_candidates and len(expanded_r) >= 2:
-                    print(f"[DEBUG] [+] Finalized expanded candidate: {expanded_r[0]} -> {expanded_r[-1]}")
+                
+                # [CRITICAL] Prevent any singleton from reaching Phase 3
+                if len(expanded_r) >= 2:
                     R_candidates.append(expanded_r)
+                else:
+                    print(f"[DEBUG] [!] Discarding orphan fragment (size {len(expanded_r)}): {expanded_r}")
+                    for name in expanded_r: status_map[name] = "Rejected (Orphan)"
             else:
                 print(f"[DEBUG] [-] Trapped region: {r[0]}. Marking as Gap.")
                 for idx in range(start_idx, end_idx + 1): status_map[cnn_layers[idx]] = "Gap"
