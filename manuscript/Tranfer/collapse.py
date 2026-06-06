@@ -422,10 +422,14 @@ class SmartIdentity(nn.Module):
     
 
 def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=None, end_name=None, container=None):
-    # [FIX] Treat SmartIdentity exactly like an nn.Sequential for slicing purposes
-    is_sequential_like = isinstance(container, nn.Sequential) or type(container).__name__ == 'SmartIdentity' or container is None
+    """
+    Patches layers into a container, handling both nn.Sequential (OrderedDict)
+    and custom nn.Module blocks (Attribute-based) safely.
+    """
+    # 1. Determine if container is a standard Sequential/ModuleList
+    is_sequential = isinstance(container, (nn.Sequential, nn.ModuleList))
     
-    if is_sequential_like:
+    if is_sequential:
         new_layers = OrderedDict()
         for i, (name, mod) in enumerate(named_layers):
             if i < start_idx or i > end_idx:
@@ -433,14 +437,23 @@ def _replace_layers(named_layers, start_idx, end_idx, replacement, start_name=No
             elif i == start_idx:
                 new_layers[name] = replacement
             else:
+                # Replace intermediate layers with identity
                 new_layers[name] = SmartIdentity()
-        return nn.Sequential(new_layers)
+        
+        # Reconstruct the Sequential container
+        if isinstance(container, nn.Sequential):
+            return nn.Sequential(new_layers)
+        else:
+            return nn.ModuleList(new_layers.values())
+    
     else:
-        # In-place patch for complex parallel containers (Inception, ConvNeXt)
+        # 2. Attribute-based patching for Inception/ConvNeXt blocks
         for i, (name, mod) in enumerate(named_layers):
             if i == start_idx:
+                # Use setattr to patch the custom block's attribute
                 setattr(container, name, replacement)
             elif start_idx < i <= end_idx:
+                # Replace with identity
                 setattr(container, name, SmartIdentity())
         return container
 def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
