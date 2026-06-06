@@ -146,9 +146,14 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     from utils import count_trainable_params
     from fvcore.nn import FlopCountAnalysis
 
+    print(f"\n[DEBUG] {'='*40}")
+    print(f"[DEBUG] === Starting Dynamic Config Generator ===")
+    print(f"[DEBUG] {'='*40}")
+
     device = next(model.parameters()).device
     base_params = count_trainable_params(model)
     module_dict = dict(model.named_modules())
+    print(f"[DEBUG] Base model parameters : {base_params:,}")
 
     # --- Calculate Base FLOPs ---
     dummy_input = torch.randn(1, *input_shape[1:]).to(device)
@@ -157,13 +162,16 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         with torch.no_grad():
             base_flops = FlopCountAnalysis(model, dummy_input).unsupported_ops_warnings(False).total()
         check_flops = True
-    except Exception:
+        print(f"[DEBUG] Base model FLOPs      : {base_flops:,}")
+    except Exception as e:
         base_flops = float('inf')
         check_flops = False
+        print(f"[WARN] Failed to calculate base FLOPs: {e}")
 
     # =====================================================================
     # PHASE 1: Calculating the Sliding Window Variance Normalization
     # =====================================================================
+    print(f"\n[INFO] Phase 1: Calculating Sliding Window Variance Normalization...")
     rolling_means = []
     for i in range(len(variances)):
         start = max(0, i - window_size)
@@ -176,12 +184,16 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             h_values.append(max((var - mean_var) / mean_var, -1.0))
         else:
             h_values.append(min((var - mean_var) / mean_var, 1.0))
+            
+    print(f"[DEBUG] -> Variance profile calculated. Min(h): {min(h_values):.4f}, Max(h): {max(h_values):.4f}")
 
     # =====================================================================
     # PHASE 2: Ensure Multi-Layer Collapsing (Candidate Selection)
     # =====================================================================
+    print(f"\n[INFO] Phase 2: Candidate Selection (Filtering & Contiguous Block Detection)...")
     num_layers = len(cnn_layers)
     veto_idx = int(num_layers * veto_fraction)
+    print(f"[DEBUG] Total probe layers: {num_layers}. Veto index (first {veto_fraction*100}%): {veto_idx}")
     
     R_candidates = []
     current_set = []
@@ -190,23 +202,45 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         layer_name = cnn_layers[i]
         mod = module_dict.get(layer_name)
         
-        is_valid_target = isinstance(mod, torch.nn.Conv2d)
+        # [FIX] Allow Conv2d and Linear (for ConvNeXt pointwise), but strictly 
+        # blacklist classifier/FC heads to prevent 1D vs 2D tensor crashes during collapse.
+        is_classifier = any(term in layer_name.lower() for term in ['classifier', 'fc', 'aux'])
+        is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear)) and not is_classifier
         
-        if i < veto_idx or not is_valid_target:
+        # 1. Check Veto Region
+        if i < veto_idx:
+            # Uncomment to see every skipped layer:
+            # print(f"[DEBUG] Layer '{layer_name}' skipped (in veto region).")
             if len(current_set) >= 2:
                 R_candidates.append(current_set)
+                print(f"[DEBUG] -> Appended candidate set of length {len(current_set)} (Fractured by Veto)")
+            current_set = []
+            continue
+            
+        # 2. Check Valid Target (The Linear / Classifier Trap)
+        if not is_valid_target:
+            reason = "Classifier/FC Blacklist" if is_classifier else f"Invalid Type ({type(mod).__name__})"
+            print(f"[DEBUG] Layer '{layer_name}' skipped ({reason}). Breaking contiguous block.")
+            if len(current_set) >= 2:
+                R_candidates.append(current_set)
+                print(f"[DEBUG] -> Appended candidate set of length {len(current_set)} (Fractured by Architecture constraint)")
             current_set = []
             continue
 
+        # 3. Process Negative Variance
         if h < 0:
             current_set.append(layer_name)
         else:
             if len(current_set) >= 2:
                 R_candidates.append(current_set)
+                print(f"[DEBUG] -> Appended candidate set of length {len(current_set)} (Fractured by Positive Variance)")
             current_set = []
             
     if len(current_set) >= 2:
         R_candidates.append(current_set)
+        print(f"[DEBUG] -> Appended final candidate set of length {len(current_set)}")
+
+    print(f"[DEBUG] Phase 2 Complete. Found {len(R_candidates)} distinct candidate regions for collapse.")
 
     # =====================================================================
     # PHASE 3: Collapsable Memory Feasibility & Surrogate Compilation
@@ -222,6 +256,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     while queue:
         r = queue.pop(0)
         if len(r) < 2:
+            print(f"[DEBUG] Discarding block fragment of length {len(r)}")
             continue
             
         start_name = r[0]
@@ -258,14 +293,18 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 set_counter += 1
             else:
                 reason = "Neither Params nor FLOPs decreased"
-                print(f"        [X] FAILED TO REDUCE: {reason}. Fracturing block...")
+                print(f"        [X] FAILED TO REDUCE: {reason}.")
+                print(f"        [DEBUG] -> Params: {base_params:,} -> {new_params:,}")
+                print(f"        [DEBUG] -> FLOPs : {base_flops:,} -> {new_flops:,}")
+                print(f"        [DEBUG] -> Fracturing block into halves to search for efficiencies...")
                 mid = len(r) // 2
                 if mid > 0:
                     queue.insert(0, r[mid:])
                     queue.insert(0, r[:mid])
 
         except Exception as e:
-            print(f"        [!] CRASH: Architecture Exception ({type(e).__name__}). Fracturing block...")
+            print(f"        [!] CRASH: Architecture Exception ({type(e).__name__}: {e})")
+            print(f"        [DEBUG] -> Fracturing block at mid-point to isolate bad geometry...")
             mid = len(r) // 2
             if mid > 0:
                 queue.insert(0, r[mid:])
@@ -286,7 +325,10 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         current_best_params = base_params
         current_best_flops = base_flops
         
+        print(f"[DEBUG] Starting greedy integration with Base Params: {current_best_params:,} | Base FLOPs: {current_best_flops:,}")
+        
         for region_tuple in R_final:
+            print(f"    [STEP] Attempting to greedily merge: {region_tuple[0]} -> {region_tuple[1]}")
             candidate_combo = safe_combined_regions + [region_tuple]
             
             try:
@@ -316,12 +358,15 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 flop_decreased = check_flops and new_flops_combo < current_best_flops
                 
                 if not (param_decreased or flop_decreased):
-                    raise ValueError(f"Neither Params nor FLOPs decreased: Params ({new_params_combo:,} vs {current_best_params:,}), FLOPs ({new_flops_combo:,} vs {current_best_flops:,})")
+                    raise ValueError(f"Diminishing returns. Params ({new_params_combo:,} >= {current_best_params:,}) & FLOPs ({new_flops_combo:,} >= {current_best_flops:,})")
+                
+                print(f"        [+] Merged safely: {region_tuple[0]} -> {region_tuple[1]}")
+                print(f"            -> Running Params: {current_best_params:,} -> {new_params_combo:,}")
+                print(f"            -> Running FLOPs : {current_best_flops:,} -> {new_flops_combo:,}")
                 
                 current_best_params = new_params_combo
                 current_best_flops = new_flops_combo
                 safe_combined_regions.append(region_tuple)
-                print(f"        [+] Merged safely: {region_tuple[0]} -> {region_tuple[1]}")
                 
             except Exception as e:
                 print(f"        [-] Merge rejected: Adding {region_tuple[0]} -> {region_tuple[1]} broke constraint ({type(e).__name__}: {e})")
@@ -332,10 +377,14 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 if torch.cuda.is_available(): torch.cuda.empty_cache()
                 
         if len(safe_combined_regions) > 1:
+            print(f"[DEBUG] Successfully built combined region with {len(safe_combined_regions)} distinct targets.")
             experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
+        else:
+            print(f"[DEBUG] Greedy integration yielded <= 1 region. Discarding combined config.")
             
     # Add control as baseline
     experiment_regions["Control_Continuted"] = None
+    print(f"\n[DEBUG] === Finished Dynamic Config Generator ===")
     return experiment_regions
 # ==============================================================================
 # Helper functions
