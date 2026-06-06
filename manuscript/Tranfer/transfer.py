@@ -251,7 +251,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             mod = module_dict.get(layer_name)
             
             is_classifier = any(term in layer_name.lower() for term in ['classifier', 'fc', 'aux'])
-            is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear)) and not is_classifier
+            is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear, torch.nn.ReLU, torch.nn.BatchNorm2d)) and not is_classifier
             
             if i < veto_idx: status = "Veto"
             elif not is_valid_target: status = "Rejected"
