@@ -586,7 +586,7 @@ def layer_stats(model):
         if param.requires_grad:
             zeros = count_zeros(param)
             total = param.numel()
-            print(f"{name}: {zeros}/{total} zeros ({100 * zeros/total:.2f}%)")
+            # print(f"{name}: {zeros}/{total} zeros ({100 * zeros/total:.2f}%)")
 
 
 
