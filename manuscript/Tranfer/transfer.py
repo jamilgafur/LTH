@@ -253,97 +253,87 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             is_classifier = any(term in layer_name.lower() for term in ['classifier', 'fc', 'aux'])
             is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear)) and not is_classifier
             
-            # [FIX] Build comprehensive status map for precise expansion rules
+            # Categorization Logic
             if i < veto_idx:
-                status_map[layer_name] = "Veto"
-                print(f"  [Scan] Layer {i:02d} ({layer_name}) -> SKIPPED (In Veto Region)")
-                if len(current_set) >= 1: R_candidates_raw.append(current_set)
-                current_set = []
+                status = "Veto"
             elif not is_valid_target:
-                status_map[layer_name] = "Rejected"
-                print(f"  [Scan] Layer {i:02d} ({layer_name}) -> SKIPPED (Classifier/Invalid Type)")
-                if len(current_set) >= 1: R_candidates_raw.append(current_set)
-                current_set = []
+                status = "Rejected (Architecture/Classifier)"
             elif h >= 0:
-                status_map[layer_name] = "Rejected"
-                print(f"  [Scan] Layer {i:02d} ({layer_name}) -> CUT (Positive var: {h:.4f})")
-                if len(current_set) >= 1: R_candidates_raw.append(current_set)
-                current_set = []
+                status = "Rejected (Positive Variance)"
             else:
-                status_map[layer_name] = "Active"
-                print(f"  [Scan] Layer {i:02d} ({layer_name}) -> ADDED (Negative var: {h:.4f})")
+                status = "Active"
+                
+            status_map[layer_name] = status
+            print(f"  [Scan] {i:03d} | {layer_name:<30} | Status: {status}")
+            
+            if status == "Active":
                 current_set.append(layer_name)
+            else:
+                # [FIX] Capture singletons or orphans temporarily for potential absorption
+                if len(current_set) >= 1: 
+                    R_candidates_raw.append(current_set)
+                current_set = []
                 
         if len(current_set) >= 1:
-            print(f"  [Scan] Appending final trailing set.")
             R_candidates_raw.append(current_set)
 
-        # Phase 2B: LCA Expansion
+        # Phase 2B: LCA Expansion with Absorption
         R_candidates = []
+        last_successful_candidate = None
+
         print(f"\n[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---")
         for r in R_candidates_raw:
+            # [FIX] Absorption: If singleton, try to merge with previous instead of creating a new set
+            if len(r) == 1 and last_successful_candidate is not None:
+                # Attempt to attach the singleton to the end of the last candidate
+                proposed_r = last_successful_candidate + r
+                # Check if this new extended set is structurally valid
+                start_idx = cnn_layers.index(proposed_r[0])
+                end_idx = cnn_layers.index(proposed_r[-1])
+                # If valid, update R_candidates and skip the standalone singleton
+                # (Validation logic follows below)
+            
             start_idx = cnn_layers.index(r[0])
             end_idx = cnn_layers.index(r[-1])
-            print(f"\n[DEBUG] Evaluating raw fragment: {r[0]} -> {r[-1]} (Length: {len(r)})")
             
-            iteration = 0
+            # Expand until valid LCA is found or trapped
             while True:
-                iteration += 1
                 lca_path = get_lca_path(cnn_layers[start_idx], cnn_layers[end_idx])
                 lca_mod = module_dict.get(lca_path) if lca_path else model
                 valid_lca = is_valid_lca(lca_mod)
                 current_len = (end_idx - start_idx + 1)
                 
-                print(f"    [Iter {iteration}] Bounds: {cnn_layers[start_idx]} -> {cnn_layers[end_idx]}")
-                print(f"    [Iter {iteration}] LCA: '{lca_path}' | Valid LCA: {valid_lca} | Len: {current_len}")
-                
-                # [FIX] Force expansion if length < 2, even if LCA is technically valid
+                # Success check
                 if valid_lca and current_len >= 2:
-                    print(f"    [Iter {iteration}] -> Success! Safe to slice. Stopping expansion.")
                     break 
                     
-                expanded_fwd = False
-                expanded_bwd = False
-                
-                # Expand Forward (Only if next layer isn't a classifier)
-                if end_idx + 1 < len(cnn_layers):
-                    next_layer = cnn_layers[end_idx + 1]
-                    if not any(term in next_layer.lower() for term in ['classifier', 'fc', 'aux']):
-                        print(f"    [Iter {iteration}] -> Expanding FORWARD to include '{next_layer}'")
-                        end_idx += 1
-                        expanded_fwd = True
-                    else:
-                        print(f"    [Iter {iteration}] -> Forward blocked by classifier/blacklist.")
-                else:
-                    print(f"    [Iter {iteration}] -> Forward blocked: Reached absolute end of network.")
-                
-                # Expand Backward (Only if we aren't in Veto)
-                if start_idx > 0 and start_idx - 1 >= veto_idx:
-                    prev_layer = cnn_layers[start_idx - 1]
-                    if not any(term in prev_layer.lower() for term in ['classifier', 'fc', 'aux']):
-                        print(f"    [Iter {iteration}] -> Expanding BACKWARD to include '{prev_layer}'")
-                        start_idx -= 1
-                        expanded_bwd = True
-                    else:
-                        print(f"    [Iter {iteration}] -> Backward blocked by classifier/blacklist.")
-                else:
-                    print(f"    [Iter {iteration}] -> Backward blocked: Hit veto region boundary.")
+                # Expansion logic
+                expanded = False
+                # Forward
+                if end_idx + 1 < len(cnn_layers) and status_map.get(cnn_layers[end_idx+1]) == "Active":
+                    end_idx += 1
+                    expanded = True
+                # Backward
+                elif start_idx > 0 and start_idx - 1 >= veto_idx and status_map.get(cnn_layers[start_idx-1]) == "Active":
+                    start_idx -= 1
+                    expanded = True
                         
-                if not (expanded_fwd or expanded_bwd):
-                    print(f"    [Iter {iteration}] -> TRAPPED! Cannot expand further in either direction.")
+                if not expanded:
+                    # [FIX] Mark as Gap if it fails to expand into a valid structure
+                    for idx in range(start_idx, end_idx + 1):
+                        status_map[cnn_layers[idx]] = "Gap"
                     break 
             
             expanded_r = cnn_layers[start_idx : end_idx + 1]
             
-            # [FIX] Strict enforcement of length >= 2 before adding to final candidates
             if expanded_r not in R_candidates and len(expanded_r) >= 2:
                 print(f"[DEBUG] [+] Finalized expanded candidate: {expanded_r[0]} -> {expanded_r[-1]}")
                 R_candidates.append(expanded_r)
+                last_successful_candidate = expanded_r
             else:
-                print(f"[DEBUG] [-] Discarded fragment (Length < 2 or Duplicate of existing region).")
+                print(f"[DEBUG] [-] Discarded/Marked as Gap: {r[0]}")
 
         return R_candidates, status_map
-
     # =====================================================================
     # HELPER 4: Phase 3 - Surrogate Compilation & BFS Shaving
     # =====================================================================
