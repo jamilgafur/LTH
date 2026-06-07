@@ -625,6 +625,7 @@ def fig3_v2t_heuristic_validation(
     plt.close()
     logger.info(f"[FIG3] Saved V2T heuristic validation map at {out_dir / 'V2T_heuristic_validation_map.png'}")
 # ========================= FIG 4 ========================= #
+
 def fig4_comprehensive_search_space_map(
     df: pd.DataFrame,
     epochs: int,
@@ -701,6 +702,11 @@ def fig4_comprehensive_search_space_map(
             valid_exps = []
             
             for exp_name, ranges in model_exps.items():
+                
+                # [CRITICAL FIX] Skip the Status Map metadata from plotting!
+                if exp_name == "Status_Map":
+                    continue
+                    
                 cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
                 
                 if "Original" in cleaned_name or "Baseline" in cleaned_name:
@@ -795,6 +801,7 @@ def fig4_comprehensive_search_space_map(
             plt.close(fig_cand)
 
     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
+
 # ========================= FIG 5 ========================= #
 def fig5_hardware_efficiency_profiles(
     df: pd.DataFrame,
