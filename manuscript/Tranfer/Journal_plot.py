@@ -347,12 +347,16 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
 
         # --- Calculation Logic ---
         h_vals, sigma_bars = [], []
-        window_size = max(5, int(len(variances) * 0.15))
+        
+        # [FIX] Force window size to exactly match transfer.py (was max(5, ...))
+        window_size = 3 
         
         for i, sigma_i in enumerate(variances):
             start = max(0, i - window_size)
             end = min(len(variances), i + window_size + 1)
             local_vars = variances[start:end]
+            
+            # Use rolling mean just like the discovery script
             sigma_bar = np.mean(local_vars) if len(local_vars) > 0 else np.mean(variances)
             sigma_bars.append(max(sigma_bar, 1e-12))
             
@@ -512,7 +516,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
         logger.info(f"[FIG2] Saved methodology plot: {save_path}")
-
+        
 # ========================= FIG 3 ========================= #
 
 def fig3_v2t_heuristic_validation(

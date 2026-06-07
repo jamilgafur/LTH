@@ -209,11 +209,15 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     def is_valid_lca(lca_mod):
         if lca_mod is None: return True
         if isinstance(lca_mod, (torch.nn.Sequential, torch.nn.ModuleList)): return True
+        
+        # [FIX] Allow the root model explicitly so stages can be bridged
+        if lca_mod.__class__.__name__ == type(model).__name__: return True
+        
         mod_name = type(lca_mod).__name__
         
-        # [FIX] Broaden Inception check to catch InceptionA, InceptionB, etc.
-        allowed_types = ['Sequential', 'ModuleList', 'OrderedDict', 'SmartIdentity', 'XBlock', 'ConvNeXtBlock']
-        if mod_name in allowed_types or 'Inception' in mod_name: 
+        # [FIX] Broad, universal whitelist for all major architectures
+        allowed_substrings = ['Inception', 'Block', 'Stage', 'Layer', 'Residual', 'AnyNetX']
+        if any(sub in mod_name for sub in allowed_substrings): 
             return True
             
         if hasattr(lca_mod, 'children') and list(lca_mod.children()):

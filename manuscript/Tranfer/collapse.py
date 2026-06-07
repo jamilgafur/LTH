@@ -61,39 +61,32 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
 
     full_block = named_layers[start_idx:end_idx + 1]
     
-    # FIX: Dynamically allow the root model class to be sliced!
     safe_sequential_classes = ("Sequential", "SeparableConv2d", "ModuleList", type(model).__name__)
-    if type(container).__name__ not in safe_sequential_classes and start_idx != end_idx and lca_path != "":
-        raise ValueError(
-            f"[ERROR] Container '{lca_path}' is {type(container).__name__}, not Sequential. "
-            f"Slicing parallel branches directly is invalid."
-        )
-
-    conv_layers = []
-    for _, mod in full_block:
-        if isinstance(mod, (nn.Conv2d, nn.Linear)):
-            conv_layers.append(mod)
-        for sub_name, sub_mod in mod.named_modules():
-            if sub_name and isinstance(sub_mod, (nn.Conv2d, nn.Linear)):
-                conv_layers.append(sub_mod)
-
-    collapse_mode = "conv" if any(isinstance(l, nn.Conv2d) for l in conv_layers) else "linear"
-    layer_type = nn.Conv2d if collapse_mode == "conv" else nn.Linear
-
-    return {
-        "container": container,
-        "container_name": lca_path,
-        "named_layers": named_layers,
-        "start_idx": start_idx,
-        "end_idx": end_idx,
-        "full_block": full_block,
-        "layer_type": layer_type,
-        "conv_layers": conv_layers,
-        "collapse_mode": collapse_mode,
-        "first_layer_name": full_block[0][0],
-        "last_layer_name": full_block[-1][0],
-    }
-
+    
+    # If the container is a complex block, escalate to the parent for a clean replacement
+    if type(container).__name__ not in safe_sequential_classes and lca_path != "":
+        print(f"[DEBUG] Escalating complex block '{lca_path}' ({type(container).__name__}) to parent for holistic replacement.")
+        
+        parent_path, subname = _get_container_and_subname(lca_path)
+        parent_container = get_layer(model, parent_path)
+        
+        # Re-map our bounds to target the entire complex block within its parent
+        named_layers = list(parent_container.named_children())
+        start_idx = end_idx = next(i for i, (n, _) in enumerate(named_layers) if n == subname)
+        
+        return {
+            "container": parent_container,
+            "container_name": parent_path,
+            "named_layers": named_layers,
+            "start_idx": start_idx,
+            "end_idx": end_idx,
+            "full_block": [(subname, container)],
+            "layer_type": nn.Conv2d,
+            "conv_layers": [m for m in container.modules() if isinstance(m, nn.Conv2d)],
+            "collapse_mode": "conv",
+            "first_layer_name": subname,
+            "last_layer_name": subname,
+        }
 
 def _build_and_replace_block(
     model,
