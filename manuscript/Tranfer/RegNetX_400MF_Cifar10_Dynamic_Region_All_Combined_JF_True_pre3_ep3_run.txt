@@ -9,3 +9,2238 @@ Loading CIFAR-10 data for RegNetX_400MF...
 CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 Loading CIFAR-10 data for RegNetX_400MF...
 CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] Base checkpoint path resolved: None
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Dynamic_Region_All_Combined'
+============================================================
+
+[INFO] Validating JSON configuration map at: RegNetX_400MF_Cifar10_epochs3_pretrain3_JF_discovered_regions.json
+[DEBUG] Loaded 20 configurations from map.
+[WARN] Trained baseline NOT found at RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs3_pretrain3/checkpoints/final_JF_Control_quant.pt. Falling back to initial un-finetuned checkpoint.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Dynamic_Region_All_Combined ---
+    Budget allocated: 3 epochs
+
+=== Running JF experiment ===
+[•] Collapsing ranges [('stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.conv3'), ('stage3.stage3_block3.block.conv2', 'stage3.stage3_block3.block.conv3'), ('stage3.stage3_block4.block.conv2', 'stage3.stage3_block4.block.conv3'), ('stage3.stage3_block5.block.conv2', 'stage3.stage3_block5.block.conv3'), ('stage3.stage3_block6.block.conv2', 'stage3.stage3_block6.block.conv3'), ('stage4.stage4_block0.block.conv2', 'stage4.stage4_block0.block.conv3'), ('stage4.stage4_block1.block.conv1', 'stage4.stage4_block1.block.conv3'), ('stage4.stage4_block2.block.conv2', 'stage4.stage4_block2.block.conv3'), ('stage4.stage4_block3.block.conv2', 'stage4.stage4_block3.block.conv3'), ('stage4.stage4_block4.block.conv2', 'stage4.stage4_block4.block.conv3'), ('stage4.stage4_block5.block.conv2', 'stage4.stage4_block5.block.conv3'), ('stage4.stage4_block6.block.conv2', 'stage4.stage4_block6.block.conv3'), ('stage4.stage4_block7.block.conv2', 'stage4.stage4_block7.block.conv3'), ('stage4.stage4_block8.block.conv2', 'stage4.stage4_block8.block.conv3'), ('stage4.stage4_block9.block.conv2', 'stage4.stage4_block9.block.conv3'), ('stage4.stage4_block10.block.conv2', 'stage4.stage4_block10.block.conv3'), ('stage4.stage4_block11.block.conv2', 'stage4.stage4_block11.block.conv3')] for Dynamic_Region_All_Combined
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (RegNetX_400MF)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 17 pairs.
+[DEBUG] Total collapse targets: 17
+[INFO] Model parameter count before collapsing: 4,776,362
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block2.block.conv2
+[INFO] End Target   : stage3.stage3_block2.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block2.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage3.stage3_block2.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage3.stage3_block2.block.conv2'
+[DEBUG] Hooking End Node   : 'stage3.stage3_block2.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3'...
+[DEBUG] Captured input shape: (512, 160, 2, 2), output shape: (512, 160, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 160, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 160, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 4,776,362
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block2.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage3.stage3_block2.block.conv3'...
+[DEBUG] Exact layer match found at index 82: stage3.stage3_block2.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 83 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 160, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 160, 2, 2)
+[DEBUG] Determined out_channels=160
+[DEBUG] Final block output shape: (512, 160, 2, 2)
+[DEBUG] Determined out_channels=160
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=2, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,2) to reconcile linear in_features mismatch.
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 160, 2, 2)
+         out_channels=160
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 2))
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 160, 2, 2)
+    - out_channels             : 160
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 2))
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage3.stage3_block2.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage3.stage3_block2.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 160 (in) -> 160 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=10, in=160, out=160)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(160, 160, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'stage3.stage3_block2.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,776,362
+[INFO] Post-collapse : 4,753,322
+[INFO] Net Change    : -23,040
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 160, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block2.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block2.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage3.stage3_block2.block.bn2' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block2.block.relu2' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block2.block.conv3' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block2.block.bn3' executed successfully, output shape: (512, 160, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block2.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage3.stage3_block2.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block2.block.conv2' → 'stage3.stage3_block2.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 66 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_1': stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block3.block.conv2', 'stage3.stage3_block3.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block3.block.conv2
+[INFO] End Target   : stage3.stage3_block3.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block3.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage3.stage3_block3.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage3.stage3_block3.block.conv2'
+[DEBUG] Hooking End Node   : 'stage3.stage3_block3.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3'...
+[DEBUG] Captured input shape: (512, 160, 2, 2), output shape: (512, 160, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 160, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 160, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 4,753,322
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block3.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage3.stage3_block3.block.conv3'...
+[DEBUG] Exact layer match found at index 98: stage3.stage3_block3.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 99 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 160, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 160, 2, 2)
+[DEBUG] Determined out_channels=160
+[DEBUG] Final block output shape: (512, 160, 2, 2)
+[DEBUG] Determined out_channels=160
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=2, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,2) to reconcile linear in_features mismatch.
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 160, 2, 2)
+         out_channels=160
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 2))
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 160, 2, 2)
+    - out_channels             : 160
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 2))
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage3.stage3_block3.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage3.stage3_block3.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 160 (in) -> 160 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=10, in=160, out=160)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(160, 160, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'stage3.stage3_block3.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,753,322
+[INFO] Post-collapse : 4,730,282
+[INFO] Net Change    : -23,040
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 160, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block3.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block3.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage3.stage3_block3.block.bn2' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block3.block.relu2' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block3.block.conv3' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block3.block.bn3' executed successfully, output shape: (512, 160, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block3.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage3.stage3_block3.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block3.block.conv2' → 'stage3.stage3_block3.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_2': stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block4.block.conv2', 'stage3.stage3_block4.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block4.block.conv2
+[INFO] End Target   : stage3.stage3_block4.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block4.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage3.stage3_block4.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage3.stage3_block4.block.conv2'
+[DEBUG] Hooking End Node   : 'stage3.stage3_block4.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3'...
+[DEBUG] Captured input shape: (512, 160, 2, 2), output shape: (512, 160, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 160, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 160, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 4,730,282
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block4.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage3.stage3_block4.block.conv3'...
+[DEBUG] Exact layer match found at index 114: stage3.stage3_block4.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 115 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 160, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 160, 2, 2)
+[DEBUG] Determined out_channels=160
+[DEBUG] Final block output shape: (512, 160, 2, 2)
+[DEBUG] Determined out_channels=160
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=2, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,2) to reconcile linear in_features mismatch.
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 160, 2, 2)
+         out_channels=160
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 2))
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 160, 2, 2)
+    - out_channels             : 160
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 2))
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage3.stage3_block4.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage3.stage3_block4.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 160 (in) -> 160 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=10, in=160, out=160)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(160, 160, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'stage3.stage3_block4.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,730,282
+[INFO] Post-collapse : 4,707,242
+[INFO] Net Change    : -23,040
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 160, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block4.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block4.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage3.stage3_block4.block.bn2' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block4.block.relu2' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block4.block.conv3' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block4.block.bn3' executed successfully, output shape: (512, 160, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block4.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage3.stage3_block4.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block4.block.conv2' → 'stage3.stage3_block4.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_3': stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block5.block.conv2', 'stage3.stage3_block5.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block5.block.conv2
+[INFO] End Target   : stage3.stage3_block5.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block5.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage3.stage3_block5.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage3.stage3_block5.block.conv2'
+[DEBUG] Hooking End Node   : 'stage3.stage3_block5.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3'...
+[DEBUG] Captured input shape: (512, 160, 2, 2), output shape: (512, 160, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 160, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 160, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 4,707,242
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block5.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage3.stage3_block5.block.conv3'...
+[DEBUG] Exact layer match found at index 130: stage3.stage3_block5.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 131 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 160, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 160, 2, 2)
+[DEBUG] Determined out_channels=160
+[DEBUG] Final block output shape: (512, 160, 2, 2)
+[DEBUG] Determined out_channels=160
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=2, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,2) to reconcile linear in_features mismatch.
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 160, 2, 2)
+         out_channels=160
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 2))
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 160, 2, 2)
+    - out_channels             : 160
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 2))
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage3.stage3_block5.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage3.stage3_block5.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 160 (in) -> 160 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=10, in=160, out=160)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(160, 160, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'stage3.stage3_block5.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,707,242
+[INFO] Post-collapse : 4,684,202
+[INFO] Net Change    : -23,040
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 160, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block5.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block5.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage3.stage3_block5.block.bn2' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block5.block.relu2' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block5.block.conv3' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block5.block.bn3' executed successfully, output shape: (512, 160, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block5.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage3.stage3_block5.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block5.block.conv2' → 'stage3.stage3_block5.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_4': stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block6.block.conv2', 'stage3.stage3_block6.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block6.block.conv2
+[INFO] End Target   : stage3.stage3_block6.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block6.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage3.stage3_block6.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage3.stage3_block6.block.conv2'
+[DEBUG] Hooking End Node   : 'stage3.stage3_block6.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3'...
+[DEBUG] Captured input shape: (512, 160, 2, 2), output shape: (512, 160, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 160, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 160, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 4,684,202
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block6.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage3.stage3_block6.block.conv3'...
+[DEBUG] Exact layer match found at index 146: stage3.stage3_block6.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 147 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 160, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 160, 2, 2)
+[DEBUG] Determined out_channels=160
+[DEBUG] Final block output shape: (512, 160, 2, 2)
+[DEBUG] Determined out_channels=160
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=2, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,2) to reconcile linear in_features mismatch.
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 160, 2, 2)
+         out_channels=160
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 2))
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 160, 2, 2)
+    - out_channels             : 160
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 2))
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage3.stage3_block6.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage3.stage3_block6.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 160 (in) -> 160 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=10, in=160, out=160)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(160, 160, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(160, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'stage3.stage3_block6.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,684,202
+[INFO] Post-collapse : 4,661,162
+[INFO] Net Change    : -23,040
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 160, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block6.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block6.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage3.stage3_block6.block.bn2' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block6.block.relu2' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block6.block.conv3' executed successfully, output shape: (512, 160, 2, 2)
+[DEBUG] Downstream 'stage3.stage3_block6.block.bn3' executed successfully, output shape: (512, 160, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block6.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage3.stage3_block6.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block6.block.conv2' → 'stage3.stage3_block6.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_4' (stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_5': stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block0.block.conv2', 'stage4.stage4_block0.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block0.block.conv2
+[INFO] End Target   : stage4.stage4_block0.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block0.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4.stage4_block0.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.stage4_block0.block.conv2'
+[DEBUG] Hooking End Node   : 'stage4.stage4_block0.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3'...
+[DEBUG] Captured input shape: (512, 384, 2, 2), output shape: (512, 384, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 384, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 384, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 4,661,162
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block0.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage4.stage4_block0.block.conv3'...
+[DEBUG] Exact layer match found at index 163: stage4.stage4_block0.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 164 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 384, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=1 (HxW=1x1)
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 384, 1, 1)
+         out_channels=384
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 384, 1, 1)
+    - out_channels             : 384
+    - pool_layer               : None
+    - adaptive_pool_to_use     : None
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.stage4_block0.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4.stage4_block0.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=24, in=384, out=384)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'stage4.stage4_block0.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,661,162
+[INFO] Post-collapse : 4,605,866
+[INFO] Net Change    : -55,296
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 384, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block0.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block0.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.stage4_block0.block.bn2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block0.block.relu2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block0.block.conv3' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block0.block.bn3' executed successfully, output shape: (512, 384, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block0.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.stage4_block0.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block0.block.conv2' → 'stage4.stage4_block0.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_6': stage4.stage4_block1.block.conv1 → stage4.stage4_block1.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block1.block.conv1', 'stage4.stage4_block1.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block1.block.conv1
+[INFO] End Target   : stage4.stage4_block1.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block1.block.conv1' -> 'stage4.stage4_block1.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block1.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4.stage4_block1.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 0 to 6
+[DEBUG] Captured Layers : 7 total
+    [LAYER MAP] conv1 -> Conv2d
+    [LAYER MAP] bn1 -> BatchNorm2d
+    [LAYER MAP] relu1 -> ReLU
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.stage4_block1.block.conv1'
+[DEBUG] Hooking End Node   : 'stage4.stage4_block1.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block1.block.conv1' -> 'stage4.stage4_block1.block.conv3'...
+[DEBUG] Captured input shape: (512, 384, 1, 1), output shape: (512, 384, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 384, 1, 1)
+[DEBUG] Output (y) shape exiting LCA   : (512, 384, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 4,605,866
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block1.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage4.stage4_block1.block.conv3'...
+[DEBUG] Exact layer match found at index 181: stage4.stage4_block1.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 182 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (7 layers)...
+[DEBUG] Input tensor shape before block: (512, 384, 1, 1)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=1 (HxW=1x1)
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 384, 1, 1)
+         out_channels=384
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 384, 1, 1)
+    - out_channels             : 384
+    - pool_layer               : None
+    - adaptive_pool_to_use     : None
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.stage4_block1.block.conv1'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4.stage4_block1.block'
+[DEBUG] Layer Indices    : 0 -> 6
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=384, out=384)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'stage4.stage4_block1.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,605,866
+[INFO] Post-collapse : 4,402,346
+[INFO] Net Change    : -203,520
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 384, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block1.block' =====
+[DEBUG] start_idx=0, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block1.block'...
+[DEBUG] Found inserted block candidate at index 0: 'conv1'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (512, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.stage4_block1.block.bn1' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block1.block.relu1' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block1.block.conv2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block1.block.bn2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block1.block.relu2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block1.block.conv3' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block1.block.bn3' executed successfully, output shape: (512, 384, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block1.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.stage4_block1.block.conv1'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block1.block.conv1' → 'stage4.stage4_block1.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_6' (stage4.stage4_block1.block.conv1 → stage4.stage4_block1.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_7': stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block2.block.conv2', 'stage4.stage4_block2.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block2.block.conv2
+[INFO] End Target   : stage4.stage4_block2.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block2.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4.stage4_block2.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.stage4_block2.block.conv2'
+[DEBUG] Hooking End Node   : 'stage4.stage4_block2.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3'...
+[DEBUG] Captured input shape: (512, 384, 1, 1), output shape: (512, 384, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 384, 1, 1)
+[DEBUG] Output (y) shape exiting LCA   : (512, 384, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 4,402,346
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block2.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage4.stage4_block2.block.conv3'...
+[DEBUG] Exact layer match found at index 197: stage4.stage4_block2.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 198 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 384, 1, 1)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=1 (HxW=1x1)
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 384, 1, 1)
+         out_channels=384
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 384, 1, 1)
+    - out_channels             : 384
+    - pool_layer               : None
+    - adaptive_pool_to_use     : None
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.stage4_block2.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4.stage4_block2.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=24, in=384, out=384)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'stage4.stage4_block2.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,402,346
+[INFO] Post-collapse : 4,347,050
+[INFO] Net Change    : -55,296
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 384, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block2.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block2.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.stage4_block2.block.bn2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block2.block.relu2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block2.block.conv3' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block2.block.bn3' executed successfully, output shape: (512, 384, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block2.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.stage4_block2.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block2.block.conv2' → 'stage4.stage4_block2.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_7' (stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_8': stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block3.block.conv2', 'stage4.stage4_block3.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block3.block.conv2
+[INFO] End Target   : stage4.stage4_block3.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block3.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4.stage4_block3.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.stage4_block3.block.conv2'
+[DEBUG] Hooking End Node   : 'stage4.stage4_block3.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3'...
+[DEBUG] Captured input shape: (512, 384, 1, 1), output shape: (512, 384, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 384, 1, 1)
+[DEBUG] Output (y) shape exiting LCA   : (512, 384, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 4,347,050
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block3.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage4.stage4_block3.block.conv3'...
+[DEBUG] Exact layer match found at index 213: stage4.stage4_block3.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 214 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 384, 1, 1)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=1 (HxW=1x1)
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 384, 1, 1)
+         out_channels=384
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 384, 1, 1)
+    - out_channels             : 384
+    - pool_layer               : None
+    - adaptive_pool_to_use     : None
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.stage4_block3.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4.stage4_block3.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=24, in=384, out=384)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'stage4.stage4_block3.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,347,050
+[INFO] Post-collapse : 4,291,754
+[INFO] Net Change    : -55,296
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 384, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block3.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block3.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.stage4_block3.block.bn2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block3.block.relu2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block3.block.conv3' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block3.block.bn3' executed successfully, output shape: (512, 384, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block3.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.stage4_block3.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block3.block.conv2' → 'stage4.stage4_block3.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_8' (stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_9': stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block4.block.conv2', 'stage4.stage4_block4.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block4.block.conv2
+[INFO] End Target   : stage4.stage4_block4.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block4.block.conv2' -> 'stage4.stage4_block4.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block4.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4.stage4_block4.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.stage4_block4.block.conv2'
+[DEBUG] Hooking End Node   : 'stage4.stage4_block4.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block4.block.conv2' -> 'stage4.stage4_block4.block.conv3'...
+[DEBUG] Captured input shape: (512, 384, 1, 1), output shape: (512, 384, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 384, 1, 1)
+[DEBUG] Output (y) shape exiting LCA   : (512, 384, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 4,291,754
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block4.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage4.stage4_block4.block.conv3'...
+[DEBUG] Exact layer match found at index 229: stage4.stage4_block4.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 230 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 384, 1, 1)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=1 (HxW=1x1)
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 384, 1, 1)
+         out_channels=384
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 384, 1, 1)
+    - out_channels             : 384
+    - pool_layer               : None
+    - adaptive_pool_to_use     : None
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.stage4_block4.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4.stage4_block4.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=24, in=384, out=384)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'stage4.stage4_block4.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,291,754
+[INFO] Post-collapse : 4,236,458
+[INFO] Net Change    : -55,296
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 384, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block4.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block4.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.stage4_block4.block.bn2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block4.block.relu2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block4.block.conv3' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block4.block.bn3' executed successfully, output shape: (512, 384, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block4.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.stage4_block4.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block4.block.conv2' → 'stage4.stage4_block4.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_9' (stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_10': stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block5.block.conv2', 'stage4.stage4_block5.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block5.block.conv2
+[INFO] End Target   : stage4.stage4_block5.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block5.block.conv2' -> 'stage4.stage4_block5.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block5.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4.stage4_block5.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.stage4_block5.block.conv2'
+[DEBUG] Hooking End Node   : 'stage4.stage4_block5.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block5.block.conv2' -> 'stage4.stage4_block5.block.conv3'...
+[DEBUG] Captured input shape: (512, 384, 1, 1), output shape: (512, 384, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 384, 1, 1)
+[DEBUG] Output (y) shape exiting LCA   : (512, 384, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 4,236,458
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block5.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage4.stage4_block5.block.conv3'...
+[DEBUG] Exact layer match found at index 245: stage4.stage4_block5.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 246 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 384, 1, 1)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=1 (HxW=1x1)
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 384, 1, 1)
+         out_channels=384
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 384, 1, 1)
+    - out_channels             : 384
+    - pool_layer               : None
+    - adaptive_pool_to_use     : None
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.stage4_block5.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4.stage4_block5.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=24, in=384, out=384)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'stage4.stage4_block5.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,236,458
+[INFO] Post-collapse : 4,181,162
+[INFO] Net Change    : -55,296
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 384, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block5.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block5.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.stage4_block5.block.bn2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block5.block.relu2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block5.block.conv3' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block5.block.bn3' executed successfully, output shape: (512, 384, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block5.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.stage4_block5.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block5.block.conv2' → 'stage4.stage4_block5.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_10' (stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_11': stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block6.block.conv2', 'stage4.stage4_block6.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block6.block.conv2
+[INFO] End Target   : stage4.stage4_block6.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block6.block.conv2' -> 'stage4.stage4_block6.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block6.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4.stage4_block6.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.stage4_block6.block.conv2'
+[DEBUG] Hooking End Node   : 'stage4.stage4_block6.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block6.block.conv2' -> 'stage4.stage4_block6.block.conv3'...
+[DEBUG] Captured input shape: (512, 384, 1, 1), output shape: (512, 384, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 384, 1, 1)
+[DEBUG] Output (y) shape exiting LCA   : (512, 384, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 4,181,162
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block6.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage4.stage4_block6.block.conv3'...
+[DEBUG] Exact layer match found at index 261: stage4.stage4_block6.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 262 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 384, 1, 1)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=1 (HxW=1x1)
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 384, 1, 1)
+         out_channels=384
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 384, 1, 1)
+    - out_channels             : 384
+    - pool_layer               : None
+    - adaptive_pool_to_use     : None
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.stage4_block6.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4.stage4_block6.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=24, in=384, out=384)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'stage4.stage4_block6.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,181,162
+[INFO] Post-collapse : 4,125,866
+[INFO] Net Change    : -55,296
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 384, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block6.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block6.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.stage4_block6.block.bn2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block6.block.relu2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block6.block.conv3' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block6.block.bn3' executed successfully, output shape: (512, 384, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block6.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.stage4_block6.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block6.block.conv2' → 'stage4.stage4_block6.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_11' (stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_12': stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block7.block.conv2', 'stage4.stage4_block7.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block7.block.conv2
+[INFO] End Target   : stage4.stage4_block7.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block7.block.conv2' -> 'stage4.stage4_block7.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block7.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4.stage4_block7.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.stage4_block7.block.conv2'
+[DEBUG] Hooking End Node   : 'stage4.stage4_block7.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block7.block.conv2' -> 'stage4.stage4_block7.block.conv3'...
+[DEBUG] Captured input shape: (512, 384, 1, 1), output shape: (512, 384, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 384, 1, 1)
+[DEBUG] Output (y) shape exiting LCA   : (512, 384, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 4,125,866
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block7.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage4.stage4_block7.block.conv3'...
+[DEBUG] Exact layer match found at index 277: stage4.stage4_block7.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 278 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 384, 1, 1)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=1 (HxW=1x1)
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 384, 1, 1)
+         out_channels=384
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 384, 1, 1)
+    - out_channels             : 384
+    - pool_layer               : None
+    - adaptive_pool_to_use     : None
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.stage4_block7.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4.stage4_block7.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=24, in=384, out=384)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'stage4.stage4_block7.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,125,866
+[INFO] Post-collapse : 4,070,570
+[INFO] Net Change    : -55,296
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 384, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block7.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block7.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.stage4_block7.block.bn2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block7.block.relu2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block7.block.conv3' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block7.block.bn3' executed successfully, output shape: (512, 384, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block7.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.stage4_block7.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block7.block.conv2' → 'stage4.stage4_block7.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_12' (stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_13': stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block8.block.conv2', 'stage4.stage4_block8.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block8.block.conv2
+[INFO] End Target   : stage4.stage4_block8.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block8.block.conv2' -> 'stage4.stage4_block8.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block8.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4.stage4_block8.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.stage4_block8.block.conv2'
+[DEBUG] Hooking End Node   : 'stage4.stage4_block8.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block8.block.conv2' -> 'stage4.stage4_block8.block.conv3'...
+[DEBUG] Captured input shape: (512, 384, 1, 1), output shape: (512, 384, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 384, 1, 1)
+[DEBUG] Output (y) shape exiting LCA   : (512, 384, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 4,070,570
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block8.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage4.stage4_block8.block.conv3'...
+[DEBUG] Exact layer match found at index 293: stage4.stage4_block8.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 294 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 384, 1, 1)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=1 (HxW=1x1)
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 384, 1, 1)
+         out_channels=384
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 384, 1, 1)
+    - out_channels             : 384
+    - pool_layer               : None
+    - adaptive_pool_to_use     : None
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.stage4_block8.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4.stage4_block8.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=24, in=384, out=384)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'stage4.stage4_block8.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,070,570
+[INFO] Post-collapse : 4,015,274
+[INFO] Net Change    : -55,296
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 384, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block8.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block8.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.stage4_block8.block.bn2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block8.block.relu2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block8.block.conv3' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block8.block.bn3' executed successfully, output shape: (512, 384, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block8.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.stage4_block8.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block8.block.conv2' → 'stage4.stage4_block8.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_13' (stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_14': stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block9.block.conv2', 'stage4.stage4_block9.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block9.block.conv2
+[INFO] End Target   : stage4.stage4_block9.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block9.block.conv2' -> 'stage4.stage4_block9.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block9.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4.stage4_block9.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.stage4_block9.block.conv2'
+[DEBUG] Hooking End Node   : 'stage4.stage4_block9.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block9.block.conv2' -> 'stage4.stage4_block9.block.conv3'...
+[DEBUG] Captured input shape: (512, 384, 1, 1), output shape: (512, 384, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 384, 1, 1)
+[DEBUG] Output (y) shape exiting LCA   : (512, 384, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 4,015,274
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block9.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage4.stage4_block9.block.conv3'...
+[DEBUG] Exact layer match found at index 309: stage4.stage4_block9.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 310 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 384, 1, 1)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=1 (HxW=1x1)
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 384, 1, 1)
+         out_channels=384
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 384, 1, 1)
+    - out_channels             : 384
+    - pool_layer               : None
+    - adaptive_pool_to_use     : None
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.stage4_block9.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4.stage4_block9.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=24, in=384, out=384)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'stage4.stage4_block9.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,015,274
+[INFO] Post-collapse : 3,959,978
+[INFO] Net Change    : -55,296
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 384, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block9.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block9.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.stage4_block9.block.bn2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block9.block.relu2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block9.block.conv3' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block9.block.bn3' executed successfully, output shape: (512, 384, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block9.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.stage4_block9.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block9.block.conv2' → 'stage4.stage4_block9.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_14' (stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_15': stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block10.block.conv2', 'stage4.stage4_block10.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block10.block.conv2
+[INFO] End Target   : stage4.stage4_block10.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block10.block.conv2' -> 'stage4.stage4_block10.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block10.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4.stage4_block10.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.stage4_block10.block.conv2'
+[DEBUG] Hooking End Node   : 'stage4.stage4_block10.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block10.block.conv2' -> 'stage4.stage4_block10.block.conv3'...
+[DEBUG] Captured input shape: (512, 384, 1, 1), output shape: (512, 384, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 384, 1, 1)
+[DEBUG] Output (y) shape exiting LCA   : (512, 384, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 3,959,978
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block10.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage4.stage4_block10.block.conv3'...
+[DEBUG] Exact layer match found at index 325: stage4.stage4_block10.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 326 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 384, 1, 1)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=1 (HxW=1x1)
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 384, 1, 1)
+         out_channels=384
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 384, 1, 1)
+    - out_channels             : 384
+    - pool_layer               : None
+    - adaptive_pool_to_use     : None
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.stage4_block10.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4.stage4_block10.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=24, in=384, out=384)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'stage4.stage4_block10.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 3,959,978
+[INFO] Post-collapse : 3,904,682
+[INFO] Net Change    : -55,296
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 384, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block10.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block10.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.stage4_block10.block.bn2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block10.block.relu2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block10.block.conv3' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block10.block.bn3' executed successfully, output shape: (512, 384, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block10.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.stage4_block10.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block10.block.conv2' → 'stage4.stage4_block10.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_15' (stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_16': stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block11.block.conv2', 'stage4.stage4_block11.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block11.block.conv2
+[INFO] End Target   : stage4.stage4_block11.block.conv3
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block11.block.conv2' -> 'stage4.stage4_block11.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block11.block' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4.stage4_block11.block'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 6
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv2 -> Conv2d
+    [LAYER MAP] bn2 -> BatchNorm2d
+    [LAYER MAP] relu2 -> ReLU
+    [LAYER MAP] conv3 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.stage4_block11.block.conv2'
+[DEBUG] Hooking End Node   : 'stage4.stage4_block11.block.conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block11.block.conv2' -> 'stage4.stage4_block11.block.conv3'...
+[DEBUG] Captured input shape: (512, 384, 1, 1), output shape: (512, 384, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 384, 1, 1)
+[DEBUG] Output (y) shape exiting LCA   : (512, 384, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 3,904,682
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block11.block.conv3'...
+
+[STEP] Searching for next nn.Linear after 'stage4.stage4_block11.block.conv3'...
+[DEBUG] Exact layer match found at index 341: stage4.stage4_block11.block.conv3 (Conv2d)
+[DEBUG] Scanning forward from index 342 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=384, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 384, 1, 1)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (512, 384, 1, 1)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=1 (HxW=1x1)
+[DEBUG] Found shortcut conv → out_channels=32
+[RESULT] Block analysis complete:
+         out_shape=(512, 384, 1, 1)
+         out_channels=384
+         has_pool=False
+         adaptive_pool_to_use=None
+         shortcut_out_channels=32
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 384, 1, 1)
+    - out_channels             : 384
+    - pool_layer               : None
+    - adaptive_pool_to_use     : None
+    - shortcut_out_channels    : 32
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.stage4_block11.block.conv2'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4.stage4_block11.block'
+[DEBUG] Layer Indices    : 3 -> 6
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=24, in=384, out=384)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for regnetx_400mf:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(384, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'stage4.stage4_block11.block'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 3,904,682
+[INFO] Post-collapse : 3,849,386
+[INFO] Net Change    : -55,296
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 384, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 384) | Flat size: 384
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block11.block' =====
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block11.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (512, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.stage4_block11.block.bn2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block11.block.relu2' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block11.block.conv3' executed successfully, output shape: (512, 384, 1, 1)
+[DEBUG] Downstream 'stage4.stage4_block11.block.bn3' executed successfully, output shape: (512, 384, 1, 1)
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block11.block' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.stage4_block11.block.conv2'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block11.block.conv2' → 'stage4.stage4_block11.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_16' (stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 4,776,362
+[INFO] Parameters after : 3,849,386
+[INFO] ΔParams = +926,976 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 17
+[•] Starting experiment 'Dynamic_Region_All_Combined_quant' in workflow 'JF' | Epoch Target: 3
+[•] No intermediate checkpoint found — starting fresh
+[•] Epoch 0
+Training:   0%|          | 0/98 [00:00<?, ?it/s]/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/amp/autocast_mode.py:266: UserWarning: User provided device_type of 'cuda', but CUDA is not available. Disabling
+  warnings.warn(
+Training:   0%|          | 0/98 [00:03<?, ?it/s, loss=3.4003, acc=9.18%]Training:   1%|          | 1/98 [00:03<05:50,  3.61s/it, loss=3.4003, acc=9.18%]Training:   1%|          | 1/98 [00:05<05:50,  3.61s/it, loss=3.9178, acc=10.74%]Training:   2%|▏         | 2/98 [00:05<04:00,  2.50s/it, loss=3.9178, acc=10.74%]Training:   2%|▏         | 2/98 [00:07<04:00,  2.50s/it, loss=3.7220, acc=10.16%]Training:   3%|▎         | 3/98 [00:07<03:23,  2.14s/it, loss=3.7220, acc=10.16%]Training:   3%|▎         | 3/98 [00:08<03:23,  2.14s/it, loss=3.3194, acc=10.64%]Training:   4%|▍         | 4/98 [00:08<03:04,  1.97s/it, loss=3.3194, acc=10.64%]Training:   4%|▍         | 4/98 [00:10<03:04,  1.97s/it, loss=3.3622, acc=10.62%]Training:   5%|▌         | 5/98 [00:10<02:53,  1.87s/it, loss=3.3622, acc=10.62%]Training:   5%|▌         | 5/98 [00:12<02:53,  1.87s/it, loss=3.0435, acc=10.97%]Training:   6%|▌         | 6/98 [00:12<02:46,  1.81s/it, loss=3.0435, acc=10.97%]Training:   6%|▌         | 6/98 [00:13<02:46,  1.81s/it, loss=2.9134, acc=11.44%]Training:   7%|▋         | 7/98 [00:13<02:41,  1.78s/it, loss=2.9134, acc=11.44%]Training:   7%|▋         | 7/98 [00:15<02:41,  1.78s/it, loss=2.6759, acc=11.84%]Training:   8%|▊         | 8/98 [00:15<02:37,  1.75s/it, loss=2.6759, acc=11.84%]Training:   8%|▊         | 8/98 [00:17<02:37,  1.75s/it, loss=3.0671, acc=11.96%]Training:   9%|▉         | 9/98 [00:17<02:34,  1.73s/it, loss=3.0671, acc=11.96%]Training:   9%|▉         | 9/98 [00:18<02:34,  1.73s/it, loss=2.7484, acc=11.84%]Training:  10%|█         | 10/98 [00:18<02:31,  1.72s/it, loss=2.7484, acc=11.84%]Training:  10%|█         | 10/98 [00:20<02:31,  1.72s/it, loss=2.8033, acc=12.09%]Training:  11%|█         | 11/98 [00:20<02:29,  1.71s/it, loss=2.8033, acc=12.09%]Training:  11%|█         | 11/98 [00:22<02:29,  1.71s/it, loss=2.6323, acc=12.13%]Training:  12%|█▏        | 12/98 [00:22<02:26,  1.71s/it, loss=2.6323, acc=12.13%]Training:  12%|█▏        | 12/98 [00:24<02:26,  1.71s/it, loss=2.8047, acc=12.20%]Training:  13%|█▎        | 13/98 [00:24<02:24,  1.70s/it, loss=2.8047, acc=12.20%]Training:  13%|█▎        | 13/98 [00:25<02:24,  1.70s/it, loss=2.6833, acc=12.23%]Training:  14%|█▍        | 14/98 [00:25<02:23,  1.70s/it, loss=2.6833, acc=12.23%]Training:  14%|█▍        | 14/98 [00:27<02:23,  1.70s/it, loss=2.6562, acc=12.28%]Training:  15%|█▌        | 15/98 [00:27<02:21,  1.70s/it, loss=2.6562, acc=12.28%]Training:  15%|█▌        | 15/98 [00:29<02:21,  1.70s/it, loss=2.7352, acc=12.29%]Training:  16%|█▋        | 16/98 [00:29<02:19,  1.70s/it, loss=2.7352, acc=12.29%]Training:  16%|█▋        | 16/98 [00:30<02:19,  1.70s/it, loss=2.6170, acc=12.24%]Training:  17%|█▋        | 17/98 [00:30<02:17,  1.70s/it, loss=2.6170, acc=12.24%]Training:  17%|█▋        | 17/98 [00:32<02:17,  1.70s/it, loss=2.4625, acc=12.33%]Training:  18%|█▊        | 18/98 [00:32<02:16,  1.70s/it, loss=2.4625, acc=12.33%]Training:  18%|█▊        | 18/98 [00:34<02:16,  1.70s/it, loss=2.4119, acc=12.40%]Training:  19%|█▉        | 19/98 [00:34<02:14,  1.70s/it, loss=2.4119, acc=12.40%]Training:  19%|█▉        | 19/98 [00:35<02:14,  1.70s/it, loss=2.3814, acc=12.46%]Training:  20%|██        | 20/98 [00:35<02:12,  1.70s/it, loss=2.3814, acc=12.46%]Training:  20%|██        | 20/98 [00:37<02:12,  1.70s/it, loss=2.9031, acc=12.51%]Training:  21%|██▏       | 21/98 [00:37<02:11,  1.70s/it, loss=2.9031, acc=12.51%]Training:  21%|██▏       | 21/98 [00:39<02:11,  1.70s/it, loss=2.4531, acc=12.64%]Training:  22%|██▏       | 22/98 [00:39<02:08,  1.70s/it, loss=2.4531, acc=12.64%]Training:  22%|██▏       | 22/98 [00:40<02:08,  1.70s/it, loss=2.3797, acc=12.72%]Training:  23%|██▎       | 23/98 [00:40<02:07,  1.70s/it, loss=2.3797, acc=12.72%]Training:  23%|██▎       | 23/98 [00:42<02:07,  1.70s/it, loss=2.5178, acc=12.77%]Training:  24%|██▍       | 24/98 [00:42<02:05,  1.70s/it, loss=2.5178, acc=12.77%]Training:  24%|██▍       | 24/98 [00:44<02:05,  1.70s/it, loss=2.5785, acc=12.82%]Training:  26%|██▌       | 25/98 [00:44<02:04,  1.70s/it, loss=2.5785, acc=12.82%]Training:  26%|██▌       | 25/98 [00:46<02:04,  1.70s/it, loss=2.3943, acc=12.88%]Training:  27%|██▋       | 26/98 [00:46<02:02,  1.70s/it, loss=2.3943, acc=12.88%]Training:  27%|██▋       | 26/98 [00:47<02:02,  1.70s/it, loss=2.3277, acc=12.94%]Training:  28%|██▊       | 27/98 [00:47<02:00,  1.70s/it, loss=2.3277, acc=12.94%]Training:  28%|██▊       | 27/98 [00:49<02:00,  1.70s/it, loss=2.4006, acc=13.01%]Training:  29%|██▊       | 28/98 [00:49<01:59,  1.70s/it, loss=2.4006, acc=13.01%]Training:  29%|██▊       | 28/98 [00:51<01:59,  1.70s/it, loss=2.3042, acc=13.11%]Training:  30%|██▉       | 29/98 [00:51<01:57,  1.70s/it, loss=2.3042, acc=13.11%]Training:  30%|██▉       | 29/98 [00:52<01:57,  1.70s/it, loss=2.4688, acc=13.17%]Training:  31%|███       | 30/98 [00:52<01:56,  1.72s/it, loss=2.4688, acc=13.17%]Training:  31%|███       | 30/98 [00:54<01:56,  1.72s/it, loss=2.3306, acc=13.22%]Training:  32%|███▏      | 31/98 [00:54<01:55,  1.72s/it, loss=2.3306, acc=13.22%]Training:  32%|███▏      | 31/98 [00:56<01:55,  1.72s/it, loss=2.3251, acc=13.26%]Training:  33%|███▎      | 32/98 [00:56<01:53,  1.72s/it, loss=2.3251, acc=13.26%]Training:  33%|███▎      | 32/98 [00:58<01:53,  1.72s/it, loss=2.2772, acc=13.39%]Training:  34%|███▎      | 33/98 [00:58<01:52,  1.73s/it, loss=2.2772, acc=13.39%]Training:  34%|███▎      | 33/98 [00:59<01:52,  1.73s/it, loss=2.3732, acc=13.45%]Training:  35%|███▍      | 34/98 [00:59<01:50,  1.72s/it, loss=2.3732, acc=13.45%]Training:  35%|███▍      | 34/98 [01:01<01:50,  1.72s/it, loss=2.4160, acc=13.50%]Training:  36%|███▌      | 35/98 [01:01<01:48,  1.73s/it, loss=2.4160, acc=13.50%]Training:  36%|███▌      | 35/98 [01:03<01:48,  1.73s/it, loss=2.3581, acc=13.58%]Training:  37%|███▋      | 36/98 [01:03<01:47,  1.73s/it, loss=2.3581, acc=13.58%]Training:  37%|███▋      | 36/98 [01:05<01:47,  1.73s/it, loss=2.3421, acc=13.59%]Training:  38%|███▊      | 37/98 [01:05<01:44,  1.72s/it, loss=2.3421, acc=13.59%]Training:  38%|███▊      | 37/98 [01:06<01:44,  1.72s/it, loss=2.3095, acc=13.69%]Training:  39%|███▉      | 38/98 [01:06<01:43,  1.72s/it, loss=2.3095, acc=13.69%]Training:  39%|███▉      | 38/98 [01:08<01:43,  1.72s/it, loss=2.2668, acc=13.75%]Training:  40%|███▉      | 39/98 [01:08<01:42,  1.73s/it, loss=2.2668, acc=13.75%]Training:  40%|███▉      | 39/98 [01:10<01:42,  1.73s/it, loss=2.2362, acc=13.84%]Training:  41%|████      | 40/98 [01:10<01:40,  1.73s/it, loss=2.2362, acc=13.84%]Training:  41%|████      | 40/98 [01:12<01:40,  1.73s/it, loss=2.2775, acc=13.87%]Training:  42%|████▏     | 41/98 [01:12<01:38,  1.73s/it, loss=2.2775, acc=13.87%]Training:  42%|████▏     | 41/98 [01:13<01:38,  1.73s/it, loss=2.2594, acc=13.96%]Training:  43%|████▎     | 42/98 [01:13<01:37,  1.74s/it, loss=2.2594, acc=13.96%]Training:  43%|████▎     | 42/98 [01:15<01:37,  1.74s/it, loss=2.2731, acc=14.08%]Training:  44%|████▍     | 43/98 [01:15<01:35,  1.73s/it, loss=2.2731, acc=14.08%]Training:  44%|████▍     | 43/98 [01:17<01:35,  1.73s/it, loss=2.3245, acc=14.11%]Training:  45%|████▍     | 44/98 [01:17<01:33,  1.73s/it, loss=2.3245, acc=14.11%]Training:  45%|████▍     | 44/98 [01:18<01:33,  1.73s/it, loss=2.2404, acc=14.10%]Training:  46%|████▌     | 45/98 [01:18<01:31,  1.72s/it, loss=2.2404, acc=14.10%]Training:  46%|████▌     | 45/98 [01:20<01:31,  1.72s/it, loss=2.2685, acc=14.17%]Training:  47%|████▋     | 46/98 [01:20<01:29,  1.72s/it, loss=2.2685, acc=14.17%]Training:  47%|████▋     | 46/98 [01:22<01:29,  1.72s/it, loss=2.3229, acc=14.18%]Training:  48%|████▊     | 47/98 [01:22<01:27,  1.72s/it, loss=2.3229, acc=14.18%]Training:  48%|████▊     | 47/98 [01:24<01:27,  1.72s/it, loss=2.1715, acc=14.29%]Training:  49%|████▉     | 48/98 [01:24<01:25,  1.72s/it, loss=2.1715, acc=14.29%]Training:  49%|████▉     | 48/98 [01:25<01:25,  1.72s/it, loss=2.2898, acc=14.34%]Training:  50%|█████     | 49/98 [01:25<01:24,  1.72s/it, loss=2.2898, acc=14.34%]Training:  50%|█████     | 49/98 [01:27<01:24,  1.72s/it, loss=2.3056, acc=14.36%]Training:  51%|█████     | 50/98 [01:27<01:22,  1.72s/it, loss=2.3056, acc=14.36%]Training:  51%|█████     | 50/98 [01:29<01:22,  1.72s/it, loss=2.3044, acc=14.41%]Training:  52%|█████▏    | 51/98 [01:29<01:20,  1.72s/it, loss=2.3044, acc=14.41%]Training:  52%|█████▏    | 51/98 [01:30<01:20,  1.72s/it, loss=2.3101, acc=14.48%]Training:  53%|█████▎    | 52/98 [01:30<01:19,  1.72s/it, loss=2.3101, acc=14.48%]Training:  53%|█████▎    | 52/98 [01:32<01:19,  1.72s/it, loss=2.1543, acc=14.55%]Training:  54%|█████▍    | 53/98 [01:32<01:17,  1.72s/it, loss=2.1543, acc=14.55%]Training:  54%|█████▍    | 53/98 [01:34<01:17,  1.72s/it, loss=2.2868, acc=14.62%]Training:  55%|█████▌    | 54/98 [01:34<01:15,  1.73s/it, loss=2.2868, acc=14.62%]Training:  55%|█████▌    | 54/98 [01:36<01:15,  1.73s/it, loss=2.2099, acc=14.74%]Training:  56%|█████▌    | 55/98 [01:36<01:14,  1.73s/it, loss=2.2099, acc=14.74%]Training:  56%|█████▌    | 55/98 [01:37<01:14,  1.73s/it, loss=2.2052, acc=14.78%]Training:  57%|█████▋    | 56/98 [01:37<01:12,  1.73s/it, loss=2.2052, acc=14.78%]Training:  57%|█████▋    | 56/98 [01:39<01:12,  1.73s/it, loss=2.2354, acc=14.84%]Training:  58%|█████▊    | 57/98 [01:39<01:10,  1.73s/it, loss=2.2354, acc=14.84%]Training:  58%|█████▊    | 57/98 [01:41<01:10,  1.73s/it, loss=2.2547, acc=14.86%]Training:  59%|█████▉    | 58/98 [01:41<01:08,  1.72s/it, loss=2.2547, acc=14.86%]Training:  59%|█████▉    | 58/98 [01:43<01:08,  1.72s/it, loss=2.2477, acc=14.98%]Training:  60%|██████    | 59/98 [01:43<01:07,  1.72s/it, loss=2.2477, acc=14.98%]Training:  60%|██████    | 59/98 [01:44<01:07,  1.72s/it, loss=2.2567, acc=15.02%]Training:  61%|██████    | 60/98 [01:44<01:05,  1.72s/it, loss=2.2567, acc=15.02%]Training:  61%|██████    | 60/98 [01:46<01:05,  1.72s/it, loss=2.1841, acc=15.10%]Training:  62%|██████▏   | 61/98 [01:46<01:03,  1.72s/it, loss=2.1841, acc=15.10%]Training:  62%|██████▏   | 61/98 [01:48<01:03,  1.72s/it, loss=2.1991, acc=15.19%]Training:  63%|██████▎   | 62/98 [01:48<01:01,  1.71s/it, loss=2.1991, acc=15.19%]Training:  63%|██████▎   | 62/98 [01:49<01:01,  1.71s/it, loss=2.2490, acc=15.26%]Training:  64%|██████▍   | 63/98 [01:49<00:59,  1.71s/it, loss=2.2490, acc=15.26%]Training:  64%|██████▍   | 63/98 [01:51<00:59,  1.71s/it, loss=2.2024, acc=15.33%]Training:  65%|██████▌   | 64/98 [01:51<00:58,  1.71s/it, loss=2.2024, acc=15.33%]Training:  65%|██████▌   | 64/98 [01:53<00:58,  1.71s/it, loss=2.2810, acc=15.36%]Training:  66%|██████▋   | 65/98 [01:53<00:56,  1.72s/it, loss=2.2810, acc=15.36%]Training:  66%|██████▋   | 65/98 [01:55<00:56,  1.72s/it, loss=2.1516, acc=15.43%]Training:  67%|██████▋   | 66/98 [01:55<00:54,  1.71s/it, loss=2.1516, acc=15.43%]Training:  67%|██████▋   | 66/98 [01:56<00:54,  1.71s/it, loss=2.3264, acc=15.44%]Training:  68%|██████▊   | 67/98 [01:56<00:53,  1.72s/it, loss=2.3264, acc=15.44%]Training:  68%|██████▊   | 67/98 [01:58<00:53,  1.72s/it, loss=2.2560, acc=15.45%]Training:  69%|██████▉   | 68/98 [01:58<00:51,  1.72s/it, loss=2.2560, acc=15.45%]Training:  69%|██████▉   | 68/98 [02:00<00:51,  1.72s/it, loss=2.1823, acc=15.49%]Training:  70%|███████   | 69/98 [02:00<00:49,  1.70s/it, loss=2.1823, acc=15.49%]Training:  70%|███████   | 69/98 [02:01<00:49,  1.70s/it, loss=2.2759, acc=15.50%]Training:  71%|███████▏  | 70/98 [02:01<00:47,  1.70s/it, loss=2.2759, acc=15.50%]
