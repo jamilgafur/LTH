@@ -408,56 +408,63 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     # HELPER 5: Phase 4 - Greedy Integration
     # =====================================================================
     def greedy_integration(R_final, experiment_regions, base_params, base_flops, check_flops, dummy_input):
-        if len(R_final) <= 1: return experiment_regions
-        
-        print(f"\n[INFO] Phase 4: Validating 'Dynamic_Region_All_Combined' (Greedy Integration)...")
-        safe_combined_regions = []
-        current_best_params = base_params
-        current_best_flops = base_flops
-        
-        for region_tuple in R_final:
-            candidate_combo = safe_combined_regions + [region_tuple]
-            try:
-                test_model = copy.deepcopy(model).to(device)
-                combo_dict = {f"comb_{i}": reg for i, reg in enumerate(candidate_combo)}
-                
-                collapsed_combined = collapse_only(
-                    model=test_model, compression_set=combo_dict,
-                    input_shape=input_shape, device=device, dry_run=False 
-                )
-                
-                collapsed_combined.eval()
-                with torch.no_grad(): _ = collapsed_combined(dummy_input)
-                    
-                new_params_combo = count_trainable_params(collapsed_combined)
-                try:
-                    new_flops_combo = FlopCountAnalysis(collapsed_combined, dummy_input).unsupported_ops_warnings(False).total()
-                except Exception:
-                    new_flops_combo = float('inf')
-
-                param_decreased = new_params_combo < current_best_params
-                flop_decreased = check_flops and new_flops_combo < current_best_flops
-                
-                if not (param_decreased or flop_decreased):
-                    raise ValueError(f"Diminishing returns.")
-                
-                print(f"        [+] Merged safely: {region_tuple[0]} -> {region_tuple[1]}")
-                current_best_params = new_params_combo
-                current_best_flops = new_flops_combo
-                safe_combined_regions.append(region_tuple)
-                
-            except Exception as e:
-                print(f"        [-] Merge rejected: Adding {region_tuple[0]} -> {region_tuple[1]} broke constraint")
-            finally:
-                if 'test_model' in locals(): del test_model
-                if 'collapsed_combined' in locals(): del collapsed_combined
-                gc.collect()
-                if torch.cuda.is_available(): torch.cuda.empty_cache()
-                
-        if len(safe_combined_regions) > 1:
-            experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
+        if len(R_final) > 1:
+            # Force the combined region to be the literal set of all valid sets
+            experiment_regions["Dynamic_Region_All_Combined"] = R_final
+            print(f"[INFO] Forced {len(R_final)} sets into 'Dynamic_Region_All_Combined'.")
             
         return experiment_regions
+    # def greedy_integration(R_final, experiment_regions, base_params, base_flops, check_flops, dummy_input):
+    #     if len(R_final) <= 1: return experiment_regions
+        
+    #     print(f"\n[INFO] Phase 4: Validating 'Dynamic_Region_All_Combined' (Greedy Integration)...")
+    #     safe_combined_regions = []
+    #     current_best_params = base_params
+    #     current_best_flops = base_flops
+        
+    #     for region_tuple in R_final:
+    #         candidate_combo = safe_combined_regions + [region_tuple]
+    #         try:
+    #             test_model = copy.deepcopy(model).to(device)
+    #             combo_dict = {f"comb_{i}": reg for i, reg in enumerate(candidate_combo)}
+                
+    #             collapsed_combined = collapse_only(
+    #                 model=test_model, compression_set=combo_dict,
+    #                 input_shape=input_shape, device=device, dry_run=False 
+    #             )
+                
+    #             collapsed_combined.eval()
+    #             with torch.no_grad(): _ = collapsed_combined(dummy_input)
+                    
+    #             new_params_combo = count_trainable_params(collapsed_combined)
+    #             try:
+    #                 new_flops_combo = FlopCountAnalysis(collapsed_combined, dummy_input).unsupported_ops_warnings(False).total()
+    #             except Exception:
+    #                 new_flops_combo = float('inf')
+
+    #             param_decreased = new_params_combo < current_best_params
+    #             flop_decreased = check_flops and new_flops_combo < current_best_flops
+                
+    #             if not (param_decreased or flop_decreased):
+    #                 raise ValueError(f"Diminishing returns.")
+                
+    #             print(f"        [+] Merged safely: {region_tuple[0]} -> {region_tuple[1]}")
+    #             current_best_params = new_params_combo
+    #             current_best_flops = new_flops_combo
+    #             safe_combined_regions.append(region_tuple)
+                
+    #         except Exception as e:
+    #             print(f"        [-] Merge rejected: Adding {region_tuple[0]} -> {region_tuple[1]} broke constraint")
+    #         finally:
+    #             if 'test_model' in locals(): del test_model
+    #             if 'collapsed_combined' in locals(): del collapsed_combined
+    #             gc.collect()
+    #             if torch.cuda.is_available(): torch.cuda.empty_cache()
+                
+    #     if len(safe_combined_regions) > 1:
+    #         experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
+            
+    #     return experiment_regions
 
     # =====================================================================
     # MAIN EXECUTION FLOW
