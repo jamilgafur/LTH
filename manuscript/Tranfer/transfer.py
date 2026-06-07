@@ -237,95 +237,101 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     # =====================================================================
     # HELPER 3: Phase 1 & 2 - Variance Normalization & Expansion
     # =====================================================================
+
     def extract_and_expand_candidates():
-        rolling_means = []
-        for i in range(len(variances)):
-            start = max(0, i - window_size)
-            end = min(len(variances), i + window_size + 1)
-            rolling_means.append(np.mean(variances[start:end]))
-            
-        h_values = []
-        for var, mean_var in zip(variances, rolling_means):
-            if var - mean_var < 0: h_values.append(max((var - mean_var) / mean_var, -1.0))
-            else: h_values.append(min((var - mean_var) / mean_var, 1.0))
+            # Phase 1: Rolling Variance
+            rolling_means = []
+            for i in range(len(variances)):
+                start = max(0, i - window_size)
+                end = min(len(variances), i + window_size + 1)
+                rolling_means.append(np.mean(variances[start:end]))
+                
+            h_values = []
+            for var, mean_var in zip(variances, rolling_means):
+                if var - mean_var < 0: h_values.append(max((var - mean_var) / mean_var, -1.0))
+                else: h_values.append(min((var - mean_var) / mean_var, 1.0))
 
-        num_layers = len(cnn_layers)
-        veto_idx = int(num_layers * veto_fraction)
-        
-        R_candidates_raw = []
-        current_set = []
-        status_map = {}
-        
-        print(f"\n[DEBUG] --- Phase 2A: Scanning {num_layers} layers for Raw Candidates ---")
-        for i, h in enumerate(h_values):
-            layer_name = cnn_layers[i]
-            mod = module_dict.get(layer_name)
+            num_layers = len(cnn_layers)
+            veto_idx = int(num_layers * veto_fraction)
             
-            is_classifier = any(term in layer_name.lower() for term in ['classifier', 'fc', 'aux'])
-            is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear, torch.nn.ReLU, torch.nn.BatchNorm2d)) and not is_classifier
+            R_candidates_raw = []
+            current_set = []
+            status_map = {}
             
-            if i < veto_idx: status = "Veto"
-            elif not is_valid_target: status = "Rejected"
-            elif h >= 0: status = "Rejected"
-            else: status = "Active"
+            print(f"\n[DEBUG] --- Phase 2A: Scanning {num_layers} layers for Raw Candidates ---")
+            for i, h in enumerate(h_values):
+                layer_name = cnn_layers[i]
+                mod = module_dict.get(layer_name)
                 
-            status_map[layer_name] = status
-            
-            if status == "Active":
-                current_set.append(layer_name)
-            else:
-                # [FIX] Ensure at least 2 parametric layers
-                if get_parametric_count(current_set) >= 2: 
-                    R_candidates_raw.append(current_set)
-                else:
-                    for orphan in current_set: status_map[orphan] = "Gap"
-                current_set = []
+                is_classifier = any(term in layer_name.lower() for term in ['classifier', 'fc', 'aux'])
+                is_parametric = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear))
+                is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear, torch.nn.ReLU, torch.nn.BatchNorm2d)) and not is_classifier
                 
-        if get_parametric_count(current_set) >= 2:
-            R_candidates_raw.append(current_set)
-        else:
-            for orphan in current_set: status_map[orphan] = "Gap"
-
-        # Phase 2B: LCA Expansion with strict parametric length enforcement
-        R_candidates = []
-        print(f"\n[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---")
-        for r in R_candidates_raw:
-            start_idx = cnn_layers.index(r[0])
-            end_idx = cnn_layers.index(r[-1])
-            
-            trapped = False
-            while True:
-                lca_path = get_lca_path(cnn_layers[start_idx], cnn_layers[end_idx])
-                lca_mod = module_dict.get(lca_path) if lca_path else model
-                
-                if is_valid_lca(lca_mod) and (end_idx - start_idx + 1) >= 2:
-                    break 
+                if i < veto_idx: 
+                    status = "Veto"
+                elif not is_valid_target: 
+                    status = "Rejected"
+                elif h >= 0: 
+                    # [CRITICAL FIX] Non-parametric layers act as "Passive" bridges so they don't fracture blocks
+                    status = "Passive" if not is_parametric else "Rejected"
+                else: 
+                    status = "Active"
                     
-                expanded = False
-                if end_idx + 1 < len(cnn_layers) and status_map.get(cnn_layers[end_idx+1]) == "Active":
-                    end_idx += 1; expanded = True
-                elif start_idx > 0 and start_idx - 1 >= veto_idx and status_map.get(cnn_layers[start_idx-1]) == "Active":
-                    start_idx -= 1; expanded = True
-                        
-                if not expanded:
-                    trapped = True
-                    break 
-            
-            if not trapped:
-                expanded_r = cnn_layers[start_idx : end_idx + 1]
+                status_map[layer_name] = status
                 
-                # [CRITICAL FIX] Verify the expanded set still meets parametric count
-                if get_parametric_count(expanded_r) >= 2:
-                    R_candidates.append(expanded_r)
+                # Allow Active layers, and Passive layers if they are attached to an active chain
+                if status == "Active" or (status == "Passive" and len(current_set) > 0):
+                    current_set.append(layer_name)
                 else:
-                    print(f"[DEBUG] [!] Discarding orphan fragment (size {len(expanded_r)}): {expanded_r}")
-                    for name in expanded_r: status_map[name] = "Rejected (Orphan)"
+                    if get_parametric_count(current_set) >= 2: 
+                        R_candidates_raw.append(current_set)
+                    else:
+                        for orphan in current_set: status_map[orphan] = "Gap"
+                    current_set = []
+                    
+            if get_parametric_count(current_set) >= 2:
+                R_candidates_raw.append(current_set)
             else:
-                print(f"[DEBUG] [-] Trapped region: {r[0]}. Marking as Gap.")
-                for idx in range(start_idx, end_idx + 1): status_map[cnn_layers[idx]] = "Gap"
+                for orphan in current_set: status_map[orphan] = "Gap"
 
-        return R_candidates, status_map
+            # Phase 2B: Structural LCA Expansion
+            R_candidates = []
+            print(f"\n[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---")
+            for r in R_candidates_raw:
+                start_idx = cnn_layers.index(r[0])
+                end_idx = cnn_layers.index(r[-1])
+                
+                trapped = False
+                while True:
+                    lca_path = get_lca_path(cnn_layers[start_idx], cnn_layers[end_idx])
+                    lca_mod = module_dict.get(lca_path) if lca_path else model
+                    
+                    if is_valid_lca(lca_mod) and get_parametric_count(cnn_layers[start_idx : end_idx + 1]) >= 2:
+                        break 
+                        
+                    expanded = False
+                    # [FIX] Allow expansion into Passive layers
+                    if end_idx + 1 < len(cnn_layers) and status_map.get(cnn_layers[end_idx+1]) in ["Active", "Passive"]:
+                        end_idx += 1; expanded = True
+                    elif start_idx > 0 and start_idx - 1 >= veto_idx and status_map.get(cnn_layers[start_idx-1]) in ["Active", "Passive"]:
+                        start_idx -= 1; expanded = True
+                            
+                    if not expanded:
+                        trapped = True
+                        break 
+                
+                if not trapped:
+                    expanded_r = cnn_layers[start_idx : end_idx + 1]
+                    if get_parametric_count(expanded_r) >= 2:
+                        R_candidates.append(expanded_r)
+                    else:
+                        print(f"[DEBUG] [!] Discarding orphan fragment (size {len(expanded_r)}): {expanded_r}")
+                        for name in expanded_r: status_map[name] = "Rejected (Orphan)"
+                else:
+                    print(f"[DEBUG] [-] Trapped region: {r[0]}. Marking as Gap.")
+                    for idx in range(start_idx, end_idx + 1): status_map[cnn_layers[idx]] = "Gap"
 
+            return R_candidates, status_map
     # =====================================================================
     # HELPER 4: Phase 3 - Surrogate Compilation & BFS Shaving
     # =====================================================================

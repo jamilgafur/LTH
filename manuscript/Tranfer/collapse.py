@@ -61,32 +61,32 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
 
     full_block = named_layers[start_idx:end_idx + 1]
     
+    # [CRITICAL FIX] Safe Holistic Escalation for Complex Blocks
     safe_sequential_classes = ("Sequential", "SeparableConv2d", "ModuleList", type(model).__name__)
-    
-    # If the container is a complex block, escalate to the parent for a clean replacement
     if type(container).__name__ not in safe_sequential_classes and lca_path != "":
         print(f"[DEBUG] Escalating complex block '{lca_path}' ({type(container).__name__}) to parent for holistic replacement.")
         
         parent_path, subname = _get_container_and_subname(lca_path)
         parent_container = get_layer(model, parent_path)
+        named_layers_parent = list(parent_container.named_children())
         
-        # Re-map our bounds to target the entire complex block within its parent
-        named_layers = list(parent_container.named_children())
-        start_idx = end_idx = next(i for i, (n, _) in enumerate(named_layers) if n == subname)
-        
-        return {
-            "container": parent_container,
-            "container_name": parent_path,
-            "named_layers": named_layers,
-            "start_idx": start_idx,
-            "end_idx": end_idx,
-            "full_block": [(subname, container)],
-            "layer_type": nn.Conv2d,
-            "conv_layers": [m for m in container.modules() if isinstance(m, nn.Conv2d)],
-            "collapse_mode": "conv",
-            "first_layer_name": subname,
-            "last_layer_name": subname,
-        }
+        try:
+            esc_idx = next(i for i, (n, _) in enumerate(named_layers_parent) if n == subname)
+            return {
+                "container": parent_container,
+                "container_name": parent_path,
+                "named_layers": named_layers_parent,
+                "start_idx": esc_idx,
+                "end_idx": esc_idx,
+                "full_block": [(subname, container)],
+                "layer_type": nn.Conv2d,
+                "conv_layers": [m for m in container.modules() if isinstance(m, nn.Conv2d)],
+                "collapse_mode": "conv",
+                "first_layer_name": subname,
+                "last_layer_name": subname,
+            }
+        except StopIteration:
+            print(f"[WARN] Escalation failed: '{subname}' not found in parent '{parent_path}'. Proceeding standard slice.")
 
 def _build_and_replace_block(
     model,
