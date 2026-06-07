@@ -20,53 +20,6 @@ Loading Tiny ImageNet data for RegNetX_400MF...
     Budget allocated: 3 epochs
 
 === Running JF experiment ===
-[•] Resumption detected. Architecture will be prepared for checkpoint loading.
 [•] Starting experiment 'Control' in workflow 'JF' | Epoch Target: 3
-[•] Loading intermediate checkpoint: RegNetX_400MF_tinyimagenet_None_epochs3_pretrain3/checkpoints/JF_Control_epoch0.pt
-[✓] Resumed at epoch 0
+[•] No intermediate checkpoint found — starting fresh
 [•] Epoch 0
-Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 1109, in <module>
-    main()
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 1098, in main
-    run_discovery_stage(
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 965, in run_discovery_stage
-    run_experiments_for_dataset(
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 853, in run_experiments_for_dataset
-    run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, run_epochs, experiment_func, save_path, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 829, in run_jf_or_kevin_experiment
-    return run_jf_experiment({experiment_name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain=None, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, quant=quant)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 398, in run_jf_experiment
-    data = run_experiment(
-           ^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 293, in run_experiment
-    torch.save({
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/serialization.py", line 943, in save
-    with _open_zipfile_writer(f) as opened_zipfile:
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/serialization.py", line 810, in _open_zipfile_writer
-    return container(name_or_buffer)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/serialization.py", line 781, in __init__
-    super().__init__(torch._C.PyTorchFileWriter(self.name, _compute_crc32))
-                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-RuntimeError: Parent directory RegNetX_400MF_tinyimagenet_None_epochs3_pretrain3/checkpoints does not exist.
-09:25:56 [INFO] Scanning for metrics files matching epochs=3, pretrain=3
-09:25:57 [INFO] Successfully parsed 2 experiment rows.
-09:25:57 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__accuracy.png
-09:25:57 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__params.png
-09:25:58 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__flops.png
-09:25:58 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__memory.png
-09:25:58 [INFO] Starting FIG2 generation. Target epochs: 3, pretrain: 3
-09:26:00 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/RegNetX_400MF_Cifar100_bav_methodology_regions.png
-09:26:01 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_Cifar100_bav_methodology_regions.png
-09:26:02 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_Cifar10_bav_methodology_regions.png
-09:26:03 [CRITICAL] Error: too many values to unpack (expected 2)
-Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py", line 1221, in <module>
-    fig4_comprehensive_search_space_map(df, epochs, pretrain, out_dir=FIG_DIR / "search_space")
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py", line 751, in fig4_comprehensive_search_space_map
-    for start_layer, end_layer in ranges:
-        ^^^^^^^^^^^^^^^^^^^^^^
-ValueError: too many values to unpack (expected 2)
