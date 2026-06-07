@@ -1025,7 +1025,6 @@ def collapse_only(
     print(f"\n[STEP] ===== Starting collapse_only process =====")
     print(f"[DEBUG] Device={device}, dry_run={dry_run}, handle_skips={handle_skips}, safe_param_reduction={safe_param_reduction}")
 
-    # Load or use provided model
     if model is None:
         print(f"[STEP] Loading model from disk...")
         if not (model_weights_1 and model_class):
@@ -1049,19 +1048,16 @@ def collapse_only(
     else:
         print(f"[STEP] Using provided in-memory model instance ({model.__class__.__name__})")
 
-    # Inspect model
     if debug:
         try:
             print(f"[DEBUG] Model layer statistics before collapse:\n{layer_stats(model)}")
         except Exception as e:
             print(f"[WARN] layer_stats() failed: {e}")
 
-    # Make a deep copy to avoid modifying the original model
     print(f"[STEP] Creating deepcopy of model for safe modification...")
     model = deepcopy(model).to(device)
     model.eval()
 
-    # Normalize compression_set
     print(f"[STEP] Parsing compression set...")
     if compression_set is None:
         print("[WARN] compression_set is None or empty; skipping collapse.")
@@ -1073,40 +1069,33 @@ def collapse_only(
             print(f"[DEBUG] Detected compression_set as dict with {len(compression_set)} entries.")
         for k, v in compression_set.items():
             start, end = v
-            if isinstance(start, tuple):
-                start = start[0]
-            if isinstance(end, tuple):
-                end = end[0]
+            if isinstance(start, tuple): start = start[0]
+            if isinstance(end, tuple): end = end[0]
             collapse_map[k] = (start, end)
-            if debug:
-                print(f"    [DEBUG] Added mapping: {k} = ({start} → {end})")
     else:
         if debug:
             print(f"[DEBUG] Detected compression_set as sequence with {len(compression_set)} pairs.")
         for i, pair in enumerate(compression_set):
             start, end = pair
-            if isinstance(start, tuple):
-                start = start[0]
-            if isinstance(end, tuple):
-                end = end[0]
+            if isinstance(start, tuple): start = start[0]
+            if isinstance(end, tuple): end = end[0]
             collapse_map[f"collapse_{i}"] = (start, end)
-            if debug:
-                print(f"    [DEBUG] Added mapping: collapse_{i} = ({start} → {end})")
 
-    # Store collapsed blocks for reference
     model._collapsed_blocks = list(collapse_map.values())
     if debug:
         print(f"[DEBUG] Total collapse targets: {len(model._collapsed_blocks)}")
-        for idx, (s, e) in enumerate(model._collapsed_blocks):
-            print(f"    [BLOCK {idx}] {s} → {e}")
 
-    # Track parameters
     pre_total = count_trainable_params(model)
     print(f"[INFO] Model parameter count before collapsing: {pre_total:,}")
 
-    # Process each block in sequence
     print(f"[STEP] Beginning block-wise collapsing...")
     for name, (start, end) in collapse_map.items():
+        
+        # [CRITICAL FIX] Guarantee single-layers are safely bypassed
+        if start == end:
+            print(f"[WARN] Skipping collapse task '{name}': Group contains only one layer ({start}). Must span at least two layers.")
+            continue
+
         print(f"\n[INFO] Processing collapse task '{name}': {start} → {end}")
         if dry_run:
             print("[INFO] dry_run enabled; skipping actual modification for this block.")
@@ -1119,34 +1108,28 @@ def collapse_only(
         except Exception as e:
             print(f"[WARN] ⚠ Collapse failed for block '{name}': {e}")
                
-
         if handle_skips:
             print(f"[STEP] Patching skip connections (if any)...")
             try:
                 patch_skip_connections(model)
-                if debug:
-                    print(f"[DEBUG] Skip connections patched successfully.")
+                if debug: print(f"[DEBUG] Skip connections patched successfully.")
             except Exception as e:
                 print(f"[WARN] Failed to patch skip connections: {e}")
 
         print(f"[STEP] Disabling in-place ReLUs for autograd safety...")
         try:
             disable_inplace_relu(model)
-            if debug:
-                print(f"[DEBUG] In-place ReLUs converted to out-of-place versions.")
+            if debug: print(f"[DEBUG] In-place ReLUs converted to out-of-place versions.")
         except Exception as e:
             print(f"[WARN] Failed to disable in-place ReLUs: {e}")
 
-    # Safe wrapping of pooling layers
     print(f"\n[STEP] Wrapping pooling layers safely...")
     try:
         _wrap_pools_safe(model)
-        if debug:
-            print("[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.")
+        if debug: print("[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.")
     except Exception as e:
         print(f"[WARN] Failed to wrap pools safely: {e}")
 
-    # Post-collapse summary
     post_total = count_trainable_params(model)
     print(f"\n[STEP] ===== Collapse summary =====")
     print(f"[INFO] Parameters before: {pre_total:,}")
@@ -1162,7 +1145,6 @@ def collapse_only(
 
     print(f"[RESULT] ✅ collapse_only complete. Total collapsed blocks: {len(collapse_map)}")
     return model
-
 
 # -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------

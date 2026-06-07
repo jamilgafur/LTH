@@ -211,8 +211,9 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         if isinstance(lca_mod, (torch.nn.Sequential, torch.nn.ModuleList)): return True
         mod_name = type(lca_mod).__name__
         
-        # [FIX] Use explicit whitelist for safe slicing containers
-        allowed_types = ['Sequential', 'ModuleList', 'OrderedDict', 'SmartIdentity', 'XBlock', 'ConvNeXtBlock']
+        # [CRITICAL FIX] Add type(model).__name__ to prevent backend blocks from fragmenting 
+        # when their LCA is the root model itself.
+        allowed_types = ['Sequential', 'ModuleList', 'OrderedDict', 'SmartIdentity', 'XBlock', 'ConvNeXtBlock', type(model).__name__]
         if mod_name in allowed_types: 
             return True
             
@@ -263,11 +264,9 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             if status == "Active":
                 current_set.append(layer_name)
             else:
-                # [FIX] Only append if the set is a valid collapse candidate (>= 2)
                 if len(current_set) >= 2: 
                     R_candidates_raw.append(current_set)
                 else:
-                    # Mark orphans as Gaps so they don't get lost
                     for orphan in current_set: status_map[orphan] = "Gap"
                 current_set = []
                 
@@ -293,10 +292,11 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     break 
                     
                 expanded = False
-                # Try forward then backward expansion
-                if end_idx + 1 < len(cnn_layers) and status_map.get(cnn_layers[end_idx+1]) == "Active":
+                # [CRITICAL FIX] Expand outward to find a valid structural boundary, regardless of "Active" status. 
+                # This guarantees indivisible backend blocks aren't discarded by trapping.
+                if end_idx + 1 < len(cnn_layers):
                     end_idx += 1; expanded = True
-                elif start_idx > 0 and start_idx - 1 >= veto_idx and status_map.get(cnn_layers[start_idx-1]) == "Active":
+                elif start_idx > 0 and start_idx - 1 >= veto_idx:
                     start_idx -= 1; expanded = True
                         
                 if not expanded:
@@ -307,8 +307,8 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 # Phase 2B: Final sanity check before adding to queue
                 expanded_r = cnn_layers[start_idx : end_idx + 1]
                 
-                # [CRITICAL] Prevent any singleton from reaching Phase 3
-                if len(expanded_r) >= 2:
+                # [CRITICAL FIX] Prevent any singleton from reaching Phase 3
+                if len(expanded_r) >= 2 and expanded_r[0] != expanded_r[-1]:
                     R_candidates.append(expanded_r)
                 else:
                     print(f"[DEBUG] [!] Discarding orphan fragment (size {len(expanded_r)}): {expanded_r}")
@@ -332,11 +332,14 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         
         while queue:
             r = queue.pop(0) 
-            # [FIX] Strict size enforcement: Ignore anything that got shaved below size 2
             if len(r) < 2: continue
                 
             start_name = r[0]
             end_name = r[-1]
+            
+            # [CRITICAL FIX] Final safety net for single layers
+            if start_name == end_name: continue
+            
             region_tuple = (start_name, end_name)
             
             if region_tuple in tested_regions: continue
@@ -458,10 +461,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     # 3. Combine safe targets together
     experiment_regions = greedy_integration(R_final, experiment_regions, base_params, base_flops, check_flops, dummy_input)
     
-    # [FIX] Attach the generated status_map to the return dictionary so transfer.py can write it to CSV
     experiment_regions["Status_Map"] = status_map
-    
-    # Add Control
     experiment_regions["Control_Continuted"] = None
     print(f"\n[DEBUG] === Finished Dynamic Config Generator ===")
     return experiment_regions
