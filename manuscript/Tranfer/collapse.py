@@ -661,11 +661,21 @@ def _collapse_block(
         for n, l in info["full_block"]:
             print(f"    [LAYER MAP] {n} -> {type(l).__name__}")
 
+    
     # =========================================================
-    # THE CRITICAL FIX: Align capture hooks to the LCA container boundaries
+    # THE CRITICAL FIX: Align capture hooks to the LCA boundaries
     # =========================================================
-    lca_start_name = f"{info['container_name']}.{info['first_layer_name']}" if info['container_name'] else info['first_layer_name']
-    lca_end_name = f"{info['container_name']}.{info['last_layer_name']}" if info['container_name'] else info['last_layer_name']
+    is_sequential = isinstance(info['container'], (nn.Sequential, nn.ModuleList))
+    
+    if not is_sequential and info['container_name'] != "":
+        # It's a complex/parallel block (e.g., InceptionBlock). Hook the container 
+        # itself to capture the true global tensor sizes entering and exiting the block.
+        lca_start_name = info['container_name']
+        lca_end_name = info['container_name']
+    else:
+        # Standard sequential layout. Hook the explicit child boundaries.
+        lca_start_name = f"{info['container_name']}.{info['first_layer_name']}" if info['container_name'] else info['first_layer_name']
+        lca_end_name = f"{info['container_name']}.{info['last_layer_name']}" if info['container_name'] else info['last_layer_name']
 
     # Step 2: Capture activation entering the LCA boundaries
     print(f"\n[STEP 2] Simulating Forward Pass & Capturing LCA Activations...")
@@ -677,7 +687,7 @@ def _collapse_block(
     x, y_out, pre_params = _capture_preblock_activation( 
         model, lca_start_name, lca_end_name, input_shape, info["conv_layers"], info["layer_type"], device, debug
     ) 
-    # =========================================================
+    # =========================================================# =========================================================
 
     if debug:
         print(f"[DEBUG] --- Activation Capture Success ---")

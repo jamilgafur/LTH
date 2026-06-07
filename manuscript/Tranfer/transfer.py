@@ -211,23 +211,29 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         if isinstance(lca_mod, (torch.nn.Sequential, torch.nn.ModuleList)): return True
         mod_name = type(lca_mod).__name__
         
-        # [CRITICAL FIX] Add type(model).__name__ to prevent backend blocks from fragmenting 
-        # when their LCA is the root model itself.
-        allowed_types = ['Sequential', 'ModuleList', 'OrderedDict', 'SmartIdentity', 'XBlock', 'ConvNeXtBlock', type(model).__name__]
+        # [FIX] Whitelisted InceptionBlock to prevent trapping large structures
+        allowed_types = ['Sequential', 'ModuleList', 'OrderedDict', 'SmartIdentity', 'XBlock', 'ConvNeXtBlock', 'InceptionBlock']
         if mod_name in allowed_types: 
             return True
             
-        # If it has children and isn't whitelisted, it's likely an indivisible block
         if hasattr(lca_mod, 'children') and list(lca_mod.children()):
             return False
             
         return True
 
-   # =====================================================================
+    # [FIX] Helper to count strictly parametric layers
+    def get_parametric_count(layer_names):
+        count = 0
+        for ln in layer_names:
+            mod = module_dict.get(ln)
+            if isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear)):
+                count += 1
+        return count
+
+    # =====================================================================
     # HELPER 3: Phase 1 & 2 - Variance Normalization & Expansion
     # =====================================================================
     def extract_and_expand_candidates():
-        # Phase 1: Rolling Variance
         rolling_means = []
         for i in range(len(variances)):
             start = max(0, i - window_size)
@@ -264,25 +270,25 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             if status == "Active":
                 current_set.append(layer_name)
             else:
-                if len(current_set) >= 2: 
+                # [FIX] Ensure at least 2 parametric layers
+                if get_parametric_count(current_set) >= 2: 
                     R_candidates_raw.append(current_set)
                 else:
                     for orphan in current_set: status_map[orphan] = "Gap"
                 current_set = []
                 
-        if len(current_set) >= 2:
+        if get_parametric_count(current_set) >= 2:
             R_candidates_raw.append(current_set)
         else:
             for orphan in current_set: status_map[orphan] = "Gap"
 
-        # Phase 2B: LCA Expansion with strict length enforcement
+        # Phase 2B: LCA Expansion with strict parametric length enforcement
         R_candidates = []
         print(f"\n[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---")
         for r in R_candidates_raw:
             start_idx = cnn_layers.index(r[0])
             end_idx = cnn_layers.index(r[-1])
             
-            # Expand until valid LCA is found or trapped
             trapped = False
             while True:
                 lca_path = get_lca_path(cnn_layers[start_idx], cnn_layers[end_idx])
@@ -292,11 +298,9 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     break 
                     
                 expanded = False
-                # [CRITICAL FIX] Expand outward to find a valid structural boundary, regardless of "Active" status. 
-                # This guarantees indivisible backend blocks aren't discarded by trapping.
-                if end_idx + 1 < len(cnn_layers):
+                if end_idx + 1 < len(cnn_layers) and status_map.get(cnn_layers[end_idx+1]) == "Active":
                     end_idx += 1; expanded = True
-                elif start_idx > 0 and start_idx - 1 >= veto_idx:
+                elif start_idx > 0 and start_idx - 1 >= veto_idx and status_map.get(cnn_layers[start_idx-1]) == "Active":
                     start_idx -= 1; expanded = True
                         
                 if not expanded:
@@ -304,11 +308,10 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     break 
             
             if not trapped:
-                # Phase 2B: Final sanity check before adding to queue
                 expanded_r = cnn_layers[start_idx : end_idx + 1]
                 
-                # [CRITICAL FIX] Prevent any singleton from reaching Phase 3
-                if len(expanded_r) >= 2 and expanded_r[0] != expanded_r[-1]:
+                # [CRITICAL FIX] Verify the expanded set still meets parametric count
+                if get_parametric_count(expanded_r) >= 2:
                     R_candidates.append(expanded_r)
                 else:
                     print(f"[DEBUG] [!] Discarding orphan fragment (size {len(expanded_r)}): {expanded_r}")
@@ -327,19 +330,15 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         set_counter = 0
         R_final = []
         tested_regions = set()
-        
         queue = R_candidates.copy()
         
         while queue:
             r = queue.pop(0) 
-            if len(r) < 2: continue
+            # [FIX] Strict parametric size enforcement: Ignore anything shaved too small
+            if get_parametric_count(r) < 2: continue
                 
             start_name = r[0]
             end_name = r[-1]
-            
-            # [CRITICAL FIX] Final safety net for single layers
-            if start_name == end_name: continue
-            
             region_tuple = (start_name, end_name)
             
             if region_tuple in tested_regions: continue
@@ -373,12 +372,11 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     set_counter += 1
                 else:
                     print(f"        [X] FAILED TO REDUCE. Shaving...")
-                    # Shave and put back only if resulting set >= 2
                     if len(r) > 2:
                         left_shaved = r[1:]
                         right_shaved = r[:-1]
-                        if len(left_shaved) >= 2: queue.append(left_shaved)
-                        if len(right_shaved) >= 2: queue.append(right_shaved)
+                        if get_parametric_count(left_shaved) >= 2: queue.append(left_shaved)
+                        if get_parametric_count(right_shaved) >= 2: queue.append(right_shaved)
 
             except Exception as e:
                 print(f"        [!] CRASH ({type(e).__name__}: {e}).")
@@ -451,14 +449,11 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     base_params, base_flops, check_flops, dummy_input = get_base_metrics()
     print(f"[DEBUG] Base model parameters: {base_params:,} | Base FLOPs: {base_flops:,}")
     
-    # 1. Fetch Expanded Targets and Status Map
     R_candidates, status_map = extract_and_expand_candidates()
     
-    # 2. Evaluate and Compile (Shaving applied automatically on fail)
     print(f"\n[INFO] Phase 3: Evaluating {len(R_candidates)} Candidate Regions (with Smart Boundary Shaving)...")
     experiment_regions, R_final = evaluate_candidates(R_candidates, base_params, base_flops, check_flops, dummy_input)
     
-    # 3. Combine safe targets together
     experiment_regions = greedy_integration(R_final, experiment_regions, base_params, base_flops, check_flops, dummy_input)
     
     experiment_regions["Status_Map"] = status_map
