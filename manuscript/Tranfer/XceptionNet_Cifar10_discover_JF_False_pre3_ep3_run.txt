@@ -1,12 +1,10 @@
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA driver initialization failed, you might not have a CUDA gpu. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
-  return torch._C._cuda_getDeviceCount() > 0
 
 ============================================================
 [INIT] PyPrune Transfer Learning Framework
 [INIT] Arguments: Namespace(model='XceptionNet', dataset='Cifar10', epochs=3, pretrain=3, experiment='discover', JF=True, Kevin=False, quant=False)
 ============================================================
 
-[INFO] Hardware detected: CPU (CUDA Available: False)
+[INFO] Hardware detected: CUDA (CUDA Available: True)
 Loading CIFAR-10 data for XceptionNet...
 CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 Loading CIFAR-10 data for XceptionNet...
@@ -24,91 +22,21 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
     Budget allocated: 3 epochs
 
 === Running JF experiment ===
-[•] Resumption detected. Architecture will be prepared for checkpoint loading.
 [•] Starting experiment 'Control' in workflow 'JF' | Epoch Target: 3
-[•] Loading intermediate checkpoint: XceptionNet_Cifar10_None_epochs3_pretrain3/checkpoints/JF_Control_epoch0.pt
-[✓] Resumed at epoch 0
+[•] No intermediate checkpoint found — starting fresh
 [•] Epoch 0
-Training:   0%|          | 0/98 [00:00<?, ?it/s]Training:   0%|          | 0/98 [00:23<?, ?it/s, loss=1.3855, acc=50.78%]Training:   1%|          | 1/98 [00:23<37:32, 23.22s/it, loss=1.3855, acc=50.78%]                                                                                 Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 1109, in <module>
-    main()
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 1098, in main
-    run_discovery_stage(
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 965, in run_discovery_stage
-    run_experiments_for_dataset(
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 853, in run_experiments_for_dataset
-    run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, run_epochs, experiment_func, save_path, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 829, in run_jf_or_kevin_experiment
-    return run_jf_experiment({experiment_name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain=None, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, quant=quant)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 398, in run_jf_experiment
-    data = run_experiment(
-           ^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 275, in run_experiment
-    avg_loss, acc = train_one_epoch(
-                    ^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/trainer.py", line 51, in train_one_epoch
-    preds = model(xb)
-            ^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/pyPrune/models/XceptionNet.py", line 179, in forward
-    x = self.middle_flow(x)
-        ^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/container.py", line 250, in forward
-    input = module(input)
-            ^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/pyPrune/models/XceptionNet.py", line 64, in forward
-    return self.skip(x) + self.rep(x)
-                          ^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/container.py", line 250, in forward
-    input = module(input)
-            ^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/pyPrune/models/XceptionNet.py", line 16, in forward
-    x = self.pointwise(x)
-        ^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
-    return forward_call(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 554, in forward
-    return self._conv_forward(input, self.weight, self.bias)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 549, in _conv_forward
-    return F.conv2d(
-           ^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
-    _error_if_any_worker_fails()
-RuntimeError: DataLoader worker (pid 264472) is killed by signal: Killed. 
-09:16:21 [INFO] Scanning for metrics files matching epochs=3, pretrain=3
-09:17:11 [INFO] Successfully parsed 58 experiment rows.
+[•] Epoch 1
+[•] Epoch 2
+2026-06-07 09:26:33,484 - WARNING - Unsupported operator aten::max_pool2d encountered 3 time(s)
+2026-06-07 09:26:33,485 - WARNING - Unsupported operator aten::add encountered 12 time(s)
+2026-06-07 09:26:33,485 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+block4.rep.6.pool
+2026-06-07 09:26:36,501 - WARNING - Unsupported operator aten::max_pool2d encountered 3 time(s)
+2026-06-07 09:26:36,501 - WARNING - Unsupported operator aten::add encountered 12 time(s)
+2026-06-07 09:26:36,501 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+block4.rep.6.pool
+[•] Running diagnostics for Control...
+Saved memory CSV to XceptionNet_Cifar10_None_epochs3_pretrain3/plots/Control_memory.csv
+Saved memory plot to XceptionNet_Cifar10_None_epochs3_pretrain3/plots/Control_memory.svg
+[•] Extracting explainability data for Control...
+[✓] Weight distribution figure saved to XceptionNet_Cifar10_None_epochs3_pretrain3/plots/Control_explainability_weight_distributions.svg

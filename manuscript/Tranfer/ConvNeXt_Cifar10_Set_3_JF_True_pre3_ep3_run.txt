@@ -1,0 +1,30 @@
+09:22:03 [INFO] Scanning for metrics files matching epochs=3, pretrain=3
+09:22:03 [INFO] Successfully parsed 74 experiment rows.
+09:22:07 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_accuracy.png
+09:22:13 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_params.png
+09:22:20 [CRITICAL] Error: [Errno 116] Stale file handle
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py", line 1216, in <module>
+    fig1(df, out_dir=FIG_DIR / "individual_plots")
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py", line 292, in fig1
+    plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.png")
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/matplotlib/pyplot.py", line 1243, in savefig
+    res = fig.savefig(*args, **kwargs)  # type: ignore[func-returns-value]
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/matplotlib/figure.py", line 3490, in savefig
+    self.canvas.print_figure(fname, **kwargs)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/matplotlib/backend_bases.py", line 2184, in print_figure
+    result = print_method(
+             ^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/matplotlib/backend_bases.py", line 2040, in <lambda>
+    print_method = functools.wraps(meth)(lambda *args, **kwargs: meth(
+                                                                 ^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/matplotlib/backends/backend_agg.py", line 481, in print_png
+    self._print_pil(filename_or_obj, "png", pil_kwargs, metadata)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/matplotlib/backends/backend_agg.py", line 430, in _print_pil
+    mpl.image.imsave(
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/matplotlib/image.py", line 1634, in imsave
+    image.save(fname, **pil_kwargs)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/PIL/Image.py", line 2612, in save
+    fp.close()
+OSError: [Errno 116] Stale file handle
