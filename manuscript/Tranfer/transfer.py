@@ -211,9 +211,9 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         if isinstance(lca_mod, (torch.nn.Sequential, torch.nn.ModuleList)): return True
         mod_name = type(lca_mod).__name__
         
-        # [FIX] Whitelisted InceptionBlock to prevent trapping large structures
-        allowed_types = ['Sequential', 'ModuleList', 'OrderedDict', 'SmartIdentity', 'XBlock', 'ConvNeXtBlock', 'InceptionBlock']
-        if mod_name in allowed_types: 
+        # [FIX] Broaden Inception check to catch InceptionA, InceptionB, etc.
+        allowed_types = ['Sequential', 'ModuleList', 'OrderedDict', 'SmartIdentity', 'XBlock', 'ConvNeXtBlock']
+        if mod_name in allowed_types or 'Inception' in mod_name: 
             return True
             
         if hasattr(lca_mod, 'children') and list(lca_mod.children()):
@@ -334,6 +334,12 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
         
         while queue:
             r = queue.pop(0) 
+            # [CRITICAL FIX] Trim non-parametric layers from boundaries
+            while r and not isinstance(module_dict.get(r[0]), (torch.nn.Conv2d, torch.nn.Linear)):
+                r.pop(0)
+            while r and not isinstance(module_dict.get(r[-1]), (torch.nn.Conv2d, torch.nn.Linear)):
+                r.pop(-1)
+
             # [FIX] Strict parametric size enforcement: Ignore anything shaved too small
             if get_parametric_count(r) < 2: continue
                 
