@@ -88,6 +88,22 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
         except StopIteration:
             print(f"[WARN] Escalation failed: '{subname}' not found in parent '{parent_path}'. Proceeding standard slice.")
 
+    # =========================================================
+    # THE FIX: Restore the missing return for standard slices!
+    # =========================================================
+    return {
+        "container": container,
+        "container_name": lca_path,
+        "named_layers": named_layers,
+        "start_idx": start_idx,
+        "end_idx": end_idx,
+        "full_block": full_block,
+        "layer_type": nn.Conv2d,
+        "conv_layers": [m for _, m in full_block if isinstance(m, nn.Conv2d)],
+        "collapse_mode": "conv",
+        "first_layer_name": named_layers[start_idx][0],
+        "last_layer_name": named_layers[end_idx][0],
+    }
 def _build_and_replace_block(
     model,
     start_layer_name,

@@ -639,6 +639,10 @@ def evaluate_experiments(model, input_tensor, exp_config, layer_names, module_di
     plot_data_var, plot_data_sim, plot_data_kl, plot_data_cscore = [], [], [], []
 
     for exp_name, layer_range in exp_config.items():
+        # [CRITICAL FIX] Skip the Status Map metadata so it doesn't crash the tuple unpacker
+        if exp_name == "Status_Map":
+            continue
+            
         exp_display = exp_name.replace("_", " ")
 
         if layer_range is None:
