@@ -1,0 +1,357 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='InceptionNet', dataset='tinyimagenet', epochs=3, pretrain=3, experiment='Set_0', JF=True, Kevin=False, quant=False)
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading Tiny ImageNet data for InceptionNet...
+Loading Tiny ImageNet data for InceptionNet...
+[DEBUG] Base checkpoint path resolved: ../structured_study/pruning_checkpoints/InceptionNet_datasettinyimagenet_pretrain10_finetune30_steps21_batch128_devicecuda_strategy_magnitude/
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Set_0'
+============================================================
+
+[INFO] Validating JSON configuration map at: InceptionNet_tinyimagenet_epochs3_pretrain3_JF_discovered_regions.json
+[DEBUG] Loaded 10 configurations from map.
+[INFO] Discovered trained baseline from Stage 1: InceptionNet_tinyimagenet_None_epochs3_pretrain3/checkpoints/final_JF_Control.pt
+[INFO] Overriding base checkpoint. Collapsing will begin from these trained weights.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Set_0 ---
+    Budget allocated: 3 epochs
+
+=== Running JF experiment ===
+[•] Collapsing ranges [('stage4.inception_4a.branch3.1.conv', 'stage4.inception_4a.branch4.1.conv')] for Set_0
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (InceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 1 pairs.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 6,185,832
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4a.branch3.1.conv', 'stage4.inception_4a.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4a.branch3.1.conv
+[INFO] End Target   : stage4.inception_4a.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4a.branch3.1.conv' -> 'stage4.inception_4a.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4a' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage4.inception_4a' (InceptionBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 0 to 0
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] inception_4a -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4a'
+[DEBUG] Hooking End Node   : 'stage4.inception_4a'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4a' -> 'stage4.inception_4a'...
+[DEBUG] Captured input shape: (64, 480, 4, 4), output shape: (64, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 480, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 6,185,832
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4a.branch4.1.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4a.branch4.1.conv'...
+[DEBUG] Exact layer match found at index 110: stage4.inception_4a.branch4.1.conv (Conv2d)
+[DEBUG] Scanning forward from index 111 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=1024, out_features=200, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 480, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[DEBUG] Comparing spatial dims: expected_hw=2, current_hw=16 (HxW=4x4)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,2) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(64, 512, 4, 4)
+         out_channels=512
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 2))
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 512, 4, 4)
+    - out_channels             : 512
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 2))
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4a.branch3.1.conv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 0 -> 0
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 480 (in) -> 512 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=480, out=192)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for inceptionnet:
+        - conv_1x1: Conv2d(480, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 6,185,832
+[INFO] Post-collapse : 6,055,816
+[INFO] Net Change    : -130,016
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 512, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 0: 'inception_4a'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (64, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'stage4.inception_4b' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4c' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4d' executed successfully, output shape: (64, 528, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (64, 832, 4, 4)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (64, 832, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4a.branch3.1.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4a.branch4.1.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 51 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 6,185,832
+[INFO] Parameters after : 6,055,816
+[INFO] ΔParams = +130,016 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+[•] Starting experiment 'Set_0' in workflow 'JF' | Epoch Target: 3
+[•] No intermediate checkpoint found — starting fresh
+[•] Epoch 0
+[•] Epoch 1
+[•] Epoch 2
+2026-06-08 05:54:14,780 - WARNING - Unsupported operator aten::max_pool2d encountered 10 time(s)
+2026-06-08 05:54:14,780 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage5.inception_5a.branch4.0.pool.pool, stage5.inception_5b.branch4.0.pool.pool
+2026-06-08 05:54:21,035 - WARNING - Unsupported operator aten::max_pool2d encountered 10 time(s)
+2026-06-08 05:54:21,035 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage5.inception_5a.branch4.0.pool.pool, stage5.inception_5b.branch4.0.pool.pool
+[•] Running diagnostics for Set_0...
+Saved memory CSV to InceptionNet_tinyimagenet_None_epochs3_pretrain3/plots/Set_0_memory.csv
+Saved memory plot to InceptionNet_tinyimagenet_None_epochs3_pretrain3/plots/Set_0_memory.svg
+[•] Extracting explainability data for Set_0...
+[✓] Weight distribution figure saved to InceptionNet_tinyimagenet_None_epochs3_pretrain3/plots/Set_0_explainability_weight_distributions.svg
+[✓] Saved explainability arrays to InceptionNet_tinyimagenet_None_epochs3_pretrain3/plots/Set_0_explainability.npz
+[✓] Explainability figure saved to InceptionNet_tinyimagenet_None_epochs3_pretrain3/plots/Set_0_explainability.svg
+[✓] Diagnostics complete for Set_0
+[✓] Saved plot: InceptionNet_tinyimagenet_None_epochs3_pretrain3/plots/JF_Set_0_metrics.svg
+[✓] Saved metrics for 'Set_0_JF' → InceptionNet_tinyimagenet_None_epochs3_pretrain3/metrics/InceptionNet_ImageFolder_metrics_20260608_055443_441685_79482.json
+[✓] Merged 11 metrics files → InceptionNet_tinyimagenet_None_epochs3_pretrain3/metrics/merged_metrics.json
+[✓] Experiment 'Set_0' completed.
+05:55:30 [INFO] Scanning for metrics files matching epochs=3, pretrain=3
+05:55:38 [INFO] Successfully parsed 252 experiment rows.
+05:55:55 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__accuracy.png
+05:56:10 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__params.png
+05:56:20 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__flops.png
+05:56:37 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__memory.png
+05:56:56 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__accuracy.png
+05:57:08 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__params.png
+05:57:31 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__flops.png
+05:57:48 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__memory.png
+05:58:07 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_accuracy.png
+05:58:21 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_params.png
+05:58:36 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_flops.png
+05:58:59 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_memory.png
+05:59:16 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__accuracy.png
+05:59:34 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__params.png
+05:59:51 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__flops.png
+06:00:06 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__memory.png
+06:00:20 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__accuracy.png
+06:00:41 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__params.png
+06:00:57 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__flops.png
+06:01:40 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__memory.png
+06:01:52 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_accuracy.png
+06:02:32 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_params.png
+06:03:03 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_flops.png
+06:03:23 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_memory.png
+06:04:38 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__accuracy.png
+06:05:13 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__params.png
+06:05:30 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__flops.png
+06:05:50 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__memory.png
+06:06:01 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__accuracy.png
+06:06:25 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__params.png
+06:06:45 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__flops.png
+06:07:15 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__memory.png
+06:07:58 [INFO] [FIG1] Saved accuracy plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_accuracy.png
+06:08:12 [INFO] [FIG1] Saved params plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_params.png
+06:08:25 [INFO] [FIG1] Saved flops plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_flops.png
+06:08:37 [INFO] [FIG1] Saved memory plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_memory.png
+06:09:05 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__accuracy.png
+06:09:15 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__params.png
+06:09:31 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__flops.png
+06:09:57 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__memory.png
+06:10:09 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__accuracy.png
+06:10:24 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__params.png
+06:10:45 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__flops.png
+06:11:04 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__memory.png
+06:11:18 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/tinyimagenet at figures_ep3_pre3/individual_plots/RegNetX_400MF_tinyimagenet_accuracy.png
+06:11:38 [INFO] [FIG1] Saved params plot for RegNetX_400MF/tinyimagenet at figures_ep3_pre3/individual_plots/RegNetX_400MF_tinyimagenet_params.png
+06:11:51 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/tinyimagenet at figures_ep3_pre3/individual_plots/RegNetX_400MF_tinyimagenet_flops.png
+06:12:24 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/tinyimagenet at figures_ep3_pre3/individual_plots/RegNetX_400MF_tinyimagenet_memory.png
+06:12:33 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__accuracy.png
+06:13:04 [INFO] [FIG1] Saved params plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__params.png
+06:13:15 [INFO] [FIG1] Saved flops plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__flops.png
+06:13:49 [INFO] [FIG1] Saved memory plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__memory.png
+06:13:57 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__accuracy.png
+06:14:14 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__params.png
+06:15:21 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__flops.png
+06:15:29 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__memory.png
+06:15:43 [INFO] [FIG1] Saved accuracy plot for VGG16/tinyimagenet at figures_ep3_pre3/individual_plots/VGG16_tinyimagenet_accuracy.png
+06:15:58 [INFO] [FIG1] Saved params plot for VGG16/tinyimagenet at figures_ep3_pre3/individual_plots/VGG16_tinyimagenet_params.png
+06:16:10 [INFO] [FIG1] Saved flops plot for VGG16/tinyimagenet at figures_ep3_pre3/individual_plots/VGG16_tinyimagenet_flops.png
+06:16:23 [INFO] [FIG1] Saved memory plot for VGG16/tinyimagenet at figures_ep3_pre3/individual_plots/VGG16_tinyimagenet_memory.png
+06:16:41 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__accuracy.png
+06:16:54 [INFO] [FIG1] Saved params plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__params.png
+06:17:18 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__flops.png
+06:18:30 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar100__memory.png
+06:18:56 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__accuracy.png
+06:19:07 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__params.png
+06:19:46 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__flops.png
+06:20:01 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/XceptionNet_cifar10__memory.png
+06:20:24 [INFO] [FIG1] Saved accuracy plot for XceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/XceptionNet_tinyimagenet_accuracy.png
+06:20:38 [INFO] [FIG1] Saved params plot for XceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/XceptionNet_tinyimagenet_params.png
+06:20:58 [INFO] [FIG1] Saved flops plot for XceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/XceptionNet_tinyimagenet_flops.png
+06:21:15 [INFO] [FIG1] Saved memory plot for XceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/XceptionNet_tinyimagenet_memory.png
+06:21:15 [INFO] Starting FIG2 generation. Target epochs: 3, pretrain: 3
+06:21:28 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/InceptionNet_Cifar10_bav_methodology_regions.png
+06:21:49 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/InceptionNet_tinyimagenet_bav_methodology_regions.png
+06:22:12 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/InceptionNet_Cifar100_bav_methodology_regions.png
+06:22:30 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/MobileNet_Cifar100_bav_methodology_regions.png
+06:22:51 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/MobileNet_Cifar10_bav_methodology_regions.png
+06:23:16 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/MobileNet_tinyimagenet_bav_methodology_regions.png
+06:23:49 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_Cifar10_bav_methodology_regions.png
+06:23:59 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_Cifar100_bav_methodology_regions.png
+06:24:22 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_tinyimagenet_bav_methodology_regions.png
+06:24:36 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/RegNetX_400MF_Cifar100_bav_methodology_regions.png
+06:24:56 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/RegNetX_400MF_tinyimagenet_bav_methodology_regions.png
+06:25:13 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/RegNetX_400MF_Cifar10_bav_methodology_regions.png
+06:25:32 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/XceptionNet_Cifar10_bav_methodology_regions.png
+06:25:45 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/XceptionNet_Cifar100_bav_methodology_regions.png
+06:26:05 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/XceptionNet_tinyimagenet_bav_methodology_regions.png
+06:26:23 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/ConvNeXt_Cifar10_bav_methodology_regions.png
+06:26:39 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/ConvNeXt_tinyimagenet_bav_methodology_regions.png
+06:26:53 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/ConvNeXt_Cifar100_bav_methodology_regions.png
+06:40:36 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+06:40:36 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar100_
+06:41:37 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar100_ at figures_ep3_pre3/hardware_efficiency/ConvNeXt_cifar100__hardware_profile.png
+06:41:37 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar100_
+06:42:48 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/cifar100_ at figures_ep3_pre3/hardware_efficiency/InceptionNet_cifar100__hardware_profile.png
+06:42:48 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar100_
+06:42:48 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar100_
+06:44:05 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/hardware_efficiency/RegNetX_400MF_cifar100__hardware_profile.png
+06:44:05 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar100_
+06:44:37 [INFO] [FIG5] Saved hardware profile plot for VGG16/cifar100_ at figures_ep3_pre3/hardware_efficiency/VGG16_cifar100__hardware_profile.png
+06:44:37 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar100_
+06:45:26 [INFO] [FIG5] Saved hardware profile plot for XceptionNet/cifar100_ at figures_ep3_pre3/hardware_efficiency/XceptionNet_cifar100__hardware_profile.png
+06:45:26 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
+06:46:06 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar10_ at figures_ep3_pre3/hardware_efficiency/ConvNeXt_cifar10__hardware_profile.png
+06:46:06 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
+06:46:46 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/cifar10_ at figures_ep3_pre3/hardware_efficiency/InceptionNet_cifar10__hardware_profile.png
+06:46:46 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
+06:46:46 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
+06:47:27 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/hardware_efficiency/RegNetX_400MF_cifar10__hardware_profile.png
+06:47:27 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
+06:48:21 [INFO] [FIG5] Saved hardware profile plot for VGG16/cifar10_ at figures_ep3_pre3/hardware_efficiency/VGG16_cifar10__hardware_profile.png
+06:48:21 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar10_
+06:49:31 [INFO] [FIG5] Saved hardware profile plot for XceptionNet/cifar10_ at figures_ep3_pre3/hardware_efficiency/XceptionNet_cifar10__hardware_profile.png
+06:49:31 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/tinyimagenet
+06:50:46 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/hardware_efficiency/ConvNeXt_tinyimagenet_hardware_profile.png
+06:50:46 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
+06:51:53 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/tinyimagenet at figures_ep3_pre3/hardware_efficiency/InceptionNet_tinyimagenet_hardware_profile.png
+06:51:53 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/tinyimagenet
+06:51:53 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/tinyimagenet
+06:52:52 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/tinyimagenet at figures_ep3_pre3/hardware_efficiency/RegNetX_400MF_tinyimagenet_hardware_profile.png
+06:52:52 [INFO] [FIG5] Processing Hardware Profiles for VGG16/tinyimagenet
+06:53:51 [INFO] [FIG5] Saved hardware profile plot for VGG16/tinyimagenet at figures_ep3_pre3/hardware_efficiency/VGG16_tinyimagenet_hardware_profile.png
+06:53:51 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/tinyimagenet
+06:54:51 [INFO] [FIG5] Saved hardware profile plot for XceptionNet/tinyimagenet at figures_ep3_pre3/hardware_efficiency/XceptionNet_tinyimagenet_hardware_profile.png
+06:55:07 [INFO] [FIG5] Saved unified best_candidates plot at figures_ep3_pre3/hardware_efficiency/unified_best_candidates.png
+06:55:27 [INFO] [FIG5] Saved unified worst_candidates plot at figures_ep3_pre3/hardware_efficiency/unified_worst_candidates.png
+06:56:41 [INFO] [FIG5] Saved global trade-off scatter plot at figures_ep3_pre3/hardware_efficiency/global_tradeoff_scatter.png
+06:56:41 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+06:56:41 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
+06:56:55 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar10_training_curves.png
+06:57:12 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar10_training_curves.png
+06:57:26 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at figures_ep3_pre3/learning_curves/MobileNet_cifar100_training_curves.png
+06:57:37 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar100_training_curves.png
+06:57:52 [INFO] [FIG6] Saved sequential training curves for XceptionNet/tinyimagenet at figures_ep3_pre3/learning_curves/XceptionNet_tinyimagenet_training_curves.png
+06:58:07 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar100_training_curves.png
+06:58:20 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/tinyimagenet at figures_ep3_pre3/learning_curves/RegNetX_400MF_tinyimagenet_training_curves.png
+06:58:36 [INFO] [FIG6] Saved sequential training curves for VGG16/tinyimagenet at figures_ep3_pre3/learning_curves/VGG16_tinyimagenet_training_curves.png
+06:58:51 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar100_training_curves.png
+06:59:09 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at figures_ep3_pre3/learning_curves/MobileNet_cifar10_training_curves.png
+06:59:26 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar100_training_curves.png
+06:59:40 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at figures_ep3_pre3/learning_curves/ConvNeXt_tinyimagenet_training_curves.png
+06:59:53 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at figures_ep3_pre3/learning_curves/MobileNet_tinyimagenet_training_curves.png
+07:00:10 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at figures_ep3_pre3/learning_curves/VGG16_cifar100_training_curves.png
+07:00:24 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar10_training_curves.png
+07:01:02 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep3_pre3/learning_curves/VGG16_cifar10_training_curves.png
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:1073: UserWarning: Tight layout not applied. The bottom and top margins cannot be made large enough to accommodate all Axes decorations.
+  plt.tight_layout()
+07:01:40 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar10_training_curves.png
+07:01:46 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at figures_ep3_pre3/learning_curves/InceptionNet_tinyimagenet_training_curves.png
+07:01:46 [INFO] [SUMMARY] Generating master lookup JSON...
+07:01:46 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/master_results_summary_ep3_pre3.json
+07:01:46 [INFO] Script completed.

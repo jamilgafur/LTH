@@ -1,0 +1,417 @@
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA driver initialization failed, you might not have a CUDA gpu. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
+  return torch._C._cuda_getDeviceCount() > 0
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='VGG16', dataset='Cifar100', epochs=3, pretrain=3, experiment='discover', JF=True, Kevin=False, quant=False)
+============================================================
+
+[INFO] Hardware detected: CPU (CUDA Available: False)
+Loading CIFAR-100 data...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+Loading CIFAR-100 data...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] Base checkpoint path resolved: None
+
+============================================================
+[MODE] STAGE 1: DISCOVERY & PRE-FLIGHT PROBE
+       Model: VGG16 | Dataset: Cifar100
+============================================================
+
+[INFO] Phase 1: Validating/Training 'Control' Baseline...
+
+--- Running experiment: Control ---
+    Budget allocated: 3 epochs
+
+=== Running JF experiment ===
+[•] Resumption detected. Architecture will be prepared for checkpoint loading.
+[•] Starting experiment 'Control' in workflow 'JF' | Epoch Target: 3
+[✓] Experiment 'Control' already completed. Found: final_JF_Control.pt
+    Skipping training and reloading metrics...
+
+[INFO] Phase 2: Loading Finalized Baseline Weights...
+[Auto-Heal] Missing JSON entry for 'Control'. Attempting recovery...
+    -> Calculating parameters live...
+    -> Calculating FLOPs live...
+    -> Calculating accuracy live (this may take a moment)...
+2026-06-07 17:08:01,249 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.bn_8, features.bn_9, features.conv_10, features.conv_9, features.relu_8, features.relu_9
+2026-06-07 17:08:10,234 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.bn_12, features.conv_13, features.relu_12
+[✓] Successfully healed merged_metrics.json for Control.
+[INFO] Found existing layer variances at /old_Users/jgafur/LTH/manuscript/Tranfer/runs/plots/VGG16/Cifar100/epochs3_pretrain3/layer_variances.json. Skipping probe.
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 34,031,780 | Base FLOPs: 333,049,856
+
+[DEBUG] --- Phase 2A: Scanning 16 layers for Raw Candidates ---
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+
+[INFO] Phase 3: Evaluating 2 Candidate Regions (with Smart Boundary Shaving)...
+    [STEP] Testing sequence: features.conv_8 -> features.conv_10 (Length: 3)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 34,031,780
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_8 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_8', 'features.conv_10')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_8
+[INFO] End Target   : features.conv_10
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_8' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 24 to 30
+[DEBUG] Captured Layers : 7 total
+    [LAYER MAP] conv_8 -> Conv2d
+    [LAYER MAP] bn_8 -> BatchNorm2d
+    [LAYER MAP] relu_8 -> ReLU
+    [LAYER MAP] conv_9 -> Conv2d
+    [LAYER MAP] bn_9 -> BatchNorm2d
+    [LAYER MAP] relu_9 -> ReLU
+    [LAYER MAP] conv_10 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_8'
+[DEBUG] Hooking End Node   : 'features.conv_10'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_8' -> 'features.conv_10'...
+[DEBUG] Captured input shape: (512, 256, 4, 4), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 256, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 34,031,780
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_10'...
+[DEBUG] Exact layer match found at index 32: features.conv_10 (Conv2d)
+[DEBUG] Scanning forward from index 33 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'classifier.fc_1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (7 layers)...
+[DEBUG] Input tensor shape before block: (512, 256, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (512, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 512
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=16 (HxW=4x4)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(512, 512, 4, 4)
+         out_channels=512
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 512, 4, 4)
+    - out_channels             : 512
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 1))
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 512
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.conv_8'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 24 -> 30
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 256 (in) -> 512 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=256, out=512)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for vgg16:
+        - conv_1x1: Conv2d(256, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 34,031,780
+[INFO] Post-collapse : 28,262,052
+[INFO] Net Change    : -5,769,728
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 512, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'classifier.fc_1'
+[DEBUG] [POOL] Entering shape: (512, 512) | Flat size: 512
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=24, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 24: 'conv_8'
+[STEP] Validating inserted module 'Sequential' at index 24...
+[DEBUG] Inserted module forward successful, output shape: (512, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'features.bn_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_4' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (512, 512, 1, 1)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.conv_8'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.conv_8' → 'features.conv_10'
+[INFO] ✅ Successfully collapsed block 'test' (features.conv_8 → features.conv_10)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 13 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 34,031,780
+[INFO] Parameters after : 28,262,052
+[INFO] ΔParams = +5,769,728 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [✓] ACCEPTED: Params (34,031,780 -> 28,262,052)
+    [STEP] Testing sequence: features.conv_12 -> features.conv_13 (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 34,031,780
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_12 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_12', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_12
+[INFO] End Target   : features.conv_13
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_12' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 37 to 40
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv_12 -> Conv2d
+    [LAYER MAP] bn_12 -> BatchNorm2d
+    [LAYER MAP] relu_12 -> ReLU
+    [LAYER MAP] conv_13 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_12'
+[DEBUG] Hooking End Node   : 'features.conv_13'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_12' -> 'features.conv_13'...
+[DEBUG] Captured input shape: (512, 512, 2, 2), output shape: (512, 512, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 512, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 34,031,780
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_13'...
+[DEBUG] Exact layer match found at index 42: features.conv_13 (Conv2d)
+[DEBUG] Scanning forward from index 43 for next Linear...
+[DEBUG] Found Linear layer ahead: classifier.fc_1 (Linear(in_features=512, out_features=4096, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'classifier.fc_1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 512, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 512, 2, 2)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (512, 512, 2, 2)
+[DEBUG] Determined out_channels=512
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 512
+[DEBUG] Comparing spatial dims: expected_hw=1, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,1) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(512, 512, 2, 2)
+         out_channels=512
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 1))
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 512, 2, 2)
+    - out_channels             : 512
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 1))
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 512
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.conv_12'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 37 -> 40
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 512 (in) -> 512 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=512, out=512)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for vgg16:
+        - conv_1x1: Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 34,031,780
+[INFO] Post-collapse : 29,574,308
+[INFO] Net Change    : -4,457,472
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 512, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'classifier.fc_1'
+[DEBUG] [POOL] Entering shape: (512, 512) | Flat size: 512
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=37, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 37: 'conv_12'
+[STEP] Validating inserted module 'Sequential' at index 37...
+[DEBUG] Inserted module forward successful, output shape: (512, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (512, 512, 1, 1)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.conv_12'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'test' (features.conv_12 → features.conv_13)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 14 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 34,031,780
+[INFO] Parameters after : 29,574,308
+[INFO] ΔParams = +4,457,472 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+        [✓] ACCEPTED: Params (34,031,780 -> 29,574,308)
+[INFO] Forced 2 sets into 'Dynamic_Region_All_Combined'.
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[•] Running Comprehensive Heuristic Analysis for VGG16 on Cifar100...
+[✓] Stage 1 Complete. Exported 5 targets to 'VGG16_Cifar100_epochs3_pretrain3_JF_discovered_regions.json'.
+17:18:06 [INFO] Scanning for metrics files matching epochs=3, pretrain=3
+17:18:07 [INFO] Successfully parsed 116 experiment rows.
+17:18:25 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__accuracy.png
+17:19:21 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__params.png
+17:19:58 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__flops.png
+17:20:23 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__memory.png
+17:20:47 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__accuracy.png
+17:21:12 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__params.png
+17:21:53 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__flops.png
+17:22:12 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__memory.png
+17:22:48 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_accuracy.png
+17:23:19 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_params.png
+17:23:21 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_flops.png
+17:23:41 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_memory.png
+17:24:10 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__accuracy.png
+17:24:26 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__params.png
+17:24:57 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__flops.png
+17:25:15 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__memory.png
+17:25:39 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__accuracy.png
+17:25:54 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__params.png
+17:26:24 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__flops.png
+17:26:46 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__memory.png
+17:27:09 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_accuracy.png
+17:27:26 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_params.png
+17:28:03 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_flops.png
+17:28:09 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_memory.png
+17:28:44 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__accuracy.png
+17:28:47 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__params.png
+17:29:14 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__flops.png
