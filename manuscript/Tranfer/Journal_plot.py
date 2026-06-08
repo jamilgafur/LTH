@@ -691,8 +691,11 @@ def fig4_comprehensive_search_space_map(
         layers = layer_df['Layer'].tolist()
 
         # --- FIX: Robust recursive JSON search (Case-Insensitive Match) ---
+        # --- FIX: Strict JSON search to prevent CIFAR-10/100 collisions ---
         potential_jsons = list(Path(".").rglob(f"{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
-        all_jsons = [p for p in potential_jsons if clean_ds in p.name.lower()]
+        
+        # Enforce boundaries with underscores so 'cifar10' doesn't match 'cifar100'
+        all_jsons = [p for p in potential_jsons if f"_{clean_ds}_" in p.name.lower()]
         
         if not all_jsons: 
             continue
