@@ -296,7 +296,6 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
 
 # ========================= FIG 2 ========================= #
 
-
 def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
     logger.info(f"Starting FIG2 generation. Target epochs: {epochs}, pretrain: {pretrain}")
     
@@ -367,11 +366,14 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
         # --- JSON Region Matching ---
         clean_ds = dataset.strip("_").lower()
         potential_jsons = list(Path(".").rglob(f"*{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
-        json_files = [p for p in potential_jsons if clean_ds in p.name.lower()]
+        
+        # [BUG FIX] Add underscores to enforce strict matching so "cifar10" doesn't match "cifar100"
+        json_files = [p for p in potential_jsons if f"_{clean_ds}_" in p.name.lower()]
         
         verified_idx_ranges = []
         
         if json_files:
+            logger.info(f"[DEBUG] [{arch}/{dataset}] Loading JSON file: {json_files[0].name}")
             try:
                 with open(json_files[0], 'r') as f:
                     config = json.load(f)
@@ -387,6 +389,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                     return regions
                     
                 extracted_regions = extract_regions(config)
+                logger.info(f"[DEBUG] [{arch}/{dataset}] Extracted Regions: {extracted_regions}")
                 
                 for v in extracted_regions:
                     if isinstance(v[0], (list, tuple)):
@@ -396,7 +399,9 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                                 s_idx = next(idx for idx, n in enumerate(layers) if s_name == n)
                                 e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if e_name == n)
                                 verified_idx_ranges.append((s_idx, e_idx))
+                                logger.info(f"[DEBUG] Mapped sub-region '{s_name}' -> '{e_name}' to indices {s_idx} -> {e_idx}")
                             except StopIteration:
+                                logger.warning(f"[DEBUG] Failed to map '{s_name}' or '{e_name}' to the layer list.")
                                 continue
                     else:
                         s_name, e_name = v[0], v[-1]
@@ -404,7 +409,9 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                             s_idx = next(idx for idx, n in enumerate(layers) if s_name == n)
                             e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if e_name == n)
                             verified_idx_ranges.append((s_idx, e_idx))
+                            logger.info(f"[DEBUG] Mapped region '{s_name}' -> '{e_name}' to indices {s_idx} -> {e_idx}")
                         except StopIteration:
+                            logger.warning(f"[DEBUG] Failed to map '{s_name}' or '{e_name}' to the layer list.")
                             continue
             except Exception as e:
                 logger.error(f"Error parsing JSON for {arch}/{dataset}: {e}")
@@ -477,6 +484,11 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                 idx += 1
 
         # ==========================================
+        # [DEBUG] Print the final color mapping mapping
+        logger.info(f"[DEBUG] --- Final Layer States for {arch} on {dataset} ---")
+        for i, (layer_name, h, state) in enumerate(zip(layers, h_vals, final_states)):
+            logger.info(f"  Layer {i:02d} | Name: {layer_name:<20} | h_val: {h:>6.3f} | Color State: {state}")
+        # ==========================================
 
         # --- Bar Plot ---
         state_colors = {"VETO": "#999999", "VERIFIED": "#2ca02c", "REJECTED": "#ff7f0e", "DANGER": "#d62728"}
@@ -516,7 +528,6 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
         logger.info(f"[FIG2] Saved methodology plot: {save_path}")
-        
 # ========================= FIG 3 ========================= #
 
 def fig3_v2t_heuristic_validation(
