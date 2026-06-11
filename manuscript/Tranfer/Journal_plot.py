@@ -487,7 +487,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
         # [DEBUG] Print the final color mapping mapping
         logger.info(f"[DEBUG] --- Final Layer States for {arch} on {dataset} ---")
         for i, (layer_name, h, state) in enumerate(zip(layers, h_vals, final_states)):
-            logger.info(f"  Layer {i:02d} | Name: {layer_name:<20} | h_val: {h:>6.3f} | Color State: {state}")
+            logger.info(f"[DEBUG] [{arch}/{dataset}] Layer {i:02d} | Name: {layer_name:<20} | h_val: {h:>6.3f} | Color State: {state}")
         # ==========================================
 
         # --- Bar Plot ---
