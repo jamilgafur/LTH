@@ -409,9 +409,9 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
                             s_idx = next(idx for idx, n in enumerate(layers) if s_name == n)
                             e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if e_name == n)
                             verified_idx_ranges.append((s_idx, e_idx))
-                            logger.info(f"[DEBUG] Mapped region '{s_name}' -> '{e_name}' to indices {s_idx} -> {e_idx}")
+                            logger.info(f"[DEBUG] [{arch}/{dataset}] Mapped region '{s_name}' -> '{e_name}' to indices {s_idx} -> {e_idx}")
                         except StopIteration:
-                            logger.warning(f"[DEBUG] Failed to map '{s_name}' or '{e_name}' to the layer list.")
+                            logger.warning(f"[DEBUG] [{arch}/{dataset}] Failed to map '{s_name}' or '{e_name}' to the layer list.")
                             continue
             except Exception as e:
                 logger.error(f"Error parsing JSON for {arch}/{dataset}: {e}")
