@@ -444,12 +444,20 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             verified_idx_set.update(range(s_idx, e_idx + 1))
         
         for i in range(len(layers)):
+            layer_name = str(layers[i]).lower()
+            # Identify standard spatial/channel transformation bottleneck layers
+            is_structural = any(k in layer_name for k in ["conv1", "downsample", "shortcut", "stem"])
+            
             if i < veto_idx:
                 final_states[i] = "VETO"
             elif i in verified_idx_set:
                 final_states[i] = "VERIFIED"
             elif h_vals[i] < 0:
-                final_states[i] = "REJECTED"
+                # Differentiate structural bottlenecks from standard rejections
+                if is_structural:
+                    final_states[i] = "STRUCTURAL"
+                else:
+                    final_states[i] = "REJECTED"
             else:
                 final_states[i] = "DANGER"
 
@@ -461,7 +469,13 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
         # ==========================================
 
         # --- Bar Plot ---
-        state_colors = {"VETO": "#9aa0a6", "VERIFIED": "#1b8a5a", "REJECTED": "#f4a261", "DANGER": "#d1495b"}
+        state_colors = {
+            "VETO": "#9aa0a6", 
+            "VERIFIED": "#1b8a5a", 
+            "STRUCTURAL": "#5c6bc0", # Indigo identifier for bottlenecks
+            "REJECTED": "#f4a261", 
+            "DANGER": "#d1495b"
+        }
         
         bar_width = max(0.55, 120 / max(len(layers), 1))
         ax2.bar(
@@ -506,6 +520,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
         label_map = {
             'VETO': 'Veto window',
             'VERIFIED': 'Selected and collapsed',
+            'STRUCTURAL': 'Structural Bottleneck (Protected)',
             'REJECTED': 'Negative but not selected',
             'DANGER': 'Positive / unselected',
         }
