@@ -234,6 +234,11 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 count += 1
         return count
 
+    def format_region(layer_names):
+        if not layer_names:
+            return "<empty>"
+        return f"{layer_names[0]} -> {layer_names[-1]}"
+
     # =====================================================================
     # HELPER 3: Phase 1 & 2 - Variance Normalization & Expansion
     # =====================================================================
@@ -278,20 +283,56 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     status = "Active"
                     
                 status_map[layer_name] = status
+
+                if status in {"Rejected", "Veto"}:
+                    reason = ""
+                    if status == "Veto":
+                        reason = f"veto window (idx={i}, cutoff={veto_idx})"
+                    elif not is_valid_target:
+                        reason = f"invalid target type={type(mod).__name__ if mod is not None else 'None'}"
+                    elif h >= 0:
+                        reason = f"non-negative h={h:.6f}"
+                    print(
+                        f"[DEBUG] [SCAN] Layer {i:02d} | {layer_name:<45} | h={h:.6f} | "
+                        f"status={status:<8} | reason={reason}"
+                    )
+                elif status == "Passive":
+                    print(
+                        f"[DEBUG] [SCAN] Layer {i:02d} | {layer_name:<45} | h={h:.6f} | "
+                        f"status=Passive  | reason=bridge layer"
+                    )
                 
                 # Allow Active layers, and Passive layers if they are attached to an active chain
                 if status == "Active" or (status == "Passive" and len(current_set) > 0):
                     current_set.append(layer_name)
                 else:
                     if get_parametric_count(current_set) >= 2: 
+                        print(
+                            f"[DEBUG] [RAW] Accepted raw candidate {format_region(current_set)} "
+                            f"| layers={len(current_set)} | parametric={get_parametric_count(current_set)}"
+                        )
                         R_candidates_raw.append(current_set)
                     else:
+                        if current_set:
+                            print(
+                                f"[DEBUG] [RAW] Discarding short fragment {format_region(current_set)} "
+                                f"| layers={len(current_set)} | parametric={get_parametric_count(current_set)}"
+                            )
                         for orphan in current_set: status_map[orphan] = "Gap"
                     current_set = []
                     
             if get_parametric_count(current_set) >= 2:
+                print(
+                    f"[DEBUG] [RAW] Accepted raw candidate {format_region(current_set)} "
+                    f"| layers={len(current_set)} | parametric={get_parametric_count(current_set)}"
+                )
                 R_candidates_raw.append(current_set)
             else:
+                if current_set:
+                    print(
+                        f"[DEBUG] [RAW] Discarding trailing fragment {format_region(current_set)} "
+                        f"| layers={len(current_set)} | parametric={get_parametric_count(current_set)}"
+                    )
                 for orphan in current_set: status_map[orphan] = "Gap"
 
             # Phase 2B: Structural LCA Expansion
@@ -300,6 +341,10 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
             for r in R_candidates_raw:
                 start_idx = cnn_layers.index(r[0])
                 end_idx = cnn_layers.index(r[-1])
+                print(
+                    f"[DEBUG] [EXPAND] Starting from raw region {format_region(r)} "
+                    f"| layers={len(r)} | parametric={get_parametric_count(r)}"
+                )
                 
                 trapped = False
                 while True:
@@ -313,8 +358,10 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     # [FIX] Allow expansion into Passive layers
                     if end_idx + 1 < len(cnn_layers) and status_map.get(cnn_layers[end_idx+1]) in ["Active", "Passive"]:
                         end_idx += 1; expanded = True
+                        print(f"[DEBUG] [EXPAND] Extended right to {cnn_layers[end_idx]}")
                     elif start_idx > 0 and start_idx - 1 >= veto_idx and status_map.get(cnn_layers[start_idx-1]) in ["Active", "Passive"]:
                         start_idx -= 1; expanded = True
+                        print(f"[DEBUG] [EXPAND] Extended left to {cnn_layers[start_idx]}")
                             
                     if not expanded:
                         trapped = True
@@ -323,6 +370,10 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 if not trapped:
                     expanded_r = cnn_layers[start_idx : end_idx + 1]
                     if get_parametric_count(expanded_r) >= 2:
+                        print(
+                            f"[DEBUG] [EXPAND] Final candidate {format_region(expanded_r)} "
+                            f"| layers={len(expanded_r)} | parametric={get_parametric_count(expanded_r)}"
+                        )
                         R_candidates.append(expanded_r)
                     else:
                         print(f"[DEBUG] [!] Discarding orphan fragment (size {len(expanded_r)}): {expanded_r}")
@@ -381,16 +432,44 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 except Exception:
                     new_flops = float('inf')
 
+                params_saved = base_params - new_params
+                flops_saved = base_flops - new_flops if check_flops and np.isfinite(base_flops) and np.isfinite(new_flops) else None
+                param_pct = (params_saved / base_params * 100.0) if base_params else 0.0
+                flop_pct = (flops_saved / base_flops * 100.0) if flops_saved is not None and base_flops not in {0, float('inf')} else None
+
                 if new_params < base_params or (check_flops and new_flops < base_flops):
-                    print(f"        [✓] ACCEPTED: Params ({base_params:,} -> {new_params:,})")
+                    flop_msg = (
+                        f" | FLOPs ({base_flops:,.0f} -> {new_flops:,.0f}, saved {flops_saved:,.0f}, {flop_pct:.4f}%)"
+                        if flop_pct is not None else ""
+                    )
+                    print(
+                        f"        [✓] ACCEPTED: region={start_name} -> {end_name} | "
+                        f"Params ({base_params:,} -> {new_params:,}, saved {params_saved:,}, {param_pct:.4f}%)"
+                        f"{flop_msg}"
+                    )
                     experiment_regions[f"Set_{set_counter}"] = region_tuple
                     R_final.append(region_tuple)
                     set_counter += 1
                 else:
-                    print(f"        [X] FAILED TO REDUCE. Shaving...")
+                    flop_msg = (
+                        f" | FLOPs ({base_flops:,.0f} -> {new_flops:,.0f})"
+                        if check_flops and np.isfinite(new_flops) and np.isfinite(base_flops) else ""
+                    )
+                    print(
+                        f"        [X] FAILED TO REDUCE: region={start_name} -> {end_name} | "
+                        f"Params ({base_params:,} -> {new_params:,}){flop_msg}. Shaving..."
+                    )
                     if len(r) > 2:
                         left_shaved = r[1:]
                         right_shaved = r[:-1]
+                        print(
+                            f"        [DEBUG] [SHAVE] Left candidate {format_region(left_shaved)} | "
+                            f"parametric={get_parametric_count(left_shaved)}"
+                        )
+                        print(
+                            f"        [DEBUG] [SHAVE] Right candidate {format_region(right_shaved)} | "
+                            f"parametric={get_parametric_count(right_shaved)}"
+                        )
                         if get_parametric_count(left_shaved) >= 2: queue.append(left_shaved)
                         if get_parametric_count(right_shaved) >= 2: queue.append(right_shaved)
 
@@ -478,6 +557,19 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     experiment_regions, R_final = evaluate_candidates(R_candidates, base_params, base_flops, check_flops, dummy_input)
     
     experiment_regions = greedy_integration(R_final, experiment_regions, base_params, base_flops, check_flops, dummy_input)
+
+    print(f"\n[DEBUG] --- Final Accepted Regions Summary ---")
+    if R_final:
+        for idx, (start_name, end_name) in enumerate(R_final):
+            start_idx = cnn_layers.index(start_name)
+            end_idx = cnn_layers.index(end_name)
+            region_layers = cnn_layers[start_idx:end_idx + 1]
+            print(
+                f"[DEBUG] [FINAL] Set_{idx}: {start_name} -> {end_name} | "
+                f"layers={len(region_layers)} | parametric={get_parametric_count(region_layers)}"
+            )
+    else:
+        print("[DEBUG] [FINAL] No regions accepted.")
     
     experiment_regions["Status_Map"] = status_map
     experiment_regions["Control_Continuted"] = None
