@@ -22,22 +22,38 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
     Budget allocated: 3 epochs
 
 === Running JF experiment ===
-[•] Resumption detected. Architecture will be prepared for checkpoint loading.
 [•] Starting experiment 'Control' in workflow 'JF' | Epoch Target: 3
-[✓] Experiment 'Control' already completed. Found: final_JF_Control.pt
-    Skipping training and reloading metrics...
+[•] No intermediate checkpoint found — starting fresh
+[•] Epoch 0
+[•] Epoch 1
+[•] Epoch 2
+2026-06-11 10:03:42,545 - WARNING - Unsupported operator aten::max_pool2d encountered 5 time(s)
+2026-06-11 10:03:45,519 - WARNING - Unsupported operator aten::max_pool2d encountered 5 time(s)
+[•] Running diagnostics for Control...
+Saved memory CSV to VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs3_pretrain3/plots/Control_memory.csv
+Saved memory plot to VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs3_pretrain3/plots/Control_memory.svg
+[•] Extracting explainability data for Control...
+[✓] Weight distribution figure saved to VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs3_pretrain3/plots/Control_explainability_weight_distributions.svg
+[✓] Saved explainability arrays to VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs3_pretrain3/plots/Control_explainability.npz
+[✓] Explainability figure saved to VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs3_pretrain3/plots/Control_explainability.svg
+[✓] Diagnostics complete for Control
+[✓] Saved plot: VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs3_pretrain3/plots/JF_Control_metrics.svg
+[✓] Saved metrics for 'Control_JF' → VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs3_pretrain3/metrics/VGG16_CIFAR10_metrics_20260611_100406_712813_487531.json
+[✓] Merged 1 metrics files → VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs3_pretrain3/metrics/merged_metrics.json
+[✓] Experiment 'Control' completed.
 
 [INFO] Phase 2: Loading Finalized Baseline Weights...
 [Auto-Heal] Missing JSON entry for 'Control'. Attempting recovery...
     -> Calculating parameters live...
     -> Calculating FLOPs live...
     -> Calculating accuracy live (this may take a moment)...
-2026-06-07 17:01:19,919 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+2026-06-11 10:04:10,728 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
 features.bn_5, features.bn_6, features.bn_7, features.bn_8, features.bn_9, features.conv_10, features.conv_6, features.conv_7, features.conv_8, features.conv_9, features.pool_3, features.relu_5, features.relu_6, features.relu_7, features.relu_8, features.relu_9
-2026-06-07 17:01:20,286 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+2026-06-11 10:04:11,300 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
 features.bn_12, features.conv_13, features.relu_12
 [✓] Successfully healed merged_metrics.json for Control.
-[INFO] Found existing layer variances at /old_Users/jgafur/LTH/manuscript/Tranfer/runs/plots/VGG16/Cifar10/epochs3_pretrain3/layer_variances.json. Skipping probe.
+[INFO] No variance file found. Executing Network Probe...
+[✓] Layer variances saved to /old_Users/jgafur/LTH/manuscript/Tranfer/runs/plots/VGG16/Cifar10/epochs3_pretrain3/layer_variances.json
 
 [DEBUG] ========================================
 [DEBUG] === Starting Dynamic Config Generator ===
@@ -45,8 +61,22 @@ features.bn_12, features.conv_13, features.relu_12
 [DEBUG] Base model parameters: 33,663,050 | Base FLOPs: 332,681,216
 
 [DEBUG] --- Phase 2A: Scanning 16 layers for Raw Candidates ---
+[DEBUG] [SCAN] Layer 00 | features.conv_1                               | h=-0.529841 | status=Veto     | reason=veto window (idx=0, cutoff=4)
+[DEBUG] [SCAN] Layer 01 | features.conv_2                               | h=-0.077169 | status=Veto     | reason=veto window (idx=1, cutoff=4)
+[DEBUG] [SCAN] Layer 02 | features.conv_3                               | h=-0.191180 | status=Veto     | reason=veto window (idx=2, cutoff=4)
+[DEBUG] [SCAN] Layer 03 | features.conv_4                               | h=-0.283879 | status=Veto     | reason=veto window (idx=3, cutoff=4)
+[DEBUG] [SCAN] Layer 10 | features.conv_11                              | h=1.000000 | status=Rejected | reason=non-negative h=1.000000
+[DEBUG] [RAW] Accepted raw candidate features.conv_5 -> features.conv_10 | layers=6 | parametric=6
+[DEBUG] [SCAN] Layer 13 | classifier.fc_1                               | h=-0.690820 | status=Rejected | reason=invalid target type=Linear
+[DEBUG] [RAW] Accepted raw candidate features.conv_12 -> features.conv_13 | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 14 | classifier.fc_2                               | h=1.000000 | status=Rejected | reason=invalid target type=Linear
+[DEBUG] [SCAN] Layer 15 | classifier.fc_3                               | h=-0.752606 | status=Rejected | reason=invalid target type=Linear
 
 [DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [EXPAND] Starting from raw region features.conv_5 -> features.conv_10 | layers=6 | parametric=6
+[DEBUG] [EXPAND] Final candidate features.conv_5 -> features.conv_10 | layers=6 | parametric=6
+[DEBUG] [EXPAND] Starting from raw region features.conv_12 -> features.conv_13 | layers=2 | parametric=2
+[DEBUG] [EXPAND] Final candidate features.conv_12 -> features.conv_13 | layers=2 | parametric=2
 
 [INFO] Phase 3: Evaluating 2 Candidate Regions (with Smart Boundary Shaving)...
     [STEP] Testing sequence: features.conv_5 -> features.conv_10 (Length: 6)
@@ -241,7 +271,7 @@ None
 [INFO] Parameters after : 26,350,922
 [INFO] ΔParams = +7,312,128 (expected ≤ 0)
 [RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
-        [✓] ACCEPTED: Params (33,663,050 -> 26,350,922)
+        [✓] ACCEPTED: region=features.conv_5 -> features.conv_10 | Params (33,663,050 -> 26,350,922, saved 7,312,128, 21.7215%) | FLOPs (332,681,216 -> 148,099,072, saved 184,582,144, 55.4832%)
     [STEP] Testing sequence: features.conv_12 -> features.conv_13 (Length: 2)
 
 [STEP] ===== Starting collapse_only process =====
@@ -398,138 +428,151 @@ None
 [INFO] Parameters after : 29,205,578
 [INFO] ΔParams = +4,457,472 (expected ≤ 0)
 [RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
-        [✓] ACCEPTED: Params (33,663,050 -> 29,205,578)
+        [✓] ACCEPTED: region=features.conv_12 -> features.conv_13 | Params (33,663,050 -> 29,205,578, saved 4,457,472, 13.2414%) | FLOPs (332,681,216 -> 314,857,472, saved 17,823,744, 5.3576%)
 [INFO] Forced 2 sets into 'Dynamic_Region_All_Combined'.
+
+[DEBUG] --- Final Accepted Regions Summary ---
+[DEBUG] [FINAL] Set_0: features.conv_5 -> features.conv_10 | layers=6 | parametric=6
+[DEBUG] [FINAL] Set_1: features.conv_12 -> features.conv_13 | layers=2 | parametric=2
 
 [DEBUG] === Finished Dynamic Config Generator ===
 [•] Running Comprehensive Heuristic Analysis for VGG16 on Cifar10...
 [✓] Stage 1 Complete. Exported 5 targets to 'VGG16_Cifar10_epochs3_pretrain3_JF_discovered_regions.json'.
-17:01:35 [INFO] Scanning for metrics files matching epochs=3, pretrain=3
-17:01:37 [INFO] Successfully parsed 106 experiment rows.
-17:01:38 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__accuracy.png
-17:01:39 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__params.png
-17:01:40 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__flops.png
-17:01:41 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar100__memory.png
-17:01:41 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__accuracy.png
-17:01:42 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__params.png
-17:01:43 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__flops.png
-17:01:44 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at figures_ep3_pre3/individual_plots/ConvNeXt_cifar10__memory.png
-17:01:44 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_accuracy.png
-17:01:44 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_params.png
-17:01:45 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_flops.png
-17:01:45 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at figures_ep3_pre3/individual_plots/ConvNeXt_tinyimagenet_memory.png
-17:01:46 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__accuracy.png
-17:01:46 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__params.png
-17:01:47 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__flops.png
-17:01:47 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar100__memory.png
-17:01:48 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__accuracy.png
-17:01:49 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__params.png
-17:01:50 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__flops.png
-17:01:50 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at figures_ep3_pre3/individual_plots/InceptionNet_cifar10__memory.png
-17:01:51 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_accuracy.png
-17:01:51 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_params.png
-17:01:52 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_flops.png
-17:01:52 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/InceptionNet_tinyimagenet_memory.png
-17:01:53 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__accuracy.png
-17:01:53 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__params.png
-17:01:54 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__flops.png
-17:01:54 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at figures_ep3_pre3/individual_plots/MobileNet_cifar100__memory.png
-17:01:55 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__accuracy.png
-17:01:55 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__params.png
-17:01:56 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__flops.png
-17:01:56 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at figures_ep3_pre3/individual_plots/MobileNet_cifar10__memory.png
-17:01:57 [INFO] [FIG1] Saved accuracy plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_accuracy.png
-17:01:57 [INFO] [FIG1] Saved params plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_params.png
-17:01:58 [INFO] [FIG1] Saved flops plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_flops.png
-17:01:58 [INFO] [FIG1] Saved memory plot for MobileNet/tinyimagenet at figures_ep3_pre3/individual_plots/MobileNet_tinyimagenet_memory.png
-17:01:58 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__accuracy.png
-17:01:59 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__params.png
-17:01:59 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__flops.png
-17:02:00 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar100__memory.png
-17:02:00 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__accuracy.png
-17:02:01 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__params.png
-17:02:01 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__flops.png
-17:02:01 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__memory.png
-17:02:02 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/tinyimagenet at figures_ep3_pre3/individual_plots/RegNetX_400MF_tinyimagenet_accuracy.png
-17:02:02 [INFO] [FIG1] Saved params plot for RegNetX_400MF/tinyimagenet at figures_ep3_pre3/individual_plots/RegNetX_400MF_tinyimagenet_params.png
-17:02:03 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/tinyimagenet at figures_ep3_pre3/individual_plots/RegNetX_400MF_tinyimagenet_flops.png
-17:02:03 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/tinyimagenet at figures_ep3_pre3/individual_plots/RegNetX_400MF_tinyimagenet_memory.png
-17:02:04 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__accuracy.png
-17:02:04 [INFO] [FIG1] Saved params plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__params.png
-17:02:05 [INFO] [FIG1] Saved flops plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__flops.png
-17:02:05 [INFO] [FIG1] Saved memory plot for VGG16/cifar100_ at figures_ep3_pre3/individual_plots/VGG16_cifar100__memory.png
-17:02:06 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__accuracy.png
-17:02:07 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__params.png
-17:02:07 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__flops.png
-17:02:08 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__memory.png
-17:02:08 [INFO] [FIG1] Saved accuracy plot for VGG16/tinyimagenet at figures_ep3_pre3/individual_plots/VGG16_tinyimagenet_accuracy.png
-17:02:09 [INFO] [FIG1] Saved params plot for VGG16/tinyimagenet at figures_ep3_pre3/individual_plots/VGG16_tinyimagenet_params.png
-17:02:09 [INFO] [FIG1] Saved flops plot for VGG16/tinyimagenet at figures_ep3_pre3/individual_plots/VGG16_tinyimagenet_flops.png
-17:02:10 [INFO] [FIG1] Saved memory plot for VGG16/tinyimagenet at figures_ep3_pre3/individual_plots/VGG16_tinyimagenet_memory.png
-17:02:10 [INFO] [FIG1] Saved accuracy plot for XceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/XceptionNet_tinyimagenet_accuracy.png
-17:02:11 [INFO] [FIG1] Saved params plot for XceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/XceptionNet_tinyimagenet_params.png
-17:02:11 [INFO] [FIG1] Saved flops plot for XceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/XceptionNet_tinyimagenet_flops.png
-17:02:11 [INFO] [FIG1] Saved memory plot for XceptionNet/tinyimagenet at figures_ep3_pre3/individual_plots/XceptionNet_tinyimagenet_memory.png
-17:02:11 [INFO] Starting FIG2 generation. Target epochs: 3, pretrain: 3
-17:02:13 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/InceptionNet_Cifar10_bav_methodology_regions.png
-17:02:15 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/InceptionNet_tinyimagenet_bav_methodology_regions.png
-17:02:17 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/InceptionNet_Cifar100_bav_methodology_regions.png
-17:02:18 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/MobileNet_Cifar100_bav_methodology_regions.png
-17:02:20 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/MobileNet_Cifar10_bav_methodology_regions.png
-17:02:21 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/MobileNet_tinyimagenet_bav_methodology_regions.png
-17:02:23 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_Cifar10_bav_methodology_regions.png
-17:02:24 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_Cifar100_bav_methodology_regions.png
-17:02:25 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_tinyimagenet_bav_methodology_regions.png
-17:02:27 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/RegNetX_400MF_Cifar100_bav_methodology_regions.png
-17:02:29 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/RegNetX_400MF_tinyimagenet_bav_methodology_regions.png
-17:02:30 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/RegNetX_400MF_Cifar10_bav_methodology_regions.png
-17:02:32 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/XceptionNet_tinyimagenet_bav_methodology_regions.png
-17:02:34 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/ConvNeXt_Cifar10_bav_methodology_regions.png
-17:02:35 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/ConvNeXt_tinyimagenet_bav_methodology_regions.png
-17:02:37 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/ConvNeXt_Cifar100_bav_methodology_regions.png
-17:02:58 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
-17:02:58 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar100_
-17:02:59 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar100_ at figures_ep3_pre3/hardware_efficiency/ConvNeXt_cifar100__hardware_profile.png
-17:02:59 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar100_
-17:02:59 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar100_
-17:02:59 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar100_
-17:02:59 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar100_
-17:03:00 [INFO] [FIG5] Saved hardware profile plot for VGG16/cifar100_ at figures_ep3_pre3/hardware_efficiency/VGG16_cifar100__hardware_profile.png
-17:03:00 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
-17:03:01 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar10_ at figures_ep3_pre3/hardware_efficiency/ConvNeXt_cifar10__hardware_profile.png
-17:03:01 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
-17:03:02 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/cifar10_ at figures_ep3_pre3/hardware_efficiency/InceptionNet_cifar10__hardware_profile.png
-17:03:02 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
-17:03:02 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
-17:03:02 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
-17:03:02 [INFO] [FIG5] Saved hardware profile plot for VGG16/cifar10_ at figures_ep3_pre3/hardware_efficiency/VGG16_cifar10__hardware_profile.png
-17:03:02 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/tinyimagenet
-17:03:02 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
-17:03:02 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/tinyimagenet
-17:03:02 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/tinyimagenet
-17:03:02 [INFO] [FIG5] Processing Hardware Profiles for VGG16/tinyimagenet
-17:03:02 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/tinyimagenet
-17:03:03 [INFO] [FIG5] Saved unified best_candidates plot at figures_ep3_pre3/hardware_efficiency/unified_best_candidates.png
-17:03:04 [INFO] [FIG5] Saved unified worst_candidates plot at figures_ep3_pre3/hardware_efficiency/unified_worst_candidates.png
-17:03:04 [INFO] [FIG5] Saved global trade-off scatter plot at figures_ep3_pre3/hardware_efficiency/global_tradeoff_scatter.png
-17:03:04 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
-17:03:04 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
-17:03:06 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar10_training_curves.png
-17:03:07 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at figures_ep3_pre3/learning_curves/MobileNet_cifar100_training_curves.png
-17:03:08 [INFO] [FIG6] Saved sequential training curves for XceptionNet/tinyimagenet at figures_ep3_pre3/learning_curves/XceptionNet_tinyimagenet_training_curves.png
-17:03:09 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar100_training_curves.png
-17:03:10 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/tinyimagenet at figures_ep3_pre3/learning_curves/RegNetX_400MF_tinyimagenet_training_curves.png
-17:03:11 [INFO] [FIG6] Saved sequential training curves for VGG16/tinyimagenet at figures_ep3_pre3/learning_curves/VGG16_tinyimagenet_training_curves.png
-17:03:12 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar100_training_curves.png
-17:03:13 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at figures_ep3_pre3/learning_curves/MobileNet_cifar10_training_curves.png
-17:03:14 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar100_training_curves.png
-17:03:15 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at figures_ep3_pre3/learning_curves/ConvNeXt_tinyimagenet_training_curves.png
-17:03:16 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at figures_ep3_pre3/learning_curves/MobileNet_tinyimagenet_training_curves.png
-17:03:17 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at figures_ep3_pre3/learning_curves/VGG16_cifar100_training_curves.png
-17:03:19 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/InceptionNet_cifar10_training_curves.png
-17:03:20 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep3_pre3/learning_curves/VGG16_cifar10_training_curves.png
-17:03:21 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar10_training_curves.png
-17:03:22 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at figures_ep3_pre3/learning_curves/InceptionNet_tinyimagenet_training_curves.png
-17:03:22 [INFO] [SUMMARY] Generating master lookup JSON...
-17:03:22 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/master_results_summary_ep3_pre3.json
-17:03:22 [INFO] Script completed.
+10:04:27 [INFO] Scanning for metrics files matching epochs=3, pretrain=3
+10:04:27 [INFO] Successfully parsed 4 experiment rows.
+10:04:28 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__accuracy.png
+10:04:28 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__params.png
+10:04:28 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__flops.png
+10:04:29 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at figures_ep3_pre3/individual_plots/RegNetX_400MF_cifar10__memory.png
+10:04:29 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__accuracy.png
+10:04:30 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__params.png
+10:04:30 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__flops.png
+10:04:31 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at figures_ep3_pre3/individual_plots/VGG16_cifar10__memory.png
+10:04:31 [INFO] Starting FIG2 generation. Target epochs: 3, pretrain: 3
+10:04:31 [INFO] [DEBUG] [VGG16/Cifar10] Loading JSON file: VGG16_Cifar10_epochs3_pretrain3_JF_discovered_regions.json
+10:04:31 [INFO] [DEBUG] [VGG16/Cifar10] Extracted Regions: [['features.conv_5', 'features.conv_10'], ['features.conv_12', 'features.conv_13']]
+10:04:31 [INFO] [DEBUG] Mapped region 'features.conv_5' -> 'features.conv_10' to indices 4 -> 9
+10:04:31 [INFO] [DEBUG] Mapped region 'features.conv_12' -> 'features.conv_13' to indices 11 -> 12
+10:04:31 [INFO] [DEBUG] --- Final Layer States for VGG16 on Cifar10 ---
+10:04:31 [INFO]   Layer 00 | Name: features.conv_1      | h_val: -0.530 | Color State: VETO
+10:04:31 [INFO]   Layer 01 | Name: features.conv_2      | h_val: -0.077 | Color State: VETO
+10:04:31 [INFO]   Layer 02 | Name: features.conv_3      | h_val: -0.191 | Color State: VETO
+10:04:31 [INFO]   Layer 03 | Name: features.conv_4      | h_val: -0.284 | Color State: VETO
+10:04:31 [INFO]   Layer 04 | Name: features.conv_5      | h_val: -0.252 | Color State: VERIFIED
+10:04:31 [INFO]   Layer 05 | Name: features.conv_6      | h_val: -0.197 | Color State: VERIFIED
+10:04:31 [INFO]   Layer 06 | Name: features.conv_7      | h_val: -0.212 | Color State: VERIFIED
+10:04:31 [INFO]   Layer 07 | Name: features.conv_8      | h_val: -0.669 | Color State: VERIFIED
+10:04:31 [INFO]   Layer 08 | Name: features.conv_9      | h_val: -0.583 | Color State: VERIFIED
+10:04:31 [INFO]   Layer 09 | Name: features.conv_10     | h_val: -0.499 | Color State: VERIFIED
+10:04:31 [INFO]   Layer 10 | Name: features.conv_11     | h_val:  1.000 | Color State: DANGER
+10:04:31 [INFO]   Layer 11 | Name: features.conv_12     | h_val: -0.849 | Color State: VERIFIED
+10:04:31 [INFO]   Layer 12 | Name: features.conv_13     | h_val: -0.851 | Color State: VERIFIED
+10:04:31 [INFO]   Layer 13 | Name: classifier.fc_1      | h_val: -0.691 | Color State: REJECTED
+10:04:31 [INFO]   Layer 14 | Name: classifier.fc_2      | h_val:  1.000 | Color State: DANGER
+10:04:31 [INFO]   Layer 15 | Name: classifier.fc_3      | h_val:  0.050 | Color State: DANGER
+10:04:32 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/VGG16_Cifar10_bav_methodology_regions.png
+10:04:32 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Loading JSON file: RegNetX_400MF_Cifar10_epochs3_pretrain3_JF_discovered_regions.json
+10:04:32 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Extracted Regions: [['stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.conv3'], ['stage3.stage3_block3.block.conv2', 'stage3.stage3_block3.block.conv3'], ['stage3.stage3_block4.block.conv2', 'stage3.stage3_block4.block.conv3'], ['stage3.stage3_block5.block.conv2', 'stage3.stage3_block5.block.conv3'], ['stage3.stage3_block6.block.conv2', 'stage3.stage3_block6.block.conv3'], ['stage4.stage4_block0.block.conv2', 'stage4.stage4_block0.block.conv3'], ['stage4.stage4_block1.block.conv2', 'stage4.stage4_block1.block.conv3'], ['stage4.stage4_block2.block.conv2', 'stage4.stage4_block2.block.conv3'], ['stage4.stage4_block3.block.conv2', 'stage4.stage4_block3.block.conv3'], ['stage4.stage4_block4.block.conv2', 'stage4.stage4_block4.block.conv3'], ['stage4.stage4_block5.block.conv2', 'stage4.stage4_block5.block.conv3'], ['stage4.stage4_block6.block.conv2', 'stage4.stage4_block6.block.conv3'], ['stage4.stage4_block7.block.conv2', 'stage4.stage4_block7.block.conv3'], ['stage4.stage4_block8.block.conv2', 'stage4.stage4_block8.block.conv3'], ['stage4.stage4_block9.block.conv2', 'stage4.stage4_block9.block.conv3'], ['stage4.stage4_block10.block.conv2', 'stage4.stage4_block10.block.conv3'], ['stage4.stage4_block11.block.conv2', 'stage4.stage4_block11.block.conv3']]
+10:04:32 [INFO] [DEBUG] Mapped region 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3' to indices 20 -> 21
+10:04:32 [INFO] [DEBUG] Mapped region 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3' to indices 23 -> 24
+10:04:32 [INFO] [DEBUG] Mapped region 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3' to indices 26 -> 27
+10:04:32 [INFO] [DEBUG] Mapped region 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3' to indices 29 -> 30
+10:04:32 [INFO] [DEBUG] Mapped region 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3' to indices 32 -> 33
+10:04:32 [INFO] [DEBUG] Mapped region 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3' to indices 35 -> 36
+10:04:32 [INFO] [DEBUG] Mapped region 'stage4.stage4_block1.block.conv2' -> 'stage4.stage4_block1.block.conv3' to indices 39 -> 40
+10:04:32 [INFO] [DEBUG] Mapped region 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3' to indices 42 -> 43
+10:04:32 [INFO] [DEBUG] Mapped region 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3' to indices 45 -> 46
+10:04:32 [INFO] [DEBUG] Mapped region 'stage4.stage4_block4.block.conv2' -> 'stage4.stage4_block4.block.conv3' to indices 48 -> 49
+10:04:32 [INFO] [DEBUG] Mapped region 'stage4.stage4_block5.block.conv2' -> 'stage4.stage4_block5.block.conv3' to indices 51 -> 52
+10:04:32 [INFO] [DEBUG] Mapped region 'stage4.stage4_block6.block.conv2' -> 'stage4.stage4_block6.block.conv3' to indices 54 -> 55
+10:04:32 [INFO] [DEBUG] Mapped region 'stage4.stage4_block7.block.conv2' -> 'stage4.stage4_block7.block.conv3' to indices 57 -> 58
+10:04:32 [INFO] [DEBUG] Mapped region 'stage4.stage4_block8.block.conv2' -> 'stage4.stage4_block8.block.conv3' to indices 60 -> 61
+10:04:32 [INFO] [DEBUG] Mapped region 'stage4.stage4_block9.block.conv2' -> 'stage4.stage4_block9.block.conv3' to indices 63 -> 64
+10:04:32 [INFO] [DEBUG] Mapped region 'stage4.stage4_block10.block.conv2' -> 'stage4.stage4_block10.block.conv3' to indices 66 -> 67
+10:04:32 [INFO] [DEBUG] Mapped region 'stage4.stage4_block11.block.conv2' -> 'stage4.stage4_block11.block.conv3' to indices 69 -> 70
+10:04:32 [INFO] [DEBUG] --- Final Layer States for RegNetX_400MF on Cifar10 ---
+10:04:32 [INFO]   Layer 00 | Name: stem.stem_conv       | h_val:  1.000 | Color State: VETO
+10:04:32 [INFO]   Layer 01 | Name: stage1.stage1_block0.block.conv1 | h_val: -0.316 | Color State: VETO
+10:04:32 [INFO]   Layer 02 | Name: stage1.stage1_block0.block.conv2 | h_val: -0.297 | Color State: VETO
+10:04:32 [INFO]   Layer 03 | Name: stage1.stage1_block0.block.conv3 | h_val: -0.325 | Color State: VETO
+10:04:32 [INFO]   Layer 04 | Name: stage1.stage1_block0.shortcut.shortcut_conv | h_val: -0.268 | Color State: VETO
+10:04:32 [INFO]   Layer 05 | Name: stage2.stage2_block0.block.conv1 | h_val:  0.677 | Color State: VETO
+10:04:32 [INFO]   Layer 06 | Name: stage2.stage2_block0.block.conv2 | h_val: -0.330 | Color State: VETO
+10:04:32 [INFO]   Layer 07 | Name: stage2.stage2_block0.block.conv3 | h_val: -0.313 | Color State: VETO
+10:04:32 [INFO]   Layer 08 | Name: stage2.stage2_block0.shortcut.shortcut_conv | h_val:  0.260 | Color State: VETO
+10:04:32 [INFO]   Layer 09 | Name: stage2.stage2_block1.block.conv1 | h_val:  0.437 | Color State: VETO
+10:04:32 [INFO]   Layer 10 | Name: stage2.stage2_block1.block.conv2 | h_val: -0.460 | Color State: VETO
+10:04:32 [INFO]   Layer 11 | Name: stage2.stage2_block1.block.conv3 | h_val: -0.361 | Color State: VETO
+10:04:32 [INFO]   Layer 12 | Name: stage3.stage3_block0.block.conv1 | h_val:  0.772 | Color State: VETO
+10:04:32 [INFO]   Layer 13 | Name: stage3.stage3_block0.block.conv2 | h_val: -0.523 | Color State: VETO
+10:04:32 [INFO]   Layer 14 | Name: stage3.stage3_block0.block.conv3 | h_val: -0.339 | Color State: VETO
+10:04:32 [INFO]   Layer 15 | Name: stage3.stage3_block0.shortcut.shortcut_conv | h_val:  0.691 | Color State: VETO
+10:04:32 [INFO]   Layer 16 | Name: stage3.stage3_block1.block.conv1 | h_val:  0.333 | Color State: VETO
+10:04:32 [INFO]   Layer 17 | Name: stage3.stage3_block1.block.conv2 | h_val: -0.665 | Color State: VETO
+10:04:32 [INFO]   Layer 18 | Name: stage3.stage3_block1.block.conv3 | h_val:  0.050 | Color State: DANGER
+10:04:32 [INFO]   Layer 19 | Name: stage3.stage3_block2.block.conv1 | h_val:  0.658 | Color State: DANGER
+10:04:32 [INFO]   Layer 20 | Name: stage3.stage3_block2.block.conv2 | h_val: -0.678 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 21 | Name: stage3.stage3_block2.block.conv3 | h_val: -0.358 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 22 | Name: stage3.stage3_block3.block.conv1 | h_val:  0.880 | Color State: DANGER
+10:04:32 [INFO]   Layer 23 | Name: stage3.stage3_block3.block.conv2 | h_val: -0.718 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 24 | Name: stage3.stage3_block3.block.conv3 | h_val: -0.460 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 25 | Name: stage3.stage3_block4.block.conv1 | h_val:  0.978 | Color State: DANGER
+10:04:32 [INFO]   Layer 26 | Name: stage3.stage3_block4.block.conv2 | h_val: -0.780 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 27 | Name: stage3.stage3_block4.block.conv3 | h_val: -0.570 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 28 | Name: stage3.stage3_block5.block.conv1 | h_val:  1.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 29 | Name: stage3.stage3_block5.block.conv2 | h_val: -0.792 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 30 | Name: stage3.stage3_block5.block.conv3 | h_val: -0.650 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 31 | Name: stage3.stage3_block6.block.conv1 | h_val:  1.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 32 | Name: stage3.stage3_block6.block.conv2 | h_val: -0.799 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 33 | Name: stage3.stage3_block6.block.conv3 | h_val: -0.583 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 34 | Name: stage4.stage4_block0.block.conv1 | h_val:  1.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 35 | Name: stage4.stage4_block0.block.conv2 | h_val: -1.000 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 36 | Name: stage4.stage4_block0.block.conv3 | h_val: -1.000 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 37 | Name: stage4.stage4_block0.shortcut.shortcut_conv | h_val: -1.000 | Color State: REJECTED
+10:04:32 [INFO]   Layer 38 | Name: stage4.stage4_block1.block.conv1 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 39 | Name: stage4.stage4_block1.block.conv2 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 40 | Name: stage4.stage4_block1.block.conv3 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 41 | Name: stage4.stage4_block2.block.conv1 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 42 | Name: stage4.stage4_block2.block.conv2 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 43 | Name: stage4.stage4_block2.block.conv3 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 44 | Name: stage4.stage4_block3.block.conv1 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 45 | Name: stage4.stage4_block3.block.conv2 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 46 | Name: stage4.stage4_block3.block.conv3 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 47 | Name: stage4.stage4_block4.block.conv1 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 48 | Name: stage4.stage4_block4.block.conv2 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 49 | Name: stage4.stage4_block4.block.conv3 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 50 | Name: stage4.stage4_block5.block.conv1 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 51 | Name: stage4.stage4_block5.block.conv2 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 52 | Name: stage4.stage4_block5.block.conv3 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 53 | Name: stage4.stage4_block6.block.conv1 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 54 | Name: stage4.stage4_block6.block.conv2 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 55 | Name: stage4.stage4_block6.block.conv3 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 56 | Name: stage4.stage4_block7.block.conv1 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 57 | Name: stage4.stage4_block7.block.conv2 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 58 | Name: stage4.stage4_block7.block.conv3 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 59 | Name: stage4.stage4_block8.block.conv1 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 60 | Name: stage4.stage4_block8.block.conv2 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 61 | Name: stage4.stage4_block8.block.conv3 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 62 | Name: stage4.stage4_block9.block.conv1 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 63 | Name: stage4.stage4_block9.block.conv2 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 64 | Name: stage4.stage4_block9.block.conv3 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 65 | Name: stage4.stage4_block10.block.conv1 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 66 | Name: stage4.stage4_block10.block.conv2 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 67 | Name: stage4.stage4_block10.block.conv3 | h_val:  0.000 | Color State: DANGER
+10:04:32 [INFO]   Layer 68 | Name: stage4.stage4_block11.block.conv1 | h_val: -1.000 | Color State: REJECTED
+10:04:32 [INFO]   Layer 69 | Name: stage4.stage4_block11.block.conv2 | h_val: -1.000 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 70 | Name: stage4.stage4_block11.block.conv3 | h_val: -1.000 | Color State: VERIFIED
+10:04:32 [INFO]   Layer 71 | Name: fc                   | h_val:  1.000 | Color State: DANGER
+10:04:34 [INFO] [FIG2] Saved methodology plot: figures_ep3_pre3/methodology/RegNetX_400MF_Cifar10_bav_methodology_regions.png
+10:04:36 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+10:04:36 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
+10:04:36 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
+10:04:36 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+10:04:36 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
+10:04:37 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at figures_ep3_pre3/learning_curves/XceptionNet_cifar10_training_curves.png
+10:04:38 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at figures_ep3_pre3/learning_curves/ConvNeXt_cifar10_training_curves.png
+10:04:39 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep3_pre3/learning_curves/VGG16_cifar10_training_curves.png
+10:04:40 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep3_pre3/learning_curves/RegNetX_400MF_cifar10_training_curves.png
+10:04:40 [INFO] [SUMMARY] Generating master lookup JSON...
+10:04:40 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/master_results_summary_ep3_pre3.json
+10:04:40 [INFO] Script completed.
