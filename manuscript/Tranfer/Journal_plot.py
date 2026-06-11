@@ -416,72 +416,42 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
             except Exception as e:
                 logger.error(f"Error parsing JSON for {arch}/{dataset}: {e}")
 
-        # Visually Pad Verified Regions mapped to a single CSV row so they survive the >= 2 enforcer
-        adjusted_verified_ranges = []
-        for (s, e) in verified_idx_ranges:
-            if s == e:
-                e = min(len(layers) - 1, e + 1)
-                h_vals[s] = min(h_vals[s], -0.25)
-                h_vals[e] = min(h_vals[e], -0.25)
-            adjusted_verified_ranges.append((s, e))
-        
-        verified_idx_ranges = adjusted_verified_ranges
-
         # --- Plotting Setup ---
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True, gridspec_kw={'height_ratios': [1, 1.5]})
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8.5), sharex=True, gridspec_kw={'height_ratios': [1, 1.65]})
         x_vals = range(1, len(layers) + 1)
         x_label = "Network Depth (Micro-Layers)"
         
-        ax1.plot(x_vals, variances, color='#4A4A4A', marker='o', markersize=4, label=r'Layer Variance ($\sigma_i$)')
-        ax1.plot(x_vals, sigma_bars, color='#ff7f0e', linestyle='--', linewidth=2.5, label=r'Local Context Mean ($\bar{\sigma}$)')
+        ax1.set_facecolor('#fbfbf8')
+        ax2.set_facecolor('#fbfbf8')
+        ax1.plot(x_vals, variances, color='#2f3e46', marker='o', markersize=3.5, label=r'Layer Variance ($\sigma_i$)', zorder=3)
+        ax1.plot(x_vals, sigma_bars, color='#c97b2a', linestyle='--', linewidth=2.2, label=r'Local Context Mean ($\bar{\sigma}$)', zorder=3)
         ax1.set_yscale('log')
+        ax1.grid(axis='y', linestyle=':', linewidth=0.8, alpha=0.35)
         
         title_str = f"Dynamic Structural Redundancy Analysis\n{arch} on {dataset.capitalize()}"
-        ax1.set_title(title_str, fontweight='bold', fontsize=14)
+        ax1.set_title(title_str, fontweight='bold', fontsize=15)
         ax1.legend(loc='upper right', frameon=False)
         sns.despine(ax=ax1)
 
         # ==========================================
-        # === STRICT 2-PASS RULE ENFORCEMENT ===
+        # === Selected Region Visualization ===
         # ==========================================
         
         veto_idx = int(len(layers) * 0.25)
         final_states = ["DANGER"] * len(layers)
+        verified_idx_set = set()
+        for s_idx, e_idx in verified_idx_ranges:
+            verified_idx_set.update(range(s_idx, e_idx + 1))
         
-        # PASS 1: Absolute ban on positive layers
         for i in range(len(layers)):
             if i < veto_idx:
                 final_states[i] = "VETO"
+            elif i in verified_idx_set:
+                final_states[i] = "VERIFIED"
+            elif h_vals[i] < 0:
+                final_states[i] = "REJECTED"
             else:
-                in_verified = any(s_idx <= i <= e_idx for s_idx, e_idx in verified_idx_ranges)
-                
-                # CRITICAL FIX: If h_vals is >= 0 (positive), it CANNOT be included.
-                if h_vals[i] >= 0:
-                    final_states[i] = "DANGER"
-                else:
-                    final_states[i] = "VERIFIED" if in_verified else "REJECTED"
-
-        # PASS 2: Enforce >= 2 contiguous negative blocks
-        n = len(final_states)
-        idx = 0
-        while idx < n:
-            # If we hit a negative block (Verified or Rejected)
-            if final_states[idx] in ["VERIFIED", "REJECTED"]:
-                j = idx
-                # Measure how long the contiguous block is
-                while j < n and final_states[j] in ["VERIFIED", "REJECTED"]:
-                    j += 1
-                
-                block_len = j - idx
-                
-                # If the continuous negative block is less than 2, neutralize it entirely
-                if block_len < 2:
-                    for k in range(idx, j):
-                        final_states[k] = "DANGER"
-                        h_vals[k] = 0.05  # Push visually positive so it doesn't render as a single negative drop
-                idx = j
-            else:
-                idx += 1
+                final_states[i] = "DANGER"
 
         # ==========================================
         # [DEBUG] Print the final color mapping mapping
@@ -491,13 +461,23 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
         # ==========================================
 
         # --- Bar Plot ---
-        state_colors = {"VETO": "#999999", "VERIFIED": "#2ca02c", "REJECTED": "#ff7f0e", "DANGER": "#d62728"}
+        state_colors = {"VETO": "#9aa0a6", "VERIFIED": "#1b8a5a", "REJECTED": "#f4a261", "DANGER": "#d1495b"}
         
-        bar_width = max(0.5, 120 / max(len(layers), 1))
-        ax2.bar(x_vals, h_vals, color=[state_colors[s] for s in final_states], alpha=0.85, edgecolor='black', linewidth=bar_width)
+        bar_width = max(0.55, 120 / max(len(layers), 1))
+        ax2.bar(
+            x_vals,
+            h_vals,
+            color=[state_colors[s] for s in final_states],
+            alpha=0.95,
+            edgecolor='#1f1f1f',
+            linewidth=max(0.35, bar_width * 0.08),
+            zorder=3,
+        )
         
-        ax2.axhline(y=0, color='#1f77b4', linestyle='--', alpha=0.8, linewidth=2)
+        ax2.axhline(y=0, color='#355070', linestyle='--', alpha=0.9, linewidth=2)
         ax2.set_ylim(-1.1, 1.1)
+        ax2.grid(axis='y', linestyle=':', linewidth=0.8, alpha=0.35, zorder=0)
+        ax2.set_ylabel('Relative Difference $h$', fontweight='bold', fontsize=12)
 
         # --- Zone Shading ---
         zones = []
@@ -511,15 +491,32 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
 
         for start, end, state in zones:
             span_start, span_end = (start + 1) - 0.5, (end + 1) + 0.5
-            alpha_val = 0.4 if state == "VETO" else 0.15
-            ax1.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, edgecolor='none')
-            ax2.axvspan(span_start, span_end, facecolor=state_colors.get(state, 'red'), alpha=alpha_val, label=state)
+            alpha_val = 0.22 if state == "VERIFIED" else 0.10
+            if state == "VETO":
+                alpha_val = 0.18
+            ax1.axvspan(span_start, span_end, facecolor=state_colors.get(state, '#d1495b'), alpha=alpha_val, edgecolor='none', zorder=1)
+            ax2.axvspan(span_start, span_end, facecolor=state_colors.get(state, '#d1495b'), alpha=alpha_val, label=state, edgecolor='none', zorder=1)
+
+        for s_idx, e_idx in verified_idx_ranges:
+            span_start, span_end = (s_idx + 1) - 0.5, (e_idx + 1) + 0.5
+            ax2.axvspan(span_start, span_end, facecolor='#2a9d8f', alpha=0.12, edgecolor='#1b8a5a', linewidth=1.2, zorder=2)
 
         handles, labels = ax2.get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
-        ax2.legend(by_label.values(), by_label.keys(), loc='upper center', bbox_to_anchor=(0.5, -0.25), ncol=4, frameon=False)
+        label_map = {
+            'VETO': 'Veto window',
+            'VERIFIED': 'Selected and collapsed',
+            'REJECTED': 'Negative but not selected',
+            'DANGER': 'Positive / unselected',
+        }
+        legend_labels = [label_map.get(label, label) for label in by_label.keys()]
+        ax2.legend(by_label.values(), legend_labels, loc='upper center', bbox_to_anchor=(0.5, -0.22), ncol=4, frameon=False)
         
         ax2.set_xlabel(x_label, fontweight='bold', fontsize=12)
+        ax2.set_xticks(list(x_vals))
+        ax2.tick_params(axis='x', labelsize=8, rotation=90)
+        ax1.margins(x=0.01)
+        ax2.margins(x=0.01)
         plt.tight_layout()
         
         # --- Final Save ---
