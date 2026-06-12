@@ -129,14 +129,13 @@ def get_layer_variances(model, dummy_input):
                 if out.ndim == 4:
                     if out.shape[2] > 1 and out.shape[3] > 1:
                         # Standard spatial variance
-                        variances[name] = out.var(dim=[2, 3]).mean().item()
+                        variances[name] = out.var(dim=[2, 3], unbiased=False).mean().item()
                     else:
-                        # Fallback for 1x1 tensors: calculate variance across channel dim (dim=1)
-                        # This avoids the degrees of freedom <= 0 error.
-                        variances[name] = out.var(dim=1).mean().item()
+                        # Fallback for 1x1 tensors: calculate variance across channel dim safely
+                        variances[name] = out.var(dim=1, unbiased=False).mean().item() if out.shape[1] > 1 else 0.0
                 else:
                     # Non-spatial (e.g., Linear layer output)
-                    variances[name] = out.var().item()
+                    variances[name] = out.var(unbiased=False).item()
             return None
         return hook
     
@@ -276,7 +275,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                     status = "Veto"
                 elif not is_valid_target: 
                     status = "Rejected"
-                elif h >= 0: 
+                elif h >= 0 or np.isnan(h): 
                     # [CRITICAL FIX] Non-parametric layers act as "Passive" bridges so they don't fracture blocks
                     status = "Passive" if not is_parametric else "Rejected"
                 else: 
@@ -290,8 +289,8 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                         reason = f"veto window (idx={i}, cutoff={veto_idx})"
                     elif not is_valid_target:
                         reason = f"invalid target type={type(mod).__name__ if mod is not None else 'None'}"
-                    elif h >= 0:
-                        reason = f"non-negative h={h:.6f}"
+                    elif h >= 0 or np.isnan(h):
+                        reason = f"non-negative or NaN h={h:.6f}"
                     print(
                         f"[DEBUG] [SCAN] Layer {i:02d} | {layer_name:<45} | h={h:.6f} | "
                         f"status={status:<8} | reason={reason}"
@@ -618,10 +617,15 @@ def run_baseline_pass(model, input_tensor):
             y = out.detach().cpu()
             saved_tensors[name] = {"in": x, "out": y}
             if y.ndim == 4:
-                act_var = y.var(dim=[2, 3]).mean().item()
-                act_mean = y.mean(dim=[2, 3]).mean().item()
+                if y.shape[2] > 1 and y.shape[3] > 1:
+                    act_var = y.var(dim=[2, 3], unbiased=False).mean().item()
+                    act_mean = y.mean(dim=[2, 3]).mean().item()
+                else:
+                    # Fallback for 1x1 spatial dims: calculate var across channel dim safely
+                    act_var = y.var(dim=1, unbiased=False).mean().item() if y.shape[1] > 1 else 0.0
+                    act_mean = y.mean(dim=1).mean().item()
             else:
-                act_var = y.var().item()
+                act_var = y.var(unbiased=False).item()
                 act_mean = y.mean().item()
                 
             layer_variances[name] = act_var
