@@ -648,7 +648,7 @@ def fig3_v2t_heuristic_validation(
     plt.close()
     logger.info(f"[FIG3] Saved V2T heuristic validation map at {out_dir / 'V2T_heuristic_validation_map.png'}")
 # ========================= FIG 4 ========================= #
-
+   
 def fig4_comprehensive_search_space_map(
     df: pd.DataFrame,
     epochs: int,
@@ -658,11 +658,11 @@ def fig4_comprehensive_search_space_map(
     import matplotlib.gridspec as gridspec
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    def get_acc_color(acc):
-        if pd.isna(acc): return "#4C72B0"
-        if acc >= 90: return "#2ca02c"     # high accuracy
-        if acc >= 75: return "#ff7f0e"     # medium
-        return "#d62728"                   # low
+    def get_acc_color(d_acc):
+        if pd.isna(d_acc): return "#4C72B0" 
+        if d_acc >= -2.0: return "#2ca02c"
+        if d_acc >= -6.0: return "#ff7f0e"
+        return "#d62728"
 
     def robust_match(target_name, is_quant_target, g_df):
         try:
@@ -674,144 +674,152 @@ def fig4_comprehensive_search_space_map(
             if not m.empty: return m
             def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
             st = squash(target_name)
-            return sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
-        except Exception:
-            return pd.DataFrame()
+            fuzzy = sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
+            return fuzzy
+        except Exception: return pd.DataFrame()
 
     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
         clean_ds = dataset.strip("_").lower()
-
+        
+        # --- Bulletproof Path Discovery for Layer Stats ---
         arch_dir = Path(f"./runs/plots/{arch}")
         if not arch_dir.exists(): continue
-
+        
+        # Case-insensitive dataset folder match
         ds_dirs = [d for d in arch_dir.iterdir() if d.is_dir() and d.name.lower() == clean_ds]
         if not ds_dirs: continue
-
+        
         stats_dir = ds_dirs[0] / f"epochs{epochs}_pretrain{pretrain}" / "Layer_Statistics"
         if not stats_dir.exists(): continue
-
-        csv_candidates = [f for f in stats_dir.glob("*_layer_stats.csv") if "normalized" not in f.name.lower()]
-        if not csv_candidates: continue
-
-        layer_df = pd.read_csv(csv_candidates[0])
+        
+        all_csvs = list(stats_dir.glob("*_layer_stats.csv"))
+        csv_candidates = [f for f in all_csvs if "normalized" not in f.name.lower()]
+        
+        if not csv_candidates: 
+            continue
+        csv_path = csv_candidates[0]
+            
+        layer_df = pd.read_csv(csv_path)
         layers = layer_df['Layer'].tolist()
 
+        # --- FIX: Robust recursive JSON search (Case-Insensitive Match) ---
+        # --- FIX: Strict JSON search to prevent CIFAR-10/100 collisions ---
         potential_jsons = list(Path(".").rglob(f"{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
+        
+        # Enforce boundaries with underscores so 'cifar10' doesn't match 'cifar100'
         all_jsons = [p for p in potential_jsons if f"_{clean_ds}_" in p.name.lower()]
-        if not all_jsons: continue
-
+        
+        if not all_jsons: 
+            continue
+            
         try:
             with open(all_jsons[0], 'r') as f:
                 model_exps = json.load(f)
-        except Exception:
-            continue
-
+        except Exception: continue
         if not model_exps: continue
 
         baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
         if baseline_mask.any():
             base_row = g_metrics[baseline_mask].iloc[0]
-            base_p = base_row.get('params', np.nan)
-            base_f = base_row.get('flops', np.nan)
-        else:
-            base_p = base_f = np.nan
+            base_p, base_f, base_m = base_row.get('params', np.nan), base_row.get('flops', np.nan), base_row.get('memory', np.nan)
+        else: base_p = base_f = base_m = np.nan
 
         for is_quant_target in [False, True]:
             valid_exps = []
-
+            
             for exp_name, ranges in model_exps.items():
+                
+                # [CRITICAL FIX] Skip the Status Map metadata from plotting!
                 if exp_name == "Status_Map":
                     continue
-
+                    
                 cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
-
+                
                 if "Original" in cleaned_name or "Baseline" in cleaned_name:
                     cleaned_name = "Original Model"
-
-                m = robust_match(cleaned_name, is_quant_target, g_metrics)
-
+                
+                m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
+                
                 if not m.empty:
                     exp_results = m.mean(numeric_only=True)
-
-                    acc = exp_results.get('acc', np.nan)
                     p_red = 100 * (1 - exp_results.get('params', np.nan) / base_p) if pd.notnull(base_p) else np.nan
                     f_red = 100 * (1 - exp_results.get('flops', np.nan) / base_f) if pd.notnull(base_f) else np.nan
-
-                    if p_red < -0.1 or f_red < -0.1:
-                        continue
+                    m_red = 100 * (1 - exp_results.get('memory', np.nan) / base_m) if pd.notnull(base_m) else np.nan
+                    
+                    if p_red < -0.1 or f_red < -0.1 or m_red < -0.1:
+                        continue 
                 else:
-                    exp_results = {'acc': np.nan}
-                    acc = np.nan
-                    p_red = f_red = np.nan
-
-                valid_exps.append((exp_name, ranges, acc, cleaned_name, p_red, f_red))
-
+                    exp_results = {'d_acc': np.nan}
+                    p_red, f_red, m_red = np.nan, np.nan, np.nan
+                        
+                valid_exps.append((exp_name, ranges, exp_results, cleaned_name, p_red, f_red, m_red))
+                    
             if not valid_exps: continue
-
-            valid_exps = sorted(valid_exps, key=lambda x: (1 if x[1] is None else 0, x[2] if pd.notnull(x[2]) else -1))
-
+            
+            valid_exps = sorted(valid_exps, key=lambda x: (1 if x[1] is None else 0, x[2].get('d_acc', -100)))
+            
             num_bars = len(valid_exps)
             file_suffix = "quantized" if is_quant_target else "unquantized"
 
             fig_height = max(3.5, 0.5 * num_bars + 1)
-
-            fig_cand = plt.figure(figsize=(14, fig_height))
+            y_limits = (-1, num_bars)
+            
+            fig_cand = plt.figure(figsize=(14, fig_height)) 
             gs = gridspec.GridSpec(1, 2, width_ratios=[2.5, 1.5], wspace=0.05)
-
+            
             ax_heur = fig_cand.add_subplot(gs[0])
             ax_side = fig_cand.add_subplot(gs[1], sharey=ax_heur)
             ax_side.axis('off')
-
-            for i, (_, ranges, acc, _, _, _) in enumerate(valid_exps):
+            
+            for i, (orig_exp_name, ranges, exp_results, display_name, p_red, f_red, m_red) in enumerate(valid_exps):
                 if ranges is None:
                     continue
-
+                    
                 if isinstance(ranges, tuple) or (isinstance(ranges, list) and len(ranges) > 0 and isinstance(ranges[0], str)):
                     ranges = [ranges]
-
-                color = get_acc_color(acc)
-
+                
+                d_acc = exp_results.get('d_acc', np.nan)
+                color = get_acc_color(d_acc)
                 for start_layer, end_layer in ranges:
                     try:
                         s_idx = next(idx for idx, n in enumerate(layers) if start_layer == n) + 1
                         e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer == n) + 1
                         ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.85)
-                    except StopIteration:
-                        continue
-
+                    except StopIteration: continue
+            
             ax_heur.set_xlim(0, len(layers) + 1)
-            ax_heur.set_ylim((-1, num_bars))
+            ax_heur.set_ylim(y_limits)
             ax_heur.set_yticks(range(len(valid_exps)))
-
-            ax_heur.set_yticklabels(
-                [e[3] if e[1] is not None else f"{e[3]} (Control)" for e in valid_exps],
-                fontsize=11, fontweight='bold'
-            )
-            ax_heur.set_xlabel("Network Depth", fontweight='bold', fontsize=11)
-            ax_heur.set_title("Structural Candidates & Hardware Reductions",
-                              loc='left', pad=25, fontsize=14, fontweight='bold')
-
+            
+            # Dynamic terminology check
+            block_archs = ["ConvNeXt", "RegNetX_400MF", "MobileNet", "InceptionNet", "XceptionNet"]
+            x_label = "Network Depth (Macro-Blocks)" if arch in block_archs else "Network Depth (Individual Layers)"
+            
+            ax_heur.set_yticklabels([e[3] if e[1] is not None else f"{e[3]} (Control)" for e in valid_exps], fontsize=11, fontweight='bold')
+            ax_heur.set_xlabel(x_label, fontweight='bold', fontsize=11)
+            ax_heur.set_title(f"Structural Candidates & Hardware Reductions", loc='left', pad=25, fontsize=14, fontweight='bold')
             sns.despine(ax=ax_heur)
 
-            # UPDATED SIDEBAR
-            cols = [0.15, 0.50, 0.85]
-            headers = ["Accuracy", "Params ↓", "FLOPs ↓"]
-
-            header_y = len(valid_exps)
+            cols = [0.10, 0.35, 0.65, 0.90]
+            headers = ["$\\Delta$ Acc", "Params $\\downarrow$", "FLOPs $\\downarrow$", "Memory $\\downarrow$"]
+            
+            header_y = len(valid_exps) 
             for x, h in zip(cols, headers):
-                ax_side.text(x, header_y, h, ha='center', va='bottom',
-                             fontweight='bold', fontsize=11, color='#333333')
-
-            for i, (_, ranges, acc, _, p_red, f_red) in enumerate(valid_exps):
-                c = "#333333" if ranges is None else get_acc_color(acc)
-
-                acc_str = f"{acc:.2f}" if pd.notnull(acc) else "N/A"
+                ax_side.text(x, header_y, h, ha='center', va='bottom', fontweight='bold', fontsize=11, color='#333333')
+            
+            for i, (_, ranges, exp_results, _, p_red, f_red, m_red) in enumerate(valid_exps):
+                d_acc = exp_results.get('d_acc', np.nan)
+                c = "#333333" if ranges is None else get_acc_color(d_acc)
+                
+                d_str = f"{d_acc:+.1f}%" if pd.notnull(d_acc) else "N/A"
                 p_str = f"{p_red:.1f}%" if pd.notnull(p_red) else "N/A"
                 f_str = f"{f_red:.1f}%" if pd.notnull(f_red) else "N/A"
-
-                for x, val in zip(cols, [acc_str, p_str, f_str]):
-                    ax_side.text(x, i, val, ha='center', va='center',
-                                 color=c, fontsize=11)
+                m_str = f"{m_red:.1f}%" if pd.notnull(m_red) else "N/A"
+                
+                for x, val in zip(cols, [d_str, p_str, f_str, m_str]):
+                    fw = 'bold' if x == cols[0] else 'normal'
+                    alpha = 0.6 if (d_acc < -6.0 and x != cols[0] and ranges is not None) else 1.0
+                    ax_side.text(x, i, val, ha='center', va='center', color=c, fontweight=fw, fontsize=11, alpha=alpha)
 
             plt.tight_layout()
             cand_save_path = out_dir / f"{arch}_{dataset}_candidates_sidebar_{file_suffix}.png"
@@ -819,185 +827,6 @@ def fig4_comprehensive_search_space_map(
             plt.close(fig_cand)
 
     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
-    
-# def fig4_comprehensive_search_space_map(
-#     df: pd.DataFrame,
-#     epochs: int,
-#     pretrain: int,
-#     out_dir: Path = Path("./figures/search_space")
-# ):
-#     import matplotlib.gridspec as gridspec
-#     out_dir.mkdir(parents=True, exist_ok=True)
-
-#     def get_acc_color(d_acc):
-#         if pd.isna(d_acc): return "#4C72B0" 
-#         if d_acc >= -2.0: return "#2ca02c"
-#         if d_acc >= -6.0: return "#ff7f0e"
-#         return "#d62728"
-
-#     def robust_match(target_name, is_quant_target, g_df):
-#         try:
-#             sub_df = g_df[g_df['is_quantized'] == is_quant_target]
-#             if sub_df.empty: return pd.DataFrame()
-#             m = sub_df[sub_df['base_name'] == target_name]
-#             if not m.empty: return m
-#             m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
-#             if not m.empty: return m
-#             def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
-#             st = squash(target_name)
-#             fuzzy = sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
-#             return fuzzy
-#         except Exception: return pd.DataFrame()
-
-#     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-#         clean_ds = dataset.strip("_").lower()
-        
-#         # --- Bulletproof Path Discovery for Layer Stats ---
-#         arch_dir = Path(f"./runs/plots/{arch}")
-#         if not arch_dir.exists(): continue
-        
-#         # Case-insensitive dataset folder match
-#         ds_dirs = [d for d in arch_dir.iterdir() if d.is_dir() and d.name.lower() == clean_ds]
-#         if not ds_dirs: continue
-        
-#         stats_dir = ds_dirs[0] / f"epochs{epochs}_pretrain{pretrain}" / "Layer_Statistics"
-#         if not stats_dir.exists(): continue
-        
-#         all_csvs = list(stats_dir.glob("*_layer_stats.csv"))
-#         csv_candidates = [f for f in all_csvs if "normalized" not in f.name.lower()]
-        
-#         if not csv_candidates: 
-#             continue
-#         csv_path = csv_candidates[0]
-            
-#         layer_df = pd.read_csv(csv_path)
-#         layers = layer_df['Layer'].tolist()
-
-#         # --- FIX: Robust recursive JSON search (Case-Insensitive Match) ---
-#         # --- FIX: Strict JSON search to prevent CIFAR-10/100 collisions ---
-#         potential_jsons = list(Path(".").rglob(f"{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
-        
-#         # Enforce boundaries with underscores so 'cifar10' doesn't match 'cifar100'
-#         all_jsons = [p for p in potential_jsons if f"_{clean_ds}_" in p.name.lower()]
-        
-#         if not all_jsons: 
-#             continue
-            
-#         try:
-#             with open(all_jsons[0], 'r') as f:
-#                 model_exps = json.load(f)
-#         except Exception: continue
-#         if not model_exps: continue
-
-#         baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
-#         if baseline_mask.any():
-#             base_row = g_metrics[baseline_mask].iloc[0]
-#             base_p, base_f, base_m = base_row.get('params', np.nan), base_row.get('flops', np.nan), base_row.get('memory', np.nan)
-#         else: base_p = base_f = base_m = np.nan
-
-#         for is_quant_target in [False, True]:
-#             valid_exps = []
-            
-#             for exp_name, ranges in model_exps.items():
-                
-#                 # [CRITICAL FIX] Skip the Status Map metadata from plotting!
-#                 if exp_name == "Status_Map":
-#                     continue
-                    
-#                 cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
-                
-#                 if "Original" in cleaned_name or "Baseline" in cleaned_name:
-#                     cleaned_name = "Original Model"
-                
-#                 m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
-                
-#                 if not m.empty:
-#                     exp_results = m.mean(numeric_only=True)
-#                     p_red = 100 * (1 - exp_results.get('params', np.nan) / base_p) if pd.notnull(base_p) else np.nan
-#                     f_red = 100 * (1 - exp_results.get('flops', np.nan) / base_f) if pd.notnull(base_f) else np.nan
-#                     m_red = 100 * (1 - exp_results.get('memory', np.nan) / base_m) if pd.notnull(base_m) else np.nan
-                    
-#                     if p_red < -0.1 or f_red < -0.1 or m_red < -0.1:
-#                         continue 
-#                 else:
-#                     exp_results = {'d_acc': np.nan}
-#                     p_red, f_red, m_red = np.nan, np.nan, np.nan
-                        
-#                 valid_exps.append((exp_name, ranges, exp_results, cleaned_name, p_red, f_red, m_red))
-                    
-#             if not valid_exps: continue
-            
-#             valid_exps = sorted(valid_exps, key=lambda x: (1 if x[1] is None else 0, x[2].get('d_acc', -100)))
-            
-#             num_bars = len(valid_exps)
-#             file_suffix = "quantized" if is_quant_target else "unquantized"
-
-#             fig_height = max(3.5, 0.5 * num_bars + 1)
-#             y_limits = (-1, num_bars)
-            
-#             fig_cand = plt.figure(figsize=(14, fig_height)) 
-#             gs = gridspec.GridSpec(1, 2, width_ratios=[2.5, 1.5], wspace=0.05)
-            
-#             ax_heur = fig_cand.add_subplot(gs[0])
-#             ax_side = fig_cand.add_subplot(gs[1], sharey=ax_heur)
-#             ax_side.axis('off')
-            
-#             for i, (orig_exp_name, ranges, exp_results, display_name, p_red, f_red, m_red) in enumerate(valid_exps):
-#                 if ranges is None:
-#                     continue
-                    
-#                 if isinstance(ranges, tuple) or (isinstance(ranges, list) and len(ranges) > 0 and isinstance(ranges[0], str)):
-#                     ranges = [ranges]
-                
-#                 d_acc = exp_results.get('d_acc', np.nan)
-#                 color = get_acc_color(d_acc)
-#                 for start_layer, end_layer in ranges:
-#                     try:
-#                         s_idx = next(idx for idx, n in enumerate(layers) if start_layer == n) + 1
-#                         e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer == n) + 1
-#                         ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.85)
-#                     except StopIteration: continue
-            
-#             ax_heur.set_xlim(0, len(layers) + 1)
-#             ax_heur.set_ylim(y_limits)
-#             ax_heur.set_yticks(range(len(valid_exps)))
-            
-#             # Dynamic terminology check
-#             block_archs = ["ConvNeXt", "RegNetX_400MF", "MobileNet", "InceptionNet", "XceptionNet"]
-#             x_label = "Network Depth (Macro-Blocks)" if arch in block_archs else "Network Depth (Individual Layers)"
-            
-#             ax_heur.set_yticklabels([e[3] if e[1] is not None else f"{e[3]} (Control)" for e in valid_exps], fontsize=11, fontweight='bold')
-#             ax_heur.set_xlabel(x_label, fontweight='bold', fontsize=11)
-#             ax_heur.set_title(f"Structural Candidates & Hardware Reductions", loc='left', pad=25, fontsize=14, fontweight='bold')
-#             sns.despine(ax=ax_heur)
-
-#             cols = [0.10, 0.35, 0.65, 0.90]
-#             headers = ["$\\Delta$ Acc", "Params $\\downarrow$", "FLOPs $\\downarrow$", "Memory $\\downarrow$"]
-            
-#             header_y = len(valid_exps) 
-#             for x, h in zip(cols, headers):
-#                 ax_side.text(x, header_y, h, ha='center', va='bottom', fontweight='bold', fontsize=11, color='#333333')
-            
-#             for i, (_, ranges, exp_results, _, p_red, f_red, m_red) in enumerate(valid_exps):
-#                 d_acc = exp_results.get('d_acc', np.nan)
-#                 c = "#333333" if ranges is None else get_acc_color(d_acc)
-                
-#                 d_str = f"{d_acc:+.1f}%" if pd.notnull(d_acc) else "N/A"
-#                 p_str = f"{p_red:.1f}%" if pd.notnull(p_red) else "N/A"
-#                 f_str = f"{f_red:.1f}%" if pd.notnull(f_red) else "N/A"
-#                 m_str = f"{m_red:.1f}%" if pd.notnull(m_red) else "N/A"
-                
-#                 for x, val in zip(cols, [d_str, p_str, f_str, m_str]):
-#                     fw = 'bold' if x == cols[0] else 'normal'
-#                     alpha = 0.6 if (d_acc < -6.0 and x != cols[0] and ranges is not None) else 1.0
-#                     ax_side.text(x, i, val, ha='center', va='center', color=c, fontweight=fw, fontsize=11, alpha=alpha)
-
-#             plt.tight_layout()
-#             cand_save_path = out_dir / f"{arch}_{dataset}_candidates_sidebar_{file_suffix}.png"
-#             fig_cand.savefig(cand_save_path, bbox_inches='tight')
-#             plt.close(fig_cand)
-
-#     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
 
 # ========================= FIG 5 ========================= #
 def fig5_hardware_efficiency_profiles(
