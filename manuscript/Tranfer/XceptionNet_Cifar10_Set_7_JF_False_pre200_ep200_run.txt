@@ -1,0 +1,461 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='XceptionNet', dataset='Cifar10', epochs=200, pretrain=200, experiment='Set_7', JF=True, Kevin=False, quant=False)
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading CIFAR-10 data for XceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+Loading CIFAR-10 data for XceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] Base checkpoint path resolved: None
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Set_7'
+============================================================
+
+[INFO] Validating JSON configuration map at: XceptionNet_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
+[DEBUG] Loaded 12 configurations from map.
+[INFO] Discovered trained baseline from Stage 1: XceptionNet_Cifar10_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
+[INFO] Overriding base checkpoint. Collapsing will begin from these trained weights.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Set_7 ---
+    Budget allocated: 200 epochs
+
+=== Running JF experiment ===
+[•] Collapsing ranges [('middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.pointwise')] for Set_7
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (XceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 1 pairs.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 20,827,442
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise
+[STEP] Calling _collapse_block('middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.pointwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.7.rep.4.depthwise
+[INFO] End Target   : middle_flow.7.rep.7.pointwise
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.7.rep.4.depthwise' -> 'middle_flow.7.rep.7.pointwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.7.rep' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'middle_flow.7.rep'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 7
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 4 -> SeparableConv2d
+    [LAYER MAP] 5 -> BatchNorm2d
+    [LAYER MAP] 6 -> ReLU
+    [LAYER MAP] 7 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'middle_flow.7.rep.4'
+[DEBUG] Hooking End Node   : 'middle_flow.7.rep.7'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'middle_flow.7.rep.4' -> 'middle_flow.7.rep.7'...
+[DEBUG] Captured input shape: (512, 728, 2, 2), output shape: (512, 728, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 728, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 728, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 20,827,442
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.7.rep.7.pointwise'...
+
+[STEP] Searching for next nn.Linear after 'middle_flow.7.rep.7.pointwise'...
+[DEBUG] Exact layer match found at index 201: middle_flow.7.rep.7.pointwise (Conv2d)
+[DEBUG] Scanning forward from index 202 for next Linear...
+[DEBUG] Found Linear layer ahead: fc (Linear(in_features=2048, out_features=10, bias=True))
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 728, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 728, 2, 2)
+[DEBUG] Determined out_channels=728
+[DEBUG] Final block output shape: (512, 728, 2, 2)
+[DEBUG] Determined out_channels=728
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[DEBUG] Comparing spatial dims: expected_hw=2, current_hw=4 (HxW=2x2)
+[DEBUG] Suggest AdaptiveAvgPool2d(1,2) to reconcile linear in_features mismatch.
+[RESULT] Block analysis complete:
+         out_shape=(512, 728, 2, 2)
+         out_channels=728
+         has_pool=False
+         adaptive_pool_to_use=AdaptiveAvgPool2d(output_size=(1, 2))
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 728, 2, 2)
+    - out_channels             : 728
+    - pool_layer               : None
+    - adaptive_pool_to_use     : AdaptiveAvgPool2d(output_size=(1, 2))
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.7.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'middle_flow.7.rep'
+[DEBUG] Layer Indices    : 4 -> 7
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 728 (in) -> 728 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 728, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(728, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'middle_flow.7.rep'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 20,827,442
+[INFO] Post-collapse : 20,284,354
+[INFO] Net Change    : -543,088
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 728, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.7.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.7.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (512, 728, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Downstream 'middle_flow.7.rep.5' executed successfully, output shape: (512, 728, 2, 2)
+[DEBUG] Downstream 'middle_flow.7.rep.6' executed successfully, output shape: (512, 728, 2, 2)
+[DEBUG] Downstream 'middle_flow.7.rep.7' executed successfully, output shape: (512, 728, 2, 2)
+[DEBUG] Downstream 'middle_flow.7.rep.8' executed successfully, output shape: (512, 728, 2, 2)
+[RESULT] ✅ Downstream validation for 'middle_flow.7.rep' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'middle_flow.7.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'middle_flow.7.rep.4.depthwise' → 'middle_flow.7.rep.7.pointwise'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise)
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 20,827,442
+[INFO] Parameters after : 20,284,354
+[INFO] ΔParams = +543,088 (expected ≤ 0)
+[RESULT] ✅ collapse_only complete. Total collapsed blocks: 1
+[•] Starting experiment 'Set_7' in workflow 'JF' | Epoch Target: 200
+[•] No intermediate checkpoint found — starting fresh
+[•] Epoch 0
+[•] Epoch 1
+[•] Epoch 2
+[•] Epoch 3
+[•] Epoch 4
+[•] Epoch 5
+[•] Epoch 6
+[•] Epoch 7
+[•] Epoch 8
+[•] Epoch 9
+[•] Epoch 10
+[•] Epoch 11
+[•] Epoch 12
+[•] Epoch 13
+[•] Epoch 14
+[•] Epoch 15
+[•] Epoch 16
+[•] Epoch 17
+[•] Epoch 18
+[•] Epoch 19
+[•] Epoch 20
+[•] Epoch 21
+[•] Epoch 22
+[•] Epoch 23
+[•] Epoch 24
+[•] Epoch 25
+[•] Epoch 26
+[•] Epoch 27
+[•] Epoch 28
+[•] Epoch 29
+[•] Epoch 30
+[•] Epoch 31
+[•] Epoch 32
+[•] Epoch 33
+[•] Epoch 34
+[•] Epoch 35
+[•] Epoch 36
+[•] Epoch 37
+[•] Epoch 38
+[•] Epoch 39
+[•] Epoch 40
+[•] Epoch 41
+[•] Epoch 42
+[•] Epoch 43
+[•] Epoch 44
+[•] Epoch 45
+[•] Epoch 46
+[•] Epoch 47
+[•] Epoch 48
+[•] Epoch 49
+[•] Epoch 50
+[•] Epoch 51
+[•] Epoch 52
+[•] Epoch 53
+[•] Epoch 54
+[•] Epoch 55
+[•] Epoch 56
+[•] Epoch 57
+[•] Epoch 58
+[•] Epoch 59
+[•] Epoch 60
+[•] Epoch 61
+[•] Epoch 62
+[•] Epoch 63
+[•] Epoch 64
+[•] Epoch 65
+[•] Epoch 66
+[•] Epoch 67
+[•] Epoch 68
+[•] Epoch 69
+[•] Epoch 70
+[•] Epoch 71
+[•] Epoch 72
+[•] Epoch 73
+[•] Epoch 74
+[•] Epoch 75
+[•] Epoch 76
+[•] Epoch 77
+[•] Epoch 78
+[•] Epoch 79
+[•] Epoch 80
+[•] Epoch 81
+[•] Epoch 82
+[•] Epoch 83
+[•] Epoch 84
+[•] Epoch 85
+[•] Epoch 86
+[•] Epoch 87
+[•] Epoch 88
+[•] Epoch 89
+[•] Epoch 90
+[•] Epoch 91
+[•] Epoch 92
+[•] Epoch 93
+[•] Epoch 94
+[•] Epoch 95
+[•] Epoch 96
+[•] Epoch 97
+[•] Epoch 98
+[•] Epoch 99
+[•] Epoch 100
+[•] Epoch 101
+[•] Epoch 102
+[•] Epoch 103
+[•] Epoch 104
+[•] Epoch 105
+[•] Epoch 106
+[•] Epoch 107
+[•] Epoch 108
+[•] Epoch 109
+[•] Epoch 110
+[•] Epoch 111
+[•] Epoch 112
+[•] Epoch 113
+[•] Epoch 114
+[•] Epoch 115
+[•] Epoch 116
+[•] Epoch 117
+[•] Epoch 118
+[•] Epoch 119
+[•] Epoch 120
+[•] Epoch 121
+[•] Epoch 122
+[•] Epoch 123
+[•] Epoch 124
+[•] Epoch 125
+[•] Epoch 126
+[•] Epoch 127
+[•] Epoch 128
+[•] Epoch 129
+[•] Epoch 130
+[•] Epoch 131
+[•] Epoch 132
+[•] Epoch 133
+[•] Epoch 134
+[•] Epoch 135
+[•] Epoch 136
+[•] Epoch 137
+[•] Epoch 138
+[•] Epoch 139
+[•] Epoch 140
+[•] Epoch 141
+[•] Epoch 142
+[•] Epoch 143
+[•] Epoch 144
+[•] Epoch 145
+[•] Epoch 146
+[•] Epoch 147
+[•] Epoch 148
+[•] Epoch 149
+[•] Epoch 150
+[•] Epoch 151
+[•] Epoch 152
+[•] Epoch 153
+[•] Epoch 154
+[•] Epoch 155
+[•] Epoch 156
+[•] Epoch 157
+[•] Epoch 158
+[•] Epoch 159
+[•] Epoch 160
+[•] Epoch 161
+[•] Epoch 162
+[•] Epoch 163
+[•] Epoch 164
+[•] Epoch 165
+[•] Epoch 166
+[•] Epoch 167
+[•] Epoch 168
+[•] Epoch 169
+[•] Epoch 170
+[•] Epoch 171
+[•] Epoch 172
+[•] Epoch 173
+[•] Epoch 174
+[•] Epoch 175
+[•] Epoch 176
+[•] Epoch 177
+[•] Epoch 178
+[•] Epoch 179
+[•] Epoch 180
+[•] Epoch 181
+[•] Epoch 182
+[•] Epoch 183
+[•] Epoch 184
+[•] Epoch 185
+[•] Epoch 186
+[•] Epoch 187
+[•] Epoch 188
+[•] Epoch 189
+[•] Epoch 190
+[•] Epoch 191
+[•] Epoch 192
+[•] Epoch 193
+[•] Epoch 194
+[•] Epoch 195
+[•] Epoch 196
+[•] Epoch 197
+[•] Epoch 198
+[•] Epoch 199
+2026-06-15 02:13:11,226 - WARNING - Unsupported operator aten::max_pool2d encountered 3 time(s)
+2026-06-15 02:13:11,226 - WARNING - Unsupported operator aten::add encountered 12 time(s)
+2026-06-15 02:13:11,226 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+block4.rep.6.pool.pool, middle_flow.7.rep.5, middle_flow.7.rep.6, middle_flow.7.rep.7
+2026-06-15 02:13:14,400 - WARNING - Unsupported operator aten::max_pool2d encountered 3 time(s)
+2026-06-15 02:13:14,400 - WARNING - Unsupported operator aten::add encountered 12 time(s)
+2026-06-15 02:13:14,401 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+block4.rep.6.pool.pool, middle_flow.7.rep.5, middle_flow.7.rep.6, middle_flow.7.rep.7
+[•] Running diagnostics for Set_7...
+Saved memory CSV to XceptionNet_Cifar10_None_epochs200_pretrain200/plots/Set_7_memory.csv
+Saved memory plot to XceptionNet_Cifar10_None_epochs200_pretrain200/plots/Set_7_memory.svg
+[•] Extracting explainability data for Set_7...
+[✓] Weight distribution figure saved to XceptionNet_Cifar10_None_epochs200_pretrain200/plots/Set_7_explainability_weight_distributions.svg
+[✓] Saved explainability arrays to XceptionNet_Cifar10_None_epochs200_pretrain200/plots/Set_7_explainability.npz
+[✓] Explainability figure saved to XceptionNet_Cifar10_None_epochs200_pretrain200/plots/Set_7_explainability.svg
+[✓] Diagnostics complete for Set_7
+[✓] Saved plot: XceptionNet_Cifar10_None_epochs200_pretrain200/plots/JF_Set_7_metrics.svg
+[✓] Saved metrics for 'Set_7_JF' → XceptionNet_Cifar10_None_epochs200_pretrain200/metrics/XceptionNet_CIFAR10_metrics_20260615_021358_407089_28223.json
+[✓] Merged 10 metrics files → XceptionNet_Cifar10_None_epochs200_pretrain200/metrics/merged_metrics.json
+[✓] Experiment 'Set_7' completed.
+02:14:12 [INFO] Scanning for metrics files matching epochs=200, pretrain=200
+02:15:04 [INFO] Successfully parsed 139 experiment rows.
+02:15:15 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar100__accuracy.png
+02:15:29 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar100__params.png
+02:15:30 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar100__flops.png
+02:15:31 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar100__memory.png
+02:15:32 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar10__accuracy.png
+02:15:47 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar10__params.png
+02:16:11 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar10__flops.png
+02:16:31 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar10__memory.png
+02:16:50 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar100__accuracy.png
+02:17:12 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar100__params.png
+02:17:27 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar100__flops.png
+02:17:42 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar100__memory.png
+02:18:09 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar10__accuracy.png
+02:18:09 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar10__params.png
+02:18:10 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar10__flops.png
+02:18:11 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar10__memory.png
+02:18:11 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at figures_ep200_pre200/individual_plots/InceptionNet_tinyimagenet_accuracy.png
+02:18:12 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at figures_ep200_pre200/individual_plots/InceptionNet_tinyimagenet_params.png
+02:18:12 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at figures_ep200_pre200/individual_plots/InceptionNet_tinyimagenet_flops.png
+02:18:32 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at figures_ep200_pre200/individual_plots/InceptionNet_tinyimagenet_memory.png
+02:18:38 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at figures_ep200_pre200/individual_plots/MobileNet_cifar100__accuracy.png
+02:18:40 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at figures_ep200_pre200/individual_plots/MobileNet_cifar100__params.png
+02:18:41 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at figures_ep200_pre200/individual_plots/MobileNet_cifar100__flops.png
+02:18:47 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at figures_ep200_pre200/individual_plots/MobileNet_cifar100__memory.png
+02:18:48 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at figures_ep200_pre200/individual_plots/MobileNet_cifar10__accuracy.png
+02:18:49 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at figures_ep200_pre200/individual_plots/MobileNet_cifar10__params.png
+02:18:51 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at figures_ep200_pre200/individual_plots/MobileNet_cifar10__flops.png
+02:18:53 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at figures_ep200_pre200/individual_plots/MobileNet_cifar10__memory.png
+02:18:54 [INFO] [FIG1] Saved accuracy plot for MobileNet/tinyimagenet at figures_ep200_pre200/individual_plots/MobileNet_tinyimagenet_accuracy.png
+02:19:18 [INFO] [FIG1] Saved params plot for MobileNet/tinyimagenet at figures_ep200_pre200/individual_plots/MobileNet_tinyimagenet_params.png
+02:19:38 [INFO] [FIG1] Saved flops plot for MobileNet/tinyimagenet at figures_ep200_pre200/individual_plots/MobileNet_tinyimagenet_flops.png
+02:19:53 [INFO] [FIG1] Saved memory plot for MobileNet/tinyimagenet at figures_ep200_pre200/individual_plots/MobileNet_tinyimagenet_memory.png
+02:20:17 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar100__accuracy.png
+02:20:51 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar100__params.png
+02:20:52 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar100__flops.png
+02:20:53 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar100__memory.png
+02:20:54 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar10__accuracy.png
+02:20:55 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar10__params.png
+02:21:05 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar10__flops.png
+02:21:16 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar10__memory.png
+02:21:31 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/tinyimagenet at figures_ep200_pre200/individual_plots/RegNetX_400MF_tinyimagenet_accuracy.png
+02:21:46 [INFO] [FIG1] Saved params plot for RegNetX_400MF/tinyimagenet at figures_ep200_pre200/individual_plots/RegNetX_400MF_tinyimagenet_params.png
+02:21:58 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/tinyimagenet at figures_ep200_pre200/individual_plots/RegNetX_400MF_tinyimagenet_flops.png
+02:22:00 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/tinyimagenet at figures_ep200_pre200/individual_plots/RegNetX_400MF_tinyimagenet_memory.png
+02:22:13 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar100_ at figures_ep200_pre200/individual_plots/VGG16_cifar100__accuracy.png
+02:23:05 [INFO] [FIG1] Saved params plot for VGG16/cifar100_ at figures_ep200_pre200/individual_plots/VGG16_cifar100__params.png
+02:23:30 [INFO] [FIG1] Saved flops plot for VGG16/cifar100_ at figures_ep200_pre200/individual_plots/VGG16_cifar100__flops.png
+02:24:09 [INFO] [FIG1] Saved memory plot for VGG16/cifar100_ at figures_ep200_pre200/individual_plots/VGG16_cifar100__memory.png
+02:24:23 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at figures_ep200_pre200/individual_plots/VGG16_cifar10__accuracy.png
+02:24:38 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at figures_ep200_pre200/individual_plots/VGG16_cifar10__params.png
+02:24:50 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at figures_ep200_pre200/individual_plots/VGG16_cifar10__flops.png
+02:25:03 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at figures_ep200_pre200/individual_plots/VGG16_cifar10__memory.png
+02:25:25 [INFO] [FIG1] Saved accuracy plot for VGG16/tinyimagenet at figures_ep200_pre200/individual_plots/VGG16_tinyimagenet_accuracy.png
+02:25:49 [INFO] [FIG1] Saved params plot for VGG16/tinyimagenet at figures_ep200_pre200/individual_plots/VGG16_tinyimagenet_params.png
+02:26:03 [INFO] [FIG1] Saved flops plot for VGG16/tinyimagenet at figures_ep200_pre200/individual_plots/VGG16_tinyimagenet_flops.png
+02:26:15 [INFO] [FIG1] Saved memory plot for VGG16/tinyimagenet at figures_ep200_pre200/individual_plots/VGG16_tinyimagenet_memory.png

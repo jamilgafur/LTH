@@ -1,0 +1,1216 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='XceptionNet', dataset='Cifar100', epochs=200, pretrain=200, experiment='Status_Map', JF=True, Kevin=False, quant=True)
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] Base checkpoint path resolved: None
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Status_Map'
+============================================================
+
+[INFO] Validating JSON configuration map at: XceptionNet_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+[DEBUG] Loaded 12 configurations from map.
+[WARN] Trained baseline NOT found at XceptionNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control_quant.pt. Falling back to initial un-finetuned checkpoint.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Status_Map ---
+    Budget allocated: 200 epochs
+
+=== Running JF experiment ===
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 1212, in <module>
+    main()
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 1206, in main
+    run_hpc_stage(
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 1173, in run_hpc_stage
+    run_experiments_for_dataset(
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 956, in run_experiments_for_dataset
+    run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, run_epochs, experiment_func, save_path, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/transfer.py", line 932, in run_jf_or_kevin_experiment
+    return run_jf_experiment({experiment_name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain=None, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, quant=quant)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 384, in run_jf_experiment
+    compression_set = _make_compression_set(collapse_range)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/experiments.py", line 166, in _make_compression_set
+    raise ValueError("collapse_range must be None, a 2-tuple, or a list of 2-tuples")
+ValueError: collapse_range must be None, a 2-tuple, or a list of 2-tuples
+00:28:06 [INFO] Scanning for metrics files matching epochs=200, pretrain=200
+00:28:08 [INFO] Successfully parsed 129 experiment rows.
+00:28:19 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar100__accuracy.png
+00:28:38 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar100__params.png
+00:29:45 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar100__flops.png
+00:30:06 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar100__memory.png
+00:30:26 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar10__accuracy.png
+00:31:10 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar10__params.png
+00:31:54 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar10__flops.png
+00:32:11 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at figures_ep200_pre200/individual_plots/ConvNeXt_cifar10__memory.png
+00:32:48 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar100__accuracy.png
+00:33:07 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar100__params.png
+00:34:32 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar100__flops.png
+00:34:54 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar100__memory.png
+00:35:33 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar10__accuracy.png
+00:35:53 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar10__params.png
+00:36:10 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar10__flops.png
+00:36:22 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at figures_ep200_pre200/individual_plots/InceptionNet_cifar10__memory.png
+00:36:55 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at figures_ep200_pre200/individual_plots/InceptionNet_tinyimagenet_accuracy.png
+00:37:13 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at figures_ep200_pre200/individual_plots/InceptionNet_tinyimagenet_params.png
+00:37:32 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at figures_ep200_pre200/individual_plots/InceptionNet_tinyimagenet_flops.png
+00:37:59 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at figures_ep200_pre200/individual_plots/InceptionNet_tinyimagenet_memory.png
+00:38:19 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at figures_ep200_pre200/individual_plots/MobileNet_cifar100__accuracy.png
+00:40:07 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at figures_ep200_pre200/individual_plots/MobileNet_cifar100__params.png
+00:41:02 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at figures_ep200_pre200/individual_plots/MobileNet_cifar100__flops.png
+00:41:27 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at figures_ep200_pre200/individual_plots/MobileNet_cifar100__memory.png
+00:41:49 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at figures_ep200_pre200/individual_plots/MobileNet_cifar10__accuracy.png
+00:42:10 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at figures_ep200_pre200/individual_plots/MobileNet_cifar10__params.png
+00:42:39 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at figures_ep200_pre200/individual_plots/MobileNet_cifar10__flops.png
+00:42:54 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at figures_ep200_pre200/individual_plots/MobileNet_cifar10__memory.png
+00:43:14 [INFO] [FIG1] Saved accuracy plot for MobileNet/tinyimagenet at figures_ep200_pre200/individual_plots/MobileNet_tinyimagenet_accuracy.png
+00:44:08 [INFO] [FIG1] Saved params plot for MobileNet/tinyimagenet at figures_ep200_pre200/individual_plots/MobileNet_tinyimagenet_params.png
+00:44:34 [INFO] [FIG1] Saved flops plot for MobileNet/tinyimagenet at figures_ep200_pre200/individual_plots/MobileNet_tinyimagenet_flops.png
+00:45:03 [INFO] [FIG1] Saved memory plot for MobileNet/tinyimagenet at figures_ep200_pre200/individual_plots/MobileNet_tinyimagenet_memory.png
+00:45:27 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar100__accuracy.png
+00:46:22 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar100__params.png
+00:46:41 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar100__flops.png
+00:47:02 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar100__memory.png
+00:48:14 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar10__accuracy.png
+00:49:03 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar10__params.png
+00:49:32 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar10__flops.png
+00:50:06 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at figures_ep200_pre200/individual_plots/RegNetX_400MF_cifar10__memory.png
+00:51:11 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/tinyimagenet at figures_ep200_pre200/individual_plots/RegNetX_400MF_tinyimagenet_accuracy.png
+00:52:20 [INFO] [FIG1] Saved params plot for RegNetX_400MF/tinyimagenet at figures_ep200_pre200/individual_plots/RegNetX_400MF_tinyimagenet_params.png
+00:54:32 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/tinyimagenet at figures_ep200_pre200/individual_plots/RegNetX_400MF_tinyimagenet_flops.png
+00:55:35 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/tinyimagenet at figures_ep200_pre200/individual_plots/RegNetX_400MF_tinyimagenet_memory.png
+00:55:51 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar100_ at figures_ep200_pre200/individual_plots/VGG16_cifar100__accuracy.png
+00:56:10 [INFO] [FIG1] Saved params plot for VGG16/cifar100_ at figures_ep200_pre200/individual_plots/VGG16_cifar100__params.png
+00:56:33 [INFO] [FIG1] Saved flops plot for VGG16/cifar100_ at figures_ep200_pre200/individual_plots/VGG16_cifar100__flops.png
+00:57:15 [INFO] [FIG1] Saved memory plot for VGG16/cifar100_ at figures_ep200_pre200/individual_plots/VGG16_cifar100__memory.png
+00:57:21 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at figures_ep200_pre200/individual_plots/VGG16_cifar10__accuracy.png
+00:57:40 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at figures_ep200_pre200/individual_plots/VGG16_cifar10__params.png
+00:58:22 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at figures_ep200_pre200/individual_plots/VGG16_cifar10__flops.png
+00:58:43 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at figures_ep200_pre200/individual_plots/VGG16_cifar10__memory.png
+00:59:27 [INFO] [FIG1] Saved accuracy plot for VGG16/tinyimagenet at figures_ep200_pre200/individual_plots/VGG16_tinyimagenet_accuracy.png
+00:59:40 [INFO] [FIG1] Saved params plot for VGG16/tinyimagenet at figures_ep200_pre200/individual_plots/VGG16_tinyimagenet_params.png
+01:00:22 [INFO] [FIG1] Saved flops plot for VGG16/tinyimagenet at figures_ep200_pre200/individual_plots/VGG16_tinyimagenet_flops.png
+01:01:06 [INFO] [FIG1] Saved memory plot for VGG16/tinyimagenet at figures_ep200_pre200/individual_plots/VGG16_tinyimagenet_memory.png
+01:01:17 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar100_ at figures_ep200_pre200/individual_plots/XceptionNet_cifar100__accuracy.png
+01:01:26 [INFO] [FIG1] Saved params plot for XceptionNet/cifar100_ at figures_ep200_pre200/individual_plots/XceptionNet_cifar100__params.png
+01:01:26 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar100_ at figures_ep200_pre200/individual_plots/XceptionNet_cifar100__flops.png
+01:01:27 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar100_ at figures_ep200_pre200/individual_plots/XceptionNet_cifar100__memory.png
+01:01:29 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at figures_ep200_pre200/individual_plots/XceptionNet_cifar10__accuracy.png
+01:01:29 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at figures_ep200_pre200/individual_plots/XceptionNet_cifar10__params.png
+01:01:30 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at figures_ep200_pre200/individual_plots/XceptionNet_cifar10__flops.png
+01:01:34 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at figures_ep200_pre200/individual_plots/XceptionNet_cifar10__memory.png
+01:01:35 [INFO] [FIG1] Saved accuracy plot for XceptionNet/tinyimagenet at figures_ep200_pre200/individual_plots/XceptionNet_tinyimagenet_accuracy.png
+01:01:36 [INFO] [FIG1] Saved params plot for XceptionNet/tinyimagenet at figures_ep200_pre200/individual_plots/XceptionNet_tinyimagenet_params.png
+01:01:36 [INFO] [FIG1] Saved flops plot for XceptionNet/tinyimagenet at figures_ep200_pre200/individual_plots/XceptionNet_tinyimagenet_flops.png
+01:01:38 [INFO] [FIG1] Saved memory plot for XceptionNet/tinyimagenet at figures_ep200_pre200/individual_plots/XceptionNet_tinyimagenet_memory.png
+01:01:38 [INFO] Starting FIG2 generation. Target epochs: 200, pretrain: 200
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Loading JSON file: InceptionNet_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Extracted Regions: [['stage4.inception_4a.branch3.1.conv', 'stage4.inception_4b.branch1.conv'], ['stage4.inception_4b.branch3.1.conv', 'stage4.inception_4b.branch4.1.conv'], ['stage4.inception_4c.branch3.1.conv', 'stage4.inception_4c.branch4.1.conv'], ['stage4.inception_4d.branch3.0.conv', 'stage4.inception_4e.branch2.0.conv'], ['stage4.inception_4e.branch3.0.conv', 'stage4.inception_4e.branch4.1.conv']]
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Mapped region 'stage4.inception_4a.branch3.1.conv' -> 'stage4.inception_4b.branch1.conv' to indices 19 -> 21
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Mapped region 'stage4.inception_4b.branch3.1.conv' -> 'stage4.inception_4b.branch4.1.conv' to indices 25 -> 26
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Mapped region 'stage4.inception_4c.branch3.1.conv' -> 'stage4.inception_4c.branch4.1.conv' to indices 31 -> 32
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Mapped region 'stage4.inception_4d.branch3.0.conv' -> 'stage4.inception_4e.branch2.0.conv' to indices 36 -> 40
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Mapped region 'stage4.inception_4e.branch3.0.conv' -> 'stage4.inception_4e.branch4.1.conv' to indices 42 -> 44
+01:01:39 [INFO] [DEBUG] --- Final Layer States for InceptionNet on Cifar100 ---
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 00 | Name: stage1.conv1.conv    | h_val:  0.135 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 01 | Name: stage2.conv2.conv    | h_val: -0.554 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 02 | Name: stage2.conv3.conv    | h_val:  0.639 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 03 | Name: stage3.inception_3a.branch1.conv | h_val: -0.369 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 04 | Name: stage3.inception_3a.branch2.0.conv | h_val: -0.381 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 05 | Name: stage3.inception_3a.branch2.1.conv | h_val:  1.000 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 06 | Name: stage3.inception_3a.branch3.0.conv | h_val: -0.012 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 07 | Name: stage3.inception_3a.branch3.1.conv | h_val: -0.119 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 08 | Name: stage3.inception_3a.branch4.1.conv | h_val: -0.745 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 09 | Name: stage3.inception_3b.branch1.conv | h_val: -0.412 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 10 | Name: stage3.inception_3b.branch2.0.conv | h_val: -0.517 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 11 | Name: stage3.inception_3b.branch2.1.conv | h_val:  1.000 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 12 | Name: stage3.inception_3b.branch3.0.conv | h_val: -0.477 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 13 | Name: stage3.inception_3b.branch3.1.conv | h_val:  0.517 | Color State: VETO
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 14 | Name: stage3.inception_3b.branch4.1.conv | h_val: -0.552 | Color State: REJECTED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 15 | Name: stage4.inception_4a.branch1.conv | h_val: -0.042 | Color State: REJECTED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 16 | Name: stage4.inception_4a.branch2.0.conv | h_val:  0.163 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 17 | Name: stage4.inception_4a.branch2.1.conv | h_val: -0.015 | Color State: REJECTED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 18 | Name: stage4.inception_4a.branch3.0.conv | h_val:  0.976 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 19 | Name: stage4.inception_4a.branch3.1.conv | h_val: -0.794 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 20 | Name: stage4.inception_4a.branch4.1.conv | h_val: -1.000 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 21 | Name: stage4.inception_4b.branch1.conv | h_val: -0.123 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 22 | Name: stage4.inception_4b.branch2.0.conv | h_val:  0.435 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 23 | Name: stage4.inception_4b.branch2.1.conv | h_val:  0.947 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 24 | Name: stage4.inception_4b.branch3.0.conv | h_val:  0.286 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 25 | Name: stage4.inception_4b.branch3.1.conv | h_val: -0.634 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 26 | Name: stage4.inception_4b.branch4.1.conv | h_val: -1.000 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 27 | Name: stage4.inception_4c.branch1.conv | h_val:  0.327 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 28 | Name: stage4.inception_4c.branch2.0.conv | h_val:  0.210 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 29 | Name: stage4.inception_4c.branch2.1.conv | h_val:  1.000 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 30 | Name: stage4.inception_4c.branch3.0.conv | h_val:  0.107 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 31 | Name: stage4.inception_4c.branch3.1.conv | h_val: -0.626 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 32 | Name: stage4.inception_4c.branch4.1.conv | h_val: -1.000 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 33 | Name: stage4.inception_4d.branch1.conv | h_val:  0.000 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 34 | Name: stage4.inception_4d.branch2.0.conv | h_val: -0.331 | Color State: REJECTED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 35 | Name: stage4.inception_4d.branch2.1.conv | h_val:  1.000 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 36 | Name: stage4.inception_4d.branch3.0.conv | h_val: -0.316 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 37 | Name: stage4.inception_4d.branch3.1.conv | h_val: -0.673 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 38 | Name: stage4.inception_4d.branch4.1.conv | h_val: -1.000 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 39 | Name: stage4.inception_4e.branch1.conv | h_val: -0.223 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 40 | Name: stage4.inception_4e.branch2.0.conv | h_val: -0.447 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 41 | Name: stage4.inception_4e.branch2.1.conv | h_val:  1.000 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 42 | Name: stage4.inception_4e.branch3.0.conv | h_val: -0.827 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 43 | Name: stage4.inception_4e.branch3.1.conv | h_val: -0.935 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 44 | Name: stage4.inception_4e.branch4.1.conv | h_val: -1.000 | Color State: VERIFIED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 45 | Name: stage5.inception_5a.branch1.conv | h_val:  1.000 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 46 | Name: stage5.inception_5a.branch2.0.conv | h_val:  1.000 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 47 | Name: stage5.inception_5a.branch2.1.conv | h_val: -0.959 | Color State: REJECTED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 48 | Name: stage5.inception_5a.branch3.0.conv | h_val:  0.507 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 49 | Name: stage5.inception_5a.branch3.1.conv | h_val: -0.995 | Color State: REJECTED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 50 | Name: stage5.inception_5a.branch4.1.conv | h_val:  1.000 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 51 | Name: stage5.inception_5b.branch1.conv | h_val: -0.441 | Color State: REJECTED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 52 | Name: stage5.inception_5b.branch2.0.conv | h_val:  0.057 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 53 | Name: stage5.inception_5b.branch2.1.conv | h_val: -0.920 | Color State: REJECTED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 54 | Name: stage5.inception_5b.branch3.0.conv | h_val:  0.551 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 55 | Name: stage5.inception_5b.branch3.1.conv | h_val: -0.975 | Color State: REJECTED
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 56 | Name: stage5.inception_5b.branch4.1.conv | h_val:  0.208 | Color State: DANGER
+01:01:39 [INFO] [DEBUG] [InceptionNet/Cifar100] Layer 57 | Name: fc                   | h_val:  0.531 | Color State: DANGER
+01:01:42 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/InceptionNet_Cifar100_bav_methodology_regions.png
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Loading JSON file: InceptionNet_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Extracted Regions: [['stage4.inception_4a.branch3.1.conv', 'stage4.inception_4b.branch2.0.conv'], ['stage4.inception_4b.branch3.0.conv', 'stage4.inception_4c.branch2.0.conv'], ['stage4.inception_4c.branch3.0.conv', 'stage4.inception_4d.branch2.0.conv'], ['stage4.inception_4d.branch3.0.conv', 'stage4.inception_4e.branch2.0.conv'], ['stage4.inception_4e.branch3.0.conv', 'stage4.inception_4e.branch4.1.conv']]
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Mapped region 'stage4.inception_4a.branch3.1.conv' -> 'stage4.inception_4b.branch2.0.conv' to indices 19 -> 22
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Mapped region 'stage4.inception_4b.branch3.0.conv' -> 'stage4.inception_4c.branch2.0.conv' to indices 24 -> 28
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Mapped region 'stage4.inception_4c.branch3.0.conv' -> 'stage4.inception_4d.branch2.0.conv' to indices 30 -> 34
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Mapped region 'stage4.inception_4d.branch3.0.conv' -> 'stage4.inception_4e.branch2.0.conv' to indices 36 -> 40
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Mapped region 'stage4.inception_4e.branch3.0.conv' -> 'stage4.inception_4e.branch4.1.conv' to indices 42 -> 44
+01:01:44 [INFO] [DEBUG] --- Final Layer States for InceptionNet on Cifar10 ---
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 00 | Name: stage1.conv1.conv    | h_val:  0.317 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 01 | Name: stage2.conv2.conv    | h_val: -0.507 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 02 | Name: stage2.conv3.conv    | h_val:  0.605 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 03 | Name: stage3.inception_3a.branch1.conv | h_val: -0.403 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 04 | Name: stage3.inception_3a.branch2.0.conv | h_val: -0.371 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 05 | Name: stage3.inception_3a.branch2.1.conv | h_val:  0.906 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 06 | Name: stage3.inception_3a.branch3.0.conv | h_val:  0.202 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 07 | Name: stage3.inception_3a.branch3.1.conv | h_val: -0.229 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 08 | Name: stage3.inception_3a.branch4.1.conv | h_val: -0.744 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 09 | Name: stage3.inception_3b.branch1.conv | h_val: -0.387 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 10 | Name: stage3.inception_3b.branch2.0.conv | h_val: -0.419 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 11 | Name: stage3.inception_3b.branch2.1.conv | h_val:  1.000 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 12 | Name: stage3.inception_3b.branch3.0.conv | h_val: -0.396 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 13 | Name: stage3.inception_3b.branch3.1.conv | h_val:  0.088 | Color State: VETO
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 14 | Name: stage3.inception_3b.branch4.1.conv | h_val: -0.503 | Color State: REJECTED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 15 | Name: stage4.inception_4a.branch1.conv | h_val:  0.243 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 16 | Name: stage4.inception_4a.branch2.0.conv | h_val:  0.223 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 17 | Name: stage4.inception_4a.branch2.1.conv | h_val: -0.039 | Color State: REJECTED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 18 | Name: stage4.inception_4a.branch3.0.conv | h_val:  0.626 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 19 | Name: stage4.inception_4a.branch3.1.conv | h_val: -0.828 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 20 | Name: stage4.inception_4a.branch4.1.conv | h_val: -1.000 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 21 | Name: stage4.inception_4b.branch1.conv | h_val: -0.426 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 22 | Name: stage4.inception_4b.branch2.0.conv | h_val: -0.443 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 23 | Name: stage4.inception_4b.branch2.1.conv | h_val:  1.000 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 24 | Name: stage4.inception_4b.branch3.0.conv | h_val: -0.568 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 25 | Name: stage4.inception_4b.branch3.1.conv | h_val: -0.796 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 26 | Name: stage4.inception_4b.branch4.1.conv | h_val: -1.000 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 27 | Name: stage4.inception_4c.branch1.conv | h_val: -0.626 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 28 | Name: stage4.inception_4c.branch2.0.conv | h_val: -0.722 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 29 | Name: stage4.inception_4c.branch2.1.conv | h_val:  1.000 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 30 | Name: stage4.inception_4c.branch3.0.conv | h_val: -0.697 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 31 | Name: stage4.inception_4c.branch3.1.conv | h_val: -0.899 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 32 | Name: stage4.inception_4c.branch4.1.conv | h_val: -1.000 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 33 | Name: stage4.inception_4d.branch1.conv | h_val: -0.685 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 34 | Name: stage4.inception_4d.branch2.0.conv | h_val: -0.666 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 35 | Name: stage4.inception_4d.branch2.1.conv | h_val:  1.000 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 36 | Name: stage4.inception_4d.branch3.0.conv | h_val: -0.720 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 37 | Name: stage4.inception_4d.branch3.1.conv | h_val: -0.566 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 38 | Name: stage4.inception_4d.branch4.1.conv | h_val: -1.000 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 39 | Name: stage4.inception_4e.branch1.conv | h_val: -0.751 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 40 | Name: stage4.inception_4e.branch2.0.conv | h_val: -0.853 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 41 | Name: stage4.inception_4e.branch2.1.conv | h_val:  1.000 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 42 | Name: stage4.inception_4e.branch3.0.conv | h_val: -0.886 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 43 | Name: stage4.inception_4e.branch3.1.conv | h_val: -0.888 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 44 | Name: stage4.inception_4e.branch4.1.conv | h_val: -1.000 | Color State: VERIFIED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 45 | Name: stage5.inception_5a.branch1.conv | h_val:  1.000 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 46 | Name: stage5.inception_5a.branch2.0.conv | h_val:  0.773 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 47 | Name: stage5.inception_5a.branch2.1.conv | h_val: -0.529 | Color State: REJECTED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 48 | Name: stage5.inception_5a.branch3.0.conv | h_val:  0.431 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 49 | Name: stage5.inception_5a.branch3.1.conv | h_val: -0.977 | Color State: REJECTED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 50 | Name: stage5.inception_5a.branch4.1.conv | h_val:  0.604 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 51 | Name: stage5.inception_5b.branch1.conv | h_val:  0.226 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 52 | Name: stage5.inception_5b.branch2.0.conv | h_val:  0.591 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 53 | Name: stage5.inception_5b.branch2.1.conv | h_val: -0.697 | Color State: REJECTED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 54 | Name: stage5.inception_5b.branch3.0.conv | h_val:  0.592 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 55 | Name: stage5.inception_5b.branch3.1.conv | h_val: -0.950 | Color State: REJECTED
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 56 | Name: stage5.inception_5b.branch4.1.conv | h_val:  0.804 | Color State: DANGER
+01:01:44 [INFO] [DEBUG] [InceptionNet/Cifar10] Layer 57 | Name: fc                   | h_val: -0.331 | Color State: REJECTED
+01:01:47 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/InceptionNet_Cifar10_bav_methodology_regions.png
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Loading JSON file: InceptionNet_tinyimagenet_epochs200_pretrain200_JF_discovered_regions.json
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Extracted Regions: [['stage4.inception_4a.branch4.1.conv', 'stage4.inception_4b.branch2.0.conv'], ['stage4.inception_4c.branch3.0.conv', 'stage4.inception_4c.branch4.1.conv'], ['stage4.inception_4e.branch2.0.conv', 'stage4.inception_4e.branch3.1.conv'], ['stage5.inception_5a.branch3.1.conv', 'stage5.inception_5b.branch1.conv'], ['stage5.inception_5b.branch3.1.conv', 'stage5.inception_5b.branch4.1.conv'], ['stage4.inception_4a.branch1.conv', 'stage4.inception_4a.branch2.0.conv']]
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Mapped region 'stage4.inception_4a.branch4.1.conv' -> 'stage4.inception_4b.branch2.0.conv' to indices 20 -> 22
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Mapped region 'stage4.inception_4c.branch3.0.conv' -> 'stage4.inception_4c.branch4.1.conv' to indices 30 -> 32
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Mapped region 'stage4.inception_4e.branch2.0.conv' -> 'stage4.inception_4e.branch3.1.conv' to indices 40 -> 43
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Mapped region 'stage5.inception_5a.branch3.1.conv' -> 'stage5.inception_5b.branch1.conv' to indices 49 -> 51
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Mapped region 'stage5.inception_5b.branch3.1.conv' -> 'stage5.inception_5b.branch4.1.conv' to indices 55 -> 56
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Mapped region 'stage4.inception_4a.branch1.conv' -> 'stage4.inception_4a.branch2.0.conv' to indices 15 -> 16
+01:01:48 [INFO] [DEBUG] --- Final Layer States for InceptionNet on tinyimagenet ---
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 00 | Name: stage1.conv1.conv    | h_val: -0.055 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 01 | Name: stage2.conv2.conv    | h_val: -0.579 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 02 | Name: stage2.conv3.conv    | h_val:  0.410 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 03 | Name: stage3.inception_3a.branch1.conv | h_val: -0.405 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 04 | Name: stage3.inception_3a.branch2.0.conv | h_val: -0.586 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 05 | Name: stage3.inception_3a.branch2.1.conv | h_val:  1.000 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 06 | Name: stage3.inception_3a.branch3.0.conv | h_val: -0.381 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 07 | Name: stage3.inception_3a.branch3.1.conv | h_val:  0.748 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 08 | Name: stage3.inception_3a.branch4.1.conv | h_val: -0.731 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 09 | Name: stage3.inception_3b.branch1.conv | h_val: -0.446 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 10 | Name: stage3.inception_3b.branch2.0.conv | h_val: -0.643 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 11 | Name: stage3.inception_3b.branch2.1.conv | h_val:  1.000 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 12 | Name: stage3.inception_3b.branch3.0.conv | h_val: -0.557 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 13 | Name: stage3.inception_3b.branch3.1.conv | h_val:  1.000 | Color State: VETO
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 14 | Name: stage3.inception_3b.branch4.1.conv | h_val: -0.603 | Color State: REJECTED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 15 | Name: stage4.inception_4a.branch1.conv | h_val: -0.121 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 16 | Name: stage4.inception_4a.branch2.0.conv | h_val: -0.172 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 17 | Name: stage4.inception_4a.branch2.1.conv | h_val:  0.435 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 18 | Name: stage4.inception_4a.branch3.0.conv | h_val:  0.358 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 19 | Name: stage4.inception_4a.branch3.1.conv | h_val:  0.015 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 20 | Name: stage4.inception_4a.branch4.1.conv | h_val: -0.510 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 21 | Name: stage4.inception_4b.branch1.conv | h_val: -0.201 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 22 | Name: stage4.inception_4b.branch2.0.conv | h_val: -0.512 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 23 | Name: stage4.inception_4b.branch2.1.conv | h_val:  0.795 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 24 | Name: stage4.inception_4b.branch3.0.conv | h_val: -0.392 | Color State: REJECTED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 25 | Name: stage4.inception_4b.branch3.1.conv | h_val:  0.802 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 26 | Name: stage4.inception_4b.branch4.1.conv | h_val: -0.644 | Color State: REJECTED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 27 | Name: stage4.inception_4c.branch1.conv | h_val:  0.272 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 28 | Name: stage4.inception_4c.branch2.0.conv | h_val: -0.449 | Color State: REJECTED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 29 | Name: stage4.inception_4c.branch2.1.conv | h_val:  1.000 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 30 | Name: stage4.inception_4c.branch3.0.conv | h_val: -0.469 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 31 | Name: stage4.inception_4c.branch3.1.conv | h_val: -0.142 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 32 | Name: stage4.inception_4c.branch4.1.conv | h_val: -0.583 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 33 | Name: stage4.inception_4d.branch1.conv | h_val:  0.782 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 34 | Name: stage4.inception_4d.branch2.0.conv | h_val: -0.310 | Color State: REJECTED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 35 | Name: stage4.inception_4d.branch2.1.conv | h_val:  0.620 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 36 | Name: stage4.inception_4d.branch3.0.conv | h_val: -0.337 | Color State: REJECTED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 37 | Name: stage4.inception_4d.branch3.1.conv | h_val:  0.079 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 38 | Name: stage4.inception_4d.branch4.1.conv | h_val: -0.525 | Color State: REJECTED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 39 | Name: stage4.inception_4e.branch1.conv | h_val:  1.000 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 40 | Name: stage4.inception_4e.branch2.0.conv | h_val: -0.118 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 41 | Name: stage4.inception_4e.branch2.1.conv | h_val: -0.355 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 42 | Name: stage4.inception_4e.branch3.0.conv | h_val: -0.029 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 43 | Name: stage4.inception_4e.branch3.1.conv | h_val: -0.591 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 44 | Name: stage4.inception_4e.branch4.1.conv | h_val:  0.033 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 45 | Name: stage5.inception_5a.branch1.conv | h_val:  0.009 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 46 | Name: stage5.inception_5a.branch2.0.conv | h_val:  0.534 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 47 | Name: stage5.inception_5a.branch2.1.conv | h_val: -0.264 | Color State: REJECTED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 48 | Name: stage5.inception_5a.branch3.0.conv | h_val:  1.000 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 49 | Name: stage5.inception_5a.branch3.1.conv | h_val: -0.700 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 50 | Name: stage5.inception_5a.branch4.1.conv | h_val: -1.000 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 51 | Name: stage5.inception_5b.branch1.conv | h_val: -0.268 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 52 | Name: stage5.inception_5b.branch2.0.conv | h_val:  0.877 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 53 | Name: stage5.inception_5b.branch2.1.conv | h_val:  0.359 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 54 | Name: stage5.inception_5b.branch3.0.conv | h_val:  0.033 | Color State: DANGER
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 55 | Name: stage5.inception_5b.branch3.1.conv | h_val: -0.753 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 56 | Name: stage5.inception_5b.branch4.1.conv | h_val: -1.000 | Color State: VERIFIED
+01:01:48 [INFO] [DEBUG] [InceptionNet/tinyimagenet] Layer 57 | Name: fc                   | h_val:  1.000 | Color State: DANGER
+01:01:58 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/InceptionNet_tinyimagenet_bav_methodology_regions.png
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Loading JSON file: XceptionNet_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Extracted Regions: [['middle_flow.0.rep.4.depthwise', 'middle_flow.0.rep.7.depthwise'], ['middle_flow.1.rep.4.depthwise', 'middle_flow.1.rep.7.depthwise'], ['middle_flow.2.rep.1.depthwise', 'middle_flow.2.rep.7.depthwise'], ['middle_flow.3.rep.4.depthwise', 'middle_flow.3.rep.7.depthwise'], ['middle_flow.4.rep.4.depthwise', 'middle_flow.4.rep.7.depthwise'], ['middle_flow.5.rep.4.depthwise', 'middle_flow.5.rep.7.depthwise'], ['middle_flow.6.rep.4.depthwise', 'middle_flow.6.rep.7.depthwise'], ['middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.pointwise'], ['block4.rep.1.depthwise', 'block4.rep.4.depthwise']]
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Mapped region 'middle_flow.0.rep.4.depthwise' -> 'middle_flow.0.rep.7.depthwise' to indices 19 -> 21
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Mapped region 'middle_flow.1.rep.4.depthwise' -> 'middle_flow.1.rep.7.depthwise' to indices 25 -> 27
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Mapped region 'middle_flow.2.rep.1.depthwise' -> 'middle_flow.2.rep.7.depthwise' to indices 29 -> 33
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Mapped region 'middle_flow.3.rep.4.depthwise' -> 'middle_flow.3.rep.7.depthwise' to indices 37 -> 39
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Mapped region 'middle_flow.4.rep.4.depthwise' -> 'middle_flow.4.rep.7.depthwise' to indices 43 -> 45
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Mapped region 'middle_flow.5.rep.4.depthwise' -> 'middle_flow.5.rep.7.depthwise' to indices 49 -> 51
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Mapped region 'middle_flow.6.rep.4.depthwise' -> 'middle_flow.6.rep.7.depthwise' to indices 55 -> 57
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Mapped region 'middle_flow.7.rep.4.depthwise' -> 'middle_flow.7.rep.7.pointwise' to indices 61 -> 64
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Mapped region 'block4.rep.1.depthwise' -> 'block4.rep.4.depthwise' to indices 66 -> 68
+01:01:59 [INFO] [DEBUG] --- Final Layer States for XceptionNet on Cifar10 ---
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 00 | Name: stem.0               | h_val: -0.622 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 01 | Name: stem.3               | h_val:  1.000 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 02 | Name: block1.skip.0        | h_val: -0.278 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 03 | Name: block1.rep.0.depthwise | h_val: -0.895 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 04 | Name: block1.rep.0.pointwise | h_val: -0.930 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 05 | Name: block1.rep.3.depthwise | h_val: -0.944 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 06 | Name: block1.rep.3.pointwise | h_val: -0.770 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 07 | Name: block2.skip.0        | h_val:  1.000 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 08 | Name: block2.rep.1.depthwise | h_val: -0.824 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 09 | Name: block2.rep.1.pointwise | h_val: -0.855 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 10 | Name: block2.rep.4.depthwise | h_val: -0.992 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 11 | Name: block2.rep.4.pointwise | h_val: -0.919 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 12 | Name: block3.skip.0        | h_val:  1.000 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 13 | Name: block3.rep.1.depthwise | h_val: -0.983 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 14 | Name: block3.rep.1.pointwise | h_val: -0.866 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 15 | Name: block3.rep.4.depthwise | h_val: -0.997 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 16 | Name: block3.rep.4.pointwise | h_val:  0.165 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 17 | Name: middle_flow.0.rep.1.depthwise | h_val: -0.947 | Color State: VETO
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 18 | Name: middle_flow.0.rep.1.pointwise | h_val:  1.000 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 19 | Name: middle_flow.0.rep.4.depthwise | h_val: -0.994 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 20 | Name: middle_flow.0.rep.4.pointwise | h_val: -0.516 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 21 | Name: middle_flow.0.rep.7.depthwise | h_val: -0.990 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 22 | Name: middle_flow.0.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 23 | Name: middle_flow.1.rep.1.depthwise | h_val: -0.987 | Color State: REJECTED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 24 | Name: middle_flow.1.rep.1.pointwise | h_val:  0.892 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 25 | Name: middle_flow.1.rep.4.depthwise | h_val: -0.998 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 26 | Name: middle_flow.1.rep.4.pointwise | h_val: -0.216 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 27 | Name: middle_flow.1.rep.7.depthwise | h_val: -0.995 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 28 | Name: middle_flow.1.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 29 | Name: middle_flow.2.rep.1.depthwise | h_val: -0.994 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 30 | Name: middle_flow.2.rep.1.pointwise | h_val: -0.004 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 31 | Name: middle_flow.2.rep.4.depthwise | h_val: -0.998 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 32 | Name: middle_flow.2.rep.4.pointwise | h_val: -0.259 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 33 | Name: middle_flow.2.rep.7.depthwise | h_val: -0.995 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 34 | Name: middle_flow.2.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 35 | Name: middle_flow.3.rep.1.depthwise | h_val: -0.993 | Color State: REJECTED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 36 | Name: middle_flow.3.rep.1.pointwise | h_val:  0.032 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 37 | Name: middle_flow.3.rep.4.depthwise | h_val: -0.999 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 38 | Name: middle_flow.3.rep.4.pointwise | h_val: -0.450 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 39 | Name: middle_flow.3.rep.7.depthwise | h_val: -0.995 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 40 | Name: middle_flow.3.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 41 | Name: middle_flow.4.rep.1.depthwise | h_val: -0.988 | Color State: REJECTED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 42 | Name: middle_flow.4.rep.1.pointwise | h_val:  0.306 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 43 | Name: middle_flow.4.rep.4.depthwise | h_val: -0.998 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 44 | Name: middle_flow.4.rep.4.pointwise | h_val: -0.382 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 45 | Name: middle_flow.4.rep.7.depthwise | h_val: -0.995 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 46 | Name: middle_flow.4.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 47 | Name: middle_flow.5.rep.1.depthwise | h_val: -0.985 | Color State: REJECTED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 48 | Name: middle_flow.5.rep.1.pointwise | h_val:  0.488 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 49 | Name: middle_flow.5.rep.4.depthwise | h_val: -0.998 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 50 | Name: middle_flow.5.rep.4.pointwise | h_val: -0.463 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 51 | Name: middle_flow.5.rep.7.depthwise | h_val: -0.995 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 52 | Name: middle_flow.5.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 53 | Name: middle_flow.6.rep.1.depthwise | h_val: -0.977 | Color State: REJECTED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 54 | Name: middle_flow.6.rep.1.pointwise | h_val:  1.000 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 55 | Name: middle_flow.6.rep.4.depthwise | h_val: -0.998 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 56 | Name: middle_flow.6.rep.4.pointwise | h_val: -0.600 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 57 | Name: middle_flow.6.rep.7.depthwise | h_val: -0.996 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 58 | Name: middle_flow.6.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 59 | Name: middle_flow.7.rep.1.depthwise | h_val: -0.973 | Color State: REJECTED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 60 | Name: middle_flow.7.rep.1.pointwise | h_val:  1.000 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 61 | Name: middle_flow.7.rep.4.depthwise | h_val: -0.997 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 62 | Name: middle_flow.7.rep.4.pointwise | h_val: -0.932 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 63 | Name: middle_flow.7.rep.7.depthwise | h_val: -0.999 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 64 | Name: middle_flow.7.rep.7.pointwise | h_val: -0.506 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 65 | Name: block4.skip.0        | h_val:  1.000 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 66 | Name: block4.rep.1.depthwise | h_val: -0.997 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 67 | Name: block4.rep.1.pointwise | h_val: -0.474 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 68 | Name: block4.rep.4.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 69 | Name: block4.rep.4.pointwise | h_val:  0.567 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 70 | Name: conv3.depthwise      | h_val: -0.998 | Color State: REJECTED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 71 | Name: conv3.pointwise      | h_val:  0.059 | Color State: DANGER
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 72 | Name: conv4.depthwise      | h_val: -1.000 | Color State: REJECTED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 73 | Name: conv4.pointwise      | h_val: -0.767 | Color State: REJECTED
+01:01:59 [INFO] [DEBUG] [XceptionNet/Cifar10] Layer 74 | Name: fc                   | h_val:  0.169 | Color State: DANGER
+01:02:11 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/XceptionNet_Cifar10_bav_methodology_regions.png
+01:02:11 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Loading JSON file: XceptionNet_tinyimagenet_epochs200_pretrain200_JF_discovered_regions.json
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Extracted Regions: [['middle_flow.0.rep.4.depthwise', 'middle_flow.0.rep.7.depthwise'], ['middle_flow.1.rep.4.depthwise', 'middle_flow.1.rep.7.depthwise'], ['middle_flow.2.rep.4.depthwise', 'middle_flow.2.rep.7.depthwise'], ['middle_flow.3.rep.4.depthwise', 'middle_flow.3.rep.7.depthwise'], ['middle_flow.4.rep.4.depthwise', 'middle_flow.4.rep.7.depthwise'], ['middle_flow.5.rep.4.depthwise', 'middle_flow.5.rep.7.depthwise'], ['middle_flow.6.rep.4.depthwise', 'middle_flow.6.rep.7.depthwise'], ['middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.pointwise']]
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Mapped region 'middle_flow.0.rep.4.depthwise' -> 'middle_flow.0.rep.7.depthwise' to indices 19 -> 21
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Mapped region 'middle_flow.1.rep.4.depthwise' -> 'middle_flow.1.rep.7.depthwise' to indices 25 -> 27
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Mapped region 'middle_flow.2.rep.4.depthwise' -> 'middle_flow.2.rep.7.depthwise' to indices 31 -> 33
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Mapped region 'middle_flow.3.rep.4.depthwise' -> 'middle_flow.3.rep.7.depthwise' to indices 37 -> 39
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Mapped region 'middle_flow.4.rep.4.depthwise' -> 'middle_flow.4.rep.7.depthwise' to indices 43 -> 45
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Mapped region 'middle_flow.5.rep.4.depthwise' -> 'middle_flow.5.rep.7.depthwise' to indices 49 -> 51
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Mapped region 'middle_flow.6.rep.4.depthwise' -> 'middle_flow.6.rep.7.depthwise' to indices 55 -> 57
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Mapped region 'middle_flow.7.rep.4.depthwise' -> 'middle_flow.7.rep.7.pointwise' to indices 61 -> 64
+01:02:12 [INFO] [DEBUG] --- Final Layer States for XceptionNet on tinyimagenet ---
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 00 | Name: stem.0               | h_val: -0.792 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 01 | Name: stem.3               | h_val:  1.000 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 02 | Name: block1.skip.0        | h_val: -0.265 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 03 | Name: block1.rep.0.depthwise | h_val: -0.981 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 04 | Name: block1.rep.0.pointwise | h_val: -0.613 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 05 | Name: block1.rep.3.depthwise | h_val: -0.975 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 06 | Name: block1.rep.3.pointwise | h_val:  0.088 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 07 | Name: block2.skip.0        | h_val:  1.000 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 08 | Name: block2.rep.1.depthwise | h_val: -0.972 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 09 | Name: block2.rep.1.pointwise | h_val:  0.626 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 10 | Name: block2.rep.4.depthwise | h_val: -0.993 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 11 | Name: block2.rep.4.pointwise | h_val:  0.047 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 12 | Name: block3.skip.0        | h_val:  0.966 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 13 | Name: block3.rep.1.depthwise | h_val: -0.988 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 14 | Name: block3.rep.1.pointwise | h_val:  1.000 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 15 | Name: block3.rep.4.depthwise | h_val: -0.999 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 16 | Name: block3.rep.4.pointwise | h_val: -0.460 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 17 | Name: middle_flow.0.rep.1.depthwise | h_val: -0.995 | Color State: VETO
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 18 | Name: middle_flow.0.rep.1.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 19 | Name: middle_flow.0.rep.4.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 20 | Name: middle_flow.0.rep.4.pointwise | h_val: -0.604 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 21 | Name: middle_flow.0.rep.7.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 22 | Name: middle_flow.0.rep.7.pointwise | h_val:  0.073 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 23 | Name: middle_flow.1.rep.1.depthwise | h_val: -0.995 | Color State: REJECTED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 24 | Name: middle_flow.1.rep.1.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 25 | Name: middle_flow.1.rep.4.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 26 | Name: middle_flow.1.rep.4.pointwise | h_val: -0.665 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 27 | Name: middle_flow.1.rep.7.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 28 | Name: middle_flow.1.rep.7.pointwise | h_val:  0.291 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 29 | Name: middle_flow.2.rep.1.depthwise | h_val: -0.998 | Color State: REJECTED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 30 | Name: middle_flow.2.rep.1.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 31 | Name: middle_flow.2.rep.4.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 32 | Name: middle_flow.2.rep.4.pointwise | h_val: -0.115 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 33 | Name: middle_flow.2.rep.7.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 34 | Name: middle_flow.2.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 35 | Name: middle_flow.3.rep.1.depthwise | h_val: -0.999 | Color State: REJECTED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 36 | Name: middle_flow.3.rep.1.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 37 | Name: middle_flow.3.rep.4.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 38 | Name: middle_flow.3.rep.4.pointwise | h_val: -0.450 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 39 | Name: middle_flow.3.rep.7.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 40 | Name: middle_flow.3.rep.7.pointwise | h_val:  0.471 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 41 | Name: middle_flow.4.rep.1.depthwise | h_val: -0.997 | Color State: REJECTED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 42 | Name: middle_flow.4.rep.1.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 43 | Name: middle_flow.4.rep.4.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 44 | Name: middle_flow.4.rep.4.pointwise | h_val: -0.322 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 45 | Name: middle_flow.4.rep.7.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 46 | Name: middle_flow.4.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 47 | Name: middle_flow.5.rep.1.depthwise | h_val: -0.996 | Color State: REJECTED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 48 | Name: middle_flow.5.rep.1.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 49 | Name: middle_flow.5.rep.4.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 50 | Name: middle_flow.5.rep.4.pointwise | h_val: -0.390 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 51 | Name: middle_flow.5.rep.7.depthwise | h_val: -0.999 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 52 | Name: middle_flow.5.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 53 | Name: middle_flow.6.rep.1.depthwise | h_val: -0.997 | Color State: REJECTED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 54 | Name: middle_flow.6.rep.1.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 55 | Name: middle_flow.6.rep.4.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 56 | Name: middle_flow.6.rep.4.pointwise | h_val: -0.618 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 57 | Name: middle_flow.6.rep.7.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 58 | Name: middle_flow.6.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 59 | Name: middle_flow.7.rep.1.depthwise | h_val: -0.993 | Color State: REJECTED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 60 | Name: middle_flow.7.rep.1.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 61 | Name: middle_flow.7.rep.4.depthwise | h_val: -0.999 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 62 | Name: middle_flow.7.rep.4.pointwise | h_val: -0.959 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 63 | Name: middle_flow.7.rep.7.depthwise | h_val: -1.000 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 64 | Name: middle_flow.7.rep.7.pointwise | h_val: -0.942 | Color State: VERIFIED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 65 | Name: block4.skip.0        | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 66 | Name: block4.rep.1.depthwise | h_val: -0.998 | Color State: REJECTED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 67 | Name: block4.rep.1.pointwise | h_val:  0.317 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 68 | Name: block4.rep.4.depthwise | h_val: -1.000 | Color State: REJECTED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 69 | Name: block4.rep.4.pointwise | h_val:  0.007 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 70 | Name: conv3.depthwise      | h_val: -0.998 | Color State: REJECTED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 71 | Name: conv3.pointwise      | h_val:  1.000 | Color State: DANGER
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 72 | Name: conv4.depthwise      | h_val: -1.000 | Color State: REJECTED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 73 | Name: conv4.pointwise      | h_val: -0.751 | Color State: REJECTED
+01:02:12 [INFO] [DEBUG] [XceptionNet/tinyimagenet] Layer 74 | Name: fc                   | h_val:  0.446 | Color State: DANGER
+01:02:21 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/XceptionNet_tinyimagenet_bav_methodology_regions.png
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Loading JSON file: XceptionNet_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Extracted Regions: [['middle_flow.0.rep.4.depthwise', 'middle_flow.0.rep.7.depthwise'], ['middle_flow.2.rep.4.depthwise', 'middle_flow.2.rep.7.depthwise'], ['middle_flow.3.rep.4.depthwise', 'middle_flow.3.rep.7.depthwise'], ['middle_flow.4.rep.4.depthwise', 'middle_flow.4.rep.7.depthwise'], ['middle_flow.5.rep.4.depthwise', 'middle_flow.5.rep.7.depthwise'], ['middle_flow.6.rep.4.depthwise', 'middle_flow.6.rep.7.depthwise'], ['middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.depthwise'], ['block4.rep.1.depthwise', 'block4.rep.4.depthwise'], ['conv3.depthwise', 'conv4.pointwise']]
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Mapped region 'middle_flow.0.rep.4.depthwise' -> 'middle_flow.0.rep.7.depthwise' to indices 19 -> 21
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Mapped region 'middle_flow.2.rep.4.depthwise' -> 'middle_flow.2.rep.7.depthwise' to indices 31 -> 33
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Mapped region 'middle_flow.3.rep.4.depthwise' -> 'middle_flow.3.rep.7.depthwise' to indices 37 -> 39
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Mapped region 'middle_flow.4.rep.4.depthwise' -> 'middle_flow.4.rep.7.depthwise' to indices 43 -> 45
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Mapped region 'middle_flow.5.rep.4.depthwise' -> 'middle_flow.5.rep.7.depthwise' to indices 49 -> 51
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Mapped region 'middle_flow.6.rep.4.depthwise' -> 'middle_flow.6.rep.7.depthwise' to indices 55 -> 57
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Mapped region 'middle_flow.7.rep.4.depthwise' -> 'middle_flow.7.rep.7.depthwise' to indices 61 -> 63
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Mapped region 'block4.rep.1.depthwise' -> 'block4.rep.4.depthwise' to indices 66 -> 68
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Mapped region 'conv3.depthwise' -> 'conv4.pointwise' to indices 70 -> 73
+01:02:22 [INFO] [DEBUG] --- Final Layer States for XceptionNet on Cifar100 ---
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 00 | Name: stem.0               | h_val: -0.660 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 01 | Name: stem.3               | h_val:  1.000 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 02 | Name: block1.skip.0        | h_val: -0.188 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 03 | Name: block1.rep.0.depthwise | h_val: -0.902 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 04 | Name: block1.rep.0.pointwise | h_val: -0.931 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 05 | Name: block1.rep.3.depthwise | h_val: -0.941 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 06 | Name: block1.rep.3.pointwise | h_val: -0.755 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 07 | Name: block2.skip.0        | h_val:  1.000 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 08 | Name: block2.rep.1.depthwise | h_val: -0.791 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 09 | Name: block2.rep.1.pointwise | h_val: -0.821 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 10 | Name: block2.rep.4.depthwise | h_val: -0.991 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 11 | Name: block2.rep.4.pointwise | h_val: -0.889 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 12 | Name: block3.skip.0        | h_val:  1.000 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 13 | Name: block3.rep.1.depthwise | h_val: -0.975 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 14 | Name: block3.rep.1.pointwise | h_val: -0.778 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 15 | Name: block3.rep.4.depthwise | h_val: -0.996 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 16 | Name: block3.rep.4.pointwise | h_val: -0.281 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 17 | Name: middle_flow.0.rep.1.depthwise | h_val: -0.985 | Color State: VETO
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 18 | Name: middle_flow.0.rep.1.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 19 | Name: middle_flow.0.rep.4.depthwise | h_val: -0.998 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 20 | Name: middle_flow.0.rep.4.pointwise | h_val: -0.171 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 21 | Name: middle_flow.0.rep.7.depthwise | h_val: -0.997 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 22 | Name: middle_flow.0.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 23 | Name: middle_flow.1.rep.1.depthwise | h_val: -0.995 | Color State: REJECTED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 24 | Name: middle_flow.1.rep.1.pointwise | h_val:  0.392 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 25 | Name: middle_flow.1.rep.4.depthwise | h_val: -0.998 | Color State: REJECTED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 26 | Name: middle_flow.1.rep.4.pointwise | h_val:  0.017 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 27 | Name: middle_flow.1.rep.7.depthwise | h_val: -0.998 | Color State: REJECTED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 28 | Name: middle_flow.1.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 29 | Name: middle_flow.2.rep.1.depthwise | h_val: -0.995 | Color State: REJECTED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 30 | Name: middle_flow.2.rep.1.pointwise | h_val:  0.283 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 31 | Name: middle_flow.2.rep.4.depthwise | h_val: -0.999 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 32 | Name: middle_flow.2.rep.4.pointwise | h_val: -0.227 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 33 | Name: middle_flow.2.rep.7.depthwise | h_val: -0.997 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 34 | Name: middle_flow.2.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 35 | Name: middle_flow.3.rep.1.depthwise | h_val: -0.994 | Color State: REJECTED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 36 | Name: middle_flow.3.rep.1.pointwise | h_val:  0.358 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 37 | Name: middle_flow.3.rep.4.depthwise | h_val: -0.999 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 38 | Name: middle_flow.3.rep.4.pointwise | h_val: -0.419 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 39 | Name: middle_flow.3.rep.7.depthwise | h_val: -0.997 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 40 | Name: middle_flow.3.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 41 | Name: middle_flow.4.rep.1.depthwise | h_val: -0.994 | Color State: REJECTED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 42 | Name: middle_flow.4.rep.1.pointwise | h_val:  0.050 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 43 | Name: middle_flow.4.rep.4.depthwise | h_val: -0.999 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 44 | Name: middle_flow.4.rep.4.pointwise | h_val: -0.286 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 45 | Name: middle_flow.4.rep.7.depthwise | h_val: -0.997 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 46 | Name: middle_flow.4.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 47 | Name: middle_flow.5.rep.1.depthwise | h_val: -0.992 | Color State: REJECTED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 48 | Name: middle_flow.5.rep.1.pointwise | h_val:  0.428 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 49 | Name: middle_flow.5.rep.4.depthwise | h_val: -0.999 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 50 | Name: middle_flow.5.rep.4.pointwise | h_val: -0.422 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 51 | Name: middle_flow.5.rep.7.depthwise | h_val: -0.997 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 52 | Name: middle_flow.5.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 53 | Name: middle_flow.6.rep.1.depthwise | h_val: -0.994 | Color State: REJECTED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 54 | Name: middle_flow.6.rep.1.pointwise | h_val:  0.301 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 55 | Name: middle_flow.6.rep.4.depthwise | h_val: -0.999 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 56 | Name: middle_flow.6.rep.4.pointwise | h_val: -0.389 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 57 | Name: middle_flow.6.rep.7.depthwise | h_val: -0.997 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 58 | Name: middle_flow.6.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 59 | Name: middle_flow.7.rep.1.depthwise | h_val: -0.994 | Color State: REJECTED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 60 | Name: middle_flow.7.rep.1.pointwise | h_val:  0.358 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 61 | Name: middle_flow.7.rep.4.depthwise | h_val: -0.999 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 62 | Name: middle_flow.7.rep.4.pointwise | h_val: -0.667 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 63 | Name: middle_flow.7.rep.7.depthwise | h_val: -0.998 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 64 | Name: middle_flow.7.rep.7.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 65 | Name: block4.skip.0        | h_val:  1.000 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 66 | Name: block4.rep.1.depthwise | h_val: -0.999 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 67 | Name: block4.rep.1.pointwise | h_val: -0.870 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 68 | Name: block4.rep.4.depthwise | h_val: -0.999 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 69 | Name: block4.rep.4.pointwise | h_val:  1.000 | Color State: DANGER
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 70 | Name: conv3.depthwise      | h_val: -0.992 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 71 | Name: conv3.pointwise      | h_val: -0.126 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 72 | Name: conv4.depthwise      | h_val: -1.000 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 73 | Name: conv4.pointwise      | h_val: -0.998 | Color State: VERIFIED
+01:02:22 [INFO] [DEBUG] [XceptionNet/Cifar100] Layer 74 | Name: fc                   | h_val:  0.313 | Color State: DANGER
+01:02:37 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/XceptionNet_Cifar100_bav_methodology_regions.png
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Loading JSON file: MobileNet_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Extracted Regions: []
+01:02:37 [INFO] [DEBUG] --- Final Layer States for MobileNet on Cifar100 ---
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 00 | Name: stem.conv1           | h_val:  1.000 | Color State: VETO
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 01 | Name: features.0.depthwise.0 | h_val: -0.821 | Color State: VETO
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 02 | Name: features.0.pointwise.0 | h_val: -0.324 | Color State: VETO
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 03 | Name: features.1.depthwise.0 | h_val: -0.643 | Color State: VETO
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 04 | Name: features.1.pointwise.0 | h_val:  0.708 | Color State: VETO
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 05 | Name: features.2.depthwise.0 | h_val: -0.830 | Color State: VETO
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 06 | Name: features.2.pointwise.0 | h_val:  1.000 | Color State: VETO
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 07 | Name: features.3.depthwise.0 | h_val: -0.777 | Color State: REJECTED
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 08 | Name: features.3.pointwise.0 | h_val:  0.715 | Color State: DANGER
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 09 | Name: features.4.depthwise.0 | h_val: -0.917 | Color State: REJECTED
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 10 | Name: features.4.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 11 | Name: features.5.depthwise.0 | h_val: -0.925 | Color State: REJECTED
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 12 | Name: features.5.pointwise.0 | h_val:  0.693 | Color State: DANGER
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 13 | Name: features.6.depthwise.0 | h_val: -0.970 | Color State: REJECTED
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 14 | Name: features.6.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 15 | Name: features.7.depthwise.0 | h_val: -0.976 | Color State: REJECTED
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 16 | Name: features.7.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 17 | Name: features.8.depthwise.0 | h_val: -0.979 | Color State: REJECTED
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 18 | Name: features.8.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 19 | Name: features.9.depthwise.0 | h_val: -0.979 | Color State: REJECTED
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 20 | Name: features.9.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 21 | Name: features.10.depthwise.0 | h_val: -0.983 | Color State: REJECTED
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 22 | Name: features.10.pointwise.0 | h_val:  0.748 | Color State: DANGER
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 23 | Name: features.11.depthwise.0 | h_val: -0.964 | Color State: REJECTED
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 24 | Name: features.11.pointwise.0 | h_val:  0.162 | Color State: DANGER
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 25 | Name: features.12.depthwise.0 | h_val: -0.999 | Color State: REJECTED
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 26 | Name: features.12.pointwise.0 | h_val: -0.333 | Color State: REJECTED
+01:02:37 [INFO] [DEBUG] [MobileNet/Cifar100] Layer 27 | Name: fc                   | h_val:  1.000 | Color State: DANGER
+01:03:15 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/MobileNet_Cifar100_bav_methodology_regions.png
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Loading JSON file: MobileNet_tinyimagenet_epochs200_pretrain200_JF_discovered_regions.json
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Extracted Regions: []
+01:03:16 [INFO] [DEBUG] --- Final Layer States for MobileNet on tinyimagenet ---
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 00 | Name: stem.conv1           | h_val:  0.920 | Color State: VETO
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 01 | Name: features.0.depthwise.0 | h_val: -0.858 | Color State: VETO
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 02 | Name: features.0.pointwise.0 | h_val:  0.219 | Color State: VETO
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 03 | Name: features.1.depthwise.0 | h_val: -0.742 | Color State: VETO
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 04 | Name: features.1.pointwise.0 | h_val:  0.889 | Color State: VETO
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 05 | Name: features.2.depthwise.0 | h_val: -0.883 | Color State: VETO
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 06 | Name: features.2.pointwise.0 | h_val:  1.000 | Color State: VETO
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 07 | Name: features.3.depthwise.0 | h_val: -0.890 | Color State: REJECTED
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 08 | Name: features.3.pointwise.0 | h_val:  0.716 | Color State: DANGER
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 09 | Name: features.4.depthwise.0 | h_val: -0.948 | Color State: REJECTED
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 10 | Name: features.4.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 11 | Name: features.5.depthwise.0 | h_val: -0.964 | Color State: REJECTED
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 12 | Name: features.5.pointwise.0 | h_val:  0.623 | Color State: DANGER
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 13 | Name: features.6.depthwise.0 | h_val: -0.978 | Color State: REJECTED
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 14 | Name: features.6.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 15 | Name: features.7.depthwise.0 | h_val: -0.976 | Color State: REJECTED
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 16 | Name: features.7.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 17 | Name: features.8.depthwise.0 | h_val: -0.978 | Color State: REJECTED
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 18 | Name: features.8.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 19 | Name: features.9.depthwise.0 | h_val: -0.981 | Color State: REJECTED
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 20 | Name: features.9.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 21 | Name: features.10.depthwise.0 | h_val: -0.984 | Color State: REJECTED
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 22 | Name: features.10.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 23 | Name: features.11.depthwise.0 | h_val: -0.987 | Color State: REJECTED
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 24 | Name: features.11.pointwise.0 | h_val:  0.405 | Color State: DANGER
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 25 | Name: features.12.depthwise.0 | h_val: -0.997 | Color State: REJECTED
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 26 | Name: features.12.pointwise.0 | h_val:  0.105 | Color State: DANGER
+01:03:16 [INFO] [DEBUG] [MobileNet/tinyimagenet] Layer 27 | Name: fc                   | h_val:  1.000 | Color State: DANGER
+01:03:44 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/MobileNet_tinyimagenet_bav_methodology_regions.png
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Loading JSON file: MobileNet_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Extracted Regions: []
+01:03:46 [INFO] [DEBUG] --- Final Layer States for MobileNet on Cifar10 ---
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 00 | Name: stem.conv1           | h_val:  1.000 | Color State: VETO
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 01 | Name: features.0.depthwise.0 | h_val: -0.799 | Color State: VETO
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 02 | Name: features.0.pointwise.0 | h_val: -0.011 | Color State: VETO
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 03 | Name: features.1.depthwise.0 | h_val: -0.618 | Color State: VETO
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 04 | Name: features.1.pointwise.0 | h_val:  0.772 | Color State: VETO
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 05 | Name: features.2.depthwise.0 | h_val: -0.804 | Color State: VETO
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 06 | Name: features.2.pointwise.0 | h_val:  1.000 | Color State: VETO
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 07 | Name: features.3.depthwise.0 | h_val: -0.792 | Color State: REJECTED
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 08 | Name: features.3.pointwise.0 | h_val:  0.730 | Color State: DANGER
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 09 | Name: features.4.depthwise.0 | h_val: -0.893 | Color State: REJECTED
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 10 | Name: features.4.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 11 | Name: features.5.depthwise.0 | h_val: -0.918 | Color State: REJECTED
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 12 | Name: features.5.pointwise.0 | h_val:  0.803 | Color State: DANGER
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 13 | Name: features.6.depthwise.0 | h_val: -0.967 | Color State: REJECTED
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 14 | Name: features.6.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 15 | Name: features.7.depthwise.0 | h_val: -0.977 | Color State: REJECTED
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 16 | Name: features.7.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 17 | Name: features.8.depthwise.0 | h_val: -0.982 | Color State: REJECTED
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 18 | Name: features.8.pointwise.0 | h_val:  0.540 | Color State: DANGER
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 19 | Name: features.9.depthwise.0 | h_val: -0.989 | Color State: REJECTED
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 20 | Name: features.9.pointwise.0 | h_val:  0.230 | Color State: DANGER
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 21 | Name: features.10.depthwise.0 | h_val: -0.993 | Color State: REJECTED
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 22 | Name: features.10.pointwise.0 | h_val:  0.472 | Color State: DANGER
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 23 | Name: features.11.depthwise.0 | h_val: -0.994 | Color State: REJECTED
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 24 | Name: features.11.pointwise.0 | h_val:  0.497 | Color State: DANGER
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 25 | Name: features.12.depthwise.0 | h_val: -1.000 | Color State: REJECTED
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 26 | Name: features.12.pointwise.0 | h_val:  1.000 | Color State: DANGER
+01:03:46 [INFO] [DEBUG] [MobileNet/Cifar10] Layer 27 | Name: fc                   | h_val: -0.650 | Color State: REJECTED
+01:04:14 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/MobileNet_Cifar10_bav_methodology_regions.png
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Loading JSON file: ConvNeXt_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Extracted Regions: [['features.2.1.dwconv', 'features.2.2.pwconv1'], ['features.3.1', 'features.4.0.pwconv1'], ['features.4.8.dwconv', 'features.4.8.pwconv2'], ['features.6.0.dwconv', 'features.6.0.pwconv2'], ['features.6.1.pwconv1', 'features.6.1.pwconv2'], ['features.6.2.pwconv1', 'features.6.2.pwconv2']]
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Mapped region 'features.2.1.dwconv' -> 'features.2.2.pwconv1' to indices 14 -> 18
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Mapped region 'features.3.1' -> 'features.4.0.pwconv1' to indices 20 -> 22
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Mapped region 'features.4.8.dwconv' -> 'features.4.8.pwconv2' to indices 45 -> 47
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Mapped region 'features.6.0.dwconv' -> 'features.6.0.pwconv2' to indices 49 -> 51
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Mapped region 'features.6.1.pwconv1' -> 'features.6.1.pwconv2' to indices 53 -> 54
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Mapped region 'features.6.2.pwconv1' -> 'features.6.2.pwconv2' to indices 56 -> 57
+01:04:14 [INFO] [DEBUG] --- Final Layer States for ConvNeXt on Cifar10 ---
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 00 | Name: stem.0               | h_val: -0.902 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 01 | Name: features.0.0.dwconv  | h_val: -0.855 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 02 | Name: features.0.0.pwconv1 | h_val: -0.235 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 03 | Name: features.0.0.pwconv2 | h_val:  1.000 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 04 | Name: features.0.1.dwconv  | h_val: -0.898 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 05 | Name: features.0.1.pwconv1 | h_val: -0.563 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 06 | Name: features.0.1.pwconv2 | h_val:  0.070 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 07 | Name: features.0.2.dwconv  | h_val: -0.920 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 08 | Name: features.0.2.pwconv1 | h_val: -0.670 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 09 | Name: features.0.2.pwconv2 | h_val:  0.549 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 10 | Name: features.1.1         | h_val: -0.304 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 11 | Name: features.2.0.dwconv  | h_val: -0.626 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 12 | Name: features.2.0.pwconv1 | h_val: -0.646 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 13 | Name: features.2.0.pwconv2 | h_val:  1.000 | Color State: VETO
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 14 | Name: features.2.1.dwconv  | h_val: -0.742 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 15 | Name: features.2.1.pwconv1 | h_val: -0.752 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 16 | Name: features.2.1.pwconv2 | h_val: -0.006 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 17 | Name: features.2.2.dwconv  | h_val: -0.866 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 18 | Name: features.2.2.pwconv1 | h_val: -0.816 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 19 | Name: features.2.2.pwconv2 | h_val:  1.000 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 20 | Name: features.3.1         | h_val: -0.943 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 21 | Name: features.4.0.dwconv  | h_val: -0.994 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 22 | Name: features.4.0.pwconv1 | h_val: -0.768 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 23 | Name: features.4.0.pwconv2 | h_val:  0.796 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 24 | Name: features.4.1.dwconv  | h_val: -0.956 | Color State: REJECTED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 25 | Name: features.4.1.pwconv1 | h_val:  0.211 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 26 | Name: features.4.1.pwconv2 | h_val:  0.786 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 27 | Name: features.4.2.dwconv  | h_val: -0.947 | Color State: REJECTED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 28 | Name: features.4.2.pwconv1 | h_val:  0.174 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 29 | Name: features.4.2.pwconv2 | h_val:  0.249 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 30 | Name: features.4.3.dwconv  | h_val: -0.940 | Color State: REJECTED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 31 | Name: features.4.3.pwconv1 | h_val:  0.349 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 32 | Name: features.4.3.pwconv2 | h_val:  0.630 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 33 | Name: features.4.4.dwconv  | h_val: -0.930 | Color State: REJECTED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 34 | Name: features.4.4.pwconv1 | h_val:  0.162 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 35 | Name: features.4.4.pwconv2 | h_val:  0.593 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 36 | Name: features.4.5.dwconv  | h_val: -0.914 | Color State: REJECTED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 37 | Name: features.4.5.pwconv1 | h_val:  0.174 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 38 | Name: features.4.5.pwconv2 | h_val:  0.425 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 39 | Name: features.4.6.dwconv  | h_val: -0.894 | Color State: REJECTED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 40 | Name: features.4.6.pwconv1 | h_val:  0.156 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 41 | Name: features.4.6.pwconv2 | h_val:  0.558 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 42 | Name: features.4.7.dwconv  | h_val: -0.894 | Color State: REJECTED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 43 | Name: features.4.7.pwconv1 | h_val:  0.120 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 44 | Name: features.4.7.pwconv2 | h_val:  0.521 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 45 | Name: features.4.8.dwconv  | h_val: -0.981 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 46 | Name: features.4.8.pwconv1 | h_val: -0.797 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 47 | Name: features.4.8.pwconv2 | h_val: -0.550 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 48 | Name: features.5.1         | h_val:  1.000 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 49 | Name: features.6.0.dwconv  | h_val: -0.966 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 50 | Name: features.6.0.pwconv1 | h_val: -1.000 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 51 | Name: features.6.0.pwconv2 | h_val: -1.000 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 52 | Name: features.6.1.dwconv  | h_val:  1.000 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 53 | Name: features.6.1.pwconv1 | h_val: -1.000 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 54 | Name: features.6.1.pwconv2 | h_val: -1.000 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 55 | Name: features.6.2.dwconv  | h_val:  0.425 | Color State: DANGER
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 56 | Name: features.6.2.pwconv1 | h_val: -1.000 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 57 | Name: features.6.2.pwconv2 | h_val: -1.000 | Color State: VERIFIED
+01:04:14 [INFO] [DEBUG] [ConvNeXt/Cifar10] Layer 58 | Name: classifier           | h_val:  1.000 | Color State: DANGER
+01:04:30 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/ConvNeXt_Cifar10_bav_methodology_regions.png
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Loading JSON file: ConvNeXt_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Extracted Regions: [['features.2.1.dwconv', 'features.2.1.pwconv1'], ['features.2.2.dwconv', 'features.2.2.pwconv1'], ['features.3.1', 'features.4.0.pwconv1'], ['features.4.8.dwconv', 'features.4.8.pwconv2'], ['features.6.0.dwconv', 'features.6.0.pwconv2'], ['features.6.1.pwconv1', 'features.6.2.pwconv2']]
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Mapped region 'features.2.1.dwconv' -> 'features.2.1.pwconv1' to indices 14 -> 15
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Mapped region 'features.2.2.dwconv' -> 'features.2.2.pwconv1' to indices 17 -> 18
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Mapped region 'features.3.1' -> 'features.4.0.pwconv1' to indices 20 -> 22
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Mapped region 'features.4.8.dwconv' -> 'features.4.8.pwconv2' to indices 45 -> 47
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Mapped region 'features.6.0.dwconv' -> 'features.6.0.pwconv2' to indices 49 -> 51
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Mapped region 'features.6.1.pwconv1' -> 'features.6.2.pwconv2' to indices 53 -> 57
+01:04:31 [INFO] [DEBUG] --- Final Layer States for ConvNeXt on Cifar100 ---
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 00 | Name: stem.0               | h_val: -0.937 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 01 | Name: features.0.0.dwconv  | h_val: -0.815 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 02 | Name: features.0.0.pwconv1 | h_val: -0.036 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 03 | Name: features.0.0.pwconv2 | h_val:  1.000 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 04 | Name: features.0.1.dwconv  | h_val: -0.907 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 05 | Name: features.0.1.pwconv1 | h_val: -0.429 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 06 | Name: features.0.1.pwconv2 | h_val:  1.000 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 07 | Name: features.0.2.dwconv  | h_val: -0.915 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 08 | Name: features.0.2.pwconv1 | h_val: -0.627 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 09 | Name: features.0.2.pwconv2 | h_val:  0.019 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 10 | Name: features.1.1         | h_val: -0.834 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 11 | Name: features.2.0.dwconv  | h_val: -0.919 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 12 | Name: features.2.0.pwconv1 | h_val: -0.832 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 13 | Name: features.2.0.pwconv2 | h_val:  1.000 | Color State: VETO
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 14 | Name: features.2.1.dwconv  | h_val: -0.934 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 15 | Name: features.2.1.pwconv1 | h_val: -0.864 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 16 | Name: features.2.1.pwconv2 | h_val:  0.514 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 17 | Name: features.2.2.dwconv  | h_val: -0.901 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 18 | Name: features.2.2.pwconv1 | h_val: -0.853 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 19 | Name: features.2.2.pwconv2 | h_val:  1.000 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 20 | Name: features.3.1         | h_val: -0.942 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 21 | Name: features.4.0.dwconv  | h_val: -0.994 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 22 | Name: features.4.0.pwconv1 | h_val: -0.720 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 23 | Name: features.4.0.pwconv2 | h_val:  1.000 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 24 | Name: features.4.1.dwconv  | h_val: -0.972 | Color State: REJECTED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 25 | Name: features.4.1.pwconv1 | h_val:  0.044 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 26 | Name: features.4.1.pwconv2 | h_val:  0.614 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 27 | Name: features.4.2.dwconv  | h_val: -0.962 | Color State: REJECTED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 28 | Name: features.4.2.pwconv1 | h_val:  0.069 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 29 | Name: features.4.2.pwconv2 | h_val:  0.492 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 30 | Name: features.4.3.dwconv  | h_val: -0.958 | Color State: REJECTED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 31 | Name: features.4.3.pwconv1 | h_val:  0.139 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 32 | Name: features.4.3.pwconv2 | h_val:  0.752 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 33 | Name: features.4.4.dwconv  | h_val: -0.953 | Color State: REJECTED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 34 | Name: features.4.4.pwconv1 | h_val:  0.045 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 35 | Name: features.4.4.pwconv2 | h_val:  0.735 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 36 | Name: features.4.5.dwconv  | h_val: -0.937 | Color State: REJECTED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 37 | Name: features.4.5.pwconv1 | h_val:  0.020 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 38 | Name: features.4.5.pwconv2 | h_val:  0.431 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 39 | Name: features.4.6.dwconv  | h_val: -0.925 | Color State: REJECTED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 40 | Name: features.4.6.pwconv1 | h_val:  0.098 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 41 | Name: features.4.6.pwconv2 | h_val:  1.000 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 42 | Name: features.4.7.dwconv  | h_val: -0.901 | Color State: REJECTED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 43 | Name: features.4.7.pwconv1 | h_val:  0.018 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 44 | Name: features.4.7.pwconv2 | h_val:  0.451 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 45 | Name: features.4.8.dwconv  | h_val: -0.941 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 46 | Name: features.4.8.pwconv1 | h_val: -0.433 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 47 | Name: features.4.8.pwconv2 | h_val: -0.101 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 48 | Name: features.5.1         | h_val:  1.000 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 49 | Name: features.6.0.dwconv  | h_val: -0.918 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 50 | Name: features.6.0.pwconv1 | h_val: -1.000 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 51 | Name: features.6.0.pwconv2 | h_val: -1.000 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 52 | Name: features.6.1.dwconv  | h_val:  1.000 | Color State: DANGER
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 53 | Name: features.6.1.pwconv1 | h_val: -1.000 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 54 | Name: features.6.1.pwconv2 | h_val: -1.000 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 55 | Name: features.6.2.dwconv  | h_val: -0.682 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 56 | Name: features.6.2.pwconv1 | h_val: -1.000 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 57 | Name: features.6.2.pwconv2 | h_val: -1.000 | Color State: VERIFIED
+01:04:31 [INFO] [DEBUG] [ConvNeXt/Cifar100] Layer 58 | Name: classifier           | h_val:  1.000 | Color State: DANGER
+01:04:33 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/ConvNeXt_Cifar100_bav_methodology_regions.png
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Loading JSON file: RegNetX_400MF_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Extracted Regions: [['stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.conv3'], ['stage3.stage3_block3.block.conv2', 'stage3.stage3_block3.block.conv3'], ['stage3.stage3_block4.block.conv2', 'stage3.stage3_block4.block.conv3'], ['stage3.stage3_block5.block.conv2', 'stage3.stage3_block5.block.conv3'], ['stage3.stage3_block6.block.conv2', 'stage3.stage3_block6.block.conv3'], ['stage4.stage4_block0.block.conv2', 'stage4.stage4_block0.block.conv3'], ['stage4.stage4_block1.block.conv2', 'stage4.stage4_block1.block.conv3'], ['stage4.stage4_block2.block.conv2', 'stage4.stage4_block2.block.conv3'], ['stage4.stage4_block3.block.conv2', 'stage4.stage4_block3.block.conv3'], ['stage4.stage4_block4.block.conv2', 'stage4.stage4_block4.block.conv3'], ['stage4.stage4_block5.block.conv2', 'stage4.stage4_block5.block.conv3'], ['stage4.stage4_block6.block.conv2', 'stage4.stage4_block6.block.conv3'], ['stage4.stage4_block7.block.conv2', 'stage4.stage4_block7.block.conv3'], ['stage4.stage4_block8.block.conv2', 'stage4.stage4_block8.block.conv3'], ['stage4.stage4_block9.block.conv2', 'stage4.stage4_block9.block.conv3'], ['stage4.stage4_block10.block.conv2', 'stage4.stage4_block10.block.conv3'], ['stage4.stage4_block11.block.conv2', 'stage4.stage4_block11.block.conv3']]
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3' to indices 20 -> 21
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3' to indices 23 -> 24
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3' to indices 26 -> 27
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3' to indices 29 -> 30
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3' to indices 32 -> 33
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3' to indices 35 -> 36
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage4.stage4_block1.block.conv2' -> 'stage4.stage4_block1.block.conv3' to indices 39 -> 40
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3' to indices 42 -> 43
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3' to indices 45 -> 46
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage4.stage4_block4.block.conv2' -> 'stage4.stage4_block4.block.conv3' to indices 48 -> 49
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage4.stage4_block5.block.conv2' -> 'stage4.stage4_block5.block.conv3' to indices 51 -> 52
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage4.stage4_block6.block.conv2' -> 'stage4.stage4_block6.block.conv3' to indices 54 -> 55
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage4.stage4_block7.block.conv2' -> 'stage4.stage4_block7.block.conv3' to indices 57 -> 58
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage4.stage4_block8.block.conv2' -> 'stage4.stage4_block8.block.conv3' to indices 60 -> 61
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage4.stage4_block9.block.conv2' -> 'stage4.stage4_block9.block.conv3' to indices 63 -> 64
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage4.stage4_block10.block.conv2' -> 'stage4.stage4_block10.block.conv3' to indices 66 -> 67
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Mapped region 'stage4.stage4_block11.block.conv2' -> 'stage4.stage4_block11.block.conv3' to indices 69 -> 70
+01:04:34 [INFO] [DEBUG] --- Final Layer States for RegNetX_400MF on Cifar100 ---
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 00 | Name: stem.stem_conv       | h_val: -0.115 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 01 | Name: stage1.stage1_block0.block.conv1 | h_val: -0.553 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 02 | Name: stage1.stage1_block0.block.conv2 | h_val:  1.000 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 03 | Name: stage1.stage1_block0.block.conv3 | h_val: -0.621 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 04 | Name: stage1.stage1_block0.shortcut.shortcut_conv | h_val: -0.573 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 05 | Name: stage2.stage2_block0.block.conv1 | h_val:  0.042 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 06 | Name: stage2.stage2_block0.block.conv2 | h_val:  0.549 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 07 | Name: stage2.stage2_block0.block.conv3 | h_val: -0.543 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 08 | Name: stage2.stage2_block0.shortcut.shortcut_conv | h_val: -0.135 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 09 | Name: stage2.stage2_block1.block.conv1 | h_val:  0.613 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 10 | Name: stage2.stage2_block1.block.conv2 | h_val: -0.056 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 11 | Name: stage2.stage2_block1.block.conv3 | h_val: -0.482 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 12 | Name: stage3.stage3_block0.block.conv1 | h_val:  0.544 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 13 | Name: stage3.stage3_block0.block.conv2 | h_val: -0.579 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 14 | Name: stage3.stage3_block0.block.conv3 | h_val: -0.459 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 15 | Name: stage3.stage3_block0.shortcut.shortcut_conv | h_val: -0.099 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 16 | Name: stage3.stage3_block1.block.conv1 | h_val:  1.000 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 17 | Name: stage3.stage3_block1.block.conv2 | h_val: -0.835 | Color State: VETO
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 18 | Name: stage3.stage3_block1.block.conv3 | h_val: -0.433 | Color State: REJECTED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 19 | Name: stage3.stage3_block2.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 20 | Name: stage3.stage3_block2.block.conv2 | h_val: -0.845 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 21 | Name: stage3.stage3_block2.block.conv3 | h_val: -0.324 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 22 | Name: stage3.stage3_block3.block.conv1 | h_val:  0.770 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 23 | Name: stage3.stage3_block3.block.conv2 | h_val: -0.870 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 24 | Name: stage3.stage3_block3.block.conv3 | h_val: -0.355 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 25 | Name: stage3.stage3_block4.block.conv1 | h_val:  0.996 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 26 | Name: stage3.stage3_block4.block.conv2 | h_val: -0.856 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 27 | Name: stage3.stage3_block4.block.conv3 | h_val: -0.231 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 28 | Name: stage3.stage3_block5.block.conv1 | h_val:  0.817 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 29 | Name: stage3.stage3_block5.block.conv2 | h_val: -0.864 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 30 | Name: stage3.stage3_block5.block.conv3 | h_val: -0.197 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 31 | Name: stage3.stage3_block6.block.conv1 | h_val:  0.680 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 32 | Name: stage3.stage3_block6.block.conv2 | h_val: -0.891 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 33 | Name: stage3.stage3_block6.block.conv3 | h_val: -0.462 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 34 | Name: stage4.stage4_block0.block.conv1 | h_val:  0.273 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 35 | Name: stage4.stage4_block0.block.conv2 | h_val: -0.949 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 36 | Name: stage4.stage4_block0.block.conv3 | h_val: -0.622 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 37 | Name: stage4.stage4_block0.shortcut.shortcut_conv | h_val:  1.000 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 38 | Name: stage4.stage4_block1.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 39 | Name: stage4.stage4_block1.block.conv2 | h_val: -0.996 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 40 | Name: stage4.stage4_block1.block.conv3 | h_val: -0.878 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 41 | Name: stage4.stage4_block2.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 42 | Name: stage4.stage4_block2.block.conv2 | h_val: -0.995 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 43 | Name: stage4.stage4_block2.block.conv3 | h_val: -0.854 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 44 | Name: stage4.stage4_block3.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 45 | Name: stage4.stage4_block3.block.conv2 | h_val: -0.995 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 46 | Name: stage4.stage4_block3.block.conv3 | h_val: -0.845 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 47 | Name: stage4.stage4_block4.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 48 | Name: stage4.stage4_block4.block.conv2 | h_val: -0.995 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 49 | Name: stage4.stage4_block4.block.conv3 | h_val: -0.830 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 50 | Name: stage4.stage4_block5.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 51 | Name: stage4.stage4_block5.block.conv2 | h_val: -0.995 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 52 | Name: stage4.stage4_block5.block.conv3 | h_val: -0.785 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 53 | Name: stage4.stage4_block6.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 54 | Name: stage4.stage4_block6.block.conv2 | h_val: -0.995 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 55 | Name: stage4.stage4_block6.block.conv3 | h_val: -0.732 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 56 | Name: stage4.stage4_block7.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 57 | Name: stage4.stage4_block7.block.conv2 | h_val: -0.994 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 58 | Name: stage4.stage4_block7.block.conv3 | h_val: -0.691 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 59 | Name: stage4.stage4_block8.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 60 | Name: stage4.stage4_block8.block.conv2 | h_val: -0.994 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 61 | Name: stage4.stage4_block8.block.conv3 | h_val: -0.662 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 62 | Name: stage4.stage4_block9.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 63 | Name: stage4.stage4_block9.block.conv2 | h_val: -0.994 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 64 | Name: stage4.stage4_block9.block.conv3 | h_val: -0.627 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 65 | Name: stage4.stage4_block10.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 66 | Name: stage4.stage4_block10.block.conv2 | h_val: -0.993 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 67 | Name: stage4.stage4_block10.block.conv3 | h_val: -0.670 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 68 | Name: stage4.stage4_block11.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 69 | Name: stage4.stage4_block11.block.conv2 | h_val: -0.993 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 70 | Name: stage4.stage4_block11.block.conv3 | h_val: -0.796 | Color State: VERIFIED
+01:04:34 [INFO] [DEBUG] [RegNetX_400MF/Cifar100] Layer 71 | Name: fc                   | h_val:  0.790 | Color State: DANGER
+01:04:40 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/RegNetX_400MF_Cifar100_bav_methodology_regions.png
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Loading JSON file: RegNetX_400MF_tinyimagenet_epochs200_pretrain200_JF_discovered_regions.json
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Extracted Regions: [['stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.conv3'], ['stage3.stage3_block3.block.conv2', 'stage3.stage3_block3.block.conv3'], ['stage3.stage3_block4.block.conv2', 'stage3.stage3_block4.block.conv3'], ['stage3.stage3_block5.block.conv2', 'stage3.stage3_block5.block.conv3'], ['stage3.stage3_block6.block.conv2', 'stage3.stage3_block6.block.conv3'], ['stage4.stage4_block0.block.conv2', 'stage4.stage4_block0.block.conv3'], ['stage4.stage4_block1.block.conv2', 'stage4.stage4_block1.block.conv3'], ['stage4.stage4_block2.block.conv2', 'stage4.stage4_block2.block.conv3'], ['stage4.stage4_block3.block.conv2', 'stage4.stage4_block3.block.conv3'], ['stage4.stage4_block4.block.conv2', 'stage4.stage4_block5.block.conv2'], ['stage4.stage4_block7.block.conv1', 'stage4.stage4_block7.block.conv2'], ['stage4.stage4_block8.block.conv1', 'stage4.stage4_block8.block.conv2'], ['stage4.stage4_block9.block.conv1', 'stage4.stage4_block9.block.conv2'], ['stage4.stage4_block10.block.conv1', 'stage4.stage4_block10.block.conv2'], ['stage4.stage4_block11.block.conv1', 'stage4.stage4_block11.block.conv2']]
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3' to indices 20 -> 21
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3' to indices 23 -> 24
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3' to indices 26 -> 27
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3' to indices 29 -> 30
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3' to indices 32 -> 33
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3' to indices 35 -> 36
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage4.stage4_block1.block.conv2' -> 'stage4.stage4_block1.block.conv3' to indices 39 -> 40
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3' to indices 42 -> 43
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3' to indices 45 -> 46
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage4.stage4_block4.block.conv2' -> 'stage4.stage4_block5.block.conv2' to indices 48 -> 51
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage4.stage4_block7.block.conv1' -> 'stage4.stage4_block7.block.conv2' to indices 56 -> 57
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage4.stage4_block8.block.conv1' -> 'stage4.stage4_block8.block.conv2' to indices 59 -> 60
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage4.stage4_block9.block.conv1' -> 'stage4.stage4_block9.block.conv2' to indices 62 -> 63
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage4.stage4_block10.block.conv1' -> 'stage4.stage4_block10.block.conv2' to indices 65 -> 66
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Mapped region 'stage4.stage4_block11.block.conv1' -> 'stage4.stage4_block11.block.conv2' to indices 68 -> 69
+01:04:40 [INFO] [DEBUG] --- Final Layer States for RegNetX_400MF on tinyimagenet ---
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 00 | Name: stem.stem_conv       | h_val: -0.433 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 01 | Name: stage1.stage1_block0.block.conv1 | h_val:  0.031 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 02 | Name: stage1.stage1_block0.block.conv2 | h_val:  1.000 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 03 | Name: stage1.stage1_block0.block.conv3 | h_val: -0.774 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 04 | Name: stage1.stage1_block0.shortcut.shortcut_conv | h_val: -0.430 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 05 | Name: stage2.stage2_block0.block.conv1 | h_val: -0.064 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 06 | Name: stage2.stage2_block0.block.conv2 | h_val:  0.497 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 07 | Name: stage2.stage2_block0.block.conv3 | h_val: -0.574 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 08 | Name: stage2.stage2_block0.shortcut.shortcut_conv | h_val: -0.385 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 09 | Name: stage2.stage2_block1.block.conv1 | h_val:  0.949 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 10 | Name: stage2.stage2_block1.block.conv2 | h_val: -0.024 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 11 | Name: stage2.stage2_block1.block.conv3 | h_val: -0.719 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 12 | Name: stage3.stage3_block0.block.conv1 | h_val:  0.494 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 13 | Name: stage3.stage3_block0.block.conv2 | h_val: -0.687 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 14 | Name: stage3.stage3_block0.block.conv3 | h_val: -0.684 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 15 | Name: stage3.stage3_block0.shortcut.shortcut_conv | h_val: -0.511 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 16 | Name: stage3.stage3_block1.block.conv1 | h_val:  1.000 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 17 | Name: stage3.stage3_block1.block.conv2 | h_val: -0.799 | Color State: VETO
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 18 | Name: stage3.stage3_block1.block.conv3 | h_val: -0.821 | Color State: REJECTED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 19 | Name: stage3.stage3_block2.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 20 | Name: stage3.stage3_block2.block.conv2 | h_val: -0.809 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 21 | Name: stage3.stage3_block2.block.conv3 | h_val: -0.847 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 22 | Name: stage3.stage3_block3.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 23 | Name: stage3.stage3_block3.block.conv2 | h_val: -0.820 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 24 | Name: stage3.stage3_block3.block.conv3 | h_val: -0.842 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 25 | Name: stage3.stage3_block4.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 26 | Name: stage3.stage3_block4.block.conv2 | h_val: -0.829 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 27 | Name: stage3.stage3_block4.block.conv3 | h_val: -0.864 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 28 | Name: stage3.stage3_block5.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 29 | Name: stage3.stage3_block5.block.conv2 | h_val: -0.815 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 30 | Name: stage3.stage3_block5.block.conv3 | h_val: -0.878 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 31 | Name: stage3.stage3_block6.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 32 | Name: stage3.stage3_block6.block.conv2 | h_val: -0.864 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 33 | Name: stage3.stage3_block6.block.conv3 | h_val: -0.834 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 34 | Name: stage4.stage4_block0.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 35 | Name: stage4.stage4_block0.block.conv2 | h_val: -0.908 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 36 | Name: stage4.stage4_block0.block.conv3 | h_val: -0.586 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 37 | Name: stage4.stage4_block0.shortcut.shortcut_conv | h_val:  1.000 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 38 | Name: stage4.stage4_block1.block.conv1 | h_val:  0.488 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 39 | Name: stage4.stage4_block1.block.conv2 | h_val: -0.946 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 40 | Name: stage4.stage4_block1.block.conv3 | h_val: -0.728 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 41 | Name: stage4.stage4_block2.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 42 | Name: stage4.stage4_block2.block.conv2 | h_val: -0.886 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 43 | Name: stage4.stage4_block2.block.conv3 | h_val: -0.747 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 44 | Name: stage4.stage4_block3.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 45 | Name: stage4.stage4_block3.block.conv2 | h_val: -0.905 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 46 | Name: stage4.stage4_block3.block.conv3 | h_val: -0.812 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 47 | Name: stage4.stage4_block4.block.conv1 | h_val:  0.277 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 48 | Name: stage4.stage4_block4.block.conv2 | h_val: -0.937 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 49 | Name: stage4.stage4_block4.block.conv3 | h_val: -0.419 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 50 | Name: stage4.stage4_block5.block.conv1 | h_val: -0.008 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 51 | Name: stage4.stage4_block5.block.conv2 | h_val: -0.931 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 52 | Name: stage4.stage4_block5.block.conv3 | h_val:  0.654 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 53 | Name: stage4.stage4_block6.block.conv1 | h_val:  0.154 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 54 | Name: stage4.stage4_block6.block.conv2 | h_val: -0.930 | Color State: REJECTED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 55 | Name: stage4.stage4_block6.block.conv3 | h_val:  0.298 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 56 | Name: stage4.stage4_block7.block.conv1 | h_val: -0.068 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 57 | Name: stage4.stage4_block7.block.conv2 | h_val: -0.921 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 58 | Name: stage4.stage4_block7.block.conv3 | h_val:  0.723 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 59 | Name: stage4.stage4_block8.block.conv1 | h_val: -0.126 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 60 | Name: stage4.stage4_block8.block.conv2 | h_val: -0.911 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 61 | Name: stage4.stage4_block8.block.conv3 | h_val:  1.000 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 62 | Name: stage4.stage4_block9.block.conv1 | h_val: -0.473 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 63 | Name: stage4.stage4_block9.block.conv2 | h_val: -0.930 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 64 | Name: stage4.stage4_block9.block.conv3 | h_val:  1.000 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 65 | Name: stage4.stage4_block10.block.conv1 | h_val: -0.405 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 66 | Name: stage4.stage4_block10.block.conv2 | h_val: -0.920 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 67 | Name: stage4.stage4_block10.block.conv3 | h_val:  0.624 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 68 | Name: stage4.stage4_block11.block.conv1 | h_val: -0.602 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 69 | Name: stage4.stage4_block11.block.conv2 | h_val: -0.946 | Color State: VERIFIED
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 70 | Name: stage4.stage4_block11.block.conv3 | h_val:  1.000 | Color State: DANGER
+01:04:40 [INFO] [DEBUG] [RegNetX_400MF/tinyimagenet] Layer 71 | Name: fc                   | h_val: -0.946 | Color State: REJECTED
+01:04:43 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/RegNetX_400MF_tinyimagenet_bav_methodology_regions.png
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Loading JSON file: RegNetX_400MF_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Extracted Regions: [['stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.conv3'], ['stage3.stage3_block3.block.conv2', 'stage3.stage3_block3.block.conv3'], ['stage3.stage3_block4.block.conv2', 'stage3.stage3_block4.block.conv3'], ['stage3.stage3_block5.block.conv2', 'stage3.stage3_block5.block.conv3'], ['stage3.stage3_block6.block.conv2', 'stage3.stage3_block6.block.conv3'], ['stage4.stage4_block0.block.conv2', 'stage4.stage4_block0.block.conv3'], ['stage4.stage4_block1.block.conv2', 'stage4.stage4_block1.block.conv3'], ['stage4.stage4_block2.block.conv2', 'stage4.stage4_block2.block.conv3'], ['stage4.stage4_block3.block.conv2', 'stage4.stage4_block3.block.conv3']]
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Mapped region 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3' to indices 20 -> 21
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Mapped region 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3' to indices 23 -> 24
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Mapped region 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3' to indices 26 -> 27
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Mapped region 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3' to indices 29 -> 30
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Mapped region 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3' to indices 32 -> 33
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Mapped region 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3' to indices 35 -> 36
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Mapped region 'stage4.stage4_block1.block.conv2' -> 'stage4.stage4_block1.block.conv3' to indices 39 -> 40
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Mapped region 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3' to indices 42 -> 43
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Mapped region 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3' to indices 45 -> 46
+01:04:45 [INFO] [DEBUG] --- Final Layer States for RegNetX_400MF on Cifar10 ---
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 00 | Name: stem.stem_conv       | h_val: -0.067 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 01 | Name: stage1.stage1_block0.block.conv1 | h_val: -0.239 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 02 | Name: stage1.stage1_block0.block.conv2 | h_val:  0.883 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 03 | Name: stage1.stage1_block0.block.conv3 | h_val: -0.602 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 04 | Name: stage1.stage1_block0.shortcut.shortcut_conv | h_val: -0.547 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 05 | Name: stage2.stage2_block0.block.conv1 | h_val:  0.256 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 06 | Name: stage2.stage2_block0.block.conv2 | h_val:  0.378 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 07 | Name: stage2.stage2_block0.block.conv3 | h_val: -0.532 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 08 | Name: stage2.stage2_block0.shortcut.shortcut_conv | h_val:  0.054 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 09 | Name: stage2.stage2_block1.block.conv1 | h_val:  0.615 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 10 | Name: stage2.stage2_block1.block.conv2 | h_val: -0.218 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 11 | Name: stage2.stage2_block1.block.conv3 | h_val: -0.528 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 12 | Name: stage3.stage3_block0.block.conv1 | h_val:  0.672 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 13 | Name: stage3.stage3_block0.block.conv2 | h_val: -0.579 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 14 | Name: stage3.stage3_block0.block.conv3 | h_val: -0.460 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 15 | Name: stage3.stage3_block0.shortcut.shortcut_conv | h_val:  0.018 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 16 | Name: stage3.stage3_block1.block.conv1 | h_val:  1.000 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 17 | Name: stage3.stage3_block1.block.conv2 | h_val: -0.845 | Color State: VETO
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 18 | Name: stage3.stage3_block1.block.conv3 | h_val: -0.507 | Color State: REJECTED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 19 | Name: stage3.stage3_block2.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 20 | Name: stage3.stage3_block2.block.conv2 | h_val: -0.850 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 21 | Name: stage3.stage3_block2.block.conv3 | h_val: -0.532 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 22 | Name: stage3.stage3_block3.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 23 | Name: stage3.stage3_block3.block.conv2 | h_val: -0.867 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 24 | Name: stage3.stage3_block3.block.conv3 | h_val: -0.463 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 25 | Name: stage3.stage3_block4.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 26 | Name: stage3.stage3_block4.block.conv2 | h_val: -0.878 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 27 | Name: stage3.stage3_block4.block.conv3 | h_val: -0.579 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 28 | Name: stage3.stage3_block5.block.conv1 | h_val:  1.000 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 29 | Name: stage3.stage3_block5.block.conv2 | h_val: -0.892 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 30 | Name: stage3.stage3_block5.block.conv3 | h_val: -0.583 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 31 | Name: stage3.stage3_block6.block.conv1 | h_val:  0.890 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 32 | Name: stage3.stage3_block6.block.conv2 | h_val: -0.904 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 33 | Name: stage3.stage3_block6.block.conv3 | h_val: -0.587 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 34 | Name: stage4.stage4_block0.block.conv1 | h_val:  0.261 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 35 | Name: stage4.stage4_block0.block.conv2 | h_val: -0.935 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 36 | Name: stage4.stage4_block0.block.conv3 | h_val: -0.637 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 37 | Name: stage4.stage4_block0.shortcut.shortcut_conv | h_val:  1.000 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 38 | Name: stage4.stage4_block1.block.conv1 | h_val:  0.803 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 39 | Name: stage4.stage4_block1.block.conv2 | h_val: -0.994 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 40 | Name: stage4.stage4_block1.block.conv3 | h_val: -0.580 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 41 | Name: stage4.stage4_block2.block.conv1 | h_val:  0.868 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 42 | Name: stage4.stage4_block2.block.conv2 | h_val: -0.993 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 43 | Name: stage4.stage4_block2.block.conv3 | h_val: -0.354 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 44 | Name: stage4.stage4_block3.block.conv1 | h_val:  0.524 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 45 | Name: stage4.stage4_block3.block.conv2 | h_val: -0.994 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 46 | Name: stage4.stage4_block3.block.conv3 | h_val: -0.187 | Color State: VERIFIED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 47 | Name: stage4.stage4_block4.block.conv1 | h_val:  0.412 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 48 | Name: stage4.stage4_block4.block.conv2 | h_val: -0.993 | Color State: REJECTED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 49 | Name: stage4.stage4_block4.block.conv3 | h_val:  0.042 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 50 | Name: stage4.stage4_block5.block.conv1 | h_val:  0.415 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 51 | Name: stage4.stage4_block5.block.conv2 | h_val: -0.993 | Color State: REJECTED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 52 | Name: stage4.stage4_block5.block.conv3 | h_val:  0.425 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 53 | Name: stage4.stage4_block6.block.conv1 | h_val:  0.422 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 54 | Name: stage4.stage4_block6.block.conv2 | h_val: -0.993 | Color State: REJECTED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 55 | Name: stage4.stage4_block6.block.conv3 | h_val:  0.129 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 56 | Name: stage4.stage4_block7.block.conv1 | h_val:  0.470 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 57 | Name: stage4.stage4_block7.block.conv2 | h_val: -0.993 | Color State: REJECTED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 58 | Name: stage4.stage4_block7.block.conv3 | h_val:  0.415 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 59 | Name: stage4.stage4_block8.block.conv1 | h_val:  0.469 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 60 | Name: stage4.stage4_block8.block.conv2 | h_val: -0.993 | Color State: REJECTED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 61 | Name: stage4.stage4_block8.block.conv3 | h_val:  0.276 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 62 | Name: stage4.stage4_block9.block.conv1 | h_val:  0.419 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 63 | Name: stage4.stage4_block9.block.conv2 | h_val: -0.994 | Color State: REJECTED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 64 | Name: stage4.stage4_block9.block.conv3 | h_val:  0.313 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 65 | Name: stage4.stage4_block10.block.conv1 | h_val:  0.657 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 66 | Name: stage4.stage4_block10.block.conv2 | h_val: -0.995 | Color State: REJECTED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 67 | Name: stage4.stage4_block10.block.conv3 | h_val:  0.185 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 68 | Name: stage4.stage4_block11.block.conv1 | h_val:  0.986 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 69 | Name: stage4.stage4_block11.block.conv2 | h_val: -0.994 | Color State: REJECTED
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 70 | Name: stage4.stage4_block11.block.conv3 | h_val:  0.451 | Color State: DANGER
+01:04:45 [INFO] [DEBUG] [RegNetX_400MF/Cifar10] Layer 71 | Name: fc                   | h_val: -0.642 | Color State: REJECTED
+01:05:02 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/RegNetX_400MF_Cifar10_bav_methodology_regions.png
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Loading JSON file: VGG16_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Extracted Regions: [['features.conv_7', 'features.conv_11']]
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Mapped region 'features.conv_7' -> 'features.conv_11' to indices 6 -> 10
+01:05:03 [INFO] [DEBUG] --- Final Layer States for VGG16 on Cifar100 ---
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 00 | Name: features.conv_1      | h_val: -0.950 | Color State: VETO
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 01 | Name: features.conv_2      | h_val:  0.713 | Color State: VETO
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 02 | Name: features.conv_3      | h_val: -0.043 | Color State: VETO
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 03 | Name: features.conv_4      | h_val:  0.004 | Color State: VETO
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 04 | Name: features.conv_5      | h_val:  0.266 | Color State: DANGER
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 05 | Name: features.conv_6      | h_val:  0.158 | Color State: DANGER
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 06 | Name: features.conv_7      | h_val: -0.433 | Color State: VERIFIED
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 07 | Name: features.conv_8      | h_val: -0.912 | Color State: VERIFIED
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 08 | Name: features.conv_9      | h_val: -0.972 | Color State: VERIFIED
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 09 | Name: features.conv_10     | h_val: -0.949 | Color State: VERIFIED
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 10 | Name: features.conv_11     | h_val: -0.154 | Color State: VERIFIED
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 11 | Name: features.conv_12     | h_val:  0.388 | Color State: DANGER
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 12 | Name: features.conv_13     | h_val:  1.000 | Color State: DANGER
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 13 | Name: classifier.fc_1      | h_val: -0.465 | Color State: REJECTED
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 14 | Name: classifier.fc_2      | h_val:  0.430 | Color State: DANGER
+01:05:03 [INFO] [DEBUG] [VGG16/Cifar100] Layer 15 | Name: classifier.fc_3      | h_val: -0.938 | Color State: REJECTED
+01:05:13 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/VGG16_Cifar100_bav_methodology_regions.png
+01:05:13 [INFO] [DEBUG] [VGG16/Cifar10] Loading JSON file: VGG16_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
+01:05:13 [INFO] [DEBUG] [VGG16/Cifar10] Extracted Regions: [['features.conv_5', 'features.conv_10'], ['features.conv_12', 'features.conv_13']]
+01:05:13 [INFO] [DEBUG] [VGG16/Cifar10] Mapped region 'features.conv_5' -> 'features.conv_10' to indices 4 -> 9
+01:05:13 [INFO] [DEBUG] [VGG16/Cifar10] Mapped region 'features.conv_12' -> 'features.conv_13' to indices 11 -> 12
+01:05:14 [INFO] [DEBUG] --- Final Layer States for VGG16 on Cifar10 ---
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 00 | Name: features.conv_1      | h_val: -0.957 | Color State: VETO
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 01 | Name: features.conv_2      | h_val:  1.000 | Color State: VETO
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 02 | Name: features.conv_3      | h_val: -0.013 | Color State: VETO
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 03 | Name: features.conv_4      | h_val: -0.041 | Color State: VETO
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 04 | Name: features.conv_5      | h_val: -0.220 | Color State: VERIFIED
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 05 | Name: features.conv_6      | h_val: -0.670 | Color State: VERIFIED
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 06 | Name: features.conv_7      | h_val: -0.892 | Color State: VERIFIED
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 07 | Name: features.conv_8      | h_val: -0.922 | Color State: VERIFIED
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 08 | Name: features.conv_9      | h_val: -0.695 | Color State: VERIFIED
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 09 | Name: features.conv_10     | h_val: -0.658 | Color State: VERIFIED
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 10 | Name: features.conv_11     | h_val:  0.767 | Color State: DANGER
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 11 | Name: features.conv_12     | h_val: -0.091 | Color State: VERIFIED
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 12 | Name: features.conv_13     | h_val: -0.365 | Color State: VERIFIED
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 13 | Name: classifier.fc_1      | h_val: -0.639 | Color State: REJECTED
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 14 | Name: classifier.fc_2      | h_val:  1.000 | Color State: DANGER
+01:05:14 [INFO] [DEBUG] [VGG16/Cifar10] Layer 15 | Name: classifier.fc_3      | h_val: -0.769 | Color State: REJECTED
+01:05:48 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/VGG16_Cifar10_bav_methodology_regions.png
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Loading JSON file: VGG16_tinyimagenet_epochs200_pretrain200_JF_discovered_regions.json
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Extracted Regions: [['features.conv_5', 'features.conv_6'], ['features.conv_11', 'features.conv_13']]
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Mapped region 'features.conv_5' -> 'features.conv_6' to indices 4 -> 5
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Mapped region 'features.conv_11' -> 'features.conv_13' to indices 10 -> 12
+01:05:48 [INFO] [DEBUG] --- Final Layer States for VGG16 on tinyimagenet ---
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 00 | Name: features.conv_1      | h_val: -0.985 | Color State: VETO
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 01 | Name: features.conv_2      | h_val:  0.078 | Color State: VETO
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 02 | Name: features.conv_3      | h_val: -0.264 | Color State: VETO
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 03 | Name: features.conv_4      | h_val: -0.276 | Color State: VETO
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 04 | Name: features.conv_5      | h_val: -0.332 | Color State: VERIFIED
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 05 | Name: features.conv_6      | h_val: -0.112 | Color State: VERIFIED
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 06 | Name: features.conv_7      | h_val:  0.169 | Color State: DANGER
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 07 | Name: features.conv_8      | h_val: -0.143 | Color State: REJECTED
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 08 | Name: features.conv_9      | h_val:  0.780 | Color State: DANGER
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 09 | Name: features.conv_10     | h_val:  0.593 | Color State: DANGER
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 10 | Name: features.conv_11     | h_val: -0.981 | Color State: VERIFIED
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 11 | Name: features.conv_12     | h_val: -1.000 | Color State: VERIFIED
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 12 | Name: features.conv_13     | h_val: -0.999 | Color State: VERIFIED
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 13 | Name: classifier.fc_1      | h_val: -0.604 | Color State: REJECTED
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 14 | Name: classifier.fc_2      | h_val:  1.000 | Color State: DANGER
+01:05:48 [INFO] [DEBUG] [VGG16/tinyimagenet] Layer 15 | Name: classifier.fc_3      | h_val: -1.000 | Color State: REJECTED
+01:06:16 [INFO] [FIG2] Saved methodology plot: figures_ep200_pre200/methodology/VGG16_tinyimagenet_bav_methodology_regions.png
+01:25:12 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+01:25:12 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar100_
+01:26:44 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar100_ at figures_ep200_pre200/hardware_efficiency/ConvNeXt_cifar100__hardware_profile.png
+01:26:44 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar100_
+01:26:44 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar100_
+01:26:44 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar100_
+01:28:40 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar100_ at figures_ep200_pre200/hardware_efficiency/RegNetX_400MF_cifar100__hardware_profile.png
+01:28:40 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar100_
+01:31:25 [INFO] [FIG5] Saved hardware profile plot for VGG16/cifar100_ at figures_ep200_pre200/hardware_efficiency/VGG16_cifar100__hardware_profile.png
+01:31:25 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar100_
+01:31:39 [INFO] [FIG5] Saved hardware profile plot for XceptionNet/cifar100_ at figures_ep200_pre200/hardware_efficiency/XceptionNet_cifar100__hardware_profile.png
+01:31:39 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
+01:32:38 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar10_ at figures_ep200_pre200/hardware_efficiency/ConvNeXt_cifar10__hardware_profile.png
+01:32:38 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
+01:33:21 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/cifar10_ at figures_ep200_pre200/hardware_efficiency/InceptionNet_cifar10__hardware_profile.png
+01:33:21 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
+01:33:21 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
+01:34:13 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar10_ at figures_ep200_pre200/hardware_efficiency/RegNetX_400MF_cifar10__hardware_profile.png
+01:34:13 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
+01:34:13 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar10_
+01:35:12 [INFO] [FIG5] Saved hardware profile plot for XceptionNet/cifar10_ at figures_ep200_pre200/hardware_efficiency/XceptionNet_cifar10__hardware_profile.png
+01:35:12 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
+01:35:12 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/tinyimagenet
+01:35:12 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/tinyimagenet
+01:35:12 [INFO] [FIG5] Processing Hardware Profiles for VGG16/tinyimagenet
+01:35:12 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/tinyimagenet
+01:36:23 [INFO] [FIG5] Saved unified best_candidates plot at figures_ep200_pre200/hardware_efficiency/unified_best_candidates.png
+01:36:39 [INFO] [FIG5] Saved unified worst_candidates plot at figures_ep200_pre200/hardware_efficiency/unified_worst_candidates.png
+01:36:52 [INFO] [FIG5] Saved global trade-off scatter plot at figures_ep200_pre200/hardware_efficiency/global_tradeoff_scatter.png
+01:36:52 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+01:36:52 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
+/old_Users/jgafur/LTH/manuscript/Tranfer/Journal_plot.py:1099: UserWarning: Tight layout not applied. The bottom and top margins cannot be made large enough to accommodate all Axes decorations.
+  plt.tight_layout()
+01:37:03 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at figures_ep200_pre200/learning_curves/RegNetX_400MF_cifar100_training_curves.png
+01:37:18 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep200_pre200/learning_curves/RegNetX_400MF_cifar10_training_curves.png
+01:37:52 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep200_pre200/learning_curves/VGG16_cifar10_training_curves.png
+01:38:11 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/tinyimagenet at figures_ep200_pre200/learning_curves/RegNetX_400MF_tinyimagenet_training_curves.png
+01:39:46 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at figures_ep200_pre200/learning_curves/VGG16_cifar100_training_curves.png
+01:40:02 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at figures_ep200_pre200/learning_curves/MobileNet_cifar10_training_curves.png
+01:40:48 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at figures_ep200_pre200/learning_curves/VGG16_cifar100_training_curves.png
+01:41:34 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at figures_ep200_pre200/learning_curves/InceptionNet_cifar100_training_curves.png
+01:41:45 [INFO] [FIG6] Saved sequential training curves for VGG16/tinyimagenet at figures_ep200_pre200/learning_curves/VGG16_tinyimagenet_training_curves.png
+01:41:45 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at figures_ep200_pre200/learning_curves/MobileNet_cifar10_training_curves.png
+01:41:47 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at figures_ep200_pre200/learning_curves/XceptionNet_cifar10_training_curves.png
+01:41:48 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at figures_ep200_pre200/learning_curves/VGG16_cifar10_training_curves.png
+01:42:00 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at figures_ep200_pre200/learning_curves/ConvNeXt_cifar100_training_curves.png
+01:42:01 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at figures_ep200_pre200/learning_curves/RegNetX_400MF_cifar10_training_curves.png
+01:42:35 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at figures_ep200_pre200/learning_curves/MobileNet_cifar100_training_curves.png
+01:42:52 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at figures_ep200_pre200/learning_curves/MobileNet_tinyimagenet_training_curves.png
+01:43:10 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/tinyimagenet at figures_ep200_pre200/learning_curves/RegNetX_400MF_tinyimagenet_training_curves.png
+01:43:28 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at figures_ep200_pre200/learning_curves/ConvNeXt_cifar10_training_curves.png
+01:44:00 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at figures_ep200_pre200/learning_curves/InceptionNet_cifar10_training_curves.png
+01:44:12 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at figures_ep200_pre200/learning_curves/InceptionNet_tinyimagenet_training_curves.png
+01:44:31 [INFO] [FIG6] Saved sequential training curves for XceptionNet/tinyimagenet at figures_ep200_pre200/learning_curves/XceptionNet_tinyimagenet_training_curves.png
+01:45:42 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at figures_ep200_pre200/learning_curves/XceptionNet_cifar100_training_curves.png
+01:46:53 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at figures_ep200_pre200/learning_curves/RegNetX_400MF_cifar100_training_curves.png
+01:47:11 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar100_ at figures_ep200_pre200/convergence/ConvNeXt_cifar100_convergence_metrics.png
+01:48:23 [INFO] [FIG7] Saved convergence metrics plot for RegNetX_400MF/cifar100_ at figures_ep200_pre200/convergence/RegNetX_400MF_cifar100_convergence_metrics.png
+01:49:53 [INFO] [FIG7] Saved convergence metrics plot for VGG16/cifar100_ at figures_ep200_pre200/convergence/VGG16_cifar100_convergence_metrics.png
+01:50:08 [INFO] [FIG7] Saved convergence metrics plot for XceptionNet/cifar100_ at figures_ep200_pre200/convergence/XceptionNet_cifar100_convergence_metrics.png
+01:51:07 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar10_ at figures_ep200_pre200/convergence/ConvNeXt_cifar10_convergence_metrics.png
+01:51:22 [INFO] [FIG7] Saved convergence metrics plot for InceptionNet/cifar10_ at figures_ep200_pre200/convergence/InceptionNet_cifar10_convergence_metrics.png
+01:51:51 [INFO] [FIG7] Saved convergence metrics plot for RegNetX_400MF/cifar10_ at figures_ep200_pre200/convergence/RegNetX_400MF_cifar10_convergence_metrics.png
+01:52:43 [INFO] [FIG7] Saved convergence metrics plot for XceptionNet/cifar10_ at figures_ep200_pre200/convergence/XceptionNet_cifar10_convergence_metrics.png
+01:52:43 [INFO] [SUMMARY] Generating master lookup JSON...
+01:53:02 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/master_results_summary_ep200_pre200.json
+01:53:02 [INFO] Script completed.
