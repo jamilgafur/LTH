@@ -165,6 +165,7 @@ def _make_compression_set(collapse_range):
 
     raise ValueError("collapse_range must be None, a 2-tuple, or a list of 2-tuples")
 
+
 def run_experiment(
     model,
     model_kwargs=None,
@@ -178,10 +179,11 @@ def run_experiment(
     data_shape=(1, 3, 32, 32),
     save_path="./runs",
     quant=False,
+    init_opt_state=None,        # Base Optimizer (if available)
+    init_sched_state=None       # Base Scheduler (if available)
 ):
     import os, glob, torch, torch.optim as optim
 
-    # Adjust name for quantization if needed
     if quant:
         exp_name += "_quant"
 
@@ -196,18 +198,14 @@ def run_experiment(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    # Define the base name used for all checkpoints
     base_ckpt_name = f"{workflow}_{exp_name}"
 
-    # ---------------------------------------------------------
     # 2. Check for "Final" Completion
-    # ---------------------------------------------------------
     final_ckpt_path = os.path.join(ckpt_dir, f"final_{base_ckpt_name}.pt")
     
     if os.path.exists(final_ckpt_path):
         print(f"[✓] Experiment '{exp_name}' already completed. Found: {os.path.basename(final_ckpt_path)}")
         print(f"    Skipping training and reloading metrics...")
-        
         try:
             checkpoint = torch.load(final_ckpt_path, map_location=device, weights_only=False)
             return checkpoint.get("data", {})
@@ -215,9 +213,10 @@ def run_experiment(
             print(f"[!] Corrupt final checkpoint found ({e}). Restarting experiment...")
             pass
 
-    # 3. Initialize Training Components
+    # 3. Initialize Default Training Components
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     scaler = torch.amp.GradScaler(device=device.type, enabled=quant)
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
     
     # 4. Checkpoint Discovery (Intermediate Epochs)
     ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
@@ -227,55 +226,70 @@ def run_experiment(
     )
 
     start_epoch = 0
-    # Store training state inside all_data to persist across restarts
-    all_data = {
-        "accuracies": [], 
-        "losses": [], 
-        "best_acc": 0.0, 
-        "patience_counter": 0
-    }
+    all_data = {"accuracies": [], "losses": [], "best_acc": 0.0, "patience_counter": 0}
 
-    # 5. Resume Logic (State Dict approach)
+    # 5. Resume Logic / Inheritance Logic
     if existing_ckpts:
         last_ckpt = existing_ckpts[-1]
         print(f"[•] Loading intermediate checkpoint: {last_ckpt}")
         checkpoint = torch.load(last_ckpt, map_location=device, weights_only=False)
 
-        # Restore structural states
         model.load_state_dict(checkpoint['model_state_dict'], strict=False)
         
         try:
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        except ValueError as e:
+        except ValueError:
             print(f"[WARN] Optimizer state mismatch due to structural changes. Starting fresh optimizer.")
             
+        if 'scheduler_state_dict' in checkpoint:
+            try:
+                scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+            except ValueError:
+                print(f"[WARN] Scheduler state mismatch. Starting fresh scheduler.")
+                
         if 'scaler_state_dict' in checkpoint:
-                try:
-                    scaler.load_state_dict(checkpoint['scaler_state_dict'])
-                except RuntimeError as e:
-                    print(f"[WARN] Bypassing empty scaler state dict from older checkpoint. Starting fresh scaler.")
+            try:
+                scaler.load_state_dict(checkpoint['scaler_state_dict'])
+            except RuntimeError:
+                print(f"[WARN] Bypassing empty scaler state dict from older checkpoint.")
         
-        # Restore RNG states (ensures reproducibility on resume)
         torch.set_rng_state(checkpoint['torch_rng_state'].cpu())
-        if torch.cuda.is_available():
-            if checkpoint.get('cuda_rng_state') is not None:
-                torch.cuda.set_rng_state(checkpoint['cuda_rng_state'].cpu())
+        if torch.cuda.is_available() and checkpoint.get('cuda_rng_state') is not None:
+            torch.cuda.set_rng_state(checkpoint['cuda_rng_state'].cpu())
 
-        start_epoch = checkpoint['epoch']
+        start_epoch = checkpoint['epoch'] + 1
         all_data = checkpoint['data']
         print(f"[✓] Resumed at epoch {start_epoch}")
+    
     else:
-        print("[•] No intermediate checkpoint found — starting fresh")
+        print("[•] No intermediate checkpoint found — starting fresh or inheriting from base.")
+        # Attempt to inherit the extracted stage-1 ecosystem
+        if init_opt_state:
+            try:
+                optimizer.load_state_dict(init_opt_state)
+                print(f"[✓] Successfully inherited base Optimizer state.")
+            except ValueError:
+                print(f"[WARN] Optimizer structural mismatch (expected after layer collapse). Adjusting to stable fine-tune LR (1e-4).")
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] = 1e-4
+        
+        if init_sched_state:
+            try:
+                scheduler.load_state_dict(init_sched_state)
+                print(f"[✓] Successfully inherited base Scheduler state.")
+            except ValueError:
+                print(f"[WARN] Scheduler structural mismatch. Starting fresh scheduler.")
 
     # 6. Training Loop
     for epoch in range(start_epoch, epochs):
         print(f"[•] Epoch {epoch}")
 
-        # Execute one epoch of training
         avg_loss, acc = train_one_epoch(
             model, train_loader, optimizer, device, 
             scaler=scaler, use_autocast=quant
         )
+        
+        scheduler.step() # Always step the scheduler
 
         all_data["accuracies"].append(acc)
         all_data["losses"].append(avg_loss)
@@ -294,15 +308,15 @@ def run_experiment(
             "epoch": epoch,
             "model_state_dict": model.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
+            "scheduler_state_dict": scheduler.state_dict(), # Pack scheduler
             "scaler_state_dict": scaler.state_dict() if quant else None,
             "torch_rng_state": torch.get_rng_state(),
             "cuda_rng_state": torch.cuda.get_rng_state() if torch.cuda.is_available() else None,
             "data": all_data,
         }, tmp_path)
         
-        os.replace(tmp_path, ckpt_path) # Atomic operation
+        os.replace(tmp_path, ckpt_path) 
         
-        # Cleanup old checkpoints to save HPC quota
         if epoch > 1:
             old_ckpt = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch - 1}.pt")
             if os.path.exists(old_ckpt):
@@ -311,7 +325,6 @@ def run_experiment(
     # 7. Finalization & Diagnostics
     torch.save({"model_state_dict": model.state_dict(), "data": all_data}, final_ckpt_path)
 
-    # Performance Benchmarking
     param_count = count_trainable_params(model)
     infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device, quant=quant)
 
@@ -323,7 +336,6 @@ def run_experiment(
         "final_accuracy": all_data["accuracies"][-1] if all_data["accuracies"] else 0,
     })
 
-    # Run remaining diagnostics/plotting
     run_full_diagnostics(model, data_shape, {exp_name: all_data}, plots_dir, exp_name, 
                          test_dataloader=test_loader, collapse_range=collapse_range, 
                          device=device, quant=quant)
@@ -359,7 +371,6 @@ def run_jf_experiment(
     print("\n=== Running JF experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
     
-    # 1. Check for existing checkpoint before structural changes
     ckpt_dir = os.path.join(save_path, "checkpoints")
     base_ckpt_name = f"JF_{exp_name}"
     if quant: base_ckpt_name += "_quant"
@@ -367,20 +378,23 @@ def run_jf_experiment(
     ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
     existing_ckpts = glob.glob(ckpt_pattern)
 
-    # 2. Initialize the Base Architecture
     base_model = model_class(**model_kwargs)
     _wrap_pools_safe(base_model)
     
-    # 3. Handle Initialization vs. Resumption
+    init_opt_state = None
+    init_sched_state = None
+
     if not existing_ckpts:
         if model_path_097 and "None" not in model_path_097:
-            print(f"[•] Loading initial weights from {model_path_097}")
-            ckpt = torch.load(model_path_097, map_location='cpu', weights_only=True)
+            print(f"[•] Loading initial weights and training state from {model_path_097}")
+            ckpt = torch.load(model_path_097, map_location='cpu', weights_only=False) 
             base_model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt['model'], strict=False)
+            
+            init_opt_state = ckpt.get('optimizer_state_dict')
+            init_sched_state = ckpt.get('scheduler_state_dict')
     else:
         print(f"[•] Resumption detected. Architecture will be prepared for checkpoint loading.")
 
-    # 4. Apply Collapse Logic 
     compression_set = _make_compression_set(collapse_range)
     if compression_set:
         print(f"[•] Collapsing ranges {compression_set} for {exp_name}")
@@ -394,7 +408,6 @@ def run_jf_experiment(
             handle_skips=True
         )
 
-    # 5. Hand off to the state-aware runner
     data = run_experiment(
         model=base_model,
         model_kwargs=model_kwargs,
@@ -406,11 +419,13 @@ def run_jf_experiment(
         exp_name=exp_name,
         data_shape=data_shape,
         save_path=save_path,
-        quant=quant
+        quant=quant,
+        init_opt_state=init_opt_state,     # Forward states
+        init_sched_state=init_sched_state  # Forward states
     )
     return base_model
 
-def run_kevin_experiment(
+    def run_kevin_experiment(
     experiments,
     model_path_000,
     train_loader,
@@ -427,7 +442,6 @@ def run_kevin_experiment(
     print("\n=== Running Kevin experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
 
-    # 1. Check for existing checkpoint
     ckpt_dir = os.path.join(save_path, "checkpoints")
     base_ckpt_name = f"Kevin_{exp_name}"
     if quant: base_ckpt_name += "_quant"
@@ -435,18 +449,23 @@ def run_kevin_experiment(
     ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
     existing_ckpts = glob.glob(ckpt_pattern)
 
-    # 2. Initialize
     base_model = model_class(**model_kwargs)
     _wrap_pools_safe(base_model)
 
-    # 3. Handle Initial Weights
+    init_opt_state = None
+    init_sched_state = None
+
     if not existing_ckpts:
         if model_path_000 and "None" not in model_path_000:
-            print(f"[•] Loading initial weights from {model_path_000}")
-            ckpt = torch.load(model_path_000, map_location='cpu', weights_only=True)
+            print(f"[•] Loading initial weights and training state from {model_path_000}")
+            ckpt = torch.load(model_path_000, map_location='cpu', weights_only=False) 
             base_model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt['model'], strict=False)
+            
+            init_opt_state = ckpt.get('optimizer_state_dict')
+            init_sched_state = ckpt.get('scheduler_state_dict')
+    else:
+        print(f"[•] Resumption detected. Architecture will be prepared for checkpoint loading.")
 
-    # 4. Apply Collapse
     compression_set = _make_compression_set(collapse_range)
     if compression_set:
         print(f"[•] Collapsing ranges {compression_set} for {exp_name}")
@@ -460,7 +479,6 @@ def run_kevin_experiment(
             handle_skips=True
         )
 
-    # 5. Run
     data = run_experiment(
         model=base_model,
         model_kwargs=model_kwargs,
@@ -472,6 +490,8 @@ def run_kevin_experiment(
         exp_name=exp_name,
         data_shape=data_shape,
         save_path=save_path,
-        quant=quant
+        quant=quant,
+        init_opt_state=init_opt_state,     # Forward states
+        init_sched_state=init_sched_state  # Forward states
     )
     return base_model
