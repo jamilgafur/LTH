@@ -425,7 +425,7 @@ def run_jf_experiment(
     )
     return base_model
 
-    def run_kevin_experiment(
+def run_kevin_experiment(
     experiments,
     model_path_000,
     train_loader,
@@ -436,8 +436,7 @@ def run_jf_experiment(
     model_kwargs=None,
     data_shape=None,
     save_path="./runs",
-    quant=False
-):
+    quant=False):
     model_kwargs = model_kwargs or {}
     print("\n=== Running Kevin experiment ===")
     exp_name, collapse_range = list(experiments.items())[0]
