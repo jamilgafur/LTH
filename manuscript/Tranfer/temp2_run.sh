@@ -1,21 +1,23 @@
 #!/bin/bash
 
 # --- Input Validation ---
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <discovery_epochs> <hpc_compute_epochs>"
-    echo "Example: $0 50 100"
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+    echo "Usage: $0 <discovery_epochs> <hpc_compute_epochs> [mode]"
+    echo "  mode: 'all' (default) or 'subset' (runs ONLY Control_Continuted and Dynamic_Region_All_Combined)"
+    echo "Example: $0 50 100 subset"
     exit 1
 fi
 
 EPOCHS=$1
 PRETRAIN=$2
+MODE=${3:-all} # Defaults to 'all' if no 3rd argument is provided
 
 models=("VGG16" "RegNetX_400MF" "XceptionNet" "InceptionNet" "MobileNet" "ConvNeXt")
 datasets=("tinyimagenet" "Cifar10" "Cifar100")
 quant=("True" "False")
 
 echo "=== Submitting Stage 2: Parallel HPC Execution ==="
-echo "    Discovery Budget (Epochs): $EPOCHS | HPC Target (Pretrain): $PRETRAIN"
+echo "    Discovery Budget (Epochs): $EPOCHS | HPC Target (Pretrain): $PRETRAIN | Mode: $MODE"
 
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do
@@ -34,6 +36,14 @@ for model in "${models[@]}"; do
 
             for quant_flag in "${quant[@]}"; do
                 for experiment in "${dynamic_experiments[@]}"; do
+                    
+                    # --- Mode Filtering Logic ---
+                    if [ "$MODE" = "subset" ]; then
+                        if [[ "$experiment" != "Control_Continuted" && "$experiment" != "Dynamic_Region_All_Combined" ]]; then
+                            # Skip this iteration if it's not one of our target subset experiments
+                            continue
+                        fi
+                    fi
                     
                     # Fire off the true parallel compute jobs
                     command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"$experiment\",FLAG=\"$flag\",QUANT=\"$quant_flag\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\" submit_job.pbs"
