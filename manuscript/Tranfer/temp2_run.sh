@@ -13,8 +13,9 @@ PRETRAIN=$2
 MODE=${3:-all} # Defaults to 'all' if no 3rd argument is provided
 
 models=("VGG16" "RegNetX_400MF" "XceptionNet" "InceptionNet" "MobileNet" "ConvNeXt")
+#models=("ConvNeXt" "MobileNet" "InceptionNet" "XceptionNet" "RegNetX_400MF" "VGG16")
 datasets=("tinyimagenet" "Cifar10" "Cifar100")
-quant=("True" "False")
+quant=("False" "True")
 
 echo "=== Submitting Stage 2: Parallel HPC Execution ==="
 echo "    Discovery Budget (Epochs): $EPOCHS | HPC Target (Pretrain): $PRETRAIN | Mode: $MODE"

@@ -13,7 +13,9 @@ PRETRAIN=$2
 # 1. Clean up previous submissions
 rm ~/submit* 2>/dev/null
 
-models=("VGG16" "RegNetX_400MF" "XceptionNet" "InceptionNet" "MobileNet" "ConvNeXt")
+#models=("VGG16" "RegNetX_400MF" "XceptionNet" "InceptionNet" "MobileNet" "ConvNeXt")
+models=("MobileNet")
+#"ConvNeXt" "MobileNet" "InceptionNet" "XceptionNet" "RegNetX_400MF" "VGG16")
 datasets=("tinyimagenet" "Cifar100" "Cifar10")
 quant=("False")
 
