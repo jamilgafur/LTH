@@ -436,7 +436,7 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
                 param_pct = (params_saved / base_params * 100.0) if base_params else 0.0
                 flop_pct = (flops_saved / base_flops * 100.0) if flops_saved is not None and base_flops not in {0, float('inf')} else None
 
-                if new_params < base_params or (check_flops and new_flops < base_flops):
+                if new_params < base_params and (not check_flops or new_flops < base_flops):
                     flop_msg = (
                         f" | FLOPs ({base_flops:,.0f} -> {new_flops:,.0f}, saved {flops_saved:,.0f}, {flop_pct:.4f}%)"
                         if flop_pct is not None else ""
