@@ -289,8 +289,8 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
                 fig, ax = plt.subplots(figsize=(12, 6))
                 sns.barplot(data=g_dataset, x="display_name", y=metric, hue="posthoc_or_posttrain", palette=palette, edgecolor="black", ax=ax)
                 plt.xticks(rotation=45, ha="right")
-                plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.png")
-                logger.info(f"[FIG1] Saved {metric} plot for {architecture}/{dataset} at {out_dir / f'{architecture}_{dataset}_{metric}.png'}")
+                plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.svg")
+                logger.info(f"[FIG1] Saved {metric} plot for {architecture}/{dataset} at {out_dir / f'{architecture}_{dataset}_{metric}.svg'}")
                 plt.close()
 
 
@@ -536,7 +536,7 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/metho
         
         # --- Final Save ---
         out_dir.mkdir(parents=True, exist_ok=True)
-        save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.png"
+        save_path = out_dir / f"{arch}_{dataset}_bav_methodology_regions.svg"
         plt.savefig(save_path, bbox_inches='tight')
         plt.close()
         logger.info(f"[FIG2] Saved methodology plot: {save_path}")
@@ -644,9 +644,9 @@ def fig3_v2t_heuristic_validation(
         axes[1].legend(loc="lower right", framealpha=0.9)
 
     sns.despine()
-    plt.savefig(out_dir / "V2T_heuristic_validation_map.png")
+    plt.savefig(out_dir / "V2T_heuristic_validation_map.svg")
     plt.close()
-    logger.info(f"[FIG3] Saved V2T heuristic validation map at {out_dir / 'V2T_heuristic_validation_map.png'}")
+    logger.info(f"[FIG3] Saved V2T heuristic validation map at {out_dir / 'V2T_heuristic_validation_map.svg'}")
 # ========================= FIG 4 ========================= #
 
 # ========================= FIG 4 ========================= #
@@ -833,7 +833,7 @@ def fig4_comprehensive_search_space_map(
                     ax_side.text(x, i, val, ha='center', va='center', color=c, fontweight=fw, fontsize=11, alpha=alpha)
 
             plt.tight_layout()
-            cand_save_path = out_dir / f"{arch}_{dataset}_candidates_sidebar_{file_suffix}.png"
+            cand_save_path = out_dir / f"{arch}_{dataset}_candidates_sidebar_{file_suffix}.svg"
             fig_cand.savefig(cand_save_path, bbox_inches='tight')
             plt.close(fig_cand)
 
@@ -1106,8 +1106,8 @@ def fig5_hardware_efficiency_profiles(
         ax.xaxis.grid(True, linestyle='--', alpha=0.7); ax.set_axisbelow(True)
         ax.legend(title="", loc='lower right'); sns.despine()
         plt.tight_layout()
-        plt.savefig(out_dir / f"{arch}_{dataset}_hardware_profile.png", bbox_inches='tight')
-        logger.info(f"[FIG5] Saved hardware profile plot for {arch}/{dataset} at {out_dir / f'{arch}_{dataset}_hardware_profile.png'}")
+        plt.savefig(out_dir / f"{arch}_{dataset}_hardware_profile.svg", bbox_inches='tight')
+        logger.info(f"[FIG5] Saved hardware profile plot for {arch}/{dataset} at {out_dir / f'{arch}_{dataset}_hardware_profile.svg'}")
         plt.close()
 
         best_cand = candidates.iloc[0]  
@@ -1149,8 +1149,8 @@ def fig5_hardware_efficiency_profiles(
         ax.yaxis.grid(True, linestyle='--', alpha=0.7); ax.set_axisbelow(True)
         ax.legend(title="", loc='upper right'); sns.despine()
         plt.tight_layout()
-        plt.savefig(out_dir / f"unified_{filename_suffix}.png", bbox_inches='tight')
-        logger.info(f"[FIG5] Saved unified {filename_suffix} plot at {out_dir / f'unified_{filename_suffix}.png'}")
+        plt.savefig(out_dir / f"unified_{filename_suffix}.svg", bbox_inches='tight')
+        logger.info(f"[FIG5] Saved unified {filename_suffix} plot at {out_dir / f'unified_{filename_suffix}.svg'}")
         plt.close()
 
     plot_unified(best_summary, "best_candidates", "Best-Performing")
@@ -1173,9 +1173,9 @@ def fig5_hardware_efficiency_profiles(
         ax.legend(loc='lower left', framealpha=0.9)
         sns.despine()
         plt.tight_layout()
-        plt.savefig(out_dir / "global_tradeoff_scatter.png", bbox_inches='tight')
+        plt.savefig(out_dir / "global_tradeoff_scatter.svg", bbox_inches='tight')
         plt.close()
-        logger.info(f"[FIG5] Saved global trade-off scatter plot at {out_dir / 'global_tradeoff_scatter.png'}")
+        logger.info(f"[FIG5] Saved global trade-off scatter plot at {out_dir / 'global_tradeoff_scatter.svg'}")
 
     logger.info("[FIG5] All 6 hardware deliverables generated successfully.")
 # ========================= FIG 6 ========================= #
@@ -1295,7 +1295,7 @@ def fig6_training_curves(
         plt.tight_layout()
 
         clean_ds = dataset.strip("_")
-        save_path = out_dir / f"{arch}_{clean_ds}_training_curves.png"
+        save_path = out_dir / f"{arch}_{clean_ds}_training_curves.svg"
         
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.close()
@@ -1428,7 +1428,7 @@ def fig7_convergence_metrics(
         
         # Save output
         clean_ds = dataset.strip("_")
-        save_path = out_dir / f"{arch}_{clean_ds}_convergence_metrics.png"
+        save_path = out_dir / f"{arch}_{clean_ds}_convergence_metrics.svg"
         plt.savefig(save_path, bbox_inches='tight', dpi=300)
         plt.close()
         
