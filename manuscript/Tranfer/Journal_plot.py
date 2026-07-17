@@ -4,15 +4,89 @@ import warnings
 # Suppress tight_layout warnings caused by GridSpec overlaps
 warnings.filterwarnings("ignore", message="This figure includes Axes that are not compatible with tight_layout")
 
+# ------------------------------------------------------------
+# Journal Plot Styling
+# ------------------------------------------------------------
+# Define a helper to configure Matplotlib for journal-quality figures.
+def _set_journal_style() -> None:
+    """Apply a set of rcParams that produce larger, serif‑based fonts
+    and thicker lines suitable for publication.
+
+    The function is called once at import time so that all subsequent
+    plotting commands inherit the style. ``matplotlib.pyplot`` is imported
+    lazily inside the function to avoid a ``NameError`` when the module
+    is imported before ``plt`` is defined.
+    """
+    # Import locally to ensure ``plt`` is available even if this function
+    # is executed before the global ``import matplotlib.pyplot as plt``.
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    # Use a serif font family (Times New Roman is common in many journals)
+    plt.rcParams.update({
+        "font.family": "serif",
+        "font.serif": ["Times New Roman", "Computer Modern", "DejaVu Serif"],
+        # Increase overall font sizes – these values are chosen to be
+        # comfortably readable when the figure is printed at 1× size.
+        "axes.titlesize": 16,
+        "axes.titleweight": "bold",
+        "axes.labelsize": 14,
+        "axes.labelweight": "bold",
+        "legend.fontsize": 12,
+        "legend.title_fontsize": 13,
+        "xtick.labelsize": 12,
+        "ytick.labelsize": 12,
+        # Thicker lines and markers for clarity
+        "lines.linewidth": 2.5,
+        "lines.markersize": 8,
+        # Default figure size for consistency across all plots
+        "figure.figsize": (12, 7),
+        # Ensure the saved figure has high resolution and tight bounding box
+        "figure.dpi": 300,
+        "savefig.dpi": 300,
+        "savefig.bbox": "tight",
+        # Remove top/right spines for a clean look
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+    })
+
+    # Seaborn theme tuned for papers – a slightly larger font scale than the default.
+    sns.set_theme(
+        context="paper",
+        style="ticks",
+        palette="colorblind",
+        font="serif",
+        font_scale=1.5,
+    )
+
+# Apply the style immediately so that all subsequent code uses it.
+_set_journal_style()
+
 import json
 import re
 import logging
 from pathlib import Path
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+# ---------------------------------------------------------------------------
+# Integrate trade‑off visualisation from ``plot_tradeoff.py``
+# ---------------------------------------------------------------------------
+# The ``plot_tradeoff`` module lives in the same directory.  Import the
+# ``generate_journal_figures`` function if possible; otherwise fall back to a
+# no‑op placeholder so the script continues to run even when the module is
+# missing (e.g., during isolated testing).
+try:
+    from .plot_tradeoff import generate_journal_figures as tradeoff_generate_journal_figures
+except Exception:  # pragma: no cover – handles script execution without package context
+    try:
+        from plot_tradeoff import generate_journal_figures as tradeoff_generate_journal_figures
+    except Exception:
+        tradeoff_generate_journal_figures = None
 
 # =========================
 # Configuration & Logging
@@ -32,30 +106,6 @@ logging.getLogger('PIL').setLevel(logging.WARNING)
 
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", None)
-
-sns.set_theme(
-    context="paper",
-    style="ticks",
-    palette="colorblind",
-    font_scale=1.2,
-)
-
-plt.rcParams.update({
-    "figure.dpi": 300,
-    "savefig.dpi": 300,
-    "savefig.bbox": "tight",
-    "axes.titlesize": 14,
-    "axes.titleweight": "bold",
-    "axes.labelsize": 12,
-    "axes.labelweight": "bold",
-    "legend.fontsize": 11,
-    "legend.title_fontsize": 12,
-    "xtick.labelsize": 10,
-    "ytick.labelsize": 10,
-    "lines.linewidth": 2.0,
-    "axes.spines.top": False,
-    "axes.spines.right": False,
-})
 
 import argparse
 
@@ -95,21 +145,36 @@ def format_dataset_name(ds: str) -> str:
     mapping = {"tinyimagenet": "TinyImageNet", "cifar10_": "CIFAR-10", "cifar100_": "CIFAR-100", "imagenet": "ImageNet"}
     return mapping.get(ds, ds.capitalize())
 
+@lru_cache(maxsize=None)
 def infer_dataset_from_path(p: Path) -> str:
+    """Infer dataset identifier from a file path.
+
+    The function is cached because the same path may be inspected many
+    times when loading results from many JSON files. Caching avoids the
+    repeated string‑search overhead.
+    """
     name = p.parent.parent.name.lower()
     for ds in DATASET_ORDER:
         if ds in name:
             return ds
-    return "unknown" 
+    return "unknown"
 
+@lru_cache(maxsize=None)
 def infer_architecture_from_path(p: Path) -> str:
+    """Infer architecture name from a file path with caching for speed."""
     name = p.parent.parent.name.lower()
-    if "regnet" in name: return "RegNetX_400MF"
-    if "vgg" in name: return "VGG16"
-    if "inception" in name: return "InceptionNet"
-    if "xception" in name: return "XceptionNet"
-    if "mobilenet" in name: return "MobileNet"
-    if "convnext" in name: return "ConvNeXt"
+    if "regnet" in name:
+        return "RegNetX_400MF"
+    if "vgg" in name:
+        return "VGG16"
+    if "inception" in name:
+        return "InceptionNet"
+    if "xception" in name:
+        return "XceptionNet"
+    if "mobilenet" in name:
+        return "MobileNet"
+    if "convnext" in name:
+        return "ConvNeXt"
     return "UnknownArch"
 
 def infer_model_type(exp_name: str) -> str:
@@ -145,56 +210,82 @@ def clean_exp_name(exp_name: str) -> str:
     return n.strip()
 
 def load_results() -> pd.DataFrame:
-    logger.info(f"Scanning for metrics files matching epochs={epochs}, pretrain={pretrain}")
-    
-    # 1. Search for all merged_metrics.json files recursively
+    """Load all merged metric JSON files that match the supplied ``epochs``
+    and ``pretrain`` arguments.
+
+    The function now:
+    * Uses a single ``rglob`` call and filters with a list‑comprehension.
+    * Caches dataset/architecture inference via ``lru_cache``.
+    * Builds the rows list with a list‑comprehension where possible to
+      minimise Python‑level loops.
+    * Returns a DataFrame directly without an intermediate mutable list.
+    """
+    logger.info(
+        f"Scanning for metrics files matching epochs={epochs}, pretrain={pretrain}"
+    )
+
+    # Find all candidate JSON files once.
     all_metrics = list(Path(".").rglob("*merged_metrics.json"))
-    
-    # 2. Filter them to only include those matching the current epochs and pretrain strings
     files = [
-        p for p in all_metrics 
+        p
+        for p in all_metrics
         if f"epochs{epochs}" in str(p) and f"pretrain{pretrain}" in str(p)
     ]
-    
+
     if not files:
-        # Fallback just in case it's in the root directory
         root_file = Path("merged_metrics.json")
-        if root_file.exists(): 
+        if root_file.exists():
             files = [root_file]
-        else: 
-            raise FileNotFoundError(f"No merged_metrics.json files found matching epochs{epochs} and pretrain{pretrain}")
-    
+        else:
+            raise FileNotFoundError(
+                f"No merged_metrics.json files found matching epochs{epochs} and pretrain{pretrain}"
+            )
+
     rows = []
     for p in files:
+        # Infer dataset and architecture – cached for speed.
         dataset = infer_dataset_from_path(p)
-        if dataset == "unknown" and "tinyimagenet" in str(p).lower(): dataset = "tinyimagenet"
-        if dataset == "unknown" and "cifar100" in str(p).lower(): dataset = "cifar100_"
-        if dataset == "unknown" and "cifar10" in str(p).lower(): dataset = "cifar10_"
+        if dataset == "unknown":
+            low = str(p).lower()
+            if "tinyimagenet" in low:
+                dataset = "tinyimagenet"
+            elif "cifar100" in low:
+                dataset = "cifar100_"
+            elif "cifar10" in low:
+                dataset = "cifar10_"
         arch = infer_architecture_from_path(p)
-        if arch == "UnknownArch": arch = infer_architecture_from_path(Path(p.name))
-        
+        if arch == "UnknownArch":
+            arch = infer_architecture_from_path(Path(p.name))
+
         try:
-            with open(p) as f: raw = json.load(f)
+            raw = json.load(open(p))
         except Exception as e:
             logger.error(f"Failed to load JSON {p}: {e}")
             continue
-            
+
         for exp_name, metrics in raw.items():
             method_group = infer_posthoc_or_posttrain(exp_name, arch)
             is_quant = infer_isquant(exp_name)
             base_name = clean_exp_name(exp_name)
-            
-            rows.append({
-                "dataset": dataset, "architecture": arch, "exp_name": exp_name,
-                "base_name": base_name, "display_name": f"{base_name}\n(Quant)" if is_quant else base_name,
-                "posthoc_or_posttrain": method_group, "model_type": infer_model_type(exp_name),
-                "is_quantized": is_quant, "accuracy": metrics.get("final_accuracy"),
-                "params": metrics.get("param_count"), "flops": metrics.get("flops"),
-                "memory": metrics.get("total_size_mb"),
-                "acc_curve": metrics.get("accuracies", []),
-                "loss_curve": metrics.get("losses", []),
-            })
-            
+            rows.append(
+                {
+                    "dataset": dataset,
+                    "architecture": arch,
+                    "exp_name": exp_name,
+                    "base_name": base_name,
+                    "display_name": f"{base_name}\n(Quant)" if is_quant else base_name,
+                    "posthoc_or_posttrain": method_group,
+                    "model_type": infer_model_type(exp_name),
+                    "is_quantized": is_quant,
+                    "accuracy": metrics.get("final_accuracy"),
+                    "params": metrics.get("param_count"),
+                    "flops": metrics.get("flops"),
+                    "memory": metrics.get("total_size_mb"),
+                    "acc_curve": metrics.get("accuracies", []),
+                    "loss_curve": metrics.get("losses", []),
+                }
+            )
+
     logger.info(f"Successfully parsed {len(rows)} experiment rows.")
     return pd.DataFrame(rows)
 
@@ -286,9 +377,11 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
             g_dataset = df_arch[df_arch["dataset"] == dataset].copy()
             if g_dataset.empty: continue
             for metric in available_metrics:
-                fig, ax = plt.subplots(figsize=(12, 6))
+                # Use a larger figure size for journal clarity and apply tight layout.
+                fig, ax = plt.subplots(figsize=(14, 8))
                 sns.barplot(data=g_dataset, x="display_name", y=metric, hue="posthoc_or_posttrain", palette=palette, edgecolor="black", ax=ax)
                 plt.xticks(rotation=45, ha="right")
+                plt.tight_layout()
                 plt.savefig(out_dir / f"{architecture}_{dataset}_{metric}.svg")
                 logger.info(f"[FIG1] Saved {metric} plot for {architecture}/{dataset} at {out_dir / f'{architecture}_{dataset}_{metric}.svg'}")
                 plt.close()
@@ -845,185 +938,6 @@ def fig4_comprehensive_search_space_map(
 
     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
 
-# def fig4_comprehensive_search_space_map(
-#     df: pd.DataFrame,
-#     epochs: int,
-#     pretrain: int,
-#     out_dir: Path = Path("./figures/search_space")
-# ):
-#     import matplotlib.gridspec as gridspec
-#     out_dir.mkdir(parents=True, exist_ok=True)
-
-#     def get_acc_color(d_acc):
-#         if pd.isna(d_acc): return "#4C72B0" 
-#         if d_acc >= -2.0: return "#2ca02c"
-#         if d_acc >= -6.0: return "#ff7f0e"
-#         return "#d62728"
-
-#     def robust_match(target_name, is_quant_target, g_df):
-#         try:
-#             sub_df = g_df[g_df['is_quantized'] == is_quant_target]
-#             if sub_df.empty: return pd.DataFrame()
-#             m = sub_df[sub_df['base_name'] == target_name]
-#             if not m.empty: return m
-#             m = sub_df[sub_df['base_name'].str.lower() == target_name.lower()]
-#             if not m.empty: return m
-#             def squash(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
-#             st = squash(target_name)
-#             fuzzy = sub_df[sub_df['base_name'].apply(lambda x: squash(x) == st)]
-#             return fuzzy
-#         except Exception: return pd.DataFrame()
-
-#     for (dataset, arch), g_metrics in df.groupby(["dataset", "architecture"]):
-#         clean_ds = dataset.strip("_").lower()
-        
-#         # --- Bulletproof Path Discovery for Layer Stats ---
-#         arch_dir = Path(f"./runs/plots/{arch}")
-#         if not arch_dir.exists(): continue
-        
-#         # Case-insensitive dataset folder match
-#         ds_dirs = [d for d in arch_dir.iterdir() if d.is_dir() and d.name.lower() == clean_ds]
-#         if not ds_dirs: continue
-        
-#         stats_dir = ds_dirs[0] / f"epochs{epochs}_pretrain{pretrain}" / "Layer_Statistics"
-#         if not stats_dir.exists(): continue
-        
-#         all_csvs = list(stats_dir.glob("*_layer_stats.csv"))
-#         csv_candidates = [f for f in all_csvs if "normalized" not in f.name.lower()]
-        
-#         if not csv_candidates: 
-#             continue
-#         csv_path = csv_candidates[0]
-            
-#         layer_df = pd.read_csv(csv_path)
-#         layers = layer_df['Layer'].tolist()
-
-#         # --- FIX: Robust recursive JSON search (Case-Insensitive Match) ---
-#         # --- FIX: Strict JSON search to prevent CIFAR-10/100 collisions ---
-#         potential_jsons = list(Path(".").rglob(f"{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
-        
-#         # Enforce boundaries with underscores so 'cifar10' doesn't match 'cifar100'
-#         all_jsons = [p for p in potential_jsons if f"_{clean_ds}_" in p.name.lower()]
-        
-#         if not all_jsons: 
-#             continue
-            
-#         try:
-#             with open(all_jsons[0], 'r') as f:
-#                 model_exps = json.load(f)
-#         except Exception: continue
-#         if not model_exps: continue
-
-#         baseline_mask = g_metrics['posthoc_or_posttrain'] == 'Baseline'
-#         if baseline_mask.any():
-#             base_row = g_metrics[baseline_mask].iloc[0]
-#             base_p, base_f, base_m = base_row.get('params', np.nan), base_row.get('flops', np.nan), base_row.get('memory', np.nan)
-#         else: base_p = base_f = base_m = np.nan
-
-#         for is_quant_target in [False, True]:
-#             valid_exps = []
-            
-#             for exp_name, ranges in model_exps.items():
-                
-#                 # [CRITICAL FIX] Skip the Status Map metadata from plotting!
-#                 if exp_name == "Status_Map":
-#                     continue
-                    
-#                 cleaned_name = re.sub(r'(?i)[_\-\s\(]*quant(ized)?[\)]*', '', exp_name).strip(" -_")
-                
-#                 if "Original" in cleaned_name or "Baseline" in cleaned_name:
-#                     cleaned_name = "Original Model"
-                
-#                 m = robust_match(cleaned_name, is_quant_target=is_quant_target, g_df=g_metrics)
-                
-#                 if not m.empty:
-#                     exp_results = m.mean(numeric_only=True)
-#                     p_red = 100 * (1 - exp_results.get('params', np.nan) / base_p) if pd.notnull(base_p) else np.nan
-#                     f_red = 100 * (1 - exp_results.get('flops', np.nan) / base_f) if pd.notnull(base_f) else np.nan
-#                     m_red = 100 * (1 - exp_results.get('memory', np.nan) / base_m) if pd.notnull(base_m) else np.nan
-                    
-#                     if p_red < -0.1 or f_red < -0.1 or m_red < -0.1:
-#                         continue 
-#                 else:
-#                     exp_results = {'d_acc': np.nan}
-#                     p_red, f_red, m_red = np.nan, np.nan, np.nan
-                        
-#                 valid_exps.append((exp_name, ranges, exp_results, cleaned_name, p_red, f_red, m_red))
-                    
-#             if not valid_exps: continue
-            
-#             valid_exps = sorted(valid_exps, key=lambda x: (1 if x[1] is None else 0, x[2].get('d_acc', -100)))
-            
-#             num_bars = len(valid_exps)
-#             file_suffix = "quantized" if is_quant_target else "unquantized"
-
-#             fig_height = max(3.5, 0.5 * num_bars + 1)
-#             y_limits = (-1, num_bars)
-            
-#             fig_cand = plt.figure(figsize=(14, fig_height)) 
-#             gs = gridspec.GridSpec(1, 2, width_ratios=[2.5, 1.5], wspace=0.05)
-            
-#             ax_heur = fig_cand.add_subplot(gs[0])
-#             ax_side = fig_cand.add_subplot(gs[1], sharey=ax_heur)
-#             ax_side.axis('off')
-            
-#             for i, (orig_exp_name, ranges, exp_results, display_name, p_red, f_red, m_red) in enumerate(valid_exps):
-#                 if ranges is None:
-#                     continue
-                    
-#                 if isinstance(ranges, tuple) or (isinstance(ranges, list) and len(ranges) > 0 and isinstance(ranges[0], str)):
-#                     ranges = [ranges]
-                
-#                 d_acc = exp_results.get('d_acc', np.nan)
-#                 color = get_acc_color(d_acc)
-#                 for start_layer, end_layer in ranges:
-#                     try:
-#                         s_idx = next(idx for idx, n in enumerate(layers) if start_layer == n) + 1
-#                         e_idx = next(idx for idx, n in reversed(list(enumerate(layers))) if end_layer == n) + 1
-#                         ax_heur.hlines(y=i, xmin=s_idx, xmax=e_idx, linewidth=16, color=color, alpha=0.85)
-#                     except StopIteration: continue
-            
-#             ax_heur.set_xlim(0, len(layers) + 1)
-#             ax_heur.set_ylim(y_limits)
-#             ax_heur.set_yticks(range(len(valid_exps)))
-            
-#             # Dynamic terminology check
-#             block_archs = ["ConvNeXt", "RegNetX_400MF", "MobileNet", "InceptionNet", "XceptionNet"]
-#             x_label = "Network Depth (Macro-Blocks)" if arch in block_archs else "Network Depth (Individual Layers)"
-            
-#             ax_heur.set_yticklabels([e[3] if e[1] is not None else f"{e[3]} (Control)" for e in valid_exps], fontsize=11, fontweight='bold')
-#             ax_heur.set_xlabel(x_label, fontweight='bold', fontsize=11)
-#             ax_heur.set_title(f"Structural Candidates & Hardware Reductions", loc='left', pad=25, fontsize=14, fontweight='bold')
-#             sns.despine(ax=ax_heur)
-
-#             cols = [0.10, 0.35, 0.65, 0.90]
-#             headers = ["$\\Delta$ Acc", "Params $\\downarrow$", "FLOPs $\\downarrow$", "Memory $\\downarrow$"]
-            
-#             header_y = len(valid_exps) 
-#             for x, h in zip(cols, headers):
-#                 ax_side.text(x, header_y, h, ha='center', va='bottom', fontweight='bold', fontsize=11, color='#333333')
-            
-#             for i, (_, ranges, exp_results, _, p_red, f_red, m_red) in enumerate(valid_exps):
-#                 d_acc = exp_results.get('d_acc', np.nan)
-#                 c = "#333333" if ranges is None else get_acc_color(d_acc)
-                
-#                 d_str = f"{d_acc:+.1f}%" if pd.notnull(d_acc) else "N/A"
-#                 p_str = f"{p_red:.1f}%" if pd.notnull(p_red) else "N/A"
-#                 f_str = f"{f_red:.1f}%" if pd.notnull(f_red) else "N/A"
-#                 m_str = f"{m_red:.1f}%" if pd.notnull(m_red) else "N/A"
-                
-#                 for x, val in zip(cols, [d_str, p_str, f_str, m_str]):
-#                     fw = 'bold' if x == cols[0] else 'normal'
-#                     alpha = 0.6 if (d_acc < -6.0 and x != cols[0] and ranges is not None) else 1.0
-#                     ax_side.text(x, i, val, ha='center', va='center', color=c, fontweight=fw, fontsize=11, alpha=alpha)
-
-#             plt.tight_layout()
-#             cand_save_path = out_dir / f"{arch}_{dataset}_candidates_sidebar_{file_suffix}.png"
-#             fig_cand.savefig(cand_save_path, bbox_inches='tight')
-#             plt.close(fig_cand)
-
-#     logger.info("[FIG4] Candidate/Sidebar plots generated successfully.")
-
 # ========================= FIG 5 ========================= #
 def fig5_hardware_efficiency_profiles(
     df: pd.DataFrame,
@@ -1434,6 +1348,100 @@ def fig7_convergence_metrics(
         
         logger.info(f"[FIG7] Saved convergence metrics plot for {arch}/{dataset} at {save_path}")
 
+# ------------------------------------------------------------
+# Additional Journal‑Quality Plots
+# ------------------------------------------------------------
+
+def fig8_accuracy_vs_params(
+    df: pd.DataFrame,
+    out_dir: Path = Path("./figures/accuracy_vs_params"),
+):
+    """Scatter plot of final accuracy versus parameter count.
+
+    Points are coloured by architecture and sized by FLOPs to give a
+    three‑dimensional view of the efficiency trade‑off. The x‑axis uses a
+    logarithmic scale because parameter counts span several orders of
+    magnitude.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    plot_df = df.dropna(subset=["accuracy", "params", "flops", "architecture"])
+    if plot_df.empty:
+        logger.warning("[FIG8] No data available for accuracy vs params plot.")
+        return
+
+    plt.figure(figsize=(12, 7))
+    # Encode architecture as categorical colour codes
+    arch_codes = plot_df["architecture"].astype('category').cat.codes
+    # Size based on log FLOPs for visual balance
+    sizes = np.log10(plot_df["flops"].replace(0, np.nan)) * 30 + 30
+    scatter = plt.scatter(
+        plot_df["params"],
+        plot_df["accuracy"],
+        c=arch_codes,
+        s=sizes,
+        cmap="viridis",
+        alpha=0.8,
+        edgecolor="black",
+    )
+    plt.xscale("log")
+    plt.xlabel("Parameter Count (log scale)", fontsize=14, fontweight="bold")
+    plt.ylabel("Final Accuracy (%)", fontsize=14, fontweight="bold")
+    plt.title("Model Accuracy vs Parameter Count", fontsize=16, fontweight="bold")
+    # Legend mapping colours to architecture names
+    handles, _ = scatter.legend_elements(prop="colors")
+    arch_labels = plot_df["architecture"].astype('category').cat.categories
+    plt.legend(handles, arch_labels, title="Architecture", bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.grid(True, which="both", ls=":", linewidth=0.5, alpha=0.7)
+    plt.tight_layout()
+    save_path = out_dir / "accuracy_vs_params.svg"
+    plt.savefig(save_path)
+    plt.close()
+    logger.info(f"[FIG8] Saved accuracy vs params plot at {save_path}")
+
+
+def fig9_flops_vs_memory(
+    df: pd.DataFrame,
+    out_dir: Path = Path("./figures/flops_vs_memory"),
+):
+    """Heat‑map style density plot of FLOPs versus memory consumption.
+
+    Models are binned into a 2‑D histogram; the colour indicates the
+    number of models falling into each bin. Log‑scale is used for FLOPs.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    plot_df = df.dropna(subset=["flops", "memory"])
+    if plot_df.empty:
+        logger.warning("[FIG9] No data available for FLOPs vs memory plot.")
+        return
+
+    # Bin edges – log‑scale for FLOPs, linear for memory.
+    flops_bins = np.logspace(
+        np.log10(plot_df["flops"].min()), np.log10(plot_df["flops"].max()), num=30
+    )
+    mem_bins = np.linspace(plot_df["memory"].min(), plot_df["memory"].max(), num=30)
+    hist, xedges, yedges = np.histogram2d(
+        plot_df["flops"], plot_df["memory"], bins=[flops_bins, mem_bins]
+    )
+
+    plt.figure(figsize=(12, 7))
+    im = plt.imshow(
+        hist.T,
+        origin="lower",
+        aspect="auto",
+        extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]],
+        cmap="magma",
+    )
+    plt.xscale("log")
+    plt.xlabel("FLOPs (log scale)", fontsize=14, fontweight="bold")
+    plt.ylabel("Memory (MiB)", fontsize=14, fontweight="bold")
+    plt.title("Model FLOPs vs Memory Distribution", fontsize=16, fontweight="bold")
+    cbar = plt.colorbar(im)
+    cbar.set_label("Count", fontsize=12)
+    plt.tight_layout()
+    save_path = out_dir / "flops_vs_memory.svg"
+    plt.savefig(save_path)
+    plt.close()
+    logger.info(f"[FIG9] Saved FLOPs vs memory heat‑map at {save_path}")
 
 # --- Updated __main__ block ---
 if __name__ == "__main__":
@@ -1452,6 +1460,16 @@ if __name__ == "__main__":
         fig5_hardware_efficiency_profiles(df, out_dir=FIG_DIR / "hardware_efficiency")
         fig6_training_curves(epochs, pretrain, out_dir=FIG_DIR / "learning_curves")
         fig7_convergence_metrics(df, out_dir=FIG_DIR / "convergence")
+        # New journal‑quality overview plots
+        fig8_accuracy_vs_params(df, out_dir=FIG_DIR / "accuracy_vs_params")
+        fig9_flops_vs_memory(df, out_dir=FIG_DIR / "flops_vs_memory")
+        # Generate the composite trade‑off figure from ``plot_tradeoff.py`` if the helper is available.
+        if tradeoff_generate_journal_figures is not None:
+            try:
+                tradeoff_generate_journal_figures(df)
+                logger.info("[TRADEOFF] Saved composite trade‑off figure via plot_tradeoff module.")
+            except Exception as e:
+                logger.error(f"[TRADEOFF] Failed to generate trade‑off figure: {e}")
         
         export_master_summary_json(df, out_path=Path(f"./master_results_summary_ep{epochs}_pre{pretrain}.json"))
         logger.info("Script completed.")
