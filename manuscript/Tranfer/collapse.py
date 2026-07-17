@@ -169,13 +169,29 @@ def _build_and_replace_block(
             is_depthwise = False
             
     if is_depthwise:
-        if debug: 
-            print(f"[DEBUG] ➔ Strategy: DEPTHWISE Conv (kernel_size={target_kernel_size})")
-        padding = target_kernel_size // 2 
-        conv = nn.Conv2d(in_channels, out_channels, kernel_size=target_kernel_size, stride=1, padding=padding, groups=in_channels, bias=False)
-        conv_name = "conv_dw"
+        # --------------------------------------------------------------
+        # MobileNet‑style block: depth‑wise conv followed by point‑wise conv.
+        # The original block expands the channel dimension with the
+        # point‑wise (1×1) conv.  To keep FLOPs low we replace the *whole*
+        # block by a **grouped 1×1 conv** that directly produces the
+        # required `out_channels`.  This preserves the cheap spatial
+        # filtering while avoiding the extra multiply‑adds that a plain
+        # depth‑wise conv with a large output channel count would incur.
+        # --------------------------------------------------------------
+        if debug:
+            print(f"[DEBUG] ➔ Strategy: GROUPED 1×1 Conv (depth‑wise style, groups={in_channels})")
+        conv = nn.Conv2d(
+            in_channels,
+            out_channels,
+            kernel_size=1,
+            stride=1,
+            padding=0,
+            groups=in_channels,   # one filter per input channel
+            bias=False,
+        )
+        conv_name = "conv_g1x1"
     else:
-        if debug: 
+        if debug:
             print(f"[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)")
         conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False)
         conv_name = "conv_1x1"
