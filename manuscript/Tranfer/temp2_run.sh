@@ -12,7 +12,7 @@ EPOCHS=$1
 PRETRAIN=$2
 MODE=${3:-all} # Defaults to 'all' if no 3rd argument is provided
 
-models=("VGG16" "RegNetX_400MF" "XceptionNet" "InceptionNet" "MobileNet" "ConvNeXt")
+models=("MobileNet")
 #models=("ConvNeXt" "MobileNet" "InceptionNet" "XceptionNet" "RegNetX_400MF" "VGG16")
 datasets=("tinyimagenet" "Cifar10" "Cifar100")
 quant=("False" "True")
