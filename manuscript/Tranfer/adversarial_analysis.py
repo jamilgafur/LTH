@@ -205,18 +205,38 @@ def evaluate_clean_accuracy(model: nn.Module, loader) -> float:
     return correct / total if total > 0 else 0.0
 
 
+def get_available_attacks() -> list[str]:
+    """Detect which attacks are available in the installed torchattacks version.
+    
+    Returns:
+        List of attack names that are available and can be instantiated.
+    """
+    available = []
+    # Attacks to try
+    candidate_attacks = ["PGD", "FGSM", "BIM", "APGD", "CW", "DeepFool", "Square", "AutoAttack"]
+    
+    for attack_name in candidate_attacks:
+        if hasattr(torchattacks, attack_name):
+            available.append(attack_name)
+    
+    if not available:
+        # Fallback to at least PGD and FGSM
+        available = ["PGD", "FGSM"]
+    
+    print(f"[INFO] Available attacks in torchattacks: {available}")
+    return available
+
+
 def instantiate_attack(attack_name: str, model: nn.Module, epsilon: float = 0.03, steps: int = 40):
     """Instantiate the appropriate attack from torchattacks.
     
-    Supported attacks: PGD, FGSM, IFGSM, BIM, APGD, Square, AutoAttack, CW, DeepFool.
+    Supported attacks: PGD, FGSM, BIM, APGD, Square, AutoAttack, CW, DeepFool.
     """
     try:
         if attack_name == "PGD":
             return torchattacks.PGD(model, eps=epsilon, alpha=epsilon / steps, steps=steps)
         elif attack_name == "FGSM":
             return torchattacks.FGSM(model, eps=epsilon)
-        elif attack_name == "IFGSM":
-            return torchattacks.IFGSM(model, eps=epsilon, alpha=epsilon / steps, steps=steps)
         elif attack_name == "BIM":
             return torchattacks.BIM(model, eps=epsilon, alpha=epsilon / steps, steps=steps)
         elif attack_name == "APGD":
@@ -295,9 +315,15 @@ def generate_attacks_phase(output_dir: str, model_filter: str = None, dataset_fi
     model_cache: dict[tuple[str, str, str], nn.Module] = {}
     loader_cache: dict[str, tuple] = {}
 
-    # Define the attacks we want to evaluate.
-    all_attacks = ["PGD", "FGSM", "IFGSM", "BIM", "APGD", "CW", "DeepFool"]
-    attacks = [a for a in all_attacks if attack_filter is None or a == attack_filter]
+    # Get the attacks available in the installed torchattacks version
+    available_attacks = get_available_attacks()
+    # Filter by user preference if specified
+    if attack_filter:
+        attacks = [attack_filter] if attack_filter in available_attacks else []
+        if not attacks:
+            print(f"[WARN] Requested attack '{attack_filter}' not available. Available: {available_attacks}")
+    else:
+        attacks = available_attacks
 
     for model_name, dataset_name, kind, ckpt_path in checkpoints:
         # Apply filters
@@ -560,7 +586,8 @@ def main():
                 model_cache[(model_name, dataset_name, kind)] = model
                 
                 # Locate pre-generated adversarial datasets
-                for attack in ["PGD", "FGSM", "IFGSM", "BIM", "APGD", "CW", "DeepFool"]:
+                available_attacks = get_available_attacks()
+                for attack in available_attacks:
                     adv_path = os.path.join(args.output_dir, f"{model_name}_{dataset_name}_{kind}_{attack}_adv.pt")
                     if os.path.exists(adv_path):
                         adv_datasets[(model_name, dataset_name, kind, attack)] = adv_path
