@@ -95,44 +95,35 @@ from transfer import CHECKPOINT_BASES, CHECKPOINT_FILES
 MODEL_ORDER = ["VGG16", "RegNetX_400MF", "InceptionNet", "MobileNet", "XceptionNet", "ConvNeXt"]
 DATASET_ORDER = ["Cifar10", "Cifar100", "imagenet", "tinyimagenet"]
 
-def get_checkpoint_path(model: str, dataset: str, kind: str) -> str | None:
-    """Return the absolute path for a given ``model``, ``dataset`` and ``kind``.
 
-    ``kind`` must be either ``"Finetuned"`` or ``"Original"``. The function
-    looks up the filename from ``CHECKPOINT_FILES`` and joins it with the base
-    directory from ``CHECKPOINT_BASES``. If the file does not exist, ``None`` is
-    returned.
-    """
-    file_tuple = CHECKPOINT_FILES.get(model, {}).get(dataset)
-    if not file_tuple:
+def get_checkpoint_path(model: str, dataset: str, kind: str) -> str | None:
+    import glob
+    import os
+    
+    # Search for the epochs100_pretrain300 directory for this model/dataset
+    pattern = f"{model}_{dataset}_*epochs100_pretrain300"
+    dirs = glob.glob(pattern)
+    if not dirs:
         return None
-    idx = 0 if kind == "Finetuned" else 1
-    filename = file_tuple[idx]
-    if not filename or filename == "None":
-        return None
-    base_dir = CHECKPOINT_BASES.get(model, {}).get(dataset)
-    if not base_dir:
-        return None
-    # ``base_dir`` already ends with a slash.
-    path = os.path.join(base_dir, filename)
-    return path if os.path.exists(path) else None
+    base_dir = dirs[0]
+    
+    # Map 'Original' to Control, and 'Finetuned' to Dynamic_Region_All_Combined
+    filename = "final_JF_Control.pt" if kind == "Original" else "final_JF_Dynamic_Region_All_Combined.pt"
+    
+    path = os.path.join(base_dir, "checkpoints", filename)
+    full_path = os.path.abspath(path)
+    return full_path if os.path.exists(full_path) else None
 
 def discover_checkpoints() -> list[tuple[str, str, str, str]]:
-    """Return a sorted list of ``(model, dataset, kind, checkpoint_path)``.
-
-    ``kind`` is either ``"Finetuned"`` (collapsed) or ``"Original"`` (uncollapsed).
-    The list respects the ordering defined in ``MODEL_ORDER`` and
-    ``DATASET_ORDER``.
-    """
-    entries: list[tuple[str, str, str, str]] = []
+    entries = []
     for model in MODEL_ORDER:
         for dataset in DATASET_ORDER:
             for kind in ("Finetuned", "Original"):
                 path = get_checkpoint_path(model, dataset, kind)
                 if path:
                     entries.append((model, dataset, kind, path))
-    # Sort according to the predefined order.
-    def sort_key(entry: tuple[str, str, str, str]):
+    
+    def sort_key(entry):
         m, d, _, _ = entry
         return (MODEL_ORDER.index(m), DATASET_ORDER.index(d))
     entries.sort(key=sort_key)
