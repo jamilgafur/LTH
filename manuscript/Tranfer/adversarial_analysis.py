@@ -140,22 +140,52 @@ DATASET_ORDER = ["Cifar10", "Cifar100", "imagenet", "tinyimagenet"]
 
 
 def get_checkpoint_path(model: str, dataset: str, kind: str) -> str | None:
-    import glob
+    """Resolve checkpoint path using CHECKPOINT_BASES and CHECKPOINT_FILES from transfer.py.
+    
+    Args:
+        model: Model architecture name (e.g., 'VGG16')
+        dataset: Dataset name (e.g., 'Cifar10')
+        kind: Either 'Finetuned' (collapsed) or 'Original' (uncollapsed)
+    
+    Returns:
+        Full path to checkpoint if it exists, None otherwise.
+    """
     import os
     
-    # Search for the epochs100_pretrain300 directory for this model/dataset
-    pattern = f"{model}_{dataset}_*epochs100_pretrain300"
-    dirs = glob.glob(pattern)
-    if not dirs:
+    # Get base directory from CHECKPOINT_BASES
+    base_dir = CHECKPOINT_BASES.get(model, {}).get(dataset)
+    if not base_dir:
+        print(f"[DEBUG] No base directory in CHECKPOINT_BASES for {model}/{dataset}")
         return None
-    base_dir = dirs[0]
     
-    # Map 'Original' to Control, and 'Finetuned' to Dynamic_Region_All_Combined
-    filename = "final_JF_Control.pt" if kind == "Original" else "final_JF_Dynamic_Region_All_Combined.pt"
+    # Strip trailing slash if present
+    base_dir = base_dir.rstrip("/")
     
-    path = os.path.join(base_dir, "checkpoints", filename)
-    full_path = os.path.abspath(path)
-    return full_path if os.path.exists(full_path) else None
+    # Get filename from CHECKPOINT_FILES
+    file_tuple = CHECKPOINT_FILES.get(model, {}).get(dataset)
+    if not file_tuple:
+        print(f"[DEBUG] No file entries in CHECKPOINT_FILES for {model}/{dataset}")
+        return None
+    
+    # Index 0 = Finetuned, Index 1 = Original
+    idx = 0 if kind == "Finetuned" else 1
+    filename = file_tuple[idx]
+    
+    if not filename or filename == "None":
+        print(f"[DEBUG] No {kind} checkpoint filename defined for {model}/{dataset}")
+        return None
+    
+    # Construct full path
+    full_path = os.path.join(base_dir, filename)
+    full_path = os.path.abspath(full_path)
+    
+    # Check if file exists
+    if not os.path.exists(full_path):
+        print(f"[WARN] Checkpoint not found: {full_path}")
+        return None
+    
+    print(f"[DEBUG] Checkpoint found for {model}/{dataset}/{kind}: {full_path}")
+    return full_path
 
 def discover_checkpoints() -> list[tuple[str, str, str, str]]:
     entries = []
@@ -347,6 +377,10 @@ def generate_attacks_phase(output_dir: str, model_filter: str = None, dataset_fi
             continue
 
         # Load the source model.
+        print(f"\n[DEBUG] Loading {model_name} ({kind}) on {dataset_name}")
+        print(f"[DEBUG] Checkpoint path: {ckpt_path}")
+        print(f"[DEBUG] Checkpoint exists: {os.path.exists(ckpt_path)}")
+        
         model = load_model(model_name, num_classes).cuda()
         try:
             robust_load_state_dict(model, ckpt_path)
@@ -359,8 +393,15 @@ def generate_attacks_phase(output_dir: str, model_filter: str = None, dataset_fi
         model = torch.nn.DataParallel(model)
         model_cache[(model_name, dataset_name, kind)] = model
 
-        # Clean accuracy.
+        # Clean accuracy - diagnostic check to verify weights were loaded correctly.
         clean_acc = evaluate_clean_accuracy(model, test_loader)
+        print(f"[DEBUG] Clean accuracy after loading {kind} checkpoint: {clean_acc:.4f}")
+        
+        # Sanity check: if accuracy is too low (< 20% for 10-class CIFAR), weights likely didn't load
+        if num_classes == 10 and clean_acc < 0.20:
+            print(f"[WARN] *** SANITY CHECK FAILED: {kind} model has suspiciously low accuracy ({clean_acc:.2%})")
+            print(f"[WARN] *** This suggests the checkpoint may not have loaded correctly!")
+            print(f"[WARN] *** Checkpoint path: {ckpt_path}")
 
         # For each attack, generate adversarial examples.
         for attack_name in attacks:
@@ -574,6 +615,8 @@ def main():
                     continue
                 
                 model = load_model(model_name, num_classes).cuda()
+                print(f"[DEBUG] Loading {model_name} ({kind}) on {dataset_name}")
+                print(f"[DEBUG] Checkpoint path: {ckpt_path}")
                 try:
                     robust_load_state_dict(model, ckpt_path)
                 except Exception as e:
