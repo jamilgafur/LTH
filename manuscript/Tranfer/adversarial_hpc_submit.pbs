@@ -29,6 +29,23 @@ cd "$(dirname "$0")"
 # Create logs directory if it doesn't exist
 mkdir -p logs
 
+# Check required variables.
+if [ -z "$PHASE" ] || [ -z "$OUTPUT_DIR" ]; then
+    echo "Error: PHASE and OUTPUT_DIR are required environment variables." >&2
+    exit 1
+fi
+
+# Prepare a txt output file similar to submit_job.pbs.
+if [ "$PHASE" = "generate" ]; then
+    if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$ATTACK" ]; then
+        echo "Error: MODEL, DATASET and ATTACK are required for generate phase." >&2
+        exit 1
+    fi
+    OUTPUT_FILE="${MODEL}_${DATASET}_${ATTACK}_${PHASE}_run.txt"
+else
+    OUTPUT_FILE="adversarial_${PHASE}_run.txt"
+fi
+
 echo "========================================================================"
 echo "Adversarial Analysis on HPC"
 echo "========================================================================"
@@ -48,13 +65,16 @@ if [ -f "venv/bin/activate" ]; then
     source venv/bin/activate
 fi
 
-# Run adversarial analysis
-python adversarial_analysis.py \
-    --mode "$PHASE" \
-    --model "$MODEL" \
-    --dataset "$DATASET" \
-    --attack "$ATTACK" \
-    --output-dir "$OUTPUT_DIR"
+# Run adversarial analysis with command line adapted by phase.
+CMD=(python adversarial_analysis.py --mode "$PHASE" --output-dir "$OUTPUT_DIR")
+if [ "$PHASE" = "generate" ]; then
+    CMD+=(--model "$MODEL" --dataset "$DATASET" --attack "$ATTACK")
+fi
+
+echo "Executing: ${CMD[*]}"
+echo "Writing output to: $OUTPUT_FILE"
+
+time "${CMD[@]}" > "$OUTPUT_FILE" 2>&1
 
 echo "========================================================================"
 echo "Job completed successfully at $(date)"
