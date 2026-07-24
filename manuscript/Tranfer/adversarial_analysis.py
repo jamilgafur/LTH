@@ -91,6 +91,49 @@ import glob
 import re
 from transfer import CHECKPOINT_BASES, CHECKPOINT_FILES
 
+# =========================================================================
+# Robust Checkpoint Loading Helper
+# =========================================================================
+
+def robust_load_state_dict(model: nn.Module, ckpt_path: str) -> None:
+    """Load a checkpoint robustly, handling multiple formats and DataParallel wrapping.
+    
+    Handles:
+    - State dict wrapped under "model_state_dict", "model", or "state_dict" keys
+    - State dict directly (plain dict of tensors)
+    - DataParallel-saved checkpoints ("module." prefix in keys)
+    - Mismatched architectures (loads with strict=False)
+    
+    Args:
+        model: The PyTorch model to load into.
+        ckpt_path: Path to the checkpoint file.
+    
+    Raises:
+        RuntimeError: If checkpoint format is unexpected.
+    """
+    state = torch.load(ckpt_path, map_location="cpu")
+
+    # Extract the actual state dict from possible wrapper keys
+    if isinstance(state, dict):
+        sd = (
+            state.get("model_state_dict")
+            or state.get("model")
+            or state.get("state_dict")
+            or state
+        )
+    else:
+        raise RuntimeError(
+            f"Unexpected checkpoint format for {ckpt_path}: {type(state)}"
+        )
+
+    # Remove the DataParallel "module." prefix if it exists
+    if any(k.startswith("module.") for k in sd.keys()):
+        sd = {k.replace("module.", "", 1): v for k, v in sd.items()}
+
+    # Load with strict=False to allow mismatched keys
+    # (missing keys will be left at initialization, extra keys in checkpoint are ignored)
+    model.load_state_dict(sd, strict=False)
+
 # Order of models and datasets as defined in ``transfer.py``.
 MODEL_ORDER = ["VGG16", "RegNetX_400MF", "InceptionNet", "MobileNet", "XceptionNet", "ConvNeXt"]
 DATASET_ORDER = ["Cifar10", "Cifar100", "imagenet", "tinyimagenet"]
@@ -279,11 +322,14 @@ def generate_attacks_phase(output_dir: str, model_filter: str = None, dataset_fi
 
         # Load the source model.
         model = load_model(model_name, num_classes).cuda()
-        state = torch.load(ckpt_path, map_location="cpu")
-        if "model" in state:
-            model.load_state_dict(state["model"])
-        else:
-            model.load_state_dict(state)
+        try:
+            robust_load_state_dict(model, ckpt_path)
+        except Exception as e:
+            print(
+                f"[WARN] Failed to load checkpoint for {model_name} ({kind}) on {dataset_name}: {e}"
+            )
+            # Skip this combination and move on to the next one
+            continue
         model = torch.nn.DataParallel(model)
         model_cache[(model_name, dataset_name, kind)] = model
 
@@ -502,11 +548,14 @@ def main():
                     continue
                 
                 model = load_model(model_name, num_classes).cuda()
-                state = torch.load(ckpt_path, map_location="cpu")
-                if "model" in state:
-                    model.load_state_dict(state["model"])
-                else:
-                    model.load_state_dict(state)
+                try:
+                    robust_load_state_dict(model, ckpt_path)
+                except Exception as e:
+                    print(
+                        f"[WARN] Failed to load checkpoint for {model_name} ({kind}) on {dataset_name}: {e}"
+                    )
+                    # Skip this combination and move on
+                    continue
                 model = torch.nn.DataParallel(model)
                 model_cache[(model_name, dataset_name, kind)] = model
                 
