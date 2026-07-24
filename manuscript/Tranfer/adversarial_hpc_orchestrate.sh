@@ -7,12 +7,12 @@
 # This script submits parallelized adversarial analysis jobs to an HPC cluster.
 #
 # Usage:
-#   ./adversarial_hpc_submit.sh <phase> [output_dir]
+#   ./adversarial_hpc_orchestrate.sh <phase> [output_dir]
 #
 # Examples:
-#   ./adversarial_hpc_submit.sh generate adversarial_results
-#   ./adversarial_hpc_submit.sh analyze adversarial_results
-#   ./adversarial_hpc_submit.sh plot adversarial_results
+#   ./adversarial_hpc_orchestrate.sh generate adversarial_results
+#   ./adversarial_hpc_orchestrate.sh analyze adversarial_results
+#   ./adversarial_hpc_orchestrate.sh plot adversarial_results
 #
 
 if [ "$#" -lt 1 ]; then
@@ -53,6 +53,11 @@ echo "==========================================================================
 
 # Create logs directory
 mkdir -p logs
+
+echo "Run outputs will be written as txt files in manuscript/Tranfer/"
+echo "  - generate: <MODEL>_<DATASET>_<ATTACK>_generate_run.txt"
+echo "  - analyze:  adversarial_analyze_run.txt"
+echo "  - plot:     adversarial_plot_run.txt"
 
 case "$PHASE" in
     generate)
