@@ -1,0 +1,61 @@
+#!/bin/bash
+#PBS -N adversarial_analysis
+#PBS -q all.q
+#PBS -l ngpus=1
+#PBS -o logs/adversarial_%J.log
+#PBS -e logs/adversarial_%J.err
+#PBS -v MODEL,DATASET,ATTACK,PHASE,OUTPUT_DIR
+
+# Adversarial Analysis HPC Submission Script
+# 
+# Usage: qsub -v MODEL="VGG16",DATASET="Cifar10",ATTACK="PGD",PHASE="generate",OUTPUT_DIR="adversarial_results" adversarial_hpc_submit.pbs
+#
+# Parameters:
+#   MODEL      - Model architecture (VGG16, RegNetX_400MF, ConvNeXt, InceptionNet, MobileNet, XceptionNet)
+#   DATASET    - Dataset (Cifar10, Cifar100, imagenet, tinyimagenet)
+#   ATTACK     - Attack type (PGD, FGSM, IFGSM, BIM, APGD, CW, DeepFool)
+#   PHASE      - Phase to run (generate, analyze, plot)
+#   OUTPUT_DIR - Output directory for results (default: adversarial_results)
+
+set -e
+
+# Load required modules (adjust based on your HPC setup)
+module load cuda/11.8
+module load python/3.10
+
+# Navigate to script directory
+cd "$(dirname "$0")"
+
+# Create logs directory if it doesn't exist
+mkdir -p logs
+
+echo "========================================================================"
+echo "Adversarial Analysis on HPC"
+echo "========================================================================"
+echo "Model:       $MODEL"
+echo "Dataset:     $DATASET"
+echo "Attack:      $ATTACK"
+echo "Phase:       $PHASE"
+echo "Output Dir:  $OUTPUT_DIR"
+echo "========================================================================"
+echo "Job ID:      $PBS_JOBID"
+echo "Hostname:    $(hostname)"
+echo "GPU Device:  $(nvidia-smi --query-gpu=index,name --format=csv,noheader)"
+echo "========================================================================"
+
+# Activate virtual environment if available
+if [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+fi
+
+# Run adversarial analysis
+python adversarial_analysis.py \
+    --mode "$PHASE" \
+    --model "$MODEL" \
+    --dataset "$DATASET" \
+    --attack "$ATTACK" \
+    --output-dir "$OUTPUT_DIR"
+
+echo "========================================================================"
+echo "Job completed successfully at $(date)"
+echo "========================================================================"
