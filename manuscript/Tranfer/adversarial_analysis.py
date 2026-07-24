@@ -90,12 +90,13 @@ from pyPrune.utils import load_cifar10, load_cifar100
 import glob
 import re
 from transfer import CHECKPOINT_BASES, CHECKPOINT_FILES
+from collapse import collapse_only, _wrap_pools_safe
 
 # =========================================================================
 # Robust Checkpoint Loading Helper
 # =========================================================================
 
-def robust_load_state_dict(model: nn.Module, ckpt_path: str) -> None:
+def robust_load_state_dict(model: nn.Module, ckpt_path: str):
     """Load a checkpoint robustly, handling multiple formats and DataParallel wrapping.
     
     Handles:
@@ -132,7 +133,7 @@ def robust_load_state_dict(model: nn.Module, ckpt_path: str) -> None:
 
     # Load with strict=False to allow mismatched keys
     # (missing keys will be left at initialization, extra keys in checkpoint are ignored)
-    model.load_state_dict(sd, strict=False)
+    return model.load_state_dict(sd, strict=False)
 
 # Order of models and datasets as defined in ``transfer.py``.
 MODEL_ORDER = ["VGG16", "RegNetX_400MF", "InceptionNet", "MobileNet", "XceptionNet", "ConvNeXt"]
@@ -163,6 +164,87 @@ def get_checkpoint_path(model: str, dataset: str, kind: str):
         return full_path
     return None
 
+
+def get_model_kwargs(model_name: str, num_classes: int, one_batch: torch.Tensor | None) -> dict:
+    kwargs = {"num_classes": num_classes}
+    if one_batch is not None:
+        kwargs["one_batch"] = one_batch
+    if model_name == "InceptionNet":
+        kwargs["aux_logits"] = False
+    return kwargs
+
+
+def get_discovered_regions_path(model_name: str, dataset_name: str, ckpt_path: str) -> str | None:
+    run_dir = os.path.basename(os.path.dirname(os.path.dirname(ckpt_path)))
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    prefix = f"{model_name}_{dataset_name}_None_"
+
+    if run_dir.startswith(prefix):
+        budget = run_dir[len(prefix):]
+        candidate = os.path.join(
+            base_dir,
+            f"{model_name}_{dataset_name}_{budget}_JF_discovered_regions.json",
+        )
+        if os.path.exists(candidate):
+            return candidate
+
+    matches = sorted(
+        glob.glob(os.path.join(base_dir, f"{model_name}_{dataset_name}_epochs*_pretrain*_JF_discovered_regions.json"))
+    )
+    return matches[0] if matches else None
+
+
+def get_compression_set_for_checkpoint(model_name: str, dataset_name: str, ckpt_path: str):
+    json_path = get_discovered_regions_path(model_name, dataset_name, ckpt_path)
+    if not json_path:
+        raise FileNotFoundError(
+            f"No discovered regions JSON found for {model_name}/{dataset_name} at {ckpt_path}"
+        )
+
+    with open(json_path, "r") as handle:
+        regions = json.load(handle)
+
+    compression_set = regions.get("Dynamic_Region_All_Combined")
+    if not compression_set:
+        raise KeyError(
+            f"Dynamic_Region_All_Combined not found in {json_path}"
+        )
+
+    print(f"[DEBUG] Discovered regions path: {json_path}")
+    print(f"[DEBUG] Collapse ranges loaded: {len(compression_set)}")
+    return compression_set
+
+
+def build_model_for_checkpoint(
+    model_name: str,
+    dataset_name: str,
+    kind: str,
+    num_classes: int,
+    one_batch: torch.Tensor,
+    ckpt_path: str,
+    device: str,
+) -> nn.Module:
+    model_kwargs = get_model_kwargs(model_name, num_classes, one_batch)
+    model = load_model(model_name, num_classes, one_batch=one_batch)
+    _wrap_pools_safe(model)
+
+    if kind == "Finetuned":
+        compression_set = get_compression_set_for_checkpoint(model_name, dataset_name, ckpt_path)
+        print(f"[DEBUG] Rebuilding collapsed architecture for {model_name} ({dataset_name}) before loading weights")
+        model = collapse_only(
+            model=model,
+            compression_set=compression_set,
+            input_shape=one_batch.shape,
+            device=device,
+            dry_run=False,
+            debug=False,
+            handle_skips=True,
+        )
+    else:
+        model = model.to(device)
+
+    return model
+
 def discover_checkpoints():
     entries = []
     for model in MODEL_ORDER:
@@ -173,7 +255,7 @@ def discover_checkpoints():
                     entries.append((model, dataset, kind, path))
     return entries
 
-def load_model(model_name: str, num_classes: int) -> nn.Module:
+def load_model(model_name: str, num_classes: int, one_batch: torch.Tensor | None = None) -> nn.Module:
     """Instantiate a model architecture.
 
     The function maps the string name used in ``CHECKPOINT_BASES`` to the actual
@@ -189,7 +271,8 @@ def load_model(model_name: str, num_classes: int) -> nn.Module:
     }
     if model_name not in mapping:
         raise ValueError(f"Unsupported model: {model_name}")
-    return mapping[model_name](num_classes=num_classes)
+    model_kwargs = get_model_kwargs(model_name, num_classes, one_batch)
+    return mapping[model_name](**model_kwargs)
 
 
 def evaluate_clean_accuracy(model: nn.Module, loader) -> float:
@@ -350,10 +433,23 @@ def generate_attacks_phase(output_dir: str, model_filter: str = None, dataset_fi
         print(f"\n[DEBUG] Loading {model_name} ({kind}) on {dataset_name}")
         print(f"[DEBUG] Checkpoint path: {ckpt_path}")
         print(f"[DEBUG] Checkpoint exists: {os.path.exists(ckpt_path)}")
-        
-        model = load_model(model_name, num_classes).cuda()
+
+        one_batch = next(iter(train_loader))[0]
         try:
-            robust_load_state_dict(model, ckpt_path)
+            model = build_model_for_checkpoint(
+                model_name=model_name,
+                dataset_name=dataset_name,
+                kind=kind,
+                num_classes=num_classes,
+                one_batch=one_batch,
+                ckpt_path=ckpt_path,
+                device="cuda",
+            )
+            load_result = robust_load_state_dict(model, ckpt_path)
+            print(
+                f"[DEBUG] load_state_dict result: missing={len(load_result.missing_keys)}, "
+                f"unexpected={len(load_result.unexpected_keys)}"
+            )
         except Exception as e:
             print(
                 f"[WARN] Failed to load checkpoint for {model_name} ({kind}) on {dataset_name}: {e}"
@@ -579,16 +675,32 @@ def main():
                 elif dataset_name == "Cifar100":
                     if "Cifar100" not in loader_cache:
                         loader_cache["Cifar100"] = load_cifar100(batch_size=256, num_workers=4)
-                    _, _ = loader_cache["Cifar100"]
+                    train_loader, _ = loader_cache["Cifar100"]
                     num_classes = 100
                 else:
                     continue
-                
-                model = load_model(model_name, num_classes).cuda()
+
+                if dataset_name == "Cifar10":
+                    train_loader, _ = loader_cache["Cifar10"]
+
+                one_batch = next(iter(train_loader))[0]
                 print(f"[DEBUG] Loading {model_name} ({kind}) on {dataset_name}")
                 print(f"[DEBUG] Checkpoint path: {ckpt_path}")
                 try:
-                    robust_load_state_dict(model, ckpt_path)
+                    model = build_model_for_checkpoint(
+                        model_name=model_name,
+                        dataset_name=dataset_name,
+                        kind=kind,
+                        num_classes=num_classes,
+                        one_batch=one_batch,
+                        ckpt_path=ckpt_path,
+                        device="cuda",
+                    )
+                    load_result = robust_load_state_dict(model, ckpt_path)
+                    print(
+                        f"[DEBUG] load_state_dict result: missing={len(load_result.missing_keys)}, "
+                        f"unexpected={len(load_result.unexpected_keys)}"
+                    )
                 except Exception as e:
                     print(
                         f"[WARN] Failed to load checkpoint for {model_name} ({kind}) on {dataset_name}: {e}"
