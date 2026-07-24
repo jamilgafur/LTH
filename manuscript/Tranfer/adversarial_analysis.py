@@ -139,55 +139,31 @@ MODEL_ORDER = ["VGG16", "RegNetX_400MF", "InceptionNet", "MobileNet", "XceptionN
 DATASET_ORDER = ["Cifar10", "Cifar100", "imagenet", "tinyimagenet"]
 
 
-def get_checkpoint_path(model: str, dataset: str, kind: str) -> str | None:
-    """Resolve checkpoint path using CHECKPOINT_BASES and CHECKPOINT_FILES from transfer.py.
-    
-    Args:
-        model: Model architecture name (e.g., 'VGG16')
-        dataset: Dataset name (e.g., 'Cifar10')
-        kind: Either 'Finetuned' (collapsed) or 'Original' (uncollapsed)
-    
-    Returns:
-        Full path to checkpoint if it exists, None otherwise.
-    """
+def get_checkpoint_path(model: str, dataset: str, kind: str):
+    import glob
     import os
-    
-    # Get base directory from CHECKPOINT_BASES
-    base_dir = CHECKPOINT_BASES.get(model, {}).get(dataset)
-    if not base_dir:
-        print(f"[DEBUG] No base directory in CHECKPOINT_BASES for {model}/{dataset}")
+    # Find directories matching this model and dataset
+    pattern = f"{model}_{dataset}_*"
+    dirs = glob.glob(pattern)
+    if not dirs:
         return None
+        
+    # Prioritize epochs100_pretrain300 if it exists
+    target_dir = dirs[0]
+    for d in dirs:
+        if "epochs100_pretrain300" in d:
+            target_dir = d
+            break
+            
+    base_dir = target_dir
+    filename = "final_JF_Control.pt" if kind == "Original" else "final_JF_Dynamic_Region_All_Combined.pt"
+    full_path = os.path.abspath(os.path.join(base_dir, "checkpoints", filename))
     
-    # Strip trailing slash if present
-    base_dir = base_dir.rstrip("/")
-    
-    # Get filename from CHECKPOINT_FILES
-    file_tuple = CHECKPOINT_FILES.get(model, {}).get(dataset)
-    if not file_tuple:
-        print(f"[DEBUG] No file entries in CHECKPOINT_FILES for {model}/{dataset}")
-        return None
-    
-    # Index 0 = Finetuned, Index 1 = Original
-    idx = 0 if kind == "Finetuned" else 1
-    filename = file_tuple[idx]
-    
-    if not filename or filename == "None":
-        print(f"[DEBUG] No {kind} checkpoint filename defined for {model}/{dataset}")
-        return None
-    
-    # Construct full path
-    full_path = os.path.join(base_dir, filename)
-    full_path = os.path.abspath(full_path)
-    
-    # Check if file exists
-    if not os.path.exists(full_path):
-        print(f"[WARN] Checkpoint not found: {full_path}")
-        return None
-    
-    print(f"[DEBUG] Checkpoint found for {model}/{dataset}/{kind}: {full_path}")
-    return full_path
+    if os.path.exists(full_path):
+        return full_path
+    return None
 
-def discover_checkpoints() -> list[tuple[str, str, str, str]]:
+def discover_checkpoints():
     entries = []
     for model in MODEL_ORDER:
         for dataset in DATASET_ORDER:
@@ -195,13 +171,7 @@ def discover_checkpoints() -> list[tuple[str, str, str, str]]:
                 path = get_checkpoint_path(model, dataset, kind)
                 if path:
                     entries.append((model, dataset, kind, path))
-    
-    def sort_key(entry):
-        m, d, _, _ = entry
-        return (MODEL_ORDER.index(m), DATASET_ORDER.index(d))
-    entries.sort(key=sort_key)
     return entries
-
 
 def load_model(model_name: str, num_classes: int) -> nn.Module:
     """Instantiate a model architecture.
