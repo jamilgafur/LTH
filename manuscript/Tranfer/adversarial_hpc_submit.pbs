@@ -4,7 +4,7 @@
 #PBS -l ngpus=1
 #PBS -o logs/adversarial_%J.log
 #PBS -e logs/adversarial_%J.err
-#PBS -v MODEL,DATASET,ATTACK,PHASE,OUTPUT_DIR
+#PBS -v MODEL,DATASET,ATTACK,KIND,PHASE,OUTPUT_DIR
 
 set -e
 
@@ -28,13 +28,19 @@ if [ -z "$PHASE" ] || [ -z "$OUTPUT_DIR" ]; then
     exit 1
 fi
 
+# Normalize optional variables
+MODEL=${MODEL:-ALL}
+DATASET=${DATASET:-ALL}
+ATTACK=${ATTACK:-ALL}
+KIND=${KIND:-ALL}
+
 # Prepare a txt output file
 if [ "$PHASE" = "generate" ]; then
-    if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$ATTACK" ]; then
+    if [ "$MODEL" = "ALL" ] || [ "$DATASET" = "ALL" ] || [ "$ATTACK" = "ALL" ]; then
         echo "Error: MODEL, DATASET and ATTACK are required for generate phase." >&2
         exit 1
     fi
-    OUTPUT_FILE="${MODEL}_${DATASET}_${ATTACK}_${PHASE}_run.txt"
+    OUTPUT_FILE="${MODEL}_${DATASET}_${ATTACK}_${KIND}_${PHASE}_run.txt"
 else
     OUTPUT_FILE="adversarial_${PHASE}_run.txt"
 fi
@@ -45,6 +51,7 @@ echo "========================================================================"
 echo "Model:       $MODEL"
 echo "Dataset:     $DATASET"
 echo "Attack:      $ATTACK"
+echo "Kind:        $KIND"
 echo "Phase:       $PHASE"
 echo "Output Dir:  $OUTPUT_DIR"
 echo "========================================================================"
@@ -57,6 +64,22 @@ echo "========================================================================"
 CMD=(~/env/lth_env/bin/python adversarial_analysis.py --mode "$PHASE" --output-dir "$OUTPUT_DIR")
 if [ "$PHASE" = "generate" ]; then
     CMD+=(--model "$MODEL" --dataset "$DATASET" --attack "$ATTACK")
+    if [ "$KIND" != "ALL" ]; then
+        CMD+=(--kind "$KIND")
+    fi
+elif [ "$PHASE" = "analyze" ]; then
+    if [ "$MODEL" != "ALL" ]; then
+        CMD+=(--model "$MODEL")
+    fi
+    if [ "$DATASET" != "ALL" ]; then
+        CMD+=(--dataset "$DATASET")
+    fi
+    if [ "$ATTACK" != "ALL" ]; then
+        CMD+=(--attack "$ATTACK")
+    fi
+    if [ "$KIND" != "ALL" ]; then
+        CMD+=(--kind "$KIND")
+    fi
 fi
 
 echo "Executing: ${CMD[*]}"

@@ -41,11 +41,14 @@ Run from the repository root:
 Output Files
 ------------
 ``adversarial_results/`` directory contains:
-* ``summary.csv`` – Direct attack results (clean_acc, adv_acc per model/dataset/kind/attack)
-* ``transferability.csv`` – Cross-model transferability rates
+* ``summary.csv`` – Direct attack and susceptibility metrics per model/dataset/kind/attack
+* ``transferability.csv`` – Cross-model transferability rates and normalized transfer metrics
 * Plots:
-  - ``attack_success_rates.png`` – Accuracy drop by model, attack, and kind
-  - ``transferability_heatmap_*.png`` – Heatmaps showing cross-architecture transferability
+    - ``attack_success_rates.png`` – Attack success rate by model, attack, and kind
+    - ``direct_attack_success_heatmap_*.png`` – Heatmaps of direct fooling rate by model and attack
+    - ``collapsed_vs_original_delta_*.png`` – Heatmaps of collapsed minus original susceptibility
+    - ``transferability_heatmap_full_*.png`` – Full source-to-target transfer matrices including kind
+    - ``transferability_matrix_full_*.csv`` – Full source-to-target transfer matrices including kind
   - ``attack_comparison_*.png`` – Comparison of attack effectiveness by dataset
 """
 
@@ -339,29 +342,68 @@ def instantiate_attack(attack_name: str, model: nn.Module, epsilon: float = 0.03
         return None
 
 
-def generate_adversarial_dataset(model: nn.Module, loader, attack_name: str, epsilon: float = 0.03, steps: int = 40) -> tuple[torch.Tensor, torch.Tensor]:
-    """Generate adversarial examples using the specified attack.
+def generate_adversarial_dataset(model: nn.Module, loader, attack_name: str, epsilon: float = 0.03, steps: int = 40) -> dict | None:
+    """Generate and package a single-source adversarial dataset.
 
-    Returns a tuple ``(adv_images, adv_labels)`` where ``adv_images`` is a tensor
-    of shape ``(N, C, H, W)`` and ``adv_labels`` are the original labels.
+    The saved bundle includes the clean images, adversarial images, ground-truth
+    labels, and the source model predictions on both the clean and adversarial
+    versions. This makes it possible to inspect the source behavior directly and
+    then reuse the adversarial images for transfer studies against all other
+    models trained on the same dataset.
     """
     model.eval()
     attack = instantiate_attack(attack_name, model, epsilon, steps)
     if attack is None:
-        return None, None
+        return None
 
+    clean_images = []
     adv_images = []
-    adv_labels = []
+    true_labels = []
+    clean_predictions = []
+    adv_predictions = []
     try:
         for imgs, lbls in loader:
             imgs, lbls = imgs.cuda(), lbls.cuda()
+            with torch.no_grad():
+                clean_preds = model(imgs).argmax(dim=1)
             adv = attack(imgs, lbls)
+            with torch.no_grad():
+                adv_preds = model(adv).argmax(dim=1)
+
+            clean_images.append(imgs.cpu())
             adv_images.append(adv.cpu())
-            adv_labels.append(lbls.cpu())
-        return torch.cat(adv_images), torch.cat(adv_labels)
+            true_labels.append(lbls.cpu())
+            clean_predictions.append(clean_preds.cpu())
+            adv_predictions.append(adv_preds.cpu())
+
+        return {
+            "clean_images": torch.cat(clean_images),
+            "adversarial_images": torch.cat(adv_images),
+            "true_labels": torch.cat(true_labels),
+            "source_clean_predictions": torch.cat(clean_predictions),
+            "source_adversarial_predictions": torch.cat(adv_predictions),
+        }
     except Exception as e:
         print(f"[ERROR] Attack generation failed for {attack_name}: {e}")
-        return None, None
+        return None
+
+
+def load_adversarial_bundle(adv_path: str) -> dict:
+    payload = torch.load(adv_path)
+    if isinstance(payload, dict):
+        return payload
+
+    if isinstance(payload, tuple) and len(payload) == 2:
+        adv_imgs, adv_lbls = payload
+        return {
+            "clean_images": None,
+            "adversarial_images": adv_imgs,
+            "true_labels": adv_lbls,
+            "source_clean_predictions": None,
+            "source_adversarial_predictions": None,
+        }
+
+    raise RuntimeError(f"Unsupported adversarial dataset format in {adv_path}")
 
 
 def evaluate_transferability(source_model: nn.Module, adv_loader, target_models: dict) -> dict:
@@ -378,7 +420,131 @@ def evaluate_transferability(source_model: nn.Module, adv_loader, target_models:
     return results
 
 
-def generate_attacks_phase(output_dir: str, model_filter: str = None, dataset_filter: str = None, attack_filter: str = None):
+def model_kind_label(model_name: str, kind: str) -> str:
+    return f"{model_name} ({kind})"
+
+
+def summarize_direct_metrics(clean_acc: float, adv_acc: float) -> dict:
+    accuracy_drop = clean_acc - adv_acc
+    attack_success_rate = 1.0 - adv_acc
+    relative_accuracy_drop = accuracy_drop / clean_acc if clean_acc > 0 else np.nan
+    robustness_ratio = adv_acc / clean_acc if clean_acc > 0 else np.nan
+    return {
+        "robust_accuracy": adv_acc,
+        "clean_error_rate": 1.0 - clean_acc,
+        "adv_error_rate": 1.0 - adv_acc,
+        "attack_success_rate": attack_success_rate,
+        "accuracy_drop": accuracy_drop,
+        "relative_accuracy_drop": relative_accuracy_drop,
+        "robustness_ratio": robustness_ratio,
+    }
+
+
+def classify_transfer_pair(src_model: str, src_kind: str, tgt_model: str, tgt_kind: str) -> str:
+    if src_model == tgt_model and src_kind == tgt_kind:
+        return "self_same_kind"
+    if src_model == tgt_model:
+        return "same_arch_cross_kind"
+    if src_kind == tgt_kind:
+        return "cross_arch_same_kind"
+    return "cross_arch_cross_kind"
+
+
+def enrich_summary_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+
+    if "model_label" not in df.columns and {"model", "kind"}.issubset(df.columns):
+        df["model_label"] = df.apply(lambda row: model_kind_label(row["model"], row["kind"]), axis=1)
+
+    if "accuracy_drop" not in df.columns and {"clean_acc", "adv_acc"}.issubset(df.columns):
+        df["accuracy_drop"] = df["clean_acc"] - df["adv_acc"]
+
+    if "robust_accuracy" not in df.columns and "adv_acc" in df.columns:
+        df["robust_accuracy"] = df["adv_acc"]
+
+    if "clean_error_rate" not in df.columns and "clean_acc" in df.columns:
+        df["clean_error_rate"] = 1.0 - df["clean_acc"]
+
+    if "adv_error_rate" not in df.columns and "adv_acc" in df.columns:
+        df["adv_error_rate"] = 1.0 - df["adv_acc"]
+
+    if "attack_success_rate" not in df.columns and "adv_acc" in df.columns:
+        df["attack_success_rate"] = 1.0 - df["adv_acc"]
+
+    if "relative_accuracy_drop" not in df.columns and {"accuracy_drop", "clean_acc"}.issubset(df.columns):
+        df["relative_accuracy_drop"] = np.where(df["clean_acc"] > 0, df["accuracy_drop"] / df["clean_acc"], np.nan)
+
+    if "robustness_ratio" not in df.columns and {"adv_acc", "clean_acc"}.issubset(df.columns):
+        df["robustness_ratio"] = np.where(df["clean_acc"] > 0, df["adv_acc"] / df["clean_acc"], np.nan)
+
+    return df
+
+
+def enrich_transfer_dataframe(tf_df: pd.DataFrame, records_df: pd.DataFrame | None = None) -> pd.DataFrame:
+    if tf_df.empty:
+        return tf_df
+
+    if "source_label" not in tf_df.columns:
+        tf_df["source_label"] = tf_df.apply(
+            lambda row: model_kind_label(row["source_model"], row["source_kind"]), axis=1
+        )
+
+    if "target_label" not in tf_df.columns:
+        tf_df["target_label"] = tf_df.apply(
+            lambda row: model_kind_label(row["target_model"], row["target_kind"]), axis=1
+        )
+
+    if "transfer_success_rate" not in tf_df.columns and "transfer_acc" in tf_df.columns:
+        tf_df["transfer_success_rate"] = 1.0 - tf_df["transfer_acc"]
+
+    if "same_architecture" not in tf_df.columns:
+        tf_df["same_architecture"] = tf_df["source_model"] == tf_df["target_model"]
+
+    if "same_kind" not in tf_df.columns:
+        tf_df["same_kind"] = tf_df["source_kind"] == tf_df["target_kind"]
+
+    if "pair_type" not in tf_df.columns:
+        tf_df["pair_type"] = tf_df.apply(
+            lambda row: classify_transfer_pair(
+                row["source_model"], row["source_kind"], row["target_model"], row["target_kind"]
+            ),
+            axis=1,
+        )
+
+    if records_df is not None and not records_df.empty and "source_attack_success_rate" not in tf_df.columns:
+        lookup = records_df[["model", "dataset", "kind", "attack", "attack_success_rate"]].rename(
+            columns={
+                "model": "source_model",
+                "dataset": "dataset",
+                "kind": "source_kind",
+                "attack": "source_attack",
+                "attack_success_rate": "source_attack_success_rate",
+            }
+        )
+        tf_df = tf_df.merge(
+            lookup,
+            on=["source_model", "dataset", "source_kind", "source_attack"],
+            how="left",
+        )
+
+    if "normalized_transfer_rate" not in tf_df.columns and {"transfer_success_rate", "source_attack_success_rate"}.issubset(tf_df.columns):
+        tf_df["normalized_transfer_rate"] = np.where(
+            tf_df["source_attack_success_rate"] > 0,
+            tf_df["transfer_success_rate"] / tf_df["source_attack_success_rate"],
+            np.nan,
+        )
+
+    return tf_df
+
+
+def generate_attacks_phase(
+    output_dir: str,
+    model_filter: str = None,
+    dataset_filter: str = None,
+    attack_filter: str = None,
+    kind_filter: str = None,
+):
     """Phase 1: Generate adversarial examples and save datasets.
     
     Args:
@@ -386,6 +552,7 @@ def generate_attacks_phase(output_dir: str, model_filter: str = None, dataset_fi
         model_filter: Filter by model name (e.g., 'VGG16'). None means all.
         dataset_filter: Filter by dataset name (e.g., 'Cifar10'). None means all.
         attack_filter: Filter by attack name (e.g., 'PGD'). None means all.
+        kind_filter: Filter by checkpoint kind ('Original' or 'Finetuned'). None means both.
     
     Returns:
         Tuple of (records_list, adv_datasets_dict).
@@ -413,6 +580,8 @@ def generate_attacks_phase(output_dir: str, model_filter: str = None, dataset_fi
         if model_filter and model_name != model_filter:
             continue
         if dataset_filter and dataset_name != dataset_filter:
+            continue
+        if kind_filter and kind != kind_filter:
             continue
 
         # Load data loaders (cached per dataset).
@@ -471,9 +640,12 @@ def generate_attacks_phase(output_dir: str, model_filter: str = None, dataset_fi
 
         # For each attack, generate adversarial examples.
         for attack_name in attacks:
-            adv_imgs, adv_lbls = generate_adversarial_dataset(model, test_loader, attack_name)
-            if adv_imgs is None:
+            adv_bundle = generate_adversarial_dataset(model, test_loader, attack_name)
+            if adv_bundle is None:
                 continue
+
+            adv_imgs = adv_bundle["adversarial_images"]
+            adv_lbls = adv_bundle["true_labels"]
 
             adv_dataset = torch.utils.data.TensorDataset(adv_imgs, adv_lbls)
             adv_loader = torch.utils.data.DataLoader(adv_dataset, batch_size=256, shuffle=False)
@@ -484,7 +656,16 @@ def generate_attacks_phase(output_dir: str, model_filter: str = None, dataset_fi
                 output_dir,
                 f"{model_name}_{dataset_name}_{kind}_{attack_name}_adv.pt",
             )
-            torch.save((adv_imgs, adv_lbls), adv_path)
+            torch.save(
+                {
+                    "source_model": model_name,
+                    "dataset": dataset_name,
+                    "kind": kind,
+                    "attack": attack_name,
+                    **adv_bundle,
+                },
+                adv_path,
+            )
             adv_datasets[(model_name, dataset_name, kind, attack_name)] = adv_path
 
             records.append(
@@ -493,9 +674,10 @@ def generate_attacks_phase(output_dir: str, model_filter: str = None, dataset_fi
                     "dataset": dataset_name,
                     "kind": kind,
                     "attack": attack_name,
+                    "model_label": model_kind_label(model_name, kind),
                     "clean_acc": clean_acc,
                     "adv_acc": adv_acc,
-                    "accuracy_drop": clean_acc - adv_acc,
+                    **summarize_direct_metrics(clean_acc, adv_acc),
                 }
             )
             print(f"[INFO] {model_name} ({kind}) {dataset_name} – {attack_name}: clean {clean_acc:.2%}, adv {adv_acc:.2%}")
@@ -506,10 +688,15 @@ def generate_attacks_phase(output_dir: str, model_filter: str = None, dataset_fi
 def analyze_transferability_phase(output_dir: str, model_cache: dict, loader_cache: dict, adv_datasets: dict):
     """Phase 2: Evaluate transferability of adversarial examples across models."""
     transfer_records = []
+    summary_path = os.path.join(output_dir, "summary.csv")
+    records_df = pd.read_csv(summary_path) if os.path.exists(summary_path) else pd.DataFrame()
+    records_df = enrich_summary_dataframe(records_df)
 
     for (src_model, src_dataset, src_kind, src_attack), adv_path in adv_datasets.items():
         # Load the pre-generated adversarial dataset.
-        adv_imgs, adv_lbls = torch.load(adv_path)
+        adv_bundle = load_adversarial_bundle(adv_path)
+        adv_imgs = adv_bundle["adversarial_images"]
+        adv_lbls = adv_bundle["true_labels"]
         adv_dataset = torch.utils.data.TensorDataset(adv_imgs, adv_lbls)
         adv_loader = torch.utils.data.DataLoader(adv_dataset, batch_size=256, shuffle=False)
 
@@ -519,15 +706,38 @@ def analyze_transferability_phase(output_dir: str, model_cache: dict, loader_cac
                 continue
             
             tgt_acc = evaluate_clean_accuracy(tgt_model_obj, adv_loader)
+            transfer_success_rate = 1.0 - tgt_acc
+            source_attack_success_rate = np.nan
+            normalized_transfer_rate = np.nan
+            if not records_df.empty:
+                match = records_df[
+                    (records_df["model"] == src_model)
+                    & (records_df["dataset"] == src_dataset)
+                    & (records_df["kind"] == src_kind)
+                    & (records_df["attack"] == src_attack)
+                ]
+                if not match.empty:
+                    source_attack_success_rate = float(match.iloc[0]["attack_success_rate"])
+                    if source_attack_success_rate > 0:
+                        normalized_transfer_rate = transfer_success_rate / source_attack_success_rate
+
             transfer_records.append(
                 {
                     "source_model": src_model,
                     "source_kind": src_kind,
+                    "source_label": model_kind_label(src_model, src_kind),
                     "source_attack": src_attack,
                     "target_model": tgt_model,
                     "target_kind": tgt_kind,
+                    "target_label": model_kind_label(tgt_model, tgt_kind),
                     "dataset": src_dataset,
                     "transfer_acc": tgt_acc,
+                    "transfer_success_rate": transfer_success_rate,
+                    "source_attack_success_rate": source_attack_success_rate,
+                    "normalized_transfer_rate": normalized_transfer_rate,
+                    "same_architecture": src_model == tgt_model,
+                    "same_kind": src_kind == tgt_kind,
+                    "pair_type": classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
                 }
             )
 
@@ -540,12 +750,12 @@ def generate_plots(output_dir: str, records: List[Dict], transfer_records: List[
 
     # Plot 1: Attack Success Rates (Accuracy Drop)
     if records:
-        df = pd.DataFrame(records)
+        df = enrich_summary_dataframe(pd.DataFrame(records))
         
-        # Overall accuracy drop by model, dataset, and kind
+        # Overall attack success by model, dataset, and kind
         plt.figure(figsize=(14, 6))
-        sns.barplot(data=df, x="model", y="accuracy_drop", hue="attack", palette="Set2")
-        plt.ylabel("Accuracy Drop (clean - adv)", fontweight='bold')
+        sns.barplot(data=df, x="model", y="attack_success_rate", hue="attack", palette="Set2")
+        plt.ylabel("Attack Success Rate", fontweight='bold')
         plt.xlabel("Model Architecture", fontweight='bold')
         plt.title("Adversarial Attack Success Rates Across Models", fontsize=14, fontweight='bold')
         plt.xticks(rotation=45)
@@ -558,8 +768,8 @@ def generate_plots(output_dir: str, records: List[Dict], transfer_records: List[
         for kind in df["kind"].unique():
             df_kind = df[df["kind"] == kind]
             plt.figure(figsize=(14, 6))
-            sns.barplot(data=df_kind, x="model", y="accuracy_drop", hue="attack", palette="husl")
-            plt.ylabel("Accuracy Drop", fontweight='bold')
+            sns.barplot(data=df_kind, x="model", y="attack_success_rate", hue="attack", palette="husl")
+            plt.ylabel("Attack Success Rate", fontweight='bold')
             plt.xlabel("Model Architecture", fontweight='bold')
             plt.title(f"Attack Success Rates – {kind} Models", fontsize=14, fontweight='bold')
             plt.xticks(rotation=45)
@@ -572,8 +782,8 @@ def generate_plots(output_dir: str, records: List[Dict], transfer_records: List[
         for dataset in df["dataset"].unique():
             df_dataset = df[df["dataset"] == dataset]
             plt.figure(figsize=(12, 5))
-            sns.boxplot(data=df_dataset, x="attack", y="accuracy_drop", hue="kind", palette="Set1")
-            plt.ylabel("Accuracy Drop", fontweight='bold')
+            sns.boxplot(data=df_dataset, x="attack", y="attack_success_rate", hue="kind", palette="Set1")
+            plt.ylabel("Attack Success Rate", fontweight='bold')
             plt.xlabel("Attack Method", fontweight='bold')
             plt.title(f"Attack Effectiveness Comparison – {dataset}", fontsize=14, fontweight='bold')
             plt.xticks(rotation=45)
@@ -582,27 +792,93 @@ def generate_plots(output_dir: str, records: List[Dict], transfer_records: List[
             plt.close()
             print(f"[INFO] Saved: attack_comparison_{dataset}.png")
 
+            direct_heatmap = df_dataset.pivot_table(
+                index="model_label",
+                columns="attack",
+                values="attack_success_rate",
+                aggfunc="mean",
+            )
+            if direct_heatmap is not None and not direct_heatmap.empty:
+                plt.figure(figsize=(10, 7))
+                sns.heatmap(
+                    direct_heatmap,
+                    annot=True,
+                    fmt=".2%",
+                    cmap="rocket_r",
+                    vmin=0,
+                    vmax=1,
+                    cbar_kws={"label": "Attack Success Rate"},
+                )
+                plt.title(f"Direct Attack Success Heatmap – {dataset}", fontsize=14, fontweight='bold')
+                plt.xlabel("Attack Method", fontweight='bold')
+                plt.ylabel("Model Variant", fontweight='bold')
+                plt.tight_layout()
+                plt.savefig(os.path.join(output_dir, f"direct_attack_success_heatmap_{dataset}.png"), dpi=300)
+                plt.close()
+                print(f"[INFO] Saved: direct_attack_success_heatmap_{dataset}.png")
+
+            delta_rows = []
+            for model_name in sorted(df_dataset["model"].unique()):
+                for attack_name in sorted(df_dataset["attack"].unique()):
+                    subset = df_dataset[(df_dataset["model"] == model_name) & (df_dataset["attack"] == attack_name)]
+                    if {"Original", "Finetuned"}.issubset(set(subset["kind"])):
+                        finetuned_value = float(subset[subset["kind"] == "Finetuned"]["attack_success_rate"].mean())
+                        original_value = float(subset[subset["kind"] == "Original"]["attack_success_rate"].mean())
+                        delta_rows.append(
+                            {
+                                "model": model_name,
+                                "attack": attack_name,
+                                "collapsed_minus_original": finetuned_value - original_value,
+                            }
+                        )
+
+            if delta_rows:
+                delta_df = pd.DataFrame(delta_rows)
+                delta_heatmap = delta_df.pivot_table(
+                    index="model",
+                    columns="attack",
+                    values="collapsed_minus_original",
+                    aggfunc="mean",
+                )
+                plt.figure(figsize=(10, 7))
+                sns.heatmap(
+                    delta_heatmap,
+                    annot=True,
+                    fmt=".2%",
+                    cmap="coolwarm",
+                    center=0,
+                    cbar_kws={"label": "Collapsed - Original Attack Success"},
+                )
+                plt.title(f"Collapsed vs Original Susceptibility Delta – {dataset}", fontsize=14, fontweight='bold')
+                plt.xlabel("Attack Method", fontweight='bold')
+                plt.ylabel("Model Architecture", fontweight='bold')
+                plt.tight_layout()
+                plt.savefig(os.path.join(output_dir, f"collapsed_vs_original_delta_{dataset}.png"), dpi=300)
+                plt.close()
+                print(f"[INFO] Saved: collapsed_vs_original_delta_{dataset}.png")
+
     # Plot 2: Transferability Heatmaps
     if transfer_records:
-        tf_df = pd.DataFrame(transfer_records)
+        records_df = enrich_summary_dataframe(pd.DataFrame(records)) if records else pd.DataFrame()
+        tf_df = enrich_transfer_dataframe(pd.DataFrame(transfer_records), records_df)
         
         # Heatmap for each dataset and attack
         for dataset in tf_df["dataset"].unique():
             for attack in tf_df["source_attack"].unique():
                 tf_subset = tf_df[(tf_df["dataset"] == dataset) & (tf_df["source_attack"] == attack)]
                 
-                # Create pivot table: rows = source models, cols = target models
+                # Coarse architecture-only view.
                 pivot_data = tf_subset.pivot_table(
                     index="source_model",
                     columns="target_model",
-                    values="transfer_acc",
+                    values="transfer_success_rate",
                     aggfunc="mean"
                 )
                 
                 if pivot_data is not None and not pivot_data.empty:
                     plt.figure(figsize=(10, 8))
-                    sns.heatmap(pivot_data, annot=True, fmt=".2%", cmap="RdYlGn", vmin=0, vmax=1,
-                                cbar_kws={"label": "Transfer Accuracy"})
+                    sns.heatmap(pivot_data, annot=True, fmt=".2%", cmap="mako", vmin=0, vmax=1,
+                                cbar_kws={"label": "Transfer Success Rate"})
                     plt.title(f"Adversarial Transferability – {dataset} ({attack})", fontsize=14, fontweight='bold')
                     plt.xlabel("Target Model", fontweight='bold')
                     plt.ylabel("Source Model", fontweight='bold')
@@ -610,6 +886,49 @@ def generate_plots(output_dir: str, records: List[Dict], transfer_records: List[
                     plt.savefig(os.path.join(output_dir, f"transferability_heatmap_{dataset}_{attack}.png"), dpi=300)
                     plt.close()
                     print(f"[INFO] Saved: transferability_heatmap_{dataset}_{attack}.png")
+
+                # Full model-kind matrix requested for the paper.
+                full_pivot = tf_subset.pivot_table(
+                    index="source_label",
+                    columns="target_label",
+                    values="transfer_success_rate",
+                    aggfunc="mean",
+                )
+
+                if full_pivot is not None and not full_pivot.empty:
+                    full_pivot.to_csv(
+                        os.path.join(output_dir, f"transferability_matrix_full_{dataset}_{attack}.csv")
+                    )
+                    plt.figure(figsize=(14, 10))
+                    sns.heatmap(
+                        full_pivot,
+                        annot=True,
+                        fmt=".2%",
+                        cmap="mako",
+                        vmin=0,
+                        vmax=1,
+                        cbar_kws={"label": "Transfer Success Rate"},
+                    )
+                    plt.title(f"Full Transferability Matrix – {dataset} ({attack})", fontsize=14, fontweight='bold')
+                    plt.xlabel("Target Model Variant", fontweight='bold')
+                    plt.ylabel("Source Model Variant", fontweight='bold')
+                    plt.tight_layout()
+                    plt.savefig(os.path.join(output_dir, f"transferability_heatmap_full_{dataset}_{attack}.png"), dpi=300)
+                    plt.close()
+                    print(f"[INFO] Saved: transferability_heatmap_full_{dataset}_{attack}.png")
+
+                pair_summary = tf_subset.groupby("pair_type", as_index=False)["normalized_transfer_rate"].mean()
+                if not pair_summary.empty:
+                    plt.figure(figsize=(10, 5))
+                    sns.barplot(data=pair_summary, x="pair_type", y="normalized_transfer_rate", palette="crest")
+                    plt.ylabel("Normalized Transfer Rate", fontweight='bold')
+                    plt.xlabel("Source/Target Pair Type", fontweight='bold')
+                    plt.title(f"Normalized Transferability by Pair Type – {dataset} ({attack})", fontsize=14, fontweight='bold')
+                    plt.xticks(rotation=20)
+                    plt.tight_layout()
+                    plt.savefig(os.path.join(output_dir, f"transferability_pairtype_{dataset}_{attack}.png"), dpi=300)
+                    plt.close()
+                    print(f"[INFO] Saved: transferability_pairtype_{dataset}_{attack}.png")
 
 
 def main():
@@ -619,6 +938,8 @@ def main():
     parser.add_argument("--model", type=str, default=None, help="Filter by model name (e.g., VGG16).")
     parser.add_argument("--dataset", type=str, default=None, help="Filter by dataset (e.g., Cifar10).")
     parser.add_argument("--attack", type=str, default=None, help="Filter by attack (e.g., PGD).")
+    parser.add_argument("--kind", choices=["Original", "Finetuned"], default=None,
+                        help="Filter the source checkpoint kind for attack generation and source dataset selection.")
     parser.add_argument("--output-dir", type=str, default="adversarial_results", help="Output directory for results.")
     args = parser.parse_args()
 
@@ -635,7 +956,7 @@ def main():
         print(f"[PHASE 1] Generating adversarial examples")
         print(f"{'='*70}")
         records, model_cache, loader_cache, adv_datasets = generate_attacks_phase(
-            args.output_dir, args.model, args.dataset, args.attack
+            args.output_dir, args.model, args.dataset, args.attack, args.kind
         )
         
         # Save records
@@ -667,6 +988,8 @@ def main():
             adv_datasets = {}
             
             for model_name, dataset_name, kind, ckpt_path in checkpoints:
+                if args.dataset and dataset_name != args.dataset:
+                    continue
                 if dataset_name == "Cifar10":
                     if "Cifar10" not in loader_cache:
                         loader_cache["Cifar10"] = load_cifar10(batch_size=256, num_workers=4)
@@ -713,6 +1036,14 @@ def main():
                 # Locate pre-generated adversarial datasets
                 available_attacks = get_available_attacks()
                 for attack in available_attacks:
+                    if args.model and model_name != args.model:
+                        continue
+                    if args.dataset and dataset_name != args.dataset:
+                        continue
+                    if args.kind and kind != args.kind:
+                        continue
+                    if args.attack and attack != args.attack:
+                        continue
                     adv_path = os.path.join(args.output_dir, f"{model_name}_{dataset_name}_{kind}_{attack}_adv.pt")
                     if os.path.exists(adv_path):
                         adv_datasets[(model_name, dataset_name, kind, attack)] = adv_path

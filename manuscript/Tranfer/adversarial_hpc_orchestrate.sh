@@ -10,24 +10,33 @@ set -o pipefail
 # This script submits parallelized adversarial analysis jobs to an HPC cluster.
 #
 # Usage:
-#   ./adversarial_hpc_orchestrate.sh <phase> [output_dir]
+#   ./adversarial_hpc_orchestrate.sh <phase> [output_dir] [model] [dataset] [attack] [kind]
 #
 # Examples:
 #   ./adversarial_hpc_orchestrate.sh generate adversarial_results
+#   ./adversarial_hpc_orchestrate.sh generate adv_single InceptionNet Cifar10 PGD Finetuned
 #   ./adversarial_hpc_orchestrate.sh analyze adversarial_results
 #   ./adversarial_hpc_orchestrate.sh plot adversarial_results
 #
 
 if [ "$#" -lt 1 ]; then
-    echo "Usage: $0 <phase> [output_dir]"
+    echo "Usage: $0 <phase> [output_dir] [model] [dataset] [attack] [kind]"
     echo ""
     echo "Phases:"
     echo "  generate  - Parallelize attack generation across models/datasets/attacks"
     echo "  analyze   - Compute transferability (single job; requires generated attacks)"
     echo "  plot      - Generate visualizations (single job; requires summary.csv)"
     echo ""
+    echo "Optional source filters (for generate/analyze):"
+    echo "  model   = VGG16 | RegNetX_400MF | InceptionNet | MobileNet | XceptionNet | ConvNeXt"
+    echo "  dataset = Cifar10 | Cifar100"
+    echo "  attack  = PGD | FGSM | IFGSM | BIM | APGD | CW | DeepFool"
+    echo "  kind    = Original | Finetuned"
+    echo ""
     echo "Examples:"
     echo "  $0 generate adversarial_results"
+    echo "  $0 generate adv_single InceptionNet Cifar10 PGD Finetuned"
+    echo "  $0 analyze  adv_single InceptionNet Cifar10 PGD Finetuned"
     echo "  $0 analyze adversarial_results"
     echo "  $0 plot adversarial_results"
     exit 1
@@ -35,6 +44,10 @@ fi
 
 PHASE=$1
 OUTPUT_DIR=${2:-adversarial_results}
+MODEL_FILTER=${3:-ALL}
+DATASET_FILTER=${4:-ALL}
+ATTACK_FILTER=${5:-ALL}
+KIND_FILTER=${6:-ALL}
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$SCRIPT_DIR/logs"
@@ -56,6 +69,10 @@ log "Script path: $SCRIPT_DIR"
 log "Current working directory: $(pwd)"
 log "Phase: $PHASE"
 log "Output directory: $OUTPUT_DIR"
+log "Model filter: $MODEL_FILTER"
+log "Dataset filter: $DATASET_FILTER"
+log "Attack filter: $ATTACK_FILTER"
+log "Kind filter: $KIND_FILTER"
 log "Run log: $RUN_LOG"
 
 if ! command -v qsub >/dev/null 2>&1; then
@@ -71,9 +88,25 @@ fi
 log "Found submission file: $SCRIPT_DIR/adversarial_hpc_submit.pbs"
 
 # Models and datasets
-models=("VGG16" "RegNetX_400MF" "InceptionNet" "MobileNet" "XceptionNet" "ConvNeXt")
-datasets=("Cifar10" "Cifar100")
-attacks=("PGD" "FGSM" "IFGSM" "BIM" "APGD" "CW" "DeepFool")
+all_models=("VGG16" "RegNetX_400MF" "InceptionNet" "MobileNet" "XceptionNet" "ConvNeXt")
+all_datasets=("Cifar10" "Cifar100")
+all_attacks=("PGD" "FGSM" "IFGSM" "BIM" "APGD" "CW" "DeepFool")
+
+models=("${all_models[@]}")
+datasets=("${all_datasets[@]}")
+attacks=("${all_attacks[@]}")
+
+if [ "$MODEL_FILTER" != "ALL" ]; then
+    models=("$MODEL_FILTER")
+fi
+
+if [ "$DATASET_FILTER" != "ALL" ]; then
+    datasets=("$DATASET_FILTER")
+fi
+
+if [ "$ATTACK_FILTER" != "ALL" ]; then
+    attacks=("$ATTACK_FILTER")
+fi
 
 log "============================================================================"
 log "Adversarial Analysis HPC Orchestration"
@@ -121,8 +154,8 @@ case "$PHASE" in
         for model in "${models[@]}"; do
             for dataset in "${datasets[@]}"; do
                 for attack in "${attacks[@]}"; do
-                    cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",ATTACK=\"$attack\",PHASE=\"generate\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
-                    submit_and_log "$cmd" "$model/$dataset/$attack" || fail "Submission failed for $model/$dataset/$attack"
+                    cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",ATTACK=\"$attack\",KIND=\"$KIND_FILTER\",PHASE=\"generate\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+                    submit_and_log "$cmd" "$model/$dataset/$attack/$KIND_FILTER" || fail "Submission failed for $model/$dataset/$attack/$KIND_FILTER"
                     ((job_count++))
                     # Optional: Add delay to avoid overwhelming scheduler
                     sleep 0.1
@@ -137,7 +170,7 @@ case "$PHASE" in
         log "[PHASE: ANALYZE] Submitting transferability analysis job..."
         log "WARNING: This requires all attacks from --generate to be completed first."
         log "Waiting for generate jobs to complete is recommended."
-        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"NONE\",DATASET=\"NONE\",ATTACK=\"NONE\",PHASE=\"analyze\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"analyze\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "analyze" || fail "Failed to submit analyze phase"
         log "[SUCCESS] Transferability analysis job submitted"
         ;;
@@ -145,7 +178,7 @@ case "$PHASE" in
     plot)
         log "[PHASE: PLOT] Submitting visualization job..."
         log "WARNING: This requires summary.csv and transferability.csv to exist."
-        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"NONE\",DATASET=\"NONE\",ATTACK=\"NONE\",PHASE=\"plot\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"plot\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "plot" || fail "Failed to submit plot phase"
         log "[SUCCESS] Visualization job submitted"
         ;;
