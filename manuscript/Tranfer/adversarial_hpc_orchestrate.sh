@@ -121,7 +121,7 @@ case "$PHASE" in
         for model in "${models[@]}"; do
             for dataset in "${datasets[@]}"; do
                 for attack in "${attacks[@]}"; do
-                    cmd="qsub -v MODEL=\"$model\",DATASET=\"$dataset\",ATTACK=\"$attack\",PHASE=\"generate\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs"
+                    cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",ATTACK=\"$attack\",PHASE=\"generate\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
                     submit_and_log "$cmd" "$model/$dataset/$attack" || fail "Submission failed for $model/$dataset/$attack"
                     ((job_count++))
                     # Optional: Add delay to avoid overwhelming scheduler
@@ -137,7 +137,7 @@ case "$PHASE" in
         log "[PHASE: ANALYZE] Submitting transferability analysis job..."
         log "WARNING: This requires all attacks from --generate to be completed first."
         log "Waiting for generate jobs to complete is recommended."
-        cmd="qsub -v MODEL=\"NONE\",DATASET=\"NONE\",ATTACK=\"NONE\",PHASE=\"analyze\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"NONE\",DATASET=\"NONE\",ATTACK=\"NONE\",PHASE=\"analyze\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "analyze" || fail "Failed to submit analyze phase"
         log "[SUCCESS] Transferability analysis job submitted"
         ;;
@@ -145,7 +145,7 @@ case "$PHASE" in
     plot)
         log "[PHASE: PLOT] Submitting visualization job..."
         log "WARNING: This requires summary.csv and transferability.csv to exist."
-        cmd="qsub -v MODEL=\"NONE\",DATASET=\"NONE\",ATTACK=\"NONE\",PHASE=\"plot\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"NONE\",DATASET=\"NONE\",ATTACK=\"NONE\",PHASE=\"plot\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "plot" || fail "Failed to submit plot phase"
         log "[SUCCESS] Visualization job submitted"
         ;;

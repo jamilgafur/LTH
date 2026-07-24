@@ -6,36 +6,29 @@
 #PBS -e logs/adversarial_%J.err
 #PBS -v MODEL,DATASET,ATTACK,PHASE,OUTPUT_DIR
 
-# Adversarial Analysis HPC Submission Script
-# 
-# Usage: qsub -v MODEL="VGG16",DATASET="Cifar10",ATTACK="PGD",PHASE="generate",OUTPUT_DIR="adversarial_results" adversarial_hpc_submit.pbs
-#
-# Parameters:
-#   MODEL      - Model architecture (VGG16, RegNetX_400MF, ConvNeXt, InceptionNet, MobileNet, XceptionNet)
-#   DATASET    - Dataset (Cifar10, Cifar100, imagenet, tinyimagenet)
-#   ATTACK     - Attack type (PGD, FGSM, IFGSM, BIM, APGD, CW, DeepFool)
-#   PHASE      - Phase to run (generate, analyze, plot)
-#   OUTPUT_DIR - Output directory for results (default: adversarial_results)
-
 set -e
 
-# Load required modules (adjust based on your HPC setup)
-module load cuda/11.8
-module load python/3.10
+# --- Environment Setup ---
+echo "Loaded CUDA and GCC modules..."
+module load cuda/11.1.1_gcc-9.3.0
+module load gcc/9.3.0
 
-# Navigate to script directory
-cd "$(dirname "$0")"
+# --- Move to script directory ---
+cd ~/LTH/manuscript/Tranfer/ || {
+    echo "Failed to change directory to ~/LTH/manuscript/Tranfer/"
+    exit 1
+}
 
 # Create logs directory if it doesn't exist
 mkdir -p logs
 
-# Check required variables.
+# Check required variables
 if [ -z "$PHASE" ] || [ -z "$OUTPUT_DIR" ]; then
     echo "Error: PHASE and OUTPUT_DIR are required environment variables." >&2
     exit 1
 fi
 
-# Prepare a txt output file similar to submit_job.pbs.
+# Prepare a txt output file
 if [ "$PHASE" = "generate" ]; then
     if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$ATTACK" ]; then
         echo "Error: MODEL, DATASET and ATTACK are required for generate phase." >&2
@@ -57,16 +50,11 @@ echo "Output Dir:  $OUTPUT_DIR"
 echo "========================================================================"
 echo "Job ID:      $PBS_JOBID"
 echo "Hostname:    $(hostname)"
-echo "GPU Device:  $(nvidia-smi --query-gpu=index,name --format=csv,noheader)"
+echo "GPU Device:  $(nvidia-smi --query-gpu=index,name --format=csv,noheader || echo 'No GPU found')"
 echo "========================================================================"
 
-# Activate virtual environment if available
-if [ -f "venv/bin/activate" ]; then
-    source venv/bin/activate
-fi
-
-# Run adversarial analysis with command line adapted by phase.
-CMD=(python adversarial_analysis.py --mode "$PHASE" --output-dir "$OUTPUT_DIR")
+# Run adversarial analysis using your specific Conda Python executable
+CMD=(~/env/lth_env/bin/python adversarial_analysis.py --mode "$PHASE" --output-dir "$OUTPUT_DIR")
 if [ "$PHASE" = "generate" ]; then
     CMD+=(--model "$MODEL" --dataset "$DATASET" --attack "$ATTACK")
 fi
