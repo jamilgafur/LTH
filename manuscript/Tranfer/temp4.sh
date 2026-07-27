@@ -59,7 +59,6 @@ echo "Analyze Job ID: $ANALYZE_JOBID"
 echo "Submitting plot job with dependency after analyze success..."
 PLOT_CMD=(
     qsub -q all.q -l ngpus=1
-    -W "depend=afterok:$ANALYZE_JOBID"
     -v "MODEL=$MODEL_FILTER,DATASET=$DATASET_FILTER,ATTACK=$ATTACK_FILTER,KIND=$KIND_FILTER,PHASE=plot,OUTPUT_DIR=$OUTPUT_DIR"
     adversarial_hpc_submit.pbs
 )
