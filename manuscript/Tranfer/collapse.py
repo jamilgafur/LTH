@@ -7,8 +7,26 @@ from uuid import uuid4
 from typing import Optional, Sequence, Tuple, Dict, Any
 from copy import deepcopy
 import copy
+import time
+import traceback
 from utils import count_trainable_params, layer_stats
 import math
+
+
+def _shape_str(tensor_like) -> str:
+    if isinstance(tensor_like, torch.Tensor):
+        return str(tuple(tensor_like.shape))
+    return str(type(tensor_like).__name__)
+
+
+def _log_exception(context: str, exc: Exception, debug: bool = False, extra: Optional[Dict[str, Any]] = None):
+    print(f"[ERROR] {context}: {exc.__class__.__name__}: {exc}")
+    if extra:
+        for k, v in extra.items():
+            print(f"[ERROR]   {k}: {v}")
+    if debug:
+        print("[DEBUG] Traceback:")
+        print(traceback.format_exc().rstrip())
 
 
 
@@ -279,28 +297,55 @@ def _build_and_replace_block(
     # REPLACEMENT VALIDATION
     # =========================================================
     try:
-        dev = next((p.device for p in model.parameters()), torch.device('cpu')) 
-        rep_module = get_layer(model, start_container_name) 
-        child = None 
-        
-        for nm, m in rep_module.named_children(): 
-            if nm.startswith("collapsed_") or (isinstance(m, nn.Sequential) and conv_name in dict(m.named_children())):
-                child = m 
-                break 
-        
-        if child is None and isinstance(updated_container, nn.Sequential) and start_container_name != "": 
-             pass  
+        dev = next((p.device for p in model.parameters()), torch.device('cpu'))
+        rep_module = get_layer(model, start_container_name)
+        child = None
 
-        if child is not None: 
-            with torch.no_grad(): 
-                test_x = x.clone().to(dev) 
-                out = child(test_x) 
-                if debug: 
-                    print(f"[DEBUG] ✓ Replacement local validation OK. Output shape: {tuple(out.shape)}") 
+        rep_children = list(rep_module.named_children())
+
+        # Validate the exact slot we replaced first; this avoids probing an unrelated
+        # block when multiple prior collapses already exist in the same container.
+        if 0 <= start_idx < len(rep_children):
+            slot_name, slot_mod = rep_children[start_idx]
+            if isinstance(slot_mod, nn.Sequential):
+                slot_keys = set(dict(slot_mod.named_children()).keys())
+                if any(k in slot_keys for k in ("conv_1x1", "conv_g1x1", "adaptive_pool")):
+                    child = slot_mod
+                    if debug:
+                        print(f"[DEBUG] Local validation candidate selected from replacement slot: '{slot_name}'")
+
+        # Fallback: reverse search for the most recent surrogate-like module.
+        if child is None:
+            for nm, m in reversed(rep_children):
+                if nm.startswith("collapsed_"):
+                    child = m
+                    break
+                if isinstance(m, nn.Sequential):
+                    keys = set(dict(m.named_children()).keys())
+                    if any(k in keys for k in ("conv_1x1", "conv_g1x1", "adaptive_pool")):
+                        child = m
+                        break
+
+        if child is not None:
+            with torch.no_grad():
+                test_x = x.clone().to(dev)
+                out = child(test_x)
+                if debug:
+                    print(f"[DEBUG] ✓ Replacement local validation OK. Output shape: {tuple(out.shape)}")
         else:
-            print(f"[WARN] Could not locate the inserted collapsed module for local validation.") 
+            print(f"[WARN] Could not locate the inserted collapsed module for local validation.")
     except Exception as e:
-        print(f"[ERROR] Replacement forward validation failed!\n       Exception: {str(e)}") 
+        _log_exception(
+            "Replacement forward validation failed",
+            e,
+            debug=debug,
+            extra={
+                "container": start_container_name or "<root>",
+                "start_idx": start_idx,
+                "input_shape": _shape_str(x),
+                "expected_out_channels": out_channels,
+            },
+        )
             
     # =========================================================
     # CORRECTIVE POOLING & DOWNSTREAM VALIDATION
@@ -310,7 +355,15 @@ def _build_and_replace_block(
             print(f"\n[STEP] Evaluating corrective pooling necessity...") 
         model = _insert_corrective_pool(model, next_linear_name, input_shape, debug) 
     except Exception as e:
-        print(f"[ERROR] Corrective pool insertion failed: {str(e)}") 
+        _log_exception(
+            "Corrective pool insertion failed",
+            e,
+            debug=debug,
+            extra={
+                "next_linear_name": next_linear_name,
+                "input_shape": input_shape,
+            },
+        )
             
     try:
         if debug:
@@ -319,7 +372,16 @@ def _build_and_replace_block(
         if debug:
             print(f"[DEBUG] ✓ Downstream validation successful.")
     except Exception as e:
-        print(f"[ERROR] Downstream validation failed!\n       Exception: {str(e)}") 
+        _log_exception(
+            "Downstream validation failed",
+            e,
+            debug=debug,
+            extra={
+                "container": start_container_name or "<root>",
+                "start_idx": start_idx,
+                "input_shape": input_shape,
+            },
+        )
             
     if debug: 
         print(f"{'='*60}")
@@ -975,7 +1037,7 @@ def _validate_downstream(
         nm, m = children[i]
         if nm.startswith("collapsed_") or (
             isinstance(m, nn.Sequential)
-            and any(k in dict(m.named_children()) for k in ("conv_1x1", "adaptive_pool", "conv_dw"))
+            and any(k in dict(m.named_children()) for k in ("conv_1x1", "conv_g1x1", "adaptive_pool", "conv_dw"))
         ):
             collapsed_idx = i
             print(f"[DEBUG] Found inserted block candidate at index {i}: '{nm}'")
@@ -1011,11 +1073,27 @@ def _validate_downstream(
     print(f"[STEP] Scanning immediate downstream modules for shape or runtime errors...")
     for nm, mod in children[collapsed_idx + 1:]:
         try:
+            if debug:
+                print(
+                    f"[DEBUG] Running downstream module '{start_container_name}.{nm}' "
+                    f"({mod.__class__.__name__}) with input shape {tuple(t.shape)}"
+                )
             t = mod(t)
             if debug:
                 print(f"[DEBUG] Downstream '{start_container_name}.{nm}' executed successfully, output shape: {tuple(t.shape)}")
         except Exception as e:
             print(f"[WARN] Downstream module '{start_container_name}.{nm}' raised exception: {e}")
+            if debug:
+                _log_exception(
+                    "Downstream module execution error",
+                    e,
+                    debug=True,
+                    extra={
+                        "module_name": f"{start_container_name}.{nm}",
+                        "module_type": mod.__class__.__name__,
+                        "input_shape": _shape_str(t),
+                    },
+                )
             # ISSUE #2 FIX: Check if nn.Linear before attempting corrective wrapping
             if isinstance(mod, nn.Linear):
                 print(f"[INFO] Target module '{nm}' is nn.Linear. Allowing Corrective Pooling to handle it natively.")
@@ -1078,6 +1156,7 @@ def collapse_only(
     """
     print(f"\n[STEP] ===== Starting collapse_only process =====")
     print(f"[DEBUG] Device={device}, dry_run={dry_run}, handle_skips={handle_skips}, safe_param_reduction={safe_param_reduction}")
+    overall_start_ts = time.perf_counter()
 
     if model is None:
         print(f"[STEP] Loading model from disk...")
@@ -1143,11 +1222,16 @@ def collapse_only(
     print(f"[INFO] Model parameter count before collapsing: {pre_total:,}")
 
     print(f"[STEP] Beginning block-wise collapsing...")
+    success_count = 0
+    failed_count = 0
+    skipped_count = 0
     for name, (start, end) in collapse_map.items():
+        block_start_ts = time.perf_counter()
         
         # [CRITICAL FIX] Guarantee single-layers are safely bypassed
         if start == end:
             print(f"[WARN] Skipping collapse task '{name}': Group contains only one layer ({start}). Must span at least two layers.")
+            skipped_count += 1
             continue
 
         print(f"\n[INFO] Processing collapse task '{name}': {start} → {end}")
@@ -1158,17 +1242,36 @@ def collapse_only(
         try:
             print(f"[STEP] Calling _collapse_block('{start}', '{end}')")
             model = _collapse_block(model, start, end, input_shape, device=device, debug=debug)
-            print(f"[INFO] ✅ Successfully collapsed block '{name}' ({start} → {end})")
+            elapsed = time.perf_counter() - block_start_ts
+            print(f"[INFO] ✅ Successfully collapsed block '{name}' ({start} → {end}) in {elapsed:.2f}s")
+            success_count += 1
         except ValueError as e:
             # ISSUE #3 FIX: Filter out cross-branch collapse candidates
             if "Could not map start/end layers" in str(e):
                 print(f"[WARN] ⚠ Collapse candidate '{name}' appears to be cross-branch (parallel paths).")
                 print(f"[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.")
+                skipped_count += 1
                 continue
             else:
                 print(f"[WARN] ⚠ Collapse failed for block '{name}': {e}")
+                if debug:
+                    _log_exception(
+                        f"Collapse task '{name}' failed",
+                        e,
+                        debug=True,
+                        extra={"start": start, "end": end},
+                    )
+                failed_count += 1
         except Exception as e:
             print(f"[WARN] ⚠ Collapse failed for block '{name}': {e}")
+            if debug:
+                _log_exception(
+                    f"Collapse task '{name}' failed",
+                    e,
+                    debug=True,
+                    extra={"start": start, "end": end},
+                )
+            failed_count += 1
                
         if handle_skips:
             print(f"[STEP] Patching skip connections (if any)...")
@@ -1193,11 +1296,14 @@ def collapse_only(
         print(f"[WARN] Failed to wrap pools safely: {e}")
 
     post_total = count_trainable_params(model)
+    total_elapsed = time.perf_counter() - overall_start_ts
     print(f"\n[STEP] ===== Collapse summary =====")
     print(f"[INFO] Parameters before: {pre_total:,}")
     print(f"[INFO] Parameters after : {post_total:,}")
     delta = pre_total - post_total
     print(f"[INFO] ΔParams = {delta:+,} (expected ≤ 0)")
+    print(f"[INFO] Collapse counts: success={success_count}, failed={failed_count}, skipped={skipped_count}")
+    print(f"[INFO] Total collapse runtime: {total_elapsed:.2f}s")
 
     if post_total > pre_total:
         print(f"[WARN] ⚠ Model gained parameters after collapsing! Investigate collapse policy or replacement logic.")
@@ -1205,7 +1311,7 @@ def collapse_only(
     if safe_param_reduction and delta < 0:
         print(f"[WARN] ⚠ Parameter count increased when safe_param_reduction=True — collapse may have failed silently.")
 
-    print(f"[RESULT] ✅ collapse_only complete. Total collapsed blocks: {len(collapse_map)}")
+    print(f"[RESULT] ✅ collapse_only complete. Total targets: {len(collapse_map)} | success={success_count} | failed={failed_count} | skipped={skipped_count}")
     return model
 
 # -----------------------------------------------------------------------------
