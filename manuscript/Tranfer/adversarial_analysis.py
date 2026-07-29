@@ -61,6 +61,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import argparse
 import json
+import time
+import traceback
 from typing import Dict, Tuple, List
 import numpy as np
 
@@ -335,27 +337,34 @@ def instantiate_attack(attack_name: str, model: nn.Module, epsilon: float = 0.03
     
     Supported attacks: PGD, FGSM, BIM, APGD, Square, AutoAttack, CW, DeepFool.
     """
+    print(
+        f"[ATTACK][SETUP] Initializing attack='{attack_name}' "
+        f"eps={epsilon:.6f} steps={steps}"
+    )
     try:
         if attack_name == "PGD":
-            return torchattacks.PGD(model, eps=epsilon, alpha=epsilon / steps, steps=steps)
+            attack = torchattacks.PGD(model, eps=epsilon, alpha=epsilon / steps, steps=steps)
         elif attack_name == "FGSM":
-            return torchattacks.FGSM(model, eps=epsilon)
+            attack = torchattacks.FGSM(model, eps=epsilon)
         elif attack_name == "BIM":
-            return torchattacks.BIM(model, eps=epsilon, alpha=epsilon / steps, steps=steps)
+            attack = torchattacks.BIM(model, eps=epsilon, alpha=epsilon / steps, steps=steps)
         elif attack_name == "APGD":
-            return torchattacks.APGD(model, eps=epsilon, steps=steps)
+            attack = torchattacks.APGD(model, eps=epsilon, steps=steps)
         elif attack_name == "Square":
-            return torchattacks.Square(model, eps=epsilon, n_queries=5000)
+            attack = torchattacks.Square(model, eps=epsilon, n_queries=5000)
         elif attack_name == "AutoAttack":
-            return torchattacks.AutoAttack(model, norm='Linf', eps=epsilon, version='standard', verbose=False)
+            attack = torchattacks.AutoAttack(model, norm='Linf', eps=epsilon, version='standard', verbose=False)
         elif attack_name == "CW":
-            return torchattacks.CW(model, c=1, lr=0.01, steps=1000, kappa=0)
+            attack = torchattacks.CW(model, c=1, lr=0.01, steps=1000, kappa=0)
         elif attack_name == "DeepFool":
-            return torchattacks.DeepFool(model, steps=50, overshoot=0.02)
+            attack = torchattacks.DeepFool(model, steps=50, overshoot=0.02)
         else:
             raise ValueError(f"Unsupported attack: {attack_name}")
+        print(f"[ATTACK][SETUP] Ready: {attack.__class__.__name__}")
+        return attack
     except Exception as e:
         print(f"[WARN] Failed to instantiate {attack_name}: {e}. Skipping.")
+        print(f"[ATTACK][ERROR] setup traceback for '{attack_name}':\n{traceback.format_exc().rstrip()}")
         return None
 
 
@@ -373,13 +382,24 @@ def generate_adversarial_dataset(model: nn.Module, loader, attack_name: str, eps
     if attack is None:
         return None
 
+    total_batches = len(loader) if hasattr(loader, "__len__") else -1
+    total_examples = len(loader.dataset) if hasattr(loader, "dataset") else -1
+    t0 = time.perf_counter()
+    print(
+        f"[ATTACK][START] attack='{attack_name}' batches={total_batches} "
+        f"examples={total_examples} eps={epsilon:.6f} steps={steps}"
+    )
+
     clean_images = []
     adv_images = []
     true_labels = []
     clean_predictions = []
     adv_predictions = []
+    running_seen = 0
+    running_clean_correct = 0
+    running_adv_correct = 0
     try:
-        for imgs, lbls in loader:
+        for batch_idx, (imgs, lbls) in enumerate(loader, start=1):
             imgs, lbls = imgs.cuda(), lbls.cuda()
             with torch.no_grad():
                 clean_preds = model(imgs).argmax(dim=1)
@@ -387,11 +407,41 @@ def generate_adversarial_dataset(model: nn.Module, loader, attack_name: str, eps
             with torch.no_grad():
                 adv_preds = model(adv).argmax(dim=1)
 
+            batch_size = lbls.size(0)
+            clean_correct = (clean_preds == lbls).sum().item()
+            adv_correct = (adv_preds == lbls).sum().item()
+            running_seen += batch_size
+            running_clean_correct += clean_correct
+            running_adv_correct += adv_correct
+
+            if batch_idx == 1 or batch_idx % 10 == 0 or (total_batches > 0 and batch_idx == total_batches):
+                with torch.no_grad():
+                    delta = (adv - imgs).detach()
+                    linf = float(delta.abs().amax().item())
+                    l2_mean = float(delta.view(delta.shape[0], -1).norm(p=2, dim=1).mean().item())
+                clean_acc_running = running_clean_correct / max(1, running_seen)
+                adv_acc_running = running_adv_correct / max(1, running_seen)
+                asr_running = 1.0 - adv_acc_running
+                print(
+                    f"[ATTACK][BATCH] {attack_name} batch={batch_idx}/{total_batches if total_batches > 0 else '?'} "
+                    f"seen={running_seen} clean_acc={clean_acc_running:.2%} adv_acc={adv_acc_running:.2%} "
+                    f"asr={asr_running:.2%} linf={linf:.5f} l2_mean={l2_mean:.5f}"
+                )
+
             clean_images.append(imgs.cpu())
             adv_images.append(adv.cpu())
             true_labels.append(lbls.cpu())
             clean_predictions.append(clean_preds.cpu())
             adv_predictions.append(adv_preds.cpu())
+
+        elapsed = time.perf_counter() - t0
+        clean_acc_final = running_clean_correct / max(1, running_seen)
+        adv_acc_final = running_adv_correct / max(1, running_seen)
+        print(
+            f"[ATTACK][DONE] attack='{attack_name}' samples={running_seen} "
+            f"clean_acc={clean_acc_final:.2%} adv_acc={adv_acc_final:.2%} "
+            f"asr={(1.0 - adv_acc_final):.2%} runtime={elapsed:.2f}s"
+        )
 
         return {
             "clean_images": torch.cat(clean_images),
@@ -402,6 +452,11 @@ def generate_adversarial_dataset(model: nn.Module, loader, attack_name: str, eps
         }
     except Exception as e:
         print(f"[ERROR] Attack generation failed for {attack_name}: {e}")
+        print(
+            f"[ATTACK][ERROR] attack='{attack_name}' failed after seen={running_seen} "
+            f"elapsed={time.perf_counter() - t0:.2f}s"
+        )
+        print(f"[ATTACK][ERROR] traceback:\n{traceback.format_exc().rstrip()}")
         return None
 
 
@@ -585,6 +640,10 @@ def generate_attacks_phase(
     # Get the attacks available in the installed torchattacks version
     available_attacks = get_available_attacks()
     fallback_map = get_attack_fallback_map()
+    print(
+        f"[ATTACK][PLAN] filters model={model_filter} dataset={dataset_filter} "
+        f"kind={kind_filter} attack={attack_filter}"
+    )
     
     # Filter by user preference if specified
     if attack_filter:
@@ -601,6 +660,7 @@ def generate_attacks_phase(
             attacks = []
     else:
         attacks = available_attacks
+    print(f"[ATTACK][PLAN] selected_attacks={attacks}")
 
     for model_name, dataset_name, kind, ckpt_path in checkpoints:
         # Apply filters
@@ -677,8 +737,17 @@ def generate_attacks_phase(
 
         # For each attack, generate adversarial examples.
         for attack_name in attacks:
+            attack_t0 = time.perf_counter()
+            print(
+                f"[ATTACK][RUN] source={model_name} kind={kind} dataset={dataset_name} "
+                f"attack={attack_name}"
+            )
             adv_bundle = generate_adversarial_dataset(model, test_loader, attack_name)
             if adv_bundle is None:
+                print(
+                    f"[ATTACK][SKIP] source={model_name} kind={kind} dataset={dataset_name} "
+                    f"attack={attack_name} reason=generation_failed"
+                )
                 continue
 
             adv_imgs = adv_bundle["adversarial_images"]
@@ -704,6 +773,10 @@ def generate_attacks_phase(
                 adv_path,
             )
             adv_datasets[(model_name, dataset_name, kind, attack_name)] = adv_path
+            print(
+                f"[ATTACK][SAVE] path={adv_path} samples={adv_imgs.shape[0]} "
+                f"elapsed={time.perf_counter() - attack_t0:.2f}s"
+            )
 
             records.append(
                 {
@@ -718,6 +791,10 @@ def generate_attacks_phase(
                 }
             )
             print(f"[INFO] {model_name} ({kind}) {dataset_name} – {attack_name}: clean {clean_acc:.2%}, adv {adv_acc:.2%}")
+            print(
+                f"[ATTACK][SUMMARY] source={model_name} kind={kind} dataset={dataset_name} "
+                f"attack={attack_name} asr={(1.0 - adv_acc):.2%}"
+            )
 
     return records, model_cache, loader_cache, adv_datasets
 
