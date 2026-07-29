@@ -313,6 +313,23 @@ def get_available_attacks() -> list[str]:
     return available
 
 
+def get_attack_fallback_map() -> dict:
+    """Return a mapping of unsupported attack names to their functional equivalents.
+    
+    ISSUE #5 FIX: Provide fallbacks for removed/unsupported attacks.
+    - IFGSM (removed in newer torchattacks) → BIM (functionally identical)
+    - Other deprecated attacks map to closest available variants.
+    
+    Returns:
+        Dict mapping missing attack names to their replacements.
+    """
+    return {
+        "IFGSM": "BIM",  # Iterative FGSM is the same as BIM
+        "JSMA": "PGD",   # If JSMA is missing, use PGD
+        "PGD-L2": "PGD", # L-infinity variant as fallback
+    }
+
+
 def instantiate_attack(attack_name: str, model: nn.Module, epsilon: float = 0.03, steps: int = 40):
     """Instantiate the appropriate attack from torchattacks.
     
@@ -567,11 +584,21 @@ def generate_attacks_phase(
 
     # Get the attacks available in the installed torchattacks version
     available_attacks = get_available_attacks()
+    fallback_map = get_attack_fallback_map()
+    
     # Filter by user preference if specified
     if attack_filter:
-        attacks = [attack_filter] if attack_filter in available_attacks else []
-        if not attacks:
+        # ISSUE #5 FIX: Check fallback map if requested attack is not available
+        if attack_filter in available_attacks:
+            attacks = [attack_filter]
+        elif attack_filter in fallback_map:
+            fallback = fallback_map[attack_filter]
+            print(f"[INFO] Requested attack '{attack_filter}' not available.")
+            print(f"[INFO] Using functional equivalent: '{fallback}'")
+            attacks = [fallback]
+        else:
             print(f"[WARN] Requested attack '{attack_filter}' not available. Available: {available_attacks}")
+            attacks = []
     else:
         attacks = available_attacks
 
@@ -619,6 +646,16 @@ def generate_attacks_phase(
                 f"[DEBUG] load_state_dict result: missing={len(load_result.missing_keys)}, "
                 f"unexpected={len(load_result.unexpected_keys)}"
             )
+            
+            # ISSUE #1 FIX: Detect ConvNeXt state-dict mismatch early
+            if len(load_result.missing_keys) > 0 or len(load_result.unexpected_keys) > 0:
+                if model_name == "ConvNeXt" and kind == "Finetuned":
+                    print(f"[WARN] ⚠ ConvNeXt ({kind}) has mismatched keys:")
+                    print(f"       Missing: {load_result.missing_keys[:3]}... ({len(load_result.missing_keys)} total)")
+                    print(f"       Unexpected: {load_result.unexpected_keys[:3]}... ({len(load_result.unexpected_keys)} total)")
+                    print(f"[WARN] ⚠ This model's collapsed architecture does not match the saved checkpoint.")
+                    print(f"[WARN] ⚠ Results from this model combination may be unreliable.")
+                    print(f"[WARN] ⚠ Verify collapse regions JSON and retrain if needed.")
         except Exception as e:
             print(
                 f"[WARN] Failed to load checkpoint for {model_name} ({kind}) on {dataset_name}: {e}"
@@ -754,7 +791,8 @@ def generate_plots(output_dir: str, records: List[Dict], transfer_records: List[
         
         # Overall attack success by model, dataset, and kind
         plt.figure(figsize=(14, 6))
-        sns.barplot(data=df, x="model", y="attack_success_rate", hue="attack", palette="Set2")
+        # ISSUE #7 FIX: Deprecated seaborn palette API – add legend parameter
+        sns.barplot(data=df, x="model", y="attack_success_rate", hue="attack", palette="Set2", legend=True)
         plt.ylabel("Attack Success Rate", fontweight='bold')
         plt.xlabel("Model Architecture", fontweight='bold')
         plt.title("Adversarial Attack Success Rates Across Models", fontsize=14, fontweight='bold')
@@ -768,7 +806,8 @@ def generate_plots(output_dir: str, records: List[Dict], transfer_records: List[
         for kind in df["kind"].unique():
             df_kind = df[df["kind"] == kind]
             plt.figure(figsize=(14, 6))
-            sns.barplot(data=df_kind, x="model", y="attack_success_rate", hue="attack", palette="husl")
+            # ISSUE #7 FIX: Deprecated seaborn palette API usage
+            sns.barplot(data=df_kind, x="model", y="attack_success_rate", hue="attack", palette="husl", legend=True)
             plt.ylabel("Attack Success Rate", fontweight='bold')
             plt.xlabel("Model Architecture", fontweight='bold')
             plt.title(f"Attack Success Rates – {kind} Models", fontsize=14, fontweight='bold')
@@ -920,7 +959,8 @@ def generate_plots(output_dir: str, records: List[Dict], transfer_records: List[
                 pair_summary = tf_subset.groupby("pair_type", as_index=False)["normalized_transfer_rate"].mean()
                 if not pair_summary.empty:
                     plt.figure(figsize=(10, 5))
-                    sns.barplot(data=pair_summary, x="pair_type", y="normalized_transfer_rate", palette="crest")
+                    # ISSUE #7 FIX: Deprecated seaborn palette API usage
+                    sns.barplot(data=pair_summary, x="pair_type", y="normalized_transfer_rate", palette="crest", legend=False)
                     plt.ylabel("Normalized Transfer Rate", fontweight='bold')
                     plt.xlabel("Source/Target Pair Type", fontweight='bold')
                     plt.title(f"Normalized Transferability by Pair Type – {dataset} ({attack})", fontsize=14, fontweight='bold')

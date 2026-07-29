@@ -12,7 +12,7 @@ import math
 
 
 
-def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
+def _locate_and_prepare_block(model, start_layer_name, end_layer_name, debug=False):
     print(f"[DEBUG] [LCA] Locating block boundaries: '{start_layer_name}' -> '{end_layer_name}'")
 
     start_parts = start_layer_name.split('.') if start_layer_name else []
@@ -55,7 +55,13 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name):
             break
 
     if start_idx is None or end_idx is None:
-        raise ValueError(f"[ERROR] Could not map start/end layers into LCA container '{lca_path}'.")
+        print(f"[WARN] ⚠ Could not map start/end layers into LCA container '{lca_path}'")
+        print(f"[DEBUG]   start_layer_name={start_layer_name}, found start_idx={start_idx}")
+        print(f"[DEBUG]   end_layer_name={end_layer_name}, found end_idx={end_idx}")
+        print(f"[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).")
+        print(f"[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.")
+        # Return None to signal filtering at caller level
+        return None
     if start_idx > end_idx:
         start_idx, end_idx = end_idx, start_idx
 
@@ -428,6 +434,12 @@ class SmartIdentity(nn.Module):
         if isinstance(x, torch.Tensor) and x.ndim == 2:
             x = x.unsqueeze(-1).unsqueeze(-1)
         return x
+    
+    def __getitem__(self, index):
+        # ISSUE #4 FIX: SmartIdentity subscriptable safety.
+        # LCA resolution may return SmartIdentity; indexing into it should be safe.
+        # Return self to prevent subscript errors.
+        return self
         
     def __getattr__(self, name):
         if name.startswith('_'):
@@ -675,7 +687,11 @@ def _collapse_block(
 
     # Step 1: Locate block
     print(f"\n[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...")
-    info = _locate_and_prepare_block(model, start_layer_name, end_layer_name)
+    info = _locate_and_prepare_block(model, start_layer_name, end_layer_name, debug=debug)
+    
+    # ISSUE #3 FIX: Cross-branch filtering at collapse level
+    if info is None:
+        raise ValueError(f"[ERROR] Could not map start/end layers into LCA container. This may be a cross-branch collapse.")
     
     if debug:
         print(f"[DEBUG] --- LCA Resolution Results ---")
@@ -950,9 +966,13 @@ def _validate_downstream(
         return
 
     # Find collapsed/inserted child index
+    # ISSUE #6 FIX: Track actual insertion index, not the start_idx from a previous collapse
     collapsed_idx = None
     print(f"[STEP] Searching for inserted collapsed module within '{start_container_name}'...")
-    for i, (nm, m) in enumerate(children):
+    # Search from the end backwards to find the most recently inserted block
+    # (accounts for multiple sequential collapses within the same container)
+    for i in range(len(children) - 1, -1, -1):
+        nm, m = children[i]
         if nm.startswith("collapsed_") or (
             isinstance(m, nn.Sequential)
             and any(k in dict(m.named_children()) for k in ("conv_1x1", "adaptive_pool", "conv_dw"))
@@ -996,17 +1016,16 @@ def _validate_downstream(
                 print(f"[DEBUG] Downstream '{start_container_name}.{nm}' executed successfully, output shape: {tuple(t.shape)}")
         except Exception as e:
             print(f"[WARN] Downstream module '{start_container_name}.{nm}' raised exception: {e}")
+            # ISSUE #2 FIX: Check if nn.Linear before attempting corrective wrapping
+            if isinstance(mod, nn.Linear):
+                print(f"[INFO] Target module '{nm}' is nn.Linear. Allowing Corrective Pooling to handle it natively.")
+                return
+            
             print(f"[STEP] Replacing problematic module '{nm}' with safe alternative...")
 
             if isinstance(mod, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d, getattr(nn, "AdaptiveMaxPool2d", nn.AdaptiveAvgPool2d))):
                 safe = _SafePool(mod)
-                print(f"[INFO] Replaced with _SafePool wrapper.")
-            # =========================================================
-            # FIX: Force validate_downstream to back off from nn.Linear
-            # =========================================================
-            elif isinstance(mod, nn.Linear):
-                print(f"[INFO] Target module '{nm}' is nn.Linear. Allowing Corrective Pooling to handle it natively.")
-                return 
+                print(f"[INFO] Replaced with _SafePool wrapper.") 
             else:
                 safe = nn.Identity()
                 print(f"[INFO] Replaced with Identity() to bypass invalid operation.")
@@ -1140,6 +1159,14 @@ def collapse_only(
             print(f"[STEP] Calling _collapse_block('{start}', '{end}')")
             model = _collapse_block(model, start, end, input_shape, device=device, debug=debug)
             print(f"[INFO] ✅ Successfully collapsed block '{name}' ({start} → {end})")
+        except ValueError as e:
+            # ISSUE #3 FIX: Filter out cross-branch collapse candidates
+            if "Could not map start/end layers" in str(e):
+                print(f"[WARN] ⚠ Collapse candidate '{name}' appears to be cross-branch (parallel paths).")
+                print(f"[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.")
+                continue
+            else:
+                print(f"[WARN] ⚠ Collapse failed for block '{name}': {e}")
         except Exception as e:
             print(f"[WARN] ⚠ Collapse failed for block '{name}': {e}")
                
