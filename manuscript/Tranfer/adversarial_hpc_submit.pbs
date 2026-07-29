@@ -68,18 +68,35 @@ if [ "$PHASE" = "generate" ]; then
         CMD+=(--kind "$KIND")
     fi
 elif [ "$PHASE" = "analyze" ]; then
-    if [ "$MODEL" != "ALL" ]; then
-        CMD+=(--model "$MODEL")
+    if [ "$MODEL" != "ALL" ]; then CMD+=(--model "$MODEL"); fi
+    if [ "$DATASET" != "ALL" ]; then CMD+=(--dataset "$DATASET"); fi
+    if [ "$ATTACK" != "ALL" ]; then CMD+=(--attack "$ATTACK"); fi
+    if [ "$KIND" != "ALL" ]; then CMD+=(--kind "$KIND"); fi
+elif [ "$PHASE" = "gradient_sim" ]; then
+    if [ "$MODEL" != "ALL" ]; then CMD+=(--model "$MODEL"); fi
+    if [ "$DATASET" != "ALL" ]; then CMD+=(--dataset "$DATASET"); fi
+    if [ "$KIND" != "ALL" ]; then CMD+=(--kind "$KIND"); fi
+elif [ "$PHASE" = "epsilon_sweep" ]; then
+    if [ "$MODEL" != "ALL" ]; then CMD+=(--model "$MODEL"); fi
+    if [ "$DATASET" != "ALL" ]; then CMD+=(--dataset "$DATASET"); fi
+    if [ "$KIND" != "ALL" ]; then CMD+=(--kind "$KIND"); fi
+    # EPSILON_ATTACKS env var: space-separated list of attacks, e.g. "PGD FGSM BIM"
+    if [ -n "${EPSILON_ATTACKS:-}" ]; then
+        # shellcheck disable=SC2086
+        CMD+=(--epsilon-attacks $EPSILON_ATTACKS)
     fi
-    if [ "$DATASET" != "ALL" ]; then
-        CMD+=(--dataset "$DATASET")
+elif [ "$PHASE" = "statistics" ]; then
+    # RESULT_DIRS env var: space-separated list of output dirs
+    if [ -n "${RESULT_DIRS:-}" ]; then
+        # shellcheck disable=SC2086
+        CMD+=(--result-dirs $RESULT_DIRS)
     fi
-    if [ "$ATTACK" != "ALL" ]; then
-        CMD+=(--attack "$ATTACK")
-    fi
-    if [ "$KIND" != "ALL" ]; then
-        CMD+=(--kind "$KIND")
-    fi
+elif [ "$PHASE" = "cka" ]; then
+    if [ "$MODEL" != "ALL" ]; then CMD+=(--model "$MODEL"); fi
+    if [ "$DATASET" != "ALL" ]; then CMD+=(--dataset "$DATASET"); fi
+    if [ "$KIND" != "ALL" ]; then CMD+=(--kind "$KIND"); fi
+    if [ -n "${CKA_MAX_SAMPLES:-}" ]; then CMD+=(--cka-max-samples "$CKA_MAX_SAMPLES"); fi
+    if [ -n "${CKA_MAX_LAYERS:-}" ]; then CMD+=(--cka-max-layers "$CKA_MAX_LAYERS"); fi
 fi
 
 echo "Executing: ${CMD[*]}"

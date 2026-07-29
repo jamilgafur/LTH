@@ -971,16 +971,663 @@ def generate_plots(output_dir: str, records: List[Dict], transfer_records: List[
                     print(f"[INFO] Saved: transferability_pairtype_{dataset}_{attack}.png")
 
 
+# =============================================================================
+# EXPERIMENT 4 — Gradient Similarity Analysis
+# =============================================================================
+
+def compute_gradient_similarity(
+    model_s: nn.Module,
+    model_t: nn.Module,
+    dataloader,
+    device: str,
+    n_samples: int = 1000,
+) -> float:
+    """Compute mean cosine similarity of input-space loss gradients between two models.
+
+    Returns a scalar in [-1, 1].  Values near 1 predict high adversarial transfer;
+    values near 0 predict low transfer.
+    """
+    model_s.eval()
+    model_t.eval()
+    similarities: list[float] = []
+    count = 0
+
+    for images, labels in dataloader:
+        if count >= n_samples:
+            break
+        images, labels = images.to(device), labels.to(device)
+        images = images.requires_grad_(True)
+
+        out_s = model_s(images)
+        loss_s = torch.nn.functional.cross_entropy(out_s, labels)
+        grad_s = torch.autograd.grad(loss_s, images, create_graph=False)[0]
+
+        out_t = model_t(images)
+        loss_t = torch.nn.functional.cross_entropy(out_t, labels)
+        grad_t = torch.autograd.grad(loss_t, images, create_graph=False)[0]
+
+        grad_s_flat = grad_s.detach().view(images.size(0), -1)
+        grad_t_flat = grad_t.detach().view(images.size(0), -1)
+
+        cos_sim = torch.nn.functional.cosine_similarity(grad_s_flat, grad_t_flat, dim=1)
+        similarities.extend(cos_sim.cpu().tolist())
+        count += images.size(0)
+
+    return float(torch.tensor(similarities).mean()) if similarities else float("nan")
+
+
+def gradient_similarity_phase(
+    output_dir: str,
+    model_cache: dict,
+    loader_cache: dict,
+    n_samples: int = 1000,
+) -> list[dict]:
+    """Experiment 4: compute pairwise gradient similarity for all model-kind pairs."""
+    os.makedirs(output_dir, exist_ok=True)
+    records: list[dict] = []
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    pairs = list(model_cache.keys())
+    print(f"[EXP4] Computing gradient similarity for {len(pairs)} model variants "
+          f"({len(pairs)**2} pairs)...")
+
+    for dataset_name in set(k[1] for k in pairs):
+        loader_key = dataset_name
+        if loader_key not in loader_cache:
+            print(f"[WARN] No loader cached for {dataset_name}; skipping gradient sim.")
+            continue
+        _, test_loader = loader_cache[loader_key]
+
+        dataset_pairs = [k for k in pairs if k[1] == dataset_name]
+        for src_key in dataset_pairs:
+            for tgt_key in dataset_pairs:
+                src_name, _, src_kind = src_key
+                tgt_name, _, tgt_kind = tgt_key
+                src_model = model_cache[src_key]
+                tgt_model = model_cache[tgt_key]
+                try:
+                    sim = compute_gradient_similarity(
+                        src_model, tgt_model, test_loader, device, n_samples
+                    )
+                except Exception as e:
+                    print(f"[WARN] Gradient sim failed for {src_key}→{tgt_key}: {e}")
+                    sim = float("nan")
+
+                records.append({
+                    "source_model": src_name,
+                    "source_kind": src_kind,
+                    "source_label": model_kind_label(src_name, src_kind),
+                    "target_model": tgt_name,
+                    "target_kind": tgt_kind,
+                    "target_label": model_kind_label(tgt_name, tgt_kind),
+                    "dataset": dataset_name,
+                    "gradient_similarity": sim,
+                    "same_architecture": src_name == tgt_name,
+                    "same_kind": src_kind == tgt_kind,
+                    "pair_type": classify_transfer_pair(src_name, src_kind, tgt_name, tgt_kind),
+                })
+                print(f"[EXP4] {src_name}({src_kind}) → {tgt_name}({tgt_kind}) "
+                      f"[{dataset_name}]: GradSim={sim:.4f}")
+
+    # ── save ──────────────────────────────────────────────────────────────────
+    df = pd.DataFrame(records)
+    csv_path = os.path.join(output_dir, "gradient_similarity.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"[EXP4] Saved: {csv_path}")
+
+    # square matrix per dataset
+    for dataset_name in df["dataset"].unique():
+        sub = df[df["dataset"] == dataset_name]
+        mat = sub.pivot_table(
+            index="source_label", columns="target_label",
+            values="gradient_similarity", aggfunc="mean",
+        )
+        mat_path = os.path.join(output_dir, f"gradient_similarity_matrix_{dataset_name}.csv")
+        mat.to_csv(mat_path)
+        print(f"[EXP4] Saved: {mat_path}")
+
+        plt.figure(figsize=(12, 9))
+        sns.heatmap(mat, annot=True, fmt=".3f", cmap="RdYlGn", vmin=-1, vmax=1,
+                    cbar_kws={"label": "Gradient Cosine Similarity"})
+        plt.title(f"Input-Gradient Similarity – {dataset_name}", fontsize=14, fontweight="bold")
+        plt.xlabel("Target Model Variant", fontweight="bold")
+        plt.ylabel("Source Model Variant", fontweight="bold")
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, f"gradient_similarity_heatmap_{dataset_name}.png"), dpi=300)
+        plt.close()
+        print(f"[EXP4] Saved: gradient_similarity_heatmap_{dataset_name}.png")
+
+    return records
+
+
+# =============================================================================
+# EXPERIMENT 7 — Epsilon Sensitivity Analysis
+# =============================================================================
+
+EPSILON_VALUES = [1 / 255, 2 / 255, 4 / 255, 8 / 255, 16 / 255]
+
+
+def epsilon_sensitivity_phase(
+    output_dir: str,
+    model_cache: dict,
+    loader_cache: dict,
+    attacks: list[str] | None = None,
+) -> list[dict]:
+    """Experiment 7: sweep epsilon values and record direct + transfer ASR."""
+    os.makedirs(output_dir, exist_ok=True)
+    if attacks is None:
+        attacks = ["PGD", "FGSM", "BIM"]  # fast attacks only for the sweep
+
+    records: list[dict] = []
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    print(f"[EXP7] Epsilon sweep over {EPSILON_VALUES} for attacks {attacks}...")
+
+    for (model_name, dataset_name, kind), model in model_cache.items():
+        loader_key = dataset_name
+        if loader_key not in loader_cache:
+            continue
+        _, test_loader = loader_cache[loader_key]
+
+        for attack_name in attacks:
+            for eps in EPSILON_VALUES:
+                steps = max(10, int(eps * 255 * 2))  # scale steps with eps
+                try:
+                    attack_obj = instantiate_attack(attack_name, model, epsilon=eps, steps=steps)
+                    if attack_obj is None:
+                        continue
+                    # Direct ASR on source model
+                    model.eval()
+                    correct = total = 0
+                    for imgs, lbls in test_loader:
+                        imgs, lbls = imgs.to(device), lbls.to(device)
+                        adv = attack_obj(imgs, lbls)
+                        with torch.no_grad():
+                            preds = model(adv).argmax(dim=1)
+                        correct += (preds == lbls).sum().item()
+                        total += lbls.size(0)
+                    asr = 1.0 - correct / total if total else float("nan")
+                except Exception as e:
+                    print(f"[WARN] EXP7 failed for {model_name}({kind}) {attack_name} eps={eps:.5f}: {e}")
+                    asr = float("nan")
+
+                records.append({
+                    "model": model_name,
+                    "kind": kind,
+                    "model_label": model_kind_label(model_name, kind),
+                    "dataset": dataset_name,
+                    "attack": attack_name,
+                    "epsilon": eps,
+                    "epsilon_255": round(eps * 255, 2),
+                    "attack_success_rate": asr,
+                })
+                print(f"[EXP7] {model_name}({kind}) {dataset_name} {attack_name} "
+                      f"ε={eps*255:.1f}/255 → ASR={asr:.4f}")
+
+    # ── save ──────────────────────────────────────────────────────────────────
+    df = pd.DataFrame(records)
+    csv_path = os.path.join(output_dir, "epsilon_sensitivity.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"[EXP7] Saved: {csv_path}")
+
+    # delta (Finetuned - Original) per epsilon
+    delta_rows: list[dict] = []
+    for (model_name, dataset_name, attack_name, eps), grp in df.groupby(
+        ["model", "dataset", "attack", "epsilon"]
+    ):
+        orig = grp[grp["kind"] == "Original"]["attack_success_rate"]
+        fine = grp[grp["kind"] == "Finetuned"]["attack_success_rate"]
+        if not orig.empty and not fine.empty:
+            delta_rows.append({
+                "model": model_name,
+                "dataset": dataset_name,
+                "attack": attack_name,
+                "epsilon": eps,
+                "epsilon_255": round(eps * 255, 2),
+                "asr_original": float(orig.mean()),
+                "asr_finetuned": float(fine.mean()),
+                "delta_asr": float(fine.mean()) - float(orig.mean()),
+            })
+
+    if delta_rows:
+        delta_df = pd.DataFrame(delta_rows)
+        delta_csv = os.path.join(output_dir, "epsilon_sensitivity_delta.csv")
+        delta_df.to_csv(delta_csv, index=False)
+        print(f"[EXP7] Saved: {delta_csv}")
+
+    # ── plots ─────────────────────────────────────────────────────────────────
+    for dataset_name in df["dataset"].unique():
+        for attack_name in df["attack"].unique():
+            sub = df[(df["dataset"] == dataset_name) & (df["attack"] == attack_name)]
+            if sub.empty:
+                continue
+            plt.figure(figsize=(9, 6))
+            for label, grp in sub.groupby("model_label"):
+                grp_sorted = grp.sort_values("epsilon_255")
+                plt.plot(grp_sorted["epsilon_255"], grp_sorted["attack_success_rate"],
+                         marker="o", label=label)
+            plt.xlabel("Perturbation Budget ε (×1/255)", fontweight="bold")
+            plt.ylabel("Attack Success Rate", fontweight="bold")
+            plt.title(f"Epsilon Sensitivity – {dataset_name} ({attack_name})",
+                      fontsize=13, fontweight="bold")
+            plt.legend(fontsize=7, ncol=2)
+            plt.tight_layout()
+            plt.savefig(os.path.join(output_dir,
+                        f"epsilon_sensitivity_{dataset_name}_{attack_name}.png"), dpi=300)
+            plt.close()
+            print(f"[EXP7] Saved: epsilon_sensitivity_{dataset_name}_{attack_name}.png")
+
+    return records
+
+
+# =============================================================================
+# EXPERIMENT 9 — Statistical Significance Testing
+# =============================================================================
+
+def _load_multi_run_summaries(result_dirs: list[str]) -> pd.DataFrame:
+    """Concatenate summary.csv files from multiple output directories."""
+    frames = []
+    for d in result_dirs:
+        p = os.path.join(d, "summary.csv")
+        if os.path.exists(p):
+            df = pd.read_csv(p)
+            df["run_dir"] = os.path.basename(d)
+            frames.append(df)
+        else:
+            print(f"[WARN] EXP9: summary.csv not found in {d}")
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
+def statistical_significance_phase(
+    output_dir: str,
+    result_dirs: list[str] | None = None,
+) -> list[dict]:
+    """Experiment 9: paired t-test and Kruskal-Wallis across three run configurations.
+
+    ``result_dirs`` should point to the three epoch-budget output directories,
+    e.g. ["adversarial_results_ep100_pre300", "adversarial_results_ep200_pre200",
+           "adversarial_results_ep300_pre100"].  Falls back to the single output_dir
+    if not supplied.
+    """
+    try:
+        from scipy import stats as scipy_stats  # soft dependency
+    except ImportError:
+        print("[WARN] EXP9: scipy not installed.  Run: pip install scipy")
+        return []
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    if result_dirs:
+        df_all = _load_multi_run_summaries(result_dirs)
+    else:
+        p = os.path.join(output_dir, "summary.csv")
+        if not os.path.exists(p):
+            print(f"[WARN] EXP9: no summary.csv at {p}")
+            return []
+        df_all = pd.read_csv(p)
+        df_all["run_dir"] = "single_run"
+
+    if df_all.empty:
+        print("[WARN] EXP9: no data to analyse.")
+        return []
+
+    records: list[dict] = []
+    for (model_name, dataset_name, attack_name), grp in df_all.groupby(
+        ["model", "dataset", "attack"]
+    ):
+        orig = grp[grp["kind"] == "Original"]["attack_success_rate"].dropna().values
+        fine = grp[grp["kind"] == "Finetuned"]["attack_success_rate"].dropna().values
+
+        if len(orig) == 0 or len(fine) == 0:
+            continue
+
+        mean_orig = float(np.mean(orig))
+        mean_fine = float(np.mean(fine))
+        std_orig = float(np.std(orig, ddof=1)) if len(orig) > 1 else float("nan")
+        std_fine = float(np.std(fine, ddof=1)) if len(fine) > 1 else float("nan")
+        delta_asr = mean_fine - mean_orig
+
+        # Paired t-test (requires equal-length matched pairs)
+        if len(orig) == len(fine) and len(orig) > 1:
+            t_stat, p_ttest = scipy_stats.ttest_rel(fine, orig)
+        else:
+            t_stat, p_ttest = float("nan"), float("nan")
+
+        # Kruskal-Wallis across run configurations
+        if len(result_dirs or []) >= 2 and len(orig) >= 2:
+            _, p_kw = scipy_stats.kruskal(orig, fine)
+        else:
+            p_kw = float("nan")
+
+        significant = (not np.isnan(p_ttest)) and (p_ttest < 0.05)
+        effect_size = abs(delta_asr)  # simple absolute difference
+
+        records.append({
+            "model": model_name,
+            "dataset": dataset_name,
+            "attack": attack_name,
+            "n_original": len(orig),
+            "n_finetuned": len(fine),
+            "mean_asr_original": mean_orig,
+            "std_asr_original": std_orig,
+            "mean_asr_finetuned": mean_fine,
+            "std_asr_finetuned": std_fine,
+            "delta_asr": delta_asr,
+            "t_statistic": t_stat,
+            "p_value_ttest": p_ttest,
+            "p_value_kruskal": p_kw,
+            "significant_at_0.05": significant,
+            "effect_size_abs": effect_size,
+        })
+
+    # ── save ──────────────────────────────────────────────────────────────────
+    df_out = pd.DataFrame(records)
+    csv_path = os.path.join(output_dir, "statistical_significance.csv")
+    df_out.to_csv(csv_path, index=False)
+    print(f"[EXP9] Saved: {csv_path}")
+
+    # print summary table
+    if not df_out.empty:
+        print(f"\n[EXP9] Statistical summary ({len(df_out)} model-attack combinations):")
+        n_sig = int(df_out["significant_at_0.05"].sum())
+        print(f"       Significant differences (p<0.05): {n_sig} / {len(df_out)}")
+        print(f"       Mean |ΔASR|: {df_out['effect_size_abs'].mean():.4f}  "
+              f"(max: {df_out['effect_size_abs'].max():.4f})")
+
+    # ── forest plot ───────────────────────────────────────────────────────────
+    if not df_out.empty:
+        for dataset_name in df_out["dataset"].unique():
+            sub = df_out[df_out["dataset"] == dataset_name].copy()
+            sub = sub.sort_values("delta_asr")
+            fig, ax = plt.subplots(figsize=(10, max(4, len(sub) * 0.35)))
+            colors = ["#e74c3c" if s else "#2ecc71"
+                      for s in sub["significant_at_0.05"]]
+            ax.barh(range(len(sub)), sub["delta_asr"], color=colors, edgecolor="black", linewidth=0.5)
+            ax.axvline(0, color="black", linewidth=1)
+            ax.set_yticks(range(len(sub)))
+            ax.set_yticklabels(sub["model"] + " / " + sub["attack"], fontsize=7)
+            ax.set_xlabel("ΔASR (Finetuned − Original)", fontweight="bold")
+            ax.set_title(f"Compression Effect on Attack Success Rate – {dataset_name}\n"
+                         f"(red = p<0.05, green = not significant)", fontsize=12)
+            plt.tight_layout()
+            plt.savefig(os.path.join(output_dir,
+                        f"statistical_significance_{dataset_name}.png"), dpi=300)
+            plt.close()
+            print(f"[EXP9] Saved: statistical_significance_{dataset_name}.png")
+
+    return records
+
+
+# =============================================================================
+# EXPERIMENT 10 — CKA Feature Similarity Analysis
+# =============================================================================
+
+def _compute_linear_cka(X: torch.Tensor, Y: torch.Tensor) -> float:
+    """Linear CKA between representation matrices X (N×p) and Y (N×q)."""
+    X = X - X.mean(0, keepdim=True)
+    Y = Y - Y.mean(0, keepdim=True)
+    dot_xx = (X @ X.T).norm(p="fro") ** 2
+    dot_yy = (Y @ Y.T).norm(p="fro") ** 2
+    dot_xy = (X @ Y.T).norm(p="fro") ** 2
+    denom = (dot_xx.sqrt() * dot_yy.sqrt())
+    return float(dot_xy / denom) if denom > 0 else float("nan")
+
+
+def _extract_representations(
+    model: nn.Module,
+    dataloader,
+    layer_name: str,
+    device: str,
+    max_samples: int = 512,
+) -> torch.Tensor | None:
+    """Extract and flatten feature maps at ``layer_name`` for up to max_samples images."""
+    reps: list[torch.Tensor] = []
+    count = 0
+
+    def hook_fn(module, inp, out):
+        reps.append(out.detach().cpu())
+
+    target = dict(model.named_modules()).get(layer_name)
+    if target is None:
+        print(f"[WARN] EXP10: layer '{layer_name}' not found in model.")
+        return None
+
+    handle = target.register_forward_hook(hook_fn)
+    model.eval()
+    try:
+        with torch.no_grad():
+            for imgs, _ in dataloader:
+                if count >= max_samples:
+                    break
+                model(imgs.to(device))
+                count += imgs.size(0)
+    except Exception as e:
+        print(f"[WARN] EXP10: forward pass failed at layer '{layer_name}': {e}")
+    finally:
+        handle.remove()
+
+    if not reps:
+        return None
+    out = torch.cat(reps, dim=0)[:max_samples]
+    return out.view(out.size(0), -1)  # flatten spatial dims
+
+
+def _candidate_layers(model: nn.Module) -> list[str]:
+    """Return names of Conv2d and Linear layers suitable for CKA probing."""
+    return [
+        name for name, mod in model.named_modules()
+        if isinstance(mod, (nn.Conv2d, nn.Linear))
+    ]
+
+
+def cka_similarity_phase(
+    output_dir: str,
+    model_cache: dict,
+    loader_cache: dict,
+    max_samples: int = 512,
+    max_layers: int = 8,
+) -> list[dict]:
+    """Experiment 10: layer-wise CKA between all model-kind pairs.
+
+    Probes up to ``max_layers`` evenly-spaced convolutional/linear layers in each model.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    records: list[dict] = []
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    pairs = list(model_cache.keys())
+    print(f"[EXP10] Computing CKA for {len(pairs)} model variants...")
+
+    for dataset_name in set(k[1] for k in pairs):
+        if dataset_name not in loader_cache:
+            continue
+        _, test_loader = loader_cache[dataset_name]
+
+        dataset_pairs = [k for k in pairs if k[1] == dataset_name]
+        for src_key in dataset_pairs:
+            src_name, _, src_kind = src_key
+            src_model = model_cache[src_key]
+
+            # Determine probe layers for source model (evenly spaced)
+            all_layers = _candidate_layers(src_model.module if hasattr(src_model, "module") else src_model)
+            if not all_layers:
+                continue
+            step = max(1, len(all_layers) // max_layers)
+            probe_layers = all_layers[::step][:max_layers]
+
+            for tgt_key in dataset_pairs:
+                tgt_name, _, tgt_kind = tgt_key
+                tgt_model = model_cache[tgt_key]
+
+                for layer_name in probe_layers:
+                    # resolve same-name layer in target (best-effort)
+                    tgt_layers = _candidate_layers(
+                        tgt_model.module if hasattr(tgt_model, "module") else tgt_model
+                    )
+                    # use same index position if name doesn't exist in target
+                    tgt_layer = layer_name if layer_name in tgt_layers else (
+                        tgt_layers[all_layers.index(layer_name)]
+                        if layer_name in all_layers and all_layers.index(layer_name) < len(tgt_layers)
+                        else None
+                    )
+                    if tgt_layer is None:
+                        continue
+
+                    X = _extract_representations(src_model, test_loader, layer_name, device, max_samples)
+                    Y = _extract_representations(tgt_model, test_loader, tgt_layer, device, max_samples)
+                    if X is None or Y is None or X.size(0) < 4 or Y.size(0) < 4:
+                        continue
+
+                    # truncate to same N
+                    n = min(X.size(0), Y.size(0))
+                    try:
+                        cka_val = _compute_linear_cka(X[:n].float(), Y[:n].float())
+                    except Exception as e:
+                        print(f"[WARN] EXP10 CKA failed {src_key}→{tgt_key} at {layer_name}: {e}")
+                        cka_val = float("nan")
+
+                    records.append({
+                        "source_model": src_name,
+                        "source_kind": src_kind,
+                        "source_label": model_kind_label(src_name, src_kind),
+                        "target_model": tgt_name,
+                        "target_kind": tgt_kind,
+                        "target_label": model_kind_label(tgt_name, tgt_kind),
+                        "dataset": dataset_name,
+                        "layer": layer_name,
+                        "cka": cka_val,
+                        "same_architecture": src_name == tgt_name,
+                        "same_kind": src_kind == tgt_kind,
+                        "pair_type": classify_transfer_pair(src_name, src_kind, tgt_name, tgt_kind),
+                    })
+                    print(f"[EXP10] {src_name}({src_kind})→{tgt_name}({tgt_kind}) "
+                          f"[{layer_name}] CKA={cka_val:.4f}")
+
+    # ── save ──────────────────────────────────────────────────────────────────
+    df = pd.DataFrame(records)
+    csv_path = os.path.join(output_dir, "cka_similarity.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"[EXP10] Saved: {csv_path}")
+
+    # ── layer-curve plots ─────────────────────────────────────────────────────
+    for dataset_name in df["dataset"].unique():
+        for src_label in df["source_label"].unique():
+            sub = df[(df["dataset"] == dataset_name) & (df["source_label"] == src_label)]
+            if sub.empty:
+                continue
+            plt.figure(figsize=(11, 5))
+            for tgt_label, grp in sub.groupby("target_label"):
+                plt.plot(range(len(grp)), grp["cka"].values, marker="o",
+                         label=f"→ {tgt_label}")
+            plt.xlabel("Layer Index (shallow → deep)", fontweight="bold")
+            plt.ylabel("CKA", fontweight="bold")
+            plt.ylim(0, 1.05)
+            plt.title(f"Layer-wise CKA from {src_label} – {dataset_name}",
+                      fontsize=12, fontweight="bold")
+            plt.legend(fontsize=7, ncol=2)
+            plt.tight_layout()
+            safe_label = src_label.replace(" ", "_").replace("/", "_")
+            plt.savefig(os.path.join(output_dir,
+                        f"cka_layerwise_{dataset_name}_{safe_label}.png"), dpi=300)
+            plt.close()
+
+    # ── pair-type summary heatmap ─────────────────────────────────────────────
+    if not df.empty:
+        for dataset_name in df["dataset"].unique():
+            sub = df[df["dataset"] == dataset_name]
+            # mean CKA across all layers per source-target pair
+            mean_cka = sub.groupby(["source_label", "target_label"])["cka"].mean().reset_index()
+            pivot = mean_cka.pivot(index="source_label", columns="target_label", values="cka")
+            plt.figure(figsize=(12, 9))
+            sns.heatmap(pivot, annot=True, fmt=".3f", cmap="YlOrRd", vmin=0, vmax=1,
+                        cbar_kws={"label": "Mean CKA (all layers)"})
+            plt.title(f"Mean Layer-wise CKA – {dataset_name}",
+                      fontsize=14, fontweight="bold")
+            plt.xlabel("Target Model Variant", fontweight="bold")
+            plt.ylabel("Source Model Variant", fontweight="bold")
+            plt.tight_layout()
+            plt.savefig(os.path.join(output_dir,
+                        f"cka_mean_heatmap_{dataset_name}.png"), dpi=300)
+            plt.close()
+            mat_path = os.path.join(output_dir, f"cka_mean_matrix_{dataset_name}.csv")
+            pivot.to_csv(mat_path)
+            print(f"[EXP10] Saved: {mat_path}")
+
+    return records
+
+
+def _rebuild_model_and_loader_cache(args) -> tuple[dict, dict]:
+    """Re-load all checkpoints and data loaders when running a standalone experiment phase."""
+    model_cache: dict = {}
+    loader_cache: dict = {}
+    checkpoints = discover_checkpoints()
+    for model_name, dataset_name, kind, ckpt_path in checkpoints:
+        if args.model and model_name != args.model:
+            continue
+        if args.dataset and dataset_name != args.dataset:
+            continue
+        if args.kind and kind != args.kind:
+            continue
+        if dataset_name == "Cifar10":
+            if "Cifar10" not in loader_cache:
+                loader_cache["Cifar10"] = load_cifar10(batch_size=256, num_workers=4)
+            train_loader, _ = loader_cache["Cifar10"]
+            num_classes = 10
+        elif dataset_name == "Cifar100":
+            if "Cifar100" not in loader_cache:
+                loader_cache["Cifar100"] = load_cifar100(batch_size=256, num_workers=4)
+            train_loader, _ = loader_cache["Cifar100"]
+            num_classes = 100
+        else:
+            continue
+        one_batch = next(iter(train_loader))[0]
+        try:
+            model = build_model_for_checkpoint(
+                model_name=model_name, dataset_name=dataset_name, kind=kind,
+                num_classes=num_classes, one_batch=one_batch,
+                ckpt_path=ckpt_path, device="cuda",
+            )
+            robust_load_state_dict(model, ckpt_path)
+        except Exception as e:
+            print(f"[WARN] Could not load {model_name}({kind}) on {dataset_name}: {e}")
+            continue
+        model = torch.nn.DataParallel(model)
+        model_cache[(model_name, dataset_name, kind)] = model
+    return model_cache, loader_cache
+
+
 def main():
     parser = argparse.ArgumentParser(description="Adversarial robustness analysis of pruned models.")
-    parser.add_argument("--mode", choices=["full", "generate", "analyze", "plot"], default="full",
-                        help="Execution mode: full (all phases), generate (attacks only), analyze (transferability), plot (visualizations).")
+    parser.add_argument("--mode", choices=[
+        "full", "generate", "analyze", "plot",
+        "gradient_sim", "epsilon_sweep", "statistics", "cka",
+    ], default="full",
+                        help=(
+                            "Execution mode: full (all phases), generate (attacks only), "
+                            "analyze (transferability), plot (visualizations), "
+                            "gradient_sim (Exp 4), epsilon_sweep (Exp 7), "
+                            "statistics (Exp 9), cka (Exp 10)."
+                        ))
     parser.add_argument("--model", type=str, default=None, help="Filter by model name (e.g., VGG16).")
     parser.add_argument("--dataset", type=str, default=None, help="Filter by dataset (e.g., Cifar10).")
     parser.add_argument("--attack", type=str, default=None, help="Filter by attack (e.g., PGD).")
     parser.add_argument("--kind", choices=["Original", "Finetuned"], default=None,
                         help="Filter the source checkpoint kind for attack generation and source dataset selection.")
     parser.add_argument("--output-dir", type=str, default="adversarial_results", help="Output directory for results.")
+    # Experiment 7
+    parser.add_argument("--epsilon-attacks", type=str, nargs="+",
+                        default=["PGD", "FGSM", "BIM"],
+                        help="Attack methods to use in the epsilon sensitivity sweep (Exp 7).")
+    # Experiment 9
+    parser.add_argument("--result-dirs", type=str, nargs="+", default=None,
+                        help="List of output dirs from multiple runs for statistical testing (Exp 9). "
+                             "E.g. adversarial_results_ep100_pre300 adversarial_results_ep200_pre200 "
+                             "adversarial_results_ep300_pre100")
+    # Experiment 10
+    parser.add_argument("--cka-max-samples", type=int, default=512,
+                        help="Max images to use per CKA layer probe (Exp 10).")
+    parser.add_argument("--cka-max-layers", type=int, default=8,
+                        help="Max layers to probe per model in CKA (Exp 10).")
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -1118,6 +1765,63 @@ def main():
         
         generate_plots(args.output_dir, records, transfer_records)
         print(f"[INFO] All plots saved to {args.output_dir}")
+
+    # =========================================================================
+    # EXPERIMENT 4 — Gradient Similarity
+    # =========================================================================
+    if args.mode in ["full", "gradient_sim"]:
+        print(f"\n{'='*70}")
+        print(f"[PHASE EXP4] Gradient Similarity Analysis")
+        print(f"{'='*70}")
+
+        if args.mode == "gradient_sim" or not model_cache:
+            model_cache, loader_cache = _rebuild_model_and_loader_cache(args)
+
+        gradient_similarity_phase(args.output_dir, model_cache, loader_cache)
+
+    # =========================================================================
+    # EXPERIMENT 7 — Epsilon Sensitivity
+    # =========================================================================
+    if args.mode in ["full", "epsilon_sweep"]:
+        print(f"\n{'='*70}")
+        print(f"[PHASE EXP7] Epsilon Sensitivity Analysis")
+        print(f"{'='*70}")
+
+        if args.mode == "epsilon_sweep" or not model_cache:
+            model_cache, loader_cache = _rebuild_model_and_loader_cache(args)
+
+        epsilon_sensitivity_phase(
+            args.output_dir, model_cache, loader_cache,
+            attacks=args.epsilon_attacks,
+        )
+
+    # =========================================================================
+    # EXPERIMENT 9 — Statistical Significance
+    # =========================================================================
+    if args.mode in ["full", "statistics"]:
+        print(f"\n{'='*70}")
+        print(f"[PHASE EXP9] Statistical Significance Testing")
+        print(f"{'='*70}")
+
+        result_dirs = args.result_dirs or [args.output_dir]
+        statistical_significance_phase(args.output_dir, result_dirs=result_dirs)
+
+    # =========================================================================
+    # EXPERIMENT 10 — CKA Feature Similarity
+    # =========================================================================
+    if args.mode in ["full", "cka"]:
+        print(f"\n{'='*70}")
+        print(f"[PHASE EXP10] CKA Feature Similarity Analysis")
+        print(f"{'='*70}")
+
+        if args.mode == "cka" or not model_cache:
+            model_cache, loader_cache = _rebuild_model_and_loader_cache(args)
+
+        cka_similarity_phase(
+            args.output_dir, model_cache, loader_cache,
+            max_samples=args.cka_max_samples,
+            max_layers=args.cka_max_layers,
+        )
 
 
 if __name__ == "__main__":

@@ -23,9 +23,13 @@ if [ "$#" -lt 1 ]; then
     echo "Usage: $0 <phase> [output_dir] [model] [dataset] [attack] [kind]"
     echo ""
     echo "Phases:"
-    echo "  generate  - Parallelize attack generation across models/datasets/attacks"
-    echo "  analyze   - Compute transferability (single job; requires generated attacks)"
-    echo "  plot      - Generate visualizations (single job; requires summary.csv)"
+    echo "  generate      - Parallelize attack generation across models/datasets/attacks"
+    echo "  analyze       - Compute transferability (single job; requires generated attacks)"
+    echo "  plot          - Generate visualizations (single job; requires summary.csv)"
+    echo "  gradient_sim  - Exp 4: pairwise input-gradient cosine similarity (single job)"
+    echo "  epsilon_sweep - Exp 7: sweep epsilon values for PGD/FGSM/BIM (single job)"
+    echo "  statistics    - Exp 9: paired t-test / Kruskal-Wallis across run configs (single job)"
+    echo "  cka           - Exp 10: layer-wise CKA feature similarity (single job)"
     echo ""
     echo "Optional source filters (for generate/analyze):"
     echo "  model   = VGG16 | RegNetX_400MF | InceptionNet | MobileNet | XceptionNet | ConvNeXt"
@@ -39,6 +43,10 @@ if [ "$#" -lt 1 ]; then
     echo "  $0 analyze  adv_single InceptionNet Cifar10 PGD Finetuned"
     echo "  $0 analyze adversarial_results"
     echo "  $0 plot adversarial_results"
+    echo "  $0 gradient_sim adversarial_results_ep100_pre300"
+    echo "  $0 epsilon_sweep adversarial_results_ep100_pre300"
+    echo "  $0 statistics adversarial_results_ep100_pre300"
+    echo "  $0 cka adversarial_results_ep100_pre300"
     exit 1
 fi
 
@@ -124,9 +132,13 @@ log "===========================================================================
 mkdir -p logs
 
 log "Run outputs will be written as txt files in manuscript/Tranfer/"
-log "  - generate: <MODEL>_<DATASET>_<ATTACK>_generate_run.txt"
-log "  - analyze:  adversarial_analyze_run.txt"
-log "  - plot:     adversarial_plot_run.txt"
+log "  - generate:      <MODEL>_<DATASET>_<ATTACK>_<KIND>_generate_run.txt"
+log "  - analyze:       adversarial_analyze_run.txt"
+log "  - plot:          adversarial_plot_run.txt"
+log "  - gradient_sim:  adversarial_gradient_sim_run.txt"
+log "  - epsilon_sweep: adversarial_epsilon_sweep_run.txt"
+log "  - statistics:    adversarial_statistics_run.txt"
+log "  - cka:           adversarial_cka_run.txt"
 
 submit_and_log() {
     local cmd="$1"
@@ -169,7 +181,6 @@ case "$PHASE" in
     analyze)
         log "[PHASE: ANALYZE] Submitting transferability analysis job..."
         log "WARNING: This requires all attacks from --generate to be completed first."
-        log "Waiting for generate jobs to complete is recommended."
         cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"analyze\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "analyze" || fail "Failed to submit analyze phase"
         log "[SUCCESS] Transferability analysis job submitted"
@@ -182,10 +193,61 @@ case "$PHASE" in
         submit_and_log "$cmd" "plot" || fail "Failed to submit plot phase"
         log "[SUCCESS] Visualization job submitted"
         ;;
+
+    gradient_sim)
+        log "[PHASE: GRADIENT_SIM] Submitting Experiment 4 (gradient similarity) job..."
+        log "Requires: model checkpoints accessible from the HPC node."
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"gradient_sim\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        submit_and_log "$cmd" "gradient_sim" || fail "Failed to submit gradient_sim phase"
+        log "[SUCCESS] Gradient similarity job submitted"
+        log "Output: gradient_similarity.csv, gradient_similarity_matrix_*.csv, gradient_similarity_heatmap_*.png"
+        ;;
+
+    epsilon_sweep)
+        log "[PHASE: EPSILON_SWEEP] Submitting Experiment 7 (epsilon sensitivity) job..."
+        log "Sweeps epsilon in {1,2,4,8,16}/255 for PGD, FGSM, BIM."
+        log "Requires: model checkpoints accessible from the HPC node."
+        EPSILON_ATTACKS_VAR="${ATTACK_FILTER:-PGD FGSM BIM}"
+        if [ "$ATTACK_FILTER" != "ALL" ]; then
+            EPSILON_ATTACKS_VAR="$ATTACK_FILTER"
+        fi
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"epsilon_sweep\",OUTPUT_DIR=\"$OUTPUT_DIR\",EPSILON_ATTACKS=\"$EPSILON_ATTACKS_VAR\" adversarial_hpc_submit.pbs </dev/null"
+        submit_and_log "$cmd" "epsilon_sweep" || fail "Failed to submit epsilon_sweep phase"
+        log "[SUCCESS] Epsilon sensitivity job submitted"
+        log "Output: epsilon_sensitivity.csv, epsilon_sensitivity_delta.csv, epsilon_sensitivity_*.png"
+        ;;
+
+    statistics)
+        log "[PHASE: STATISTICS] Submitting Experiment 9 (statistical significance) job..."
+        log "Compares Original vs. Finetuned ASR across run configurations."
+        # RESULT_DIRS: space-separated paths to the three epoch/pretrain output dirs
+        # Default to the three standard dirs if they exist; otherwise use OUTPUT_DIR
+        DEFAULT_RESULT_DIRS=""
+        for candidate in adversarial_results_ep100_pre300 adversarial_results_ep200_pre200 adversarial_results_ep300_pre100; do
+            if [ -d "$SCRIPT_DIR/$candidate" ]; then
+                DEFAULT_RESULT_DIRS="$DEFAULT_RESULT_DIRS $candidate"
+            fi
+        done
+        RESULT_DIRS_VAR="${DEFAULT_RESULT_DIRS:-$OUTPUT_DIR}"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"statistics\",OUTPUT_DIR=\"$OUTPUT_DIR\",RESULT_DIRS=\"$RESULT_DIRS_VAR\" adversarial_hpc_submit.pbs </dev/null"
+        submit_and_log "$cmd" "statistics" || fail "Failed to submit statistics phase"
+        log "[SUCCESS] Statistical significance job submitted"
+        log "Output: statistical_significance.csv, statistical_significance_*.png"
+        ;;
+
+    cka)
+        log "[PHASE: CKA] Submitting Experiment 10 (CKA feature similarity) job..."
+        log "Computes layer-wise CKA between all model-kind pairs."
+        log "Requires: model checkpoints accessible from the HPC node."
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"cka\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        submit_and_log "$cmd" "cka" || fail "Failed to submit cka phase"
+        log "[SUCCESS] CKA feature similarity job submitted"
+        log "Output: cka_similarity.csv, cka_mean_matrix_*.csv, cka_mean_heatmap_*.png, cka_layerwise_*.png"
+        ;;
     
     *)
         log "ERROR: Unknown phase '$PHASE'"
-        log "Valid phases: generate, analyze, plot"
+        log "Valid phases: generate, analyze, plot, gradient_sim, epsilon_sweep, statistics, cka"
         exit 1
         ;;
 esac
