@@ -43,6 +43,9 @@ Output Files
 ``adversarial_results/`` directory contains:
 * ``summary.csv`` – Direct attack and susceptibility metrics per model/dataset/kind/attack
 * ``transferability.csv`` – Cross-model transferability rates and normalized transfer metrics
+* ``accuracy_parameter_comparison.csv`` – Original vs collapsed clean accuracy and parameter counts
+* ``collapsed_vs_original_explainability_by_attack.csv`` – Per-attack explainability deltas (collapsed minus original)
+* ``collapsed_vs_original_explainability_summary.csv`` – Mean explainability deltas aggregated across attacks
 * Plots:
     - ``attack_success_rates.png`` – Attack success rate by model, attack, and kind
     - ``direct_attack_success_heatmap_*.png`` – Heatmaps of direct fooling rate by model and attack
@@ -512,6 +515,11 @@ def summarize_direct_metrics(clean_acc: float, adv_acc: float) -> dict:
     }
 
 
+def count_model_parameters(model: nn.Module) -> int:
+    """Return total number of parameters in a model."""
+    return int(sum(p.numel() for p in model.parameters()))
+
+
 def classify_transfer_pair(src_model: str, src_kind: str, tgt_model: str, tgt_kind: str) -> str:
     if src_model == tgt_model and src_kind == tgt_kind:
         return "self_same_kind"
@@ -722,6 +730,7 @@ def generate_attacks_phase(
             )
             # Skip this combination and move on to the next one
             continue
+        param_count = count_model_parameters(model)
         model = torch.nn.DataParallel(model)
         model_cache[(model_name, dataset_name, kind)] = model
 
@@ -785,6 +794,7 @@ def generate_attacks_phase(
                     "kind": kind,
                     "attack": attack_name,
                     "model_label": model_kind_label(model_name, kind),
+                    "param_count": param_count,
                     "clean_acc": clean_acc,
                     "adv_acc": adv_acc,
                     **summarize_direct_metrics(clean_acc, adv_acc),
@@ -797,6 +807,207 @@ def generate_attacks_phase(
             )
 
     return records, model_cache, loader_cache, adv_datasets
+
+
+def generate_comparison_tables(output_dir: str, records: List[Dict]):
+    """Generate collapsed-vs-original comparison tables for explainability and model size.
+
+    The produced tables are designed to be directly comparable to the journal
+    summaries: they include clean accuracy and parameter counts for both model
+    kinds, plus attack-driven explainability deltas.
+    """
+    if not records:
+        return
+
+    os.makedirs(output_dir, exist_ok=True)
+    df = enrich_summary_dataframe(pd.DataFrame(records))
+    if df.empty:
+        return
+
+    if "param_count" not in df.columns:
+        df["param_count"] = np.nan
+
+    # One-row-per-model-kind profile used for accuracy/parameter comparison.
+    profile = (
+        df.groupby(["model", "dataset", "kind"], as_index=False)
+        .agg(
+            clean_acc=("clean_acc", "mean"),
+            robust_accuracy=("robust_accuracy", "mean"),
+            attack_success_rate=("attack_success_rate", "mean"),
+            param_count=("param_count", "mean"),
+        )
+    )
+
+    orig_profile = profile[profile["kind"] == "Original"].rename(
+        columns={
+            "clean_acc": "original_clean_acc",
+            "robust_accuracy": "original_robust_accuracy_mean",
+            "attack_success_rate": "original_attack_success_rate_mean",
+            "param_count": "original_param_count",
+        }
+    )[[
+        "model",
+        "dataset",
+        "original_clean_acc",
+        "original_robust_accuracy_mean",
+        "original_attack_success_rate_mean",
+        "original_param_count",
+    ]]
+
+    finetuned_profile = profile[profile["kind"] == "Finetuned"].rename(
+        columns={
+            "clean_acc": "collapsed_clean_acc",
+            "robust_accuracy": "collapsed_robust_accuracy_mean",
+            "attack_success_rate": "collapsed_attack_success_rate_mean",
+            "param_count": "collapsed_param_count",
+        }
+    )[[
+        "model",
+        "dataset",
+        "collapsed_clean_acc",
+        "collapsed_robust_accuracy_mean",
+        "collapsed_attack_success_rate_mean",
+        "collapsed_param_count",
+    ]]
+
+    acc_param_df = orig_profile.merge(
+        finetuned_profile,
+        on=["model", "dataset"],
+        how="outer",
+    )
+    acc_param_df["collapsed_minus_original_clean_acc"] = (
+        acc_param_df["collapsed_clean_acc"] - acc_param_df["original_clean_acc"]
+    )
+    acc_param_df["params_reduction_percent"] = np.where(
+        acc_param_df["original_param_count"] > 0,
+        100.0
+        * (
+            1.0
+            - acc_param_df["collapsed_param_count"]
+            / acc_param_df["original_param_count"]
+        ),
+        np.nan,
+    )
+    acc_param_path = os.path.join(output_dir, "accuracy_parameter_comparison.csv")
+    acc_param_df.to_csv(acc_param_path, index=False)
+    print(f"[INFO] Saved: {acc_param_path}")
+
+    # Per-attack explainability table (collapsed vs original).
+    by_attack = (
+        df.groupby(["model", "dataset", "attack", "kind"], as_index=False)
+        .agg(
+            clean_acc=("clean_acc", "mean"),
+            robust_accuracy=("robust_accuracy", "mean"),
+            attack_success_rate=("attack_success_rate", "mean"),
+            relative_accuracy_drop=("relative_accuracy_drop", "mean"),
+            robustness_ratio=("robustness_ratio", "mean"),
+            param_count=("param_count", "mean"),
+        )
+    )
+
+    orig_attack = by_attack[by_attack["kind"] == "Original"].rename(
+        columns={
+            "clean_acc": "original_clean_acc",
+            "robust_accuracy": "original_robust_accuracy",
+            "attack_success_rate": "original_attack_success_rate",
+            "relative_accuracy_drop": "original_relative_accuracy_drop",
+            "robustness_ratio": "original_robustness_ratio",
+            "param_count": "original_param_count",
+        }
+    )[[
+        "model",
+        "dataset",
+        "attack",
+        "original_clean_acc",
+        "original_robust_accuracy",
+        "original_attack_success_rate",
+        "original_relative_accuracy_drop",
+        "original_robustness_ratio",
+        "original_param_count",
+    ]]
+
+    finetuned_attack = by_attack[by_attack["kind"] == "Finetuned"].rename(
+        columns={
+            "clean_acc": "collapsed_clean_acc",
+            "robust_accuracy": "collapsed_robust_accuracy",
+            "attack_success_rate": "collapsed_attack_success_rate",
+            "relative_accuracy_drop": "collapsed_relative_accuracy_drop",
+            "robustness_ratio": "collapsed_robustness_ratio",
+            "param_count": "collapsed_param_count",
+        }
+    )[[
+        "model",
+        "dataset",
+        "attack",
+        "collapsed_clean_acc",
+        "collapsed_robust_accuracy",
+        "collapsed_attack_success_rate",
+        "collapsed_relative_accuracy_drop",
+        "collapsed_robustness_ratio",
+        "collapsed_param_count",
+    ]]
+
+    explainability_df = orig_attack.merge(
+        finetuned_attack,
+        on=["model", "dataset", "attack"],
+        how="inner",
+    )
+    explainability_df["collapsed_minus_original_attack_success_rate"] = (
+        explainability_df["collapsed_attack_success_rate"]
+        - explainability_df["original_attack_success_rate"]
+    )
+    explainability_df["collapsed_minus_original_robust_accuracy"] = (
+        explainability_df["collapsed_robust_accuracy"]
+        - explainability_df["original_robust_accuracy"]
+    )
+    explainability_df["collapsed_minus_original_relative_accuracy_drop"] = (
+        explainability_df["collapsed_relative_accuracy_drop"]
+        - explainability_df["original_relative_accuracy_drop"]
+    )
+    explainability_df["collapsed_minus_original_robustness_ratio"] = (
+        explainability_df["collapsed_robustness_ratio"]
+        - explainability_df["original_robustness_ratio"]
+    )
+    explainability_df["params_reduction_percent"] = np.where(
+        explainability_df["original_param_count"] > 0,
+        100.0
+        * (
+            1.0
+            - explainability_df["collapsed_param_count"]
+            / explainability_df["original_param_count"]
+        ),
+        np.nan,
+    )
+
+    explainability_path = os.path.join(
+        output_dir,
+        "collapsed_vs_original_explainability_by_attack.csv",
+    )
+    explainability_df.to_csv(explainability_path, index=False)
+    print(f"[INFO] Saved: {explainability_path}")
+
+    explainability_summary_df = (
+        explainability_df.groupby(["model", "dataset"], as_index=False)
+        .agg(
+            original_clean_acc=("original_clean_acc", "mean"),
+            collapsed_clean_acc=("collapsed_clean_acc", "mean"),
+            original_param_count=("original_param_count", "mean"),
+            collapsed_param_count=("collapsed_param_count", "mean"),
+            params_reduction_percent=("params_reduction_percent", "mean"),
+            mean_original_attack_success_rate=("original_attack_success_rate", "mean"),
+            mean_collapsed_attack_success_rate=("collapsed_attack_success_rate", "mean"),
+            mean_delta_attack_success_rate=("collapsed_minus_original_attack_success_rate", "mean"),
+            mean_delta_robust_accuracy=("collapsed_minus_original_robust_accuracy", "mean"),
+            mean_delta_relative_accuracy_drop=("collapsed_minus_original_relative_accuracy_drop", "mean"),
+            mean_delta_robustness_ratio=("collapsed_minus_original_robustness_ratio", "mean"),
+        )
+    )
+    explainability_summary_path = os.path.join(
+        output_dir,
+        "collapsed_vs_original_explainability_summary.csv",
+    )
+    explainability_summary_df.to_csv(explainability_summary_path, index=False)
+    print(f"[INFO] Saved: {explainability_summary_path}")
 
 
 def analyze_transferability_phase(output_dir: str, model_cache: dict, loader_cache: dict, adv_datasets: dict):
@@ -1842,6 +2053,10 @@ def main():
         
         generate_plots(args.output_dir, records, transfer_records)
         print(f"[INFO] All plots saved to {args.output_dir}")
+
+    # Comparison tables for explainability + model profile alignment with journal tables.
+    if records:
+        generate_comparison_tables(args.output_dir, records)
 
     # =========================================================================
     # EXPERIMENT 4 — Gradient Similarity
