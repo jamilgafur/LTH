@@ -1959,7 +1959,15 @@ def main():
         # Save records
         if records:
             df_records = pd.DataFrame(records)
-            csv_path = os.path.join(args.output_dir, "summary.csv")
+
+            # --- NEW LOGIC: Unique filenames for parallel jobs ---
+            if args.model and args.attack:
+                job_label = f"_{args.model}_{args.dataset}_{args.attack}_{args.kind or 'ALL'}"
+                csv_path = os.path.join(args.output_dir, f"summary{job_label}.csv")
+            else:
+                csv_path = os.path.join(args.output_dir, "summary.csv")
+            # ----------------------------------------------------
+
             df_records.to_csv(csv_path, index=False)
             print(f"[INFO] Summary written to {csv_path}")
 
@@ -2077,7 +2085,7 @@ def main():
         print(f"[INFO] All plots saved to {args.output_dir}")
 
     # Comparison tables for explainability + model profile alignment with journal tables.
-    if records:
+    if records and args.mode != "generate":
         generate_comparison_tables(args.output_dir, records)
 
     # =========================================================================
