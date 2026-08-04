@@ -149,29 +149,33 @@ DATASET_ORDER = ["Cifar10", "Cifar100", "imagenet", "tinyimagenet"]
 
 
 def get_checkpoint_path(model: str, dataset: str, kind: str):
-    import glob
     import os
-    # Find directories matching this model and dataset
-    pattern = f"{model}_{dataset}_*"
-    dirs = glob.glob(pattern)
+
+    # Strict prefix ensures Cifar10 never matches Cifar100 (e.g., "VGG16_Cifar10_")
+    prefix = f"{model}_{dataset}_"
+    
+    # Filter for directories only that match the exact prefix
+    dirs = [
+        d for d in os.listdir(".")
+        if os.path.isdir(d) and d.startswith(prefix)
+    ]
+    
     if not dirs:
         return None
         
-    # Prioritize epochs100_pretrain300 if it exists
+    # Prioritize 'epochs100_pretrain300' directory if multiple runs exist
     target_dir = dirs[0]
     for d in dirs:
         if "epochs100_pretrain300" in d:
             target_dir = d
             break
             
-    base_dir = target_dir
     filename = "final_JF_Control.pt" if kind == "Original" else "final_JF_Dynamic_Region_All_Combined.pt"
-    full_path = os.path.abspath(os.path.join(base_dir, "checkpoints", filename))
+    full_path = os.path.abspath(os.path.join(target_dir, "checkpoints", filename))
     
     if os.path.exists(full_path):
         return full_path
     return None
-
 
 def get_model_kwargs(model_name: str, num_classes: int, one_batch: torch.Tensor | None) -> dict:
     kwargs = {"num_classes": num_classes}
@@ -183,24 +187,29 @@ def get_model_kwargs(model_name: str, num_classes: int, one_batch: torch.Tensor 
 
 
 def get_discovered_regions_path(model_name: str, dataset_name: str, ckpt_path: str) -> str | None:
+    import os
+    import re
+    import glob
+
     run_dir = os.path.basename(os.path.dirname(os.path.dirname(ckpt_path)))
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    prefix = f"{model_name}_{dataset_name}_None_"
 
-    if run_dir.startswith(prefix):
-        budget = run_dir[len(prefix):]
+    # Extract exact epoch config from folder name (e.g., "epochs100_pretrain300")
+    match = re.search(r"(epochs\d+_pretrain\d+)", run_dir)
+    if match:
+        epoch_tag = match.group(1)
         candidate = os.path.join(
             base_dir,
-            f"{model_name}_{dataset_name}_{budget}_JF_discovered_regions.json",
+            f"{model_name}_{dataset_name}_{epoch_tag}_JF_discovered_regions.json"
         )
         if os.path.exists(candidate):
             return candidate
 
+    # Fallback search if exact tag isn't in folder name
     matches = sorted(
         glob.glob(os.path.join(base_dir, f"{model_name}_{dataset_name}_epochs*_pretrain*_JF_discovered_regions.json"))
     )
     return matches[0] if matches else None
-
 
 def get_compression_set_for_checkpoint(model_name: str, dataset_name: str, ckpt_path: str):
     json_path = get_discovered_regions_path(model_name, dataset_name, ckpt_path)
@@ -255,13 +264,26 @@ def build_model_for_checkpoint(
 
 def discover_checkpoints():
     entries = []
+    print("\n" + "=" * 70)
+    print("[CHECKPOINT DISCOVERY] Scanning for available models and datasets...")
+    print("=" * 70)
+    
     for model in MODEL_ORDER:
         for dataset in DATASET_ORDER:
             for kind in ("Finetuned", "Original"):
                 path = get_checkpoint_path(model, dataset, kind)
                 if path:
+                    print(f"  [FOUND] Model: {model:<15} | Dataset: {dataset:<10} | Kind: {kind:<10}")
                     entries.append((model, dataset, kind, path))
+                else:
+                    # Debug log to track missing models
+                    pass
+
+    print("=" * 70)
+    print(f"[CHECKPOINT DISCOVERY] Total valid checkpoint pairs found: {len(entries)}")
+    print("=" * 70 + "\n")
     return entries
+
 
 def load_model(model_name: str, num_classes: int, one_batch: torch.Tensor | None = None) -> nn.Module:
     """Instantiate a model architecture.
