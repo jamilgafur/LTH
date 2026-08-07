@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Stage 4: Submit adversarial transferability analysis (run before plotting)
+# Stage 4: Submit adversarial transferability plotting (run after analysis)
 # Usage:
-#   bash temp4.sh <discovery_epochs> <pretrain_epochs> [model] [dataset] [attack] [kind]
+#   bash temp5.sh <discovery_epochs> <pretrain_epochs> [model] [dataset] [attack] [kind]
 # Examples:
-#   bash temp4.sh 100 300
-#   bash temp4.sh 100 300 InceptionNet Cifar10 PGD Finetuned
+#   bash temp5.sh 100 300
+#   bash temp5.sh 100 300 InceptionNet Cifar10 PGD Finetuned
 
 set -euo pipefail
 
@@ -34,7 +34,7 @@ if ! command -v qsub >/dev/null 2>&1; then
 fi
 
 echo "===================================================================="
-echo "Stage 4: Adversarial Analyze + Plot"
+echo "Stage 4: Adversarial Plotting"
 echo "Discovery Epochs: $EPOCHS"
 echo "Pretrain Epochs:  $PRETRAIN"
 echo "Output Dir:       $OUTPUT_DIR"
@@ -44,15 +44,15 @@ echo "Attack Filter:    $ATTACK_FILTER"
 echo "Kind Filter:      $KIND_FILTER"
 echo "===================================================================="
 
-ANALYZE_CMD=(
+# Submit plot job (run after analysis has completed manually)
+echo "Submitting plot job..."
+PLOT_CMD=(
     qsub -q all.q -l ngpus=1
-    -v "MODEL=$MODEL_FILTER,DATASET=$DATASET_FILTER,ATTACK=$ATTACK_FILTER,KIND=$KIND_FILTER,PHASE=analyze,OUTPUT_DIR=$OUTPUT_DIR"
+    -v "MODEL=$MODEL_FILTER,DATASET=$DATASET_FILTER,ATTACK=$ATTACK_FILTER,KIND=$KIND_FILTER,PHASE=plot,OUTPUT_DIR=$OUTPUT_DIR"
     adversarial_hpc_submit.pbs
 )
+PLOT_JOBID=$("${PLOT_CMD[@]}")
+PLOT_JOBID=$(echo "$PLOT_JOBID" | awk '{print $1}')
 
-echo "Submitting analyze job..."
-ANALYZE_JOBID=$("${ANALYZE_CMD[@]}")
-ANALYZE_JOBID=$(echo "$ANALYZE_JOBID" | awk '{print $1}')
-
-echo "Analyze Job ID: $ANALYZE_JOBID"
-echo "[DONE] Analysis submission complete. Run temp5.sh after the analysis finishes."
+echo "Plot Job ID: $PLOT_JOBID"
+echo "[DONE] Plot submission complete. Ensure analysis has finished before running."
