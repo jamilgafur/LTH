@@ -1176,10 +1176,16 @@ def generate_plots(output_dir: str, records: List[Dict], transfer_records: List[
         plt.figure(figsize=(14, 6))
         # If multiple runs are present, add them as an additional hue so the
         # figure shows a side‑by‑side comparison across runs.
-        hue_cols = ["attack"]
-        if "run" in df.columns:
-            hue_cols.append("run")
-        sns.barplot(data=df, x="model", y="attack_success_rate", hue=hue_cols, palette="Set2", legend=True)
+        # Use a single column for hue. If a "run" column exists, we can encode it via the "style" argument.
+        # Use only the "attack" column for hue. If a "run" column exists, it will be ignored for this plot.
+        sns.barplot(
+            data=df,
+            x="model",
+            y="attack_success_rate",
+            hue="attack",
+            palette="Set2",
+            legend=True,
+        )
         plt.ylabel("Attack Success Rate", fontweight='bold')
         plt.xlabel("Model Architecture", fontweight='bold')
         plt.title("Adversarial Attack Success Rates Across Models", fontsize=14, fontweight='bold')
@@ -1193,10 +1199,15 @@ def generate_plots(output_dir: str, records: List[Dict], transfer_records: List[
         for kind in df["kind"].unique():
             df_kind = df[df["kind"] == kind]
             plt.figure(figsize=(14, 6))
-            hue_cols_kind = ["attack"]
-            if "run" in df_kind.columns:
-                hue_cols_kind.append("run")
-            sns.barplot(data=df_kind, x="model", y="attack_success_rate", hue=hue_cols_kind, palette="husl", legend=True)
+            # Plot per kind using only the "attack" column for hue.
+            sns.barplot(
+                data=df_kind,
+                x="model",
+                y="attack_success_rate",
+                hue="attack",
+                palette="husl",
+                legend=True,
+            )
             plt.ylabel("Attack Success Rate", fontweight='bold')
             plt.xlabel("Model Architecture", fontweight='bold')
             plt.title(f"Attack Success Rates – {kind} Models", fontsize=14, fontweight='bold')
