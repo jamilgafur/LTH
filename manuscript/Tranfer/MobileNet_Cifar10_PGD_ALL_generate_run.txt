@@ -1,0 +1,68 @@
+
+======================================================================
+[PHASE 1] Generating adversarial examples
+======================================================================
+
+======================================================================
+[CHECKPOINT DISCOVERY] Scanning for available models and datasets...
+======================================================================
+  [FOUND] Model: VGG16           | Dataset: Cifar10    | Kind: Finetuned 
+  [FOUND] Model: VGG16           | Dataset: Cifar10    | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: Cifar100   | Kind: Finetuned 
+  [FOUND] Model: VGG16           | Dataset: Cifar100   | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10    | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10    | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100   | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100   | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10    | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10    | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100   | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100   | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: Cifar10    | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: Cifar100   | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: tinyimagenet | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10    | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10    | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100   | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100   | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10    | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10    | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100   | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100   | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet | Kind: Original  
+======================================================================
+[CHECKPOINT DISCOVERY] Total valid checkpoint pairs found: 32
+======================================================================
+
+[INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
+[ATTACK][PLAN] filters model=MobileNet dataset=Cifar10 kind=None attack=PGD
+[ATTACK][PLAN] selected_attacks=['PGD']
+CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
+
+[DEBUG] Loading MobileNet (Original) on Cifar10
+[DEBUG] Checkpoint path: /old_Users/jgafur/LTH/manuscript/Tranfer/MobileNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[DEBUG] Checkpoint exists: True
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[DEBUG] Clean accuracy after loading Original checkpoint: 0.7836
+[ATTACK][RUN] source=MobileNet kind=Original dataset=Cifar10 attack=PGD
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][START] attack='PGD' batches=40 examples=10000 eps=0.030000 steps=40
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=79.30% adv_acc=9.77% asr=90.23% linf=1.98947 l2_mean=38.98567
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=78.28% adv_acc=10.98% asr=89.02% linf=1.98947 l2_mean=38.70522
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=78.50% adv_acc=11.07% asr=88.93% linf=1.98947 l2_mean=38.41632
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=78.44% adv_acc=10.69% asr=89.31% linf=1.98947 l2_mean=37.85828
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=78.36% adv_acc=10.96% asr=89.04% linf=1.98947 l2_mean=40.67949
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=78.36% adv_acc=10.96% asr=89.04% runtime=12.78s
+[ATTACK][SAVE] path=adversarial_results_ep100_pre300/MobileNet_Cifar10_Original_PGD_adv.pt samples=10000 elapsed=15.81s
+[INFO] MobileNet (Original) Cifar10 – PGD: clean 78.36%, adv 10.96%
+[ATTACK][SUMMARY] source=MobileNet kind=Original dataset=Cifar10 attack=PGD asr=89.04%
+[INFO] Summary written to adversarial_results_ep100_pre300/summary_MobileNet_Cifar10_PGD_ALL.csv

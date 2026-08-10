@@ -1,0 +1,178 @@
+
+======================================================================
+[PHASE 1] Generating adversarial examples
+======================================================================
+
+======================================================================
+[CHECKPOINT DISCOVERY] Scanning for available models and datasets...
+======================================================================
+  [FOUND] Model: VGG16           | Dataset: Cifar10    | Kind: Finetuned 
+  [FOUND] Model: VGG16           | Dataset: Cifar10    | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: Cifar100   | Kind: Finetuned 
+  [FOUND] Model: VGG16           | Dataset: Cifar100   | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10    | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10    | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100   | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100   | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10    | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10    | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100   | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100   | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: Cifar10    | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: Cifar100   | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: tinyimagenet | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10    | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10    | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100   | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100   | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10    | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10    | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100   | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100   | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet | Kind: Original  
+======================================================================
+[CHECKPOINT DISCOVERY] Total valid checkpoint pairs found: 32
+======================================================================
+
+[INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
+[ATTACK][PLAN] filters model=VGG16 dataset=Cifar100 kind=None attack=DeepFool
+[ATTACK][PLAN] selected_attacks=['DeepFool']
+CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
+
+[DEBUG] Loading VGG16 (Finetuned) on Cifar100
+[DEBUG] Checkpoint path: /old_Users/jgafur/LTH/manuscript/Tranfer/VGG16_Cifar100_checkpoint_Finetuned_0.981986.pth_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[DEBUG] Checkpoint exists: True
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/VGG16_Cifar100_epochs100_pretrain300_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 2
+[DEBUG] Rebuilding collapsed architecture for VGG16 (Cifar100) before loading weights
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 34,031,780
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': features.conv_6 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_6', 'features.conv_10')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_6
+[INFO] End Target   : features.conv_10
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_6' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_6' -> 'features.conv_10'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=17, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 17: 'conv_6'
+[STEP] Validating inserted module 'Sequential' at index 17...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_6' → 'features.conv_10'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_6 → features.conv_10) in 16.27s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 11 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': features.conv_12 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_12', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_12
+[INFO] End Target   : features.conv_13
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_12' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_12' -> 'features.conv_13'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=37, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 37: 'conv_12'
+[STEP] Validating inserted module 'Sequential' at index 37...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 34,031,780
+[INFO] Parameters after : 22,623,396
+[INFO] ΔParams = +11,408,384 (expected ≤ 0)
+[INFO] Collapse counts: success=2, failed=0, skipped=0
+[INFO] Total collapse runtime: 17.04s
+[RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[DEBUG] Clean accuracy after loading Finetuned checkpoint: 0.6784
+[ATTACK][RUN] source=VGG16 kind=Finetuned dataset=Cifar100 attack=DeepFool
+[ATTACK][SETUP] Initializing attack='DeepFool' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: DeepFool
+[ATTACK][START] attack='DeepFool' batches=40 examples=10000 eps=0.030000 steps=40
+[ATTACK][BATCH] DeepFool batch=1/40 seen=256 clean_acc=69.92% adv_acc=7.42% asr=92.58% linf=1.91679 l2_mean=26.33191
+[ATTACK][BATCH] DeepFool batch=10/40 seen=2560 clean_acc=67.19% adv_acc=5.00% asr=95.00% linf=1.90216 l2_mean=26.30672
+[ATTACK][BATCH] DeepFool batch=20/40 seen=5120 clean_acc=66.45% adv_acc=5.64% asr=94.36% linf=1.91221 l2_mean=25.34758
+[ATTACK][BATCH] DeepFool batch=30/40 seen=7680 clean_acc=67.27% adv_acc=5.92% asr=94.08% linf=1.91851 l2_mean=25.66891
+[ATTACK][BATCH] DeepFool batch=40/40 seen=10000 clean_acc=67.84% adv_acc=6.14% asr=93.86% linf=1.89747 l2_mean=31.20346
+[ATTACK][DONE] attack='DeepFool' samples=10000 clean_acc=67.84% adv_acc=6.14% asr=93.86% runtime=6622.50s
+[ATTACK][SAVE] path=adversarial_results_ep200_pre200/VGG16_Cifar100_Finetuned_DeepFool_adv.pt samples=10000 elapsed=6623.81s
+[INFO] VGG16 (Finetuned) Cifar100 – DeepFool: clean 67.84%, adv 6.14%
+[ATTACK][SUMMARY] source=VGG16 kind=Finetuned dataset=Cifar100 attack=DeepFool asr=93.86%
+
+[DEBUG] Loading VGG16 (Original) on Cifar100
+[DEBUG] Checkpoint path: /old_Users/jgafur/LTH/manuscript/Tranfer/VGG16_Cifar100_checkpoint_Finetuned_0.981986.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[DEBUG] Checkpoint exists: True
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[DEBUG] Clean accuracy after loading Original checkpoint: 0.5488
+[ATTACK][RUN] source=VGG16 kind=Original dataset=Cifar100 attack=DeepFool
+[ATTACK][SETUP] Initializing attack='DeepFool' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: DeepFool
+[ATTACK][START] attack='DeepFool' batches=40 examples=10000 eps=0.030000 steps=40
+[ATTACK][BATCH] DeepFool batch=1/40 seen=256 clean_acc=58.98% adv_acc=3.91% asr=96.09% linf=1.93175 l2_mean=21.77916
+[ATTACK][BATCH] DeepFool batch=10/40 seen=2560 clean_acc=54.65% adv_acc=3.59% asr=96.41% linf=1.91033 l2_mean=20.87738
+[ATTACK][BATCH] DeepFool batch=20/40 seen=5120 clean_acc=54.53% adv_acc=3.44% asr=96.56% linf=1.91413 l2_mean=21.89789
+[ATTACK][BATCH] DeepFool batch=30/40 seen=7680 clean_acc=54.80% adv_acc=3.46% asr=96.54% linf=1.89997 l2_mean=22.48839
+[ATTACK][BATCH] DeepFool batch=40/40 seen=10000 clean_acc=54.88% adv_acc=3.41% asr=96.59% linf=1.89751 l2_mean=22.38883
+[ATTACK][DONE] attack='DeepFool' samples=10000 clean_acc=54.88% adv_acc=3.41% asr=96.59% runtime=5052.10s
+[ATTACK][SAVE] path=adversarial_results_ep200_pre200/VGG16_Cifar100_Original_DeepFool_adv.pt samples=10000 elapsed=5053.43s
+[INFO] VGG16 (Original) Cifar100 – DeepFool: clean 54.88%, adv 3.41%
+[ATTACK][SUMMARY] source=VGG16 kind=Original dataset=Cifar100 attack=DeepFool asr=96.59%
+[INFO] Summary written to adversarial_results_ep200_pre200/summary_VGG16_Cifar100_DeepFool_ALL.csv
+ 
