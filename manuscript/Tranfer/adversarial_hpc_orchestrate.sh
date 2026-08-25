@@ -17,6 +17,9 @@ set -o pipefail
 #   ./adversarial_hpc_orchestrate.sh generate adv_single InceptionNet Cifar10 PGD Finetuned
 #   ./adversarial_hpc_orchestrate.sh analyze adversarial_results
 #   ./adversarial_hpc_orchestrate.sh plot adversarial_results
+#   ./adversarial_hpc_orchestrate.sh compare adversarial_results
+#   ./adversarial_hpc_orchestrate.sh compute_tradeoff adversarial_results
+#   ./adversarial_hpc_orchestrate.sh correlations adversarial_results
 #
 
 if [ "$#" -lt 1 ]; then
@@ -29,7 +32,10 @@ if [ "$#" -lt 1 ]; then
     echo "  gradient_sim  - Exp 4: pairwise input-gradient cosine similarity (single job)"
     echo "  epsilon_sweep - Exp 7: sweep epsilon values for PGD/FGSM/BIM (single job)"
     echo "  statistics    - Exp 9: paired t-test / Kruskal-Wallis across run configs (single job)"
-    echo "  cka           - Exp 10: layer-wise CKA feature similarity (single job)"
+    echo "  cka              - Exp 10: layer-wise CKA feature similarity (single job)"
+    echo "  compare          - Build collapsed-vs-original explainability/profile tables"
+    echo "  compute_tradeoff - Compute-cost tradeoff tables + figures"
+    echo "  correlations     - Correlation statistics + figures"
     echo ""
     echo "Optional source filters (for generate/analyze):"
     echo "  model   = VGG16 | RegNetX_400MF | InceptionNet | MobileNet | XceptionNet | ConvNeXt"
@@ -47,6 +53,9 @@ if [ "$#" -lt 1 ]; then
     echo "  $0 epsilon_sweep adversarial_results_ep100_pre300"
     echo "  $0 statistics adversarial_results_ep100_pre300"
     echo "  $0 cka adversarial_results_ep100_pre300"
+    echo "  $0 compare adversarial_results_ep100_pre300"
+    echo "  $0 compute_tradeoff adversarial_results_ep100_pre300"
+    echo "  $0 correlations adversarial_results_ep100_pre300"
     exit 1
 fi
 
@@ -139,6 +148,9 @@ log "  - gradient_sim:  adversarial_gradient_sim_run.txt"
 log "  - epsilon_sweep: adversarial_epsilon_sweep_run.txt"
 log "  - statistics:    adversarial_statistics_run.txt"
 log "  - cka:           adversarial_cka_run.txt"
+log "  - compare:       adversarial_compare_run.txt"
+log "  - compute_tradeoff: adversarial_compute_tradeoff_run.txt"
+log "  - correlations:  adversarial_correlations_run.txt"
 
 submit_and_log() {
     local cmd="$1"
@@ -244,10 +256,34 @@ case "$PHASE" in
         log "[SUCCESS] CKA feature similarity job submitted"
         log "Output: cka_similarity.csv, cka_mean_matrix_*.csv, cka_mean_heatmap_*.png, cka_layerwise_*.png"
         ;;
+
+    compare)
+        log "[PHASE: COMPARE] Submitting collapsed-vs-original comparison table job..."
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"compare\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        submit_and_log "$cmd" "compare" || fail "Failed to submit compare phase"
+        log "[SUCCESS] Compare job submitted"
+        log "Output: collapsed_vs_original_explainability_*.csv, accuracy_parameter_comparison.csv"
+        ;;
+
+    compute_tradeoff)
+        log "[PHASE: COMPUTE_TRADEOFF] Submitting compute-cost tradeoff job..."
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"compute_tradeoff\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        submit_and_log "$cmd" "compute_tradeoff" || fail "Failed to submit compute_tradeoff phase"
+        log "[SUCCESS] Compute tradeoff job submitted"
+        log "Output: compute_profile.csv, tradeoff_summary.csv, figure1-4 tradeoff PNGs"
+        ;;
+
+    correlations)
+        log "[PHASE: CORRELATIONS] Submitting correlation analysis job..."
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"correlations\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        submit_and_log "$cmd" "correlations" || fail "Failed to submit correlations phase"
+        log "[SUCCESS] Correlation analysis job submitted"
+        log "Output: correlation_summary.csv, partial_correlation_summary.csv, figure5-8 PNGs"
+        ;;
     
     *)
         log "ERROR: Unknown phase '$PHASE'"
-        log "Valid phases: generate, analyze, plot, gradient_sim, epsilon_sweep, statistics, cka"
+        log "Valid phases: generate, analyze, plot, compare, gradient_sim, epsilon_sweep, statistics, cka, compute_tradeoff, correlations"
         exit 1
         ;;
 esac

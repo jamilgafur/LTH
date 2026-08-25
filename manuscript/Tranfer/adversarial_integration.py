@@ -36,7 +36,8 @@ def run_adversarial_analysis_pipeline(
     Args:
         output_dir: Output directory for results.
         use_hpc: If True, submit jobs to HPC cluster using PBS; otherwise run locally.
-        mode: Execution mode ('full', 'generate', 'analyze', 'plot').
+          mode: Execution mode ('full', 'generate', 'analyze', 'plot', 'compare',
+              'compute_tradeoff', 'correlations').
         model_filter: Filter by model name (e.g., 'VGG16'). None means all.
         dataset_filter: Filter by dataset name (e.g., 'Cifar10'). None means all.
         attack_filter: Filter by attack name (e.g., 'PGD'). None means all.

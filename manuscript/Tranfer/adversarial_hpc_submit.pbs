@@ -4,7 +4,7 @@
 #PBS -l ngpus=1
 #PBS -o logs/adversarial_%J.log
 #PBS -e logs/adversarial_%J.err
-#PBS -v MODEL,DATASET,ATTACK,KIND,PHASE,OUTPUT_DIR
+#PBS -v MODEL,DATASET,ATTACK,KIND,PHASE,OUTPUT_DIR,EPSILON_ATTACKS,RESULT_DIRS,CKA_MAX_SAMPLES,CKA_MAX_LAYERS
 
 set -e
 
@@ -72,6 +72,12 @@ elif [ "$PHASE" = "analyze" ]; then
     if [ "$DATASET" != "ALL" ]; then CMD+=(--dataset "$DATASET"); fi
     if [ "$ATTACK" != "ALL" ]; then CMD+=(--attack "$ATTACK"); fi
     if [ "$KIND" != "ALL" ]; then CMD+=(--kind "$KIND"); fi
+elif [ "$PHASE" = "plot" ]; then
+    # plot phase consumes existing CSV outputs.
+    :
+elif [ "$PHASE" = "compare" ]; then
+    # compare phase builds explainability/profile tables from summary.csv.
+    :
 elif [ "$PHASE" = "gradient_sim" ]; then
     if [ "$MODEL" != "ALL" ]; then CMD+=(--model "$MODEL"); fi
     if [ "$DATASET" != "ALL" ]; then CMD+=(--dataset "$DATASET"); fi
@@ -97,6 +103,13 @@ elif [ "$PHASE" = "cka" ]; then
     if [ "$KIND" != "ALL" ]; then CMD+=(--kind "$KIND"); fi
     if [ -n "${CKA_MAX_SAMPLES:-}" ]; then CMD+=(--cka-max-samples "$CKA_MAX_SAMPLES"); fi
     if [ -n "${CKA_MAX_LAYERS:-}" ]; then CMD+=(--cka-max-layers "$CKA_MAX_LAYERS"); fi
+elif [ "$PHASE" = "compute_tradeoff" ]; then
+    if [ "$MODEL" != "ALL" ]; then CMD+=(--model "$MODEL"); fi
+    if [ "$DATASET" != "ALL" ]; then CMD+=(--dataset "$DATASET"); fi
+    if [ "$KIND" != "ALL" ]; then CMD+=(--kind "$KIND"); fi
+elif [ "$PHASE" = "correlations" ]; then
+    # Correlations are derived from generated CSV outputs.
+    :
 fi
 
 echo "Executing: ${CMD[*]}"

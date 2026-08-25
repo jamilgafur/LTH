@@ -6,10 +6,13 @@
 # Examples:
 #   bash temp3.sh 100 300
 #   bash temp3.sh 100 300 generate InceptionNet Cifar10 PGD Finetuned
+#   bash temp3.sh 100 300 compare
 #   bash temp3.sh 100 300 gradient_sim
 #   bash temp3.sh 100 300 epsilon_sweep
 #   bash temp3.sh 100 300 statistics
 #   bash temp3.sh 100 300 cka
+#   bash temp3.sh 100 300 compute_tradeoff
+#   bash temp3.sh 100 300 correlations
 
 set -euo pipefail
 
@@ -21,6 +24,9 @@ if [ "$#" -lt 2 ] || [ "$#" -gt 7 ]; then
     echo "Example (epsilon sweep):   $0 100 300 epsilon_sweep"
     echo "Example (statistics):      $0 100 300 statistics"
     echo "Example (cka):             $0 100 300 cka"
+    echo "Example (compare):         $0 100 300 compare"
+    echo "Example (compute tradeoff):$0 100 300 compute_tradeoff"
+    echo "Example (correlations):    $0 100 300 correlations"
     exit 1
 fi
 
