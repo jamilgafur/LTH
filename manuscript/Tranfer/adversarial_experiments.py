@@ -50,23 +50,19 @@ class AdvancedExperimentSuite:
 
             out_t = model_t(images)
             loss_t = torch.nn.functional.cross_entropy(out_t, labels)
-                            "source_model": src_name,
-                            "source_kind": src_kind,
-                            "source_label": self.model_kind_label(src_name, src_kind),
-                            "target_model": tgt_name,
-                            "target_kind": tgt_kind,
-                            "target_label": self.model_kind_label(tgt_name, tgt_kind),
-                            "dataset": dataset_name,
-                            "gradient_similarity": sim,
-                return CKASuite.run(
-                    output_dir=output_dir,
-                    model_cache=model_cache,
-                    loader_cache=loader_cache,
-                    model_kind_label=self.model_kind_label,
-                    classify_transfer_pair=self.classify_transfer_pair,
-                    max_samples=max_samples,
-                    max_layers=max_layers,
-                )
+            # Compute gradient for target model
+            grad_t = torch.autograd.grad(loss_t, images, create_graph=False)[0]
+
+            # Flatten gradients and compute cosine similarity per sample
+            g_s = grad_s.view(grad_s.size(0), -1)
+            g_t = grad_t.view(grad_t.size(0), -1)
+            cos = torch.nn.functional.cosine_similarity(g_s, g_t, dim=1)
+            # Record mean similarity for this batch
+            similarities.append(cos.mean().item())
+            count += images.size(0)
+
+        # Return overall average similarity
+        return float(np.mean(similarities)) if similarities else 0.0
         df = pd.DataFrame(records)
         csv_path = os.path.join(output_dir, "epsilon_sensitivity.csv")
         df.to_csv(csv_path, index=False)
