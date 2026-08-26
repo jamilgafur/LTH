@@ -1,122 +1,135 @@
-"""Advanced adversarial experiment suite."""
-
-from __future__ import annotations
-
-import os
-from typing import Callable
-
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-import seaborn as sns
-import torch
-import torch.nn as nn
-from adversarial_cka import CKASuite
-EPSILON_VALUES = [1 / 255, 2 / 255, 4 / 255, 8 / 255, 16 / 255]
-
-class AdvancedExperimentSuite:
-    """Collection of optional experiment phases (Exp 4/7/9/10)."""
-    def __init__(
+    def cka_similarity_phase(
         self,
-        instantiate_attack: Callable,
-        model_kind_label: Callable,
-        classify_transfer_pair: Callable,
-    ) -> None:
-        self.instantiate_attack = instantiate_attack
-        self.model_kind_label = model_kind_label
-        self.classify_transfer_pair = classify_transfer_pair
-    def compute_gradient_similarity(
-        self,
-        model_s: nn.Module,
-        model_t: nn.Module,
-        dataloader,
-        device: str,
-        n_samples: int = 1000,
-    ) -> float:
-        model_s.eval()
-        model_t.eval()
-        similarities: list[float] = []
-        count = 0
+        output_dir: str,
+        model_cache: dict,
+        loader_cache: dict,
+        max_samples: int = 512,
+        max_layers: int = 8,
+    ) -> list[dict]:
+        """Compute CKA similarity between model pairs.
 
-        for images, labels in dataloader:
-            if count >= n_samples:
-                break
-            images, labels = images.to(device), labels.to(device)
-            images = images.requires_grad_(True)
+        The original implementation assumed that at least one record would be
+        generated. When no records are produced (e.g., missing data or a filter
+        that excludes all pairs) ``pandas`` raises a ``KeyError`` when we try
+        to access ``df["dataset"]``.  We now guard against an empty DataFrame
+        and return early with a helpful warning.
+        """
+        os.makedirs(output_dir, exist_ok=True)
+        records: list[dict] = []
+        device = "cuda" if torch.cuda.is_available() else "cpu"
 
-            out_s = model_s(images)
-            loss_s = torch.nn.functional.cross_entropy(out_s, labels)
-            grad_s = torch.autograd.grad(loss_s, images, create_graph=False)[0]
+        pairs = list(model_cache.keys())
 
-            out_t = model_t(images)
-            loss_t = torch.nn.functional.cross_entropy(out_t, labels)
-            # Compute gradient for target model
-            grad_t = torch.autograd.grad(loss_t, images, create_graph=False)[0]
+        for dataset_name in set(k[1] for k in pairs):
+            if dataset_name not in loader_cache:
+                continue
+            _, test_loader = loader_cache[dataset_name]
+            dataset_pairs = [k for k in pairs if k[1] == dataset_name]
 
-            # Flatten gradients and compute cosine similarity per sample
-            g_s = grad_s.view(grad_s.size(0), -1)
-            g_t = grad_t.view(grad_t.size(0), -1)
-            cos = torch.nn.functional.cosine_similarity(g_s, g_t, dim=1)
-            # Record mean similarity for this batch
-            similarities.append(cos.mean().item())
-            count += images.size(0)
+            for src_key in dataset_pairs:
+                src_name, _, src_kind = src_key
+                src_model = model_cache[src_key]
+                src_base = src_model.module if hasattr(src_model, "module") else src_model
+                all_layers = self._candidate_layers(src_base)
+                if not all_layers:
+                    continue
+                step = max(1, len(all_layers) // max_layers)
+                probe_layers = all_layers[::step][:max_layers]
 
-        # Return overall average similarity
-        return float(np.mean(similarities)) if similarities else 0.0
+                for tgt_key in dataset_pairs:
+                    tgt_name, _, tgt_kind = tgt_key
+                    tgt_model = model_cache[tgt_key]
+                    tgt_base = tgt_model.module if hasattr(tgt_model, "module") else tgt_model
+                    tgt_layers = self._candidate_layers(tgt_base)
+
+                    for layer_name in probe_layers:
+                        tgt_layer = layer_name if layer_name in tgt_layers else None
+                        if tgt_layer is None and layer_name in all_layers:
+                            idx = all_layers.index(layer_name)
+                            if idx < len(tgt_layers):
+                                tgt_layer = tgt_layers[idx]
+                        if tgt_layer is None:
+                            continue
+
+                        X = self._extract_representations(src_model, test_loader, layer_name, device, max_samples)
+                        Y = self._extract_representations(tgt_model, test_loader, tgt_layer, device, max_samples)
+                        if X is None or Y is None or X.size(0) < 4 or Y.size(0) < 4:
+                            continue
+
+                        n = min(X.size(0), Y.size(0))
+                        try:
+                            cka_val = self._compute_linear_cka(X[:n].float(), Y[:n].float())
+                        except Exception:
+                            cka_val = float("nan")
+
+                        records.append(
+                            {
+                                "source_model": src_name,
+                                "source_kind": src_kind,
+                                "source_label": self.model_kind_label(src_name, src_kind),
+                                "target_model": tgt_name,
+                                "target_kind": tgt_kind,
+                                "target_label": self.model_kind_label(tgt_name, tgt_kind),
+                                "dataset": dataset_name,
+                                "layer": layer_name,
+                                "cka": cka_val,
+                                "same_architecture": src_name == tgt_name,
+                                "same_kind": src_kind == tgt_kind,
+                                "pair_type": self.classify_transfer_pair(src_name, src_kind, tgt_name, tgt_kind),
+                            }
+                        )
+
         df = pd.DataFrame(records)
-        csv_path = os.path.join(output_dir, "epsilon_sensitivity.csv")
+        csv_path = os.path.join(output_dir, "cka_similarity.csv")
         df.to_csv(csv_path, index=False)
-        print(f"[EXP7] Saved: {csv_path}")
 
-        delta_rows: list[dict] = []
-        for (model_name, dataset_name, attack_name, eps), grp in df.groupby(
-            ["model", "dataset", "attack", "epsilon"]
-        ):
-            orig = grp[grp["kind"] == "Original"]["attack_success_rate"]
-            fine = grp[grp["kind"] == "Finetuned"]["attack_success_rate"]
-            if not orig.empty and not fine.empty:
-                delta_rows.append(
-                    {
-                        "model": model_name,
-                        "dataset": dataset_name,
-                        "attack": attack_name,
-                        "epsilon": eps,
-                        "epsilon_255": round(eps * 255, 2),
-                        "asr_original": float(orig.mean()),
-                        "asr_finetuned": float(fine.mean()),
-                        "delta_asr": float(fine.mean()) - float(orig.mean()),
-                    }
-                )
-
-        if delta_rows:
-            delta_df = pd.DataFrame(delta_rows)
-            delta_csv = os.path.join(output_dir, "epsilon_sensitivity_delta.csv")
-            delta_df.to_csv(delta_csv, index=False)
+        # Guard against empty results – the downstream code expects the columns to exist.
+        if df.empty:
+            print("[WARN] CKA phase produced no records; skipping visualisation.")
+            return records
 
         for dataset_name in df["dataset"].unique():
-            for attack_name in df["attack"].unique():
-                sub = df[(df["dataset"] == dataset_name) & (df["attack"] == attack_name)]
+            for src_label in df["source_label"].unique():
+                sub = df[(df["dataset"] == dataset_name) & (df["source_label"] == src_label)]
                 if sub.empty:
                     continue
-                plt.figure(figsize=(9, 6))
-                for label, grp in sub.groupby("model_label"):
-                    grp_sorted = grp.sort_values("epsilon_255")
-                    plt.plot(
-                        grp_sorted["epsilon_255"],
-                        grp_sorted["attack_success_rate"],
-                        marker="o",
-                        label=label,
-                    )
-                plt.xlabel("Perturbation Budget epsilon (x1/255)", fontweight="bold")
-                plt.ylabel("Attack Success Rate", fontweight="bold")
-                plt.title(f"Epsilon Sensitivity - {dataset_name} ({attack_name})", fontsize=13, fontweight="bold")
+                plt.figure(figsize=(11, 5))
+                for tgt_label, grp in sub.groupby("target_label"):
+                    plt.plot(range(len(grp)), grp["cka"].values, marker="o", label=f"-> {tgt_label}")
+                plt.xlabel("Layer Index (shallow -> deep)", fontweight="bold")
+                plt.ylabel("CKA", fontweight="bold")
+                plt.ylim(0, 1.05)
+                plt.title(f"Layer-wise CKA from {src_label} - {dataset_name}", fontsize=12, fontweight="bold")
                 plt.legend(fontsize=7, ncol=2)
                 plt.tight_layout()
-                plt.savefig(
-                    os.path.join(output_dir, f"epsilon_sensitivity_{dataset_name}_{attack_name}.png"),
-                    dpi=300,
-                )
+                safe_label = src_label.replace(" ", "_").replace("/", "_")
+                plt.savefig(os.path.join(output_dir, f"cka_layerwise_{dataset_name}_{safe_label}.png"), dpi=300)
                 plt.close()
+
+        if not df.empty:
+                for dataset_name in df["dataset"].unique():
+                    sub = df[df["dataset"] == dataset_name]
+                    mean_cka = sub.groupby(["source_label", "target_label"])["cka"].mean().reset_index()
+                    pivot = mean_cka.pivot(index="source_label", columns="target_label", values="cka")
+                plt.figure(figsize=(12, 9))
+                sns.heatmap(
+                    pivot,
+                    annot=True,
+                    fmt=".3f",
+                    cmap="YlOrRd",
+                    vmin=0,
+                    vmax=1,
+                    cbar_kws={"label": "Mean CKA (all layers)"},
+                )
+                plt.title(f"Mean Layer-wise CKA - {dataset_name}", fontsize=14, fontweight="bold")
+                plt.xlabel("Target Model Variant", fontweight="bold")
+                plt.ylabel("Source Model Variant", fontweight="bold")
+                plt.tight_layout()
+                plt.savefig(os.path.join(output_dir, f"cka_mean_heatmap_{dataset_name}.png"), dpi=300)
+                plt.close()
+                pivot.to_csv(os.path.join(output_dir, f"cka_mean_matrix_{dataset_name}.csv"))
+
+        return records
         return records
     def _load_multi_run_summaries(self, result_dirs: list[str]) -> pd.DataFrame:
         frames = []
