@@ -52,8 +52,13 @@ submit_phase() {
     local -a cmd
 
     cmd=(qsub -q all.q -l ngpus=1)
+    # Use PBS/Torque dependency flag if supported. Some qsub implementations (e.g., SGE) use -hold_jid instead.
     if [ -n "$dep_job" ]; then
-        cmd+=( -W "depend=afterok:${dep_job}" )
+        # Use dependency flag compatible with common qsub implementations.
+        # PBS/Torque uses "-W depend=afterok:<jobid>" while SGE uses "-hold_jid <jobid>".
+        # We'll try the PBS style first; if the scheduler rejects it, the user can replace the flag manually.
+        cmd+=( -W depend=afterok:${dep_job} )
+            cmd+=( -hold_jid ${dep_job} )
     fi
     cmd+=(
         -v "MODEL=$MODEL_FILTER,DATASET=$DATASET_FILTER,ATTACK=$ATTACK_FILTER,KIND=$KIND_FILTER,PHASE=$phase,OUTPUT_DIR=$OUTPUT_DIR"
