@@ -161,6 +161,19 @@ def run_pipeline(args) -> None:
         print(f"\n{'='*70}\n[PHASE CORR] Correlation Analysis\n{'='*70}")
         CorrelationSuite.run(args.output_dir)
 
+    if args.mode in ["full", "explainability"]:
+        print(f"\n{'='*70}\n[PHASE EXP11] SHAP Explainability Similarity\n{'='*70}")
+        if args.mode == "explainability" or not model_cache:
+            model_cache, loader_cache = AdversarialCore.rebuild_model_and_loader_cache(args)
+        experiment_suite.explainability_similarity_phase(
+            args.output_dir,
+            model_cache,
+            loader_cache,
+            max_samples=args.shap_max_samples,
+            background_samples=args.shap_background_samples,
+            topk_ratio=args.shap_topk_ratio,
+        )
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Adversarial robustness analysis of pruned models.")
@@ -178,11 +191,12 @@ def build_parser() -> argparse.ArgumentParser:
             "cka",
             "compute_tradeoff",
             "correlations",
+            "explainability",
         ],
         default="full",
         help=(
             "Execution mode: full, generate, analyze, plot, compare, gradient_sim, "
-            "epsilon_sweep, statistics, cka, compute_tradeoff, correlations."
+            "epsilon_sweep, statistics, cka, compute_tradeoff, correlations, explainability."
         ),
     )
     parser.add_argument("--model", type=str, default=None, help="Filter by model name (e.g., VGG16).")
@@ -194,6 +208,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--result-dirs", type=str, nargs="+", default=None)
     parser.add_argument("--cka-max-samples", type=int, default=512)
     parser.add_argument("--cka-max-layers", type=int, default=8)
+    parser.add_argument("--shap-max-samples", type=int, default=64)
+    parser.add_argument("--shap-background-samples", type=int, default=32)
+    parser.add_argument("--shap-topk-ratio", type=float, default=0.05)
     return parser
 
 

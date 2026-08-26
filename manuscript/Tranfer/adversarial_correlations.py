@@ -92,6 +92,7 @@ class CorrelationSuite:
         transfer = CorrelationSuite._read_csv_if_valid(os.path.join(output_dir, "transferability.csv"))
         grad = CorrelationSuite._read_csv_if_valid(os.path.join(output_dir, "gradient_similarity.csv"))
         cka = CorrelationSuite._read_csv_if_valid(os.path.join(output_dir, "cka_similarity.csv"))
+        shap_pairs = CorrelationSuite._read_csv_if_valid(os.path.join(output_dir, "shap_pairwise_similarity.csv"))
         cost = CorrelationSuite._read_csv_if_valid(os.path.join(output_dir, "compute_profile.csv"))
 
         if transfer.empty:
@@ -111,6 +112,24 @@ class CorrelationSuite:
             c2 = cka.groupby(["source_model", "source_kind", "target_model", "target_kind", "dataset"], as_index=False)["cka"].mean()
             base = base.merge(
                 c2,
+                on=["source_model", "source_kind", "target_model", "target_kind", "dataset"],
+                how="left",
+            )
+
+        if not shap_pairs.empty:
+            s2 = shap_pairs.groupby(
+                ["source_model", "source_kind", "target_model", "target_kind", "dataset"],
+                as_index=False,
+            ).agg(
+                shap_cosine_similarity=("cosine_similarity", "mean"),
+                shap_pearson_r=("pearson_r", "mean"),
+                shap_spearman_r=("spearman_r", "mean"),
+                shap_l1_mean_abs_diff=("l1_mean_abs_diff", "mean"),
+                shap_l2_distance=("l2_distance", "mean"),
+                shap_topk_jaccard=("topk_jaccard", "mean"),
+            )
+            base = base.merge(
+                s2,
                 on=["source_model", "source_kind", "target_model", "target_kind", "dataset"],
                 how="left",
             )
@@ -144,6 +163,12 @@ class CorrelationSuite:
             "normalized_transfer_rate",
             "gradient_similarity",
             "cka",
+            "shap_cosine_similarity",
+            "shap_pearson_r",
+            "shap_spearman_r",
+            "shap_l1_mean_abs_diff",
+            "shap_l2_distance",
+            "shap_topk_jaccard",
             "clean_acc",
             "source_asr",
             "source_flops",
@@ -159,8 +184,16 @@ class CorrelationSuite:
             ("transfer_success_rate", "source_flops"),
             ("transfer_success_rate", "source_latency_ms"),
             ("transfer_success_rate", "source_params"),
+            ("transfer_success_rate", "shap_cosine_similarity"),
+            ("transfer_success_rate", "shap_pearson_r"),
+            ("transfer_success_rate", "shap_spearman_r"),
+            ("transfer_success_rate", "shap_topk_jaccard"),
+            ("transfer_success_rate", "shap_l1_mean_abs_diff"),
+            ("transfer_success_rate", "shap_l2_distance"),
             ("normalized_transfer_rate", "gradient_similarity"),
             ("normalized_transfer_rate", "cka"),
+            ("normalized_transfer_rate", "shap_cosine_similarity"),
+            ("normalized_transfer_rate", "shap_topk_jaccard"),
         ]
 
         rows = []
@@ -205,7 +238,8 @@ class CorrelationSuite:
         print(f"[CORR] Saved: {out_path}")
 
         cls._plot_scatter_panels(output_dir, df)
-        cls._plot_matrix(output_dir, df, numeric_cols)
+        available_numeric = [col for col in numeric_cols if col in df.columns]
+        cls._plot_matrix(output_dir, df, available_numeric)
         cls._plot_effect_forest(output_dir, corr_df)
         cls._compute_partial_correlations(output_dir, df)
 
@@ -216,7 +250,11 @@ class CorrelationSuite:
         for y_col, fname, title in [
             ("gradient_similarity", "figure5_transfer_vs_gradient_similarity.png", "Figure 5: Transfer vs Gradient Similarity"),
             ("cka", "figure6_transfer_vs_cka.png", "Figure 6: Transfer vs CKA"),
+            ("shap_cosine_similarity", "figure9_transfer_vs_shap_cosine.png", "Figure 9: Transfer vs SHAP Cosine Similarity"),
+            ("shap_topk_jaccard", "figure10_transfer_vs_shap_topk_jaccard.png", "Figure 10: Transfer vs SHAP Top-k Jaccard"),
         ]:
+            if y_col not in df.columns:
+                continue
             sub = df[["transfer_success_rate", y_col, "source_attack"]].dropna()
             if sub.empty:
                 continue
@@ -237,6 +275,8 @@ class CorrelationSuite:
 
     @staticmethod
     def _plot_matrix(output_dir: str, df: pd.DataFrame, numeric_cols: list[str]) -> None:
+        if not numeric_cols:
+            return
         sub = df[numeric_cols].dropna()
         if sub.shape[0] < 4:
             return
@@ -269,7 +309,16 @@ class CorrelationSuite:
     def _compute_partial_correlations(cls, output_dir: str, df: pd.DataFrame) -> None:
         # Partial corr of transfer_success_rate vs similarity metrics controlling for clean_acc + params
         rows = []
-        for metric in ["gradient_similarity", "cka"]:
+        for metric in [
+            "gradient_similarity",
+            "cka",
+            "shap_cosine_similarity",
+            "shap_pearson_r",
+            "shap_spearman_r",
+            "shap_topk_jaccard",
+        ]:
+            if metric not in df.columns:
+                continue
             sub = df[["transfer_success_rate", metric, "clean_acc", "source_params"]].dropna()
             if len(sub) < 10:
                 continue

@@ -8,6 +8,7 @@ from typing import Callable
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import torch
 import torch.nn as nn
 
@@ -18,7 +19,7 @@ EPSILON_VALUES = [1 / 255, 2 / 255, 4 / 255, 8 / 255, 16 / 255]
 
 
 class AdvancedExperimentSuite:
-    """Collection of optional experiment phases (Exp 4/7/9/10)."""
+    """Collection of optional experiment phases (Exp 4/7/9/10/11)."""
 
     def __init__(
         self,
@@ -367,3 +368,320 @@ class AdvancedExperimentSuite:
         if not records:
             print("[WARN] CKA phase produced no records; generated cka_similarity.csv may be empty.")
         return records
+
+    @staticmethod
+    def _extract_loader_images(loader, max_samples: int, device: str) -> torch.Tensor | None:
+        chunks = []
+        total = 0
+        for images, _labels in loader:
+            chunks.append(images.to(device))
+            total += images.size(0)
+            if total >= max_samples:
+                break
+        if not chunks:
+            return None
+        return torch.cat(chunks, dim=0)[:max_samples]
+
+    @staticmethod
+    def _safe_model_call(model: nn.Module, batch: torch.Tensor) -> torch.Tensor:
+        with torch.no_grad():
+            out = model(batch)
+        return out if isinstance(out, torch.Tensor) else out[0]
+
+    @staticmethod
+    def _safe_spearman(x: np.ndarray, y: np.ndarray) -> float:
+        if x.size < 2 or y.size < 2:
+            return float("nan")
+        rx = pd.Series(x).rank().to_numpy(dtype=float)
+        ry = pd.Series(y).rank().to_numpy(dtype=float)
+        return float(np.corrcoef(rx, ry)[0, 1])
+
+    @staticmethod
+    def _feature_vector_metrics(a: np.ndarray, b: np.ndarray, topk_ratio: float = 0.05) -> dict:
+        a = a.astype(float)
+        b = b.astype(float)
+
+        denom = float(np.linalg.norm(a) * np.linalg.norm(b))
+        cosine = float(np.dot(a, b) / denom) if denom > 0 else float("nan")
+        pearson = float(np.corrcoef(a, b)[0, 1]) if a.size >= 2 else float("nan")
+        spearman = AdvancedExperimentSuite._safe_spearman(a, b)
+
+        diff = a - b
+        l1_mean = float(np.mean(np.abs(diff)))
+        l2 = float(np.linalg.norm(diff))
+
+        k = int(max(1, round(topk_ratio * a.size)))
+        a_top = set(np.argpartition(np.abs(a), -k)[-k:])
+        b_top = set(np.argpartition(np.abs(b), -k)[-k:])
+        topk_intersection = len(a_top & b_top)
+        topk_union = len(a_top | b_top)
+        topk_jaccard = float(topk_intersection / topk_union) if topk_union > 0 else float("nan")
+
+        return {
+            "cosine_similarity": cosine,
+            "pearson_r": pearson,
+            "spearman_r": spearman,
+            "l1_mean_abs_diff": l1_mean,
+            "l2_distance": l2,
+            "topk_ratio": float(topk_ratio),
+            "topk_jaccard": topk_jaccard,
+            "topk_intersection": int(topk_intersection),
+            "topk_union": int(topk_union),
+        }
+
+    @staticmethod
+    def _select_class_shap(shap_values, preds: np.ndarray) -> np.ndarray | None:
+        if isinstance(shap_values, list):
+            arr = np.stack([np.asarray(v) for v in shap_values], axis=1)
+            if arr.ndim < 3:
+                return None
+            idx = np.arange(arr.shape[0])
+            clipped = np.clip(preds, 0, arr.shape[1] - 1)
+            return arr[idx, clipped]
+
+        arr = np.asarray(shap_values)
+        if arr.ndim >= 3 and arr.shape[0] == preds.shape[0]:
+            # Some SHAP backends already return per-sample selected outputs.
+            return arr
+        if arr.ndim >= 3 and arr.shape[-1] > 1 and arr.shape[0] == preds.shape[0]:
+            idx = np.arange(arr.shape[0])
+            clipped = np.clip(preds, 0, arr.shape[-1] - 1)
+            return arr[idx, ..., clipped]
+        if arr.ndim >= 4 and arr.shape[1] == preds.shape[0]:
+            # Shape [num_classes, N, ...]
+            arr = np.moveaxis(arr, 0, 1)
+            idx = np.arange(arr.shape[0])
+            clipped = np.clip(preds, 0, arr.shape[1] - 1)
+            return arr[idx, clipped]
+        return None
+
+    def _compute_shap_reference_vector(
+        self,
+        model: nn.Module,
+        loader,
+        device: str,
+        max_samples: int,
+        background_samples: int,
+    ) -> tuple[np.ndarray | None, list[dict]]:
+        try:
+            import shap
+        except Exception:
+            print("[WARN] SHAP package not available. Install via: pip install shap")
+            return None, []
+
+        eval_images = self._extract_loader_images(loader, max_samples=max_samples, device=device)
+        if eval_images is None or eval_images.size(0) < 2:
+            return None, []
+
+        bg_n = int(max(2, min(background_samples, eval_images.size(0))))
+        background = eval_images[:bg_n]
+        eval_batch = eval_images[:max_samples]
+
+        base_model = model.module if hasattr(model, "module") else model
+        base_model.eval()
+
+        explainer = None
+        for explainer_cls in (shap.DeepExplainer, shap.GradientExplainer):
+            try:
+                explainer = explainer_cls(base_model, background)
+                break
+            except Exception:
+                explainer = None
+        if explainer is None:
+            print("[WARN] Could not initialize SHAP explainer for a model; skipping.")
+            return None, []
+
+        try:
+            logits = self._safe_model_call(base_model, eval_batch)
+            preds = logits.argmax(dim=1).detach().cpu().numpy()
+            shap_values = explainer.shap_values(eval_batch)
+        except Exception as exc:
+            print(f"[WARN] SHAP attribution failed: {exc}")
+            return None, []
+
+        selected = self._select_class_shap(shap_values, preds)
+        if selected is None:
+            print("[WARN] Unsupported SHAP output format for this model; skipping.")
+            return None, []
+
+        sample_vectors = selected.reshape(selected.shape[0], -1)
+        ref_vector = np.mean(np.abs(sample_vectors), axis=0)
+
+        sample_stats: list[dict] = []
+        for sample_idx in range(sample_vectors.shape[0]):
+            sv = sample_vectors[sample_idx]
+            sample_stats.append(
+                {
+                    "sample_index": int(sample_idx),
+                    "pred_class": int(preds[sample_idx]),
+                    "attr_mean": float(np.mean(sv)),
+                    "attr_mean_abs": float(np.mean(np.abs(sv))),
+                    "attr_l1": float(np.sum(np.abs(sv))),
+                    "attr_l2": float(np.linalg.norm(sv)),
+                }
+            )
+
+        return ref_vector, sample_stats
+
+    def explainability_similarity_phase(
+        self,
+        output_dir: str,
+        model_cache: dict,
+        loader_cache: dict,
+        max_samples: int = 64,
+        background_samples: int = 32,
+        topk_ratio: float = 0.05,
+    ) -> list[dict]:
+        """Compute SHAP-based explainability similarity across model pairs on clean data."""
+        os.makedirs(output_dir, exist_ok=True)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        vector_rows: list[dict] = []
+        sample_rows: list[dict] = []
+        ref_vectors: dict[tuple[str, str, str], np.ndarray] = {}
+
+        for key, model in model_cache.items():
+            model_name, dataset_name, kind = key
+            if dataset_name not in loader_cache:
+                continue
+            _, test_loader = loader_cache[dataset_name]
+
+            ref_vec, stats = self._compute_shap_reference_vector(
+                model=model,
+                loader=test_loader,
+                device=device,
+                max_samples=max_samples,
+                background_samples=background_samples,
+            )
+            if ref_vec is None:
+                continue
+
+            ref_vectors[key] = ref_vec
+            vector_rows.append(
+                {
+                    "model": model_name,
+                    "dataset": dataset_name,
+                    "kind": kind,
+                    "model_label": self.model_kind_label(model_name, kind),
+                    "feature_dim": int(ref_vec.size),
+                    **{f"feature_{i}": float(v) for i, v in enumerate(ref_vec)},
+                }
+            )
+            for row in stats:
+                sample_rows.append(
+                    {
+                        "model": model_name,
+                        "dataset": dataset_name,
+                        "kind": kind,
+                        "model_label": self.model_kind_label(model_name, kind),
+                        **row,
+                    }
+                )
+
+        vectors_df = pd.DataFrame(vector_rows)
+        vectors_path = os.path.join(output_dir, "shap_reference_vectors.csv")
+        vectors_df.to_csv(vectors_path, index=False)
+        print(f"[EXP11] Saved: {vectors_path}")
+
+        sample_df = pd.DataFrame(sample_rows)
+        sample_path = os.path.join(output_dir, "shap_sample_stats.csv")
+        sample_df.to_csv(sample_path, index=False)
+        print(f"[EXP11] Saved: {sample_path}")
+
+        if not ref_vectors:
+            print("[WARN] EXP11: no SHAP vectors generated; skipping similarity plots.")
+            empty_pair = pd.DataFrame()
+            empty_pair.to_csv(os.path.join(output_dir, "shap_pairwise_similarity.csv"), index=False)
+            return []
+
+        pair_rows: list[dict] = []
+        keys = list(ref_vectors.keys())
+        for src_key in keys:
+            src_model, src_dataset, src_kind = src_key
+            src_vec = ref_vectors[src_key]
+            for tgt_key in keys:
+                tgt_model, tgt_dataset, tgt_kind = tgt_key
+                if src_dataset != tgt_dataset:
+                    continue
+                tgt_vec = ref_vectors[tgt_key]
+
+                metrics = self._feature_vector_metrics(src_vec, tgt_vec, topk_ratio=topk_ratio)
+                pair_rows.append(
+                    {
+                        "source_model": src_model,
+                        "source_kind": src_kind,
+                        "source_label": self.model_kind_label(src_model, src_kind),
+                        "target_model": tgt_model,
+                        "target_kind": tgt_kind,
+                        "target_label": self.model_kind_label(tgt_model, tgt_kind),
+                        "dataset": src_dataset,
+                        "same_architecture": src_model == tgt_model,
+                        "same_kind": src_kind == tgt_kind,
+                        "pair_type": self.classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
+                        **metrics,
+                    }
+                )
+
+        pair_df = pd.DataFrame(pair_rows)
+        pair_path = os.path.join(output_dir, "shap_pairwise_similarity.csv")
+        pair_df.to_csv(pair_path, index=False)
+        print(f"[EXP11] Saved: {pair_path}")
+
+        collapsed_vs_original = pair_df[
+            (pair_df["same_architecture"])
+            & (pair_df["source_kind"] != pair_df["target_kind"])
+        ].copy()
+        collapsed_vs_original_path = os.path.join(output_dir, "shap_original_vs_collapsed_similarity.csv")
+        collapsed_vs_original.to_csv(collapsed_vs_original_path, index=False)
+        print(f"[EXP11] Saved: {collapsed_vs_original_path}")
+
+        for dataset_name in pair_df["dataset"].unique():
+            sub = pair_df[pair_df["dataset"] == dataset_name]
+            for metric, fname in [
+                ("cosine_similarity", f"shap_cosine_heatmap_{dataset_name}.png"),
+                ("pearson_r", f"shap_pearson_heatmap_{dataset_name}.png"),
+                ("spearman_r", f"shap_spearman_heatmap_{dataset_name}.png"),
+            ]:
+                mat = sub.pivot(index="source_label", columns="target_label", values=metric)
+                if mat.empty:
+                    continue
+                plt.figure(figsize=(12, 9))
+                sns.heatmap(mat, annot=True, fmt=".3f", cmap="vlag", center=0)
+                plt.title(f"SHAP {metric} Similarity - {dataset_name}", fontweight="bold")
+                plt.xlabel("Target Model Variant", fontweight="bold")
+                plt.ylabel("Source Model Variant", fontweight="bold")
+                plt.tight_layout()
+                plt.savefig(os.path.join(output_dir, fname), dpi=300)
+                plt.close()
+
+        if not collapsed_vs_original.empty:
+            cv = (
+                collapsed_vs_original.groupby(["dataset", "source_model"], as_index=False)
+                .agg(
+                    cosine_similarity=("cosine_similarity", "mean"),
+                    pearson_r=("pearson_r", "mean"),
+                    spearman_r=("spearman_r", "mean"),
+                    l1_mean_abs_diff=("l1_mean_abs_diff", "mean"),
+                    l2_distance=("l2_distance", "mean"),
+                    topk_jaccard=("topk_jaccard", "mean"),
+                )
+            )
+            cv.to_csv(os.path.join(output_dir, "shap_original_vs_collapsed_summary.csv"), index=False)
+
+            melt = cv.melt(
+                id_vars=["dataset", "source_model"],
+                value_vars=["cosine_similarity", "pearson_r", "spearman_r", "topk_jaccard"],
+                var_name="metric",
+                value_name="value",
+            )
+            plt.figure(figsize=(12, 6))
+            sns.barplot(data=melt, x="source_model", y="value", hue="metric", errorbar=None)
+            plt.title("Original vs Collapsed SHAP Similarity Metrics", fontweight="bold")
+            plt.xlabel("Model Architecture", fontweight="bold")
+            plt.ylabel("Similarity", fontweight="bold")
+            plt.xticks(rotation=25, ha="right")
+            plt.tight_layout()
+            plt.savefig(os.path.join(output_dir, "shap_original_vs_collapsed_similarity_metrics.png"), dpi=300)
+            plt.close()
+
+        return pair_rows
