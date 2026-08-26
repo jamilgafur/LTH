@@ -11,19 +11,22 @@
 
 set -euo pipefail
 
-if [ "$#" -lt 3 ] || [ "$#" -gt 9 ]; then
-    echo "Usage: $0 <discovery_epochs> <pretrain_epochs> <phase> [model] [dataset] [attack] [kind] [depend_jobid]"
-    echo "Example (plot):         $0 100 300 plot"
-    echo "Example (compare):      $0 100 300 compare"
-    echo "Example (cost):         $0 100 300 compute_tradeoff"
-    echo "Example (corr):         $0 100 300 correlations"
-    echo "Example (with dep):     $0 100 300 plot ALL ALL ALL ALL 123456.server"
+# Allow the <phase> argument to be optional – default to "full" (run all phases)
+if [ "$#" -lt 2 ] || [ "$#" -gt 9 ]; then
+    echo "Usage: $0 <discovery_epochs> <pretrain_epochs> [phase] [model] [dataset] [attack] [kind] [depend_jobid]"
+    echo "  phase defaults to 'full' (run the complete pipeline)"
+    echo "Examples:"
+    echo "  $0 100 300               # runs full pipeline"
+    echo "  $0 100 300 plot          # runs only the plot phase"
+    echo "  $0 100 300 compute_tradeoff ALL Cifar10 ALL ALL"
+    echo "  $0 100 300 correlations ALL ALL ALL ALL 123456.server"
     exit 1
 fi
 
 EPOCHS=$1
 PRETRAIN=$2
-PHASE=$3
+# If the third argument is missing, default to "full"
+PHASE=${3:-full}
 MODEL_FILTER=${4:-ALL}
 DATASET_FILTER=${5:-ALL}
 ATTACK_FILTER=${6:-ALL}
@@ -56,11 +59,11 @@ fi
 echo "===================================================================="
 
 case "$PHASE" in
-    analyze|plot|compare|gradient_sim|epsilon_sweep|statistics|cka|compute_tradeoff|correlations)
+    full|analyze|plot|compare|gradient_sim|epsilon_sweep|statistics|cka|compute_tradeoff|correlations)
         ;;
     *)
         echo "[ERROR] Unsupported phase: $PHASE"
-        echo "Valid phases: analyze, plot, compare, gradient_sim, epsilon_sweep, statistics, cka, compute_tradeoff, correlations"
+        echo "Valid phases: full, analyze, plot, compare, gradient_sim, epsilon_sweep, statistics, cka, compute_tradeoff, correlations"
         exit 1
         ;;
 esac
