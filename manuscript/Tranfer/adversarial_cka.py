@@ -147,6 +147,10 @@ class CKASuite:
         df = pd.DataFrame(records)
         df.to_csv(os.path.join(output_dir, "cka_similarity.csv"), index=False)
 
+        if df.empty:
+            print("[WARN] CKA: no records generated; skipping CKA plots.")
+            return records
+
         for dataset_name in df["dataset"].unique():
             for src_label in df["source_label"].unique():
                 sub = df[(df["dataset"] == dataset_name) & (df["source_label"] == src_label)]

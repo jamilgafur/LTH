@@ -75,12 +75,24 @@ class CorrelationSuite:
         return out.tolist()
 
     @staticmethod
+    def _read_csv_if_valid(path: str) -> pd.DataFrame:
+        if not os.path.exists(path):
+            return pd.DataFrame()
+        try:
+            df = pd.read_csv(path)
+        except pd.errors.EmptyDataError:
+            return pd.DataFrame()
+        except Exception:
+            return pd.DataFrame()
+        return df
+
+    @staticmethod
     def _load_inputs(output_dir: str) -> pd.DataFrame:
-        summary = pd.read_csv(os.path.join(output_dir, "summary.csv")) if os.path.exists(os.path.join(output_dir, "summary.csv")) else pd.DataFrame()
-        transfer = pd.read_csv(os.path.join(output_dir, "transferability.csv")) if os.path.exists(os.path.join(output_dir, "transferability.csv")) else pd.DataFrame()
-        grad = pd.read_csv(os.path.join(output_dir, "gradient_similarity.csv")) if os.path.exists(os.path.join(output_dir, "gradient_similarity.csv")) else pd.DataFrame()
-        cka = pd.read_csv(os.path.join(output_dir, "cka_similarity.csv")) if os.path.exists(os.path.join(output_dir, "cka_similarity.csv")) else pd.DataFrame()
-        cost = pd.read_csv(os.path.join(output_dir, "compute_profile.csv")) if os.path.exists(os.path.join(output_dir, "compute_profile.csv")) else pd.DataFrame()
+        summary = CorrelationSuite._read_csv_if_valid(os.path.join(output_dir, "summary.csv"))
+        transfer = CorrelationSuite._read_csv_if_valid(os.path.join(output_dir, "transferability.csv"))
+        grad = CorrelationSuite._read_csv_if_valid(os.path.join(output_dir, "gradient_similarity.csv"))
+        cka = CorrelationSuite._read_csv_if_valid(os.path.join(output_dir, "cka_similarity.csv"))
+        cost = CorrelationSuite._read_csv_if_valid(os.path.join(output_dir, "compute_profile.csv"))
 
         if transfer.empty:
             return pd.DataFrame()
