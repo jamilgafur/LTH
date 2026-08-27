@@ -38,10 +38,7 @@ OUTPUT_DIR="adversarial_results_ep${EPOCHS}_pre${PRETRAIN}"
 
 cd "$SCRIPT_DIR"
 
-if ! command -v qsub >/dev/null 2>&1; then
-    echo "[ERROR] qsub command not found in PATH."
-    exit 1
-fi
+# The script will later check for qsub and fall back to local execution if unavailable.
 
 echo "===================================================================="
 echo "Stage 5: Adversarial Single-Phase Submission"
@@ -69,6 +66,23 @@ case "$PHASE" in
 esac
 
 echo "Submitting $PHASE job..."
+
+# If qsub is not available (e.g., running on a local workstation), fall back to a direct Python call.
+if ! command -v qsub >/dev/null 2>&1; then
+    echo "[WARN] qsub not found – falling back to local Python execution."
+    PY_CMD=(python adversarial_analysis.py --mode "$PHASE" --output-dir "$OUTPUT_DIR")
+    # Apply optional filters only when they are not the default "ALL"
+    if [ "$MODEL_FILTER" != "ALL" ]; then PY_CMD+=(--model "$MODEL_FILTER"); fi
+    if [ "$DATASET_FILTER" != "ALL" ]; then PY_CMD+=(--dataset "$DATASET_FILTER"); fi
+    if [ "$ATTACK_FILTER" != "ALL" ]; then PY_CMD+=(--attack "$ATTACK_FILTER"); fi
+    if [ "$KIND_FILTER" != "ALL" ]; then PY_CMD+=(--kind "$KIND_FILTER"); fi
+    echo "Running: ${PY_CMD[@]}"
+    "${PY_CMD[@]}"
+    EXIT_CODE=$?
+    echo "[DONE] Local execution finished with exit code $EXIT_CODE"
+    exit $EXIT_CODE
+fi
+
 CMD=(qsub -q all.q -l ngpus=1)
 if [ -n "$DEPEND_JOBID" ]; then
     CMD+=( -W "depend=afterok:${DEPEND_JOBID}" )

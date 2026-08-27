@@ -523,6 +523,73 @@ class AdvancedExperimentSuite:
 
         return ref_vector, sample_stats
 
+    # ------------------------------------------------------------------
+    # Plotting helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _save_fig(path_no_ext: str) -> None:
+        """Save the current matplotlib figure as both PNG (300 dpi) and SVG."""
+        plt.savefig(path_no_ext + ".png", dpi=300)
+        plt.savefig(path_no_ext + ".svg")
+
+    @staticmethod
+    def _plot_shap_attribution_profiles(
+        output_dir: str,
+        ref_vectors: dict,
+        model_kind_label_fn,
+        topk: int = 30,
+    ) -> None:
+        """Plot per-model mean-absolute SHAP attribution bar charts and a
+        combined overlay, saved as PNG + SVG."""
+        datasets = sorted({k[1] for k in ref_vectors})
+        for dataset_name in datasets:
+            dataset_keys = [k for k in ref_vectors if k[1] == dataset_name]
+            if not dataset_keys:
+                continue
+
+            # --- individual per-model attribution bars ---
+            for key in dataset_keys:
+                model_name, _, kind = key
+                vec = ref_vectors[key]
+                n = vec.size
+                actual_k = min(topk, n)
+                top_idx = np.argsort(vec)[::-1][:actual_k]
+                top_vals = vec[top_idx]
+
+                fig, ax = plt.subplots(figsize=(max(8, actual_k * 0.35), 4))
+                ax.bar(range(actual_k), top_vals, color="#4c72b0", edgecolor="black", linewidth=0.4)
+                ax.set_xticks(range(actual_k))
+                ax.set_xticklabels([str(i) for i in top_idx], rotation=90, fontsize=7)
+                ax.set_xlabel(f"Feature index (top-{actual_k} by |attribution|)", fontweight="bold")
+                ax.set_ylabel("Mean |SHAP|", fontweight="bold")
+                label = model_kind_label_fn(model_name, kind)
+                ax.set_title(f"SHAP Attribution Profile – {label} – {dataset_name}", fontweight="bold")
+                fig.tight_layout()
+                safe = label.replace(" ", "_").replace("(", "").replace(")", "")
+                AdvancedExperimentSuite._save_fig(
+                    os.path.join(output_dir, f"shap_attribution_{dataset_name}_{safe}")
+                )
+                plt.close(fig)
+
+            # --- combined overlay of all models' normalized profiles ---
+            fig, ax = plt.subplots(figsize=(12, 5))
+            for key in dataset_keys:
+                model_name, _, kind = key
+                vec = ref_vectors[key].astype(float)
+                norm = vec / (vec.max() + 1e-12)
+                label = model_kind_label_fn(model_name, kind)
+                ax.plot(norm, linewidth=0.8, alpha=0.75, label=label)
+            ax.set_xlabel("Feature index (flattened)", fontweight="bold")
+            ax.set_ylabel("Normalized mean |SHAP|", fontweight="bold")
+            ax.set_title(f"SHAP Attribution Profiles Overlay – {dataset_name}", fontweight="bold")
+            ax.legend(fontsize=7, ncol=2, loc="upper right")
+            fig.tight_layout()
+            AdvancedExperimentSuite._save_fig(
+                os.path.join(output_dir, f"shap_attribution_overlay_{dataset_name}")
+            )
+            plt.close(fig)
+
     def explainability_similarity_phase(
         self,
         output_dir: str,
@@ -594,6 +661,11 @@ class AdvancedExperimentSuite:
             empty_pair.to_csv(os.path.join(output_dir, "shap_pairwise_similarity.csv"), index=False)
             return []
 
+        # --- Plot SHAP attribution profiles (PNG + SVG) ---
+        self._plot_shap_attribution_profiles(
+            output_dir, ref_vectors, self.model_kind_label
+        )
+
         pair_rows: list[dict] = []
         keys = list(ref_vectors.keys())
         for src_key in keys:
@@ -637,10 +709,10 @@ class AdvancedExperimentSuite:
 
         for dataset_name in pair_df["dataset"].unique():
             sub = pair_df[pair_df["dataset"] == dataset_name]
-            for metric, fname in [
-                ("cosine_similarity", f"shap_cosine_heatmap_{dataset_name}.png"),
-                ("pearson_r", f"shap_pearson_heatmap_{dataset_name}.png"),
-                ("spearman_r", f"shap_spearman_heatmap_{dataset_name}.png"),
+            for metric, fname_stem in [
+                ("cosine_similarity", f"shap_cosine_heatmap_{dataset_name}"),
+                ("pearson_r", f"shap_pearson_heatmap_{dataset_name}"),
+                ("spearman_r", f"shap_spearman_heatmap_{dataset_name}"),
             ]:
                 mat = sub.pivot(index="source_label", columns="target_label", values=metric)
                 if mat.empty:
@@ -651,8 +723,39 @@ class AdvancedExperimentSuite:
                 plt.xlabel("Target Model Variant", fontweight="bold")
                 plt.ylabel("Source Model Variant", fontweight="bold")
                 plt.tight_layout()
-                plt.savefig(os.path.join(output_dir, fname), dpi=300)
+                self._save_fig(os.path.join(output_dir, fname_stem))
                 plt.close()
+
+            # Dedicated Original-vs-Collapsed cosine similarity heatmap
+            ov_sub = sub[sub["same_architecture"] & (sub["source_kind"] != sub["target_kind"])]
+            if not ov_sub.empty:
+                ov_mat = ov_sub.pivot(
+                    index="source_label", columns="target_label", values="cosine_similarity"
+                )
+                if not ov_mat.empty:
+                    plt.figure(figsize=(max(6, len(ov_mat.columns) * 1.2), max(4, len(ov_mat) * 0.8)))
+                    sns.heatmap(
+                        ov_mat,
+                        annot=True,
+                        fmt=".3f",
+                        cmap="RdYlGn",
+                        center=0,
+                        vmin=-1,
+                        vmax=1,
+                        linewidths=0.5,
+                        cbar_kws={"label": "Cosine similarity"},
+                    )
+                    plt.title(
+                        f"SHAP Cosine Similarity: Original vs Collapsed – {dataset_name}",
+                        fontweight="bold",
+                    )
+                    plt.xlabel("Collapsed variant", fontweight="bold")
+                    plt.ylabel("Original variant", fontweight="bold")
+                    plt.tight_layout()
+                    self._save_fig(
+                        os.path.join(output_dir, f"shap_orig_vs_collapsed_cosine_{dataset_name}")
+                    )
+                    plt.close()
 
         if not collapsed_vs_original.empty:
             cv = (
@@ -681,7 +784,7 @@ class AdvancedExperimentSuite:
             plt.ylabel("Similarity", fontweight="bold")
             plt.xticks(rotation=25, ha="right")
             plt.tight_layout()
-            plt.savefig(os.path.join(output_dir, "shap_original_vs_collapsed_similarity_metrics.png"), dpi=300)
+            self._save_fig(os.path.join(output_dir, "shap_original_vs_collapsed_similarity_metrics"))
             plt.close()
 
         return pair_rows
