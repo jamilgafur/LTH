@@ -70,7 +70,7 @@ echo "Submitting $PHASE job..."
 # If qsub is not available (e.g., running on a local workstation), fall back to a direct Python call.
 if ! command -v qsub >/dev/null 2>&1; then
     echo "[WARN] qsub not found – falling back to local Python execution."
-    PY_CMD=(python -m pyPrune.adversarial.analysis --mode "$PHASE" --output-dir "$OUTPUT_DIR")
+    PY_CMD=(python -m manuscript.Tranfer.adversarial_analysis --mode "$PHASE" --output-dir "$OUTPUT_DIR")
     # Apply optional filters only when they are not the default "ALL"
     if [ "$MODEL_FILTER" != "ALL" ]; then PY_CMD+=(--model "$MODEL_FILTER"); fi
     if [ "$DATASET_FILTER" != "ALL" ]; then PY_CMD+=(--dataset "$DATASET_FILTER"); fi

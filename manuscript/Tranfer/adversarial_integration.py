@@ -69,7 +69,7 @@ def _run_locally(
     cmd = [
         sys.executable,
         "-m",
-        "pyPrune.adversarial.analysis",
+        "manuscript.Tranfer.adversarial_analysis",
         "--mode", mode,
         "--output-dir", output_dir,
     ]
