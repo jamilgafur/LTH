@@ -46,29 +46,19 @@ def run_adversarial_analysis_pipeline(
     Returns:
         Dictionary with status and job information.
     """
-    script_dir = Path(__file__).parent
-    script_path = script_dir / "adversarial_analysis.py"
-    
-    if not script_path.exists():
-        return {
-            "status": "error",
-            "message": f"adversarial_analysis.py not found at {script_path}"
-        }
-    
     if use_hpc:
         return _submit_hpc_jobs(
-            script_dir, output_dir, mode,
+            Path(__file__).parent, output_dir, mode,
             model_filter, dataset_filter, attack_filter
         )
     else:
         return _run_locally(
-            script_path, output_dir, mode,
+            output_dir, mode,
             model_filter, dataset_filter, attack_filter
         )
 
 
 def _run_locally(
-    script_path: Path,
     output_dir: str,
     mode: str,
     model_filter: Optional[str],
@@ -78,7 +68,8 @@ def _run_locally(
     """Run adversarial analysis locally."""
     cmd = [
         sys.executable,
-        str(script_path),
+        "-m",
+        "pyPrune.adversarial.analysis",
         "--mode", mode,
         "--output-dir", output_dir,
     ]

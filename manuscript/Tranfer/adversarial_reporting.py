@@ -410,6 +410,31 @@ class ReportingSuite:
                 mean_delta_robustness_ratio=("collapsed_minus_original_robustness_ratio", "mean"),
             )
         )
+
+        shap_summary_path = os.path.join(output_dir, "shap_original_vs_collapsed_summary.csv")
+        if os.path.exists(shap_summary_path):
+            shap_df = pd.read_csv(shap_summary_path)
+            if not shap_df.empty:
+                shap_summary_df = (
+                    shap_df.groupby(["source_model", "dataset"], as_index=False)
+                    .agg(
+                        mean_shap_cosine_similarity=("cosine_similarity", "mean"),
+                        mean_shap_pearson_r=("pearson_r", "mean"),
+                        mean_shap_spearman_r=("spearman_r", "mean"),
+                        mean_shap_l1_mean_abs_diff=("l1_mean_abs_diff", "mean"),
+                        mean_shap_l2_distance=("l2_distance", "mean"),
+                        mean_shap_topk_jaccard=("topk_jaccard", "mean"),
+                        mean_shap_topk_ratio=("topk_ratio", "mean"),
+                        shap_pair_count=("cosine_similarity", "size"),
+                    )
+                    .rename(columns={"source_model": "model"})
+                )
+                explainability_summary_df = explainability_summary_df.merge(
+                    shap_summary_df,
+                    on=["model", "dataset"],
+                    how="left",
+                )
+
         explainability_summary_path = os.path.join(
             output_dir,
             "collapsed_vs_original_explainability_summary.csv",

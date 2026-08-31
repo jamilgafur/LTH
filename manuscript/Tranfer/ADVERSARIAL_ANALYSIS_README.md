@@ -139,6 +139,11 @@ adversarial_results/
 ├── transferability_heatmap_Cifar10_PGD.png  # Cross-architecture transferability
 ├── transferability_heatmap_full_Cifar10_PGD.png
 ├── transferability_matrix_full_Cifar10_PGD.csv
+├── collapsed_vs_original_explainability_summary.csv  # Pruning-vs-original attack + SHAP summary
+├── shap_original_vs_collapsed_summary.csv            # SHAP similarity metrics for original vs pruned models
+├── shap_class_examples_<dataset>_<model>.png/.svg     # Per-class original vs collapsed SHAP comparison grid
+├── shap_class_examples_<dataset>_<model>.csv         # Per-class comparison metrics and class metadata
+├── shap_class_examples_<dataset>_<model>.npz         # Saved inputs, SHAP maps, and delta maps
 ├── transferability_heatmap_Cifar10_FGSM.png
 ├── InceptionNet_Cifar10_Finetuned_PGD_adv.pt # Single-source attack bundle
 └── ...
@@ -245,6 +250,17 @@ Compare Original vs. Finetuned for collapse effects and compare attacks for thre
   - `cross_arch_cross_kind`
 
 Use `transferability_heatmap_full_*.png` and `transferability_matrix_full_*.csv` for the full source-kind to target-kind matrix (for example, InceptionNet Finetuned source to all Cifar10 targets).
+
+### Explainability comparison (collapsed_vs_original_explainability_summary.csv)
+- **mean_shap_cosine_similarity**: Mean cosine similarity between original and collapsed SHAP reference vectors
+- **mean_shap_pearson_r / mean_shap_spearman_r**: Linear and rank correlations between explanation profiles
+- **mean_shap_topk_jaccard**: Overlap of the most important attribution features after pruning
+- **mean_shap_l1_mean_abs_diff / mean_shap_l2_distance**: Attribution shift magnitude between original and collapsed models
+- **mean_delta_attack_success_rate**: Attack-success change used in the paper-facing pruning comparison table
+
+### Per-class SHAP examples (shap_class_examples_<dataset>_<model>.*)
+- A compact 4-column grid shows the representative input image, original-model SHAP map, collapsed-model SHAP map, and delta map for one example per class.
+- The matching CSV stores per-class metadata and the saved `.npz` stores the raw input and attribution arrays used for the figure.
 
 ## Performance Tuning
 

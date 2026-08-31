@@ -60,8 +60,8 @@ echo "Hostname:    $(hostname)"
 echo "GPU Device:  $(nvidia-smi --query-gpu=index,name --format=csv,noheader || echo 'No GPU found')"
 echo "========================================================================"
 
-# Run adversarial analysis using your specific Conda Python executable
-CMD=(~/env/lth_env/bin/python adversarial_analysis.py --mode "$PHASE" --output-dir "$OUTPUT_DIR")
+# Run adversarial analysis using the package entrypoint
+CMD=(~/env/lth_env/bin/python -m pyPrune.adversarial.analysis --mode "$PHASE" --output-dir "$OUTPUT_DIR")
 if [ "$PHASE" = "generate" ]; then
     CMD+=(--model "$MODEL" --dataset "$DATASET" --attack "$ATTACK")
     if [ "$KIND" != "ALL" ]; then

@@ -20,6 +20,22 @@ import shutil
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
+
+def count_zeros(tensor):
+    return torch.sum(tensor == 0).item()
+
+
+def count_trainable_params(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+def layer_stats(model):
+    print("\nLayer-wise zero parameter stats:\n")
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            zeros = count_zeros(param)
+            total = param.numel()
+
 def get_pruneable_named_parameters(model: torch.nn.Module, prunable_layers: Tuple) -> Tuple[List[str], List[torch.nn.Parameter]]:
     names = []
     params = []

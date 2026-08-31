@@ -99,6 +99,13 @@ class ComputeTradeoffSuite:
             attack_success = float("nan")
             transfer_success = float("nan")
             explain_delta = float("nan")
+            explain_cosine = float("nan")
+            explain_pearson = float("nan")
+            explain_spearman = float("nan")
+            explain_topk = float("nan")
+            explain_l1 = float("nan")
+            explain_l2 = float("nan")
+            explain_pair_count = float("nan")
 
             if not summary_df.empty:
                 s = summary_df[
@@ -123,6 +130,20 @@ class ComputeTradeoffSuite:
                 e = explain_df[(explain_df["model"] == model_name) & (explain_df["dataset"] == dataset_name)]
                 if not e.empty:
                     explain_delta = float(e["mean_delta_attack_success_rate"].mean())
+                    if "mean_shap_cosine_similarity" in e.columns:
+                        explain_cosine = float(e["mean_shap_cosine_similarity"].mean())
+                    if "mean_shap_pearson_r" in e.columns:
+                        explain_pearson = float(e["mean_shap_pearson_r"].mean())
+                    if "mean_shap_spearman_r" in e.columns:
+                        explain_spearman = float(e["mean_shap_spearman_r"].mean())
+                    if "mean_shap_topk_jaccard" in e.columns:
+                        explain_topk = float(e["mean_shap_topk_jaccard"].mean())
+                    if "mean_shap_l1_mean_abs_diff" in e.columns:
+                        explain_l1 = float(e["mean_shap_l1_mean_abs_diff"].mean())
+                    if "mean_shap_l2_distance" in e.columns:
+                        explain_l2 = float(e["mean_shap_l2_distance"].mean())
+                    if "shap_pair_count" in e.columns:
+                        explain_pair_count = float(e["shap_pair_count"].mean())
 
             rows.append(
                 {
@@ -140,6 +161,13 @@ class ComputeTradeoffSuite:
                     "transfer_success_rate": transfer_success,
                     "transfer_resistance": 1.0 - transfer_success if not np.isnan(transfer_success) else np.nan,
                     "explainability_delta_asr": explain_delta,
+                    "explainability_shap_cosine_similarity": explain_cosine,
+                    "explainability_shap_pearson_r": explain_pearson,
+                    "explainability_shap_spearman_r": explain_spearman,
+                    "explainability_shap_topk_jaccard": explain_topk,
+                    "explainability_shap_l1_mean_abs_diff": explain_l1,
+                    "explainability_shap_l2_distance": explain_l2,
+                    "explainability_shap_pair_count": explain_pair_count,
                 }
             )
 
@@ -243,6 +271,8 @@ class ComputeTradeoffSuite:
             "robust_accuracy",
             "transfer_resistance",
             "explainability_delta_asr",
+            "explainability_shap_cosine_similarity",
+            "explainability_shap_topk_jaccard",
             "flops",
             "latency_ms",
             "peak_memory_mb",

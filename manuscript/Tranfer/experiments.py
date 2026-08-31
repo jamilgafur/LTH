@@ -28,7 +28,7 @@ from plots import *
 from diagnostic import *
 from utils import *
 from filemanager import *
-from collapse import collapse_only, _wrap_pools_safe
+from pyPrune.collapse import collapse_only, _wrap_pools_safe
 from trainer import train_one_epoch
 
 def ensure_dir(directory):

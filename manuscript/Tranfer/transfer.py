@@ -23,6 +23,7 @@ from pyPrune.models.MobileNet import MobileNet
 from experiments import *
 from utils import *
 from plots import *
+from pyPrune.collapse import collapse_only
 from pyPrune.utils import *
 from trainer import train_one_epoch
 from datetime import datetime
@@ -163,7 +164,6 @@ def get_dynamic_experiment_config(model, cnn_layers, variances, input_shape=(1, 
     import copy
     import torch
     import gc
-    from collapse import collapse_only
     from utils import count_trainable_params
     from fvcore.nn import FlopCountAnalysis
 

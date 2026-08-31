@@ -383,6 +383,25 @@ class AdvancedExperimentSuite:
         return torch.cat(chunks, dim=0)[:max_samples]
 
     @staticmethod
+    def _extract_loader_samples(loader, max_samples: int, device: str) -> tuple[torch.Tensor | None, torch.Tensor | None]:
+        image_chunks = []
+        label_chunks = []
+        total = 0
+        for images, labels in loader:
+            images = images.to(device)
+            take = min(images.size(0), max_samples - total)
+            if take <= 0:
+                break
+            image_chunks.append(images[:take].detach().cpu())
+            label_chunks.append(labels[:take].detach().cpu())
+            total += take
+            if total >= max_samples:
+                break
+        if not image_chunks:
+            return None, None
+        return torch.cat(image_chunks, dim=0), torch.cat(label_chunks, dim=0)
+
+    @staticmethod
     def _safe_model_call(model: nn.Module, batch: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():
             out = model(batch)
@@ -462,20 +481,21 @@ class AdvancedExperimentSuite:
         device: str,
         max_samples: int,
         background_samples: int,
-    ) -> tuple[np.ndarray | None, list[dict]]:
+    ) -> tuple[np.ndarray | None, list[dict], dict | None]:
         try:
             import shap
         except Exception:
             print("[WARN] SHAP package not available. Install via: pip install shap")
-            return None, []
+            return None, [], None
 
-        eval_images = self._extract_loader_images(loader, max_samples=max_samples, device=device)
-        if eval_images is None or eval_images.size(0) < 2:
-            return None, []
+        eval_images, eval_labels = self._extract_loader_samples(loader, max_samples=max_samples, device=device)
+        if eval_images is None or eval_images.size(0) < 2 or eval_labels is None:
+            return None, [], None
 
         bg_n = int(max(2, min(background_samples, eval_images.size(0))))
         background = eval_images[:bg_n]
         eval_batch = eval_images[:max_samples]
+        eval_label_batch = eval_labels[:max_samples]
 
         base_model = model.module if hasattr(model, "module") else model
         base_model.eval()
@@ -489,7 +509,7 @@ class AdvancedExperimentSuite:
                 explainer = None
         if explainer is None:
             print("[WARN] Could not initialize SHAP explainer for a model; skipping.")
-            return None, []
+            return None, [], None
 
         try:
             logits = self._safe_model_call(base_model, eval_batch)
@@ -497,22 +517,27 @@ class AdvancedExperimentSuite:
             shap_values = explainer.shap_values(eval_batch)
         except Exception as exc:
             print(f"[WARN] SHAP attribution failed: {exc}")
-            return None, []
+            return None, [], None
 
         selected = self._select_class_shap(shap_values, preds)
         if selected is None:
             print("[WARN] Unsupported SHAP output format for this model; skipping.")
-            return None, []
+            return None, [], None
 
-        sample_vectors = selected.reshape(selected.shape[0], -1)
+        selected_np = np.asarray(selected)
+        sample_vectors = selected_np.reshape(selected_np.shape[0], -1)
         ref_vector = np.mean(np.abs(sample_vectors), axis=0)
 
         sample_stats: list[dict] = []
+        class_examples: list[dict] = []
+        seen_labels: set[int] = set()
         for sample_idx in range(sample_vectors.shape[0]):
             sv = sample_vectors[sample_idx]
+            true_label = int(eval_label_batch[sample_idx].item())
             sample_stats.append(
                 {
                     "sample_index": int(sample_idx),
+                    "true_label": true_label,
                     "pred_class": int(preds[sample_idx]),
                     "attr_mean": float(np.mean(sv)),
                     "attr_mean_abs": float(np.mean(np.abs(sv))),
@@ -520,8 +545,31 @@ class AdvancedExperimentSuite:
                     "attr_l2": float(np.linalg.norm(sv)),
                 }
             )
+            if true_label not in seen_labels:
+                seen_labels.add(true_label)
+                class_examples.append(
+                    {
+                        "sample_index": int(sample_idx),
+                        "true_label": true_label,
+                        "pred_class": int(preds[sample_idx]),
+                        "input_image": np.asarray(eval_batch[sample_idx].detach().cpu().numpy(), dtype=np.float32),
+                        "shap_map": np.asarray(selected_np[sample_idx], dtype=np.float32),
+                        "attr_mean_abs": float(np.mean(np.abs(sv))),
+                        "attr_l1": float(np.sum(np.abs(sv))),
+                        "attr_l2": float(np.linalg.norm(sv)),
+                    }
+                )
 
-        return ref_vector, sample_stats
+        class_bundle = {
+            "rows": class_examples,
+            "sample_indices": np.array([row["sample_index"] for row in class_examples], dtype=int),
+            "true_labels": np.array([row["true_label"] for row in class_examples], dtype=int),
+            "pred_classes": np.array([row["pred_class"] for row in class_examples], dtype=int),
+            "input_images": np.stack([row["input_image"] for row in class_examples], axis=0) if class_examples else None,
+            "shap_maps": np.stack([row["shap_map"] for row in class_examples], axis=0) if class_examples else None,
+        }
+
+        return ref_vector, sample_stats, class_bundle
 
     # ------------------------------------------------------------------
     # Plotting helpers
@@ -590,6 +638,157 @@ class AdvancedExperimentSuite:
             )
             plt.close(fig)
 
+    @staticmethod
+    def _to_display_image(image: np.ndarray) -> np.ndarray:
+        arr = np.asarray(image, dtype=float)
+        if arr.ndim == 3 and arr.shape[0] in (1, 3):
+            arr = np.transpose(arr, (1, 2, 0))
+        if arr.ndim == 3 and arr.shape[2] == 1:
+            arr = arr[:, :, 0]
+        arr_min = np.nanmin(arr)
+        arr_max = np.nanmax(arr)
+        if np.isfinite(arr_min) and np.isfinite(arr_max) and arr_max > arr_min:
+            arr = (arr - arr_min) / (arr_max - arr_min)
+        return np.clip(arr, 0.0, 1.0)
+
+    @staticmethod
+    def _collapse_attribution_map(attr_map: np.ndarray) -> np.ndarray:
+        arr = np.asarray(attr_map, dtype=float)
+        if arr.ndim == 3:
+            if arr.shape[0] in (1, 3):
+                arr = np.mean(np.abs(arr), axis=0)
+            elif arr.shape[-1] in (1, 3):
+                arr = np.mean(np.abs(arr), axis=-1)
+            else:
+                arr = np.mean(np.abs(arr), axis=0)
+        elif arr.ndim > 3:
+            arr = np.mean(np.abs(arr.reshape(arr.shape[0], -1)), axis=0)
+        return arr
+
+    @classmethod
+    def _save_shap_class_example_artifacts(
+        cls,
+        output_dir: str,
+        dataset_name: str,
+        model_name: str,
+        class_rows: list[dict],
+        original_kind: str,
+        collapsed_kind: str,
+    ) -> pd.DataFrame:
+        output_rows = []
+        input_images = []
+        original_maps = []
+        collapsed_maps = []
+        delta_maps = []
+        labels = []
+
+        for row in class_rows:
+            input_image = np.asarray(row["input_image"], dtype=np.float32)
+            original_map = np.asarray(row["original_shap_map"], dtype=np.float32)
+            collapsed_map = np.asarray(row["collapsed_shap_map"], dtype=np.float32)
+            delta_map = collapsed_map - original_map
+
+            input_images.append(input_image)
+            original_maps.append(original_map)
+            collapsed_maps.append(collapsed_map)
+            delta_maps.append(delta_map)
+            labels.append(int(row["true_label"]))
+
+            output_rows.append(
+                {
+                    "dataset": dataset_name,
+                    "model": model_name,
+                    "true_label": int(row["true_label"]),
+                    "class_name": row.get("class_name", str(row["true_label"])),
+                    "sample_index": int(row["sample_index"]),
+                    f"{original_kind.lower()}_pred_class": int(row["original_pred_class"]),
+                    f"{collapsed_kind.lower()}_pred_class": int(row["collapsed_pred_class"]),
+                    f"{original_kind.lower()}_attr_mean_abs": float(row["original_attr_mean_abs"]),
+                    f"{collapsed_kind.lower()}_attr_mean_abs": float(row["collapsed_attr_mean_abs"]),
+                    "delta_attr_mean_abs": float(np.mean(np.abs(delta_map))),
+                    "delta_attr_l1": float(np.sum(np.abs(delta_map))),
+                    "delta_attr_l2": float(np.linalg.norm(delta_map.reshape(-1))),
+                }
+            )
+
+        csv_path = os.path.join(output_dir, f"shap_class_examples_{dataset_name}_{model_name}.csv")
+        df = pd.DataFrame(output_rows)
+        df.to_csv(csv_path, index=False)
+        print(f"[EXP11] Saved: {csv_path}")
+
+        npz_path = os.path.join(output_dir, f"shap_class_examples_{dataset_name}_{model_name}.npz")
+        np.savez_compressed(
+            npz_path,
+            labels=np.asarray(labels, dtype=int),
+            inputs=np.asarray(input_images, dtype=np.float32),
+            original_shap_maps=np.asarray(original_maps, dtype=np.float32),
+            collapsed_shap_maps=np.asarray(collapsed_maps, dtype=np.float32),
+            delta_shap_maps=np.asarray(delta_maps, dtype=np.float32),
+        )
+        print(f"[EXP11] Saved: {npz_path}")
+
+        return df
+
+    @classmethod
+    def _plot_shap_class_example_grid(
+        cls,
+        output_dir: str,
+        dataset_name: str,
+        model_name: str,
+        class_rows: list[dict],
+        class_names: list[str] | None,
+        original_kind: str,
+        collapsed_kind: str,
+    ) -> None:
+        if not class_rows:
+            return
+
+        class_rows = sorted(class_rows, key=lambda row: int(row["true_label"]))
+        n_rows = len(class_rows)
+        fig, axes = plt.subplots(n_rows, 4, figsize=(16, max(4, 3.0 * n_rows)))
+        if n_rows == 1:
+            axes = np.expand_dims(axes, axis=0)
+
+        for row_idx, row in enumerate(class_rows):
+            class_id = int(row["true_label"])
+            class_name = class_names[class_id] if class_names and class_id < len(class_names) else str(class_id)
+            image = cls._to_display_image(row["input_image"])
+            original_map = cls._collapse_attribution_map(row["original_shap_map"])
+            collapsed_map = cls._collapse_attribution_map(row["collapsed_shap_map"])
+            delta_map = collapsed_map - original_map
+
+            ax = axes[row_idx, 0]
+            ax.imshow(image)
+            ax.set_title(f"Input | {class_name}")
+            ax.axis("off")
+
+            ax = axes[row_idx, 1]
+            im = ax.imshow(original_map, cmap="magma")
+            ax.set_title(f"{original_kind} SHAP")
+            ax.axis("off")
+            fig.colorbar(im, ax=ax, fraction=0.046, pad=0.02)
+
+            ax = axes[row_idx, 2]
+            im = ax.imshow(collapsed_map, cmap="magma")
+            ax.set_title(f"{collapsed_kind} SHAP")
+            ax.axis("off")
+            fig.colorbar(im, ax=ax, fraction=0.046, pad=0.02)
+
+            ax = axes[row_idx, 3]
+            im = ax.imshow(delta_map, cmap="coolwarm")
+            ax.set_title(f"Delta ({collapsed_kind} - {original_kind})")
+            ax.axis("off")
+            fig.colorbar(im, ax=ax, fraction=0.046, pad=0.02)
+
+        fig.suptitle(
+            f"SHAP Example Changes by Class - {model_name} - {dataset_name}",
+            fontsize=14,
+            fontweight="bold",
+        )
+        fig.tight_layout(rect=(0, 0, 1, 0.98))
+        cls._save_fig(os.path.join(output_dir, f"shap_class_examples_{dataset_name}_{model_name}"))
+        plt.close(fig)
+
     def explainability_similarity_phase(
         self,
         output_dir: str,
@@ -606,6 +805,7 @@ class AdvancedExperimentSuite:
         vector_rows: list[dict] = []
         sample_rows: list[dict] = []
         ref_vectors: dict[tuple[str, str, str], np.ndarray] = {}
+        class_example_bundles: dict[tuple[str, str, str], dict] = {}
 
         for key, model in model_cache.items():
             model_name, dataset_name, kind = key
@@ -613,7 +813,7 @@ class AdvancedExperimentSuite:
                 continue
             _, test_loader = loader_cache[dataset_name]
 
-            ref_vec, stats = self._compute_shap_reference_vector(
+            ref_vec, stats, class_bundle = self._compute_shap_reference_vector(
                 model=model,
                 loader=test_loader,
                 device=device,
@@ -624,6 +824,8 @@ class AdvancedExperimentSuite:
                 continue
 
             ref_vectors[key] = ref_vec
+            if class_bundle is not None:
+                class_example_bundles[key] = class_bundle
             vector_rows.append(
                 {
                     "model": model_name,
@@ -665,6 +867,75 @@ class AdvancedExperimentSuite:
         self._plot_shap_attribution_profiles(
             output_dir, ref_vectors, self.model_kind_label
         )
+
+        for dataset_name in sorted({dataset for (_model, dataset, _kind) in class_example_bundles}):
+            model_names = sorted({model for (model, dataset, _kind) in class_example_bundles if dataset == dataset_name})
+            for model_name in model_names:
+                orig_key = (model_name, dataset_name, "Original")
+                fin_key = (model_name, dataset_name, "Finetuned")
+                if orig_key not in class_example_bundles or fin_key not in class_example_bundles:
+                    continue
+
+                orig_bundle = class_example_bundles[orig_key]
+                fin_bundle = class_example_bundles[fin_key]
+                orig_rows = {int(row["true_label"]): row for row in orig_bundle["rows"]}
+                fin_rows = {int(row["true_label"]): row for row in fin_bundle["rows"]}
+                class_ids = sorted(set(orig_rows) & set(fin_rows))
+                if not class_ids:
+                    continue
+
+                test_loader = loader_cache[dataset_name][1]
+                class_names = getattr(getattr(test_loader, "dataset", None), "classes", None)
+                pair_rows: list[dict] = []
+
+                for class_id in class_ids:
+                    orig_row = orig_rows[class_id]
+                    fin_row = fin_rows[class_id]
+                    orig_vec = np.asarray(orig_row["shap_map"], dtype=np.float32).reshape(-1)
+                    fin_vec = np.asarray(fin_row["shap_map"], dtype=np.float32).reshape(-1)
+                    delta_vec = fin_vec - orig_vec
+                    denom = float(np.linalg.norm(orig_vec) * np.linalg.norm(fin_vec))
+                    delta_cos = float(np.dot(orig_vec, fin_vec) / denom) if denom > 0 else float("nan")
+
+                    pair_rows.append(
+                        {
+                            "dataset": dataset_name,
+                            "model": model_name,
+                            "true_label": class_id,
+                            "class_name": class_names[class_id] if class_names and class_id < len(class_names) else str(class_id),
+                            "sample_index": int(orig_row["sample_index"]),
+                            "original_pred_class": int(orig_row["pred_class"]),
+                            "collapsed_pred_class": int(fin_row["pred_class"]),
+                            "original_attr_mean_abs": float(orig_row["attr_mean_abs"]),
+                            "collapsed_attr_mean_abs": float(fin_row["attr_mean_abs"]),
+                            "delta_attr_mean_abs": float(np.mean(np.abs(delta_vec))),
+                            "delta_attr_l1": float(np.sum(np.abs(delta_vec))),
+                            "delta_attr_l2": float(np.linalg.norm(delta_vec)),
+                            "delta_cosine_similarity": delta_cos,
+                            "input_image": orig_row["input_image"],
+                            "original_shap_map": orig_row["shap_map"],
+                            "collapsed_shap_map": fin_row["shap_map"],
+                        }
+                    )
+
+                if pair_rows:
+                    pair_df = self._save_shap_class_example_artifacts(
+                        output_dir=output_dir,
+                        dataset_name=dataset_name,
+                        model_name=model_name,
+                        class_rows=pair_rows,
+                        original_kind="Original",
+                        collapsed_kind="Finetuned",
+                    )
+                    self._plot_shap_class_example_grid(
+                        output_dir=output_dir,
+                        dataset_name=dataset_name,
+                        model_name=model_name,
+                        class_rows=pair_rows,
+                        class_names=class_names,
+                        original_kind="Original",
+                        collapsed_kind="Finetuned",
+                    )
 
         pair_rows: list[dict] = []
         keys = list(ref_vectors.keys())

@@ -9,7 +9,10 @@ from copy import deepcopy
 import copy
 import time
 import traceback
-from utils import count_trainable_params, layer_stats
+try:
+    from manuscript.Tranfer.utils import count_trainable_params, layer_stats
+except ImportError:  # pragma: no cover
+    from utils import count_trainable_params, layer_stats
 import math
 
 
