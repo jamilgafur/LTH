@@ -11,14 +11,18 @@
 
 set -euo pipefail
 
-# Allow the <phase> argument to be optional – default to "full" (run all phases)
+# Allow the <phase> argument to be optional – default to "full" (run all phases).
+# If a user requests only the "compute_tradeoff" phase, the pipeline would skip
+# earlier phases that generate the CSV summaries and explainability figures.
+# To ensure all expected artefacts (including explainability plots) are produced,
+# we automatically promote a "compute_tradeoff" request to the full pipeline.
 if [ "$#" -lt 2 ] || [ "$#" -gt 9 ]; then
     echo "Usage: $0 <discovery_epochs> <pretrain_epochs> [phase] [model] [dataset] [attack] [kind] [depend_jobid]"
     echo "  phase defaults to 'full' (run the complete pipeline)"
     echo "Examples:"
     echo "  $0 100 300               # runs full pipeline"
     echo "  $0 100 300 plot          # runs only the plot phase"
-    echo "  $0 100 300 compute_tradeoff ALL Cifar10 ALL ALL"
+    echo "  $0 100 300 compute_tradeoff ALL Cifar10 ALL ALL   # runs full pipeline (includes explainability)"
     echo "  $0 100 300 correlations ALL ALL ALL ALL 123456.server"
     exit 1
 fi
@@ -27,6 +31,12 @@ EPOCHS=$1
 PRETRAIN=$2
 # If the third argument is missing, default to "full"
 PHASE=${3:-full}
+
+# Promote compute_tradeoff to full pipeline to generate all required outputs.
+if [ "$PHASE" = "compute_tradeoff" ]; then
+    echo "[INFO] Phase 'compute_tradeoff' detected – switching to 'full' to generate all required outputs."
+    PHASE=full
+fi
 MODEL_FILTER=${4:-ALL}
 DATASET_FILTER=${5:-ALL}
 ATTACK_FILTER=${6:-ALL}

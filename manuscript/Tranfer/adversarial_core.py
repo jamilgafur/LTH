@@ -19,7 +19,8 @@ except ImportError as exc:  # pragma: no cover
         "'pip install torchattacks' and re-run the script."
     ) from exc
 
-from pyPrune.utils import load_cifar10, load_cifar100
+# Added support for Tiny ImageNet (and ImageNet) dataset loaders
+from pyPrune.utils import load_cifar10, load_cifar100, load_tiny_imagenet, load_imagenet
 
 from adversarial_checkpointing import CheckpointManager
 from adversarial_reporting import ReportingSuite
@@ -235,22 +236,35 @@ class AdversarialCore:
         for model_name, dataset_name, kind, ckpt_path in checkpoints:
             if model_filter and model_name != model_filter:
                 continue
-            if dataset_filter and dataset_name != dataset_filter:
-                continue
+            # Allow filtering by base dataset name (ignore split tag)
+            if dataset_filter:
+                base_check = dataset_name.split("|")[0]
+                if base_check != dataset_filter:
+                    continue
             if kind_filter and kind != kind_filter:
                 continue
 
-            if dataset_name == "Cifar10":
+            # Dataset strings may now include a split tag (e.g. "Cifar10|epochs100_pretrain300").
+            base_dataset = dataset_name.split("|")[0]
+
+            if base_dataset == "Cifar10":
                 if "Cifar10" not in loader_cache:
                     loader_cache["Cifar10"] = load_cifar10(batch_size=256, num_workers=4)
                 train_loader, test_loader = loader_cache["Cifar10"]
                 num_classes = 10
-            elif dataset_name == "Cifar100":
+            elif base_dataset == "Cifar100":
                 if "Cifar100" not in loader_cache:
                     loader_cache["Cifar100"] = load_cifar100(batch_size=256, num_workers=4)
                 train_loader, test_loader = loader_cache["Cifar100"]
                 num_classes = 100
+            elif base_dataset.lower() == "tinyimagenet":
+                # Tiny ImageNet has 200 classes; use the same batch size / workers as CIFAR loaders.
+                if "tinyimagenet" not in loader_cache:
+                    loader_cache["tinyimagenet"] = load_tiny_imagenet(batch_size=256, num_workers=4)
+                train_loader, test_loader = loader_cache["tinyimagenet"]
+                num_classes = 200
             else:
+                # Skip unsupported datasets.
                 continue
 
             one_batch = next(iter(train_loader))[0]
@@ -327,6 +341,7 @@ class AdversarialCore:
 
         for (src_model, src_dataset, src_kind, src_attack), adv_path in adv_datasets.items():
             adv_bundle = cls.load_adversarial_bundle(adv_path)
+            # Loader for evaluating target model on the full adversarial set (aggregate metric).
             adv_loader = torch.utils.data.DataLoader(
                 torch.utils.data.TensorDataset(
                     adv_bundle["adversarial_images"], adv_bundle["true_labels"]
@@ -335,15 +350,43 @@ class AdversarialCore:
                 shuffle=False,
             )
 
+            # Extract per‑example source predictions for the conditioned metric.
+            src_clean_preds = adv_bundle.get("source_clean_predictions")
+            src_adv_preds = adv_bundle.get("source_adversarial_predictions")
+            true_labels = adv_bundle["true_labels"]
+
             for (tgt_model, tgt_dataset, tgt_kind), tgt_model_obj in model_cache.items():
                 if tgt_dataset != src_dataset:
                     continue
 
+                # ----- Aggregate transfer success (existing) -----
                 tgt_acc = cls.evaluate_clean_accuracy(tgt_model_obj, adv_loader)
                 transfer_success_rate = 1.0 - tgt_acc
+
+                # ----- Conditioned transfer success (new) -----
+                conditioned_success_rate = np.nan
+                if src_clean_preds is not None and src_adv_preds is not None:
+                    # Gather target predictions per example.
+                    device = next(tgt_model_obj.parameters()).device
+                    tgt_preds_all = []
+                    for imgs, _ in adv_loader:
+                        imgs = imgs.to(device)
+                        with torch.no_grad():
+                            preds = tgt_model_obj(imgs).argmax(dim=1).cpu()
+                        tgt_preds_all.append(preds)
+                    tgt_preds = torch.cat(tgt_preds_all)
+
+                    # Boolean mask: source correctly classified clean AND fooled on adversarial.
+                    mask = (src_clean_preds == true_labels) & (src_adv_preds != true_labels)
+                    if mask.sum().item() > 0:
+                        # Transfer success = proportion where target misclassifies.
+                        target_correct = (tgt_preds == true_labels)
+                        conditioned_success_rate = 1.0 - float(target_correct[mask].float().mean())
+
+                # ----- Normalized rates -----
                 source_attack_success_rate = np.nan
                 normalized_transfer_rate = np.nan
-
+                normalized_conditioned_rate = np.nan
                 if not records_df.empty:
                     match = records_df[
                         (records_df["model"] == src_model)
@@ -355,6 +398,8 @@ class AdversarialCore:
                         source_attack_success_rate = float(match.iloc[0]["attack_success_rate"])
                         if source_attack_success_rate > 0:
                             normalized_transfer_rate = transfer_success_rate / source_attack_success_rate
+                            if not np.isnan(conditioned_success_rate):
+                                normalized_conditioned_rate = conditioned_success_rate / source_attack_success_rate
 
                 transfer_records.append(
                     {
@@ -368,8 +413,10 @@ class AdversarialCore:
                         "dataset": src_dataset,
                         "transfer_acc": tgt_acc,
                         "transfer_success_rate": transfer_success_rate,
+                        "conditioned_transfer_success_rate": conditioned_success_rate,
                         "source_attack_success_rate": source_attack_success_rate,
                         "normalized_transfer_rate": normalized_transfer_rate,
+                        "normalized_conditioned_transfer_rate": normalized_conditioned_rate,
                         "same_architecture": src_model == tgt_model,
                         "same_kind": src_kind == tgt_kind,
                         "pair_type": ReportingSuite.classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
@@ -387,22 +434,35 @@ class AdversarialCore:
         for model_name, dataset_name, kind, ckpt_path in CheckpointManager.discover_checkpoints():
             if args.model and model_name != args.model:
                 continue
-            if args.dataset and dataset_name != args.dataset:
-                continue
+            # Allow args.dataset to match base name, ignoring split tag.
+            if args.dataset:
+                base_check = dataset_name.split("|")[0]
+                if base_check != args.dataset:
+                    continue
             if args.kind and kind != args.kind:
                 continue
 
-            if dataset_name == "Cifar10":
+            # Dataset may include a split tag (e.g. "Cifar10|epochs100_pretrain300").
+            base_dataset = dataset_name.split("|")[0]
+
+            if base_dataset == "Cifar10":
                 if "Cifar10" not in loader_cache:
                     loader_cache["Cifar10"] = load_cifar10(batch_size=256, num_workers=4)
                 train_loader, _ = loader_cache["Cifar10"]
                 num_classes = 10
-            elif dataset_name == "Cifar100":
+            elif base_dataset == "Cifar100":
                 if "Cifar100" not in loader_cache:
                     loader_cache["Cifar100"] = load_cifar100(batch_size=256, num_workers=4)
                 train_loader, _ = loader_cache["Cifar100"]
                 num_classes = 100
+            elif base_dataset.lower() == "tinyimagenet":
+                # Tiny ImageNet loader (200 classes)
+                if "tinyimagenet" not in loader_cache:
+                    loader_cache["tinyimagenet"] = load_tiny_imagenet(batch_size=256, num_workers=4)
+                train_loader, _ = loader_cache["tinyimagenet"]
+                num_classes = 200
             else:
+                # Skip unsupported datasets.
                 continue
 
             one_batch = next(iter(train_loader))[0]

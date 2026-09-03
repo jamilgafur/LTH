@@ -77,7 +77,8 @@ class AdvancedExperimentSuite:
         for dataset_name in set(k[1] for k in pairs):
             if dataset_name not in loader_cache:
                 continue
-            _, test_loader = loader_cache[dataset_name]
+            base_dataset = dataset_name.split("|")[0]
+            _, test_loader = loader_cache[base_dataset]
             dataset_pairs = [k for k in pairs if k[1] == dataset_name]
 
             for src_key in dataset_pairs:

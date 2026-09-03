@@ -225,17 +225,18 @@ def print_adversarial_summary(output_dir: str = "adversarial_results") -> None:
     if results["data"]["transferability"] is not None:
         stats = results["data"]["transfer_stats"]
         print(f"\nAdversarial Transferability:")
-        print(f\"  Mean transfer accuracy: {stats['mean_transfer_acc']:.2%}")
+        # Fixed malformed f-strings (double‑escaped quotes) that caused a syntax error.
+        print(f"  Mean transfer accuracy: {stats['mean_transfer_acc']:.2%}")
         print(f"  Min transfer accuracy:  {stats['min_transfer_acc']:.2%}")
     
-    if results[\"plots\"]:
+    if results["plots"]:
         print(f"\nGenerated Visualizations ({len(results['plots'])} files):")
-        for plot in sorted(results[\"plots\"])[:10]:
-            print(f\"  - {plot}\")
-        if len(results[\"plots\"]) > 10:
-            print(f\"  ... and {len(results['plots']) - 10} more\")
-    
-    print(\"\\n\" + \"=\" * 80)
+        for plot in sorted(results["plots"])[:10]:
+            print(f"  - {plot}")
+        if len(results["plots"]) > 10:
+            print(f"  ... and {len(results['plots']) - 10} more")
+
+    print("\n" + "=" * 80)
 
 
 if __name__ == \"__main__\":

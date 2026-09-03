@@ -34,24 +34,33 @@ class CheckpointManager:
 
     @staticmethod
     def get_checkpoint_path(model: str, dataset: str, kind: str):
+        """Return **all** matching checkpoint paths for a given model/dataset/kind.
+
+        The original implementation returned only a single path (preferring the
+        ``epochs100_pretrain300`` split). Table III, however, reports three
+        separate training regimens (``epochs100_pretrain300``, ``epochs200_pretrain200``,
+        ``epochs300_pretrain100``). To expose each regimen we now return a list of
+        ``(path, split)`` tuples, where *split* is the ``epochsX_pretrainY`` tag
+        extracted from the directory name. Callers should iterate over the list
+        to obtain all available checkpoints.
+        """
         prefix = f"{model}_{dataset}_"
         dirs = [d for d in os.listdir(".") if os.path.isdir(d) and d.startswith(prefix)]
         if not dirs:
-            return None
+            return []
 
-        target_dir = dirs[0]
+        results = []
         for d in dirs:
-            if "epochs100_pretrain300" in d:
-                target_dir = d
-                break
-
-        filename = (
-            "final_JF_Control.pt"
-            if kind == "Original"
-            else "final_JF_Dynamic_Region_All_Combined.pt"
-        )
-        full_path = os.path.abspath(os.path.join(target_dir, "checkpoints", filename))
-        return full_path if os.path.exists(full_path) else None
+            # Extract the split tag (e.g. epochs100_pretrain300) from the directory name.
+            match = re.search(r"(epochs\d+_pretrain\d+)", d)
+            split_tag = match.group(1) if match else "unknown"
+            filename = (
+                "final_JF_Control.pt" if kind == "Original" else "final_JF_Dynamic_Region_All_Combined.pt"
+            )
+            full_path = os.path.abspath(os.path.join(d, "checkpoints", filename))
+            if os.path.exists(full_path):
+                results.append((full_path, split_tag))
+        return results
 
     @staticmethod
     def get_model_kwargs(model_name: str, num_classes: int, one_batch: torch.Tensor | None) -> dict:
@@ -64,6 +73,15 @@ class CheckpointManager:
 
     @staticmethod
     def get_discovered_regions_path(model_name: str, dataset_name: str, ckpt_path: str) -> str | None:
+        """Return the JSON file that stores discovered regions for a checkpoint.
+
+        ``dataset_name`` may now contain a split tag (e.g. ``"Cifar10|epochs100_pretrain300"``).
+        The underlying file naming convention only includes the *base* dataset name,
+        so we strip any ``|...`` suffix before constructing the path.
+        """
+        # Strip any split tag that may have been appended to the dataset name.
+        base_dataset = dataset_name.split("|")[0]
+
         run_dir = os.path.basename(os.path.dirname(os.path.dirname(ckpt_path)))
         base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -72,7 +90,7 @@ class CheckpointManager:
             epoch_tag = match.group(1)
             candidate = os.path.join(
                 base_dir,
-                f"{model_name}_{dataset_name}_{epoch_tag}_JF_discovered_regions.json",
+                f"{model_name}_{base_dataset}_{epoch_tag}_JF_discovered_regions.json",
             )
             if os.path.exists(candidate):
                 return candidate
@@ -81,7 +99,7 @@ class CheckpointManager:
             glob.glob(
                 os.path.join(
                     base_dir,
-                    f"{model_name}_{dataset_name}_epochs*_pretrain*_JF_discovered_regions.json",
+                    f"{model_name}_{base_dataset}_epochs*_pretrain*_JF_discovered_regions.json",
                 )
             )
         )
@@ -162,12 +180,14 @@ class CheckpointManager:
         for model in MODEL_ORDER:
             for dataset in DATASET_ORDER:
                 for kind in ("Finetuned", "Original"):
-                    path = cls.get_checkpoint_path(model, dataset, kind)
-                    if path:
+                    paths = cls.get_checkpoint_path(model, dataset, kind)
+                    for path, split_tag in paths:
+                        # Combine dataset name with split tag to keep downstream grouping simple.
+                        composite_dataset = f"{dataset}|{split_tag}"
                         print(
-                            f"  [FOUND] Model: {model:<15} | Dataset: {dataset:<10} | Kind: {kind:<10}"
+                            f"  [FOUND] Model: {model:<15} | Dataset: {composite_dataset:<30} | Kind: {kind:<10}"
                         )
-                        entries.append((model, dataset, kind, path))
+                        entries.append((model, composite_dataset, kind, path))
 
         print("=" * 70)
         print(f"[CHECKPOINT DISCOVERY] Total valid checkpoint pairs found: {len(entries)}")

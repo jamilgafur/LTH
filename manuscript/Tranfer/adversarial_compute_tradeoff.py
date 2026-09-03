@@ -86,9 +86,11 @@ class ComputeTradeoffSuite:
         explain_df = pd.read_csv(explain_path) if os.path.exists(explain_path) else pd.DataFrame()
 
         for (model_name, dataset_name, kind), model in model_cache.items():
-            if dataset_name not in loader_cache:
+            # dataset_name may include a split tag; use the base name for loader lookup.
+            base_dataset = dataset_name.split("|")[0]
+            if base_dataset not in loader_cache:
                 continue
-            _, test_loader = loader_cache[dataset_name]
+            _, test_loader = loader_cache[base_dataset]
             sample_batch = next(iter(test_loader))[0]
 
             param_count = AdversarialCore.count_model_parameters(model)

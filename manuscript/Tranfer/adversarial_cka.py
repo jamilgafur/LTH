@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+from collapse import _capture_preblock_activation
+from adversarial_checkpointing import CheckpointManager
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -86,9 +88,11 @@ class CKASuite:
 
         pairs = list(model_cache.keys())
         for dataset_name in set(k[1] for k in pairs):
-            if dataset_name not in loader_cache:
+            # ``dataset_name`` may include a split tag (e.g. "Cifar10|epochs100_pretrain300").
+            base_dataset = dataset_name.split("|")[0]
+            if base_dataset not in loader_cache:
                 continue
-            _, test_loader = loader_cache[dataset_name]
+            _, test_loader = loader_cache[base_dataset]
             dataset_pairs = [k for k in pairs if k[1] == dataset_name]
 
             for src_key in dataset_pairs:
@@ -146,6 +150,75 @@ class CKASuite:
 
         df = pd.DataFrame(records)
         df.to_csv(os.path.join(output_dir, "cka_similarity.csv"), index=False)
+
+        # -----------------------------------------------------------------
+        # Optional: compute CKA at exact collapsed block boundaries.
+        # This provides a precise metric for H2 by comparing the representation
+        # before and after each collapsed block in Finetuned models.
+        # -----------------------------------------------------------------
+        boundary_records = []
+        for (model_name, dataset_name, kind), model in model_cache.items():
+            if kind != "Finetuned":
+                continue
+            # Split tag handling (dataset_name may be "Cifar10|epochs100_pretrain300")
+            base_dataset = dataset_name.split("|")[0]
+            split_tag = dataset_name.split("|")[1] if "|" in dataset_name else None
+
+            # Find the checkpoint path that matches this split.
+            ckpt_candidates = CheckpointManager.get_checkpoint_path(model_name, base_dataset, kind)
+            ckpt_path = None
+            for p, tag in ckpt_candidates:
+                if tag == split_tag:
+                    ckpt_path = p
+                    break
+            if not ckpt_path:
+                continue
+
+            try:
+                compression_set = CheckpointManager.get_compression_set_for_checkpoint(
+                    model_name, base_dataset, ckpt_path
+                )
+            except Exception:
+                continue
+
+            # Use a real batch to infer input shape.
+            if base_dataset not in loader_cache:
+                continue
+            train_loader, _ = loader_cache[base_dataset]
+            sample_batch = next(iter(train_loader))[0]
+            input_shape = tuple(sample_batch.shape)
+
+            for block in compression_set:
+                start = block.get("start_layer_name") or block.get("start_layer")
+                end = block.get("end_layer_name") or block.get("end_layer")
+                if not start or not end:
+                    continue
+                try:
+                    x_in, y_out, _ = _capture_preblock_activation(
+                        model, start, end, input_shape, [], None, device, debug=False
+                    )
+                    if x_in is None or y_out is None:
+                        continue
+                    X = x_in.view(x_in.size(0), -1).float()
+                    Y = y_out.view(y_out.size(0), -1).float()
+                    cka_val = CKASuite._compute_linear_cka(X, Y)
+                except Exception:
+                    cka_val = float("nan")
+                boundary_records.append(
+                    {
+                        "model": model_name,
+                        "dataset": dataset_name,
+                        "kind": kind,
+                        "block_start": start,
+                        "block_end": end,
+                        "boundary_cka": cka_val,
+                    }
+                )
+
+        if boundary_records:
+            pd.DataFrame(boundary_records).to_csv(
+                os.path.join(output_dir, "cka_boundary.csv"), index=False
+            )
 
         if df.empty:
             print("[WARN] CKA: no records generated; skipping CKA plots.")
