@@ -43,8 +43,10 @@ def _find_precomputed_adversarial_files(args, output_dir: str, checkpoints: list
         for attack in available_attacks:
             if args.model and model_name != args.model:
                 continue
-            if args.dataset and dataset_name != args.dataset:
-                continue
+            if args.dataset:
+                base_check = dataset_name.split("|")[0]
+                if base_check != args.dataset:
+                    continue
             if args.kind and kind != args.kind:
                 continue
             if args.attack and attack != args.attack:

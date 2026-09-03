@@ -189,8 +189,11 @@ class CKASuite:
             input_shape = tuple(sample_batch.shape)
 
             for block in compression_set:
-                start = block.get("start_layer_name") or block.get("start_layer")
-                end = block.get("end_layer_name") or block.get("end_layer")
+                if isinstance(block, dict):
+                    start = block.get("start_layer_name") or block.get("start_layer")
+                    end = block.get("end_layer_name") or block.get("end_layer")
+                else:
+                    start, end = block[0], block[1]
                 if not start or not end:
                     continue
                 try:

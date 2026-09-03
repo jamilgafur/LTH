@@ -125,9 +125,10 @@ class AdvancedExperimentSuite:
         selected_attacks = attacks if attacks else ["PGD", "FGSM", "BIM"]
 
         for (model_name, dataset_name, kind), model in model_cache.items():
-            if dataset_name not in loader_cache:
+            base_dataset = dataset_name.split("|")[0]
+            if base_dataset not in loader_cache:
                 continue
-            _, test_loader = loader_cache[dataset_name]
+            _, test_loader = loader_cache[base_dataset]
             clean_acc = AdversarialCore.evaluate_clean_accuracy(model, test_loader)
 
             for attack_name in selected_attacks:
@@ -810,9 +811,10 @@ class AdvancedExperimentSuite:
 
         for key, model in model_cache.items():
             model_name, dataset_name, kind = key
-            if dataset_name not in loader_cache:
+            base_dataset = dataset_name.split("|")[0]
+            if base_dataset not in loader_cache:
                 continue
-            _, test_loader = loader_cache[dataset_name]
+            _, test_loader = loader_cache[base_dataset]
 
             ref_vec, stats, class_bundle = self._compute_shap_reference_vector(
                 model=model,
@@ -885,7 +887,10 @@ class AdvancedExperimentSuite:
                 if not class_ids:
                     continue
 
-                test_loader = loader_cache[dataset_name][1]
+                base_dataset = dataset_name.split("|")[0]
+                if base_dataset not in loader_cache:
+                    continue
+                test_loader = loader_cache[base_dataset][1]
                 class_names = getattr(getattr(test_loader, "dataset", None), "classes", None)
                 pair_rows: list[dict] = []
 

@@ -239,14 +239,14 @@ def print_adversarial_summary(output_dir: str = "adversarial_results") -> None:
     print("\n" + "=" * 80)
 
 
-if __name__ == \"__main__\":
+if __name__ == "__main__":
     import argparse
     
-    parser = argparse.ArgumentParser(description=\"Adversarial analysis integration utilities.\")
-    parser.add_argument(\"--run\", action=\"store_true\", help=\"Run the full adversarial analysis pipeline.\")
-    parser.add_argument(\"--summary\", action=\"store_true\", help=\"Print summary of results.\")
-    parser.add_argument(\"--output-dir\", type=str, default=\"adversarial_results\", help=\"Output directory.\")
-    parser.add_argument(\"--use-hpc\", action=\"store_true\", help=\"Submit to HPC cluster.\")
+    parser = argparse.ArgumentParser(description="Adversarial analysis integration utilities.")
+    parser.add_argument("--run", action="store_true", help="Run the full adversarial analysis pipeline.")
+    parser.add_argument("--summary", action="store_true", help="Print summary of results.")
+    parser.add_argument("--output-dir", type=str, default="adversarial_results", help="Output directory.")
+    parser.add_argument("--use-hpc", action="store_true", help="Submit to HPC cluster.")
     args = parser.parse_args()
     
     if args.run:
