@@ -12,6 +12,7 @@ import seaborn as sns
 import torch
 import torch.nn as nn
 
+from adversarial_checkpointing import CheckpointManager
 from adversarial_core import AdversarialCore
 from adversarial_cka import CKASuite
 
@@ -77,7 +78,7 @@ class AdvancedExperimentSuite:
         for dataset_name in set(k[1] for k in pairs):
             if dataset_name not in loader_cache:
                 continue
-            base_dataset = dataset_name.split("|")[0]
+            base_dataset = CheckpointManager.base_dataset_name(dataset_name)
             _, test_loader = loader_cache[base_dataset]
             dataset_pairs = [k for k in pairs if k[1] == dataset_name]
 
@@ -125,7 +126,7 @@ class AdvancedExperimentSuite:
         selected_attacks = attacks if attacks else ["PGD", "FGSM", "BIM"]
 
         for (model_name, dataset_name, kind), model in model_cache.items():
-            base_dataset = dataset_name.split("|")[0]
+            base_dataset = CheckpointManager.base_dataset_name(dataset_name)
             if base_dataset not in loader_cache:
                 continue
             _, test_loader = loader_cache[base_dataset]
@@ -811,7 +812,7 @@ class AdvancedExperimentSuite:
 
         for key, model in model_cache.items():
             model_name, dataset_name, kind = key
-            base_dataset = dataset_name.split("|")[0]
+            base_dataset = CheckpointManager.base_dataset_name(dataset_name)
             if base_dataset not in loader_cache:
                 continue
             _, test_loader = loader_cache[base_dataset]
@@ -887,7 +888,7 @@ class AdvancedExperimentSuite:
                 if not class_ids:
                     continue
 
-                base_dataset = dataset_name.split("|")[0]
+                base_dataset = CheckpointManager.base_dataset_name(dataset_name)
                 if base_dataset not in loader_cache:
                     continue
                 test_loader = loader_cache[base_dataset][1]

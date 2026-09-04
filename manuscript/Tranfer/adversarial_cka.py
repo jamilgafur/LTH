@@ -88,8 +88,8 @@ class CKASuite:
 
         pairs = list(model_cache.keys())
         for dataset_name in set(k[1] for k in pairs):
-            # ``dataset_name`` may include a split tag (e.g. "Cifar10|epochs100_pretrain300").
-            base_dataset = dataset_name.split("|")[0]
+            # ``dataset_name`` may include a split tag (e.g. "Cifar10_epochs100_pretrain300").
+            base_dataset = CheckpointManager.base_dataset_name(dataset_name)
             if base_dataset not in loader_cache:
                 continue
             _, test_loader = loader_cache[base_dataset]
@@ -160,9 +160,9 @@ class CKASuite:
         for (model_name, dataset_name, kind), model in model_cache.items():
             if kind != "Finetuned":
                 continue
-            # Split tag handling (dataset_name may be "Cifar10|epochs100_pretrain300")
-            base_dataset = dataset_name.split("|")[0]
-            split_tag = dataset_name.split("|")[1] if "|" in dataset_name else None
+            # Split tag handling (dataset_name may be "Cifar10_epochs100_pretrain300")
+            base_dataset = CheckpointManager.base_dataset_name(dataset_name)
+            split_tag = CheckpointManager.split_tag_from_dataset_name(dataset_name)
 
             # Find the checkpoint path that matches this split.
             ckpt_candidates = CheckpointManager.get_checkpoint_path(model_name, base_dataset, kind)

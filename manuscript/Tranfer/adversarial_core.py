@@ -238,14 +238,14 @@ class AdversarialCore:
                 continue
             # Allow filtering by base dataset name (ignore split tag)
             if dataset_filter:
-                base_check = dataset_name.split("|")[0]
+                base_check = CheckpointManager.base_dataset_name(dataset_name)
                 if base_check != dataset_filter:
                     continue
             if kind_filter and kind != kind_filter:
                 continue
 
-            # Dataset strings may now include a split tag (e.g. "Cifar10|epochs100_pretrain300").
-            base_dataset = dataset_name.split("|")[0]
+            # Dataset strings may now include a split tag (e.g. "Cifar10_epochs100_pretrain300").
+            base_dataset = CheckpointManager.base_dataset_name(dataset_name)
 
             if base_dataset == "Cifar10":
                 if "Cifar10" not in loader_cache:
@@ -436,14 +436,14 @@ class AdversarialCore:
                 continue
             # Allow args.dataset to match base name, ignoring split tag.
             if args.dataset:
-                base_check = dataset_name.split("|")[0]
+                base_check = CheckpointManager.base_dataset_name(dataset_name)
                 if base_check != args.dataset:
                     continue
             if args.kind and kind != args.kind:
                 continue
 
-            # Dataset may include a split tag (e.g. "Cifar10|epochs100_pretrain300").
-            base_dataset = dataset_name.split("|")[0]
+            # Dataset may include a split tag (e.g. "Cifar10_epochs100_pretrain300").
+            base_dataset = CheckpointManager.base_dataset_name(dataset_name)
 
             if base_dataset == "Cifar10":
                 if "Cifar10" not in loader_cache:

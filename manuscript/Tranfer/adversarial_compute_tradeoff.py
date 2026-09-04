@@ -11,6 +11,7 @@ import pandas as pd
 import seaborn as sns
 import torch
 
+from adversarial_checkpointing import CheckpointManager
 from adversarial_core import AdversarialCore
 
 
@@ -87,7 +88,7 @@ class ComputeTradeoffSuite:
 
         for (model_name, dataset_name, kind), model in model_cache.items():
             # dataset_name may include a split tag; use the base name for loader lookup.
-            base_dataset = dataset_name.split("|")[0]
+            base_dataset = CheckpointManager.base_dataset_name(dataset_name)
             if base_dataset not in loader_cache:
                 continue
             _, test_loader = loader_cache[base_dataset]

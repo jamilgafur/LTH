@@ -44,7 +44,7 @@ def _find_precomputed_adversarial_files(args, output_dir: str, checkpoints: list
             if args.model and model_name != args.model:
                 continue
             if args.dataset:
-                base_check = dataset_name.split("|")[0]
+                base_check = CheckpointManager.base_dataset_name(dataset_name)
                 if base_check != args.dataset:
                     continue
             if args.kind and kind != args.kind:

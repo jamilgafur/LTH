@@ -27,10 +27,34 @@ MODEL_ORDER = [
     "ConvNeXt",
 ]
 DATASET_ORDER = ["Cifar10", "Cifar100", "imagenet", "tinyimagenet"]
+SPLIT_TAG_PATTERN = re.compile(r"(epochs\d+_pretrain\d+)")
 
 
 class CheckpointManager:
     """Handles checkpoint discovery and model reconstruction."""
+
+    @staticmethod
+    def parse_dataset_name(dataset_name: str) -> tuple[str, str | None]:
+        """Parse dataset names like ``Cifar10_epochs100_pretrain300``.
+
+        Returns ``(base_dataset, split_tag_or_none)``.
+        """
+        match = re.match(r"^(?P<base>.+)_(?P<split>epochs\d+_pretrain\d+)$", dataset_name)
+        if match:
+            return match.group("base"), match.group("split")
+        return dataset_name, None
+
+    @classmethod
+    def base_dataset_name(cls, dataset_name: str) -> str:
+        return cls.parse_dataset_name(dataset_name)[0]
+
+    @classmethod
+    def split_tag_from_dataset_name(cls, dataset_name: str) -> str | None:
+        return cls.parse_dataset_name(dataset_name)[1]
+
+    @staticmethod
+    def compose_dataset_name(dataset: str, split_tag: str) -> str:
+        return f"{dataset}_{split_tag}"
 
     @staticmethod
     def get_checkpoint_path(model: str, dataset: str, kind: str):
@@ -52,7 +76,7 @@ class CheckpointManager:
         results = []
         for d in dirs:
             # Extract the split tag (e.g. epochs100_pretrain300) from the directory name.
-            match = re.search(r"(epochs\d+_pretrain\d+)", d)
+            match = SPLIT_TAG_PATTERN.search(d)
             split_tag = match.group(1) if match else "unknown"
             filename = (
                 "final_JF_Control.pt" if kind == "Original" else "final_JF_Dynamic_Region_All_Combined.pt"
@@ -75,17 +99,16 @@ class CheckpointManager:
     def get_discovered_regions_path(model_name: str, dataset_name: str, ckpt_path: str) -> str | None:
         """Return the JSON file that stores discovered regions for a checkpoint.
 
-        ``dataset_name`` may now contain a split tag (e.g. ``"Cifar10|epochs100_pretrain300"``).
+        ``dataset_name`` may now contain a split tag (e.g. ``"Cifar10_epochs100_pretrain300"``).
         The underlying file naming convention only includes the *base* dataset name,
-        so we strip any ``|...`` suffix before constructing the path.
+        so we strip any split suffix before constructing the path.
         """
-        # Strip any split tag that may have been appended to the dataset name.
-        base_dataset = dataset_name.split("|")[0]
+        base_dataset = CheckpointManager.base_dataset_name(dataset_name)
 
         run_dir = os.path.basename(os.path.dirname(os.path.dirname(ckpt_path)))
         base_dir = os.path.dirname(os.path.abspath(__file__))
 
-        match = re.search(r"(epochs\d+_pretrain\d+)", run_dir)
+        match = SPLIT_TAG_PATTERN.search(run_dir)
         if match:
             epoch_tag = match.group(1)
             candidate = os.path.join(
@@ -183,7 +206,7 @@ class CheckpointManager:
                     paths = cls.get_checkpoint_path(model, dataset, kind)
                     for path, split_tag in paths:
                         # Combine dataset name with split tag to keep downstream grouping simple.
-                        composite_dataset = f"{dataset}|{split_tag}"
+                        composite_dataset = cls.compose_dataset_name(dataset, split_tag)
                         print(
                             f"  [FOUND] Model: {model:<15} | Dataset: {composite_dataset:<30} | Kind: {kind:<10}"
                         )
