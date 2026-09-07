@@ -48,10 +48,18 @@ class CKASuite:
         def hook_fn(_module, _inp, out):
             reps.append(out.detach().cpu())
 
-        target = dict(model.named_modules()).get(layer_name)
+        # NOTE: If the model is wrapped in ``nn.DataParallel`` (or ``nn.DistributedDataParallel``),
+        # the actual sub‑modules live under the ``.module`` attribute. ``named_modules()`` on the
+        # wrapper prefixes all names with ``module.`` which means a plain ``layer_name`` (e.g.
+        # ``features.0``) will not be found. To make the hook robust we unwrap the model when
+        # searching for the target layer.
+        base_model = model.module if hasattr(model, "module") else model
+        target = dict(base_model.named_modules()).get(layer_name)
         if target is None:
             return None
 
+        # Register the hook on the *unwrapped* module but keep the original ``model`` for the
+        # forward pass (so DataParallel still handles scattering/gathering).
         handle = target.register_forward_hook(hook_fn)
         model.eval()
         try:
