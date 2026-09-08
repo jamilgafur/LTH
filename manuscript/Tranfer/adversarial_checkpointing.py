@@ -28,6 +28,7 @@ MODEL_ORDER = [
 ]
 DATASET_ORDER = ["Cifar10", "Cifar100", "imagenet", "tinyimagenet"]
 SPLIT_TAG_PATTERN = re.compile(r"(epochs\d+_pretrain\d+)")
+OUTPUT_DIR_SPLIT_PATTERN = re.compile(r"adversarial_results_ep(?P<epochs>\d+)_pre(?P<pretrain>\d+)$")
 
 
 class CheckpointManager:
@@ -55,6 +56,28 @@ class CheckpointManager:
     @staticmethod
     def compose_dataset_name(dataset: str, split_tag: str) -> str:
         return f"{dataset}_{split_tag}"
+
+    @staticmethod
+    def split_tag_from_output_dir(output_dir: str) -> str | None:
+        """Map an output directory name like ``adversarial_results_ep100_pre300`` to
+        ``epochs100_pretrain300``.
+        """
+        run_name = os.path.basename(os.path.normpath(output_dir))
+        match = OUTPUT_DIR_SPLIT_PATTERN.match(run_name)
+        if not match:
+            return None
+        return f"epochs{match.group('epochs')}_pretrain{match.group('pretrain')}"
+
+    @classmethod
+    def dataset_matches_output_dir(cls, dataset_name: str, output_dir: str) -> bool:
+        """Return True when a checkpoint dataset belongs to the split encoded in output_dir.
+
+        If ``output_dir`` does not encode a split tag, all dataset names are accepted.
+        """
+        required_split = cls.split_tag_from_output_dir(output_dir)
+        if required_split is None:
+            return True
+        return cls.split_tag_from_dataset_name(dataset_name) == required_split
 
     @staticmethod
     def get_checkpoint_path(model: str, dataset: str, kind: str):

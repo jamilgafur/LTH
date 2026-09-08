@@ -234,6 +234,8 @@ class AdversarialCore:
             attacks = available_attacks
 
         for model_name, dataset_name, kind, ckpt_path in checkpoints:
+            if not CheckpointManager.dataset_matches_output_dir(dataset_name, output_dir):
+                continue
             if model_filter and model_name != model_filter:
                 continue
             # Allow filtering by base dataset name (ignore split tag)
@@ -432,6 +434,8 @@ class AdversarialCore:
         device = cls._default_device()
 
         for model_name, dataset_name, kind, ckpt_path in CheckpointManager.discover_checkpoints():
+            if not CheckpointManager.dataset_matches_output_dir(dataset_name, args.output_dir):
+                continue
             if args.model and model_name != args.model:
                 continue
             # Allow args.dataset to match base name, ignoring split tag.

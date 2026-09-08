@@ -40,6 +40,8 @@ def _find_precomputed_adversarial_files(args, output_dir: str, checkpoints: list
     adv_datasets = {}
     available_attacks = AdversarialCore.get_available_attacks()
     for model_name, dataset_name, kind, _ckpt_path in checkpoints:
+        if not CheckpointManager.dataset_matches_output_dir(dataset_name, output_dir):
+            continue
         for attack in available_attacks:
             if args.model and model_name != args.model:
                 continue
@@ -83,8 +85,10 @@ def run_pipeline(args) -> None:
             os.path.join(args.output_dir, "statistical_significance*.csv"),
             os.path.join(args.output_dir, "epsilon_sensitivity*.csv"),
             os.path.join(args.output_dir, "gradient_similarity*.csv"),
+            os.path.join(args.output_dir, "transferability*.csv"),
             os.path.join(args.output_dir, "compute_profile.csv"),
             os.path.join(args.output_dir, "tradeoff_summary.csv"),
+            os.path.join(args.output_dir, "*_adv.pt"),
             os.path.join(args.output_dir, "*.png"),
         ]
         for pattern in stale_patterns:
