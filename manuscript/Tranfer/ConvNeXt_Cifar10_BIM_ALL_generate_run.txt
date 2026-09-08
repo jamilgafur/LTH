@@ -135,723 +135,6 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_epochs3_pretrain3_JF_discovered_regions.json
-[DEBUG] Collapse ranges loaded: 10
-[DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar10_epochs3_pretrain3)
-
-[STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
-[STEP] Using provided in-memory model instance (ConvNeXt)
-[STEP] Creating deepcopy of model for safe modification...
-[STEP] Parsing compression set...
-[INFO] Model parameter count before collapsing: 27,827,818
-[STEP] Beginning block-wise collapsing...
-
-[INFO] Processing collapse task 'collapse_0': features.2.1.dwconv → features.2.1.pwconv1
-[STEP] Calling _collapse_block('features.2.1.dwconv', 'features.2.1.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.2.1.dwconv
-[INFO] End Target   : features.2.1.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.2.1.dwconv' -> 'features.2.1.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.2.1' | Type: ConvNeXtBlock
-[DEBUG] Escalating complex block 'features.2.1' (ConvNeXtBlock) to parent for holistic replacement.
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.2.1' -> 'features.2.1'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.2.1.pwconv1'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.2'...
-[DEBUG] Found inserted block candidate at index 1: '1'
-[STEP] Validating inserted module 'Sequential' at index 1...
-[DEBUG] Inserted module forward successful, output shape: (256, 192, 4, 4)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.2' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.1.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.92s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_1': features.2.2.dwconv → features.2.2.pwconv1
-[STEP] Calling _collapse_block('features.2.2.dwconv', 'features.2.2.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.2.2.dwconv
-[INFO] End Target   : features.2.2.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.2.2.dwconv' -> 'features.2.2.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.2.2' | Type: ConvNeXtBlock
-[DEBUG] Escalating complex block 'features.2.2' (ConvNeXtBlock) to parent for holistic replacement.
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.2.2' -> 'features.2.2'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.2.2.pwconv1'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=2, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.2'...
-[DEBUG] Found inserted block candidate at index 2: '2'
-[STEP] Validating inserted module 'Sequential' at index 2...
-[DEBUG] Inserted module forward successful, output shape: (256, 192, 4, 4)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.2' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.2.2.dwconv' → 'features.2.2.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.2.2.dwconv → features.2.2.pwconv1) in 0.02s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_2': features.3.1 → features.4.0.dwconv
-[STEP] Calling _collapse_block('features.3.1', 'features.4.0.dwconv')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.3.1
-[INFO] End Target   : features.4.0.dwconv
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.3.1' -> 'features.4.0.dwconv'
-[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.3' -> 'features.4'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.4.0.dwconv'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features'...
-[DEBUG] Found inserted block candidate at index 3: '3'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.3.1' → 'features.4.0.dwconv'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (features.3.1 → features.4.0.dwconv) in 0.02s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_3': features.4.1.dwconv → features.4.1.pwconv1
-[STEP] Calling _collapse_block('features.4.1.dwconv', 'features.4.1.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.4.1.dwconv
-[INFO] End Target   : features.4.1.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.4.1.dwconv' -> 'features.4.1.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.4.1' | Type: SmartIdentity
-[WARN] ⚠ Could not map start/end layers into LCA container 'features.4.1'
-[DEBUG]   start_layer_name=features.4.1.dwconv, found start_idx=None
-[DEBUG]   end_layer_name=features.4.1.pwconv1, found end_idx=None
-[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
-[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'collapse_3' appears to be cross-branch (parallel paths).
-[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
-
-[INFO] Processing collapse task 'collapse_4': features.4.5.dwconv → features.4.5.pwconv1
-[STEP] Calling _collapse_block('features.4.5.dwconv', 'features.4.5.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.4.5.dwconv
-[INFO] End Target   : features.4.5.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.4.5.dwconv' -> 'features.4.5.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.4.5' | Type: SmartIdentity
-[WARN] ⚠ Could not map start/end layers into LCA container 'features.4.5'
-[DEBUG]   start_layer_name=features.4.5.dwconv, found start_idx=None
-[DEBUG]   end_layer_name=features.4.5.pwconv1, found end_idx=None
-[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
-[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'collapse_4' appears to be cross-branch (parallel paths).
-[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
-
-[INFO] Processing collapse task 'collapse_5': features.4.6.dwconv → features.4.6.pwconv1
-[STEP] Calling _collapse_block('features.4.6.dwconv', 'features.4.6.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.4.6.dwconv
-[INFO] End Target   : features.4.6.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.4.6.dwconv' -> 'features.4.6.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.4.6' | Type: SmartIdentity
-[WARN] ⚠ Could not map start/end layers into LCA container 'features.4.6'
-[DEBUG]   start_layer_name=features.4.6.dwconv, found start_idx=None
-[DEBUG]   end_layer_name=features.4.6.pwconv1, found end_idx=None
-[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
-[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'collapse_5' appears to be cross-branch (parallel paths).
-[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
-
-[INFO] Processing collapse task 'collapse_6': features.4.7.dwconv → features.4.7.pwconv1
-[STEP] Calling _collapse_block('features.4.7.dwconv', 'features.4.7.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.4.7.dwconv
-[INFO] End Target   : features.4.7.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.4.7.dwconv' -> 'features.4.7.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.4.7' | Type: SmartIdentity
-[WARN] ⚠ Could not map start/end layers into LCA container 'features.4.7'
-[DEBUG]   start_layer_name=features.4.7.dwconv, found start_idx=None
-[DEBUG]   end_layer_name=features.4.7.pwconv1, found end_idx=None
-[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
-[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'collapse_6' appears to be cross-branch (parallel paths).
-[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
-
-[INFO] Processing collapse task 'collapse_7': features.4.8.dwconv → features.4.8.pwconv1
-[STEP] Calling _collapse_block('features.4.8.dwconv', 'features.4.8.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.4.8.dwconv
-[INFO] End Target   : features.4.8.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.4.8.dwconv' -> 'features.4.8.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.4.8' | Type: SmartIdentity
-[WARN] ⚠ Could not map start/end layers into LCA container 'features.4.8'
-[DEBUG]   start_layer_name=features.4.8.dwconv, found start_idx=None
-[DEBUG]   end_layer_name=features.4.8.pwconv1, found end_idx=None
-[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
-[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'collapse_7' appears to be cross-branch (parallel paths).
-[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
-
-[INFO] Processing collapse task 'collapse_8': features.6.0.dwconv → features.6.0.pwconv2
-[STEP] Calling _collapse_block('features.6.0.dwconv', 'features.6.0.pwconv2')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.6.0.dwconv
-[INFO] End Target   : features.6.0.pwconv2
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.6.0.dwconv' -> 'features.6.0.pwconv2'
-[DEBUG] [LCA] Resolved Container: 'features.6.0' | Type: ConvNeXtBlock
-[DEBUG] Escalating complex block 'features.6.0' (ConvNeXtBlock) to parent for holistic replacement.
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.6.0' -> 'features.6.0'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.6.0.pwconv2'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.6'...
-[DEBUG] Found inserted block candidate at index 0: '0'
-[STEP] Validating inserted module 'Sequential' at index 0...
-[DEBUG] Inserted module forward successful, output shape: (256, 768, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.6' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (features.6.0.dwconv → features.6.0.pwconv2) in 0.03s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_9': features.6.1.pwconv1 → features.6.2.pwconv2
-[STEP] Calling _collapse_block('features.6.1.pwconv1', 'features.6.2.pwconv2')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.6.1.pwconv1
-[INFO] End Target   : features.6.2.pwconv2
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.6.1.pwconv1' -> 'features.6.2.pwconv2'
-[DEBUG] [LCA] Resolved Container: 'features.6' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.6.1' -> 'features.6.2'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.6.2.pwconv2'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.6'...
-[DEBUG] Found inserted block candidate at index 1: '1'
-[STEP] Validating inserted module 'Sequential' at index 1...
-[DEBUG] Inserted module forward successful, output shape: (256, 768, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.6' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_9' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[STEP] Wrapping pooling layers safely...
-
-[STEP] ===== Collapse summary =====
-[INFO] Parameters before: 27,827,818
-[INFO] Parameters after : 2,482,666
-[INFO] ΔParams = +25,345,152 (expected ≤ 0)
-[INFO] Collapse counts: success=5, failed=0, skipped=5
-[INFO] Total collapse runtime: 0.65s
-[RESULT] ✅ collapse_only complete. Total targets: 10 | success=5 | failed=0 | skipped=5
-[DEBUG] load_state_dict result: missing=3, unexpected=3
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=10.55% adv_acc=6.25%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=10.23% adv_acc=6.60%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=9.98% adv_acc=6.31%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=9.79% adv_acc=6.29%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=9.82% adv_acc=6.39%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=9.82% adv_acc=6.39% asr=93.61% runtime=24.51s
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
-[DEBUG] Collapse ranges loaded: 7
-[DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar10_epochs100_pretrain300)
-
-[STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
-[STEP] Using provided in-memory model instance (ConvNeXt)
-[STEP] Creating deepcopy of model for safe modification...
-[STEP] Parsing compression set...
-[INFO] Model parameter count before collapsing: 27,827,818
-[STEP] Beginning block-wise collapsing...
-
-[INFO] Processing collapse task 'collapse_0': features.2.1.dwconv → features.2.1.pwconv1
-[STEP] Calling _collapse_block('features.2.1.dwconv', 'features.2.1.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.2.1.dwconv
-[INFO] End Target   : features.2.1.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.2.1.dwconv' -> 'features.2.1.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.2.1' | Type: ConvNeXtBlock
-[DEBUG] Escalating complex block 'features.2.1' (ConvNeXtBlock) to parent for holistic replacement.
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.2.1' -> 'features.2.1'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.2.1.pwconv1'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.2'...
-[DEBUG] Found inserted block candidate at index 1: '1'
-[STEP] Validating inserted module 'Sequential' at index 1...
-[DEBUG] Inserted module forward successful, output shape: (256, 192, 4, 4)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.2' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.1.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.02s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_1': features.2.2.dwconv → features.2.2.pwconv1
-[STEP] Calling _collapse_block('features.2.2.dwconv', 'features.2.2.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.2.2.dwconv
-[INFO] End Target   : features.2.2.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.2.2.dwconv' -> 'features.2.2.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.2.2' | Type: ConvNeXtBlock
-[DEBUG] Escalating complex block 'features.2.2' (ConvNeXtBlock) to parent for holistic replacement.
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.2.2' -> 'features.2.2'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.2.2.pwconv1'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=2, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.2'...
-[DEBUG] Found inserted block candidate at index 2: '2'
-[STEP] Validating inserted module 'Sequential' at index 2...
-[DEBUG] Inserted module forward successful, output shape: (256, 192, 4, 4)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.2' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.2.2.dwconv' → 'features.2.2.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.2.2.dwconv → features.2.2.pwconv1) in 0.02s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_2': features.3.1 → features.4.0.pwconv1
-[STEP] Calling _collapse_block('features.3.1', 'features.4.0.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.3.1
-[INFO] End Target   : features.4.0.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.3.1' -> 'features.4.0.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.3' -> 'features.4'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.4.0.pwconv1'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features'...
-[DEBUG] Found inserted block candidate at index 3: '3'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.3.1' → 'features.4.0.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (features.3.1 → features.4.0.pwconv1) in 0.02s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_3': features.4.2.pwconv2 → features.4.3.dwconv
-[STEP] Calling _collapse_block('features.4.2.pwconv2', 'features.4.3.dwconv')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.4.2.pwconv2
-[INFO] End Target   : features.4.3.dwconv
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.4.2.pwconv2' -> 'features.4.3.dwconv'
-[DEBUG] [LCA] Resolved Container: 'features.4' | Type: SmartIdentity
-[WARN] ⚠ Could not map start/end layers into LCA container 'features.4'
-[DEBUG]   start_layer_name=features.4.2.pwconv2, found start_idx=None
-[DEBUG]   end_layer_name=features.4.3.dwconv, found end_idx=None
-[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
-[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'collapse_3' appears to be cross-branch (parallel paths).
-[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
-
-[INFO] Processing collapse task 'collapse_4': features.4.8.dwconv → features.4.8.pwconv2
-[STEP] Calling _collapse_block('features.4.8.dwconv', 'features.4.8.pwconv2')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.4.8.dwconv
-[INFO] End Target   : features.4.8.pwconv2
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.4.8.dwconv' -> 'features.4.8.pwconv2'
-[DEBUG] [LCA] Resolved Container: 'features.4.8' | Type: SmartIdentity
-[WARN] ⚠ Could not map start/end layers into LCA container 'features.4.8'
-[DEBUG]   start_layer_name=features.4.8.dwconv, found start_idx=None
-[DEBUG]   end_layer_name=features.4.8.pwconv2, found end_idx=None
-[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
-[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'collapse_4' appears to be cross-branch (parallel paths).
-[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
-
-[INFO] Processing collapse task 'collapse_5': features.6.0.dwconv → features.6.0.pwconv2
-[STEP] Calling _collapse_block('features.6.0.dwconv', 'features.6.0.pwconv2')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.6.0.dwconv
-[INFO] End Target   : features.6.0.pwconv2
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.6.0.dwconv' -> 'features.6.0.pwconv2'
-[DEBUG] [LCA] Resolved Container: 'features.6.0' | Type: ConvNeXtBlock
-[DEBUG] Escalating complex block 'features.6.0' (ConvNeXtBlock) to parent for holistic replacement.
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.6.0' -> 'features.6.0'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.6.0.pwconv2'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.6'...
-[DEBUG] Found inserted block candidate at index 0: '0'
-[STEP] Validating inserted module 'Sequential' at index 0...
-[DEBUG] Inserted module forward successful, output shape: (256, 768, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.6' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (features.6.0.dwconv → features.6.0.pwconv2) in 0.02s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_6': features.6.1.pwconv1 → features.6.2.pwconv2
-[STEP] Calling _collapse_block('features.6.1.pwconv1', 'features.6.2.pwconv2')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.6.1.pwconv1
-[INFO] End Target   : features.6.2.pwconv2
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.6.1.pwconv1' -> 'features.6.2.pwconv2'
-[DEBUG] [LCA] Resolved Container: 'features.6' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.6.1' -> 'features.6.2'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.6.2.pwconv2'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.6'...
-[DEBUG] Found inserted block candidate at index 1: '1'
-[STEP] Validating inserted module 'Sequential' at index 1...
-[DEBUG] Inserted module forward successful, output shape: (256, 768, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.6' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_6' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.03s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[STEP] Wrapping pooling layers safely...
-
-[STEP] ===== Collapse summary =====
-[INFO] Parameters before: 27,827,818
-[INFO] Parameters after : 2,482,666
-[INFO] ΔParams = +25,345,152 (expected ≤ 0)
-[INFO] Collapse counts: success=5, failed=0, skipped=2
-[INFO] Total collapse runtime: 0.20s
-[RESULT] ✅ collapse_only complete. Total targets: 7 | success=5 | failed=0 | skipped=2
-[DEBUG] load_state_dict result: missing=3, unexpected=3
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=6.64% adv_acc=0.78%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=5.82% adv_acc=2.03%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=6.27% adv_acc=2.13%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=6.58% adv_acc=2.29%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=6.58% adv_acc=2.27%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=6.58% adv_acc=2.27% asr=97.73% runtime=27.70s
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
-[DEBUG] Collapse ranges loaded: 5
-[DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar10_epochs300_pretrain100)
-
-[STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
-[STEP] Using provided in-memory model instance (ConvNeXt)
-[STEP] Creating deepcopy of model for safe modification...
-[STEP] Parsing compression set...
-[INFO] Model parameter count before collapsing: 27,827,818
-[STEP] Beginning block-wise collapsing...
-
-[INFO] Processing collapse task 'collapse_0': features.2.1.dwconv → features.2.2.pwconv1
-[STEP] Calling _collapse_block('features.2.1.dwconv', 'features.2.2.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.2.1.dwconv
-[INFO] End Target   : features.2.2.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.2.1.dwconv' -> 'features.2.2.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.2' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.2.1' -> 'features.2.2'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.2.2.pwconv1'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.2'...
-[DEBUG] Found inserted block candidate at index 1: '1'
-[STEP] Validating inserted module 'Sequential' at index 1...
-[DEBUG] Inserted module forward successful, output shape: (256, 192, 4, 4)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.2' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.2.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.2.pwconv1) in 0.02s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_1': features.3.1 → features.4.0.pwconv1
-[STEP] Calling _collapse_block('features.3.1', 'features.4.0.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.3.1
-[INFO] End Target   : features.4.0.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.3.1' -> 'features.4.0.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.3' -> 'features.4'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.4.0.pwconv1'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features'...
-[DEBUG] Found inserted block candidate at index 3: '3'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.3.1' → 'features.4.0.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.3.1 → features.4.0.pwconv1) in 0.02s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_2': features.4.8.dwconv → features.4.8.pwconv2
-[STEP] Calling _collapse_block('features.4.8.dwconv', 'features.4.8.pwconv2')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.4.8.dwconv
-[INFO] End Target   : features.4.8.pwconv2
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.4.8.dwconv' -> 'features.4.8.pwconv2'
-[DEBUG] [LCA] Resolved Container: 'features.4.8' | Type: SmartIdentity
-[WARN] ⚠ Could not map start/end layers into LCA container 'features.4.8'
-[DEBUG]   start_layer_name=features.4.8.dwconv, found start_idx=None
-[DEBUG]   end_layer_name=features.4.8.pwconv2, found end_idx=None
-[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
-[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'collapse_2' appears to be cross-branch (parallel paths).
-[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
-
-[INFO] Processing collapse task 'collapse_3': features.6.0.dwconv → features.6.0.pwconv2
-[STEP] Calling _collapse_block('features.6.0.dwconv', 'features.6.0.pwconv2')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.6.0.dwconv
-[INFO] End Target   : features.6.0.pwconv2
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.6.0.dwconv' -> 'features.6.0.pwconv2'
-[DEBUG] [LCA] Resolved Container: 'features.6.0' | Type: ConvNeXtBlock
-[DEBUG] Escalating complex block 'features.6.0' (ConvNeXtBlock) to parent for holistic replacement.
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.6.0' -> 'features.6.0'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.6.0.pwconv2'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.6'...
-[DEBUG] Found inserted block candidate at index 0: '0'
-[STEP] Validating inserted module 'Sequential' at index 0...
-[DEBUG] Inserted module forward successful, output shape: (256, 768, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.6' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (features.6.0.dwconv → features.6.0.pwconv2) in 0.01s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_4': features.6.1.pwconv1 → features.6.2.pwconv2
-[STEP] Calling _collapse_block('features.6.1.pwconv1', 'features.6.2.pwconv2')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.6.1.pwconv1
-[INFO] End Target   : features.6.2.pwconv2
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.6.1.pwconv1' -> 'features.6.2.pwconv2'
-[DEBUG] [LCA] Resolved Container: 'features.6' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.6.1' -> 'features.6.2'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.6.2.pwconv2'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.6'...
-[DEBUG] Found inserted block candidate at index 1: '1'
-[STEP] Validating inserted module 'Sequential' at index 1...
-[DEBUG] Inserted module forward successful, output shape: (256, 768, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.6' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.03s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[STEP] Wrapping pooling layers safely...
-
-[STEP] ===== Collapse summary =====
-[INFO] Parameters before: 27,827,818
-[INFO] Parameters after : 2,518,762
-[INFO] ΔParams = +25,309,056 (expected ≤ 0)
-[INFO] Collapse counts: success=4, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.16s
-[RESULT] ✅ collapse_only complete. Total targets: 5 | success=4 | failed=0 | skipped=1
-[DEBUG] load_state_dict result: missing=1, unexpected=1
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=5.86% adv_acc=2.73%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=5.98% adv_acc=2.15%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=5.90% adv_acc=2.17%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=6.09% adv_acc=2.28%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=5.99% adv_acc=2.23%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=5.99% adv_acc=2.23% asr=97.77% runtime=36.64s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 6
 [DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar10_epochs200_pretrain200)
@@ -895,7 +178,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.1.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.76s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -930,7 +213,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.2.dwconv' → 'features.2.2.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.2.2.dwconv → features.2.2.pwconv1) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.2.2.dwconv → features.2.2.pwconv1) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1003,55 +286,16 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 
 [STEP 3] Probing graph for downstream classifier after 'features.6.0.pwconv2'...
 
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.6'...
-[DEBUG] Found inserted block candidate at index 0: '0'
-[STEP] Validating inserted module 'Sequential' at index 0...
-[DEBUG] Inserted module forward successful, output shape: (256, 768, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.6' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (features.6.0.dwconv → features.6.0.pwconv2) in 0.01s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_5': features.6.1.pwconv1 → features.6.2.pwconv2
-[STEP] Calling _collapse_block('features.6.1.pwconv1', 'features.6.2.pwconv2')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.6.1.pwconv1
-[INFO] End Target   : features.6.2.pwconv2
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.6.1.pwconv1' -> 'features.6.2.pwconv2'
-[DEBUG] [LCA] Resolved Container: 'features.6' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.6.1' -> 'features.6.2'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.6.2.pwconv2'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[STEP 4] Analytart_idx=1, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.6'...
 [DEBUG] Found inserted block candidate at index 1: '1'
-[STEP] Validating inserted module 'Sequential' at in index 1...
+[STEP] Validating inserted module 'Sequential' at index 1...
 [DEBUG] Inserted module forward successful, output shape: (256, 768, 1, 1)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_4' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1059,51 +303,52 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 
 [STEP] ===== Collapse summary =====
 [INFO] Parameters before: 27,827,818
-[INFO] Parameters after : 2,482,666
-[INFO] ΔParams = +25,345,152 (expected ≤ 0)
-[INFO] Collapse counts: success=5, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.14s
-[RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
-[DEBUG] load_state_dict result: missing=3, unexpected=3
+[INFO] Parameters after : 2,518,762
+[INFO] ΔParams = +25,309,056 (expected ≤ 0)
+[INFO] Collapse counts: success=4, failed=0, skipped=1
+[INFO] Total collapse runtime: 0.66s
+[RESULT] ✅ collapse_only complete. Total targets: 5 | success=4 | failed=0 | skipped=1
+[DEBUG] load_state_dict result: missing=1, unexpected=1
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=10.16% adv_acc=3.52%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=7.58% adv_acc=2.81%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=7.89% adv_acc=2.81%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=8.19% adv_acc=2.88%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=8.23% adv_acc=2.87%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=8.23% adv_acc=2.87% asr=97.13% runtime=18.26s
+[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=7.42% adv_acc=4.30%
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=8.20% adv_acc=3.71%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=7.87% adv_acc=3.59%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=7.47% adv_acc=3.49%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=7.43% adv_acc=3.46%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=7.43% adv_acc=3.46% asr=96.54% runtime=21.39s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=51.56% adv_acc=40.23%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=51.91% adv_acc=38.52%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=52.62% adv_acc=39.61%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=52.08% adv_acc=38.59%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=52.00% adv_acc=38.50%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=52.00% adv_acc=38.50% asr=61.50% runtime=26.87s
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: BIM
-[[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=76.56% adv_acc=52.73%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=76.17% adv_acc=54.14%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=75.78% adv_acc=54.65%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=75.16% adv_acc=54.34%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=75.25% adv_acc=54.60%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=75.25% adv_acc=54.60% asr=45.40% runtime=31.54s
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
-[ATTACK][SETUP][ATTACK][BAT[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=77.34% adv_acc=58.59%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=76.29% adv_acc=57.07%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=76.33% adv_acc=57.64%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=75.44% adv_acc=57.12%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=75.56% adv_acc=57.25%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=75.56% adv_acc=57.25% asr=42.75% runtime=35.88s
-[DEBUG] load_state_dict result: missing=0, u[ATTACK][SET[ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
-[ATTACK][SETUP][ATTACK][BAT[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=73.05% adv_acc=54.30%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=75.94% adv_acc=56.13%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=75.86% adv_acc=56.66%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=75.20% adv_acc=56.28%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=75.34% adv_acc=56.59%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=75.34% adv_acc=56.59% asr=43.41% runtime=40.35s
+[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=77.34% adv_acc=58.59%
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=76.29% adv_acc=57.11%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=76.33% adv_acc=57.66%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=75.46% adv_acc=57.12%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=75.57% adv_acc=57.25%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=75.57% adv_acc=57.25% asr=42.75% runtime=35.90s
 [INFO] Summary written to adversarial_results_ep300_pre100/summary_ConvNeXt_Cifar10_BIM_ALL.csv
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: BIM
+[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=73.05% adv_acc=54.30%
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=75.98% adv_acc=56.13%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=75.88% adv_acc=56.66%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=75.21% adv_acc=56.28%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=75.35% adv_acc=56.59%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=75.35% adv_acc=56.59% asr=43.41% runtime=36.16s
+[INFO] Summary written to adversarial_results_ep200_pre200/summary_ConvNeXt_Cifar10_BIM_ALL.csv
+0%
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=10.82% adv_acc=4.65%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=10.78% adv_acc=4.63%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=10.33% adv_acc=4.49%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=10.35% adv_acc=4.65%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=10.35% adv_acc=4.65% asr=95.35% runtime=22.96s
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: BIM
+[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=76.56% adv_acc=52.73%
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=76.17% adv_acc=54.14%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=75.76% adv_acc=54.65%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=75.14% adv_acc=54.34%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=75.24% adv_acc=54.60%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=75.24% adv_acc=54.60% asr=45.40% runtime=36.20s
+[INFO] Summary written to adversarial_results_ep100_pre300/summary_ConvNeXt_Cifar10_BIM_ALL.csv

@@ -135,118 +135,16 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/VGG16_Cifar10_epochs3_pretrain3_JF_discovered_regions.json
-[DEBUG] Collapse ranges loaded: 2
-[DEBUG] Rebuilding collapsed architecture for VGG16 (Cifar10_epochs3_pretrain3)
-
-[STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
-[STEP] Using provided in-memory model instance (VGG16)
-[STEP] Creating deepcopy of model for safe modification...
-[STEP] Parsing compression set...
-[INFO] Model parameter count before collapsing: 33,663,050
-[STEP] Beginning block-wise collapsing...
-
-[INFO] Processing collapse task 'collapse_0': features.conv_5 → features.conv_10
-[STEP] Calling _collapse_block('features.conv_5', 'features.conv_10')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.conv_5
-[INFO] End Target   : features.conv_10
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_10'
-[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_10'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=14, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features'...
-[DEBUG] Found inserted block candidate at index 14: 'conv_5'
-[STEP] Validating inserted module 'Sequential' at index 14...
-[DEBUG] Inserted module forward successful, output shape: (256, 512, 4, 4)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.conv_5' → 'features.conv_10'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_5 → features.conv_10) in 1.46s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-[INFO] Replaced 10 in-place ReLU(s) with out-of-place variants.
-
-[INFO] Processing collapse task 'collapse_1': features.conv_12 → features.conv_13
-[STEP] Calling _collapse_block('features.conv_12', 'features.conv_13')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.conv_12
-[INFO] End Target   : features.conv_13
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.conv_12' -> 'features.conv_13'
-[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.conv_12' -> 'features.conv_13'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=37, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features'...
-[DEBUG] Found inserted block candidate at index 37: 'conv_12'
-[STEP] Validating inserted module 'Sequential' at index 37...
-[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.03s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[STEP] Wrapping pooling layers safely...
-
-[STEP] ===== Collapse summary =====
-[INFO] Parameters before: 33,663,050
-[INFO] Parameters after : 21,893,450
-[INFO] ΔParams = +11,769,600 (expected ≤ 0)
-[INFO] Collapse counts: success=2, failed=0, skipped=0
-[INFO] Total collapse runtime: 1.95s
-[RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/m[ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: APGD
-[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=77.34% adv_acc=14.84%
-[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=75.66% adv_acc=13.52%
-[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=76.07% adv_acc=13.14%
-[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=75.79% adv_acc=12.62%
-[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=75.92% adv_acc=12.89%
-[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=75.92% adv_acc=12.89% asr=87.11% runtime=50.79s
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/VGG16_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
-[DEBUG] Collapse ranges loaded: 2
-[DEBUG] Rebuilding collapsed architecture for VGG16 (Cifar10_epochs100_pretrain300)
-
-[STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
-[STEP] Using provided in-memory model instance (VGG16)
-[STEP] Creating deepcopy of model for safe modification...
-[STEP] Parsing compression set...
-[INFO] Model parameter count before collapsing: 33,663,050
-[STEP] Beginning block-wise collapsing...
-
-[INFO] Processing collapse task 'collapse_0': features.conv_5 → features.conv_10
+[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=94.92% adv_acc=15.62%
+[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=92.42% adv_acc=13.95%
+[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=92.38% adv_acc=14.16%
+[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=92.50% adv_acc=13.58%
+[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=92.45% adv_acc=13.71%
+[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=92.45% adv_acc=13.71% asr=86.29% runtime=43.41s
+[INFO] Summary written to adversarial_results_ep200_pre200/summary_VGG16_Cifar10_APGD_ALL.csv
+0
 [STEP] Calling _collapse_block('features.conv_5', 'features.conv_10')
 
 [INFO] ==================== Collapsing Block ====================
@@ -276,7 +174,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.conv_5' → 'features.conv_10'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_5 → features.conv_10) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_5 → features.conv_10) in 0.33s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 10 in-place ReLU(s) with out-of-place variants.
@@ -311,7 +209,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.02s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -322,107 +220,24 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 21,893,450
 [INFO] ΔParams = +11,769,600 (expected ≤ 0)
 [INFO] Collapse counts: success=2, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.19s
+[INFO] Total collapse runtime: 0.79s
 [RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: APGD
 [ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=91.41% adv_acc=7.42%
-[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=90.66% adv_acc=5.35%
-[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=91.13% adv_acc=5.33%
-[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=91.61% adv_acc=4.97%
-[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=91.67% adv_acc=5.02%
-[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=91.67% adv_acc=5.02% asr=94.98% runtime=39.50s
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: APGD
-[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=94.92% adv_acc=15.23%
-[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=92.42% adv_acc=13.83%
-[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=92.38% adv_acc=14.14%
-[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=92.50% adv_acc=13.58%
-[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=92.45% adv_acc=13.71%
-[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=92.45% adv_acc=13.71% asr=86.29% runtime=53.26s
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: APGD
-[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=92.58% adv_acc=12.11%
-[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=11.91%
-[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=92.52% adv_acc=12.36%
-[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=92.73% adv_acc=11.97%
-[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=92.87% adv_acc=12.14%
-[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=92.87% adv_acc=12.14% asr=87.86% runtime=54.21s
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: APGD
-2% adv_acc=13.83%
-[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=92.38% adv_acc=14.14%
-[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=92.50% adv_acc=13.58%
-[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=92.45% adv_acc=13.71%
-[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=92.45% adv_acc=13.71% asr=86.29% runtime=56.10s
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: APGD
-[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=92.58% adv_acc=12.11%
-[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=11.91%
-[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=92.52% adv_acc=12.36%
-[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=92.73% adv_acc=11.97%
-[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=92.87% adv_acc=12.14%
-[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=92.87% adv_acc=12.14% asr=87.86% runtime=58.03s
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: APGD
-[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=53.12% adv_acc=9.77%
-[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=54.88% adv_acc=9.65%
-[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=54.79% adv_acc=9.69%
-[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=54.36% adv_acc=9.53%
-[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=54.29% adv_acc=9.53%
-[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=54.29% adv_acc=9.53% asr=90.47% runtime=38.81s
+[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=90.59% adv_acc=5.31%
+[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=91.09% adv_acc=5.25%
+[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=91.59% adv_acc=4.93%
+[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=91.65% adv_acc=5.01%
+[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=91.65% adv_acc=5.01% asr=94.99% runtime=33.56s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: APGD
 [ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=91.41% adv_acc=11.72%
 [ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=91.72% adv_acc=12.07%
-[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=92.19% adv_acc=11.70%
-[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=92.16% adv_acc=11.17%
-[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=92.04% adv_acc=11.18%
-[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=92.04% adv_acc=11.18% asr=88.82% runtime=55.36s
+[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=92.19% adv_acc=11.76%
+[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=92.16% adv_acc=11.21%
+[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=92.04% adv_acc=11.22%
+[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=92.04% adv_acc=11.22% asr=88.78% runtime=45.10s
 [INFO] Summary written to adversarial_results_ep100_pre300/summary_VGG16_Cifar10_APGD_ALL.csv
-e 73, in handler
-    _error_if_any_worker_fails()
-RuntimeError: DataLoader worker (pid 330567) is killed by signal: Killed.
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: APGD
-[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=94.92% adv_acc=15.23%
-[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=92.42% adv_acc=13.83%
-[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=92.38% adv_acc=14.14%
-[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=92.50% adv_acc=13.58%
-[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=92.45% adv_acc=13.71%
-[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=92.45% adv_acc=13.71% asr=86.29% runtime=57.66s
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: APGD
-[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=92.58% adv_acc=12.11%
-[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=11.91%
-[ERROR] Attack generation failed for APGD: DataLoader worker (pid 332013) is killed by signal: Killed. 
-[ATTACK][ERROR] traceback:
-Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 141, in generate_adversarial_dataset
-    adv = attack(imgs, lbls)
-          ^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchattacks/attack.py", line 511, in __call__
-    adv_inputs = self.forward(inputs, labels, *args, **kwargs)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchattacks/attacks/apgd.py", line 74, in forward
-    _, adv_images = self.perturb(images, labels, cheap=True)
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchattacks/attacks/apgd.py", line 348, in perturb
-    ) = self.attack_single_run(
-        ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchattacks/attacks/apgd.py", line 262, in attack_single_run
-    x_best_adv[(pred == 0).nonzero().squeeze()] = (
-               ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
-    _error_if_any_worker_fails()
-RuntimeError: DataLoader worker (pid 332013) is killed by signal: Killed.
-[DEBUG] load_state_dict result: missing=0, unexpected=0
