@@ -27,7 +27,12 @@ MODEL_ORDER = [
     "ConvNeXt",
 ]
 DATASET_ORDER = ["Cifar10", "Cifar100", "imagenet", "tinyimagenet"]
-SPLIT_TAG_PATTERN = re.compile(r"(epochs\d+_pretrain\d+)")
+# Some checkpoint directories were created with a ``None_`` prefix before the split tag
+# (e.g. ``InceptionNet_tinyimagenet_None_epochs100_pretrain300``). The original pattern
+# only matched ``epochs..._pretrain...`` and therefore ignored those directories, causing
+# the corresponding model‑dataset pair to be omitted from discovery. We now accept an
+# optional ``None_`` prefix.
+SPLIT_TAG_PATTERN = re.compile(r"(?:None_)?(epochs\d+_pretrain\d+)")
 OUTPUT_DIR_SPLIT_PATTERN = re.compile(r"adversarial_results_ep(?P<epochs>\d+)_pre(?P<pretrain>\d+)$")
 
 
