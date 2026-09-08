@@ -177,7 +177,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.pointwise) in 0.27s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.pointwise) in 14.91s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -212,7 +212,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.1.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.1.rep.4.depthwise' → 'middle_flow.1.rep.7.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.pointwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.pointwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -246,7 +246,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.2.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.2.rep.4.depthwise' → 'middle_flow.2.rep.7.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.pointwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.pointwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -280,7 +280,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.3.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.3.rep.4.depthwise' → 'middle_flow.3.rep.7.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.pointwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.pointwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -314,7 +314,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.4.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.4.rep.4.depthwise' → 'middle_flow.4.rep.7.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.pointwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_4' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.pointwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -452,7 +452,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
 [INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'conv4.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (block4.rep.1.depthwise → conv4.pointwise) in 0.06s
+[INFO] ✅ Successfully collapsed block 'collapse_8' (block4.rep.1.depthwise → conv4.pointwise) in 0.34s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -463,34 +463,17 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 11,193,490
 [INFO] ΔParams = +9,633,952 (expected ≤ 0)
 [INFO] Collapse counts: success=9, failed=0, skipped=0
-[INFO] Total collapse runtime: 1.13s
+[INFO] Total collapse runtime: 16.16s
 [RESULT] ✅ collapse_only complete. Total targets: 9 | success=9 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
-Traceback (most recent call last):
-='BIM' eps=0.030000 steps=40
+[ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=65.62% adv_acc=39.84%
-[ERROR] Attack generation failed for BIM: DataLoader worker (pid 4239) is killed by signal: Killed. 
-[ATTACK][ERROR] traceback:
-Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 141, in generate_adversarial_dataset
-    adv = attack(imgs, lbls)
-          ^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchattacks/attack.py", line 511, in __call__
-    adv_inputs = self.forward(inputs, labels, *args, **kwargs)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchattacks/attacks/bim.py", line 68, in forward
-    grad = torch.autograd.grad(
-           ^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/autograd/__init__.py", line 496, in grad
-    result = _engine_run_backward(
-             ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/autograd/graph.py", line 823, in _engine_run_backward
-    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
-    _error_if_any_worker_fails()
-RuntimeError: DataLoader worker (pid 4239) is killed by signal: Killed.
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=66.72% adv_acc=38.52%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=67.73% adv_acc=39.18%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=67.30% adv_acc=38.29%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=67.47% adv_acc=38.13%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=67.47% adv_acc=38.13% asr=61.87% runtime=40.68s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 9
 [DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar10_epochs200_pretrain200)
@@ -533,7 +516,7 @@ RuntimeError: DataLoader worker (pid 4239) is killed by signal: Killed.
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -568,7 +551,7 @@ RuntimeError: DataLoader worker (pid 4239) is killed by signal: Killed.
 [RESULT] ✅ Downstream validation for 'middle_flow.2.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.2.rep.4.depthwise' → 'middle_flow.2.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.depthwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -602,7 +585,7 @@ RuntimeError: DataLoader worker (pid 4239) is killed by signal: Killed.
 [RESULT] ✅ Downstream validation for 'middle_flow.3.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.3.rep.4.depthwise' → 'middle_flow.3.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.depthwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -636,7 +619,7 @@ RuntimeError: DataLoader worker (pid 4239) is killed by signal: Killed.
 [RESULT] ✅ Downstream validation for 'middle_flow.4.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.4.rep.4.depthwise' → 'middle_flow.4.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -670,7 +653,7 @@ RuntimeError: DataLoader worker (pid 4239) is killed by signal: Killed.
 [RESULT] ✅ Downstream validation for 'middle_flow.5.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.5.rep.4.depthwise' → 'middle_flow.5.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_4' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -795,10 +778,31 @@ RuntimeError: DataLoader worker (pid 4239) is killed by signal: Killed.
 [STEP 4] Analyzing topological characteristics for replacement...
 
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
-[DEBUG] Updating root containermeters after : 13,839,874
+[DEBUG] Updating root container in-place (Preserving attribute names).
+
+[STEP] ===== Starting _validate_downstream for '' =====
+[DEBUG] start_idx=6, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within ''...
+[DEBUG] Found inserted block candidate at index 6: 'conv3'
+[STEP] Validating inserted module 'Sequential' at index 6...
+[DEBUG] Inserted module forward successful, output shape: (256, 2048, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[WARN] Downstream module '.fc' raised exception: mat1 and mat2 shapes cannot be multiplied (524288x1 and 2048x10)
+[INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
+
+[INFO] ✅ Framework successfully merged 'conv3.depthwise' → 'conv4.pointwise'
+[INFO] ✅ Successfully collapsed block 'collapse_8' (conv3.depthwise → conv4.pointwise) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 20,827,442
+[INFO] Parameters after : 13,839,874
 [INFO] ΔParams = +6,987,568 (expected ≤ 0)
 [INFO] Collapse counts: success=9, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.41s
+[INFO] Total collapse runtime: 0.39s
 [RESULT] ✅ collapse_only complete. Total targets: 9 | success=9 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
@@ -808,7 +812,7 @@ RuntimeError: DataLoader worker (pid 4239) is killed by signal: Killed.
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=88.44% adv_acc=65.06%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=88.46% adv_acc=65.05%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=88.45% adv_acc=65.16%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=88.45% adv_acc=65.16% asr=34.84% runtime=53.62s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=88.45% adv_acc=65.16% asr=34.84% runtime=43.16s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 9
 [DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar10_epochs100_pretrain300)
@@ -1141,13 +1145,12 @@ RuntimeError: DataLoader worker (pid 4239) is killed by signal: Killed.
 [RESULT] ✅ collapse_only complete. Total targets: 9 | success=9 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=86.72% adv_acc=67.19%
+[ATTACK][SETUP] Ready: BI[A[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=86.72% adv_acc=67.19%
 [ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=88.20% adv_acc=66.68%
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=88.48% adv_acc=67.17%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=88.78% adv_acc=67.43%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=88.76% adv_acc=67.83%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=88.76% adv_acc=67.83% asr=32.17% runtime=35.00s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=88.76% adv_acc=67.83% asr=32.17% runtime=34.90s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 9
 [DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar10_epochs300_pretrain100)
@@ -1459,13 +1462,13 @@ RuntimeError: DataLoader worker (pid 4239) is killed by signal: Killed.
 [STEP] Searching for inserted collapsed module within ''...
 [DEBUG] Found inserted block candidate at index 6: 'conv3'
 [STEP] Validating inserted module 'Sequential' at index 6...
-[DEBUG] Inserted module forward successful, output shape: (256, 2048, 2, 2)
+[DEBUG] Inserted module forward successful, outputhape: (256, 2048, 2, 2)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [WARN] Downstream module '.fc' raised exception: mat1 and mat2 shapes cannot be multiplied (524288x1 and 2048x10)
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
 [INFO] ✅ Framework successfully merged 'conv3.depthwise' → 'conv4.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (conv3.depthwise → conv4.pointwise) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_8' (conv3.depthwise → conv4.pointwise) in 0.06s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1476,44 +1479,44 @@ RuntimeError: DataLoader worker (pid 4239) is killed by signal: Killed.
 [INFO] Parameters after : 13,839,874
 [INFO] ΔParams = +6,987,568 (expected ≤ 0)
 [INFO] Collapse counts: success=9, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.39s
+[INFO] Total collapse runtime: 0.57s
 [RESULT] ✅ collapse_only complete. Total targets: 9 | success=9 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=87.11% adv_acc=63.67%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=87.46% adv_acc=62.42%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=87.73% adv_acc=61.46%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=87.57% adv_acc=61.08%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=87.49% adv_acc=61.35%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=87.49% adv_acc=61.35% asr=38.65% runtime=39.83s
+[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=87.11% adv_acc=63.28%
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=87.50% adv_acc=62.38%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=87.75% adv_acc=61.48%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=87.58% adv_acc=61.09%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=87.51% adv_acc=61.35%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=87.51% adv_acc=61.35% asr=38.65% runtime=57.79s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=62.50% adv_acc=33.20%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=65.47% adv_acc=39.10%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=65.25% adv_acc=39.30%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=65.30% adv_acc=39.19%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=65.05% adv_acc=39.07%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=65.05% adv_acc=39.07% asr=60.93% runtime=37.21s
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=65.43% adv_acc=39.10%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=65.23% adv_acc=39.32%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=65.29% adv_acc=39.21%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=65.04% adv_acc=39.10%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=65.04% adv_acc=39.10% asr=60.90% runtime=47.26s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=88.67% adv_acc=63.28%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=87.54% adv_acc=65.12%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=87.73% adv_acc=64.49%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=87.93% adv_acc=64.51%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=88.07% adv_acc=65.02%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=88.07% adv_acc=65.02% asr=34.98% runtime=35.65s
+[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=88.67% adv_acc=63.67%
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=87.50% adv_acc=65.20%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=87.71% adv_acc=64.51%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=87.92% adv_acc=64.52%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=88.06% adv_acc=65.02%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=88.06% adv_acc=65.02% asr=34.98% runtime=46.55s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=85.94% adv_acc=60.16%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=86.72% adv_acc=60.51%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=86.70% adv_acc=60.68%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=86.91% adv_acc=60.34%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=87.13% adv_acc=61.09%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=87.13% adv_acc=61.09% asr=38.91% runtime=42.93s
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=86.72% adv_acc=60.47%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=86.68% adv_acc=60.66%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=86.90% adv_acc=60.34%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=87.12% adv_acc=61.08%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=87.12% adv_acc=61.08% asr=38.92% runtime=46.82s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
@@ -1521,6 +1524,7 @@ RuntimeError: DataLoader worker (pid 4239) is killed by signal: Killed.
 [ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=88.16% adv_acc=67.27%
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=88.18% adv_acc=66.95%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=88.14% adv_acc=66.88%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=88.28% adv_acc=67.39%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=88.28% adv_acc=67.39% asr=32.61% runtime=51.05s
-[INFO] Summary written to adversarial_results_ep100_pre300/summary_XceptionNet_Cifar10_BIM_ALL.csv
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=88.27% adv_acc=67.40%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=88.27% adv_acc=67.40% asr=32.60% runtime=68.90s
+[INFO] Summary written to adversarial_results_ep200_pre200/summary_XceptionNet_Cifar10_BIM_ALL.csv
+v

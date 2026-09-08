@@ -135,8 +135,6 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar100_epochs3_pretrain3_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 9
 [DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar100_epochs3_pretrain3)
@@ -179,7 +177,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.pointwise) in 1.11s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.pointwise) in 0.32s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -316,7 +314,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.4.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.4.rep.4.depthwise' → 'middle_flow.4.rep.7.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.pointwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_4' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.pointwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -465,18 +463,19 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 11,377,900
 [INFO] ΔParams = +9,633,952 (expected ≤ 0)
 [INFO] Collapse counts: success=9, failed=0, skipped=0
-[INFO] Total collapse runtime: 2.15s
+[INFO] Total collapse runtime: 1.21s
 [RESULT] ✅ collapse_only complete. Total targets: 9 | success=9 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=40.62% adv_acc=3.91%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=36.41% adv_acc=2.70%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=36.76% adv_acc=2.54%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=36.25% adv_acc=2.59%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=36.14% adv_acc=2.58%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=36.14% adv_acc=2.58% asr=97.42% runtime=47.22s
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar100_epochs100_pretrain300_JF_discovered_regions.json
+[ERROR] Attack generation failed for PGD: DataLoader worker (pid 216119) is killed by signal: Killed. 
+[ATTACK][ERROR] traceback:
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 140, in generate_adversarial_dataset
+    clean_preds = model(imgs).argmax(dim=1)
+                  ^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/py[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar100_epochs100_pretrain300_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 10
 [DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar100_epochs100_pretrain300)
 
@@ -518,7 +517,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -553,7 +552,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.1.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.1.rep.4.depthwise' → 'middle_flow.1.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -587,7 +586,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.2.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.2.rep.4.depthwise' → 'middle_flow.2.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.depthwise) in 0.06s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.depthwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -621,7 +620,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.3.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.3.rep.4.depthwise' → 'middle_flow.3.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.depthwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -655,7 +654,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.4.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.4.rep.4.depthwise' → 'middle_flow.4.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_4' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -689,7 +688,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.5.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.5.rep.4.depthwise' → 'middle_flow.5.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -723,7 +722,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.6.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.6.rep.4.depthwise' → 'middle_flow.6.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_6' (middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_6' (middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -757,7 +756,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.7.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.7.rep.4.depthwise' → 'middle_flow.7.rep.7.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_7' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_7' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -791,7 +790,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'block4.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'block4.rep.4.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_8' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -827,7 +826,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
 [INFO] ✅ Framework successfully merged 'conv3.depthwise' → 'conv4.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_9' (conv3.depthwise → conv4.pointwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_9' (conv3.depthwise → conv4.pointwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -838,17 +837,79 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 13,481,196
 [INFO] ΔParams = +7,530,656 (expected ≤ 0)
 [INFO] Collapse counts: success=10, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.59s
+[INFO] Total collapse runtime: 0.34s
 [RESULT] ✅ collapse_only complete. Total targets: 10 | success=10 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=66.80% adv_acc=14.06%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=60.70% adv_acc=9.06%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=59.26% adv_acc=8.54%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=59.60% adv_acc=8.65%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=60.10% adv_acc=8.69%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=60.10% adv_acc=8.69% asr=91.31% runtime=60.10s
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=66.80% adv_acc=14.45%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=60.70% adv_acc=8.95%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=59.26% adv_acc=8.36%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=59.60% adv_acc=8.53%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=60.10% adv_acc=8.57%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=60.10% adv_acc=8.57% asr=91.43% runtime=39.25s
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar100_epochs300_pretrain100_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 10
+[DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar100_epochs300_pretrain100)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (XceptionNet)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 21,011,852
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.0.rep.4.depthwise', 'middle_flow.0.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.0.rep.4.depthwise
+[INFO] End Target   : middle_flow.0.rep.7.depthwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.0.rep.4.depthwise' -> 'middle_flow.0.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.0.rep' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'middle_flow.0.rep.4' -> 'middle_flow.0.rep.7'...
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.0.rep.7.depthwise'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.0.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.0.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (256, 728, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.1.rep.4.depthwise', 'middle_flow.1.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.1.rep.4.depthwise
+[INFO] End Target   : middle_flow.1.rep.7.depthwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.1.rep.4.depthwise' -> 'middle_flow.1.rep.7.depthwise'
+[DEBUG] [LCA] Resolv[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=66.80% adv_acc=14.45%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=60.70% adv_acc=8.98%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=59.26% adv_acc=8.44%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=59.60% adv_acc=8.62%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=60.10% adv_acc=8.66%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=60.10% adv_acc=8.66% asr=91.34% runtime=71.29s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar100_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 10
 [DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar100_epochs300_pretrain100)
@@ -1062,7 +1123,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.5.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.5.rep.4.depthwise' → 'middle_flow.5.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1098,74 +1159,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] ✅ Framework successfully merged 'middle_flow.6.rep.4.depthwise' → 'middle_flow.6.rep.7.depthwise'
 [INFO] ✅ Successfully collapsed block 'collapse_6' (middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise) in 0.04s
 [STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_7': middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.depthwise
-[STEP] Calling _collapse_block('middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.depthwise')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : middle_flow.7.rep.4.depthwise
-[INFO] End Target   : middle_flow.7.rep.7.depthwise
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'middle_flow.7.rep.4.depthwise' -> 'middle_flow.7.rep.7.depthwise'
-[DEBUG] [LCA] Resolved Container: 'middle_flow.7.rep' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'middle_flow.7.rep.4' -> 'middle_flow.7.rep.7'...
-
-[STEP 3] Probing graph for downstream classifier after 'middle_flow.7.rep.7.depthwise'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'middle_flow.7.rep' =====
-[DEBUG] start_idx=4, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'middle_flow.7.rep'...
-[DEBUG] Found inserted block candidate at index 4: '4'
-[STEP] Validating inserted module 'Sequential' at index 4...
-[DEBUG] Inserted module forward successful, output shape: (256, 728, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'middle_flow.7.rep' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'middle_flow.7.rep.4.depthwise' → 'middle_flow.7.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_7' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.depthwise) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_8': block4.rep.1.depthwise → block4.rep.4.depthwise
-[STEP] Calling _collapse_block('block4.rep.1.depthwise', 'block4.rep.4.depthwise')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : block4.rep.1.depthwise
-[INFO] End Target   : block4.rep.4.depthwise
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'block4.rep.1.depthwise' -> 'block4.rep.4.depthwise'
-[DEBUG] [LCA] Resolved Container: 'block4.rep' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'block4.rep.1' -> 'block4.rep.4'...
-
-[STEP 3] Probing graph for downstream classifier after 'block4.rep.4.depthwise'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'block4.rep' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'block4.rep'...
-[DEBUG] Found inserted block candidate at index 1: '1'
-[STEP] Validating inserted module 'Sequential' at index 1...
-[DEBUG] Inserted module forward successful, output shape: (256, 1024, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'block4.rep' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'block4.rep.4.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.04s
-[STEP] Patching skip connections (if any)...
+ (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
 [INFO] Processing collapse task 'collapse_9': conv3.depthwise → conv4.pointwise
@@ -1200,7 +1194,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
 [INFO] ✅ Framework successfully merged 'conv3.depthwise' → 'conv4.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_9' (conv3.depthwise → conv4.pointwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_9' (conv3.depthwise → conv4.pointwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1211,17 +1205,79 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 13,481,196
 [INFO] ΔParams = +7,530,656 (expected ≤ 0)
 [INFO] Collapse counts: success=10, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.57s
+[INFO] Total collapse runtime: 0.37s
 [RESULT] ✅ collapse_only complete. Total targets: 10 | success=10 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=67.58% adv_acc=9.38%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.03% adv_acc=7.42%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=60.55% adv_acc=7.23%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=60.21% adv_acc=7.15%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=60.48% adv_acc=7.00%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=60.48% adv_acc=7.00% asr=93.00% runtime=60.16s
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=67.58% adv_acc=9.77%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.03% adv_acc=7.54%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=60.57% adv_acc=7.29%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=60.22% adv_acc=7.15%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=60.48% adv_acc=7.04%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=60.48% adv_acc=7.04% asr=92.96% runtime=33.91s
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 10
+[DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar100_epochs200_pretrain200)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (XceptionNet)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 21,011,852
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.0.rep.4.depthwise', 'middle_flow.0.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.0.rep.4.depthwise
+[INFO] End Target   : middle_flow.0.rep.7.depthwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.0.rep.4.depthwise' -> 'middle_flow.0.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.0.rep' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'middle_flow.0.rep.4' -> 'middle_flow.0.rep.7'...
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.0.rep.7.depthwise'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.0.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.0.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (256, 728, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.1.rep.4.depthwise', 'middle_flow.1.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.1.rep.4.depthwise
+[INFO] End Target   : middle_flow.1.rep.7.depthwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.1.rep.4.depthwise' -> 'middle_flow.1.rep.7.depthwise'
+[DEBUG] [LCA] Resolve[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=67.58% adv_acc=9.38%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.03% adv_acc=7.54%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=60.55% adv_acc=7.27%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=60.21% adv_acc=7.17%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=60.48% adv_acc=7.01%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=60.48% adv_acc=7.01% asr=92.99% runtime=58.38s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 10
 [DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar100_epochs200_pretrain200)
@@ -1469,75 +1525,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.6.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.6.rep.4.depthwise' → 'middle_flow.6.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_6' (middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_7': middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.depthwise
-[STEP] Calling _collapse_block('middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.depthwise')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : middle_flow.7.rep.4.depthwise
-[INFO] End Target   : middle_flow.7.rep.7.depthwise
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'middle_flow.7.rep.4.depthwise' -> 'middle_flow.7.rep.7.depthwise'
-[DEBUG] [LCA] Resolved Container: 'middle_flow.7.rep' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'middle_flow.7.rep.4' -> 'middle_flow.7.rep.7'...
-
-[STEP 3] Probing graph for downstream classifier after 'middle_flow.7.rep.7.depthwise'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'middle_flow.7.rep' =====
-[DEBUG] start_idx=4, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'middle_flow.7.rep'...
-[DEBUG] Found inserted block candidate at index 4: '4'
-[STEP] Validating inserted module 'Sequential' at index 4...
-[DEBUG] Inserted module forward successful, output shape: (256, 728, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'middle_flow.7.rep' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'middle_flow.7.rep.4.depthwise' → 'middle_flow.7.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_7' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.depthwise) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_8': block4.rep.1.depthwise → block4.rep.4.depthwise
-[STEP] Calling _collapse_block('block4.rep.1.depthwise', 'block4.rep.4.depthwise')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : block4.rep.1.depthwise
-[INFO] End Target   : block4.rep.4.depthwise
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'block4.rep.1.depthwise' -> 'block4.rep.4.depthwise'
-[DEBUG] [LCA] Resolved Container: 'block4.rep' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'block4.rep.1' -> 'block4.rep.4'...
-
-[STEP 3] Probing graph for downstream classifier after 'block4.rep.4.depthwise'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'block4.rep' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'block4.rep'...
-[DEBUG] Found inserted block candidate at index 1: '1'
-[STEP] Validating inserted module 'Sequential' at index 1...
-[DEBUG] Inserted module forward successful, output shape: (256, 1024, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'block4.rep' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'block4.rep.4.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.04s
+[INFO] ✅ Successfully collapsed block 'cessfully collapsed block 'collapse_8' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1573,7 +1561,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
 [INFO] ✅ Framework successfully merged 'conv3.depthwise' → 'conv4.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_9' (conv3.depthwise → conv4.pointwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_9' (conv3.depthwise → conv4.pointwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1584,51 +1572,110 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 13,481,196
 [INFO] ΔParams = +7,530,656 (expected ≤ 0)
 [INFO] Collapse counts: success=10, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.55s
+[INFO] Total collapse runtime: 0.35s
 [RESULT] ✅ collapse_only complete. Total targets: 10 | success=10 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=63.67% adv_acc=10.55%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=60.04% adv_acc=8.20%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=59.57% adv_acc=8.18%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=59.36% adv_acc=8.36%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=60.04% adv_acc=8.31%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=60.04% adv_acc=8.31% asr=91.69% runtime=61.51s
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=60.04% adv_acc=8.12%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=59.57% adv_acc=8.11%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=59.35% adv_acc=8.33%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=60.03% adv_acc=8.30%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=60.03% adv_acc=8.30% asr=91.70% runtime=34.45s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=37.11% adv_acc=3.52%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=30.94% adv_acc=2.27%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=30.70% adv_acc=1.97%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=30.33% adv_acc=2.12%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=30.36% adv_acc=2.22%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=30.36% adv_acc=2.22% asr=97.78% runtime=54.71s
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=30.86% adv_acc=2.23%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=30.66% adv_acc=1.95%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=30.30% adv_acc=2.12%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=30.34% adv_acc=2.21%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=30.34% adv_acc=2.21% asr=97.79% runtime=36.25s
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=62.11% adv_acc=8.20%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=59.61% adv_acc=7.50%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=58.85% adv_acc=7.27%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=59.01% adv_acc=7.24%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=59.17% adv_acc=7.20%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=59.17% adv_acc=7.20% asr=92.80% runtime=33.55s
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=62.50% adv_acc=10.16%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=58.98% adv_acc=9.18%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=59.06% adv_acc=8.98%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=59.53% adv_acc=9.14%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=59.84% adv_acc=9.11%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=59.84% adv_acc=9.11% asr=90.89% runtime=38.84s
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=63.28% adv_acc=12.11%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=59.53% adv_acc=8.87%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=59.41% adv_acc=8.16%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=59.43% adv_acc=8.28%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=59.74% adv_acc=8.22%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=59.74% adv_acc=8.22% asr=91.78% runtime=27.57s
+[INFO] Summary written to adversarial_results_ep200_pre200/summary_XceptionNet_Cifar100_PGD_ALL.csv
+thwise → conv4.pointwise) in 0.06s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 21,011,852
+[INFO] Parameters after : 13,481,196
+[INFO] ΔParams = +7,530,656 (expected ≤ 0)
+[INFO] Collapse counts: success=10, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.59s
+[RESULT] ✅ collapse_only complete. Total targets: 10 | success=10 | failed=0 | skipped=0
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=63.67% adv_acc=10.16%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=60.04% adv_acc=8.12%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=59.57% adv_acc=8.12%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=59.36% adv_acc=8.32%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=60.04% adv_acc=8.30%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=60.04% adv_acc=8.30% asr=91.70% runtime=57.69s
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=37.11% adv_acc=3.52%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=30.94% adv_acc=2.30%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=30.70% adv_acc=2.03%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=30.33% adv_acc=2.17%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=30.36% adv_acc=2.26%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=30.36% adv_acc=2.26% asr=97.74% runtime=49.66s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=62.11% adv_acc=7.81%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=59.57% adv_acc=7.42%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=58.83% adv_acc=7.21%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=59.57% adv_acc=7.38%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=58.83% adv_acc=7.23%
 [ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=58.98% adv_acc=7.23%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=59.15% adv_acc=7.19%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=59.15% adv_acc=7.19% asr=92.81% runtime=50.39s
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=59.15% adv_acc=7.23%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=59.15% adv_acc=7.23% asr=92.77% runtime=46.27s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=62.50% adv_acc=11.33%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=58.98% adv_acc=9.45%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=59.06% adv_acc=9.22%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=59.53% adv_acc=9.23%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=59.86% adv_acc=9.17%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=59.86% adv_acc=9.17% asr=90.83% runtime=50.91s
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=62.50% adv_acc=10.16%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=58.98% adv_acc=9.34%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=59.06% adv_acc=9.06%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=59.53% adv_acc=9.13%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=59.86% adv_acc=9.09%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=59.86% adv_acc=9.09% asr=90.91% runtime=46.10s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=63.28% adv_acc=11.72%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=59.53% adv_acc=8.83%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=59.41% adv_acc=8.22%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=59.43% adv_acc=8.29%
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=63.28% adv_acc=12.11%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=59.53% adv_acc=8.79%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=59.41% adv_acc=8.18%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=59.43% adv_acc=8.27%
 [ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=59.75% adv_acc=8.18%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=59.75% adv_acc=8.18% asr=91.82% runtime=51.34s
-[INFO] Summary written to adversarial_results_ep200_pre200/summary_XceptionNet_Cifar100_PGD_ALL.csv
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=59.75% adv_acc=8.18% asr=91.82% runtime=51.49s
+[INFO] Summary written to adversarial_results_ep100_pre300/summary_XceptionNet_Cifar100_PGD_ALL.csv

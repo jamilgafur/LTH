@@ -1,5 +1,3 @@
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
-  return torch._C._cuda_getDeviceCount() > 0
 
 ======================================================================
 [PHASE 1] Generating adversarial examples
@@ -142,7 +140,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar10_epochs100_pretrain300)
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (InceptionNet)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -170,7 +168,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=0, device=cpu, has_next_linear=True
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 0: 'inception_4a'
 [STEP] Validating inserted module 'Sequential' at index 0...
@@ -179,7 +177,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 1.86s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 6.06s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
@@ -205,7 +203,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=1, device=cpu, has_next_linear=True
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 1: 'inception_4b'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -214,7 +212,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4b.branch3.0.conv' → 'stage4.inception_4c.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 1.71s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -239,7 +237,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=2, device=cpu, has_next_linear=True
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 2: 'inception_4c'
 [STEP] Validating inserted module 'Sequential' at index 2...
@@ -248,7 +246,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 1.65s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -273,7 +271,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 3: 'inception_4d'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -282,7 +280,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.0.conv' → 'stage4.inception_4e.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv) in 1.63s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -326,7 +324,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage5' =====
-[DEBUG] start_idx=1, device=cpu, has_next_linear=True
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage5'...
 [DEBUG] Found inserted block candidate at index 1: 'inception_5b'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -335,7 +333,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage5' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage5.inception_5b.branch2.1.conv' → 'stage5.inception_5b.branch3.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch2.1.conv → stage5.inception_5b.branch3.1.conv) in 1.65s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch2.1.conv → stage5.inception_5b.branch3.1.conv) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -346,7 +344,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 3,809,226
 [INFO] ΔParams = +2,181,856 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=1
-[INFO] Total collapse runtime: 8.76s
+[INFO] Total collapse runtime: 12.73s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
@@ -354,12 +352,202 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=86.72% adv_acc=37.89%
 [ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=86.09% adv_acc=42.23%
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=86.48% adv_acc=42.48%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=86.35% adv_acc=41.55%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=86.33% adv_acc=41.52%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=86.33% adv_acc=41.52% asr=58.48% runtime=117.63s
+[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=86.35% adv_acc=41.54%
+[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=86.33% adv_acc=41.51%
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=86.33% adv_acc=41.51% asr=58.49% runtime=18.62s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 5
 [DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar10_epochs300_pretrain100)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (InceptionNet)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4a.branch3.1.conv', 'stage4.inception_4b.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4a.branch3.1.conv
+[INFO] End Target   : stage4.inception_4b.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4a.branch3.1.conv' -> 'stage4.inception_4b.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4a' -> 'stage4.inception_4b'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4b.branch2.0.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 0: 'inception_4a'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 0.06s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4b.branch3.0.conv', 'stage4.inception_4c.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4b.branch3.0.conv
+[INFO] End Target   : stage4.inception_4c.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4b.branch3.0.conv' -> 'stage4.inception_4c.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4b' -> 'stage4.inception_4c'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4c.branch2.0.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 1: 'inception_4b'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4b.branch3.0.conv' → 'stage4.inception_4c.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_2': stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4c.branch3.0.conv', 'stage4.inception_4d.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4c.branch3.0.conv
+[INFO] End Target   : stage4.inception_4d.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.0.conv' -> 'stage4.inception_4d.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4c' -> 'stage4.inception_4d'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4d.branch2.0.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (256, 528, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_3': stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4d.branch3.0.conv', 'stage4.inception_4e.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4d.branch3.0.conv
+[INFO] End Target   : stage4.inception_4e.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4d.branch3.0.conv' -> 'stage4.inception_4e.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4d' -> 'stage4.inception_4e'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4e.branch2.0.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 3: 'inception_4d'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 832, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.0.conv' → 'stage4.inception_4e.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_4': stage4.inception_4e.branch3.0.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch3.0.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch3.0.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch3.0.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: SmartIdentity
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4e'
+[DEBUG]   start_layer_name=stage4.inception_4e.branch3.0.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4e.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'collapse_4' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 4,400,554
+[INFO] ΔParams = +1,590,528 (expected ≤ 0)
+[INFO] Collapse counts: success=4, failed=0, skipped=1
+[INFO] Total collapse runtime: 0.37s
+[RESULT] ✅ collapse_only complete. Total targets: 5 | success=4 | failed=0 | skipped=1
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: FGSM
+[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=85.55% adv_acc=42.97%
+[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=85.23% adv_acc=42.50%
+[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=85.47% adv_acc=42.52%
+[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=85.35% adv_acc=42.16%
+[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=85.48% adv_acc=42.33%
+[ATTACK][DONE] attack='FGSM' s[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=85.55% adv_acc=42.97%
+[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=85.23% adv_acc=42.54%
+[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=85.47% adv_acc=42.56%
+[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=85.35% adv_acc=42.17%
+[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=85.48% adv_acc=42.33%
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=85.48% adv_acc=42.33% asr=57.67% runtime=117.66s
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 6
+[DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar10_epochs200_pretrain200)
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -399,7 +587,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 1.83s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 1.85s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
@@ -502,192 +690,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.0.conv' → 'stage4.inception_4e.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv) in 1.62s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_4': stage4.inception_4e.branch3.0.conv → stage4.inception_4e.branch4.1.conv
-[STEP] Calling _collapse_block('stage4.inception_4e.branch3.0.conv', 'stage4.inception_4e.branch4.1.conv')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.inception_4e.branch3.0.conv
-[INFO] End Target   : stage4.inception_4e.branch4.1.conv
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch3.0.conv' -> 'stage4.inception_4e.branch4.1.conv'
-[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: SmartIdentity
-[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4e'
-[DEBUG]   start_layer_name=stage4.inception_4e.branch3.0.conv, found start_idx=None
-[DEBUG]   end_layer_name=stage4.inception_4e.branch4.1.conv, found end_idx=None
-[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
-[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'collapse_4' appears to be cross-branch (parallel paths).
-[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
-
-[STEP] Wrapping pooling layers safely...
-
-[STEP] ===== Collapse summary =====
-[INFO] Parameters before: 5,991,082
-[INFO] Parameters after : 4,400,554
-[INFO] ΔParams = +1,590,528 (expected ≤ 0)
-[INFO] Collapse counts: success=4, failed=0, skipped=1
-[INFO] Total collapse runtime: 6.87s
-[RESULT] ✅ collapse_only complete. Total targets: 5 | success=4 | failed=0 | skipped=1
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=85.55% adv_acc=42.97%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=85.23% adv_acc=42.54%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=85.47% adv_acc=42.56%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=85.35% adv_acc=42.17%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=85.48% adv_acc=42.33%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=85.48% adv_acc=42.33% asr=57.67% runtime=122.05s
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
-[DEBUG] Collapse ranges loaded: 6
-[DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar10_epochs200_pretrain200)
-
-[STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
-[STEP] Using provided in-memory model instance (InceptionNet)
-[STEP] Creating deepcopy of model for safe modification...
-[STEP] Parsing compression set...
-[INFO] Model parameter count before collapsing: 5,991,082
-[STEP] Beginning block-wise collapsing...
-
-[INFO] Processing collapse task 'collapse_0': stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv
-[STEP] Calling _collapse_block('stage4.inception_4a.branch3.1.conv', 'stage4.inception_4b.branch2.0.conv')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.inception_4a.branch3.1.conv
-[INFO] End Target   : stage4.inception_4b.branch2.0.conv
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4a.branch3.1.conv' -> 'stage4.inception_4b.branch2.0.conv'
-[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.inception_4a' -> 'stage4.inception_4b'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4b.branch2.0.conv'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=0, device=cpu, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4'...
-[DEBUG] Found inserted block candidate at index 0: 'inception_4a'
-[STEP] Validating inserted module 'Sequential' at index 0...
-[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 1.83s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
-
-[INFO] Processing collapse task 'collapse_1': stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv
-[STEP] Calling _collapse_block('stage4.inception_4b.branch3.0.conv', 'stage4.inception_4c.branch2.0.conv')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.inception_4b.branch3.0.conv
-[INFO] End Target   : stage4.inception_4c.branch2.0.conv
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4b.branch3.0.conv' -> 'stage4.inception_4c.branch2.0.conv'
-[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.inception_4b' -> 'stage4.inception_4c'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4c.branch2.0.conv'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=1, device=cpu, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4'...
-[DEBUG] Found inserted block candidate at index 1: 'inception_4b'
-[STEP] Validating inserted module 'Sequential' at index 1...
-[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.inception_4b.branch3.0.conv' → 'stage4.inception_4c.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 1.71s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_2': stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv
-[STEP] Calling _collapse_block('stage4.inception_4c.branch3.0.conv', 'stage4.inception_4d.branch2.0.conv')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.inception_4c.branch3.0.conv
-[INFO] End Target   : stage4.inception_4d.branch2.0.conv
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.0.conv' -> 'stage4.inception_4d.branch2.0.conv'
-[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.inception_4c' -> 'stage4.inception_4d'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4d.branch2.0.conv'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=2, device=cpu, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4'...
-[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
-[STEP] Validating inserted module 'Sequential' at index 2...
-[DEBUG] Inserted module forward successful, output shape: (256, 528, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 1.63s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_3': stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv
-[STEP] Calling _collapse_block('stage4.inception_4d.branch3.0.conv', 'stage4.inception_4e.branch2.0.conv')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.inception_4d.branch3.0.conv
-[INFO] End Target   : stage4.inception_4e.branch2.0.conv
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4d.branch3.0.conv' -> 'stage4.inception_4e.branch2.0.conv'
-[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.inception_4d' -> 'stage4.inception_4e'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4e.branch2.0.conv'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4'...
-[DEBUG] Found inserted block candidate at index 3: 'inception_4d'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 832, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.0.conv' → 'stage4.inception_4e.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv) in 1.62s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv) in 1.63s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -740,7 +743,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage5' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage5.inception_5a.branch2.1.conv' → 'stage5.inception_5a.branch3.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5a.branch2.1.conv → stage5.inception_5a.branch3.1.conv) in 1.67s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5a.branch2.1.conv → stage5.inception_5a.branch3.1.conv) in 1.69s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -751,7 +754,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 4,049,962
 [INFO] ΔParams = +1,941,120 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=1
-[INFO] Total collapse runtime: 8.51s
+[INFO] Total collapse runtime: 8.59s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
@@ -761,7 +764,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=85.88% adv_acc=41.64%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=85.82% adv_acc=40.98%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=85.71% adv_acc=40.88%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=85.71% adv_acc=40.88% asr=59.12% runtime=115.23s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=85.71% adv_acc=40.88% asr=59.12% runtime=115.49s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_epochs3_pretrain3_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 6
 [DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar10_epochs3_pretrain3)
@@ -805,7 +808,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4a.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv) in 1.93s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv) in 1.95s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 51 in-place ReLU(s) with out-of-place variants.
@@ -875,7 +878,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.1.conv' → 'stage4.inception_4d.branch1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv) in 1.69s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch1.conv) in 1.70s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -909,7 +912,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.1.conv' → 'stage4.inception_4e.branch1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.1.conv → stage4.inception_4e.branch1.conv) in 1.62s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.1.conv → stage4.inception_4e.branch1.conv) in 1.63s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -962,7 +965,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage5' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage5.inception_5b.branch2.1.conv' → 'stage5.inception_5b.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch2.1.conv → stage5.inception_5b.branch4.1.conv) in 1.65s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch2.1.conv → stage5.inception_5b.branch4.1.conv) in 1.64s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -973,7 +976,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 3,809,226
 [INFO] ΔParams = +2,181,856 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=1
-[INFO] Total collapse runtime: 8.82s
+[INFO] Total collapse runtime: 8.84s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
@@ -983,7 +986,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=69.32% adv_acc=27.13%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=68.45% adv_acc=26.54%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=68.28% adv_acc=26.59%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=68.28% adv_acc=26.59% asr=73.41% runtime=118.68s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=68.28% adv_acc=26.59% asr=73.41% runtime=117.53s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: FGSM
@@ -992,7 +995,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=85.06% adv_acc=40.94%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=85.16% adv_acc=40.38%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=85.28% adv_acc=40.28%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=85.28% adv_acc=40.28% asr=59.72% runtime=129.27s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=85.28% adv_acc=40.28% asr=59.72% runtime=129.02s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: FGSM
@@ -1001,7 +1004,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=85.86% adv_acc=41.17%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=85.89% adv_acc=40.68%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=85.96% adv_acc=40.81%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=85.96% adv_acc=40.81% asr=59.19% runtime=130.99s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=85.96% adv_acc=40.81% asr=59.19% runtime=132.21s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: FGSM
@@ -1010,7 +1013,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=86.05% adv_acc=41.29%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=86.02% adv_acc=41.30%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=85.99% adv_acc=41.14%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=85.99% adv_acc=41.14% asr=58.86% runtime=129.60s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=85.99% adv_acc=41.14% asr=58.86% runtime=130.03s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: FGSM
@@ -1019,5 +1022,5 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=65.61% adv_acc=22.25%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=65.07% adv_acc=21.48%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=65.13% adv_acc=21.56%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=65.13% adv_acc=21.56% asr=78.44% runtime=129.01s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=65.13% adv_acc=21.56% asr=78.44% runtime=129.19s
 [INFO] Summary written to adversarial_results_ep300_pre100/summary_InceptionNet_Cifar10_FGSM_ALL.csv
