@@ -236,14 +236,19 @@ class AdversarialCore:
         for model_name, dataset_name, kind, ckpt_path in checkpoints:
             if not CheckpointManager.dataset_matches_output_dir(dataset_name, output_dir):
                 continue
-            if model_filter and model_name != model_filter:
+            # ``*_FILTER`` arguments may be set to "ALL" by the shell scripts to indicate
+            # no filtering. Treat both ``None`` and the literal string "ALL" as a no‑op.
+            if model_filter and model_filter != "ALL" and model_name != model_filter:
                 continue
-            # Allow filtering by base dataset name (ignore split tag)
-            if dataset_filter:
-                base_check = CheckpointManager.base_dataset_name(dataset_name)
-                if base_check != dataset_filter:
+            # Allow filtering by base dataset name (ignore split tag). ``ALL`` means no filter.
+            if dataset_filter and dataset_filter != "ALL":
+                # Perform case‑insensitive comparison because shell arguments may use
+                # capitalised names (e.g., "TinyImageNet"). Internally dataset identifiers
+                # are stored in lower‑case.
+                base_check = CheckpointManager.base_dataset_name(dataset_name).lower()
+                if base_check != dataset_filter.lower():
                     continue
-            if kind_filter and kind != kind_filter:
+            if kind_filter and kind_filter != "ALL" and kind != kind_filter:
                 continue
 
             # Dataset strings may now include a split tag (e.g. "Cifar10_epochs100_pretrain300").

@@ -63,6 +63,25 @@ class CheckpointManager:
         return f"{dataset}_{split_tag}"
 
     @staticmethod
+    def extract_dataset_name(full_name: str) -> str:
+        """Extract the *dataset* component from a combined ``model_dataset`` string.
+
+        Directory names may include an optional ``_None`` suffix before the split tag,
+        e.g. ``InceptionNet_tinyimagenet_None_epochs100_pretrain300``. In that case the
+        dataset component is the token before ``_None`` (``tinyimagenet``). For standard
+        names like ``InceptionNet_Cifar10`` the dataset is the token after the model
+        name. This helper normalises both cases.
+        """
+        parts = full_name.split('_')
+        # If the last token is "None" (case‑insensitive), the dataset is the token before it.
+        if parts[-1].lower() == "none":
+            # Example: ["InceptionNet", "tinyimagenet", "None"] -> "tinyimagenet"
+            return parts[-2]
+        # Otherwise the dataset is the token after the model name.
+        # Example: ["InceptionNet", "Cifar10"] -> "Cifar10"
+        return parts[-1]
+
+    @staticmethod
     def split_tag_from_output_dir(output_dir: str) -> str | None:
         """Map an output directory name like ``adversarial_results_ep100_pre300`` to
         ``epochs100_pretrain300``.
