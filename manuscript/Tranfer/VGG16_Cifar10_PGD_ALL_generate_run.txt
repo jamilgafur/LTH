@@ -135,32 +135,102 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/t[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/m[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
-lize NVML")
+llapse ranges loaded: 2
+[DEBUG] Rebuilding collapsed architecture for VGG16 (Cifar10_epochs100_pretrain300)
+
+[STEP] ===== Starting collapse_only process =====
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=92.58% adv_acc=21.48%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=21.21%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.52% adv_acc=21.66%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.73% adv_acc=21.07%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.87% adv_acc=21.13%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.87% adv_acc=21.13% asr=78.87% runtime=51.38s
+[INFO] Summary written to adversarial_results_ep300_pre100/summary_VGG16_Cifar10_PGD_ALL.csv
+ Target : features.conv_5
+[INFO] End Target   : features.conv_10
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_10'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=14, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 14: 'conv_5'
+[STEP] Validating inserted module 'Sequential' at index 14...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_5' → 'features.conv_10'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_5 → features.conv_10) in 4.09s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 10 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': features.conv_12 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_12', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_12
+[INFO] End Target   : features.conv_13
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_12' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_12' -> 'features.conv_13'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=37, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 37: 'conv_12'
+[STEP] Validating inserted module 'Sequential' at index 37...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 2.79s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 21,893,450
+[INFO] ΔParams = +11,769,600 (expected ≤ 0)
+[INFO] Collapse counts: success=2, failed=0, skipped=0
+[INFO] Total collapse runtime: 6.94s
+[RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=94.92% adv_acc=24.61%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=92.42% adv_acc=21.05%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.38% adv_acc=21.58%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.50% adv_acc=21.04%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.45% adv_acc=20.95%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.45% adv_acc=20.95% asr=79.05% runtime=50.46s
-[INFO] Summary written to adversarial_results_ep200_pre200/summary_VGG16_Cifar10_PGD_ALL.csv
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=91.41% adv_acc=14.84%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=90.66% adv_acc=10.94%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=91.13% adv_acc=10.72%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=91.61% adv_acc=10.18%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=91.67% adv_acc=10.24%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=91.67% adv_acc=10.24% asr=89.76% runtime=34.65s
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=91.41% adv_acc=14.06%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=90.66% adv_acc=10.90%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=91.13% adv_acc=10.64%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=91.61% adv_acc=10.25%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=91.67% adv_acc=10.31%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=91.67% adv_acc=10.31% asr=89.69% runtime=4371.91s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=91.41% adv_acc=19.14%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=91.72% adv_acc=19.02%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.19% adv_acc=19.10%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.16% adv_acc=18.42%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.04% adv_acc=18.30%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.04% adv_acc=18.30% asr=81.70% runtime=50.89s
-[INFO] Summary written to adversarial_results_ep100_pre300/summary_VGG16_Cifar10_PGD_ALL.csv

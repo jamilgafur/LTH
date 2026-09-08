@@ -135,8 +135,6 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML")
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 6
 [DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar10_epochs200_pretrain200)
@@ -179,7 +177,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 0.34s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 0.31s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
@@ -276,7 +274,9 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 3: 'inception_4d'
-[STEP] Validating inserted mape or runtime errors...
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 832, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.0.conv' → 'stage4.inception_4e.branch2.0.conv'
@@ -302,24 +302,20 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [WARN] ⚠ Collapse candidate 'collapse_4' appears to be cross-branch (parallel paths).
 [WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
 
-[STEP] Wrapping pooling layers safely...
+[INFO] Processing collapse task 'collapse_5': stage5.inception_5a.branch2.1.conv → stage5.inception_5a.branch3.1.conv
+[STEP] Calling _collapse_block('stage5.inception_5a.branch2.1.conv', 'stage5.inception_5a.branch3.1.conv')
 
-[STEP] ===== Collapse summary =====
-[INFO] Parameters before: 5,991,082
-[INFO] Parameters after : 4,400,554
-[INFO] ΔParams = +1,590,528 (expected ≤ 0)
-[INFO] Collapse counts: success=4, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.97s
-[RESULT] ✅ collapse_only complete. Total targets: 5 | success=4 | failed=0 | skipped=1
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=85.55% adv_acc=66.80%
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage5.inception_5a.branch2.1.conv
+[INFO] End Target   : stage5.inception_5a.branch3.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'st[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=85.55% adv_acc=66.80%
 [ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=85.27% adv_acc=64.69%
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=85.49% adv_acc=64.65%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=85.36% adv_acc=64.36%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=85.49% adv_acc=64.76%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.49% adv_acc=64.76% asr=35.24% runtime=25.90s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.49% adv_acc=64.76% asr=35.24% runtime=32.18s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
@@ -328,12 +324,21 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=85.84% adv_acc=67.91%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=85.86% adv_acc=67.63%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=85.94% adv_acc=67.99%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.94% adv_acc=67.99% asr=32.01% runtime=32.40s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.94% adv_acc=67.99% asr=32.01% runtime=37.99s
 [INFO] Summary written to adversarial_results_ep300_pre100/summary_InceptionNet_Cifar10_BIM_ALL.csv
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    9,962
+INFO] ✅ Framework successfully merged 'stage5.inception_5a.branch2.1.conv' → 'stage5.inception_5a.branch3.1.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5a.branch2.1.conv → stage5.inception_5a.branch3.1.conv) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 4,049,962
 [INFO] ΔParams = +1,941,120 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=1
-[INFO] Total collapse runtime: 1.03s
+[INFO] Total collapse runtime: 0.97s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
@@ -343,7 +348,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=85.88% adv_acc=67.09%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=85.82% adv_acc=67.14%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=85.71% adv_acc=67.35%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.71% adv_acc=67.35% asr=32.65% runtime=28.10s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.71% adv_acc=67.35% asr=32.65% runtime=26.27s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
@@ -352,5 +357,6 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=86.05% adv_acc=67.25%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=86.02% adv_acc=67.08%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=85.99% adv_acc=67.17%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.99% adv_acc=67.17% asr=32.83% runtime=43.20s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.99% adv_acc=67.17% asr=32.83% runtime=41.70s
 [INFO] Summary written to adversarial_results_ep200_pre200/summary_InceptionNet_Cifar10_BIM_ALL.csv
+

@@ -135,85 +135,40 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/m[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
-ollapse ranges loaded: 2
-[DEBUG] Rebuilding collapsed architecture for VGG16 (Cifar100_epochs100_pretrain300)
-
-[STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
-[STEP] Using provided in-memory model instance (VGG16)
-[STEP] Creating deepcopy of model for safe modification...
-[STEP] Parsing compression set...
-[INFO] Model parameter count before collapsing: 34,031,780
-[STEP] Beginning block-wise collapsing...
-
-[INFO] Processing collapse task 'collapse_0': features.conv_6 → features.conv_10
-[STEP] Calling _collapse_block('features.conv_6', 'features.conv_10')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.conv_6
-[INFO] End Target   : features.conv_10
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.conv_6' -> 'features.conv_10'
-[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.conv_6' -> 'features.conv_10'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=17, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features'...
-[DEBUG] Found inserted block candidate at index 17: 'conv_6'
-[STEP] Validating inserted module 'Sequential' at index 17...
-[DEBUG] Inserted module forward successful, output shape: (256, 512, 4, 4)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.conv_6' → 'features.conv_10'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_6 → features.conv_10) in 4.95s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-[INFO] Replaced 11 in-place ReLU(s) with out-of-place variants.
-
-[INFO] Processing collapse task 'collapse_1': features.conv_12 → features.conv_13
-[STEP] Calling _collapse_block('features.conv_12', 'features.conv_13')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.conv_12
-[INFO] End Target   : features.conv_13
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.conv_12' -> 'features.conv_13'
-[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.conv_12' -> 'features.conv_13'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=37, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features'...
-[DEBUG] Found inserted block candidate at index 37: 'conv_12'
-[STEP] Validating inserted module 'Sequential' at index 37...
-[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.07s
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=66.41% adv_acc=6.64%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=61.41% adv_acc=3.63%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=60.61% adv_acc=3.87%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=60.82% adv_acc=4.04%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=60.72% adv_acc=4.19%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=60.72% adv_acc=4.19% asr=95.81% runtime=47.80s
+[INFO] Summary written to adversarial_results_ep200_pre200/summary_VGG16_Cifar100_PGD_ALL.csv
+cript/Tranfer/adversarial_pipeline.py", line 28, in _save_summary_records
+    df_records.to_csv(csv_path, index=False)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/core/generic.py", line 3967, in to_csv
+    return DataFrameRenderer(formatter).to_csv(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/formats/format.py", line 1014, in to_csv
+    csv_formatter.save()
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/formats/csvs.py", line 251, in save
+    with get_handle(
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/common.py", line 157, in __exit__
+    self.close()
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/common.py", line 144, in close
+    handle.close()
+OSError: [Errno 116] Stale file handle
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=63.28% adv_acc=7.42%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.97% adv_acc=4.41%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=61.95% adv_acc=4.18%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=61.91% adv_acc=4.26%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=61.95% adv_acc=4.32%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=61.95% adv_acc=4.32% asr=95.68% runtime=47.41s
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           llapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -224,17 +179,24 @@ ollapse ranges loaded: 2
 [INFO] Parameters after : 22,623,396
 [INFO] ΔParams = +11,408,384 (expected ≤ 0)
 [INFO] Collapse counts: success=2, failed=0, skipped=0
-[INFO] Total collapse runtime: 5.45s
+[INFO] Total collapse runtime: 0.54s
 [RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=69.92% adv_acc=7.03%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=67.23% adv_acc=4.30%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=66.46% adv_acc=4.26%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=67.28% adv_acc=4.21%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=67.85% adv_acc=4.21%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=67.85% adv_acc=4.21% asr=95.79% runtime=64.92s
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=67.23% adv_acc=4.34%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=66.46% adv_acc=4.28%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=67.28% adv_acc=4.23%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=67.85% adv_acc=4.27%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=67.85% adv_acc=4.27% asr=95.73% runtime=37.17s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=58.98% adv_acc=4.30%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=54.61% adv_acc=3.12%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=54.49% adv_acc=3.01%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=54.78% adv_acc=3.09%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=54.86% adv_acc=2.97%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=54.86% adv_acc=2.97% asr=97.03% runtime=49.79s
+[INFO] Summary written to adversarial_results_ep100_pre300/summary_VGG16_Cifar100_PGD_ALL.csv
