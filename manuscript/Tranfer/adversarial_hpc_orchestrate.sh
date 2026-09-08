@@ -106,7 +106,7 @@ log "Found submission file: $SCRIPT_DIR/adversarial_hpc_submit.pbs"
 
 # Models and datasets
 all_models=("VGG16" "RegNetX_400MF" "InceptionNet" "MobileNet" "XceptionNet" "ConvNeXt")
-all_datasets=("Cifar10" "Cifar100")
+all_datasets=("Cifar10" "Cifar100" "TinyImageNet")
 all_attacks=("PGD" "FGSM" "IFGSM" "BIM" "APGD" "CW" "DeepFool")
 
 models=("${all_models[@]}")

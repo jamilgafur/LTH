@@ -39,6 +39,13 @@ class ReportingSuite:
         merged_path = os.path.join(output_dir, f"{base_name}.csv")
         merged.to_csv(merged_path, index=False)
         print(f"[INFO] Merged {len(csv_paths)} files into {merged_path}")
+        # Clean up the temporary per‑run CSV files now that they have been merged.
+        for path in csv_paths:
+            try:
+                os.remove(path)
+            except OSError:
+                # If removal fails (e.g., file in use), we simply continue.
+                pass
 
     @staticmethod
     def load_multiple_runs(root_dir: str) -> Tuple[List[Dict], List[Dict]]:

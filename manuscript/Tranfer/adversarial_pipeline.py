@@ -66,7 +66,33 @@ def _build_experiment_suite() -> AdvancedExperimentSuite:
 
 
 def run_pipeline(args) -> None:
+    # Ensure the output directory exists and is clean for a fresh run.
+    # Previously, leftover CSV files from earlier runs (e.g., summary_*.csv) could be
+    # unintentionally merged, causing statistical significance results to contain data
+    # from unrelated experiments. We now remove any existing CSV artefacts before
+    # starting a new pipeline execution.
     os.makedirs(args.output_dir, exist_ok=True)
+    # When generating new results (full pipeline or generate mode), we start from a clean
+    # state to avoid mixing artefacts from previous executions in the same directory.
+    # For analysis‑only modes (e.g., "analyze", "statistics"), we keep existing CSVs so
+    # that the analysis can operate on the previously generated data.
+    import glob
+    if args.mode in ["full", "generate"]:
+        stale_patterns = [
+            os.path.join(args.output_dir, "summary*.csv"),
+            os.path.join(args.output_dir, "statistical_significance*.csv"),
+            os.path.join(args.output_dir, "epsilon_sensitivity*.csv"),
+            os.path.join(args.output_dir, "gradient_similarity*.csv"),
+            os.path.join(args.output_dir, "compute_profile.csv"),
+            os.path.join(args.output_dir, "tradeoff_summary.csv"),
+            os.path.join(args.output_dir, "*.png"),
+        ]
+        for pattern in stale_patterns:
+            for path in glob.glob(pattern):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
 
     records = []
     transfer_records = []

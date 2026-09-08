@@ -227,7 +227,10 @@ class ComputeTradeoffSuite:
         plt.ylabel("Robust Accuracy", fontweight="bold")
         plt.title("Figure 1: Robustness-Compute Pareto", fontweight="bold")
         plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, "figure1_pareto_flops_vs_robust_accuracy.png"), dpi=300)
+        # Include the output directory name in the figure filename so that each results
+        # folder gets its own distinct copy when multiple pipelines are run.
+        prefix = os.path.basename(output_dir)
+        plt.savefig(os.path.join(output_dir, f"{prefix}_figure1_pareto_flops_vs_robust_accuracy.png"), dpi=300)
         plt.close()
 
         # Figure 2: Transfer resistance vs latency
@@ -240,7 +243,7 @@ class ComputeTradeoffSuite:
         plt.ylabel("Transfer Resistance (1 - transfer success)", fontweight="bold")
         plt.title("Figure 2: Transfer Resistance vs Latency", fontweight="bold")
         plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, "figure2_transfer_resistance_vs_latency.png"), dpi=300)
+        plt.savefig(os.path.join(output_dir, f"{prefix}_figure2_transfer_resistance_vs_latency.png"), dpi=300)
         plt.close()
 
         # Figure 3: Collapsed vs Original deltas for core metrics
@@ -266,7 +269,7 @@ class ComputeTradeoffSuite:
             plt.ylabel("Finetuned - Original", fontweight="bold")
             plt.title("Figure 3: Collapsed vs Original Metric Deltas", fontweight="bold")
             plt.tight_layout()
-            plt.savefig(os.path.join(output_dir, "figure3_collapsed_original_deltas.png"), dpi=300)
+            plt.savefig(os.path.join(output_dir, f"{prefix}_figure3_collapsed_original_deltas.png"), dpi=300)
             plt.close()
 
         # Figure 4: normalized tradeoff heatmap
@@ -286,5 +289,5 @@ class ComputeTradeoffSuite:
         sns.heatmap(mat_norm, cmap="coolwarm", center=0)
         plt.title("Figure 4: Normalized Compute-Performance Tradeoff", fontweight="bold")
         plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, "figure4_tradeoff_heatmap.png"), dpi=300)
+        plt.savefig(os.path.join(output_dir, f"{prefix}_figure4_tradeoff_heatmap.png"), dpi=300)
         plt.close()
