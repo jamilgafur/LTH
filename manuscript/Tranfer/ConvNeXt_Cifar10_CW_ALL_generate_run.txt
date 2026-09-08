@@ -135,9 +135,9 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
-[DEBUG] Collapse ranges loaded: 6
-[DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar10_epochs200_pretrain200)
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 5
+[DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar10_epochs300_pretrain100)
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -147,22 +147,21 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Model parameter count before collapsing: 27,827,818
 [STEP] Beginning block-wise collapsing...
 
-[INFO] Processing collapse task 'collapse_0': features.2.1.dwconv → features.2.1.pwconv1
-[STEP] Calling _collapse_block('features.2.1.dwconv', 'features.2.1.pwconv1')
+[INFO] Processing collapse task 'collapse_0': features.2.1.dwconv → features.2.2.pwconv1
+[STEP] Calling _collapse_block('features.2.1.dwconv', 'features.2.2.pwconv1')
 
 [INFO] ==================== Collapsing Block ====================
 [INFO] Start Target : features.2.1.dwconv
-[INFO] End Target   : features.2.1.pwconv1
+[INFO] End Target   : features.2.2.pwconv1
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.2.1.dwconv' -> 'features.2.1.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.2.1' | Type: ConvNeXtBlock
-[DEBUG] Escalating complex block 'features.2.1' (ConvNeXtBlock) to parent for holistic replacement.
+[DEBUG] [LCA] Locating block boundaries: 'features.2.1.dwconv' -> 'features.2.2.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.2' | Type: Sequential
 
 [STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.2.1' -> 'features.2.1'...
+[DEBUG] Capturing I/O hooks for 'features.2.1' -> 'features.2.2'...
 
-[STEP 3] Probing graph for downstream classifier after 'features.2.1.pwconv1'...
+[STEP 3] Probing graph for downstream classifier after 'features.2.2.pwconv1'...
 
 [STEP 4] Analyzing topological characteristics for replacement...
 
@@ -177,47 +176,12 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
-[INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.1.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.33s
+[INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.2.pwconv1'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.2.pwconv1) in 0.40s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'collapse_1': features.2.2.dwconv → features.2.2.pwconv1
-[STEP] Calling _collapse_block('features.2.2.dwconv', 'features.2.2.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.2.2.dwconv
-[INFO] End Target   : features.2.2.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.2.2.dwconv' -> 'features.2.2.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.2.2' | Type: ConvNeXtBlock
-[DEBUG] Escalating complex block 'features.2.2' (ConvNeXtBlock) to parent for holistic replacement.
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.2.2' -> 'features.2.2'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.2.2.pwconv1'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=2, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.2'...
-[DEBUG] Found inserted block candidate at index 2: '2'
-[STEP] Validating inserted module 'Sequential' at index 2...
-[DEBUG] Inserted module forward successful, output shape: (256, 192, 4, 4)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.2' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.2.2.dwconv' → 'features.2.2.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.2.2.dwconv → features.2.2.pwconv1) in 0.03s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_2': features.3.1 → features.4.0.pwconv1
+[INFO] Processing collapse task 'collapse_1': features.3.1 → features.4.0.pwconv1
 [STEP] Calling _collapse_block('features.3.1', 'features.4.0.pwconv1')
 
 [INFO] ==================== Collapsing Block ====================
@@ -247,11 +211,11 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.3.1' → 'features.4.0.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (features.3.1 → features.4.0.pwconv1) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.3.1 → features.4.0.pwconv1) in 0.02s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'collapse_3': features.4.8.dwconv → features.4.8.pwconv2
+[INFO] Processing collapse task 'collapse_2': features.4.8.dwconv → features.4.8.pwconv2
 [STEP] Calling _collapse_block('features.4.8.dwconv', 'features.4.8.pwconv2')
 
 [INFO] ==================== Collapsing Block ====================
@@ -266,10 +230,10 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [DEBUG]   end_layer_name=features.4.8.pwconv2, found end_idx=None
 [DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
 [DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'collapse_3' appears to be cross-branch (parallel paths).
+[WARN] ⚠ Collapse candidate 'collapse_2' appears to be cross-branch (parallel paths).
 [WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
 
-[INFO] Processing collapse task 'collapse_4': features.6.0.dwconv → features.6.0.pwconv2
+[INFO] Processing collapse task 'collapse_3': features.6.0.dwconv → features.6.0.pwconv2
 [STEP] Calling _collapse_block('features.6.0.dwconv', 'features.6.0.pwconv2')
 
 [INFO] ==================== Collapsing Block ====================
@@ -286,16 +250,92 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 
 [STEP 3] Probing graph for downstream classifier after 'features.6.0.pwconv2'...
 
-[STEP 4] Analytart_idx=1, device=cuda, has_next_linear=True
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.6' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.6'...
-[DEBUG] Found inserted block candidate at index 1: '1'
-[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Found inserted block candidate at index 0: '0'
+[STEP] Validating inserted module 'Sequential' at index 0...
 [DEBUG] Inserted module forward successful, output shape: (256, 768, 1, 1)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
-[INFO] ✅ Framework successfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.02s
+[INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_3' (features.6.0.dwconv → features.6.0.pwconv2) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_4': features.6.1.pwconv1 → features.6.2.pwconv2
+[STEP] Calling _collapse_block('features.6.1.pwconv1', 'features.6.2.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.6.1.pwconv1
+[INFO] End Target   : features.6.2.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.6.1.pwconv1' -> 'features.6.2.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.6' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.6.1' -> 'features.6.2'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.6.2.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.6' =====
+[DEBUG] szing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.6' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.6'...
+[DEBUG] Found inserted block candidate at index 0: '0'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (256, 768, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.6' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_4' (features.6.0.dwconv → features.6.0.pwconv2) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_5': features.6.1.pwconv1 → features.6.2.pwconv2
+[STEP] Calling _collapse_block('features.6.1.pwconv1', 'features.6.2.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.6.1.pwconv1
+[INFO] End Target   : features.6.2.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.6.1.pwconv1' -> 'features.6.2.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.6' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.6.1' -> 'features.6.2'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.6.2.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STE[ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=77.34% adv_acc=0.00%
+[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=76.29% adv_acc=0.23%
+[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=76.33% adv_acc=0.29%
+[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=75.44% adv_acc=0.22%
+[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=75.56% adv_acc=0.24%
+[ATTACK][DONE] attack='CW' samples=10000 clean_acc=75.56% adv_acc=0.24% asr=99.76% runtime=908.71s
+[INFO] Summary written to adversarial_results_ep300_pre100/summary_ConvNeXt_Cifar10_CW_ALL.csv
+uccessfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_5' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -303,43 +343,44 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 
 [STEP] ===== Collapse summary =====
 [INFO] Parameters before: 27,827,818
-[INFO] Parameters after : 2,518,762
-[INFO] ΔParams = +25,309,056 (expected ≤ 0)
-[INFO] Collapse counts: success=4, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.64s
-[RESULT] ✅ collapse_only complete. Total targets: 5 | success=4 | failed=0 | skipped=1
-[DEBUG] load_state_dict result: missing=1, unexpected=1
+[INFO] Parameters after : 2,482,666
+[INFO] ΔParams = +25,345,152 (expected ≤ 0)
+[INFO] Collapse counts: success=5, failed=0, skipped=1
+[INFO] Total collapse runtime: 0.67s
+[RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
+[DEBUG] load_state_dict result: missing=3, unexpected=3
 [ATTACK][SETUP] Initializing attack='CW' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: CW
-[ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=7.42% adv_acc=0.00%
-[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=7.42% adv_acc=0.08%
-[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=7.79% adv_acc=0.04%
-[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=7.98% adv_acc=0.05%
-[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=8.02% adv_acc=0.08%
-[ATTACK][DONE] attack='CW' samples=10000 clean_acc=8.02% adv_acc=0.08% asr=99.92% runtime=298.60s
+[ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=8.59% adv_acc=0.00%
+[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=8.87% adv_acc=0.00%
+[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=8.65% adv_acc=0.06%
+[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=8.95% adv_acc=0.04%
+[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=8.97% adv_acc=0.03%
+[ATTACK][DONE] attack='CW' samples=10000 clean_acc=8.97% adv_acc=0.03% asr=99.97% runtime=297.61s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='CW' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: CW
-[ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=77.34% adv_acc=0.00%
-[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=76.29% adv_acc=0.23%
-[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=76.33% adv_acc=0.29%
-[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=75.44% adv_acc=0.22%
-[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=75.56% adv_acc=0.24%
-[ATTACK][DONE] attack='CW' samples=10000 clean_acc=75.56% adv_acc=0.24% asr=99.76% runtime=591.50s
-[INFO] Summary written to adversarial_results_ep300_pre100/summary_ConvNeXt_Cifar10_CW_ALL.csv
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         [ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=73.05% adv_acc=0.00%
-[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=75.98% adv_acc=0.59%
-[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=75.88% adv_acc=0.47%
-[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=75.21% adv_acc=0.33%
-[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=75.35% adv_acc=0.32%
-[ATTACK][DONE] attack='CW' samples=10000 clean_acc=75.35% adv_acc=0.32% asr=99.68% runtime=920.71s
-[INFO] Summary written to adversarial_results_ep200_pre200/summary_ConvNeXt_Cifar10_CW_ALL.csv
-an_acc=8.98% adv_acc=0.39%
-[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=11.13% adv_acc=1.09%
-[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=11.37% adv_acc=1.17%
-[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=11.34% adv_acc=1.15%
-[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=11.46% adv_acc=1.20%
-[ATTACK][DONE] attack='CW' samples=10000 clean_acc=11.46% adv_acc=1.20% asr=98.80% runtime=574.30s
+[ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=73.05% adv_acc=0.00%
+[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=75.94% adv_acc=0.59%
+[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=75.86% adv_acc=0.47%
+[ATTACK][BATCH] CW batch=30/40 seen=7680 clease runtime: 0.89s
+[RESULT] ✅ collapse_only complete. Total targets: 7 | success=5 | failed=0 | skipped=2
+[DEBUG] load_state_dict result: missing=3, unexpected=3
+[ATTACK][SETUP] Initializing attack='CW' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: CW
+[ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=3.91% adv_acc=0.00%
+[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=7.38% adv_acc=0.08%
+[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=7.25% adv_acc=0.10%
+[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=7.21% adv_acc=0.12%
+[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=7.11% adv_acc=0.10%
+[ATTACK][DONE] attack='CW' samples=10000 clean_acc=7.11% adv_acc=0.10% asr=99.90% runtime=318.62s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='CW' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: CW
+[ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=76.56% adv_acc=0.00%
+[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=76.17% adv_acc=0.51%
+[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=75.78% adv_acc=0.41%
+[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=75.16% adv_acc=0.31%
+[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=75.25% adv_acc=0.32%
+[ATTACK][DONE] attack='CW' samples=10000 clean_acc=75.25% adv_acc=0.32% asr=99.68% runtime=761.31s
+[INFO] Summary written to adversarial_results_ep100_pre300/summary_ConvNeXt_Cifar10_CW_ALL.csv

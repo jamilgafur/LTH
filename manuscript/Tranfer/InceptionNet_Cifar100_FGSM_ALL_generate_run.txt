@@ -178,7 +178,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4a.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv) in 0.38s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv) in 0.42s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 51 in-place ReLU(s) with out-of-place variants.
@@ -214,7 +214,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4b.branch3.1.conv' → 'stage4.inception_4b.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.1.conv → stage4.inception_4b.branch4.1.conv) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.1.conv → stage4.inception_4b.branch4.1.conv) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -248,7 +248,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -275,7 +275,19 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
 [DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
-)
+[DEBUG] Found inserted block candidate at index 3: 'inception_4d'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 832, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.0.conv' → 'stage4.inception_4e.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_4': stage4.inception_4e.branch3.0.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch3.0.conv', 'stage4.inception_4e.branch4.1.conv')
 
 [INFO] ==================== Collapsing Block ====================
 [INFO] Start Target : stage4.inception_4e.branch3.0.conv
@@ -323,7 +335,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage5' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage5.inception_5b.branch3.1.conv' → 'stage5.inception_5b.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch3.1.conv → stage5.inception_5b.branch4.1.conv) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch3.1.conv → stage5.inception_5b.branch4.1.conv) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -331,40 +343,25 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 
 [STEP] ===== Collapse summary =====
 [INFO] Parameters before: 6,083,332
-[INFO] Parameters after : 3,638,308
-[INFO] ΔParams = +2,445,024 (expected ≤ 0)
-[INFO] Collapse counts: success=4, failed=0, skipped=2
-[INFO] Total collapse runtime: 0.90s
-[RESULT] ✅ collapse_only complete. Total targets: 6 | success=4 | failed=0 | skipped=2
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=61.72% adv_acc=17.58%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=57.62% adv_acc=16.05%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=57.01% adv_acc=15.39%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=57.02% adv_acc=15.49%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=57.30% adv_acc=15.65%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=57.30% adv_acc=15.65% asr=84.3===== Collapse summary =====
-[INFO] Parameters before: 6,083,332
 [INFO] Parameters after : 3,901,476
 [INFO] ΔParams = +2,181,856 (expected ≤ 0)
-[INFO] Collapse cou[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=62.11% adv_acc=20.70%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=56.48% adv_acc=14.88%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=55.68% adv_acc=14.55%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=55.72% adv_acc=14.44%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=56.06% adv_acc=14.43%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=56.06% adv_acc=14.43% asr=85.57% runtime=2.37s
-[INFO] Summary written to adversarial_results_ep200_pre200/summary_InceptionNet_Cifar100_FGSM_ALL.csv
- clean_acc=57.20% adv_acc=15.51%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=57.41% adv_acc=15.76%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=57.41% adv_acc=15.76% asr=84.24% runtime=1.77s
+[INFO] Collapse cou[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=63.28% adv_acc=17.19%
+[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=57.38% adv_acc=14.26%
+[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=56.50% adv_acc=14[ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: FGSM
+[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=63.67% adv_acc=18.75%
+[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=58.16% adv_acc=15.78%
+[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=57.13% adv_acc=15.47%
+[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=57.17% adv_acc=15.47%
+[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=57.38% adv_acc=15.75%
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=57.38% adv_acc=15.75% asr=84.25% runtime=3.40s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=62.89% adv_acc=13.67%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=55.31% adv_acc=13.32%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=54.57% adv_acc=13.01%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=54.58% adv_acc=13.45%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=54.91% adv_acc=13.51%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=54.91% adv_acc=13.51% asr=86.49% runtime=2.32s
+[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=62.89% adv_acc=14.45%
+[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=55.31% adv_acc=13.44%
+[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=54.57% adv_acc=13.11%
+[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=54.58% adv_acc=13.50%
+[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=54.91% adv_acc=13.56%
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=54.91% adv_acc=13.56% asr=86.44% runtime=3.78s
 [INFO] Summary written to adversarial_results_ep100_pre300/summary_InceptionNet_Cifar100_FGSM_ALL.csv

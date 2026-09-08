@@ -136,9 +136,9 @@
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 [INFO] Requested attack 'IFGSM' not available. Using 'BIM'.
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
-[DEBUG] Collapse ranges loaded: 5
-[DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar10_epochs300_pretrain100)
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 6
+[DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar10_epochs200_pretrain200)
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -178,7 +178,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 0.39s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 0.35s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
@@ -213,7 +213,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4b.branch3.0.conv' → 'stage4.inception_4c.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -247,7 +247,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -310,46 +310,69 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 4,400,554
 [INFO] ΔParams = +1,590,528 (expected ≤ 0)
 [INFO] Collapse counts: success=4, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.98s
+[INFO] Total collapse runtime: 0.91s
 [RESULT] ✅ collapse_only complete. Total targets: 5 | success=4 | failed=0 | skipped=1
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=85.55% adv_acc=66.80%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=85.27% adv_acc=64.69%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=85.49% adv_acc=64.65%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=85.36% adv_acc=64.36%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=85.49% adv_acc=64.76%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.49% adv_acc=64.76% asr=35.24% runtime=32.72s
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=85.23% adv_acc=64.69%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=85.47% adv_acc=64.65%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=85.35% adv_acc=64.36%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=85.48% adv_acc=64.77%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.48% adv_acc=64.77% asr=35.23% runtime=29.70s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=85.16% adv_acc=73.05%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=85.74% adv_acc=67.89%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=85.84% adv_acc=67.91%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=85.86% adv_acc=67.63%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=85.94% adv_acc=67.99%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.94% adv_acc=67.99% asr=32.01% runtime=37.70s
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=85.78% adv_acc=67.89%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=85.86% adv_acc=67.89%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=85.89% adv_acc=67.62%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=85.96% adv_acc=67.98%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.96% adv_acc=67.98% asr=32.02% runtime=41.36s
 [INFO] Summary written to adversarial_results_ep300_pre100/summary_InceptionNet_Cifar10_IFGSM_ALL.csv
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      kipped=1
-[INFO] Total collapse runtime: 0.81s
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ipped=1
+[INFO] Total collapse runtime: 0.90s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=86.72% adv_acc=68.36%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=86.09% adv_acc=68.59%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=86.48% adv_acc=68.07%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=86.35% adv_acc=67.66%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=86.33% adv_acc=68.01%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=86.33% adv_acc=68.01% asr=31.99% runtime=25.31s
+[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=87.11% adv_acc=69.14%
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=85.86% adv_acc=67.34%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=85.88% adv_acc=67.09%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=85.82% adv_acc=67.14%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=85.71% adv_acc=67.35%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.71% adv_acc=67.35% asr=32.65% runtime=28.34s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: BIM[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=86.33% adv_acc=68.36%
+[ATTACK][SETUP] Ready: BIM
+[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=86.33% adv_acc=68.36%
 [ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=85.55% adv_acc=67.54%
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=86.05% adv_acc=67.25%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=86.02% adv_acc=67.06%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=86.00% adv_acc=67.16%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=86.00% adv_acc=67.16% asr=32.84% runtime=37.90s
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=86.02% adv_acc=67.08%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=85.99% adv_acc=67.17%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.99% adv_acc=67.17% asr=32.83% runtime=42.30s
 [INFO] Summary written to adversarial_results_ep200_pre200/summary_InceptionNet_Cifar10_IFGSM_ALL.csv
-
+/adversarial_pipeline.py", line 28, in _save_summary_records
+    df_records.to_csv(csv_path, index=False)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/core/generic.py", line 3967, in to_csv
+    return DataFrameRenderer(formatter).to_csv(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/formats/format.py", line 1014, in to_csv
+    csv_formatter.save()
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/formats/csvs.py", line 251, in save
+    with get_handle(
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/common.py", line 157, in __exit__
+    self.close()
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/common.py", line 144, in close
+    handle.close()
+OSError: [Errno 116] Stale file handle
+[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=84.38% adv_acc=65.23%
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=84.61% adv_acc=65.08%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=85.06% adv_acc=64.43%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=85.16% adv_acc=64.01%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=85.28% adv_acc=64.36%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.28% adv_acc=64.36% asr=35.64% runtime=42.64s

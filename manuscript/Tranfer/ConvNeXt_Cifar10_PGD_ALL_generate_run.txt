@@ -135,9 +135,9 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
-[DEBUG] Collapse ranges loaded: 6
-[DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar10_epochs200_pretrain200)
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 5
+[DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar10_epochs300_pretrain100)
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -147,22 +147,21 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Model parameter count before collapsing: 27,827,818
 [STEP] Beginning block-wise collapsing...
 
-[INFO] Processing collapse task 'collapse_0': features.2.1.dwconv → features.2.1.pwconv1
-[STEP] Calling _collapse_block('features.2.1.dwconv', 'features.2.1.pwconv1')
+[INFO] Processing collapse task 'collapse_0': features.2.1.dwconv → features.2.2.pwconv1
+[STEP] Calling _collapse_block('features.2.1.dwconv', 'features.2.2.pwconv1')
 
 [INFO] ==================== Collapsing Block ====================
 [INFO] Start Target : features.2.1.dwconv
-[INFO] End Target   : features.2.1.pwconv1
+[INFO] End Target   : features.2.2.pwconv1
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.2.1.dwconv' -> 'features.2.1.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.2.1' | Type: ConvNeXtBlock
-[DEBUG] Escalating complex block 'features.2.1' (ConvNeXtBlock) to parent for holistic replacement.
+[DEBUG] [LCA] Locating block boundaries: 'features.2.1.dwconv' -> 'features.2.2.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.2' | Type: Sequential
 
 [STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.2.1' -> 'features.2.1'...
+[DEBUG] Capturing I/O hooks for 'features.2.1' -> 'features.2.2'...
 
-[STEP 3] Probing graph for downstream classifier after 'features.2.1.pwconv1'...
+[STEP 3] Probing graph for downstream classifier after 'features.2.2.pwconv1'...
 
 [STEP 4] Analyzing topological characteristics for replacement...
 
@@ -177,47 +176,12 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
-[INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.1.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.35s
+[INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.2.pwconv1'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.2.pwconv1) in 0.99s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'collapse_1': features.2.2.dwconv → features.2.2.pwconv1
-[STEP] Calling _collapse_block('features.2.2.dwconv', 'features.2.2.pwconv1')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.2.2.dwconv
-[INFO] End Target   : features.2.2.pwconv1
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.2.2.dwconv' -> 'features.2.2.pwconv1'
-[DEBUG] [LCA] Resolved Container: 'features.2.2' | Type: ConvNeXtBlock
-[DEBUG] Escalating complex block 'features.2.2' (ConvNeXtBlock) to parent for holistic replacement.
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.2.2' -> 'features.2.2'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.2.2.pwconv1'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=2, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.2'...
-[DEBUG] Found inserted block candidate at index 2: '2'
-[STEP] Validating inserted module 'Sequential' at index 2...
-[DEBUG] Inserted module forward successful, output shape: (256, 192, 4, 4)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.2' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.2.2.dwconv' → 'features.2.2.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.2.2.dwconv → features.2.2.pwconv1) in 0.02s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_2': features.3.1 → features.4.0.pwconv1
+[INFO] Processing collapse task 'collapse_1': features.3.1 → features.4.0.pwconv1
 [STEP] Calling _collapse_block('features.3.1', 'features.4.0.pwconv1')
 
 [INFO] ==================== Collapsing Block ====================
@@ -247,11 +211,11 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.3.1' → 'features.4.0.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (features.3.1 → features.4.0.pwconv1) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.3.1 → features.4.0.pwconv1) in 0.02s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'collapse_3': features.4.8.dwconv → features.4.8.pwconv2
+[INFO] Processing collapse task 'collapse_2': features.4.8.dwconv → features.4.8.pwconv2
 [STEP] Calling _collapse_block('features.4.8.dwconv', 'features.4.8.pwconv2')
 
 [INFO] ==================== Collapsing Block ====================
@@ -266,10 +230,10 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [DEBUG]   end_layer_name=features.4.8.pwconv2, found end_idx=None
 [DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
 [DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'collapse_3' appears to be cross-branch (parallel paths).
+[WARN] ⚠ Collapse candidate 'collapse_2' appears to be cross-branch (parallel paths).
 [WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
 
-[INFO] Processing collapse task 'collapse_4': features.6.0.dwconv → features.6.0.pwconv2
+[INFO] Processing collapse task 'collapse_3': features.6.0.dwconv → features.6.0.pwconv2
 [STEP] Calling _collapse_block('features.6.0.dwconv', 'features.6.0.pwconv2')
 
 [INFO] ==================== Collapsing Block ====================
@@ -300,33 +264,41 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (features.6.0.dwconv → features.6.0.pwconv2) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (features.6.0.dwconv → features.6.0.pwconv2) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'collapse_5': features.6.1.pwconv1 → features.6.2.pwconv2
+[INFO] Processing collapse task 'collapse_4': features.6.1.pwconv1 → features.6.2.pwconv2
 [STEP] Calling _collapse_block('features.6.1.pwconv1', 'features.6.2.pwconv2')
 
-[INFO] ==================== Collapsing Block ==============[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=6.25% adv_acc=5.47%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=5.94% adv_acc=4.18%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=6.09% adv_acc=4.55%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=6.05% adv_acc=4.65%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=5.98% adv_acc=4.67%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=5.98% adv_acc=4.67% asr=95.33% runtime=22.45s
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=77.34% adv_acc=20.70%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=76.29% adv_acc=19.18%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=76.33% adv_acc=20.31%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=75.46% adv_acc=19.82%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=75.57% adv_acc=19.96%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=75.57% adv_acc=19.96% asr=80.04% runtime=38.52s
-[INFO] Summary written to adversarial_results_ep300_pre100/summary_ConvNeXt_Cifar10_PGD_ALL.csv
-eatures.6.1.pwconv1' → 'features.6.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.04s
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.6.1.pwconv1
+[INFO] End Target   : features.6.2.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.6.1.pwconv1' -> 'features.6.2.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.6' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.6.1' -> 'features.6.2'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.6.2.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.6' =====
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.6'...
+[DEBUG] Found inserted block candidate at index 1: '1'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (256, 768, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.6' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_4' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -334,43 +306,36 @@ eatures.6.1.pwconv1' → 'features.6.2.pwconv2'
 
 [STEP] ===== Collapse summary =====
 [INFO] Parameters before: 27,827,818
-[INFO] Parameters after : 2,482,666
-[INFO] ΔParams = +25,345,152 (expected ≤ 0)
-[INFO] Collapse counts: success=5, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.74s
-[RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
-[DEBUG] load_state_dict result: missing=3, unexpected=3
+[INFO] Parameters after : 2,518,762
+[INFO] ΔParams = +25,309,056 (expected ≤ 0)
+[INFO] Collapse counts: success=4, failed=0, skipped=1
+[INFO] Total collapse runtime: 1.45s
+[RESULT] ✅ collapse_only complete. Total targets: 5 | success=4 | failed=0 | skipped=1
+[DEBUG] load_state_dict result: missing=1, unexpected=1
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=5.08% adv_acc=4.30%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=7.93% adv_acc=3.91%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=7.50% adv_acc=3.48%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=7.32% adv_acc=3.59%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=7.43% adv_acc=3.49%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=7.43% adv_acc=3.49% asr=96.51% runtime=22.89s
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=8.20% adv_acc=3.52%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=6.02% adv_acc=3.40%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=6.17% adv_acc=3.79%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=6.35% adv_acc=3.61%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=6.41% adv_acc=3.87%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=6.41% adv_acc=3.87% asr=96.13% runtime=16.03s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=77.34% adv_acc=20.70%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=76.29% adv_acc=19.22%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=76.33% adv_acc=20.33%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=75.44% adv_acc=19.84%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=75.56% adv_acc=19.98%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=75.56% adv_acc=19.98% asr=80.02% runtime=30.75s
+[INFO] Summary written to adversarial_results_ep300_pre100/summary_ConvNeXt_Cifar10_PGD_ALL.csv
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=73.05% adv_acc=20.70%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=75.98% adv_acc=19.92%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=75.88% adv_acc=20.23%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=75.21% adv_acc=20.07%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=75.35% adv_acc=19.81%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=75.35% adv_acc=19.81% asr=80.19% runtime=35.51s
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=75.94% adv_acc=19.88%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=75.86% adv_acc=20.21%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=75.20% adv_acc=20.04%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=75.34% adv_acc=19.79%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=75.34% adv_acc=19.79% asr=80.21% runtime=33.13s
 [INFO] Summary written to adversarial_results_ep200_pre200/summary_ConvNeXt_Cifar10_PGD_ALL.csv
-acc=4.30%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=10.59% adv_acc=4.06%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=10.21% adv_acc=4.39%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=10.40% adv_acc=4.31%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=10.59% adv_acc=4.54%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=10.59% adv_acc=4.54% asr=95.46% runtime=22.98s
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=76.56% adv_acc=16.41%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=76.17% adv_acc=18.63%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=75.76% adv_acc=19.10%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=75.14% adv_acc=18.46%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=75.24% adv_acc=18.41%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=75.24% adv_acc=18.41% asr=81.59% runtime=35.49s
-[INFO] Summary written to adversarial_results_ep100_pre300/summary_ConvNeXt_Cifar10_PGD_ALL.csv

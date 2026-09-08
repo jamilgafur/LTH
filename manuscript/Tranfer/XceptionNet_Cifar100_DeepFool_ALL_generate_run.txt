@@ -135,9 +135,11 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar100_epochs100_pretrain300_JF_discovered_regions.json
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar100_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 10
-[DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar100_epochs100_pretrain300)
+[DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar100_epochs300_pretrain100)
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -177,7 +179,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.35s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.30s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -382,25 +384,25 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.6.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.6.rep.4.depthwise' → 'middle_flow.6.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_6' (middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_6' (middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'collapse_7': middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise
-[STEP] Calling _collapse_block('middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.pointwise')
+[INFO] Processing collapse task 'collapse_7': middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.depthwise')
 
 [INFO] ==================== Collapsing Block ====================
 [INFO] Start Target : middle_flow.7.rep.4.depthwise
-[INFO] End Target   : middle_flow.7.rep.7.pointwise
+[INFO] End Target   : middle_flow.7.rep.7.depthwise
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'middle_flow.7.rep.4.depthwise' -> 'middle_flow.7.rep.7.pointwise'
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.7.rep.4.depthwise' -> 'middle_flow.7.rep.7.depthwise'
 [DEBUG] [LCA] Resolved Container: 'middle_flow.7.rep' | Type: Sequential
 
 [STEP 2] Simulating Forward Pass & Capturing LCA Activations...
 [DEBUG] Capturing I/O hooks for 'middle_flow.7.rep.4' -> 'middle_flow.7.rep.7'...
 
-[STEP 3] Probing graph for downstream classifier after 'middle_flow.7.rep.7.pointwise'...
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.7.rep.7.depthwise'...
 
 [STEP 4] Analyzing topological characteristics for replacement...
 
@@ -415,8 +417,8 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'middle_flow.7.rep' completed successfully.
 
-[INFO] ✅ Framework successfully merged 'middle_flow.7.rep.4.depthwise' → 'middle_flow.7.rep.7.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_7' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise) in 0.05s
+[INFO] ✅ Framework successfully merged 'middle_flow.7.rep.4.depthwise' → 'middle_flow.7.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'collapse_7' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.depthwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -450,7 +452,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'block4.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'block4.rep.4.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_8' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -486,7 +488,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
 [INFO] ✅ Framework successfully merged 'conv3.depthwise' → 'conv4.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_9' (conv3.depthwise → conv4.pointwise) in 0.06s
+[INFO] ✅ Successfully collapsed block 'collapse_9' (conv3.depthwise → conv4.pointwise) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -497,7 +499,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 13,481,196
 [INFO] ΔParams = +7,530,656 (expected ≤ 0)
 [INFO] Collapse counts: success=10, failed=0, skipped=0
-[INFO] Total collapse runtime: 1.32s
+[INFO] Total collapse runtime: 1.39s
 [RESULT] ✅ collapse_only complete. Total targets: 10 | success=10 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='DeepFool' eps=0.030000 steps=40

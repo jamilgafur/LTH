@@ -135,43 +135,41 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
-  warnings.warn("Can't initialize NVML"[ATTACK][BATCH] DeepFool batch=1/40 seen=256 clean_acc=92.58% adv_acc=18.75%
-[ATTACK][BATCH] DeepFool batch=10/40 seen=2560 clean_acc=92.34% adv_acc=19.10%
-[AT[ATTACK][BATCH] DeepFool batch=1/40 seen=256 clean_acc=94.92% adv_acc=17.19%
-[ATTACK][BATCH] DeepFool batch=10/40 seen=2560 clean_acc=92.42% adv_acc=17.77%
-[ATTACK][BATCH] DeepFool batch=20/40 seen=5120 clean_acc=92.38% adv_acc=17.73%
-[ATTACK][BATCH] DeepFool batch=30/40 seen=7680 clean_acc=92.50% adv_acc=17.19%
-[ATTACK][BATCH] DeepFool batch=40/40 seen=10000 clean_acc=92.45% adv_acc=17.01%
-[ATTACK][DONE] attack='DeepFool' samples=10000 clean_acc=92.45% adv_acc=17.01% asr=82.99% runtime=2795.90s
-[INFO] Summary written to adversarial_results_ep200_pre200/summary_VGG16_Cifar10_DeepFool_ALL.csv
-: features.conv_10
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_10'
-[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_10'...
-
-[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=14, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features'...
-[DEBUG] Found inserted block candidate at index 14: 'conv_5'
-[STEP] Validating inserted module 'Sequential' at index 14...
-[DEBUG] Inserted module forward successful, output shape: (256, 512, 4, 4)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.conv_5' → 'features.conv_10'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_5 → features.conv_10) in 0.31s
-[STEP] Patching skip connections (if any)...
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/m[ATTACK][SETUP] Initializing attack='DeepFool' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: DeepFool
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_analysis.py", line 17, in <module>
+    main()
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 252, in main
+    run_pipeline(args)
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 117, in run_pipeline
+    _save_summary_records(args, args.output_dir, records)
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 28, in _save_summary_records
+    df_records.to_csv(csv_path, index=False)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/core/generic.py", line 3967, in to_csv
+    return DataFrameRenderer(formatter).to_csv(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/formats/format.py", line 1014, in to_csv
+    csv_formatter.save()
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/formats/csvs.py", line 251, in save
+    with get_handle(
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/common.py", line 157, in __exit__
+    self.close()
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/common.py", line 144, in close
+    handle.close()
+OSError: [Errno 116] Stale file handle
+[ATTACK][BATCH] DeepFool batch=1/40 seen=256 clean_acc=92.58% adv_acc=8.20%
+[ATTACK][BATCH] DeepFool batch=10/40 seen=2560 clean_acc=92.34% adv_acc=10.08%
+[ATTACK][BATCH] DeepFool batch=20/40 seen=5120 clean_acc=92.52% adv_acc=10.49%
+[ATTACK][BATCH] DeepFool batch=30/40 seen=7680 clean_acc=92.73% adv_acc=10.65%
+[ATTACK][BATCH] DeepFool batch=40/40 seen=10000 clean_acc=92.87% adv_acc=10.45%
+[ATTACK][DONE] attack='DeepFool' samples=10000 clean_acc=92.87% adv_acc=10.45% asr=89.55% runtime=1350.90s
+any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 10 in-place ReLU(s) with out-of-place variants.
 
@@ -205,7 +203,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -216,24 +214,24 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 21,893,450
 [INFO] ΔParams = +11,769,600 (expected ≤ 0)
 [INFO] Collapse counts: success=2, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.64s
+[INFO] Total collapse runtime: 3.91s
 [RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='DeepFool' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: DeepFool
-[ATTACK][BATCH] DeepFool batch=1/40 seen=256 clean_acc=91.41% adv_acc=24.22%
-[ATTACK][BATCH] DeepFool batch=10/40 seen=2560 clean_acc=90.66% adv_acc=22.93%
-[ATTACK][BATCH] DeepFool batch=20/40 seen=5120 clean_acc=91.13% adv_acc=23.20%
-[ATTACK][BATCH] DeepFool batch=30/40 seen=7680 clean_acc=91.61% adv_acc=22.99%
-[ATTACK][BATCH] DeepFool batch=40/40 seen=10000 clean_acc=91.67% adv_acc=23.24%
-[ATTACK][DONE] attack='DeepFool' samples=10000 clean_acc=91.67% adv_acc=23.24% asr=76.76% runtime=2247.95s
+[ATTACK][BATCH] DeepFool batch=1/40 seen=256 clean_acc=91.41% adv_acc=12.11%
+[ATTACK][BATCH] DeepFool batch=10/40 seen=2560 clean_acc=90.59% adv_acc=11.88%
+[ATTACK][BATCH] DeepFool batch=20/40 seen=5120 clean_acc=91.09% adv_acc=12.56%
+[ATTACK][BATCH] DeepFool batch=30/40 seen=7680 clean_acc=91.59% adv_acc=12.47%
+[ATTACK][BATCH] DeepFool batch=40/40 seen=10000 clean_acc=91.65% adv_acc=12.37%
+[ATTACK][DONE] attack='DeepFool' samples=10000 clean_acc=91.65% adv_acc=12.37% asr=87.63% runtime=1139.92s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='DeepFool' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: DeepFool
-[ATTACK][BATCH] DeepFool batch=1/40 seen=256 clean_acc=91.41% adv_acc=23.44%
-[ATTACK][BATCH] DeepFool batch=10/40 seen=2560 clean_acc=91.72% adv_acc=18.59%
-[ATTACK][BATCH] DeepFool batch=20/40 seen=5120 clean_acc=92.19% adv_acc=18.61%
-[ATTACK][BATCH] DeepFool batch=30/40 seen=7680 clean_acc=92.16% adv_acc=18.37%
-[ATTACK][BATCH] DeepFool batch=40/40 seen=10000 clean_acc=92.04% adv_acc=18.40%
-[ATTACK][DONE] attack='DeepFool' samples=10000 clean_acc=92.04% adv_acc=18.40% asr=81.60% runtime=2756.20s
+[ATTACK][BATCH] DeepFool batch=1/40 seen=256 clean_acc=91.41% adv_acc=10.55%
+[ATTACK][BATCH] DeepFool batch=10/40 seen=2560 clean_acc=91.72% adv_acc=9.61%
+[ATTACK][BATCH] DeepFool batch=20/40 seen=5120 clean_acc=92.19% adv_acc=10.12%
+[ATTACK][BATCH] DeepFool batch=30/40 seen=7680 clean_acc=92.16% adv_acc=10.20%
+[ATTACK][BATCH] DeepFool batch=40/40 seen=10000 clean_acc=92.04% adv_acc=10.29%
+[ATTACK][DONE] attack='DeepFool' samples=10000 clean_acc=92.04% adv_acc=10.29% asr=89.71% runtime=1399.48s
 [INFO] Summary written to adversarial_results_ep100_pre300/summary_VGG16_Cifar10_DeepFool_ALL.csv

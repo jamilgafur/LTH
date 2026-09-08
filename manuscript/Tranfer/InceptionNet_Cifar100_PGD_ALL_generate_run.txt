@@ -135,9 +135,9 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar100_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 6
-[DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar100_epochs200_pretrain200)
+[DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar100_epochs300_pretrain100)
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -177,7 +177,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch1.conv) in 0.41s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch1.conv) in 0.36s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
@@ -200,15 +200,15 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [WARN] ⚠ Collapse candidate 'collapse_1' appears to be cross-branch (parallel paths).
 [WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
 
-[INFO] Processing collapse task 'collapse_2': stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv
-[STEP] Calling _collapse_block('stage4.inception_4c.branch3.0.conv', 'stage4.inception_4d.branch2.0.conv')
+[INFO] Processing collapse task 'collapse_2': stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4c.branch3.1.conv', 'stage4.inception_4d.branch2.0.conv')
 
 [INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.inception_4c.branch3.0.conv
+[INFO] Start Target : stage4.inception_4c.branch3.1.conv
 [INFO] End Target   : stage4.inception_4d.branch2.0.conv
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.0.conv' -> 'stage4.inception_4d.branch2.0.conv'
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.1.conv' -> 'stage4.inception_4d.branch2.0.conv'
 [DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
 
 [STEP 2] Simulating Forward Pass & Capturing LCA Activations...
@@ -229,8 +229,8 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
-[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.05s
+[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.1.conv' → 'stage4.inception_4d.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch2.0.conv) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -317,7 +317,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage5' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage5.inception_5b.branch3.1.conv' → 'stage5.inception_5b.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch3.1.conv → stage5.inception_5b.branch4.1.conv) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch3.1.conv → stage5.inception_5b.branch4.1.conv) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -328,36 +328,37 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 3,638,308
 [INFO] ΔParams = +2,445,024 (expected ≤ 0)
 [INFO] Collapse counts: success=4, failed=0, skipped=2
-[INFO] Total collapse runtime: 1.07s
+[INFO] Total collapse runtime: 0.93s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=4 | failed=0 | skipped=2
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=61.72% adv_acc=11.72%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=57.62% adv_acc=9.06%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=57.01% adv_acc=8.71%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=57.02% adv_acc=8.66%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=57.30% adv_acc=8.69%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=57.30% adv_acc=8.69% asr=91.31% runtime=24===== Collapse summary =====
-[INFO] Parameters before: 6,083,[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=62.11% adv_acc=9.77%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=56.48% adv_acc=7.23%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=55.68% adv_acc=6.88%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=55.72% adv_acc=6.90%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=56.06% adv_acc=6.93%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=56.06% adv_acc=6.93% asr=93.07% runtime=42.59s
-[INFO] Summary written to adversarial_results_ep200_pre200/summary_InceptionNet_Cifar100_PGD_ALL.csv
-ch=30/40 seen=7680 clean_acc=57.17% adv_acc=8.37%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=57.38% adv_acc=8.46%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=57.38% adv_acc=8.46% asr=91.54% runtime=24.73s
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=61.33% adv_acc=10.16%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=57.73% adv_acc=8.20%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=56.72% adv_acc=7.75%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=57.11% adv_acc=7.70%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=57.15% adv_acc=7.80%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=57.15% adv_acc=7.80% asr=92.20% runtime=26.24s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=62.89% adv_acc=8.20%
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=63.28% adv_acc=7.03%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=57.38% adv_acc=6.91%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=56.50% adv_acc=6.91%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=56.32% adv_acc=7.02%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=56.58% adv_acc=7.15%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=56.58% adv_acc=7.15% asr=92.85% runtime=42.40s
+[INFO] Summary written to adversarial_results_ep300_pre100/summary_InceptionNet_Cifar100_PGD_ALL.csv
+ch=30/40 seen=7680 clean_acc=57.20% adv_acc=8.35%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=57.41% adv_acc=8.45%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=57.41% adv_acc=8.45% asr=91.55% runtime=28.89s
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=62.89% adv_acc=7.81%
 [ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=55.31% adv_acc=6.21%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=54.57% adv_acc=5.98%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=54.58% adv_acc=6.02%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=54.91% adv_acc=5.98%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=54.91% adv_acc=5.98% asr=94.02% runtime=31.73s
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=54.57% adv_acc=6.00%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=54.58% adv_acc=6.04%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=54.91% adv_acc=6.00%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=54.91% adv_acc=6.00% asr=94.00% runtime=45.07s
 [INFO] Summary written to adversarial_results_ep100_pre300/summary_InceptionNet_Cifar100_PGD_ALL.csv

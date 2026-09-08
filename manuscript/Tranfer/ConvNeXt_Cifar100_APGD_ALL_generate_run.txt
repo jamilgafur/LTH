@@ -135,9 +135,9 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar100_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 6
-[DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar100_epochs200_pretrain200)
+[DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar100_epochs300_pretrain100)
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -178,7 +178,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.1.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.37s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.29s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -213,7 +213,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.2.dwconv' → 'features.2.2.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.2.2.dwconv → features.2.2.pwconv1) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.2.2.dwconv → features.2.2.pwconv1) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -300,7 +300,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (features.6.0.dwconv → features.6.0.pwconv2) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_4' (features.6.0.dwconv → features.6.0.pwconv2) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -334,7 +334,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.02s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -345,24 +345,42 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 2,551,876
 [INFO] ΔParams = +25,345,152 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.74s
+[INFO] Total collapse runtime: 0.65s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
 [DEBUG] load_state_dict result: missing=3, unexpected=3
 [ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: APGD
-[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=1.56% adv_acc=0.00%
-[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=0.98% adv_acc=0.08%
-[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=0.90% adv_acc=0.04%
-[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=0.95% adv_acc=0.03%
-[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=0.87% adv_acc=0.03%
-[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=0.87% adv_acc=0.03% asr=99.97% runtime=21.89s
+[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=1.95% adv_acc=0.00%
+[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=1.05% adv_acc=0.23%
+[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=1.15% adv_acc=0.25%
+[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=1.20% adv_acc=0.26%
+[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=1.26% adv_acc=0.29%
+[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=1.26% adv_acc=0.29% asr=99.71% runtime=13.20s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: APGD
-[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=46.48% adv_acc=3.12%
-[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=41.45% adv_acc=3.32%
-[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=41.99% adv_acc=2.89%
-[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=41.34% adv_acc=2.73%
-[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=41.59% adv_acc=2.86%
-[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=41.59% adv_acc=2.86% asr=97.14% runtime=35.20s
-[INFO] Summary written to adversarial_results_ep200_pre200/summary_ConvNeXt_Cifar100_APGD_ALL.csv
+[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=46.88% adv_acc=3.12%
+[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=41.56% adv_acc=3.44%
+[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=41.74% adv_acc=3.26%
+[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=41.21% adv_acc=3.06%
+[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=41.20% adv_acc=3.15%
+[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=41.20% adv_acc=3.15% asr=96.85% runtime=18.01s
+[INFO] Summary written to adversarial_results_ep300_pre100/summary_ConvNeXt_Cifar100_APGD_ALL.csv
+e.py", line 110, in run_pipeline
+    records, model_cache, loader_cache, adv_datasets = AdversarialCore.generate_attacks_phase(
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 277, in generate_attacks_phase
+    one_batch = next(iter(train_loader))[0]
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 708, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1458, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1420, in _get_data
+    success, data = self._try_get_data()
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1264, in _try_get_data
+    raise RuntimeError(
+RuntimeError: DataLoader worker (pid(s) 201493) exited unexpectedly

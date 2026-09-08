@@ -135,9 +135,9 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 9
-[DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar10_epochs300_pretrain100)
+[DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar10_epochs200_pretrain200)
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -177,7 +177,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.37s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 1.16s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -416,7 +416,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'block4.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'block4.rep.4.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_7' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.06s
+[INFO] ✅ Successfully collapsed block 'collapse_7' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.07s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -427,16 +427,12 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Start Target : conv3.depthwise
 [INFO] End Target   : conv4.pointwise
 
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)=
-[INFO] Start Target : block4.rep.1.depthwise
-[INFO] End Target   : conv4.pointwise
-
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'block4.rep.1.depthwise' -> 'conv4.pointwise'
+[DEBUG] [LCA] Locating block boundaries: 'conv3.depthwise' -> 'conv4.pointwise'
 [DEBUG] [LCA] Resolved Container: '' | Type: XceptionNet
 
 [STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'block4' -> 'conv4'...
+[DEBUG] Capturing I/O hooks for 'conv3' -> 'conv4'...
 
 [STEP 3] Probing graph for downstream classifier after 'conv4.pointwise'...
 
@@ -446,17 +442,17 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [DEBUG] Updating root container in-place (Preserving attribute names).
 
 [STEP] ===== Starting _validate_downstream for '' =====
-[DEBUG] start_idx=5, device=cuda, has_next_linear=True
+[DEBUG] start_idx=6, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within ''...
-[DEBUG] Found inserted block candidate at index 5: 'block4'
-[STEP] Validating inserted module 'Sequential' at index 5...
+[DEBUG] Found inserted block candidate at index 6: 'conv3'
+[STEP] Validating inserted module 'Sequential' at index 6...
 [DEBUG] Inserted module forward successful, output shape: (256, 2048, 2, 2)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [WARN] Downstream module '.fc' raised exception: mat1 and mat2 shapes cannot be multiplied (524288x1 and 2048x10)
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
-[INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'conv4.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (block4.rep.1.depthwise → conv4.pointwise) in 0.07s
+[INFO] ✅ Framework successfully merged 'conv3.depthwise' → 'conv4.pointwise'
+[INFO] ✅ Successfully collapsed block 'collapse_8' (conv3.depthwise → conv4.pointwise) in 0.06s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -464,25 +460,65 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 
 [STEP] ===== Collapse summary =====
 [INFO] Parameters before: 20,827,442
-[INFO] Parameters after : 11,193,490
-[INFO] ΔParams = +9,633,952 (expected ≤ 0)
+[INFO] Parameters after : 13,839,874
+[INFO] ΔParams = +6,987,568 (expected ≤ 0)
 [INFO] Collapse counts: success=9, failed=0, skipped=0
-[INFO] Total collapse runtime: 1.28s
+[INFO] Total collapse runtime: 1.26s
 [RESULT] ✅ collapse_only complete. Total targets: 9 | success=9 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=86.72% adv_acc=66.80%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=88.20% adv_acc=66.64%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=88.48% adv_acc=67.13%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=88.78% adv_acc=67.41%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=88.76% adv_acc=67.82%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=88.76% adv_acc=67.8[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=87.50% adv_acc=67.97%
+[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=87.11% adv_acc=63.28%
+[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=87.46% adv_acc=62.38%
+[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=87.73% adv_acc=61.45%
+[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=87.58% adv_acc=61.08%
+[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=87.50% adv_acc=61.36%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=87.50% adv_acc=61.36% asr=38.64% runtime=66.99s
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: BIM
+[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=87.50% adv_acc=67.97%
 [ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=88.12% adv_acc=67.27%
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=88.16% adv_acc=66.95%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=88.12% adv_acc=66.88%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=88.26% adv_acc=67.40%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=88.26% adv_acc=67.40% asr=32.60% runtime=90.31s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=88.26% adv_acc=67.40% asr=32.60% runtime=64.42s
 [INFO] Summary written to adversarial_results_ep300_pre100/summary_XceptionNet_Cifar10_BIM_ALL.csv
-BIM' samples=10000 clean_acc=87.13% adv_acc=61.07% asr=38.93% runtime=90.30s
-[INFO] Summary written to adversarial_results_ep100_pre300/summary_XceptionNet_Cifar10_BIM_ALL.csv
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ach
+    with _resource_sharer.get_connection(self._id) as conn:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/resource_sharer.py", line 86, in get_connection
+    c = Client(address, authkey=process.current_process().authkey)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 525, in Client
+    answer_challenge(c, authkey)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 769, in answer_challenge
+    message = connection.recv_bytes(256)         # reject large message
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 216, in recv_bytes
+    buf = self._recv_bytes(maxlength)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 430, in _recv_bytes
+    buf = self._recv(4)
+          ^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 395, in _recv
+    chunk = read(handle, remaining)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 137, in generate_adversarial_dataset
+    for batch_idx, (imgs, lbls) in enumerate(loader, start=1):
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 704, in __next__
+    with torch.autograd.profiler.record_function(self._profile_name):
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/autograd/profiler.py", line 769, in __exit__
+    torch.ops.profiler._record_function_exit._RecordFunction(record)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/_ops.py", line 960, in __call__
+    return self._op(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 43822) is killed by signal: Killed.
+[INFO] Summary written to adversarial_results_ep200_pre200/summary_XceptionNet_Cifar10_BIM_ALL.csv

@@ -177,7 +177,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.32s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.40s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -382,7 +382,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.7.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.7.rep.4.depthwise' → 'middle_flow.7.rep.7.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_6' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_6' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -416,7 +416,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'block4.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'block4.rep.4.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_7' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_7' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -452,7 +452,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
 [INFO] ✅ Framework successfully merged 'conv3.depthwise' → 'conv4.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (conv3.depthwise → conv4.pointwise) in 0.07s
+[INFO] ✅ Successfully collapsed block 'collapse_8' (conv3.depthwise → conv4.pointwise) in 0.06s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -463,24 +463,26 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 13,839,874
 [INFO] ΔParams = +6,987,568 (expected ≤ 0)
 [INFO] Collapse counts: success=9, failed=0, skipped=0
-[INFO] Total collapse runtime: 1.23s
+[INFO] Total collapse runtime: 1.15s
 [RESULT] ✅ collapse_only complete. Total targets: 9 | success=9 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='CW' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: CW
 [ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=89.06% adv_acc=1.56%
 [ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=88.67% adv_acc=1.29%
-[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=88.46% adv_acc=1.17%
-[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=88.48% adv_acc=1.22%
-[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=88.46% adv_acc=1.32%
-[ATTACK][DONE] attack='CW' samples=10000 clean_acc=88.46% adv_acc=1.32% asr=98.68% runtime=1391.90s
+[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=88.46% adv_acc=1.15%
+[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=88.48% adv_acc=1.20%
+[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=88.46% adv_acc=1.31%
+[ATTACK][DONE] attack='CW' samples=10000 clean_acc=88.46% adv_acc=1.31% asr=98.69% runtime=1133.15s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='CW' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: CW
-[ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=88.67% adv_acc=0.39%
-[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=87.50% adv_acc=0.59%
-[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=87.71% adv_acc=0.49%
-[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=87.92% adv_acc=0.46%
-[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=88.06% adv_acc=0.48%
-[ATTACK][DONE] attack='CW' samples=10000 clean_acc=88.06% adv_acc=0.48% asr=99.52% runtime=1706.18s
-[INFO] Summary written to adversarial_results_ep200_pre200/summary_XceptionNet_Cifar10_CW_ALL.csv
+[ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=87.50% adv_acc=0.78%
+[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=88.16% adv_acc=0.74%
+[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=88.18% adv_acc=0.96%
+[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=88.14% adv_acc=0.90%
+[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=88.27% adv_acc=1.07%
+[ATTACK][DONE] attack='CW' samples=10000 clean_acc=88.27% adv_acc=1.07% asr=98.93% runtime=1181.82s
+[INFO] Summary written to adversarial_results_ep300_pre100/summary_XceptionNet_Cifar10_CW_ALL.csv
+CW' samples=10000 clean_acc=87.12% adv_acc=0.14% asr=99.86% runtime=1031.59s
+[INFO] Summary written to adversarial_results_ep100_pre300/summary_XceptionNet_Cifar10_CW_ALL.csv

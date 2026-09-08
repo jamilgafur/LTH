@@ -135,13 +135,40 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: APGD
-[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=79.30% adv_acc=4.30%
-[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=78.28% adv_acc=5.78%
-[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=78.50% adv_acc=5.51%
-[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=78.44% adv_acc=5.31%
-[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=78.36% adv_acc=5.55%
-[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=78.36% adv_acc=5.55% asr=94.45% runtime=16.28s
-[INFO] Summary written to adversarial_results_ep100_pre300/summary_MobileNet_Cifar10_APGD_ALL.csv
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_analysis.py", line 17, in <module>
+    main()
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 252, in main
+    run_pipeline(args)
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 117, in run_pipeline
+    _save_summary_records(args, args.output_dir, records)
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 28, in _save_summary_records
+    df_records.to_csv(csv_path, index=False)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/util/_decorators.py", line 333, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/core/generic.py", line 3967, in to_csv
+    return DataFrameRenderer(formatter).to_csv(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/formats/format.py", line 1014, in to_csv
+    csv_formatter.save()
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/formats/csvs.py", line 251, in save
+    with get_handle(
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/common.py", line 157, in __exit__
+    self.close()
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/pandas/io/common.py", line 144, in close
+    handle.close()
+OSError: [Errno 116] Stale file handle
+[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=83.20% adv_acc=8.98%
+[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=79.69% adv_acc=9.18%
+[ATTACK][BATCH] APGD batch=20/40 seen=5120 clean_acc=79.84% adv_acc=9.49%
+[ATTACK][BATCH] APGD batch=30/40 seen=7680 clean_acc=80.14% adv_acc=8.98%
+[ATTACK][BATCH] APGD batch=40/40 seen=10000 clean_acc=80.14% adv_acc=9.16%
+[ATTACK][DONE] attack='APGD' samples=10000 clean_acc=80.14% adv_acc=9.16% asr=90.84% runtime=22.57s

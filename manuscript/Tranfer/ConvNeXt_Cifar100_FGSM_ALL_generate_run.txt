@@ -135,9 +135,9 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar100_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 6
-[DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar100_epochs200_pretrain200)
+[DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar100_epochs300_pretrain100)
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -178,7 +178,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.1.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.32s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.64s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -286,26 +286,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 
 [STEP 3] Probing graph for downstream classifier after 'features.6.0.pwconv2'...
 
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'features.6'...
-[DEBUG] Found inserted block candidate at index 0: '0'
-[STEP] Validating inserted module 'Sequential' at index 0...
-[DEBUG] Inserted module forward successful, output shape: (256, 768, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'features.6' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (features.6.0.dwconv → features.6.0.pwconv2) in 0.03s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_5': features.6.1.pwconv1 → features.6.2.pwconv2
-[STEP] Calling _collapse_block('features.6.1.pwconv1', 'features.6.2.pwconv2')
+[STEP 4] An1', 'features.6.2.pwconv2')
 
 [INFO] ==================== Collapsing Block ====================
 [INFO] Start Target : features.6.1.pwconv1
@@ -334,30 +315,71 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.04s
-[STEP] Patching skip connections (i[ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
+[INFO] ✅ Successfully collapsed block 'collapse_4' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,897,028
+[INFO] Parameters after : 2,551,876
+[INFO] ΔParams = +25,345,152 (expected ≤ 0)
+[INFO] Collapse counts: success=5, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.59s
+[RESULT] ✅ collapse_only complete. Total targets: 5 | success=5 | failed=0 | skipped=0
+[DEBUG] load_state_dict result: missing=3, unexpected=3
+[ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: FGSM
+[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=0.78% adv_acc=0.78%
+[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=1.21% adv_acc=1.25%
+[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=1.15% adv_acc=1.09%
+[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=1.11% adv_acc=0.95%
+[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=1.17% adv_acc=0.99%
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=1.17% adv_acc=0.99% asr=99.01% runtime=2.14s
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: FGSM
 [ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=50.78% adv_acc=9.77%
 [ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=41.02% adv_acc=8.91%
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=41.66% adv_acc=8.38%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=41.25% adv_acc=8.46%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=41.19% adv_acc=8.79%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=41.19% adv_acc=8.79% asr=91.21% runtime=4.25s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=41.19% adv_acc=8.79% asr=91.21% runtime=2.58s
 [INFO] Summary written to adversarial_results_ep100_pre300/summary_ConvNeXt_Cifar100_FGSM_ALL.csv
-0.78%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=1.05% adv_acc=0.59%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=1.05% adv_acc=0.66%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=1.08% adv_acc=0.62%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=1.02% adv_acc=0.68%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=1.02% adv_acc=0.68% asr=99.32% runtime=5.11s
-[DEBUG] load_state_dict result: missing=0, unexpected=0
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=46.48% adv_acc=7.42%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=41.45% adv_acc=9.38%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=41.99% adv_acc=8.89%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=41.34% adv_acc=8.70%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=41.59% adv_acc=8.88%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=41.59% adv_acc=8.88% asr=91.12% runtime=3.03s
-[INFO] Summary written to adversarial_results_ep200_pre200/summary_ConvNeXt_Cifar100_FGSM_ALL.csv
-v
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                lib/python3.11/selectors.py", line 415, in select
+    fd_event_list = self._selector.poll(timeout)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 199762) is killed by signal: Killed. 
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_analysis.py", line 17, in <module>
+    main()
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 252, in main
+    run_pipeline(args)
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 110, in run_pipeline
+    records, model_cache, loader_cache, adv_datasets = AdversarialCore.generate_attacks_phase(
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 296, in generate_attacks_phase
+    clean_acc = cls.evaluate_clean_accuracy(model, test_loader)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 58, in evaluate_clean_accuracy
+    for imgs, lbls in loader:
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 708, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1458, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1420, in _get_data
+    success, data = self._try_get_data()
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1264, in _try_get_data
+    raise RuntimeError(
+RuntimeError: DataLoader worker (pid(s) 199762) exited unexpectedly

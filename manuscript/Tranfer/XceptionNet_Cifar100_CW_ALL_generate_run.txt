@@ -135,9 +135,11 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar100_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 10
-[DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar100_epochs200_pretrain200)
+[DEBUG] Rebuilding collapsed architecture for XceptionNet (Cifar100_epochs300_pretrain100)
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -177,7 +179,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 1.03s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.29s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -314,7 +316,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.4.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.4.rep.4.depthwise' → 'middle_flow.4.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_4' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise) in 0.06s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -420,10 +422,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'collapse_8': block4.rep.1.depthwise → block4.rep.4.depthwise
-[STEP] Calling _collapse_block('block4.rep.1.depthwise', 'block4.rep.4.depthwise')
-
-[INFO] ==================== Collapsing Block ====================
+[INFO] Processing collapse task 'collapse_8': block4.rep.1.depthwis===================
 [INFO] Start Target : block4.rep.1.depthwise
 [INFO] End Target   : block4.rep.4.depthwise
 
@@ -497,24 +496,24 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 13,481,196
 [INFO] ΔParams = +7,530,656 (expected ≤ 0)
 [INFO] Collapse counts: success=10, failed=0, skipped=0
-[INFO] Total collapse runtime: 1.05s
+[INFO] Total collapse runtime: 1.10s
 [RESULT] ✅ collapse_only complete. Total targets: 10 | success=10 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='CW' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: CW
 [ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=66.80% adv_acc=0.00%
-[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=60.70% adv_acc=0.47%
-[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=60.55% adv_acc=0.29%
-[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=60.21% adv_acc=0.29%
-[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=60.48% adv_acc=0.27%
-[ATTACK][DONE] attack='CW' samples=10000 clean_acc=60.48% adv_acc=0.27% asr=99.73% runtime=1025.73s
+[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=60.70% adv_acc=0.43%
+[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=59.26% adv_acc=0.53%
+[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=59.60% adv_acc=0.53%
+[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=60.10% adv_acc=0.52%
+[ATTACK][DONE] attack='CW' samples=10000 clean_acc=60.10% adv_acc=0.52% asr=99.48% runtime=1133.91s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='CW' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: CW
-[ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=62.50% adv_acc=7.81%
-[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=58.98% adv_acc=5.86%
-[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=59.06% adv_acc=5.72%
-[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=59.53% adv_acc=5.66%
-[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=59.86% adv_acc=5.79%
-[ATTACK][DONE] attack='CW' samples=10000 clean_acc=59.86% adv_acc=5.79% asr=94.21% runtime=1325.58s
-[INFO] Summary written to adversarial_results_ep300_pre100/summary_XceptionNet_Cifar100_CW_ALL.csv
+[ATTACK][BATCH] CW batch=1/40 seen=256 clean_acc=62.11% adv_acc=1.56%
+[ATTACK][BATCH] CW batch=10/40 seen=2560 clean_acc=59.57% adv_acc=1.60%
+[ATTACK][BATCH] CW batch=20/40 seen=5120 clean_acc=58.83% adv_acc=1.68%
+[ATTACK][BATCH] CW batch=30/40 seen=7680 clean_acc=58.98% adv_acc=1.76%
+[ATTACK][BATCH] CW batch=40/40 seen=10000 clean_acc=59.15% adv_acc=1.77%
+[ATTACK][DONE] attack='CW' samples=10000 clean_acc=59.15% adv_acc=1.77% asr=98.23% runtime=1184.61s
+[INFO] Summary written to adversarial_results_ep100_pre300/summary_XceptionNet_Cifar100_CW_ALL.csv
