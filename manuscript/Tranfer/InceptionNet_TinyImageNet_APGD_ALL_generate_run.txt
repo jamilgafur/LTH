@@ -1,0 +1,485 @@
+
+======================================================================
+[PHASE 1] Generating adversarial examples
+======================================================================
+
+======================================================================
+[CHECKPOINT DISCOVERY] Scanning for available models and datasets...
+======================================================================
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs3_pretrain3      | Kind: Finetuned 
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs100_pretrain300  | Kind: Finetuned 
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs200_pretrain200  | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs300_pretrain100  | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs3_pretrain3      | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs100_pretrain300  | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs100_pretrain300 | Kind: Finetuned 
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs3_pretrain3     | Kind: Finetuned 
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs200_pretrain200 | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs100_pretrain300 | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs300_pretrain100 | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs3_pretrain3     | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Original  
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs200_pretrain200  | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs300_pretrain100  | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs100_pretrain300  | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs3_pretrain3      | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs200_pretrain200  | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs300_pretrain100  | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs100_pretrain300  | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs3_pretrain3      | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs300_pretrain100 | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs100_pretrain300 | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs3_pretrain3     | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs200_pretrain200 | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs300_pretrain100 | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs100_pretrain300 | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs3_pretrain3     | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs200_pretrain200 | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Finetuned 
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Original  
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs100_pretrain300  | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs300_pretrain100  | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs200_pretrain200  | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs3_pretrain3      | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs100_pretrain300  | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs300_pretrain100  | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs200_pretrain200  | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs3_pretrain3      | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs200_pretrain200 | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs3_pretrain3     | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs100_pretrain300 | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs300_pretrain100 | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs200_pretrain200 | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs3_pretrain3     | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs100_pretrain300 | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs300_pretrain100 | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Finetuned 
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Original  
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: Cifar10_epochs200_pretrain200  | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: Cifar10_epochs3_pretrain3      | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: Cifar10_epochs100_pretrain300  | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: Cifar100_epochs3_pretrain3     | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: Cifar100_epochs200_pretrain200 | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: Cifar100_epochs300_pretrain100 | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: Cifar100_epochs100_pretrain300 | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Original  
+  [FOUND] Model: MobileNet       | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs3_pretrain3      | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs200_pretrain200  | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs100_pretrain300  | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs300_pretrain100  | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs3_pretrain3      | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs200_pretrain200  | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs100_pretrain300  | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs300_pretrain100  | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs3_pretrain3     | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs100_pretrain300 | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs300_pretrain100 | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs200_pretrain200 | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs3_pretrain3     | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs100_pretrain300 | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs300_pretrain100 | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs200_pretrain200 | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Finetuned 
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Original  
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs3_pretrain3      | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs100_pretrain300  | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs300_pretrain100  | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs200_pretrain200  | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs3_pretrain3      | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs100_pretrain300  | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs300_pretrain100  | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs200_pretrain200  | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs200_pretrain200 | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs3_pretrain3     | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs300_pretrain100 | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs100_pretrain300 | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs200_pretrain200 | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs3_pretrain3     | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs300_pretrain100 | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs100_pretrain300 | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Finetuned 
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Original  
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Original  
+======================================================================
+[CHECKPOINT DISCOVERY] Total valid checkpoint pairs found: 123
+======================================================================
+
+[INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_tinyimagenet_epochs300_pretrain100_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 6
+[DEBUG] Rebuilding collapsed architecture for InceptionNet (tinyimagenet_epochs300_pretrain100)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (InceptionNet)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 6,185,832
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': stage4.inception_4a.branch4.1.conv → stage4.inception_4b.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4a.branch4.1.conv', 'stage4.inception_4b.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4a.branch4.1.conv
+[INFO] End Target   : stage4.inception_4b.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4a.branch4.1.conv' -> 'stage4.inception_4b.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4a' -> 'stage4.inception_4b'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4b.branch2.0.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 0: 'inception_4a'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch4.1.conv' → 'stage4.inception_4b.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch4.1.conv → stage4.inception_4b.branch2.0.conv) in 0.39s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': stage4.inception_4c.branch3.0.conv → stage4.inception_4c.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4c.branch3.0.conv', 'stage4.inception_4c.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4c.branch3.0.conv
+[INFO] End Target   : stage4.inception_4c.branch4.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.0.conv' -> 'stage4.inception_4c.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4c' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage4.inception_4c' (InceptionBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4c' -> 'stage4.inception_4c'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4c.branch4.1.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4c.branch4.1.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4c.branch3.0.conv → stage4.inception_4c.branch4.1.conv) in 0.08s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_2': stage4.inception_4e.branch2.0.conv → stage4.inception_4e.branch3.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch2.0.conv', 'stage4.inception_4e.branch3.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch2.0.conv
+[INFO] End Target   : stage4.inception_4e.branch3.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch2.0.conv' -> 'stage4.inception_4e.branch3.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage4.inception_4e' (InceptionBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4e' -> 'stage4.inception_4e'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4e.branch3.1.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 4: 'inception_4e'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (256, 832, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4e.branch2.0.conv' → 'stage4.inception_4e.branch3.1.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4e.branch2.0.conv → stage4.inception_4e.branch3.1.conv) in 0.08s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_3': stage5.inception_5a.branch3.1.conv → stage5.inception_5b.branch1.conv
+[STEP] Calling _collapse_block('stage5.inception_5a.branch3.1.conv', 'stage5.inception_5b.branch1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage5.inception_5a.branch3.1.conv
+[INFO] End Target   : stage5.inception_5b.branch1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage5.inception_5a.branch3.1.conv' -> 'stage5.inception_5b.branch1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage5' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage5.inception_5a' -> 'stage5.inception_5b'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage5.inception_5b.branch1.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage5' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage5'...
+[DEBUG] Found inserted block candidate at index 0: 'inception_5a'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (256, 1024, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage5' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage5.inception_5a.branch3.1.conv' → 'stage5.inception_5b.branch1.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage5.inception_5a.branch3.1.conv → stage5.inception_5b.branch1.conv) in 0.08s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_4': stage5.inception_5b.branch3.0.conv → stage5.inception_5b.branch4.1.conv
+[STEP] Calling _collapse_block('stage5.inception_5b.branch3.0.conv', 'stage5.inception_5b.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage5.inception_5b.branch3.0.conv
+[INFO] End Target   : stage5.inception_5b.branch4.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage5.inception_5b.branch3.0.conv' -> 'stage5.inception_5b.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage5.inception_5b' | Type: SmartIdentity
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage5.inception_5b'
+[DEBUG]   start_layer_name=stage5.inception_5b.branch3.0.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage5.inception_5b.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'collapse_4' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'collapse_5': stage4.inception_4a.branch1.conv → stage4.inception_4a.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4a.branch1.conv', 'stage4.inception_4a.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4a.branch1.conv
+[INFO] End Target   : stage4.inception_4a.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4a.branch1.conv' -> 'stage4.inception_4a.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4a' | Type: Sequential
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4a'
+[DEBUG]   start_layer_name=stage4.inception_4a.branch1.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4a.branch2.0.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'collapse_5' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 6,185,832
+[INFO] Parameters after : 3,294,184
+[INFO] ΔParams = +2,891,648 (expected ≤ 0)
+[INFO] Collapse counts: success=4, failed=0, skipped=2
+[INFO] Total collapse runtime: 0.93s
+[RESULT] ✅ collapse_only complete. Total targets: 6 | success=4 | failed=0 | skipped=2
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: APGD
+[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=0.00% adv_acc=0.00%
+[ATTACK][BATCH] APGD batch=10/40 seen=2560 clean_acc=0.43% adv_acc=0.12%
+[ERROR] Attack generation failed for APGD: DataLoader worker (pid 187326) is killed by signal: Killed. 
+[ATTACK][ERROR] traceback:
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 141, in generate_adversarial_dataset
+    adv = attack(imgs, lbls)
+          ^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchattacks/attack.py", line 511, in __call__
+    adv_inputs = self.forward(inputs, labels, *args, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchattacks/attacks/apgd.py", line 74, in forward
+    _, adv_images = self.perturb(images, labels, cheap=True)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchattacks/attacks/apgd.py", line 348, in perturb
+    ) = self.attack_single_run(
+        ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchattacks/attacks/apgd.py", line 250, in attack_single_run
+    logits = self.get_logits(x_adv)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torchattacks/attack.py", line 79, in get_logits
+    logits = self.model(inputs)
+             ^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/parallel/data_parallel.py", line 191, in forward
+    return self.module(*inputs[0], **module_kwargs[0])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/pyPrune/models/InceptionNet.py", line 167, in forward
+    x = self.stage1(x)
+        ^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/pyPrune/models/InceptionNet.py", line 16, in forward
+    return self.relu(self.bn(self.conv(x)))
+                     ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/batchnorm.py", line 193, in forward
+    return F.batch_norm(
+           ^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/functional.py", line 2822, in batch_norm
+    return torch.batch_norm(
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 187326) is killed by signal: Killed.
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='APGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: APGD
+Traceback (most recent call last):
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/resource_sharer.py", line 138, in _serve
+    with self._listener.accept() as conn:
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 482, in accept
+    deliver_challenge(c, self._authkey)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 757, in deliver_challenge
+    response = connection.recv_bytes(256)        # reject large message
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 216, in recv_bytes
+    buf = self._recv_bytes(maxlength)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 430, in _recv_bytes
+    buf = self._recv(4)
+          ^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 395, in _recv
+    chunk = read(handle, remaining)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+[ATTACK][BATCH] APGD batch=1/40 seen=256 clean_acc=0.00% adv_acc=0.00%
+[ERROR] Attack generation failed for APGD: DataLoader worker (pid(s) 187702) exited unexpectedly
+[ATTACK][ERROR] traceback:
+Traceback (most recent call last):
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1251, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/queues.py", line 122, in get
+    return _ForkingPickler.loads(res)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/multiprocessing/reductions.py", line 541, in rebuild_storage_fd
+    fd = df.detach()
+         ^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/resource_sharer.py", line 57, in detach
+    with _resource_sharer.get_connection(self._id) as conn:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/resource_sharer.py", line 86, in get_connection
+    c = Client(address, authkey=process.current_process().authkey)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 525, in Client
+    answer_challenge(c, authkey)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 769, in answer_challenge
+    message = connection.recv_bytes(256)         # reject large message
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 216, in recv_bytes
+    buf = self._recv_bytes(maxlength)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 430, in _recv_bytes
+    buf = self._recv(4)
+          ^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/connection.py", line 395, in _recv
+    chunk = read(handle, remaining)
+            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 187702) is killed by signal: Killed. 
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 137, in generate_adversarial_dataset
+    for batch_idx, (imgs, lbls) in enumerate(loader, start=1):
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 708, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1458, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1420, in _get_data
+    success, data = self._try_get_data()
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1264, in _try_get_data
+    raise RuntimeError(
+RuntimeError: DataLoader worker (pid(s) 187702) exited unexpectedly
