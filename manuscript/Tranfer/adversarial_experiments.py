@@ -172,34 +172,34 @@ class AdvancedExperimentSuite:
         csv_path = os.path.join(output_dir, "epsilon_sensitivity.csv")
         df.to_csv(csv_path, index=False)
         print(f"[EXP7] Saved: {csv_path}")
-                            baseline = grp[grp["kind"] == ReportingSuite.baseline_kind()]["attack_success_rate"]
-                            if baseline.empty:
-                                continue
-                            for variant_kind in ReportingSuite.variant_kinds():
-                                variant = grp[grp["kind"] == variant_kind]["attack_success_rate"]
-                                if variant.empty:
-                                    continue
-                                delta_rows.append(
-                                    {
-                                        "model": model_name,
-                                        "dataset": dataset_name,
-                                        "attack": attack_name,
-                                        "epsilon": float(eps),
-                                        "epsilon_255": float(round(eps * 255, 2)),
-                                        "baseline_kind": ReportingSuite.baseline_kind(),
-                                        "variant_kind": variant_kind,
-                                        "asr_baseline": float(baseline.mean()),
-                                        "asr_variant": float(variant.mean()),
-                                        "delta_asr": float(variant.mean()) - float(baseline.mean()),
-                                    }
-                                )
+
+        if df.empty:
+            print("[WARN] EXP7: no epsilon sensitivity records were generated.")
+            return records
+
+        delta_rows: list[dict] = []
+        for (model_name, dataset_name, attack_name, eps), grp in df.groupby(
+            ["model", "dataset", "attack", "epsilon"]
+        ):
+            baseline = grp[grp["kind"] == ReportingSuite.baseline_kind()]["attack_success_rate"]
+            if baseline.empty:
+                continue
+            for variant_kind in ReportingSuite.variant_kinds():
+                variant = grp[grp["kind"] == variant_kind]["attack_success_rate"]
+                if variant.empty:
+                    continue
+                delta_rows.append(
+                    {
+                        "model": model_name,
                         "dataset": dataset_name,
                         "attack": attack_name,
                         "epsilon": float(eps),
                         "epsilon_255": float(round(eps * 255, 2)),
-                        "asr_original": float(orig.mean()),
-                        "asr_finetuned": float(fine.mean()),
-                        "delta_asr": float(fine.mean()) - float(orig.mean()),
+                        "baseline_kind": ReportingSuite.baseline_kind(),
+                        "variant_kind": variant_kind,
+                        "asr_baseline": float(baseline.mean()),
+                        "asr_variant": float(variant.mean()),
+                        "delta_asr": float(variant.mean()) - float(baseline.mean()),
                     }
                 )
 
@@ -347,8 +347,8 @@ class AdvancedExperimentSuite:
                 ax.barh(range(len(sub)), sub["delta_asr"], color=colors, edgecolor="black", linewidth=0.5)
                 ax.axvline(0, color="black", linewidth=1)
                 ax.set_yticks(range(len(sub)))
-                ax.set_yticklabels(sub["model"] + " / " + sub["attack"], fontsize=7)
-                ax.set_xlabel("Delta ASR (Finetuned - Original)", fontweight="bold")
+                ax.set_yticklabels(sub["model"] + " / " + sub["attack"] + " / " + sub["variant_kind"], fontsize=7)
+                ax.set_xlabel("Delta ASR (Variant - Control Continued)", fontweight="bold")
                 ax.set_title(
                     f"Compression Effect on Attack Success Rate - {dataset_name}\n"
                     f"(red = p<0.05, green = not significant)",
@@ -1024,7 +1024,7 @@ class AdvancedExperimentSuite:
                 self._save_fig(os.path.join(output_dir, fname_stem))
                 plt.close()
 
-            # Dedicated Original-vs-Collapsed cosine similarity heatmap
+            # Dedicated Control-Continuted-vs-variant cosine similarity heatmap
             ov_sub = sub[sub["same_architecture"] & (sub["source_kind"] != sub["target_kind"])]
             if not ov_sub.empty:
                 ov_mat = ov_sub.pivot(
