@@ -177,7 +177,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block2.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block2.block.conv2' → 'stage3.stage3_block2.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.28s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.88s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 66 in-place ReLU(s) with out-of-place variants.
@@ -348,7 +348,607 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block0.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block0.block.conv2' → 'stage4.stage4_block0.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_6': stage4.stage4_block1.block.conv2 → stage4.stage4_block1.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block1.block.conv2', 'stage4.stage4_block1.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block1.block.conv2
+[INFO] End Target   : stage4.stage4_block1.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block1.block.conv2' -> 'stage4.stage4_block1.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block1.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block1.block.conv2' -> 'stage4.stage4_block1.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block1.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block1.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block1.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block1.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block1.block.conv2' → 'stage4.stage4_block1.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_6' (stage4.stage4_block1.block.conv2 → stage4.stage4_block1.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_7': stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block2.block.conv2', 'stage4.stage4_block2.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block2.block.conv2
+[INFO] End Target   : stage4.stage4_block2.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block2.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block2.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block2.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block2.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block2.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block2.block.conv2' → 'stage4.stage4_block2.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_7' (stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_8': stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block3.block.conv2', 'stage4.stage4_block3.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block3.block.conv2
+[INFO] End Target   : stage4.stage4_block3.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block3.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block3.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block3.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block3.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block3.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block3.block.conv2' → 'stage4.stage4_block3.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_8' (stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3) in 0.05s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_9': stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block4.block.conv2', 'stage4.stage4_block4.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block4.block.conv2
+[INFO] End Target   : stage4.stage4_block4.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block4.block.conv2' -> 'stage4.stage4_block4.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block4.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block4.block.conv2' -> 'stage4.stage4_block4.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block4.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block4.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block4.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block4.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block4.block.conv2' → 'stage4.stage4_block4.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_9' (stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_10': stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block5.block.conv2', 'stage4.stage4_block5.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block5.block.conv2
+[INFO] End Target   : stage4.stage4_block5.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block5.block.conv2' -> 'stage4.stage4_block5.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block5.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block5.block.conv2' -> 'stage4.stage4_block5.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block5.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block5.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block5.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block5.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block5.block.conv2' → 'stage4.stage4_block5.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_10' (stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_11': stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block6.block.conv2', 'stage4.stage4_block6.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block6.block.conv2
+[INFO] End Target   : stage4.stage4_block6.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block6.block.conv2' -> 'stage4.stage4_block6.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block6.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block6.block.conv2' -> 'stage4.stage4_block6.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block6.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block6.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block6.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block6.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block6.block.conv2' → 'stage4.stage4_block6.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_11' (stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_12': stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block7.block.conv2', 'stage4.stage4_block7.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block7.block.conv2
+[INFO] End Target   : stage4.stage4_block7.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block7.block.conv2' -> 'stage4.stage4_block7.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block7.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block7.block.conv2' -> 'stage4.stage4_block7.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block7.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block7.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block7.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block7.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block7.block.conv2' → 'stage4.stage4_block7.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_12' (stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_13': stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block8.block.conv2', 'stage4.stage4_block8.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block8.block.conv2
+[INFO] End Target   : stage4.stage4_block8.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block8.block.conv2' -> 'stage4.stage4_block8.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block8.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block8.block.conv2' -> 'stage4.stage4_block8.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block8.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block8.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block8.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block8.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block8.block.conv2' → 'stage4.stage4_block8.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_13' (stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_14': stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block9.block.conv2', 'stage4.stage4_block9.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block9.block.conv2
+[INFO] End Target   : stage4.stage4_block9.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block9.block.conv2' -> 'stage4.stage4_block9.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block9.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block9.block.conv2' -> 'stage4.stage4_block9.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block9.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block9.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block9.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block9.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block9.block.conv2' → 'stage4.stage4_block9.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_14' (stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_15': stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block10.block.conv2', 'stage4.stage4_block10.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block10.block.conv2
+[INFO] End Target   : stage4.stage4_block10.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block10.block.conv2' -> 'stage4.stage4_block10.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block10.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block10.block.conv2' -> 'stage4.stage4_block10.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block10.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block10.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block10.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block10.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block10.block.conv2' → 'stage4.stage4_block10.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_15' (stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_16': stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block11.block.conv2', 'stage4.stage4_block11.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block11.block.conv2
+[INFO] End Target   : stage4.stage4_block11.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block11.block.conv2' -> 'stage4.stage4_block11.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block11.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block11.block.conv2' -> 'stage4.stage4_block11.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block11.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block11.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block11.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block11.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block11.block.conv2' → 'stage4.stage4_block11.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_16' (stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 4,776,362
+[INFO] Parameters after : 3,997,610
+[INFO] ΔParams = +778,752 (expected ≤ 0)
+[INFO] Collapse counts: success=17, failed=0, skipped=0
+[INFO] Total collapse runtime: 1.65s
+[RESULT] ✅ collapse_only complete. Total targets: 17 | success=17 | failed=0 | skipped=0
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/RegNetX_400MF_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 17
+[DEBUG] Rebuilding collapsed architecture for RegNetX_400MF (Cifar100_epochs200_pretrain200)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (RegNetX_400MF)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 4,811,012
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block2.block.conv2
+[INFO] End Target   : stage3.stage3_block2.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block2.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block2.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block2.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block2.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block2.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block2.block.conv2' → 'stage3.stage3_block2.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 66 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block3.block.conv2', 'stage3.stage3_block3.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block3.block.conv2
+[INFO] End Target   : stage3.stage3_block3.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block3.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block3.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block3.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block3.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block3.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block3.block.conv2' → 'stage3.stage3_block3.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_2': stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block4.block.conv2', 'stage3.stage3_block4.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block4.block.conv2
+[INFO] End Target   : stage3.stage3_block4.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block4.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block4.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block4.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block4.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block4.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block4.block.conv2' → 'stage3.stage3_block4.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_3': stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block5.block.conv2', 'stage3.stage3_block5.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block5.block.conv2
+[INFO] End Target   : stage3.stage3_block5.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block5.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block5.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block5.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block5.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block5.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block5.block.conv2' → 'stage3.stage3_block5.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_4': stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block6.block.conv2', 'stage3.stage3_block6.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block6.block.conv2
+[INFO] End Target   : stage3.stage3_block6.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block6.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block6.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block6.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block6.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block6.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block6.block.conv2' → 'stage3.stage3_block6.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_4' (stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_5': stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block0.block.conv2', 'stage4.stage4_block0.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block0.block.conv2
+[INFO] End Target   : stage4.stage4_block0.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block0.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block0.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block0.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block0.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block0.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block0.block.conv2' → 'stage4.stage4_block0.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -729,611 +1329,11 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [STEP] Wrapping pooling layers safely...
 
 [STEP] ===== Collapse summary =====
-[INFO] Parameters before: 4,776,362
-[INFO] Parameters after : 3,997,610
-[INFO] ΔParams = +778,752 (expected ≤ 0)
-[INFO] Collapse counts: success=17, failed=0, skipped=0
-[INFO] Total collapse runtime: 1.07s
-[RESULT] ✅ collapse_only complete. Total targets: 17 | success=17 | failed=0 | skipped=0
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/RegNetX_400MF_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
-[DEBUG] Collapse ranges loaded: 17
-[DEBUG] Rebuilding collapsed architecture for RegNetX_400MF (Cifar100_epochs200_pretrain200)
-
-[STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
-[STEP] Using provided in-memory model instance (RegNetX_400MF)
-[STEP] Creating deepcopy of model for safe modification...
-[STEP] Parsing compression set...
-[INFO] Model parameter count before collapsing: 4,811,012
-[STEP] Beginning block-wise collapsing...
-
-[INFO] Processing collapse task 'collapse_0': stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3
-[STEP] Calling _collapse_block('stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage3.stage3_block2.block.conv2
-[INFO] End Target   : stage3.stage3_block2.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block2.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block2.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block2.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage3.stage3_block2.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage3.stage3_block2.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage3.stage3_block2.block.conv2' → 'stage3.stage3_block2.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.05s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-[INFO] Replaced 66 in-place ReLU(s) with out-of-place variants.
-
-[INFO] Processing collapse task 'collapse_1': stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3
-[STEP] Calling _collapse_block('stage3.stage3_block3.block.conv2', 'stage3.stage3_block3.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage3.stage3_block3.block.conv2
-[INFO] End Target   : stage3.stage3_block3.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block3.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block3.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block3.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage3.stage3_block3.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage3.stage3_block3.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage3.stage3_block3.block.conv2' → 'stage3.stage3_block3.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_2': stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3
-[STEP] Calling _collapse_block('stage3.stage3_block4.block.conv2', 'stage3.stage3_block4.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage3.stage3_block4.block.conv2
-[INFO] End Target   : stage3.stage3_block4.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block4.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block4.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block4.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage3.stage3_block4.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage3.stage3_block4.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage3.stage3_block4.block.conv2' → 'stage3.stage3_block4.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_3': stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3
-[STEP] Calling _collapse_block('stage3.stage3_block5.block.conv2', 'stage3.stage3_block5.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage3.stage3_block5.block.conv2
-[INFO] End Target   : stage3.stage3_block5.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block5.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block5.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block5.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage3.stage3_block5.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage3.stage3_block5.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage3.stage3_block5.block.conv2' → 'stage3.stage3_block5.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_4': stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3
-[STEP] Calling _collapse_block('stage3.stage3_block6.block.conv2', 'stage3.stage3_block6.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage3.stage3_block6.block.conv2
-[INFO] End Target   : stage3.stage3_block6.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block6.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block6.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block6.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage3.stage3_block6.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage3.stage3_block6.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage3.stage3_block6.block.conv2' → 'stage3.stage3_block6.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_5': stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3
-[STEP] Calling _collapse_block('stage4.stage4_block0.block.conv2', 'stage4.stage4_block0.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.stage4_block0.block.conv2
-[INFO] End Target   : stage4.stage4_block0.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block0.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block0.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block0.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4.stage4_block0.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4.stage4_block0.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.stage4_block0.block.conv2' → 'stage4.stage4_block0.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.05s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_6': stage4.stage4_block1.block.conv2 → stage4.stage4_block1.block.conv3
-[STEP] Calling _collapse_block('stage4.stage4_block1.block.conv2', 'stage4.stage4_block1.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.stage4_block1.block.conv2
-[INFO] End Target   : stage4.stage4_block1.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block1.block.conv2' -> 'stage4.stage4_block1.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block1.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.stage4_block1.block.conv2' -> 'stage4.stage4_block1.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block1.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block1.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4.stage4_block1.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4.stage4_block1.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.stage4_block1.block.conv2' → 'stage4.stage4_block1.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_6' (stage4.stage4_block1.block.conv2 → stage4.stage4_block1.block.conv3) in 0.05s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_7': stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3
-[STEP] Calling _collapse_block('stage4.stage4_block2.block.conv2', 'stage4.stage4_block2.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.stage4_block2.block.conv2
-[INFO] End Target   : stage4.stage4_block2.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block2.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block2.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block2.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4.stage4_block2.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4.stage4_block2.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.stage4_block2.block.conv2' → 'stage4.stage4_block2.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_7' (stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_8': stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3
-[STEP] Calling _collapse_block('stage4.stage4_block3.block.conv2', 'stage4.stage4_block3.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.stage4_block3.block.conv2
-[INFO] End Target   : stage4.stage4_block3.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block3.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block3.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block3.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4.stage4_block3.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4.stage4_block3.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.stage4_block3.block.conv2' → 'stage4.stage4_block3.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_9': stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3
-[STEP] Calling _collapse_block('stage4.stage4_block4.block.conv2', 'stage4.stage4_block4.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.stage4_block4.block.conv2
-[INFO] End Target   : stage4.stage4_block4.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block4.block.conv2' -> 'stage4.stage4_block4.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block4.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.stage4_block4.block.conv2' -> 'stage4.stage4_block4.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block4.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block4.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4.stage4_block4.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4.stage4_block4.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.stage4_block4.block.conv2' → 'stage4.stage4_block4.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_9' (stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_10': stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3
-[STEP] Calling _collapse_block('stage4.stage4_block5.block.conv2', 'stage4.stage4_block5.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.stage4_block5.block.conv2
-[INFO] End Target   : stage4.stage4_block5.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block5.block.conv2' -> 'stage4.stage4_block5.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block5.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.stage4_block5.block.conv2' -> 'stage4.stage4_block5.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block5.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block5.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4.stage4_block5.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4.stage4_block5.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.stage4_block5.block.conv2' → 'stage4.stage4_block5.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_10' (stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_11': stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3
-[STEP] Calling _collapse_block('stage4.stage4_block6.block.conv2', 'stage4.stage4_block6.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.stage4_block6.block.conv2
-[INFO] End Target   : stage4.stage4_block6.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block6.block.conv2' -> 'stage4.stage4_block6.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block6.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.stage4_block6.block.conv2' -> 'stage4.stage4_block6.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block6.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block6.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4.stage4_block6.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4.stage4_block6.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.stage4_block6.block.conv2' → 'stage4.stage4_block6.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_11' (stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_12': stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3
-[STEP] Calling _collapse_block('stage4.stage4_block7.block.conv2', 'stage4.stage4_block7.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.stage4_block7.block.conv2
-[INFO] End Target   : stage4.stage4_block7.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block7.block.conv2' -> 'stage4.stage4_block7.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block7.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.stage4_block7.block.conv2' -> 'stage4.stage4_block7.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block7.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block7.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4.stage4_block7.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4.stage4_block7.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.stage4_block7.block.conv2' → 'stage4.stage4_block7.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_12' (stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_13': stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3
-[STEP] Calling _collapse_block('stage4.stage4_block8.block.conv2', 'stage4.stage4_block8.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.stage4_block8.block.conv2
-[INFO] End Target   : stage4.stage4_block8.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block8.block.conv2' -> 'stage4.stage4_block8.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block8.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.stage4_block8.block.conv2' -> 'stage4.stage4_block8.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block8.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block8.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4.stage4_block8.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4.stage4_block8.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.stage4_block8.block.conv2' → 'stage4.stage4_block8.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_13' (stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_14': stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3
-[STEP] Calling _collapse_block('stage4.stage4_block9.block.conv2', 'stage4.stage4_block9.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.stage4_block9.block.conv2
-[INFO] End Target   : stage4.stage4_block9.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block9.block.conv2' -> 'stage4.stage4_block9.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block9.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.stage4_block9.block.conv2' -> 'stage4.stage4_block9.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block9.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block9.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4.stage4_block9.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4.stage4_block9.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.stage4_block9.block.conv2' → 'stage4.stage4_block9.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_14' (stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_15': stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3
-[STEP] Calling _collapse_block('stage4.stage4_block10.block.conv2', 'stage4.stage4_block10.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.stage4_block10.block.conv2
-[INFO] End Target   : stage4.stage4_block10.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block10.block.conv2' -> 'stage4.stage4_block10.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block10.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.stage4_block10.block.conv2' -> 'stage4.stage4_block10.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block10.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block10.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4.stage4_block10.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4.stage4_block10.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.stage4_block10.block.conv2' → 'stage4.stage4_block10.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_15' (stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_16': stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3
-[STEP] Calling _collapse_block('stage4.stage4_block11.block.conv2', 'stage4.stage4_block11.block.conv3')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.stage4_block11.block.conv2
-[INFO] End Target   : stage4.stage4_block11.block.conv3
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block11.block.conv2' -> 'stage4.stage4_block11.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block11.block' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.stage4_block11.block.conv2' -> 'stage4.stage4_block11.block.conv3'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block11.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block11.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4.stage4_block11.block'...
-[DEBUG] Found inserted block candidate at index 3: 'conv2'
-[STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4.stage4_block11.block' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.stage4_block11.block.conv2' → 'stage4.stage4_block11.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_16' (stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3) in 0.04s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[STEP] Wrapping pooling layers safely...
-
-[STEP] ===== Collapse summary =====
 [INFO] Parameters before: 4,811,012
 [INFO] Parameters after : 4,032,260
 [INFO] ΔParams = +778,752 (expected ≤ 0)
 [INFO] Collapse counts: success=17, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.83s
+[INFO] Total collapse runtime: 0.73s
 [RESULT] ✅ collapse_only complete. Total targets: 17 | success=17 | failed=0 | skipped=0
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/RegNetX_400MF_tinyimagenet_epochs200_pretrain200_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 16
@@ -1377,7 +1377,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block2.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block2.block.conv2' → 'stage3.stage3_block2.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.10s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.11s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 66 in-place ReLU(s) with out-of-place variants.
@@ -1751,7 +1751,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block11.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block11.block.conv1' → 'stage4.stage4_block11.block.conv2'
-[INFO] ✅ Successfully collapsed block 'collapse_11' (stage4.stage4_block11.block.conv1 → stage4.stage4_block11.block.conv2) in 0.08s
+[INFO] ✅ Successfully collapsed block 'collapse_11' (stage4.stage4_block11.block.conv1 → stage4.stage4_block11.block.conv2) in 0.06s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1762,7 +1762,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 3,493,224
 [INFO] ΔParams = +1,356,288 (expected ≤ 0)
 [INFO] Collapse counts: success=12, failed=0, skipped=0
-[INFO] Total collapse runtime: 1.13s
+[INFO] Total collapse runtime: 0.91s
 [RESULT] ✅ collapse_only complete. Total targets: 12 | success=12 | failed=0 | skipped=0
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 5
@@ -1806,7 +1806,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 0.15s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 0.26s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
@@ -1841,152 +1841,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4b.branch3.0.conv' → 'stage4.inception_4c.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 0.05s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'collapse_2': stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv
-[STEP] Calling _collapse_block('stage4.inception_4c.branch3.0.conv', 'stage4.inception_4d.branch2.0.conv')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.inception_4c.branch3.0.conv
-[INFO] End Target   : stage4.inception_4d.branch2.0.conv
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.0.conv' -> 'stage4.inception_4d.branch2.0.conv'
-[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.inception_4c' -> 'stage4.inception_4d'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4d.branch2.0.conv'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=2, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4'...
-[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
-[STEP] Validating inserted module 'Sequential' at index 2...
-[DEBUG] Inserted module forward successful, output shape: (256, 528, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inceptitage4.stage4_block11.block.conv3'
-[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.stage4_block10' -> 'stage4.stage4_block11'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block11.block.conv3'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=10, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4'...
-[DEBUG] Found inserted block candidate at index 10: 'stage4_block10'
-[STEP] Validating inserted module 'Sequential' at index 10...
-[DEBUG] Inserted module forward successful, output shape: (256, 384, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.stage4_block10.block.conv2' → 'stage4.stage4_block11.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_15' (stage4.stage4_block10.block.conv2 → stage4.stage4_block11.block.conv3) in 0.08s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[STEP] Wrapping pooling layers safely...
-
-[STEP] ===== Collapse summary =====
-[INFO] Parameters before: 4,849,512
-[INFO] Parameters after : 3,624,552
-[INFO] ΔParams = +1,224,960 (expected ≤ 0)
-[INFO] Collapse counts: success=16, failed=0, skipped=0
-[INFO] Total collapse runtime: 1.36s
-[RESULT] ✅ collapse_only complete. Total targets: 16 | success=16 | failed=0 | skipped=0
-[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
-[DEBUG] Collapse ranges loaded: 6
-[DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar10_epochs200_pretrain200)
-
-[STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
-[STEP] Using provided in-memory model instance (InceptionNet)
-[STEP] Creating deepcopy of model for safe modification...
-[STEP] Parsing compression set...
-[INFO] Model parameter count before collapsing: 5,991,082
-[STEP] Beginning block-wise collapsing...
-
-[INFO] Processing collapse task 'collapse_0': stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv
-[STEP] Calling _collapse_block('stage4.inception_4a.branch3.1.conv', 'stage4.inception_4b.branch2.0.conv')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.inception_4a.branch3.1.conv
-[INFO] End Target   : stage4.inception_4b.branch2.0.conv
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4a.branch3.1.conv' -> 'stage4.inception_4b.branch2.0.conv'
-[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.inception_4a' -> 'stage4.inception_4b'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4b.branch2.0.conv'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4'...
-[DEBUG] Found inserted block candidate at index 0: 'inception_4a'
-[STEP] Validating inserted module 'Sequential' at index 0...
-[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 0.09s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
-
-[INFO] Processing collapse task 'collapse_1': stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv
-[STEP] Calling _collapse_block('stage4.inception_4b.branch3.0.conv', 'stage4.inception_4c.branch2.0.conv')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage4.inception_4b.branch3.0.conv
-[INFO] End Target   : stage4.inception_4c.branch2.0.conv
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4b.branch3.0.conv' -> 'stage4.inception_4c.branch2.0.conv'
-[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'stage4.inception_4b' -> 'stage4.inception_4c'...
-
-[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4c.branch2.0.conv'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'stage4'...
-[DEBUG] Found inserted block candidate at index 1: 'inception_4b'
-[STEP] Validating inserted module 'Sequential' at index 1...
-[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'stage4.inception_4b.branch3.0.conv' → 'stage4.inception_4c.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -2020,7 +1875,165 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_3': stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4d.branch3.0.conv', 'stage4.inception_4e.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4d.branch3.0.conv
+[INFO] End Target   : stage4.inception_4e.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4d.branch3.0.conv' -> 'stage4.inception_4e.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4d' -> 'stage4.inception_4e'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4e.branch2.0.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 3: 'inception_4d'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 832, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.0.conv' → 'stage4.inception_4e.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_4': stage4.inception_4e.branch3.0.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch3.0.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch3.0.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch3.0.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: SmartIdentity
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4e'
+[DEBUG]   start_layer_name=stage4.inception_4e.branch3.0.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4e.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This ma[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_epochs200_pretrain200_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 6
+[DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar10_epochs200_pretrain200)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (InceptionNet)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'coll[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar100_epochs300_pretrain100_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 6
+[DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar100_epochs300_pretrain100)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (InceptionNet)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 6,083,332
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch1.conv
+[STEP] Calling _collapse_block('stage4.inception_4a.branch3.1.conv', 'stage4.inception_4b.branch1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4a.branch3.1.conv
+[INFO] End Target   : stage4.inception_4b.branch1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4a.branch3.1.conv' -> 'stage4.inception_4b.branch1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4a' -> 'stage4.inception_4b'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4b.branch1.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 0: 'inception_4a'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch1.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch1.conv) in 0.06s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': stage4.inception_4b.branch3.1.conv → stage4.inception_4b.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4b.branch3.1.conv', 'stage4.inception_4b.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4b.branch3.1.conv
+[INFO] End Target   : stage4.inception_4b.branch4.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4b.branch3.1.conv' -> 'stage4.inception_4b.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4b' | Type: SmartIdentity
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4b'
+[DEBUG]   start_layer_name=stage4.inception_4b.branch3.1.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4b.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'collapse_1' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'collapse_2': stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4c.branch3.1.conv', 'stage4.inception_4d.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4c.branch3.1.conv
+[INFO] End Target   : stage4.inception_4d.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.1.conv' -> 'stage4.inception_4d.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4c' -> 'stage4.inception_4d'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4d.branch2.0.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (256, 528, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.1.conv' → 'stage4.inception_4d.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.1.conv → stage4.inception_4d.branch2.0.conv) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -2076,25 +2089,6 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [WARN] ⚠ Collapse candidate 'collapse_4' appears to be cross-branch (parallel paths).
 [WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
 
-[INFO] Processing collapse task 'collapse_5': stage5.inception_5a.branch2.1.conv → stage5.inception_5a.branch3.1.conv
-[STEP] Calling _collapse_block('stage5.inception_5a.branch2.1.conv', 'stage5.inception_5a.branch3.1.conv')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : stage5.inception_5a.branch2.1.conv
-[INFO] End Target   : stage5.inception_5a.branch3.1.conv
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'stage5.inception_5a.branch2.1.conv' -> 'stage5.inception_5a.branch3.1.conv'
-[DEBUG] [LCA] Resolved Container: 'stage5.inception_5a' | Type: InceptionBlock
-[DEBUG] Escalating complex block 'stage5.inception_5a' (InceptionBlock) to parent for holistiage4.inception_4e' | Type: SmartIdentity
-[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4e'
-[DEBUG]   start_layer_name=stage4.inception_4e.branch3.0.conv, found start_idx=None
-[DEBUG]   end_layer_name=stage4.inception_4e.branch4.1.conv, found end_idx=None
-[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
-[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'collapse_4' appears to be cross-branch (parallel paths).
-[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
-
 [INFO] Processing collapse task 'collapse_5': stage5.inception_5b.branch3.1.conv → stage5.inception_5b.branch4.1.conv
 [STEP] Calling _collapse_block('stage5.inception_5b.branch3.1.conv', 'stage5.inception_5b.branch4.1.conv')
 
@@ -2126,7 +2120,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage5' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage5.inception_5b.branch3.1.conv' → 'stage5.inception_5b.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch3.1.conv → stage5.inception_5b.branch4.1.conv) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch3.1.conv → stage5.inception_5b.branch4.1.conv) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -2137,7 +2131,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 3,638,308
 [INFO] ΔParams = +2,445,024 (expected ≤ 0)
 [INFO] Collapse counts: success=4, failed=0, skipped=2
-[INFO] Total collapse runtime: 0.24s
+[INFO] Total collapse runtime: 0.20s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=4 | failed=0 | skipped=2
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_tinyimagenet_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 6
@@ -2181,7 +2175,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch4.1.conv' → 'stage4.inception_4b.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch4.1.conv → stage4.inception_4b.branch2.0.conv) in 0.16s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch4.1.conv → stage4.inception_4b.branch2.0.conv) in 0.13s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
@@ -2217,7 +2211,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4c.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4c.branch3.0.conv → stage4.inception_4c.branch4.1.conv) in 0.08s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4c.branch3.0.conv → stage4.inception_4c.branch4.1.conv) in 0.07s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -2252,7 +2246,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4e.branch2.0.conv' → 'stage4.inception_4e.branch3.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4e.branch2.0.conv → stage4.inception_4e.branch3.1.conv) in 0.08s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4e.branch2.0.conv → stage4.inception_4e.branch3.1.conv) in 0.07s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -2286,7 +2280,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage5' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage5.inception_5a.branch3.1.conv' → 'stage5.inception_5b.branch1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (stage5.inception_5a.branch3.1.conv → stage5.inception_5b.branch1.conv) in 0.08s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage5.inception_5a.branch3.1.conv → stage5.inception_5b.branch1.conv) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -2333,7 +2327,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 3,294,184
 [INFO] ΔParams = +2,891,648 (expected ≤ 0)
 [INFO] Collapse counts: success=4, failed=0, skipped=2
-[INFO] Total collapse runtime: 0.47s
+[INFO] Total collapse runtime: 0.38s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=4 | failed=0 | skipped=2
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 9
@@ -2377,7 +2371,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.06s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.08s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -2480,7 +2474,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.4.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.4.rep.4.depthwise' → 'middle_flow.4.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise) in 0.06s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -2652,7 +2646,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
 [INFO] ✅ Framework successfully merged 'conv3.depthwise' → 'conv4.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (conv3.depthwise → conv4.pointwise) in 0.06s
+[INFO] ✅ Successfully collapsed block 'collapse_8' (conv3.depthwise → conv4.pointwise) in 1.56s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -2663,7 +2657,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 13,839,874
 [INFO] ΔParams = +6,987,568 (expected ≤ 0)
 [INFO] Collapse counts: success=9, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.57s
+[INFO] Total collapse runtime: 2.08s
 [RESULT] ✅ collapse_only complete. Total targets: 9 | success=9 | failed=0 | skipped=0
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/XceptionNet_Cifar100_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 10
@@ -3016,7 +3010,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
 [INFO] ✅ Framework successfully merged 'conv3.depthwise' → 'conv4.pointwise'
-[INFO] ✅ Successfully collapsed block 'collapse_9' (conv3.depthwise → conv4.pointwise) in 0.06s
+[INFO] ✅ Successfully collapsed block 'collapse_9' (conv3.depthwise → conv4.pointwise) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3071,7 +3065,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.11s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.10s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -3106,7 +3100,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.1.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.1.rep.4.depthwise' → 'middle_flow.1.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise) in 0.09s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise) in 0.08s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3140,7 +3134,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.2.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.2.rep.4.depthwise' → 'middle_flow.2.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.depthwise) in 0.09s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.depthwise) in 0.08s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3174,7 +3168,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.4.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.4.rep.4.depthwise' → 'middle_flow.4.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise) in 0.09s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise) in 0.08s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3208,7 +3202,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.5.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.5.rep.4.depthwise' → 'middle_flow.5.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise) in 0.09s
+[INFO] ✅ Successfully collapsed block 'collapse_4' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise) in 0.08s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3242,7 +3236,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.6.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.6.rep.4.depthwise' → 'middle_flow.6.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise) in 0.09s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise) in 0.08s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3310,7 +3304,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'block4.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'block4.rep.4.depthwise'
-[INFO] ✅ Successfully collapsed block 'collapse_7' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.09s
+[INFO] ✅ Successfully collapsed block 'collapse_7' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.08s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3321,7 +3315,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 16,872,640
 [INFO] ΔParams = +4,344,112 (expected ≤ 0)
 [INFO] Collapse counts: success=8, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.86s
+[INFO] Total collapse runtime: 0.76s
 [RESULT] ✅ collapse_only complete. Total targets: 8 | success=8 | failed=0 | skipped=0
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 5
@@ -3365,7 +3359,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.2.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.2.pwconv1) in 0.15s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.2.pwconv1) in 0.97s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3452,7 +3446,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (features.6.0.dwconv → features.6.0.pwconv2) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (features.6.0.dwconv → features.6.0.pwconv2) in 0.78s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3497,7 +3491,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 2,518,762
 [INFO] ΔParams = +25,309,056 (expected ≤ 0)
 [INFO] Collapse counts: success=4, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.32s
+[INFO] Total collapse runtime: 1.88s
 [RESULT] ✅ collapse_only complete. Total targets: 5 | success=4 | failed=0 | skipped=1
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar100_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 6
@@ -3542,7 +3536,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.1.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3664,7 +3658,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (features.6.0.dwconv → features.6.0.pwconv2) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_4' (features.6.0.dwconv → features.6.0.pwconv2) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3754,7 +3748,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.pwconv1' → 'features.2.1.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.pwconv1 → features.2.1.pwconv2) in 0.06s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.pwconv1 → features.2.1.pwconv2) in 0.09s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3823,7 +3817,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.1.pwconv1' → 'features.4.1.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (features.4.1.pwconv1 → features.4.1.pwconv2) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (features.4.1.pwconv1 → features.4.1.pwconv2) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3893,7 +3887,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.3.pwconv1' → 'features.4.3.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (features.4.3.pwconv1 → features.4.3.pwconv2) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_4' (features.4.3.pwconv1 → features.4.3.pwconv2) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3928,7 +3922,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.4.pwconv1' → 'features.4.4.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (features.4.4.pwconv1 → features.4.4.pwconv2) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (features.4.4.pwconv1 → features.4.4.pwconv2) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3963,7 +3957,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.5.pwconv1' → 'features.4.5.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_6' (features.4.5.pwconv1 → features.4.5.pwconv2) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_6' (features.4.5.pwconv1 → features.4.5.pwconv2) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -3998,7 +3992,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.6.pwconv1' → 'features.4.6.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_7' (features.4.6.pwconv1 → features.4.6.pwconv2) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_7' (features.4.6.pwconv1 → features.4.6.pwconv2) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -4033,7 +4027,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.7.pwconv1' → 'features.4.7.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (features.4.7.pwconv1 → features.4.7.pwconv2) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_8' (features.4.7.pwconv1 → features.4.7.pwconv2) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -4096,48 +4090,48 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 843,176
 [INFO] ΔParams = +27,130,752 (expected ≤ 0)
 [INFO] Collapse counts: success=10, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.60s
+[INFO] Total collapse runtime: 0.57s
 [RESULT] ✅ collapse_only complete. Total targets: 11 | success=10 | failed=0 | skipped=1
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.003922 steps=40
 [ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=92.58% adv_acc=49.61%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=50.82%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.52% adv_acc=52.13%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.73% adv_acc=51.95%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.87% adv_acc=51.39%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.87% adv_acc=51.39% asr=48.61% runtime=33.72s
+[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=92.58% adv_acc=50.00%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=50.86%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.52% adv_acc=52.15%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.73% adv_acc=51.94%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.87% adv_acc=51.37%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.87% adv_acc=51.37% asr=48.63% runtime=55.61s
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.007843 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=92.58% adv_acc=44.92%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=44.96%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.52% adv_acc=46.52%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.73% adv_acc=46.35%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.87% adv_acc=45.90%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.87% adv_acc=45.90% asr=54.10% runtime=33.47s
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=44.92%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.52% adv_acc=46.46%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.73% adv_acc=46.22%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.87% adv_acc=45.83%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.87% adv_acc=45.83% asr=54.17% runtime=34.16s
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.015686 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=92.58% adv_acc=36.72%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=34.30%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.52% adv_acc=36.02%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.73% adv_acc=35.25%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.87% adv_acc=35.17%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.87% adv_acc=35.17% asr=64.83% runtime=33.61s
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=34.26%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.52% adv_acc=36.00%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.73% adv_acc=35.30%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.87% adv_acc=35.26%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.87% adv_acc=35.26% asr=64.74% runtime=33.63s
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.031373 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=92.58% adv_acc=21.09%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=19.84%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.52% adv_acc=20.51%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.73% adv_acc=19.92%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.87% adv_acc=20.07%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.87% adv_acc=20.07% asr=79.93% runtime=33.60s
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=20.00%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.52% adv_acc=20.64%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.73% adv_acc=19.91%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.87% adv_acc=19.98%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.87% adv_acc=19.98% asr=80.02% runtime=33.52s
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.062745 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=92.58% adv_acc=5.47%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=6.13%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.52% adv_acc=6.62%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.73% adv_acc=6.41%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.87% adv_acc=6.69%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.87% adv_acc=6.69% asr=93.31% runtime=33.65s
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=92.34% adv_acc=5.90%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.52% adv_acc=6.54%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.73% adv_acc=6.33%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.87% adv_acc=6.61%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.87% adv_acc=6.61% asr=93.39% runtime=37.50s
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.003922 steps=40
 [ATTACK][SETUP] Ready: FGSM
 [ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=92.58% adv_acc=55.86%
@@ -4145,7 +4139,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=92.52% adv_acc=56.39%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=92.73% adv_acc=55.87%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=92.87% adv_acc=55.27%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.87% adv_acc=55.27% asr=44.73% runtime=4.19s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.87% adv_acc=55.27% asr=44.73% runtime=4.13s
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.007843 steps=40
 [ATTACK][SETUP] Ready: FGSM
 [ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=92.58% adv_acc=53.91%
@@ -4153,7 +4147,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=92.52% adv_acc=54.61%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=92.73% adv_acc=54.19%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=92.87% adv_acc=53.53%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.87% adv_acc=53.53% asr=46.47% runtime=4.00s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.87% adv_acc=53.53% asr=46.47% runtime=3.80s
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.015686 steps=40
 [ATTACK][SETUP] Ready: FGSM
 [ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=92.58% adv_acc=50.39%
@@ -4161,7 +4155,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=92.52% adv_acc=51.84%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=92.73% adv_acc=51.39%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=92.87% adv_acc=50.76%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.87% adv_acc=50.76% asr=49.24% runtime=3.78s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.87% adv_acc=50.76% asr=49.24% runtime=3.90s
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.031373 steps=40
 [ATTACK][SETUP] Ready: FGSM
 [ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=92.58% adv_acc=48.05%
@@ -4169,7 +4163,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=92.52% adv_acc=46.54%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=92.73% adv_acc=45.83%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=92.87% adv_acc=45.33%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.87% adv_acc=45.33% asr=54.67% runtime=4.16s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.87% adv_acc=45.33% asr=54.67% runtime=3.86s
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.062745 steps=40
 [ATTACK][SETUP] Ready: FGSM
 [ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=92.58% adv_acc=39.84%
@@ -4177,7 +4171,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=92.52% adv_acc=38.34%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=92.73% adv_acc=37.46%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=92.87% adv_acc=37.24%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.87% adv_acc=37.24% asr=62.76% runtime=3.99s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.87% adv_acc=37.24% asr=62.76% runtime=3.79s
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.003922 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=92.58% adv_acc=89.45%
@@ -4185,7 +4179,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=92.52% adv_acc=88.57%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=92.73% adv_acc=88.50%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=92.87% adv_acc=88.82%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.87% adv_acc=88.82% asr=11.18% runtime=33.73s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.87% adv_acc=88.82% asr=11.18% runtime=33.60s
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.007843 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=92.58% adv_acc=85.94%
@@ -4193,7 +4187,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=92.52% adv_acc=85.98%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=92.73% adv_acc=85.86%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=92.87% adv_acc=86.12%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.87% adv_acc=86.12% asr=13.88% runtime=33.81s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.87% adv_acc=86.12% asr=13.88% runtime=33.60s
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.015686 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=92.58% adv_acc=80.08%
@@ -4201,7 +4195,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=92.52% adv_acc=79.86%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=92.73% adv_acc=79.87%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=92.87% adv_acc=80.18%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.87% adv_acc=80.18% asr=19.82% runtime=33.69s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.87% adv_acc=80.18% asr=19.82% runtime=33.60s
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.031373 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=92.58% adv_acc=66.41%
@@ -4209,7 +4203,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=92.52% adv_acc=66.00%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=92.73% adv_acc=65.89%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=92.87% adv_acc=66.26%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.87% adv_acc=66.26% asr=33.74% runtime=33.70s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.87% adv_acc=66.26% asr=33.74% runtime=33.62s
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.062745 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=92.58% adv_acc=45.70%
@@ -4217,47 +4211,47 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=92.52% adv_acc=43.18%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=92.73% adv_acc=43.53%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=92.87% adv_acc=43.81%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.87% adv_acc=43.81% asr=56.19% runtime=33.64s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.87% adv_acc=43.81% asr=56.19% runtime=33.55s
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.003922 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=63.28% adv_acc=20.70%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.97% adv_acc=13.71%
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.97% adv_acc=13.79%
 [ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=61.95% adv_acc=13.91%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=61.91% adv_acc=14.10%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=61.91% adv_acc=14.11%
 [ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=61.95% adv_acc=14.06%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=61.95% adv_acc=14.06% asr=85.94% runtime=33.48s
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=61.95% adv_acc=14.06% asr=85.94% runtime=33.41s
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.007843 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=63.28% adv_acc=18.36%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.97% adv_acc=11.37%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=61.95% adv_acc=11.58%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=61.91% adv_acc=11.58%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=61.95% adv_acc=11.64%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=61.95% adv_acc=11.64% asr=88.36% runtime=33.37s
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.97% adv_acc=11.41%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=61.95% adv_acc=11.64%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=61.91% adv_acc=11.64%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=61.95% adv_acc=11.70%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=61.95% adv_acc=11.70% asr=88.30% runtime=33.29s
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.015686 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=63.28% adv_acc=12.11%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.97% adv_acc=7.97%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=61.95% adv_acc=7.89%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=61.91% adv_acc=7.81%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=61.95% adv_acc=7.87%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=61.95% adv_acc=7.87% asr=92.13% runtime=33.51s
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.97% adv_acc=8.01%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=61.95% adv_acc=7.87%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=61.91% adv_acc=7.77%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=61.95% adv_acc=7.85%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=61.95% adv_acc=7.85% asr=92.15% runtime=33.39s
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.031373 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=63.28% adv_acc=6.25%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.97% adv_acc=4.10%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=61.95% adv_acc=4.04%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=61.91% adv_acc=4.10%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=61.95% adv_acc=4.16%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=61.95% adv_acc=4.16% asr=95.84% runtime=33.39s
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.97% adv_acc=3.98%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=61.95% adv_acc=3.98%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=61.91% adv_acc=4.09%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=61.95% adv_acc=4.14%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=61.95% adv_acc=4.14% asr=95.86% runtime=33.22s
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.062745 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=63.28% adv_acc=1.56%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.97% adv_acc=1.68%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=61.95% adv_acc=1.56%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=61.91% adv_acc=1.65%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=61.95% adv_acc=1.68%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=61.95% adv_acc=1.68% asr=98.32% runtime=33.49s
+[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=62.97% adv_acc=1.60%
+[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=61.95% adv_acc=1.48%
+[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=61.91% adv_acc=1.56%
+[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=61.95% adv_acc=1.67%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=61.95% adv_acc=1.67% asr=98.33% runtime=33.23s
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.003922 steps=40
 [ATTACK][SETUP] Ready: FGSM
 [ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=63.28% adv_acc=23.44%
@@ -4265,7 +4259,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=61.95% adv_acc=17.34%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=61.91% adv_acc=17.30%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=61.95% adv_acc=17.27%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=61.95% adv_acc=17.27% asr=82.73% runtime=3.72s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=61.95% adv_acc=17.27% asr=82.73% runtime=3.90s
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.007843 steps=40
 [ATTACK][SETUP] Ready: FGSM
 [ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=63.28% adv_acc=22.66%
@@ -4273,7 +4267,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=61.95% adv_acc=16.82%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=61.91% adv_acc=16.74%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=61.95% adv_acc=16.70%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=61.95% adv_acc=16.70% asr=83.30% runtime=3.76s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=61.95% adv_acc=16.70% asr=83.30% runtime=3.92s
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.015686 steps=40
 [ATTACK][SETUP] Ready: FGSM
 [ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=63.28% adv_acc=22.27%
@@ -4281,7 +4275,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=61.95% adv_acc=15.82%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=61.91% adv_acc=15.74%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=61.95% adv_acc=15.72%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=61.95% adv_acc=15.72% asr=84.28% runtime=5.83s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=61.95% adv_acc=15.72% asr=84.28% runtime=3.94s
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.031373 steps=40
 [ATTACK][SETUP] Ready: FGSM
 [ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=63.28% adv_acc=19.92%
@@ -4289,7 +4283,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=61.95% adv_acc=14.16%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=61.91% adv_acc=14.18%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=61.95% adv_acc=14.31%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=61.95% adv_acc=14.31% asr=85.69% runtime=3.77s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=61.95% adv_acc=14.31% asr=85.69% runtime=3.95s
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.062745 steps=40
 [ATTACK][SETUP] Ready: FGSM
 [ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=63.28% adv_acc=17.58%
@@ -4297,7 +4291,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=61.95% adv_acc=11.78%
 [ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=61.91% adv_acc=11.60%
 [ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=61.95% adv_acc=11.86%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=61.95% adv_acc=11.86% asr=88.14% runtime=4.11s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=61.95% adv_acc=11.86% asr=88.14% runtime=4.03s
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.003922 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=63.28% adv_acc=55.08%
@@ -4305,7 +4299,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=61.95% adv_acc=51.78%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=61.91% adv_acc=51.51%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=61.95% adv_acc=51.68%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=61.95% adv_acc=51.68% asr=48.32% runtime=33.86s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=61.95% adv_acc=51.68% asr=48.32% runtime=33.61s
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.007843 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=63.28% adv_acc=51.95%
@@ -4313,7 +4307,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=61.95% adv_acc=46.52%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=61.91% adv_acc=46.15%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=61.95% adv_acc=46.43%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=61.95% adv_acc=46.43% asr=53.57% runtime=34.13s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=61.95% adv_acc=46.43% asr=53.57% runtime=33.60s
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.015686 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=63.28% adv_acc=42.19%
@@ -4321,7 +4315,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=61.95% adv_acc=37.54%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=61.91% adv_acc=37.24%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=61.95% adv_acc=37.36%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=61.95% adv_acc=37.36% asr=62.64% runtime=34.02s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=61.95% adv_acc=37.36% asr=62.64% runtime=33.64s
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.031373 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=63.28% adv_acc=31.25%
@@ -4329,7 +4323,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=61.95% adv_acc=26.27%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=61.91% adv_acc=25.99%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=61.95% adv_acc=26.13%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=61.95% adv_acc=26.13% asr=73.87% runtime=34.05s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=61.95% adv_acc=26.13% asr=73.87% runtime=33.63s
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.062745 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=63.28% adv_acc=15.62%
@@ -4337,7 +4331,7 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=61.95% adv_acc=15.04%
 [ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=61.91% adv_acc=15.08%
 [ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=61.95% adv_acc=15.32%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=61.95% adv_acc=15.32% asr=84.68% runtime=33.98s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=61.95% adv_acc=15.32% asr=84.68% runtime=33.61s
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.003922 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=0.00% adv_acc=0.00%
@@ -4345,433 +4339,6 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=0.43% adv_acc=0.53%
 [ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=0.36% adv_acc=0.46%
 [ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=0.43% adv_acc=0.51%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=0.43% adv_acc=0.51% asr=99.49% runtime=102.40s
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=0.43% adv_acc=0.51% asr=99.49% runtime=129.09s
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.007843 steps=40
-[ATTACK][SETUP] Ready: PGD
-e=3.50s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.062745 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=91.41% adv_acc=31.25%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=90.59% adv_acc=31.09%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=91.09% adv_acc=30.94%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=91.59% adv_acc=30.33%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=91.65% adv_acc=30.19%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=91.65% adv_acc=30.19% asr=69.81% runtime=3.61s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.003922 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=91.41% adv_acc=85.16%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=90.59% adv_acc=84.84%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=91.09% adv_acc=85.55%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=91.59% adv_acc=85.65%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=91.65% adv_acc=85.94%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=91.65% adv_acc=85.94% asr=14.06% runtime=32.75s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.007843 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=91.41% adv_acc=80.86%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=90.59% adv_acc=80.66%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=91.09% adv_acc=80.78%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=91.59% adv_acc=81.05%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=91.65% adv_acc=81.38%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=91.65% adv_acc=81.38% asr=18.62% runtime=33.01s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.015686 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=91.41% adv_acc=70.31%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=90.59% adv_acc=70.59%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=91.09% adv_acc=70.16%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=91.59% adv_acc=70.55%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=91.65% adv_acc=70.81%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=91.65% adv_acc=70.81% asr=29.19% runtime=32.79s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.031373 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=91.41% adv_acc=52.73%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=90.59% adv_acc=50.55%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=91.09% adv_acc=50.35%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=91.59% adv_acc=50.21%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=91.65% adv_acc=50.52%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=91.65% adv_acc=50.52% asr=49.48% runtime=32.83s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.062745 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=91.41% adv_acc=26.56%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=90.59% adv_acc=25.47%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=91.09% adv_acc=25.29%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=91.59% adv_acc=24.83%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=91.65% adv_acc=24.92%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=91.65% adv_acc=24.92% asr=75.08% runtime=32.74s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.003922 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=91.41% adv_acc=44.14%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=91.72% adv_acc=45.98%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.19% adv_acc=46.88%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.16% adv_acc=46.63%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.04% adv_acc=46.60%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.04% adv_acc=46.60% asr=53.40% runtime=42.10s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.007843 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=91.41% adv_acc=41.41%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=91.72% adv_acc=41.52%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.19% adv_acc=42.11%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.16% adv_acc=41.42%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.04% adv_acc=41.28%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.04% adv_acc=41.28% asr=58.72% runtime=42.14s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.015686 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=91.41% adv_acc=32.03%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=91.72% adv_acc=31.05%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.19% adv_acc=31.54%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.16% adv_acc=31.24%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.04% adv_acc=31.18%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.04% adv_acc=31.18% asr=68.82% runtime=42.12s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.031373 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=91.41% adv_acc=18.36%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=91.72% adv_acc=18.05%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.19% adv_acc=18.26%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.16% adv_acc=17.51%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.04% adv_acc=17.43%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.04% adv_acc=17.43% asr=82.57% runtime=42.06s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.062745 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=91.41% adv_acc=8.20%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=91.72% adv_acc=6.72%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=92.19% adv_acc=6.62%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=92.16% adv_acc=6.25%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=92.04% adv_acc=6.45%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.04% adv_acc=6.45% asr=93.55% runtime=42.05s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.003922 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=91.41% adv_acc=51.56%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=91.72% adv_acc=51.21%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=92.19% adv_acc=51.64%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=92.16% adv_acc=51.38%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=92.04% adv_acc=51.30%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.04% adv_acc=51.30% asr=48.70% runtime=3.93s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.007843 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=91.41% adv_acc=50.39%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=91.72% adv_acc=50.27%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=92.19% adv_acc=50.64%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=92.16% adv_acc=50.36%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=92.04% adv_acc=50.29%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.04% adv_acc=50.29% asr=49.71% runtime=3.89s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.015686 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=91.41% adv_acc=47.66%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=91.72% adv_acc=48.20%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=92.19% adv_acc=48.73%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=92.16% adv_acc=48.37%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=92.04% adv_acc=48.37%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.04% adv_acc=48.37% asr=51.63% runtime=3.85s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.031373 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=91.41% adv_acc=43.36%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=91.72% adv_acc=44.22%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=92.19% adv_acc=44.55%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=92.16% adv_acc=44.06%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=92.04% adv_acc=44.31%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.04% adv_acc=44.31% asr=55.69% runtime=3.84s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.062745 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=91.41% adv_acc=39.45%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=91.72% adv_acc=40.31%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=92.19% adv_acc=39.88%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=92.16% adv_acc=39.24%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=92.04% adv_acc=39.36%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.04% adv_acc=39.36% asr=60.64% runtime=3.86s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.003922 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=91.41% adv_acc=86.72%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=91.72% adv_acc=87.19%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=92.19% adv_acc=87.27%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=92.16% adv_acc=87.38%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=92.04% adv_acc=87.58%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.04% adv_acc=87.58% asr=12.42% runtime=42.36s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.007843 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=91.41% adv_acc=84.77%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=91.72% adv_acc=83.55%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=92.19% adv_acc=84.06%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=92.16% adv_acc=84.39%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=92.04% adv_acc=84.51%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.04% adv_acc=84.51% asr=15.49% runtime=42.38s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.015686 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=91.41% adv_acc=78.91%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=91.72% adv_acc=77.19%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=92.19% adv_acc=77.25%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=92.16% adv_acc=77.63%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=92.04% adv_acc=77.91%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.04% adv_acc=77.91% asr=22.09% runtime=42.35s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.031373 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=91.41% adv_acc=65.62%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=91.72% adv_acc=64.65%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=92.19% adv_acc=64.00%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=92.16% adv_acc=63.93%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=92.04% adv_acc=64.18%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.04% adv_acc=64.18% asr=35.82% runtime=42.34s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.062745 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=91.41% adv_acc=43.75%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=91.72% adv_acc=44.02%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=92.19% adv_acc=43.73%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=92.16% adv_acc=43.33%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=92.04% adv_acc=43.40%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.04% adv_acc=43.40% asr=56.60% runtime=42.36s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.003922 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=69.92% adv_acc=21.88%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=67.19% adv_acc=16.76%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=66.45% adv_acc=16.97%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=67.27% adv_acc=16.81%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=67.84% adv_acc=17.23%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=67.84% adv_acc=17.23% asr=82.77% runtime=34.79s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.007843 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=69.92% adv_acc=17.19%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=67.19% adv_acc=13.05%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=66.45% adv_acc=13.22%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=67.27% adv_acc=12.98%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=67.84% adv_acc=13.43%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=67.84% adv_acc=13.43% asr=86.57% runtime=34.75s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.015686 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=69.92% adv_acc=10.55%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=67.19% adv_acc=7.97%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=66.45% adv_acc=8.50%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=67.27% adv_acc=8.40%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=67.84% adv_acc=8.76%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=67.84% adv_acc=8.76% asr=91.24% runtime=34.75s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.031373 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=69.92% adv_acc=6.64%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=67.19% adv_acc=4.10%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=66.45% adv_acc=4.08%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=67.27% adv_acc=4.01%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=67.84% adv_acc=4.05%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=67.84% adv_acc=4.05% asr=95.95% runtime=34.71s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.062745 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=69.92% adv_acc=1.95%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=67.19% adv_acc=1.84%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=66.45% adv_acc=1.74%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=67.27% adv_acc=1.64%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=67.84% adv_acc=1.65%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=67.84% adv_acc=1.65% asr=98.35% runtime=34.68s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.003922 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=69.92% adv_acc=27.73%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=67.19% adv_acc=21.76%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=66.45% adv_acc=21.54%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=67.27% adv_acc=21.48%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=67.84% adv_acc=21.86%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=67.84% adv_acc=21.86% asr=78.14% runtime=3.59s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.007843 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=69.92% adv_acc=26.17%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=67.19% adv_acc=20.78%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=66.45% adv_acc=20.70%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=67.27% adv_acc=20.66%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=67.84% adv_acc=21.09%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=67.84% adv_acc=21.09% asr=78.91% runtime=3.61s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.015686 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=69.92% adv_acc=25.00%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=67.19% adv_acc=19.02%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=66.45% adv_acc=19.28%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=67.27% adv_acc=19.18%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=67.84% adv_acc=19.67%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=67.84% adv_acc=19.67% asr=80.33% runtime=3.95s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.031373 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=69.92% adv_acc=21.88%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=67.19% adv_acc=17.11%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=66.45% adv_acc=17.03%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=67.27% adv_acc=16.95%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=67.84% adv_acc=17.35%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=67.84% adv_acc=17.35% asr=82.65% runtime=17.09s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.062745 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=69.92% adv_acc=18.36%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=67.19% adv_acc=14.18%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=66.45% adv_acc=14.04%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=67.27% adv_acc=13.91%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=67.84% adv_acc=14.04%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=67.84% adv_acc=14.04% asr=85.96% runtime=4.35s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.003922 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=69.92% adv_acc=64.84%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=67.19% adv_acc=56.02%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=66.45% adv_acc=55.68%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=67.27% adv_acc=56.15%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=67.84% adv_acc=56.66%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=67.84% adv_acc=56.66% asr=43.34% runtime=60.44s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.007843 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=69.92% adv_acc=60.16%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=67.19% adv_acc=49.65%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=66.45% adv_acc=49.38%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=67.27% adv_acc=50.05%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=67.84% adv_acc=50.47%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=67.84% adv_acc=50.47% asr=49.53% runtime=46.74s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.015686 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=69.92% adv_acc=48.05%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=67.19% adv_acc=39.53%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=66.45% adv_acc=39.26%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=67.27% adv_acc=39.66%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=67.84% adv_acc=39.86%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=67.84% adv_acc=39.86% asr=60.14% runtime=35.08s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.031373 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=69.92% adv_acc=31.25%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=67.19% adv_acc=26.29%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=66.45% adv_acc=25.84%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=67.27% adv_acc=26.02%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=67.84% adv_acc=26.40%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=67.84% adv_acc=26.40% asr=73.60% runtime=34.95s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.062745 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=69.92% adv_acc=17.58%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=67.19% adv_acc=13.52%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=66.45% adv_acc=13.30%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=67.27% adv_acc=13.53%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=67.84% adv_acc=13.94%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=67.84% adv_acc=13.94% asr=86.06% runtime=34.98s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.003922 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=58.98% adv_acc=14.06%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=54.65% adv_acc=11.64%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=54.53% adv_acc=11.31%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=54.80% adv_acc=11.02%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=54.88% adv_acc=11.13%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=54.88% adv_acc=11.13% asr=88.87% runtime=42.00s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.007843 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=58.98% adv_acc=10.94%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=54.65% adv_acc=9.45%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=54.53% adv_acc=9.14%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=54.80% adv_acc=8.88%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=54.88% adv_acc=8.96%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=54.88% adv_acc=8.96% asr=91.04% runtime=42.04s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.015686 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=58.98% adv_acc=9.38%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=54.65% adv_acc=6.17%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=54.53% adv_acc=6.04%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=54.80% adv_acc=5.81%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=54.88% adv_acc=5.87%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=54.88% adv_acc=5.87% asr=94.13% runtime=42.06s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.031373 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=58.98% adv_acc=4.30%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=54.65% adv_acc=3.01%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=54.53% adv_acc=2.77%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=54.80% adv_acc=2.89%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=54.88% adv_acc=2.80%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=54.88% adv_acc=2.80% asr=97.20% runtime=42.03s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.062745 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=58.98% adv_acc=2.73%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=54.65% adv_acc=1.33%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=54.53% adv_acc=1.27%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=54.80% adv_acc=1.20%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=54.88% adv_acc=1.17%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=54.88% adv_acc=1.17% asr=98.83% runtime=42.08s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.003922 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=58.98% adv_acc=16.41%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=54.65% adv_acc=14.53%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=54.53% adv_acc=13.83%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=54.80% adv_acc=13.66%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=54.88% adv_acc=13.67%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=54.88% adv_acc=13.67% asr=86.33% runtime=3.97s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.007843 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=58.98% adv_acc=15.23%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=54.65% adv_acc=13.83%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=54.53% adv_acc=13.24%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=54.80% adv_acc=13.05%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=54.88% adv_acc=13.07%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=54.88% adv_acc=13.07% asr=86.93% runtime=3.88s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.015686 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=58.98% adv_acc=14.45%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=54.65% adv_acc=12.73%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=54.53% adv_acc=12.15%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=54.80% adv_acc=11.89%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=54.88% adv_acc=11.89%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=54.88% adv_acc=11.89% asr=88.11% runtime=3.93s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.031373 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=58.98% adv_acc=12.50%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=54.65% adv_acc=11.02%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=54.53% adv_acc=10.37%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=54.80% adv_acc=10.20%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=54.88% adv_acc=10.23%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=54.88% adv_acc=10.23% asr=89.77% runtime=3.86s
-[ATTACK][SETUP] Initializing attack='FGSM' eps=0.062745 steps=40
-[ATTACK][SETUP] Ready: FGSM
-[ATTACK][BATCH] FGSM batch=1/40 seen=256 clean_acc=58.98% adv_acc=9.77%
-[ATTACK][BATCH] FGSM batch=10/40 seen=2560 clean_acc=54.65% adv_acc=8.75%
-[ATTACK][BATCH] FGSM batch=20/40 seen=5120 clean_acc=54.53% adv_acc=8.22%
-[ATTACK][BATCH] FGSM batch=30/40 seen=7680 clean_acc=54.80% adv_acc=8.01%
-[ATTACK][BATCH] FGSM batch=40/40 seen=10000 clean_acc=54.88% adv_acc=7.95%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=54.88% adv_acc=7.95% asr=92.05% runtime=3.93s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.003922 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=58.98% adv_acc=48.44%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=54.65% adv_acc=44.49%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=54.53% adv_acc=43.85%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=54.80% adv_acc=43.84%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=54.88% adv_acc=44.00%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=54.88% adv_acc=44.00% asr=56.00% runtime=42.35s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.007843 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=58.98% adv_acc=40.23%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=54.65% adv_acc=38.55%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=54.53% adv_acc=38.44%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=54.80% adv_acc=38.71%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=54.88% adv_acc=38.72%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=54.88% adv_acc=38.72% asr=61.28% runtime=42.39s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.015686 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=58.98% adv_acc=32.81%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=54.65% adv_acc=30.04%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=54.53% adv_acc=30.41%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=54.80% adv_acc=30.36%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=54.88% adv_acc=30.49%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=54.88% adv_acc=30.49% asr=69.51% runtime=42.46s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.031373 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=58.98% adv_acc=24.22%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=54.65% adv_acc=19.73%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=54.53% adv_acc=19.75%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=54.80% adv_acc=19.60%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=54.88% adv_acc=19.67%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=54.88% adv_acc=19.67% asr=80.33% runtime=42.48s
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.062745 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=256 clean_acc=58.98% adv_acc=11.72%
-[ATTACK][BATCH] BIM batch=10/40 seen=2560 clean_acc=54.65% adv_acc=9.84%
-[ATTACK][BATCH] BIM batch=20/40 seen=5120 clean_acc=54.53% adv_acc=9.57%
-[ATTACK][BATCH] BIM batch=30/40 seen=7680 clean_acc=54.80% adv_acc=9.71%
-[ATTACK][BATCH] BIM batch=40/40 seen=10000 clean_acc=54.88% adv_acc=9.93%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=54.88% adv_acc=9.93% asr=90.07% runtime=42.45s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.003922 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=0.00% adv_acc=0.78%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=0.51% adv_acc=0.62%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=0.39% adv_acc=0.55%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=0.39% adv_acc=0.51%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=0.47% adv_acc=0.55%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=0.47% adv_acc=0.55% asr=99.45% runtime=131.72s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.007843 steps=40
-[ATTACK][SETUP] Ready: PGD
-[ATTACK][BATCH] PGD batch=1/40 seen=256 clean_acc=0.00% adv_acc=0.78%
-[ATTACK][BATCH] PGD batch=10/40 seen=2560 clean_acc=0.51% adv_acc=0.59%
-[ATTACK][BATCH] PGD batch=20/40 seen=5120 clean_acc=0.39% adv_acc=0.49%
-[ATTACK][BATCH] PGD batch=30/40 seen=7680 clean_acc=0.39% adv_acc=0.44%
-[ATTACK][BATCH] PGD batch=40/40 seen=10000 clean_acc=0.47% adv_acc=0.47%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=0.47% adv_acc=0.47% asr=99.53% runtime=133.11s
-[ATTACK][SETUP] Initializing attack='PGD' eps=0.015686 steps=40
 [ATTACK][SETUP] Ready: PGD
