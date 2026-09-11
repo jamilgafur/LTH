@@ -5,7 +5,7 @@
 #   bash temp3.sh <discovery_epochs> <pretrain_epochs> [phase] [model] [dataset] [attack] [kind]
 # Examples:
 #   bash temp3.sh 100 300
-#   bash temp3.sh 100 300 generate InceptionNet Cifar10 PGD Finetuned
+#   bash temp3.sh 100 300 generate InceptionNet Cifar10 PGD Dynamic_Region_All_Combined
 #   bash temp3.sh 100 300 compare
 #   bash temp3.sh 100 300 gradient_sim
 #   bash temp3.sh 100 300 epsilon_sweep

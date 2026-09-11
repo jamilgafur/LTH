@@ -7,7 +7,7 @@
 #   bash temp4.sh <discovery_epochs> <pretrain_epochs> [model] [dataset] [attack] [kind]
 # Examples:
 #   bash temp4.sh 100 300
-#   bash temp4.sh 100 300 InceptionNet Cifar10 PGD Finetuned
+#   bash temp4.sh 100 300 full InceptionNet Cifar10 PGD Dynamic_Region_All_Combined
 
 set -euo pipefail
 

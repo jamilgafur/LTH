@@ -96,37 +96,50 @@ class AdversarialPlotSuite:
             for model_name in sorted(df_dataset["model"].unique()):
                 for attack_name in sorted(df_dataset["attack"].unique()):
                     subset = df_dataset[(df_dataset["model"] == model_name) & (df_dataset["attack"] == attack_name)]
-                    if {"Original", "Finetuned"}.issubset(set(subset["kind"])):
-                        finetuned_value = float(subset[subset["kind"] == "Finetuned"]["attack_success_rate"].mean())
-                        original_value = float(subset[subset["kind"] == "Original"]["attack_success_rate"].mean())
+                    baseline_kind = ReportingSuite.baseline_kind()
+                    baseline = subset[subset["kind"] == baseline_kind]
+                    if baseline.empty:
+                        continue
+                    baseline_value = float(baseline["attack_success_rate"].mean())
+                    for variant_kind in ReportingSuite.variant_kinds():
+                        variant = subset[subset["kind"] == variant_kind]
+                        if variant.empty:
+                            continue
+                        variant_value = float(variant["attack_success_rate"].mean())
                         cls_rows.append(
                             {
                                 "model": model_name,
                                 "attack": attack_name,
-                                "collapsed_minus_original": finetuned_value - original_value,
+                                "variant_kind": variant_kind,
+                                "variant_minus_baseline": variant_value - baseline_value,
                             }
                         )
 
             if cls_rows:
                 delta_df = pd.DataFrame(cls_rows)
-                delta_heatmap = delta_df.pivot_table(
-                    index="model", columns="attack", values="collapsed_minus_original", aggfunc="mean"
-                )
-                plt.figure(figsize=(10, 7))
-                sns.heatmap(
-                    delta_heatmap,
-                    annot=True,
-                    fmt=".2%",
-                    cmap="coolwarm",
-                    center=0,
-                    cbar_kws={"label": "Collapsed - Original Attack Success"},
-                )
-                plt.title(f"Collapsed vs Original Susceptibility Delta - {dataset}", fontsize=14, fontweight="bold")
-                plt.xlabel("Attack Method", fontweight="bold")
-                plt.ylabel("Model Architecture", fontweight="bold")
-                plt.tight_layout()
-                plt.savefig(os.path.join(output_dir, f"collapsed_vs_original_delta_{dataset}.png"), dpi=300)
-                plt.close()
+                for variant_kind, variant_df in delta_df.groupby("variant_kind"):
+                    delta_heatmap = variant_df.pivot_table(
+                        index="model", columns="attack", values="variant_minus_baseline", aggfunc="mean"
+                    )
+                    plt.figure(figsize=(10, 7))
+                    sns.heatmap(
+                        delta_heatmap,
+                        annot=True,
+                        fmt=".2%",
+                        cmap="coolwarm",
+                        center=0,
+                        cbar_kws={"label": "Variant - Control Continued Attack Success"},
+                    )
+                    plt.title(
+                        f"{variant_kind} vs Control Continued Susceptibility Delta - {dataset}",
+                        fontsize=14,
+                        fontweight="bold",
+                    )
+                    plt.xlabel("Attack Method", fontweight="bold")
+                    plt.ylabel("Model Architecture", fontweight="bold")
+                    plt.tight_layout()
+                    plt.savefig(os.path.join(output_dir, f"{variant_kind}_vs_control_continued_delta_{dataset}.png"), dpi=300)
+                    plt.close()
 
     @staticmethod
     def _plot_transferability(output_dir: str, tf_df: pd.DataFrame) -> None:

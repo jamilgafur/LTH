@@ -15,6 +15,7 @@ import torch.nn as nn
 from adversarial_checkpointing import CheckpointManager
 from adversarial_core import AdversarialCore
 from adversarial_cka import CKASuite
+from adversarial_reporting import ReportingSuite
 
 EPSILON_VALUES = [1 / 255, 2 / 255, 4 / 255, 8 / 255, 16 / 255]
 
@@ -171,21 +172,27 @@ class AdvancedExperimentSuite:
         csv_path = os.path.join(output_dir, "epsilon_sensitivity.csv")
         df.to_csv(csv_path, index=False)
         print(f"[EXP7] Saved: {csv_path}")
-
-        if df.empty:
-            print("[WARN] EXP7: no epsilon sensitivity records were generated.")
-            return records
-
-        delta_rows: list[dict] = []
-        for (model_name, dataset_name, attack_name, eps), grp in df.groupby(
-            ["model", "dataset", "attack", "epsilon"]
-        ):
-            orig = grp[grp["kind"] == "Original"]["attack_success_rate"]
-            fine = grp[grp["kind"] == "Finetuned"]["attack_success_rate"]
-            if not orig.empty and not fine.empty:
-                delta_rows.append(
-                    {
-                        "model": model_name,
+                            baseline = grp[grp["kind"] == ReportingSuite.baseline_kind()]["attack_success_rate"]
+                            if baseline.empty:
+                                continue
+                            for variant_kind in ReportingSuite.variant_kinds():
+                                variant = grp[grp["kind"] == variant_kind]["attack_success_rate"]
+                                if variant.empty:
+                                    continue
+                                delta_rows.append(
+                                    {
+                                        "model": model_name,
+                                        "dataset": dataset_name,
+                                        "attack": attack_name,
+                                        "epsilon": float(eps),
+                                        "epsilon_255": float(round(eps * 255, 2)),
+                                        "baseline_kind": ReportingSuite.baseline_kind(),
+                                        "variant_kind": variant_kind,
+                                        "asr_baseline": float(baseline.mean()),
+                                        "asr_variant": float(variant.mean()),
+                                        "delta_asr": float(variant.mean()) - float(baseline.mean()),
+                                    }
+                                )
                         "dataset": dataset_name,
                         "attack": attack_name,
                         "epsilon": float(eps),
@@ -281,46 +288,52 @@ class AdvancedExperimentSuite:
 
         records: list[dict] = []
         for (model_name, dataset_name, attack_name), grp in df_all.groupby(["model", "dataset", "attack"]):
-            orig = grp[grp["kind"] == "Original"]["attack_success_rate"].dropna().values
-            fine = grp[grp["kind"] == "Finetuned"]["attack_success_rate"].dropna().values
-            if len(orig) == 0 or len(fine) == 0:
+            baseline = grp[grp["kind"] == ReportingSuite.baseline_kind()]["attack_success_rate"].dropna().values
+            if len(baseline) == 0:
                 continue
 
-            mean_orig = float(np.mean(orig))
-            mean_fine = float(np.mean(fine))
-            std_orig = float(np.std(orig, ddof=1)) if len(orig) > 1 else float("nan")
-            std_fine = float(np.std(fine, ddof=1)) if len(fine) > 1 else float("nan")
-            delta_asr = mean_fine - mean_orig
+            for variant_kind in ReportingSuite.variant_kinds():
+                variant = grp[grp["kind"] == variant_kind]["attack_success_rate"].dropna().values
+                if len(variant) == 0:
+                    continue
 
-            if len(orig) == len(fine) and len(orig) > 1:
-                t_stat, p_ttest = scipy_stats.ttest_rel(fine, orig)
-            else:
-                t_stat, p_ttest = float("nan"), float("nan")
+                mean_baseline = float(np.mean(baseline))
+                mean_variant = float(np.mean(variant))
+                std_baseline = float(np.std(baseline, ddof=1)) if len(baseline) > 1 else float("nan")
+                std_variant = float(np.std(variant, ddof=1)) if len(variant) > 1 else float("nan")
+                delta_asr = mean_variant - mean_baseline
 
-            if len(result_dirs or []) >= 2 and len(orig) >= 2:
-                _, p_kw = scipy_stats.kruskal(orig, fine)
-            else:
-                p_kw = float("nan")
+                if len(baseline) == len(variant) and len(baseline) > 1:
+                    t_stat, p_ttest = scipy_stats.ttest_rel(variant, baseline)
+                else:
+                    t_stat, p_ttest = float("nan"), float("nan")
 
-            records.append(
-                {
-                    "model": model_name,
-                    "dataset": dataset_name,
-                    "attack": attack_name,
-                    "n_original": len(orig),
-                    "n_finetuned": len(fine),
-                    "mean_asr_original": mean_orig,
-                    "std_asr_original": std_orig,
-                    "mean_asr_finetuned": mean_fine,
-                    "std_asr_finetuned": std_fine,
-                    "delta_asr": delta_asr,
-                    "t_statistic": t_stat,
-                    "p_value_ttest": p_ttest,
-                    "p_value_kruskal": p_kw,
-                    "significant_at_0.05": (not np.isnan(p_ttest)) and (p_ttest < 0.05),
-                    "effect_size_abs": abs(delta_asr),
-                }
-            )
+                if len(result_dirs or []) >= 2 and len(baseline) >= 2:
+                    _, p_kw = scipy_stats.kruskal(baseline, variant)
+                else:
+                    p_kw = float("nan")
+
+                records.append(
+                    {
+                        "model": model_name,
+                        "dataset": dataset_name,
+                        "attack": attack_name,
+                        "baseline_kind": ReportingSuite.baseline_kind(),
+                        "variant_kind": variant_kind,
+                        "n_baseline": len(baseline),
+                        "n_variant": len(variant),
+                        "mean_asr_baseline": mean_baseline,
+                        "std_asr_baseline": std_baseline,
+                        "mean_asr_variant": mean_variant,
+                        "std_asr_variant": std_variant,
+                        "delta_asr": delta_asr,
+                        "t_statistic": t_stat,
+                        "p_value_ttest": p_ttest,
+                        "p_value_kruskal": p_kw,
+                        "significant_at_0.05": (not np.isnan(p_ttest)) and (p_ttest < 0.05),
+                        "effect_size_abs": abs(delta_asr),
+                    }
+                )
 
         df_out = pd.DataFrame(records)
         csv_path = os.path.join(output_dir, "statistical_significance.csv")
@@ -872,77 +885,83 @@ class AdvancedExperimentSuite:
             output_dir, ref_vectors, self.model_kind_label
         )
 
+        baseline_kind = ReportingSuite.baseline_kind()
         for dataset_name in sorted({dataset for (_model, dataset, _kind) in class_example_bundles}):
             model_names = sorted({model for (model, dataset, _kind) in class_example_bundles if dataset == dataset_name})
             for model_name in model_names:
-                orig_key = (model_name, dataset_name, "Original")
-                fin_key = (model_name, dataset_name, "Finetuned")
-                if orig_key not in class_example_bundles or fin_key not in class_example_bundles:
+                baseline_key = (model_name, dataset_name, baseline_kind)
+                if baseline_key not in class_example_bundles:
                     continue
 
-                orig_bundle = class_example_bundles[orig_key]
-                fin_bundle = class_example_bundles[fin_key]
-                orig_rows = {int(row["true_label"]): row for row in orig_bundle["rows"]}
-                fin_rows = {int(row["true_label"]): row for row in fin_bundle["rows"]}
-                class_ids = sorted(set(orig_rows) & set(fin_rows))
-                if not class_ids:
-                    continue
+                baseline_bundle = class_example_bundles[baseline_key]
+                baseline_rows = {int(row["true_label"]): row for row in baseline_bundle["rows"]}
 
                 base_dataset = CheckpointManager.base_dataset_name(dataset_name)
                 if base_dataset not in loader_cache:
                     continue
                 test_loader = loader_cache[base_dataset][1]
                 class_names = getattr(getattr(test_loader, "dataset", None), "classes", None)
-                pair_rows: list[dict] = []
 
-                for class_id in class_ids:
-                    orig_row = orig_rows[class_id]
-                    fin_row = fin_rows[class_id]
-                    orig_vec = np.asarray(orig_row["shap_map"], dtype=np.float32).reshape(-1)
-                    fin_vec = np.asarray(fin_row["shap_map"], dtype=np.float32).reshape(-1)
-                    delta_vec = fin_vec - orig_vec
-                    denom = float(np.linalg.norm(orig_vec) * np.linalg.norm(fin_vec))
-                    delta_cos = float(np.dot(orig_vec, fin_vec) / denom) if denom > 0 else float("nan")
+                for variant_kind in ReportingSuite.variant_kinds():
+                    variant_key = (model_name, dataset_name, variant_kind)
+                    if variant_key not in class_example_bundles:
+                        continue
 
-                    pair_rows.append(
-                        {
-                            "dataset": dataset_name,
-                            "model": model_name,
-                            "true_label": class_id,
-                            "class_name": class_names[class_id] if class_names and class_id < len(class_names) else str(class_id),
-                            "sample_index": int(orig_row["sample_index"]),
-                            "original_pred_class": int(orig_row["pred_class"]),
-                            "collapsed_pred_class": int(fin_row["pred_class"]),
-                            "original_attr_mean_abs": float(orig_row["attr_mean_abs"]),
-                            "collapsed_attr_mean_abs": float(fin_row["attr_mean_abs"]),
-                            "delta_attr_mean_abs": float(np.mean(np.abs(delta_vec))),
-                            "delta_attr_l1": float(np.sum(np.abs(delta_vec))),
-                            "delta_attr_l2": float(np.linalg.norm(delta_vec)),
-                            "delta_cosine_similarity": delta_cos,
-                            "input_image": orig_row["input_image"],
-                            "original_shap_map": orig_row["shap_map"],
-                            "collapsed_shap_map": fin_row["shap_map"],
-                        }
-                    )
+                    variant_bundle = class_example_bundles[variant_key]
+                    variant_rows = {int(row["true_label"]): row for row in variant_bundle["rows"]}
+                    class_ids = sorted(set(baseline_rows) & set(variant_rows))
+                    if not class_ids:
+                        continue
 
-                if pair_rows:
-                    pair_df = self._save_shap_class_example_artifacts(
-                        output_dir=output_dir,
-                        dataset_name=dataset_name,
-                        model_name=model_name,
-                        class_rows=pair_rows,
-                        original_kind="Original",
-                        collapsed_kind="Finetuned",
-                    )
-                    self._plot_shap_class_example_grid(
-                        output_dir=output_dir,
-                        dataset_name=dataset_name,
-                        model_name=model_name,
-                        class_rows=pair_rows,
-                        class_names=class_names,
-                        original_kind="Original",
-                        collapsed_kind="Finetuned",
-                    )
+                    pair_rows: list[dict] = []
+                    for class_id in class_ids:
+                        baseline_row = baseline_rows[class_id]
+                        variant_row = variant_rows[class_id]
+                        baseline_vec = np.asarray(baseline_row["shap_map"], dtype=np.float32).reshape(-1)
+                        variant_vec = np.asarray(variant_row["shap_map"], dtype=np.float32).reshape(-1)
+                        delta_vec = variant_vec - baseline_vec
+                        denom = float(np.linalg.norm(baseline_vec) * np.linalg.norm(variant_vec))
+                        delta_cos = float(np.dot(baseline_vec, variant_vec) / denom) if denom > 0 else float("nan")
+
+                        pair_rows.append(
+                            {
+                                "dataset": dataset_name,
+                                "model": model_name,
+                                "true_label": class_id,
+                                "class_name": class_names[class_id] if class_names and class_id < len(class_names) else str(class_id),
+                                "sample_index": int(baseline_row["sample_index"]),
+                                "original_pred_class": int(baseline_row["pred_class"]),
+                                "collapsed_pred_class": int(variant_row["pred_class"]),
+                                "original_attr_mean_abs": float(baseline_row["attr_mean_abs"]),
+                                "collapsed_attr_mean_abs": float(variant_row["attr_mean_abs"]),
+                                "delta_attr_mean_abs": float(np.mean(np.abs(delta_vec))),
+                                "delta_attr_l1": float(np.sum(np.abs(delta_vec))),
+                                "delta_attr_l2": float(np.linalg.norm(delta_vec)),
+                                "delta_cosine_similarity": delta_cos,
+                                "input_image": baseline_row["input_image"],
+                                "original_shap_map": baseline_row["shap_map"],
+                                "collapsed_shap_map": variant_row["shap_map"],
+                            }
+                        )
+
+                    if pair_rows:
+                        self._save_shap_class_example_artifacts(
+                            output_dir=output_dir,
+                            dataset_name=dataset_name,
+                            model_name=model_name,
+                            class_rows=pair_rows,
+                            original_kind=baseline_kind,
+                            collapsed_kind=variant_kind,
+                        )
+                        self._plot_shap_class_example_grid(
+                            output_dir=output_dir,
+                            dataset_name=dataset_name,
+                            model_name=model_name,
+                            class_rows=pair_rows,
+                            class_names=class_names,
+                            original_kind=baseline_kind,
+                            collapsed_kind=variant_kind,
+                        )
 
         pair_rows: list[dict] = []
         keys = list(ref_vectors.keys())
@@ -979,7 +998,8 @@ class AdvancedExperimentSuite:
 
         collapsed_vs_original = pair_df[
             (pair_df["same_architecture"])
-            & (pair_df["source_kind"] != pair_df["target_kind"])
+            & (pair_df["source_kind"] == ReportingSuite.baseline_kind())
+            & (pair_df["target_kind"].isin(ReportingSuite.variant_kinds()))
         ].copy()
         collapsed_vs_original_path = os.path.join(output_dir, "shap_original_vs_collapsed_similarity.csv")
         collapsed_vs_original.to_csv(collapsed_vs_original_path, index=False)
@@ -1024,11 +1044,11 @@ class AdvancedExperimentSuite:
                         cbar_kws={"label": "Cosine similarity"},
                     )
                     plt.title(
-                        f"SHAP Cosine Similarity: Original vs Collapsed – {dataset_name}",
+                        f"SHAP Cosine Similarity: Control Continued vs Variants – {dataset_name}",
                         fontweight="bold",
                     )
-                    plt.xlabel("Collapsed variant", fontweight="bold")
-                    plt.ylabel("Original variant", fontweight="bold")
+                    plt.xlabel("Variant", fontweight="bold")
+                    plt.ylabel("Control Continued", fontweight="bold")
                     plt.tight_layout()
                     self._save_fig(
                         os.path.join(output_dir, f"shap_orig_vs_collapsed_cosine_{dataset_name}")
@@ -1037,7 +1057,7 @@ class AdvancedExperimentSuite:
 
         if not collapsed_vs_original.empty:
             cv = (
-                collapsed_vs_original.groupby(["dataset", "source_model"], as_index=False)
+                collapsed_vs_original.groupby(["dataset", "source_model", "source_kind", "target_kind"], as_index=False)
                 .agg(
                     cosine_similarity=("cosine_similarity", "mean"),
                     pearson_r=("pearson_r", "mean"),
@@ -1050,14 +1070,15 @@ class AdvancedExperimentSuite:
             cv.to_csv(os.path.join(output_dir, "shap_original_vs_collapsed_summary.csv"), index=False)
 
             melt = cv.melt(
-                id_vars=["dataset", "source_model"],
+                id_vars=["dataset", "source_model", "target_kind"],
                 value_vars=["cosine_similarity", "pearson_r", "spearman_r", "topk_jaccard"],
                 var_name="metric",
                 value_name="value",
             )
+            melt["comparison_metric"] = melt["target_kind"] + " | " + melt["metric"]
             plt.figure(figsize=(12, 6))
-            sns.barplot(data=melt, x="source_model", y="value", hue="metric", errorbar=None)
-            plt.title("Original vs Collapsed SHAP Similarity Metrics", fontweight="bold")
+            sns.barplot(data=melt, x="source_model", y="value", hue="comparison_metric", errorbar=None)
+            plt.title("Control Continued vs Variant SHAP Similarity Metrics", fontweight="bold")
             plt.xlabel("Model Architecture", fontweight="bold")
             plt.ylabel("Similarity", fontweight="bold")
             plt.xticks(rotation=25, ha="right")

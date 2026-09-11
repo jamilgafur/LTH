@@ -148,7 +148,7 @@ def run_pipeline(args) -> None:
         print(f"[INFO] All plots saved to {args.output_dir}")
 
     if args.mode in ["full", "analyze", "plot", "compare"]:
-        print(f"\n{'='*70}\n[PHASE 4] Comparing original vs collapsed explainability\n{'='*70}")
+        print(f"\n{'='*70}\n[PHASE 4] Comparing Control Continued vs collapsed variants\n{'='*70}")
         if records:
             ReportingSuite.generate_comparison_tables(args.output_dir, records)
         else:
@@ -234,7 +234,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model", type=str, default=None, help="Filter by model name (e.g., VGG16).")
     parser.add_argument("--dataset", type=str, default=None, help="Filter by dataset (e.g., Cifar10).")
     parser.add_argument("--attack", type=str, default=None, help="Filter by attack (e.g., PGD).")
-    parser.add_argument("--kind", choices=["Original", "Finetuned"], default=None)
+    parser.add_argument(
+        "--kind",
+        choices=[
+            ReportingSuite.baseline_kind(),
+            *ReportingSuite.variant_kinds(),
+        ],
+        default=None,
+    )
     parser.add_argument("--output-dir", type=str, default="adversarial_results", help="Output directory for results.")
     parser.add_argument("--epsilon-attacks", type=str, nargs="+", default=["PGD", "FGSM", "BIM"])
     parser.add_argument("--result-dirs", type=str, nargs="+", default=None)

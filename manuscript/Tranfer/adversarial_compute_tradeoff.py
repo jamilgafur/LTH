@@ -13,6 +13,7 @@ import torch
 
 from adversarial_checkpointing import CheckpointManager
 from adversarial_core import AdversarialCore
+from adversarial_reporting import ReportingSuite
 
 
 class ComputeTradeoffSuite:
@@ -129,8 +130,12 @@ class ComputeTradeoffSuite:
                 if not t.empty:
                     transfer_success = float(t["transfer_success_rate"].mean())
 
-            if not explain_df.empty:
-                e = explain_df[(explain_df["model"] == model_name) & (explain_df["dataset"] == dataset_name)]
+            if not explain_df.empty and kind != ReportingSuite.baseline_kind():
+                e = explain_df[
+                    (explain_df["model"] == model_name)
+                    & (explain_df["dataset"] == dataset_name)
+                    & (explain_df["variant_kind"] == kind)
+                ]
                 if not e.empty:
                     explain_delta = float(e["mean_delta_attack_success_rate"].mean())
                     if "mean_shap_cosine_similarity" in e.columns:
@@ -246,28 +251,32 @@ class ComputeTradeoffSuite:
         plt.savefig(os.path.join(output_dir, f"{prefix}_figure2_transfer_resistance_vs_latency.png"), dpi=300)
         plt.close()
 
-        # Figure 3: Collapsed vs Original deltas for core metrics
+        # Figure 3: Variant vs baseline deltas for core metrics
         delta_rows = []
         for (model_name, dataset_name), g in df.groupby(["model", "dataset"]):
-            orig = g[g["kind"] == "Original"]
-            fin = g[g["kind"] == "Finetuned"]
-            if orig.empty or fin.empty:
+            baseline = g[g["kind"] == ReportingSuite.baseline_kind()]
+            if baseline.empty:
                 continue
-            delta_rows.extend(
-                [
-                    {"label": f"{model_name}-{dataset_name}", "metric": "robust_accuracy", "delta": float(fin["robust_accuracy"].mean() - orig["robust_accuracy"].mean())},
-                    {"label": f"{model_name}-{dataset_name}", "metric": "transfer_resistance", "delta": float(fin["transfer_resistance"].mean() - orig["transfer_resistance"].mean())},
-                    {"label": f"{model_name}-{dataset_name}", "metric": "latency_ms", "delta": float(fin["latency_ms"].mean() - orig["latency_ms"].mean())},
-                    {"label": f"{model_name}-{dataset_name}", "metric": "flops", "delta": float(fin["flops"].mean() - orig["flops"].mean())},
-                ]
-            )
+            for variant_kind in ReportingSuite.variant_kinds():
+                variant = g[g["kind"] == variant_kind]
+                if variant.empty:
+                    continue
+                label = f"{model_name}-{dataset_name}-{variant_kind}"
+                delta_rows.extend(
+                    [
+                        {"label": label, "metric": "robust_accuracy", "delta": float(variant["robust_accuracy"].mean() - baseline["robust_accuracy"].mean())},
+                        {"label": label, "metric": "transfer_resistance", "delta": float(variant["transfer_resistance"].mean() - baseline["transfer_resistance"].mean())},
+                        {"label": label, "metric": "latency_ms", "delta": float(variant["latency_ms"].mean() - baseline["latency_ms"].mean())},
+                        {"label": label, "metric": "flops", "delta": float(variant["flops"].mean() - baseline["flops"].mean())},
+                    ]
+                )
         if delta_rows:
             delta_df = pd.DataFrame(delta_rows)
             plt.figure(figsize=(12, 6))
             sns.barplot(data=delta_df, x="label", y="delta", hue="metric")
             plt.xticks(rotation=45, ha="right")
-            plt.ylabel("Finetuned - Original", fontweight="bold")
-            plt.title("Figure 3: Collapsed vs Original Metric Deltas", fontweight="bold")
+            plt.ylabel("Variant - Control Continued", fontweight="bold")
+            plt.title("Figure 3: Variant vs Control Continued Metric Deltas", fontweight="bold")
             plt.tight_layout()
             plt.savefig(os.path.join(output_dir, f"{prefix}_figure3_collapsed_original_deltas.png"), dpi=300)
             plt.close()

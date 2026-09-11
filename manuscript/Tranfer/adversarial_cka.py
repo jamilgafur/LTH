@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from collapse import _capture_preblock_activation
 from adversarial_checkpointing import CheckpointManager
+from adversarial_reporting import ReportingSuite
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -162,11 +163,11 @@ class CKASuite:
         # -----------------------------------------------------------------
         # Optional: compute CKA at exact collapsed block boundaries.
         # This provides a precise metric for H2 by comparing the representation
-        # before and after each collapsed block in Finetuned models.
+        # before and after each collapsed block in the collapsed variants.
         # -----------------------------------------------------------------
         boundary_records = []
         for (model_name, dataset_name, kind), model in model_cache.items():
-            if kind != "Finetuned":
+            if kind not in ReportingSuite.variant_kinds():
                 continue
             # Split tag handling (dataset_name may be "Cifar10_epochs100_pretrain300")
             base_dataset = CheckpointManager.base_dataset_name(dataset_name)

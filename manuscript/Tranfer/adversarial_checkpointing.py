@@ -27,6 +27,20 @@ MODEL_ORDER = [
     "ConvNeXt",
 ]
 DATASET_ORDER = ["Cifar10", "Cifar100", "imagenet", "tinyimagenet"]
+KIND_SPECS = {
+    "Control_Continuted": {
+        "checkpoint": "final_JF_Control_Continuted.pt",
+        "collapsed": False,
+    },
+    "Dynamic_Region_All_Combined": {
+        "checkpoint": "final_JF_Dynamic_Region_All_Combined.pt",
+        "collapsed": True,
+    },
+    "Dynamic_Region_All_Combined_quant": {
+        "checkpoint": "final_JF_Dynamic_Region_All_Combined_quant.pt",
+        "collapsed": True,
+    },
+}
 # Some checkpoint directories were created with a ``None_`` prefix before the split tag
 # (e.g. ``InceptionNet_tinyimagenet_None_epochs100_pretrain300``). The original pattern
 # only matched ``epochs..._pretrain...`` and therefore ignored those directories, causing
@@ -125,9 +139,7 @@ class CheckpointManager:
             # Extract the split tag (e.g. epochs100_pretrain300) from the directory name.
             match = SPLIT_TAG_PATTERN.search(d)
             split_tag = match.group(1) if match else "unknown"
-            filename = (
-                "final_JF_Control.pt" if kind == "Original" else "final_JF_Dynamic_Region_All_Combined.pt"
-            )
+            filename = KIND_SPECS[kind]["checkpoint"]
             full_path = os.path.abspath(os.path.join(d, "checkpoints", filename))
             if os.path.exists(full_path):
                 results.append((full_path, split_tag))
@@ -223,7 +235,7 @@ class CheckpointManager:
         model = cls.load_model(model_name, num_classes, one_batch=one_batch)
         _wrap_pools_safe(model)
 
-        if kind == "Finetuned":
+        if KIND_SPECS[kind]["collapsed"]:
             compression_set = cls.get_compression_set_for_checkpoint(model_name, dataset_name, ckpt_path)
             print(f"[DEBUG] Rebuilding collapsed architecture for {model_name} ({dataset_name})")
             model = collapse_only(
@@ -249,7 +261,7 @@ class CheckpointManager:
 
         for model in MODEL_ORDER:
             for dataset in DATASET_ORDER:
-                for kind in ("Finetuned", "Original"):
+                for kind in KIND_SPECS:
                     paths = cls.get_checkpoint_path(model, dataset, kind)
                     for path, split_tag in paths:
                         # Combine dataset name with split tag to keep downstream grouping simple.

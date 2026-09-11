@@ -15,6 +15,13 @@ import numpy as np
 import pandas as pd
 
 
+BASELINE_KIND = "Control_Continuted"
+VARIANT_KINDS = [
+    "Dynamic_Region_All_Combined",
+    "Dynamic_Region_All_Combined_quant",
+]
+
+
 class ReportingSuite:
     """Encapsulates reporting and explainability table generation."""
 
@@ -81,7 +88,20 @@ class ReportingSuite:
 
     @staticmethod
     def model_kind_label(model_name: str, kind: str) -> str:
-        return f"{model_name} ({kind})"
+        kind_map = {
+            "Control_Continuted": "Control Continued",
+            "Dynamic_Region_All_Combined": "Pruned Finetuned",
+            "Dynamic_Region_All_Combined_quant": "Pruned Finetuned Quantized",
+        }
+        return f"{model_name} ({kind_map.get(kind, kind)})"
+
+    @staticmethod
+    def baseline_kind() -> str:
+        return BASELINE_KIND
+
+    @staticmethod
+    def variant_kinds() -> list[str]:
+        return list(VARIANT_KINDS)
 
     @staticmethod
     def summarize_direct_metrics(clean_acc: float, adv_acc: float) -> dict:
@@ -254,56 +274,55 @@ class ReportingSuite:
             )
         )
 
-        orig_profile = profile[profile["kind"] == "Original"].rename(
+        baseline_profile = profile[profile["kind"] == cls.baseline_kind()].rename(
             columns={
-                "clean_acc": "original_clean_acc",
-                "robust_accuracy": "original_robust_accuracy_mean",
-                "attack_success_rate": "original_attack_success_rate_mean",
-                "param_count": "original_param_count",
+                "clean_acc": "baseline_clean_acc",
+                "robust_accuracy": "baseline_robust_accuracy_mean",
+                "attack_success_rate": "baseline_attack_success_rate_mean",
+                "param_count": "baseline_param_count",
             }
         )[[
             "model",
             "dataset",
-            "original_clean_acc",
-            "original_robust_accuracy_mean",
-            "original_attack_success_rate_mean",
-            "original_param_count",
+            "baseline_clean_acc",
+            "baseline_robust_accuracy_mean",
+            "baseline_attack_success_rate_mean",
+            "baseline_param_count",
         ]]
 
-        finetuned_profile = profile[profile["kind"] == "Finetuned"].rename(
-            columns={
-                "clean_acc": "collapsed_clean_acc",
-                "robust_accuracy": "collapsed_robust_accuracy_mean",
-                "attack_success_rate": "collapsed_attack_success_rate_mean",
-                "param_count": "collapsed_param_count",
-            }
-        )[[
-            "model",
-            "dataset",
-            "collapsed_clean_acc",
-            "collapsed_robust_accuracy_mean",
-            "collapsed_attack_success_rate_mean",
-            "collapsed_param_count",
-        ]]
+        acc_param_frames = []
+        for variant_kind in cls.variant_kinds():
+            variant_profile = profile[profile["kind"] == variant_kind].rename(
+                columns={
+                    "clean_acc": "variant_clean_acc",
+                    "robust_accuracy": "variant_robust_accuracy_mean",
+                    "attack_success_rate": "variant_attack_success_rate_mean",
+                    "param_count": "variant_param_count",
+                }
+            )[[
+                "model",
+                "dataset",
+                "variant_clean_acc",
+                "variant_robust_accuracy_mean",
+                "variant_attack_success_rate_mean",
+                "variant_param_count",
+            ]]
+            merged = baseline_profile.merge(variant_profile, on=["model", "dataset"], how="inner")
+            if merged.empty:
+                continue
+            merged["baseline_kind"] = cls.baseline_kind()
+            merged["variant_kind"] = variant_kind
+            merged["variant_minus_baseline_clean_acc"] = (
+                merged["variant_clean_acc"] - merged["baseline_clean_acc"]
+            )
+            merged["params_reduction_percent"] = np.where(
+                merged["baseline_param_count"] > 0,
+                100.0 * (1.0 - merged["variant_param_count"] / merged["baseline_param_count"]),
+                np.nan,
+            )
+            acc_param_frames.append(merged)
 
-        acc_param_df = orig_profile.merge(
-            finetuned_profile,
-            on=["model", "dataset"],
-            how="outer",
-        )
-        acc_param_df["collapsed_minus_original_clean_acc"] = (
-            acc_param_df["collapsed_clean_acc"] - acc_param_df["original_clean_acc"]
-        )
-        acc_param_df["params_reduction_percent"] = np.where(
-            acc_param_df["original_param_count"] > 0,
-            100.0
-            * (
-                1.0
-                - acc_param_df["collapsed_param_count"]
-                / acc_param_df["original_param_count"]
-            ),
-            np.nan,
-        )
+        acc_param_df = pd.concat(acc_param_frames, ignore_index=True) if acc_param_frames else pd.DataFrame()
         acc_param_path = os.path.join(output_dir, "accuracy_parameter_comparison.csv")
         acc_param_df.to_csv(acc_param_path, index=False)
         print(f"[INFO] Saved: {acc_param_path}")
@@ -320,79 +339,75 @@ class ReportingSuite:
             )
         )
 
-        orig_attack = by_attack[by_attack["kind"] == "Original"].rename(
+        baseline_attack = by_attack[by_attack["kind"] == cls.baseline_kind()].rename(
             columns={
-                "clean_acc": "original_clean_acc",
-                "robust_accuracy": "original_robust_accuracy",
-                "attack_success_rate": "original_attack_success_rate",
-                "relative_accuracy_drop": "original_relative_accuracy_drop",
-                "robustness_ratio": "original_robustness_ratio",
-                "param_count": "original_param_count",
+                "clean_acc": "baseline_clean_acc",
+                "robust_accuracy": "baseline_robust_accuracy",
+                "attack_success_rate": "baseline_attack_success_rate",
+                "relative_accuracy_drop": "baseline_relative_accuracy_drop",
+                "robustness_ratio": "baseline_robustness_ratio",
+                "param_count": "baseline_param_count",
             }
         )[[
             "model",
             "dataset",
             "attack",
-            "original_clean_acc",
-            "original_robust_accuracy",
-            "original_attack_success_rate",
-            "original_relative_accuracy_drop",
-            "original_robustness_ratio",
-            "original_param_count",
+            "baseline_clean_acc",
+            "baseline_robust_accuracy",
+            "baseline_attack_success_rate",
+            "baseline_relative_accuracy_drop",
+            "baseline_robustness_ratio",
+            "baseline_param_count",
         ]]
 
-        finetuned_attack = by_attack[by_attack["kind"] == "Finetuned"].rename(
-            columns={
-                "clean_acc": "collapsed_clean_acc",
-                "robust_accuracy": "collapsed_robust_accuracy",
-                "attack_success_rate": "collapsed_attack_success_rate",
-                "relative_accuracy_drop": "collapsed_relative_accuracy_drop",
-                "robustness_ratio": "collapsed_robustness_ratio",
-                "param_count": "collapsed_param_count",
-            }
-        )[[
-            "model",
-            "dataset",
-            "attack",
-            "collapsed_clean_acc",
-            "collapsed_robust_accuracy",
-            "collapsed_attack_success_rate",
-            "collapsed_relative_accuracy_drop",
-            "collapsed_robustness_ratio",
-            "collapsed_param_count",
-        ]]
+        explainability_frames = []
+        for variant_kind in cls.variant_kinds():
+            variant_attack = by_attack[by_attack["kind"] == variant_kind].rename(
+                columns={
+                    "clean_acc": "variant_clean_acc",
+                    "robust_accuracy": "variant_robust_accuracy",
+                    "attack_success_rate": "variant_attack_success_rate",
+                    "relative_accuracy_drop": "variant_relative_accuracy_drop",
+                    "robustness_ratio": "variant_robustness_ratio",
+                    "param_count": "variant_param_count",
+                }
+            )[[
+                "model",
+                "dataset",
+                "attack",
+                "variant_clean_acc",
+                "variant_robust_accuracy",
+                "variant_attack_success_rate",
+                "variant_relative_accuracy_drop",
+                "variant_robustness_ratio",
+                "variant_param_count",
+            ]]
 
-        explainability_df = orig_attack.merge(
-            finetuned_attack,
-            on=["model", "dataset", "attack"],
-            how="inner",
-        )
-        explainability_df["collapsed_minus_original_attack_success_rate"] = (
-            explainability_df["collapsed_attack_success_rate"]
-            - explainability_df["original_attack_success_rate"]
-        )
-        explainability_df["collapsed_minus_original_robust_accuracy"] = (
-            explainability_df["collapsed_robust_accuracy"]
-            - explainability_df["original_robust_accuracy"]
-        )
-        explainability_df["collapsed_minus_original_relative_accuracy_drop"] = (
-            explainability_df["collapsed_relative_accuracy_drop"]
-            - explainability_df["original_relative_accuracy_drop"]
-        )
-        explainability_df["collapsed_minus_original_robustness_ratio"] = (
-            explainability_df["collapsed_robustness_ratio"]
-            - explainability_df["original_robustness_ratio"]
-        )
-        explainability_df["params_reduction_percent"] = np.where(
-            explainability_df["original_param_count"] > 0,
-            100.0
-            * (
-                1.0
-                - explainability_df["collapsed_param_count"]
-                / explainability_df["original_param_count"]
-            ),
-            np.nan,
-        )
+            merged = baseline_attack.merge(variant_attack, on=["model", "dataset", "attack"], how="inner")
+            if merged.empty:
+                continue
+            merged["baseline_kind"] = cls.baseline_kind()
+            merged["variant_kind"] = variant_kind
+            merged["variant_minus_baseline_attack_success_rate"] = (
+                merged["variant_attack_success_rate"] - merged["baseline_attack_success_rate"]
+            )
+            merged["variant_minus_baseline_robust_accuracy"] = (
+                merged["variant_robust_accuracy"] - merged["baseline_robust_accuracy"]
+            )
+            merged["variant_minus_baseline_relative_accuracy_drop"] = (
+                merged["variant_relative_accuracy_drop"] - merged["baseline_relative_accuracy_drop"]
+            )
+            merged["variant_minus_baseline_robustness_ratio"] = (
+                merged["variant_robustness_ratio"] - merged["baseline_robustness_ratio"]
+            )
+            merged["params_reduction_percent"] = np.where(
+                merged["baseline_param_count"] > 0,
+                100.0 * (1.0 - merged["variant_param_count"] / merged["baseline_param_count"]),
+                np.nan,
+            )
+            explainability_frames.append(merged)
+
+        explainability_df = pd.concat(explainability_frames, ignore_index=True) if explainability_frames else pd.DataFrame()
 
         explainability_path = os.path.join(
             output_dir,
@@ -402,19 +417,19 @@ class ReportingSuite:
         print(f"[INFO] Saved: {explainability_path}")
 
         explainability_summary_df = (
-            explainability_df.groupby(["model", "dataset"], as_index=False)
+            explainability_df.groupby(["model", "dataset", "baseline_kind", "variant_kind"], as_index=False)
             .agg(
-                original_clean_acc=("original_clean_acc", "mean"),
-                collapsed_clean_acc=("collapsed_clean_acc", "mean"),
-                original_param_count=("original_param_count", "mean"),
-                collapsed_param_count=("collapsed_param_count", "mean"),
+                baseline_clean_acc=("baseline_clean_acc", "mean"),
+                variant_clean_acc=("variant_clean_acc", "mean"),
+                baseline_param_count=("baseline_param_count", "mean"),
+                variant_param_count=("variant_param_count", "mean"),
                 params_reduction_percent=("params_reduction_percent", "mean"),
-                mean_original_attack_success_rate=("original_attack_success_rate", "mean"),
-                mean_collapsed_attack_success_rate=("collapsed_attack_success_rate", "mean"),
-                mean_delta_attack_success_rate=("collapsed_minus_original_attack_success_rate", "mean"),
-                mean_delta_robust_accuracy=("collapsed_minus_original_robust_accuracy", "mean"),
-                mean_delta_relative_accuracy_drop=("collapsed_minus_original_relative_accuracy_drop", "mean"),
-                mean_delta_robustness_ratio=("collapsed_minus_original_robustness_ratio", "mean"),
+                mean_baseline_attack_success_rate=("baseline_attack_success_rate", "mean"),
+                mean_variant_attack_success_rate=("variant_attack_success_rate", "mean"),
+                mean_delta_attack_success_rate=("variant_minus_baseline_attack_success_rate", "mean"),
+                mean_delta_robust_accuracy=("variant_minus_baseline_robust_accuracy", "mean"),
+                mean_delta_relative_accuracy_drop=("variant_minus_baseline_relative_accuracy_drop", "mean"),
+                mean_delta_robustness_ratio=("variant_minus_baseline_robustness_ratio", "mean"),
             )
         )
 
@@ -423,7 +438,7 @@ class ReportingSuite:
             shap_df = pd.read_csv(shap_summary_path)
             if not shap_df.empty:
                 shap_summary_df = (
-                    shap_df.groupby(["source_model", "dataset"], as_index=False)
+                    shap_df.groupby(["source_model", "dataset", "source_kind", "target_kind"], as_index=False)
                     .agg(
                         mean_shap_cosine_similarity=("cosine_similarity", "mean"),
                         mean_shap_pearson_r=("pearson_r", "mean"),
@@ -434,11 +449,17 @@ class ReportingSuite:
                         mean_shap_topk_ratio=("topk_ratio", "mean"),
                         shap_pair_count=("cosine_similarity", "size"),
                     )
-                    .rename(columns={"source_model": "model"})
+                    .rename(
+                        columns={
+                            "source_model": "model",
+                            "source_kind": "baseline_kind",
+                            "target_kind": "variant_kind",
+                        }
+                    )
                 )
                 explainability_summary_df = explainability_summary_df.merge(
                     shap_summary_df,
-                    on=["model", "dataset"],
+                    on=["model", "dataset", "baseline_kind", "variant_kind"],
                     how="left",
                 )
 

@@ -14,7 +14,7 @@ set -o pipefail
 #
 # Examples:
 #   ./adversarial_hpc_orchestrate.sh generate adversarial_results
-#   ./adversarial_hpc_orchestrate.sh generate adv_single InceptionNet Cifar10 PGD Finetuned
+#   ./adversarial_hpc_orchestrate.sh generate adv_single InceptionNet Cifar10 PGD Dynamic_Region_All_Combined
 #   ./adversarial_hpc_orchestrate.sh analyze adversarial_results
 #   ./adversarial_hpc_orchestrate.sh plot adversarial_results
 #   ./adversarial_hpc_orchestrate.sh compare adversarial_results
@@ -33,7 +33,7 @@ if [ "$#" -lt 1 ]; then
     echo "  epsilon_sweep - Exp 7: sweep epsilon values for PGD/FGSM/BIM (single job)"
     echo "  statistics    - Exp 9: paired t-test / Kruskal-Wallis across run configs (single job)"
     echo "  cka              - Exp 10: layer-wise CKA feature similarity (single job)"
-    echo "  compare          - Build collapsed-vs-original explainability/profile tables"
+    echo "  compare          - Build Control_Continuted-vs-variant explainability/profile tables"
     echo "  compute_tradeoff - Compute-cost tradeoff tables + figures"
     echo "  correlations     - Correlation statistics + figures"
     echo ""
@@ -41,12 +41,12 @@ if [ "$#" -lt 1 ]; then
     echo "  model   = VGG16 | RegNetX_400MF | InceptionNet | MobileNet | XceptionNet | ConvNeXt"
     echo "  dataset = Cifar10 | Cifar100"
     echo "  attack  = PGD | FGSM | IFGSM | BIM | APGD | CW | DeepFool"
-    echo "  kind    = Original | Finetuned"
+    echo "  kind    = Control_Continuted | Dynamic_Region_All_Combined | Dynamic_Region_All_Combined_quant"
     echo ""
     echo "Examples:"
     echo "  $0 generate adversarial_results"
-    echo "  $0 generate adv_single InceptionNet Cifar10 PGD Finetuned"
-    echo "  $0 analyze  adv_single InceptionNet Cifar10 PGD Finetuned"
+    echo "  $0 generate adv_single InceptionNet Cifar10 PGD Dynamic_Region_All_Combined"
+    echo "  $0 analyze  adv_single InceptionNet Cifar10 PGD Dynamic_Region_All_Combined"
     echo "  $0 analyze adversarial_results"
     echo "  $0 plot adversarial_results"
     echo "  $0 gradient_sim adversarial_results_ep100_pre300"
@@ -231,7 +231,7 @@ case "$PHASE" in
 
     statistics)
         log "[PHASE: STATISTICS] Submitting Experiment 9 (statistical significance) job..."
-        log "Compares Original vs. Finetuned ASR across run configurations."
+        log "Compares Control_Continuted vs. collapsed-variant ASR across run configurations."
         # RESULT_DIRS: space-separated paths to the three epoch/pretrain output dirs
         # Default to the three standard dirs if they exist; otherwise use OUTPUT_DIR
         DEFAULT_RESULT_DIRS=""
@@ -258,7 +258,7 @@ case "$PHASE" in
         ;;
 
     compare)
-        log "[PHASE: COMPARE] Submitting collapsed-vs-original comparison table job..."
+        log "[PHASE: COMPARE] Submitting Control_Continuted-vs-variant comparison table job..."
         cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"compare\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "compare" || fail "Failed to submit compare phase"
         log "[SUCCESS] Compare job submitted"
