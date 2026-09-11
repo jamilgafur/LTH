@@ -16,23 +16,24 @@
 
 set -euo pipefail
 
+# ---------------------------------------------------------------------------
+# Argument handling
+# ---------------------------------------------------------------------------
 if [ "$#" -lt 2 ] || [ "$#" -gt 7 ]; then
     echo "Usage: $0 <discovery_epochs> <pretrain_epochs> [phase] [model] [dataset] [attack] [kind]"
-    echo "Example (generate all):    $0 100 300"
-    echo "Example (generate single): $0 100 300 generate InceptionNet Cifar10 PGD Finetuned"
-    echo "Example (gradient sim):    $0 100 300 gradient_sim"
-    echo "Example (epsilon sweep):   $0 100 300 epsilon_sweep"
-    echo "Example (statistics):      $0 100 300 statistics"
-    echo "Example (cka):             $0 100 300 cka"
-    echo "Example (compare):         $0 100 300 compare"
-    echo "Example (compute tradeoff):$0 100 300 compute_tradeoff"
-    echo "Example (correlations):    $0 100 300 correlations"
+    echo "If <phase> is omitted or set to 'full', all stages are run sequentially."
+    echo "Examples:"
+    echo "  $0 100 300                     # run full pipeline"
+    echo "  $0 100 300 generate            # run only generate phase"
+    echo "  $0 100 300 analyze            # run only analyze phase"
+    echo "  $0 100 300 compute_tradeoff    # run only compute_tradeoff phase"
     exit 1
 fi
 
 EPOCHS=$1
 PRETRAIN=$2
-PHASE=${3:-generate}
+# Default to "full" which triggers all phases in order.
+PHASE=${3:-full}
 MODEL_FILTER=${4:-ALL}
 DATASET_FILTER=${5:-ALL}
 ATTACK_FILTER=${6:-ALL}
@@ -54,7 +55,15 @@ echo "Kind Filter:      $KIND_FILTER"
 echo "===================================================================="
 
 cd "$SCRIPT_DIR"
-
-bash ./adversarial_hpc_orchestrate.sh "$PHASE" "$OUTPUT_DIR" "$MODEL_FILTER" "$DATASET_FILTER" "$ATTACK_FILTER" "$KIND_FILTER"
+# If the user requested the full pipeline, iterate over all phases in the desired order.
+if [ "$PHASE" = "full" ]; then
+    PHASES=(generate analyze plot compare gradient_sim epsilon_sweep statistics cka compute_tradeoff correlations)
+    for p in "${PHASES[@]}"; do
+        echo "--- Submitting phase: $p ---"
+        bash ./adversarial_hpc_orchestrate.sh "$p" "$OUTPUT_DIR" "$MODEL_FILTER" "$DATASET_FILTER" "$ATTACK_FILTER" "$KIND_FILTER"
+    done
+else
+    bash ./adversarial_hpc_orchestrate.sh "$PHASE" "$OUTPUT_DIR" "$MODEL_FILTER" "$DATASET_FILTER" "$ATTACK_FILTER" "$KIND_FILTER"
+fi
 
 echo "[DONE] Stage 3 ($PHASE) submissions complete. Monitor with: qstat"
