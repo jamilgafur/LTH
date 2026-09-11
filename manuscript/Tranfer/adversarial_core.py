@@ -134,7 +134,22 @@ class AdversarialCore:
 
         try:
             total_batches = len(loader) if hasattr(loader, "__len__") else -1
-            for batch_idx, (imgs, lbls) in enumerate(loader, start=1):
+            # Use a lightweight DataLoader to avoid OOM in workers (especially for large models
+            # like ConvNeXt on TinyImageNet). We create a single‑process loader with a modest batch size.
+            from torch.utils.data import DataLoader
+            # Preserve the original dataset if available; otherwise fall back to the iterator.
+            dataset = getattr(loader, "dataset", None)
+            batch_size = getattr(loader, "batch_size", 32)
+            # Clamp batch size to a safe default (32) for attack generation.
+            safe_batch = min(batch_size, 32)
+            if dataset is not None:
+                safe_loader = DataLoader(dataset, batch_size=safe_batch, shuffle=False, num_workers=0, pin_memory=False)
+                iterator = iter(safe_loader)
+            else:
+                # If the loader is already an iterator (unlikely), just reuse it.
+                iterator = iter(loader)
+
+            for batch_idx, (imgs, lbls) in enumerate(iterator, start=1):
                 imgs, lbls = imgs.to(device), lbls.to(device)
                 with torch.no_grad():
                     clean_preds = model(imgs).argmax(dim=1)
