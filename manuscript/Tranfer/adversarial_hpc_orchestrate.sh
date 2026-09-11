@@ -178,7 +178,7 @@ case "$PHASE" in
         for model in "${models[@]}"; do
             for dataset in "${datasets[@]}"; do
                 for attack in "${attacks[@]}"; do
-                    cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",ATTACK=\"$attack\",KIND=\"$KIND_FILTER\",PHASE=\"generate\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+                    cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",ATTACK=\"$attack\",KIND=\"$KIND_FILTER\",PHASE=\"generate\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
                     submit_and_log "$cmd" "$model/$dataset/$attack/$KIND_FILTER" || fail "Submission failed for $model/$dataset/$attack/$KIND_FILTER"
                     ((job_count++))
                     # Optional: Add delay to avoid overwhelming scheduler
@@ -193,7 +193,7 @@ case "$PHASE" in
     analyze)
         log "[PHASE: ANALYZE] Submitting transferability analysis job..."
         log "WARNING: This requires all attacks from --generate to be completed first."
-        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"analyze\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"analyze\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "analyze" || fail "Failed to submit analyze phase"
         log "[SUCCESS] Transferability analysis job submitted"
         ;;
@@ -201,7 +201,7 @@ case "$PHASE" in
     plot)
         log "[PHASE: PLOT] Submitting visualization job..."
         log "WARNING: This requires summary.csv and transferability.csv to exist."
-        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"plot\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"plot\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "plot" || fail "Failed to submit plot phase"
         log "[SUCCESS] Visualization job submitted"
         ;;
@@ -209,7 +209,7 @@ case "$PHASE" in
     gradient_sim)
         log "[PHASE: GRADIENT_SIM] Submitting Experiment 4 (gradient similarity) job..."
         log "Requires: model checkpoints accessible from the HPC node."
-        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"gradient_sim\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"gradient_sim\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "gradient_sim" || fail "Failed to submit gradient_sim phase"
         log "[SUCCESS] Gradient similarity job submitted"
         log "Output: gradient_similarity.csv, gradient_similarity_matrix_*.csv, gradient_similarity_heatmap_*.png"
@@ -223,7 +223,7 @@ case "$PHASE" in
         if [ "$ATTACK_FILTER" != "ALL" ]; then
             EPSILON_ATTACKS_VAR="$ATTACK_FILTER"
         fi
-        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"epsilon_sweep\",OUTPUT_DIR=\"$OUTPUT_DIR\",EPSILON_ATTACKS=\"$EPSILON_ATTACKS_VAR\" adversarial_hpc_submit.pbs </dev/null"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"epsilon_sweep\",OUTPUT_DIR=\"$OUTPUT_DIR\",EPSILON_ATTACKS=\"$EPSILON_ATTACKS_VAR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "epsilon_sweep" || fail "Failed to submit epsilon_sweep phase"
         log "[SUCCESS] Epsilon sensitivity job submitted"
         log "Output: epsilon_sensitivity.csv, epsilon_sensitivity_delta.csv, epsilon_sensitivity_*.png"
@@ -241,7 +241,7 @@ case "$PHASE" in
             fi
         done
         RESULT_DIRS_VAR="${DEFAULT_RESULT_DIRS:-$OUTPUT_DIR}"
-        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"statistics\",OUTPUT_DIR=\"$OUTPUT_DIR\",RESULT_DIRS=\"$RESULT_DIRS_VAR\" adversarial_hpc_submit.pbs </dev/null"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"statistics\",OUTPUT_DIR=\"$OUTPUT_DIR\",RESULT_DIRS=\"$RESULT_DIRS_VAR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "statistics" || fail "Failed to submit statistics phase"
         log "[SUCCESS] Statistical significance job submitted"
         log "Output: statistical_significance.csv, statistical_significance_*.png"
@@ -251,7 +251,7 @@ case "$PHASE" in
         log "[PHASE: CKA] Submitting Experiment 10 (CKA feature similarity) job..."
         log "Computes layer-wise CKA between all model-kind pairs."
         log "Requires: model checkpoints accessible from the HPC node."
-        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"cka\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"cka\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "cka" || fail "Failed to submit cka phase"
         log "[SUCCESS] CKA feature similarity job submitted"
         log "Output: cka_similarity.csv, cka_mean_matrix_*.csv, cka_mean_heatmap_*.png, cka_layerwise_*.png"
@@ -259,7 +259,7 @@ case "$PHASE" in
 
     compare)
         log "[PHASE: COMPARE] Submitting Control_Continuted-vs-variant comparison table job..."
-        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"compare\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"compare\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "compare" || fail "Failed to submit compare phase"
         log "[SUCCESS] Compare job submitted"
         log "Output: collapsed_vs_original_explainability_*.csv, accuracy_parameter_comparison.csv"
@@ -267,7 +267,7 @@ case "$PHASE" in
 
     compute_tradeoff)
         log "[PHASE: COMPUTE_TRADEOFF] Submitting compute-cost tradeoff job..."
-        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"compute_tradeoff\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"compute_tradeoff\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "compute_tradeoff" || fail "Failed to submit compute_tradeoff phase"
         log "[SUCCESS] Compute tradeoff job submitted"
         log "Output: compute_profile.csv, tradeoff_summary.csv, figure1-4 tradeoff PNGs"
@@ -275,7 +275,7 @@ case "$PHASE" in
 
     correlations)
         log "[PHASE: CORRELATIONS] Submitting correlation analysis job..."
-        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"correlations\",OUTPUT_DIR=\"$OUTPUT_DIR\" adversarial_hpc_submit.pbs </dev/null"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"correlations\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "correlations" || fail "Failed to submit correlations phase"
         log "[SUCCESS] Correlation analysis job submitted"
         log "Output: correlation_summary.csv, partial_correlation_summary.csv, figure5-8 PNGs"

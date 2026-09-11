@@ -4,7 +4,7 @@
 #PBS -l ngpus=1
 #PBS -o logs/adversarial_%J.log
 #PBS -e logs/adversarial_%J.err
-#PBS -v MODEL,DATASET,ATTACK,KIND,PHASE,OUTPUT_DIR,EPSILON_ATTACKS,RESULT_DIRS,CKA_MAX_SAMPLES,CKA_MAX_LAYERS
+#PBS -v MODEL,DATASET,ATTACK,KIND,PHASE,OUTPUT_DIR,EPSILON_ATTACKS,RESULT_DIRS,CKA_MAX_SAMPLES,CKA_MAX_LAYERS,FORCE_RERUN
 
 set -e
 
@@ -49,6 +49,47 @@ else
     # For non‑generate phases use a generic name but scoped to the result folder
     OUTPUT_FILE="${OUTPUT_DIR}/adversarial_${PHASE}_run.txt"
 fi
+
+# -----------------------------------------------------------------------------
+# Idempotency guards: skip if this unit is already running or already completed.
+# Set FORCE_RERUN=1 in the qsub environment to bypass these checks.
+# -----------------------------------------------------------------------------
+STATUS_DIR="${OUTPUT_DIR}/.job_status"
+mkdir -p "$STATUS_DIR"
+
+if [ "$PHASE" = "generate" ]; then
+    JOB_KEY="${MODEL}_${DATASET}_${ATTACK}_${KIND}_${PHASE}"
+else
+    JOB_KEY="${PHASE}"
+fi
+
+DONE_MARKER="${STATUS_DIR}/${JOB_KEY}.done"
+LOCK_MARKER="${STATUS_DIR}/${JOB_KEY}.lock"
+
+if [ "${FORCE_RERUN:-0}" != "1" ]; then
+    if [ -f "$LOCK_MARKER" ]; then
+        echo "[SKIP] Active lock detected for ${JOB_KEY}: $LOCK_MARKER"
+        echo "[SKIP] Another job is already processing this unit. Exiting without overwrite."
+        exit 0
+    fi
+
+    if [ -f "$DONE_MARKER" ]; then
+        echo "[SKIP] Completion marker detected for ${JOB_KEY}: $DONE_MARKER"
+        echo "[SKIP] This unit was already processed. Exiting without overwrite."
+        exit 0
+    fi
+
+    if [ -s "$OUTPUT_FILE" ]; then
+        echo "[SKIP] Existing output detected: $OUTPUT_FILE"
+        echo "[SKIP] Treating as already processed to prevent accidental overwrite."
+        echo "[SKIP] Use FORCE_RERUN=1 if you intentionally want to regenerate."
+        exit 0
+    fi
+fi
+
+# Mark this unit as in-progress and always release lock on exit.
+echo "${PBS_JOBID:-unknown}" > "$LOCK_MARKER"
+trap 'rm -f "$LOCK_MARKER"' EXIT
 
 echo "========================================================================"
 echo "Adversarial Analysis on HPC"
@@ -121,6 +162,11 @@ echo "Executing: ${CMD[*]}"
 echo "Writing output to: $OUTPUT_FILE"
 
 time "${CMD[@]}" > "$OUTPUT_FILE" 2>&1
+
+printf "job_id=%s\noutput_file=%s\ncompleted_at=%s\n" \
+    "${PBS_JOBID:-unknown}" \
+    "$OUTPUT_FILE" \
+    "$(date '+%Y-%m-%d %H:%M:%S')" > "$DONE_MARKER"
 
 echo "========================================================================"
 echo "Job completed successfully at $(date)"

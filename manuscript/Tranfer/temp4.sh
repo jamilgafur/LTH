@@ -68,7 +68,7 @@ submit_phase() {
         cmd+=( -hold_jid ${dep_job} )
     fi
     cmd+=(
-        -v "MODEL=$MODEL_FILTER,DATASET=$DATASET_FILTER,ATTACK=$ATTACK_FILTER,KIND=$KIND_FILTER,PHASE=$phase,OUTPUT_DIR=$OUTPUT_DIR"
+        -v "MODEL=$MODEL_FILTER,DATASET=$DATASET_FILTER,ATTACK=$ATTACK_FILTER,KIND=$KIND_FILTER,PHASE=$phase,OUTPUT_DIR=$OUTPUT_DIR,FORCE_RERUN=${FORCE_RERUN:-0}"
         adversarial_hpc_submit.pbs
     )
 
