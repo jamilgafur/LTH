@@ -1,0 +1,470 @@
+
+======================================================================
+[PHASE 1] Generating adversarial examples
+======================================================================
+
+======================================================================
+[CHECKPOINT DISCOVERY] Scanning for available models and datasets...
+======================================================================
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: MobileNet       | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: MobileNet       | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: MobileNet       | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined_quant
+======================================================================
+[CHECKPOINT DISCOVERY] Total valid checkpoint pairs found: 167
+======================================================================
+
+[INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
+CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=32 clean_acc=100.00% adv_acc=18.75%
+[ATTACK][BATCH] PGD batch=10/40 seen=320 clean_acc=93.44% adv_acc=22.81%
+[ATTACK][BATCH] PGD batch=20/40 seen=640 clean_acc=93.59% adv_acc=20.47%
+[ATTACK][BATCH] PGD batch=30/40 seen=960 clean_acc=93.02% adv_acc=20.83%
+[ATTACK][BATCH] PGD batch=40/40 seen=1280 clean_acc=93.05% adv_acc=21.80%
+[ATTACK][BATCH] PGD batch=50/40 seen=1600 clean_acc=93.75% adv_acc=21.56%
+[ATTACK][BATCH] PGD batch=60/40 seen=1920 clean_acc=93.54% adv_acc=21.56%
+[ATTACK][BATCH] PGD batch=70/40 seen=2240 clean_acc=93.26% adv_acc=21.61%
+[ATTACK][BATCH] PGD batch=80/40 seen=2560 clean_acc=92.93% adv_acc=21.72%
+[ATTACK][BATCH] PGD batch=90/40 seen=2880 clean_acc=93.12% adv_acc=22.15%
+[ATTACK][BATCH] PGD batch=100/40 seen=3200 clean_acc=93.09% adv_acc=22.41%
+[ATTACK][BATCH] PGD batch=110/40 seen=3520 clean_acc=92.95% adv_acc=22.41%
+[ATTACK][BATCH] PGD batch=120/40 seen=3840 clean_acc=92.79% adv_acc=22.68%
+[ATTACK][BATCH] PGD batch=130/40 seen=4160 clean_acc=92.81% adv_acc=22.55%
+[ATTACK][BATCH] PGD batch=140/40 seen=4480 clean_acc=92.81% adv_acc=22.72%
+[ATTACK][BATCH] PGD batch=150/40 seen=4800 clean_acc=92.71% adv_acc=22.79%
+[ATTACK][BATCH] PGD batch=160/40 seen=5120 clean_acc=92.70% adv_acc=22.60%
+[ATTACK][BATCH] PGD batch=170/40 seen=5440 clean_acc=92.68% adv_acc=22.22%
+[ATTACK][BATCH] PGD batch=180/40 seen=5760 clean_acc=92.74% adv_acc=22.19%
+[ATTACK][BATCH] PGD batch=190/40 seen=6080 clean_acc=92.66% adv_acc=22.06%
+[ATTACK][BATCH] PGD batch=200/40 seen=6400 clean_acc=92.75% adv_acc=22.17%
+[ATTACK][BATCH] PGD batch=210/40 seen=6720 clean_acc=92.77% adv_acc=22.31%
+[ATTACK][BATCH] PGD batch=220/40 seen=7040 clean_acc=92.68% adv_acc=22.13%
+[ATTACK][BATCH] PGD batch=230/40 seen=7360 clean_acc=92.70% adv_acc=22.04%
+[ATTACK][BATCH] PGD batch=240/40 seen=7680 clean_acc=92.66% adv_acc=21.80%
+[ATTACK][BATCH] PGD batch=250/40 seen=8000 clean_acc=92.66% adv_acc=21.86%
+[ATTACK][BATCH] PGD batch=260/40 seen=8320 clean_acc=92.66% adv_acc=21.88%
+[ATTACK][BATCH] PGD batch=270/40 seen=8640 clean_acc=92.65% adv_acc=21.81%
+[ATTACK][BATCH] PGD batch=280/40 seen=8960 clean_acc=92.69% adv_acc=21.86%
+[ATTACK][BATCH] PGD batch=290/40 seen=9280 clean_acc=92.69% adv_acc=21.89%
+[ATTACK][BATCH] PGD batch=300/40 seen=9600 clean_acc=92.75% adv_acc=21.84%
+[ATTACK][BATCH] PGD batch=310/40 seen=9920 clean_acc=92.81% adv_acc=21.93%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.82% adv_acc=21.88% asr=78.12% runtime=104.67s
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/VGG16_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 2
+[DEBUG] Rebuilding collapsed architecture for VGG16 (Cifar10_epochs100_pretrain300)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': features.conv_5 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_5', 'features.conv_10')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_5
+[INFO] End Target   : features.conv_10
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_10'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=14, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 14: 'conv_5'
+[STEP] Validating inserted module 'Sequential' at index 14...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_5' → 'features.conv_10'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_5 → features.conv_10) in 5.35s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 10 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': features.conv_12 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_12', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_12
+[INFO] End Target   : features.conv_13
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_12' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_12' -> 'features.conv_13'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=37, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 37: 'conv_12'
+[STEP] Validating inserted module 'Sequential' at index 37...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.26s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 21,893,450
+[INFO] ΔParams = +11,769,600 (expected ≤ 0)
+[INFO] Collapse counts: success=2, failed=0, skipped=0
+[INFO] Total collapse runtime: 5.86s
+[RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=32 clean_acc=100.00% adv_acc=12.50%
+[ATTACK][BATCH] PGD batch=10/40 seen=320 clean_acc=90.94% adv_acc=13.75%
+[ATTACK][BATCH] PGD batch=20/40 seen=640 clean_acc=92.34% adv_acc=10.78%
+[ATTACK][BATCH] PGD batch=30/40 seen=960 clean_acc=91.88% adv_acc=10.73%
+[ATTACK][BATCH] PGD batch=40/40 seen=1280 clean_acc=90.94% adv_acc=10.78%
+[ATTACK][BATCH] PGD batch=50/40 seen=1600 clean_acc=91.44% adv_acc=10.81%
+[ATTACK][BATCH] PGD batch=60/40 seen=1920 clean_acc=91.46% adv_acc=10.83%
+[ATTACK][BATCH] PGD batch=70/40 seen=2240 clean_acc=90.98% adv_acc=11.07%
+[ATTACK][BATCH] PGD batch=80/40 seen=2560 clean_acc=90.66% adv_acc=10.90%
+[ATTACK][BATCH] PGD batch=90/40 seen=2880 clean_acc=90.87% adv_acc=10.56%
+[ATTACK][BATCH] PGD batch=100/40 seen=3200 clean_acc=91.03% adv_acc=10.53%
+[ATTACK][BATCH] PGD batch=110/40 seen=3520 clean_acc=90.97% adv_acc=10.74%
+[ATTACK][BATCH] PGD batch=120/40 seen=3840 clean_acc=90.78% adv_acc=10.78%
+[ATTACK][BATCH] PGD batch=130/40 seen=4160 clean_acc=90.79% adv_acc=10.79%
+[ATTACK][BATCH] PGD batch=140/40 seen=4480 clean_acc=91.05% adv_acc=10.96%
+[ATTACK][BATCH] PGD batch=150/40 seen=4800 clean_acc=91.10% adv_acc=10.90%
+[ATTACK][BATCH] PGD batch=160/40 seen=5120 clean_acc=91.13% adv_acc=10.76%
+[ATTACK][BATCH] PGD batch=170/40 seen=5440 clean_acc=91.14% adv_acc=10.55%
+[ATTACK][BATCH] PGD batch=180/40 seen=5760 clean_acc=91.23% adv_acc=10.52%
+[ATTACK][BATCH] PGD batch=190/40 seen=6080 clean_acc=91.43% adv_acc=10.44%
+[ATTACK][BATCH] PGD batch=200/40 seen=6400 clean_acc=91.53% adv_acc=10.48%
+[ATTACK][BATCH] PGD batch=210/40 seen=6720 clean_acc=91.61% adv_acc=10.54%
+[ATTACK][BATCH] PGD batch=220/40 seen=7040 clean_acc=91.53% adv_acc=10.43%
+[ATTACK][BATCH] PGD batch=230/40 seen=7360 clean_acc=91.67% adv_acc=10.42%
+[ATTACK][BATCH] PGD batch=240/40 seen=7680 clean_acc=91.61% adv_acc=10.34%
+[ATTACK][BATCH] PGD batch=250/40 seen=8000 clean_acc=91.56% adv_acc=10.29%
+[ATTACK][BATCH] PGD batch=260/40 seen=8320 clean_acc=91.60% adv_acc=10.35%
+[ATTACK][BATCH] PGD batch=270/40 seen=8640 clean_acc=91.56% adv_acc=10.36%
+[ATTACK][BATCH] PGD batch=280/40 seen=8960 clean_acc=91.58% adv_acc=10.33%
+[ATTACK][BATCH] PGD batch=290/40 seen=9280 clean_acc=91.65% adv_acc=10.38%
+[ATTACK][BATCH] PGD batch=300/40 seen=9600 clean_acc=91.66% adv_acc=10.33%
+[ATTACK][BATCH] PGD batch=310/40 seen=9920 clean_acc=91.68% adv_acc=10.37%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=91.67% adv_acc=10.39% asr=89.61% runtime=54.82s
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/VGG16_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 2
+[DEBUG] Rebuilding collapsed architecture for VGG16 (Cifar10_epochs100_pretrain300)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': features.conv_5 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_5', 'features.conv_10')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_5
+[INFO] End Target   : features.conv_10
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_10'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=14, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 14: 'conv_5'
+[STEP] Validating inserted module 'Sequential' at index 14...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_5' → 'features.conv_10'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_5 → features.conv_10) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 10 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': features.conv_12 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_12', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_12
+[INFO] End Target   : features.conv_13
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_12' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_12' -> 'features.conv_13'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=37, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 37: 'conv_12'
+[STEP] Validating inserted module 'Sequential' at index 37...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 21,893,450
+[INFO] ΔParams = +11,769,600 (expected ≤ 0)
+[INFO] Collapse counts: success=2, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.17s
+[RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=32 clean_acc=93.75% adv_acc=25.00%
+[ATTACK][BATCH] PGD batch=10/40 seen=320 clean_acc=91.56% adv_acc=16.56%
+[ATTACK][BATCH] PGD batch=20/40 seen=640 clean_acc=92.19% adv_acc=13.59%
+[ATTACK][BATCH] PGD batch=30/40 seen=960 clean_acc=90.73% adv_acc=13.23%
+[ATTACK][BATCH] PGD batch=40/40 seen=1280 clean_acc=90.62% adv_acc=14.22%
+[ATTACK][BATCH] PGD batch=50/40 seen=1600 clean_acc=91.38% adv_acc=14.12%
+[ATTACK][BATCH] PGD batch=60/40 seen=1920 clean_acc=91.04% adv_acc=14.27%
+[ATTACK][BATCH] PGD batch=70/40 seen=2240 clean_acc=90.71% adv_acc=14.29%
+[ATTACK][BATCH] PGD batch=80/40 seen=2560 clean_acc=90.62% adv_acc=14.14%
+[ATTACK][BATCH] PGD batch=90/40 seen=2880 clean_acc=90.94% adv_acc=13.96%
+[ATTACK][BATCH] PGD batch=100/40 seen=3200 clean_acc=91.16% adv_acc=14.09%
+[ATTACK][BATCH] PGD batch=110/40 seen=3520 clean_acc=90.99% adv_acc=14.20%
+[ATTACK][BATCH] PGD batch=120/40 seen=3840 clean_acc=91.04% adv_acc=14.43%
+[ATTACK][BATCH] PGD batch=130/40 seen=4160 clean_acc=91.11% adv_acc=14.50%
+[ATTACK][BATCH] PGD batch=140/40 seen=4480 clean_acc=91.36% adv_acc=14.62%
+[ATTACK][BATCH] PGD batch=150/40 seen=4800 clean_acc=91.25% adv_acc=14.52%
+[ATTACK][BATCH] PGD batch=160/40 seen=5120 clean_acc=91.27% adv_acc=14.47%
+[ATTACK][BATCH] PGD batch=170/40 seen=5440 clean_acc=91.25% adv_acc=14.21%
+[ATTACK][BATCH] PGD batch=180/40 seen=5760 clean_acc=91.30% adv_acc=14.20%
+[ATTACK][BATCH] PGD batch=190/40 seen=6080 clean_acc=91.41% adv_acc=14.05%
+[ATTACK][BATCH] PGD batch=200/40 seen=6400 clean_acc=91.42% adv_acc=14.09%
+[ATTACK][BATCH] PGD batch=210/40 seen=6720 clean_acc=91.50% adv_acc=14.12%
+[ATTACK][BATCH] PGD batch=220/40 seen=7040 clean_acc=91.42% adv_acc=14.02%
+[ATTACK][BATCH] PGD batch=230/40 seen=7360 clean_acc=91.54% adv_acc=14.14%
+[ATTACK][BATCH] PGD batch=240/40 seen=7680 clean_acc=91.43% adv_acc=14.01%
+[ATTACK][BATCH] PGD batch=250/40 seen=8000 clean_acc=91.33% adv_acc=14.06%
+[ATTACK][BATCH] PGD batch=260/40 seen=8320 clean_acc=91.42% adv_acc=13.99%
+[ATTACK][BATCH] PGD batch=270/40 seen=8640 clean_acc=91.41% adv_acc=13.97%
+[ATTACK][BATCH] PGD batch=280/40 seen=8960 clean_acc=91.44% adv_acc=13.98%
+[ATTACK][BATCH] PGD batch=290/40 seen=9280 clean_acc=91.44% adv_acc=13.99%
+[ATTACK][BATCH] PGD batch=300/40 seen=9600 clean_acc=91.44% adv_acc=13.97%
+[ATTACK][BATCH] PGD batch=310/40 seen=9920 clean_acc=91.43% adv_acc=14.03%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=91.45% adv_acc=14.06% asr=85.94% runtime=51.15s
+[INFO] Summary written to adversarial_results_ep100_pre300/summary_VGG16_Cifar10_PGD_ALL.csv

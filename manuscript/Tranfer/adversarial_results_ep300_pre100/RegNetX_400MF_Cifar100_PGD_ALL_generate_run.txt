@@ -1,0 +1,1490 @@
+
+======================================================================
+[PHASE 1] Generating adversarial examples
+======================================================================
+
+======================================================================
+[CHECKPOINT DISCOVERY] Scanning for available models and datasets...
+======================================================================
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: MobileNet       | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: MobileNet       | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: MobileNet       | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined_quant
+======================================================================
+[CHECKPOINT DISCOVERY] Total valid checkpoint pairs found: 167
+======================================================================
+
+[INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
+CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=32 clean_acc=37.50% adv_acc=12.50%
+[ATTACK][BATCH] PGD batch=10/40 seen=320 clean_acc=37.19% adv_acc=6.56%
+[ATTACK][BATCH] PGD batch=20/40 seen=640 clean_acc=35.62% adv_acc=4.84%
+[ATTACK][BATCH] PGD batch=30/40 seen=960 clean_acc=35.94% adv_acc=3.96%
+[ATTACK][BATCH] PGD batch=40/40 seen=1280 clean_acc=35.86% adv_acc=3.67%
+[ATTACK][BATCH] PGD batch=50/40 seen=1600 clean_acc=35.88% adv_acc=3.75%
+[ATTACK][BATCH] PGD batch=60/40 seen=1920 clean_acc=35.99% adv_acc=3.39%
+[ATTACK][BATCH] PGD batch=70/40 seen=2240 clean_acc=36.43% adv_acc=3.53%
+[ATTACK][BATCH] PGD batch=80/40 seen=2560 clean_acc=36.72% adv_acc=3.67%
+[ATTACK][BATCH] PGD batch=90/40 seen=2880 clean_acc=36.94% adv_acc=3.61%
+[ATTACK][BATCH] PGD batch=100/40 seen=3200 clean_acc=36.91% adv_acc=3.47%
+[ATTACK][BATCH] PGD batch=110/40 seen=3520 clean_acc=36.88% adv_acc=3.49%
+[ATTACK][BATCH] PGD batch=120/40 seen=3840 clean_acc=36.88% adv_acc=3.46%
+[ATTACK][BATCH] PGD batch=130/40 seen=4160 clean_acc=37.12% adv_acc=3.70%
+[ATTACK][BATCH] PGD batch=140/40 seen=4480 clean_acc=37.30% adv_acc=3.62%
+[ATTACK][BATCH] PGD batch=150/40 seen=4800 clean_acc=37.25% adv_acc=3.52%
+[ATTACK][BATCH] PGD batch=160/40 seen=5120 clean_acc=37.09% adv_acc=3.50%
+[ATTACK][BATCH] PGD batch=170/40 seen=5440 clean_acc=36.95% adv_acc=3.49%
+[ATTACK][BATCH] PGD batch=180/40 seen=5760 clean_acc=36.79% adv_acc=3.45%
+[ATTACK][BATCH] PGD batch=190/40 seen=6080 clean_acc=36.74% adv_acc=3.49%
+[ATTACK][BATCH] PGD batch=200/40 seen=6400 clean_acc=36.56% adv_acc=3.53%
+[ATTACK][BATCH] PGD batch=210/40 seen=6720 clean_acc=36.70% adv_acc=3.51%
+[ATTACK][BATCH] PGD batch=220/40 seen=7040 clean_acc=36.75% adv_acc=3.51%
+[ATTACK][BATCH] PGD batch=230/40 seen=7360 clean_acc=36.60% adv_acc=3.49%
+[ATTACK][BATCH] PGD batch=240/40 seen=7680 clean_acc=36.55% adv_acc=3.45%
+[ATTACK][BATCH] PGD batch=250/40 seen=8000 clean_acc=36.40% adv_acc=3.40%
+[ATTACK][BATCH] PGD batch=260/40 seen=8320 clean_acc=36.42% adv_acc=3.33%
+[ATTACK][BATCH] PGD batch=270/40 seen=8640 clean_acc=36.50% adv_acc=3.31%
+[ATTACK][BATCH] PGD batch=280/40 seen=8960 clean_acc=36.53% adv_acc=3.36%
+[ATTACK][BATCH] PGD batch=290/40 seen=9280 clean_acc=36.41% adv_acc=3.42%
+[ATTACK][BATCH] PGD batch=300/40 seen=9600 clean_acc=36.33% adv_acc=3.46%
+[ATTACK][BATCH] PGD batch=310/40 seen=9920 clean_acc=36.39% adv_acc=3.47%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=36.34% adv_acc=3.45% asr=96.55% runtime=174.59s
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/RegNetX_400MF_Cifar100_epochs300_pretrain100_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 17
+[DEBUG] Rebuilding collapsed architecture for RegNetX_400MF (Cifar100_epochs300_pretrain100)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (RegNetX_400MF)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 4,811,012
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block2.block.conv2
+[INFO] End Target   : stage3.stage3_block2.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block2.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block2.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block2.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block2.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block2.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block2.block.conv2' → 'stage3.stage3_block2.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 66 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block3.block.conv2', 'stage3.stage3_block3.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block3.block.conv2
+[INFO] End Target   : stage3.stage3_block3.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block3.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block3.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block3.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block3.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block3.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block3.block.conv2' → 'stage3.stage3_block3.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_2': stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block4.block.conv2', 'stage3.stage3_block4.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block4.block.conv2
+[INFO] End Target   : stage3.stage3_block4.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block4.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block4.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block4.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block4.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block4.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block4.block.conv2' → 'stage3.stage3_block4.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_3': stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block5.block.conv2', 'stage3.stage3_block5.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block5.block.conv2
+[INFO] End Target   : stage3.stage3_block5.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block5.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block5.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block5.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block5.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block5.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block5.block.conv2' → 'stage3.stage3_block5.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_4': stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block6.block.conv2', 'stage3.stage3_block6.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block6.block.conv2
+[INFO] End Target   : stage3.stage3_block6.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block6.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block6.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block6.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block6.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block6.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block6.block.conv2' → 'stage3.stage3_block6.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_4' (stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_5': stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block0.block.conv2', 'stage4.stage4_block0.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block0.block.conv2
+[INFO] End Target   : stage4.stage4_block0.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block0.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block0.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block0.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block0.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block0.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block0.block.conv2' → 'stage4.stage4_block0.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_6': stage4.stage4_block1.block.conv2 → stage4.stage4_block1.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block1.block.conv2', 'stage4.stage4_block1.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block1.block.conv2
+[INFO] End Target   : stage4.stage4_block1.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block1.block.conv2' -> 'stage4.stage4_block1.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block1.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block1.block.conv2' -> 'stage4.stage4_block1.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block1.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block1.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block1.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block1.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block1.block.conv2' → 'stage4.stage4_block1.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_6' (stage4.stage4_block1.block.conv2 → stage4.stage4_block1.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_7': stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block2.block.conv2', 'stage4.stage4_block2.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block2.block.conv2
+[INFO] End Target   : stage4.stage4_block2.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block2.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block2.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block2.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block2.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block2.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block2.block.conv2' → 'stage4.stage4_block2.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_7' (stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_8': stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block3.block.conv2', 'stage4.stage4_block3.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block3.block.conv2
+[INFO] End Target   : stage4.stage4_block3.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block3.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block3.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block3.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block3.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block3.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block3.block.conv2' → 'stage4.stage4_block3.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_8' (stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_9': stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block4.block.conv2', 'stage4.stage4_block4.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block4.block.conv2
+[INFO] End Target   : stage4.stage4_block4.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block4.block.conv2' -> 'stage4.stage4_block4.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block4.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block4.block.conv2' -> 'stage4.stage4_block4.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block4.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block4.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block4.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block4.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block4.block.conv2' → 'stage4.stage4_block4.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_9' (stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_10': stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block5.block.conv2', 'stage4.stage4_block5.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block5.block.conv2
+[INFO] End Target   : stage4.stage4_block5.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block5.block.conv2' -> 'stage4.stage4_block5.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block5.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block5.block.conv2' -> 'stage4.stage4_block5.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block5.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block5.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block5.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block5.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block5.block.conv2' → 'stage4.stage4_block5.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_10' (stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_11': stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block6.block.conv2', 'stage4.stage4_block6.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block6.block.conv2
+[INFO] End Target   : stage4.stage4_block6.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block6.block.conv2' -> 'stage4.stage4_block6.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block6.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block6.block.conv2' -> 'stage4.stage4_block6.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block6.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block6.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block6.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block6.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block6.block.conv2' → 'stage4.stage4_block6.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_11' (stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_12': stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block7.block.conv2', 'stage4.stage4_block7.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block7.block.conv2
+[INFO] End Target   : stage4.stage4_block7.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block7.block.conv2' -> 'stage4.stage4_block7.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block7.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block7.block.conv2' -> 'stage4.stage4_block7.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block7.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block7.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block7.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block7.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block7.block.conv2' → 'stage4.stage4_block7.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_12' (stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_13': stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block8.block.conv2', 'stage4.stage4_block8.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block8.block.conv2
+[INFO] End Target   : stage4.stage4_block8.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block8.block.conv2' -> 'stage4.stage4_block8.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block8.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block8.block.conv2' -> 'stage4.stage4_block8.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block8.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block8.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block8.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block8.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block8.block.conv2' → 'stage4.stage4_block8.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_13' (stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_14': stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block9.block.conv2', 'stage4.stage4_block9.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block9.block.conv2
+[INFO] End Target   : stage4.stage4_block9.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block9.block.conv2' -> 'stage4.stage4_block9.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block9.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block9.block.conv2' -> 'stage4.stage4_block9.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block9.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block9.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block9.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block9.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block9.block.conv2' → 'stage4.stage4_block9.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_14' (stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_15': stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block10.block.conv2', 'stage4.stage4_block10.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block10.block.conv2
+[INFO] End Target   : stage4.stage4_block10.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block10.block.conv2' -> 'stage4.stage4_block10.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block10.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block10.block.conv2' -> 'stage4.stage4_block10.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block10.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block10.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block10.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block10.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block10.block.conv2' → 'stage4.stage4_block10.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_15' (stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_16': stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block11.block.conv2', 'stage4.stage4_block11.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block11.block.conv2
+[INFO] End Target   : stage4.stage4_block11.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block11.block.conv2' -> 'stage4.stage4_block11.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block11.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block11.block.conv2' -> 'stage4.stage4_block11.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block11.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block11.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block11.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block11.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block11.block.conv2' → 'stage4.stage4_block11.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_16' (stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 4,811,012
+[INFO] Parameters after : 4,032,260
+[INFO] ΔParams = +778,752 (expected ≤ 0)
+[INFO] Collapse counts: success=17, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.49s
+[RESULT] ✅ collapse_only complete. Total targets: 17 | success=17 | failed=0 | skipped=0
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=32 clean_acc=50.00% adv_acc=9.38%
+[ATTACK][BATCH] PGD batch=10/40 seen=320 clean_acc=43.44% adv_acc=5.00%
+[ATTACK][BATCH] PGD batch=20/40 seen=640 clean_acc=41.72% adv_acc=4.06%
+[ATTACK][BATCH] PGD batch=30/40 seen=960 clean_acc=41.98% adv_acc=3.54%
+[ATTACK][BATCH] PGD batch=40/40 seen=1280 clean_acc=40.47% adv_acc=3.05%
+[ATTACK][BATCH] PGD batch=50/40 seen=1600 clean_acc=40.38% adv_acc=3.31%
+[ATTACK][BATCH] PGD batch=60/40 seen=1920 clean_acc=39.95% adv_acc=3.28%
+[ATTACK][BATCH] PGD batch=70/40 seen=2240 clean_acc=40.45% adv_acc=3.30%
+[ATTACK][BATCH] PGD batch=80/40 seen=2560 clean_acc=40.47% adv_acc=3.32%
+[ATTACK][BATCH] PGD batch=90/40 seen=2880 clean_acc=40.97% adv_acc=3.23%
+[ATTACK][BATCH] PGD batch=100/40 seen=3200 clean_acc=40.12% adv_acc=3.19%
+[ATTACK][BATCH] PGD batch=110/40 seen=3520 clean_acc=39.74% adv_acc=3.12%
+[ATTACK][BATCH] PGD batch=120/40 seen=3840 clean_acc=39.92% adv_acc=3.28%
+[ATTACK][BATCH] PGD batch=130/40 seen=4160 clean_acc=40.29% adv_acc=3.25%
+[ATTACK][BATCH] PGD batch=140/40 seen=4480 clean_acc=40.33% adv_acc=3.19%
+[ATTACK][BATCH] PGD batch=150/40 seen=4800 clean_acc=40.38% adv_acc=3.15%
+[ATTACK][BATCH] PGD batch=160/40 seen=5120 clean_acc=40.39% adv_acc=3.01%
+[ATTACK][BATCH] PGD batch=170/40 seen=5440 clean_acc=40.46% adv_acc=3.01%
+[ATTACK][BATCH] PGD batch=180/40 seen=5760 clean_acc=40.45% adv_acc=3.06%
+[ATTACK][BATCH] PGD batch=190/40 seen=6080 clean_acc=40.36% adv_acc=3.08%
+[ATTACK][BATCH] PGD batch=200/40 seen=6400 clean_acc=40.16% adv_acc=3.11%
+[ATTACK][BATCH] PGD batch=210/40 seen=6720 clean_acc=40.09% adv_acc=3.12%
+[ATTACK][BATCH] PGD batch=220/40 seen=7040 clean_acc=40.10% adv_acc=3.11%
+[ATTACK][BATCH] PGD batch=230/40 seen=7360 clean_acc=40.04% adv_acc=3.10%
+[ATTACK][BATCH] PGD batch=240/40 seen=7680 clean_acc=40.05% adv_acc=3.07%
+[ATTACK][BATCH] PGD batch=250/40 seen=8000 clean_acc=39.91% adv_acc=3.01%
+[ATTACK][BATCH] PGD batch=260/40 seen=8320 clean_acc=39.77% adv_acc=3.00%
+[ATTACK][BATCH] PGD batch=270/40 seen=8640 clean_acc=39.99% adv_acc=3.06%
+[ATTACK][BATCH] PGD batch=280/40 seen=8960 clean_acc=40.06% adv_acc=3.14%
+[ATTACK][BATCH] PGD batch=290/40 seen=9280 clean_acc=40.02% adv_acc=3.19%
+[ATTACK][BATCH] PGD batch=300/40 seen=9600 clean_acc=40.07% adv_acc=3.22%
+[ATTACK][BATCH] PGD batch=310/40 seen=9920 clean_acc=40.07% adv_acc=3.26%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=40.09% adv_acc=3.24% asr=96.76% runtime=139.61s
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/RegNetX_400MF_Cifar100_epochs300_pretrain100_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 17
+[DEBUG] Rebuilding collapsed architecture for RegNetX_400MF (Cifar100_epochs300_pretrain100)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (RegNetX_400MF)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 4,811,012
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block2.block.conv2', 'stage3.stage3_block2.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block2.block.conv2
+[INFO] End Target   : stage3.stage3_block2.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block2.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block2.block.conv2' -> 'stage3.stage3_block2.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block2.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block2.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block2.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block2.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block2.block.conv2' → 'stage3.stage3_block2.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 66 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block3.block.conv2', 'stage3.stage3_block3.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block3.block.conv2
+[INFO] End Target   : stage3.stage3_block3.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block3.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block3.block.conv2' -> 'stage3.stage3_block3.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block3.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block3.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block3.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block3.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block3.block.conv2' → 'stage3.stage3_block3.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_2': stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block4.block.conv2', 'stage3.stage3_block4.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block4.block.conv2
+[INFO] End Target   : stage3.stage3_block4.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block4.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block4.block.conv2' -> 'stage3.stage3_block4.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block4.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block4.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block4.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block4.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block4.block.conv2' → 'stage3.stage3_block4.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_3': stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block5.block.conv2', 'stage3.stage3_block5.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block5.block.conv2
+[INFO] End Target   : stage3.stage3_block5.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block5.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block5.block.conv2' -> 'stage3.stage3_block5.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block5.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block5.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block5.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block5.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block5.block.conv2' → 'stage3.stage3_block5.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_4': stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3
+[STEP] Calling _collapse_block('stage3.stage3_block6.block.conv2', 'stage3.stage3_block6.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage3.stage3_block6.block.conv2
+[INFO] End Target   : stage3.stage3_block6.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage3.stage3_block6.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage3.stage3_block6.block.conv2' -> 'stage3.stage3_block6.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage3.stage3_block6.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage3.stage3_block6.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage3.stage3_block6.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 160, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage3.stage3_block6.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage3.stage3_block6.block.conv2' → 'stage3.stage3_block6.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_4' (stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_5': stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block0.block.conv2', 'stage4.stage4_block0.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block0.block.conv2
+[INFO] End Target   : stage4.stage4_block0.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block0.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block0.block.conv2' -> 'stage4.stage4_block0.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block0.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block0.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block0.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block0.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block0.block.conv2' → 'stage4.stage4_block0.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_6': stage4.stage4_block1.block.conv2 → stage4.stage4_block1.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block1.block.conv2', 'stage4.stage4_block1.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block1.block.conv2
+[INFO] End Target   : stage4.stage4_block1.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block1.block.conv2' -> 'stage4.stage4_block1.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block1.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block1.block.conv2' -> 'stage4.stage4_block1.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block1.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block1.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block1.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block1.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block1.block.conv2' → 'stage4.stage4_block1.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_6' (stage4.stage4_block1.block.conv2 → stage4.stage4_block1.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_7': stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block2.block.conv2', 'stage4.stage4_block2.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block2.block.conv2
+[INFO] End Target   : stage4.stage4_block2.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block2.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block2.block.conv2' -> 'stage4.stage4_block2.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block2.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block2.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block2.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block2.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block2.block.conv2' → 'stage4.stage4_block2.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_7' (stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_8': stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block3.block.conv2', 'stage4.stage4_block3.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block3.block.conv2
+[INFO] End Target   : stage4.stage4_block3.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block3.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block3.block.conv2' -> 'stage4.stage4_block3.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block3.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block3.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block3.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block3.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block3.block.conv2' → 'stage4.stage4_block3.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_8' (stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_9': stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block4.block.conv2', 'stage4.stage4_block4.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block4.block.conv2
+[INFO] End Target   : stage4.stage4_block4.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block4.block.conv2' -> 'stage4.stage4_block4.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block4.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block4.block.conv2' -> 'stage4.stage4_block4.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block4.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block4.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block4.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block4.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block4.block.conv2' → 'stage4.stage4_block4.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_9' (stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_10': stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block5.block.conv2', 'stage4.stage4_block5.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block5.block.conv2
+[INFO] End Target   : stage4.stage4_block5.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block5.block.conv2' -> 'stage4.stage4_block5.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block5.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block5.block.conv2' -> 'stage4.stage4_block5.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block5.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block5.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block5.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block5.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block5.block.conv2' → 'stage4.stage4_block5.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_10' (stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_11': stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block6.block.conv2', 'stage4.stage4_block6.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block6.block.conv2
+[INFO] End Target   : stage4.stage4_block6.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block6.block.conv2' -> 'stage4.stage4_block6.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block6.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block6.block.conv2' -> 'stage4.stage4_block6.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block6.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block6.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block6.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block6.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block6.block.conv2' → 'stage4.stage4_block6.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_11' (stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_12': stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block7.block.conv2', 'stage4.stage4_block7.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block7.block.conv2
+[INFO] End Target   : stage4.stage4_block7.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block7.block.conv2' -> 'stage4.stage4_block7.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block7.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block7.block.conv2' -> 'stage4.stage4_block7.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block7.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block7.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block7.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block7.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block7.block.conv2' → 'stage4.stage4_block7.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_12' (stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_13': stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block8.block.conv2', 'stage4.stage4_block8.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block8.block.conv2
+[INFO] End Target   : stage4.stage4_block8.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block8.block.conv2' -> 'stage4.stage4_block8.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block8.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block8.block.conv2' -> 'stage4.stage4_block8.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block8.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block8.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block8.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block8.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block8.block.conv2' → 'stage4.stage4_block8.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_13' (stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_14': stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block9.block.conv2', 'stage4.stage4_block9.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block9.block.conv2
+[INFO] End Target   : stage4.stage4_block9.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block9.block.conv2' -> 'stage4.stage4_block9.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block9.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block9.block.conv2' -> 'stage4.stage4_block9.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block9.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block9.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block9.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block9.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block9.block.conv2' → 'stage4.stage4_block9.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_14' (stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_15': stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block10.block.conv2', 'stage4.stage4_block10.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block10.block.conv2
+[INFO] End Target   : stage4.stage4_block10.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block10.block.conv2' -> 'stage4.stage4_block10.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block10.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block10.block.conv2' -> 'stage4.stage4_block10.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block10.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block10.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block10.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block10.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block10.block.conv2' → 'stage4.stage4_block10.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_15' (stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_16': stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3
+[STEP] Calling _collapse_block('stage4.stage4_block11.block.conv2', 'stage4.stage4_block11.block.conv3')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.stage4_block11.block.conv2
+[INFO] End Target   : stage4.stage4_block11.block.conv3
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.stage4_block11.block.conv2' -> 'stage4.stage4_block11.block.conv3'
+[DEBUG] [LCA] Resolved Container: 'stage4.stage4_block11.block' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.stage4_block11.block.conv2' -> 'stage4.stage4_block11.block.conv3'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.stage4_block11.block.conv3'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4.stage4_block11.block' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4.stage4_block11.block'...
+[DEBUG] Found inserted block candidate at index 3: 'conv2'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4.stage4_block11.block' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.stage4_block11.block.conv2' → 'stage4.stage4_block11.block.conv3'
+[INFO] ✅ Successfully collapsed block 'collapse_16' (stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 4,811,012
+[INFO] Parameters after : 4,032,260
+[INFO] ΔParams = +778,752 (expected ≤ 0)
+[INFO] Collapse counts: success=17, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.49s
+[RESULT] ✅ collapse_only complete. Total targets: 17 | success=17 | failed=0 | skipped=0
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: PGD
+[ATTACK][BATCH] PGD batch=1/40 seen=32 clean_acc=40.62% adv_acc=3.12%
+[ATTACK][BATCH] PGD batch=10/40 seen=320 clean_acc=36.56% adv_acc=0.62%
+[ATTACK][BATCH] PGD batch=20/40 seen=640 clean_acc=33.91% adv_acc=0.94%
+[ATTACK][BATCH] PGD batch=30/40 seen=960 clean_acc=33.96% adv_acc=1.04%
+[ATTACK][BATCH] PGD batch=40/40 seen=1280 clean_acc=32.58% adv_acc=1.41%
+[ATTACK][BATCH] PGD batch=50/40 seen=1600 clean_acc=32.75% adv_acc=1.75%
+[ATTACK][BATCH] PGD batch=60/40 seen=1920 clean_acc=33.12% adv_acc=1.72%
+[ATTACK][BATCH] PGD batch=70/40 seen=2240 clean_acc=33.04% adv_acc=1.79%
+[ATTACK][BATCH] PGD batch=80/40 seen=2560 clean_acc=32.97% adv_acc=1.68%
+[ATTACK][BATCH] PGD batch=90/40 seen=2880 clean_acc=33.40% adv_acc=1.60%
+[ATTACK][BATCH] PGD batch=100/40 seen=3200 clean_acc=33.34% adv_acc=1.53%
+[ATTACK][BATCH] PGD batch=110/40 seen=3520 clean_acc=33.41% adv_acc=1.48%
+[ATTACK][BATCH] PGD batch=120/40 seen=3840 clean_acc=33.57% adv_acc=1.48%
+[ATTACK][BATCH] PGD batch=130/40 seen=4160 clean_acc=33.92% adv_acc=1.73%
+[ATTACK][BATCH] PGD batch=140/40 seen=4480 clean_acc=34.26% adv_acc=1.74%
+[ATTACK][BATCH] PGD batch=150/40 seen=4800 clean_acc=34.17% adv_acc=1.73%
+[ATTACK][BATCH] PGD batch=160/40 seen=5120 clean_acc=34.16% adv_acc=1.72%
+[ATTACK][BATCH] PGD batch=170/40 seen=5440 clean_acc=34.06% adv_acc=1.67%
+[ATTACK][BATCH] PGD batch=180/40 seen=5760 clean_acc=34.10% adv_acc=1.75%
+[ATTACK][BATCH] PGD batch=190/40 seen=6080 clean_acc=34.00% adv_acc=1.79%
+[ATTACK][BATCH] PGD batch=200/40 seen=6400 clean_acc=33.83% adv_acc=1.80%
+[ATTACK][BATCH] PGD batch=210/40 seen=6720 clean_acc=33.96% adv_acc=1.80%
+[ATTACK][BATCH] PGD batch=220/40 seen=7040 clean_acc=34.15% adv_acc=1.78%
+[ATTACK][BATCH] PGD batch=230/40 seen=7360 clean_acc=33.98% adv_acc=1.78%
+[ATTACK][BATCH] PGD batch=240/40 seen=7680 clean_acc=33.91% adv_acc=1.78%
+[ATTACK][BATCH] PGD batch=250/40 seen=8000 clean_acc=33.85% adv_acc=1.79%
+[ATTACK][BATCH] PGD batch=260/40 seen=8320 clean_acc=33.87% adv_acc=1.80%
+[ATTACK][BATCH] PGD batch=270/40 seen=8640 clean_acc=34.02% adv_acc=1.85%
+[ATTACK][BATCH] PGD batch=280/40 seen=8960 clean_acc=34.07% adv_acc=1.91%
+[ATTACK][BATCH] PGD batch=290/40 seen=9280 clean_acc=33.94% adv_acc=1.93%
+[ATTACK][BATCH] PGD batch=300/40 seen=9600 clean_acc=33.89% adv_acc=2.02%
+[ATTACK][BATCH] PGD batch=310/40 seen=9920 clean_acc=33.99% adv_acc=2.07%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=33.95% adv_acc=2.06% asr=97.94% runtime=143.66s
+[INFO] Summary written to adversarial_results_ep300_pre100/summary_RegNetX_400MF_Cifar100_PGD_ALL.csv
