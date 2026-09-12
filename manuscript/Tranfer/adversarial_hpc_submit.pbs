@@ -143,6 +143,12 @@ elif [ "$PHASE" = "statistics" ]; then
         # shellcheck disable=SC2086
         CMD+=(--result-dirs $RESULT_DIRS)
     fi
+elif [ "$PHASE" = "compare" ]; then
+    # Optional multi-run comparison table input.
+    if [ -n "${RESULT_DIRS:-}" ]; then
+        # shellcheck disable=SC2086
+        CMD+=(--result-dirs $RESULT_DIRS)
+    fi
 elif [ "$PHASE" = "cka" ]; then
     if [ "$MODEL" != "ALL" ]; then CMD+=(--model "$MODEL"); fi
     if [ "$DATASET" != "ALL" ]; then CMD+=(--dataset "$DATASET"); fi

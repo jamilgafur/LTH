@@ -283,10 +283,18 @@ case "$PHASE" in
 
     compare)
         log "[PHASE: COMPARE] Submitting Control_Continuted-vs-variant comparison table job..."
-        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"compare\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
+        # RESULT_DIRS: optional multi-run inputs for a single aggregated CSV table.
+        DEFAULT_RESULT_DIRS=""
+        for candidate in adversarial_results_ep100_pre300 adversarial_results_ep200_pre200 adversarial_results_ep300_pre100; do
+            if [ -d "$SCRIPT_DIR/$candidate" ]; then
+                DEFAULT_RESULT_DIRS="$DEFAULT_RESULT_DIRS $candidate"
+            fi
+        done
+        RESULT_DIRS_VAR="${DEFAULT_RESULT_DIRS:-$OUTPUT_DIR}"
+        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"compare\",OUTPUT_DIR=\"$OUTPUT_DIR\",RESULT_DIRS=\"$RESULT_DIRS_VAR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "compare" || fail "Failed to submit compare phase"
         log "[SUCCESS] Compare job submitted"
-        log "Output: collapsed_vs_original_explainability_*.csv, accuracy_parameter_comparison.csv"
+        log "Output: collapsed_vs_original_explainability_*.csv, accuracy_parameter_comparison.csv, multi_run_kind_comparison_table.csv"
         ;;
 
     compute_tradeoff)

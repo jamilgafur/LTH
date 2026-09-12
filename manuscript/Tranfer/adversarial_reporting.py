@@ -104,6 +104,202 @@ class ReportingSuite:
         return list(VARIANT_KINDS)
 
     @staticmethod
+    def _safe_read_csv(path: str) -> pd.DataFrame:
+        if not os.path.exists(path):
+            return pd.DataFrame()
+        try:
+            return pd.read_csv(path)
+        except Exception as exc:
+            print(f"[WARN] Failed to read {path}: {exc}")
+            return pd.DataFrame()
+
+    @staticmethod
+    def _split_tag_from_results_dir(result_dir: str) -> str:
+        # Example: adversarial_results_ep100_pre300 -> epochs100_pretrain300
+        name = os.path.basename(os.path.normpath(result_dir))
+        parts = name.split("_")
+        if len(parts) >= 4 and parts[-2].startswith("ep") and parts[-1].startswith("pre"):
+            ep = parts[-2].replace("ep", "")
+            pre = parts[-1].replace("pre", "")
+            if ep.isdigit() and pre.isdigit():
+                return f"epochs{ep}_pretrain{pre}"
+        return name
+
+    @classmethod
+    def _load_summary_for_result_dir(cls, result_dir: str) -> pd.DataFrame:
+        summary_path = os.path.join(result_dir, "summary.csv")
+        df = cls._safe_read_csv(summary_path)
+        if not df.empty:
+            return cls.enrich_summary_dataframe(df)
+
+        # Fallback for sharded runs where only summary_*.csv files are present.
+        shard_paths = glob.glob(os.path.join(result_dir, "summary_*.csv"))
+        if not shard_paths:
+            return pd.DataFrame()
+        frames = []
+        for path in shard_paths:
+            sdf = cls._safe_read_csv(path)
+            if not sdf.empty:
+                frames.append(sdf)
+        if not frames:
+            return pd.DataFrame()
+        return cls.enrich_summary_dataframe(pd.concat(frames, ignore_index=True).drop_duplicates())
+
+    @classmethod
+    def generate_multi_run_kind_comparison_table(
+        cls,
+        output_dir: str,
+        result_dirs: list[str],
+    ) -> bool:
+        """Build one CSV across multiple run folders with pairwise kind deltas.
+
+        Includes robust/attack deltas and SHAP similarity deltas for
+        Control_Continuted, Dynamic_Region_All_Combined, and
+        Dynamic_Region_All_Combined_quant pairs within each model+dataset.
+        """
+        if not result_dirs:
+            print("[WARN] No result directories provided for multi-run comparison table.")
+            return False
+
+        os.makedirs(output_dir, exist_ok=True)
+        kind_order = [cls.baseline_kind(), *cls.variant_kinds()]
+        rows: list[dict] = []
+
+        for result_dir in result_dirs:
+            run_tag = cls._split_tag_from_results_dir(result_dir)
+
+            summary_df = cls._load_summary_for_result_dir(result_dir)
+            if summary_df.empty:
+                print(f"[WARN] Skipping {result_dir}: summary data unavailable.")
+                continue
+
+            by_kind = (
+                summary_df.groupby(["model", "dataset", "kind"], as_index=False)
+                .agg(
+                    clean_acc=("clean_acc", "mean"),
+                    robust_accuracy=("robust_accuracy", "mean"),
+                    attack_success_rate=("attack_success_rate", "mean"),
+                    relative_accuracy_drop=("relative_accuracy_drop", "mean"),
+                    robustness_ratio=("robustness_ratio", "mean"),
+                    param_count=("param_count", "mean"),
+                )
+            )
+
+            shap_pairwise_path = os.path.join(result_dir, "shap_pairwise_similarity.csv")
+            shap_df = cls._safe_read_csv(shap_pairwise_path)
+            shap_summary = pd.DataFrame()
+            if not shap_df.empty:
+                required_cols = {
+                    "source_model",
+                    "target_model",
+                    "dataset",
+                    "source_kind",
+                    "target_kind",
+                }
+                if required_cols.issubset(shap_df.columns):
+                    shap_same_arch = shap_df[
+                        (shap_df["source_model"] == shap_df["target_model"])
+                        & (shap_df["source_kind"] != shap_df["target_kind"])
+                    ].copy()
+                    if not shap_same_arch.empty:
+                        shap_summary = (
+                            shap_same_arch.groupby(
+                                ["source_model", "dataset", "source_kind", "target_kind"],
+                                as_index=False,
+                            )
+                            .agg(
+                                shap_cosine_similarity=("cosine_similarity", "mean"),
+                                shap_pearson_r=("pearson_r", "mean"),
+                                shap_spearman_r=("spearman_r", "mean"),
+                                shap_l1_mean_abs_diff=("l1_mean_abs_diff", "mean"),
+                                shap_l2_distance=("l2_distance", "mean"),
+                                shap_topk_jaccard=("topk_jaccard", "mean"),
+                                shap_pair_count=("cosine_similarity", "size"),
+                            )
+                            .rename(columns={"source_model": "model"})
+                        )
+
+            for (model_name, dataset_name), group_df in by_kind.groupby(["model", "dataset"]):
+                kind_lookup = {
+                    row["kind"]: row for _, row in group_df.iterrows()
+                }
+
+                for i, source_kind in enumerate(kind_order):
+                    for target_kind in kind_order[i + 1 :]:
+                        source_row = kind_lookup.get(source_kind)
+                        target_row = kind_lookup.get(target_kind)
+                        if source_row is None or target_row is None:
+                            continue
+
+                        row = {
+                            "result_dir": os.path.basename(os.path.normpath(result_dir)),
+                            "run_tag": run_tag,
+                            "model": model_name,
+                            "dataset": dataset_name,
+                            "source_kind": source_kind,
+                            "target_kind": target_kind,
+                            "source_clean_acc": float(source_row["clean_acc"]),
+                            "target_clean_acc": float(target_row["clean_acc"]),
+                            "source_robust_accuracy": float(source_row["robust_accuracy"]),
+                            "target_robust_accuracy": float(target_row["robust_accuracy"]),
+                            "delta_robust_accuracy": float(target_row["robust_accuracy"] - source_row["robust_accuracy"]),
+                            "source_attack_success_rate": float(source_row["attack_success_rate"]),
+                            "target_attack_success_rate": float(target_row["attack_success_rate"]),
+                            "delta_attack_success_rate": float(target_row["attack_success_rate"] - source_row["attack_success_rate"]),
+                            "source_relative_accuracy_drop": float(source_row["relative_accuracy_drop"]),
+                            "target_relative_accuracy_drop": float(target_row["relative_accuracy_drop"]),
+                            "delta_relative_accuracy_drop": float(target_row["relative_accuracy_drop"] - source_row["relative_accuracy_drop"]),
+                            "source_robustness_ratio": float(source_row["robustness_ratio"]),
+                            "target_robustness_ratio": float(target_row["robustness_ratio"]),
+                            "delta_robustness_ratio": float(target_row["robustness_ratio"] - source_row["robustness_ratio"]),
+                            "source_param_count": float(source_row["param_count"]),
+                            "target_param_count": float(target_row["param_count"]),
+                            "params_reduction_percent": float(
+                                100.0 * (1.0 - target_row["param_count"] / source_row["param_count"])
+                            ) if source_row["param_count"] > 0 else np.nan,
+                            "shap_cosine_similarity": np.nan,
+                            "shap_pearson_r": np.nan,
+                            "shap_spearman_r": np.nan,
+                            "shap_l1_mean_abs_diff": np.nan,
+                            "shap_l2_distance": np.nan,
+                            "shap_topk_jaccard": np.nan,
+                            "shap_pair_count": np.nan,
+                        }
+
+                        if not shap_summary.empty:
+                            match = shap_summary[
+                                (shap_summary["model"] == model_name)
+                                & (shap_summary["dataset"] == dataset_name)
+                                & (shap_summary["source_kind"] == source_kind)
+                                & (shap_summary["target_kind"] == target_kind)
+                            ]
+                            if not match.empty:
+                                best = match.iloc[0]
+                                row.update(
+                                    {
+                                        "shap_cosine_similarity": float(best["shap_cosine_similarity"]),
+                                        "shap_pearson_r": float(best["shap_pearson_r"]),
+                                        "shap_spearman_r": float(best["shap_spearman_r"]),
+                                        "shap_l1_mean_abs_diff": float(best["shap_l1_mean_abs_diff"]),
+                                        "shap_l2_distance": float(best["shap_l2_distance"]),
+                                        "shap_topk_jaccard": float(best["shap_topk_jaccard"]),
+                                        "shap_pair_count": float(best["shap_pair_count"]),
+                                    }
+                                )
+
+                        rows.append(row)
+
+        if not rows:
+            print("[WARN] Multi-run kind comparison table not generated: no rows available.")
+            return False
+
+        out_df = pd.DataFrame(rows)
+        out_path = os.path.join(output_dir, "multi_run_kind_comparison_table.csv")
+        out_df.to_csv(out_path, index=False)
+        print(f"[INFO] Saved: {out_path}")
+        return True
+
+    @staticmethod
     def summarize_direct_metrics(clean_acc: float, adv_acc: float) -> dict:
         accuracy_drop = clean_acc - adv_acc
         attack_success_rate = 1.0 - adv_acc

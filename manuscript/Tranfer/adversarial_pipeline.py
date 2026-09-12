@@ -154,6 +154,15 @@ def run_pipeline(args) -> None:
         else:
             ReportingSuite.generate_comparison_tables_from_csv(args.output_dir)
 
+        # Optional cross-run table: combine run folders such as
+        # adversarial_results_ep100_pre300, adversarial_results_ep200_pre200,
+        # adversarial_results_ep300_pre100 into one CSV with pairwise kind deltas.
+        if args.result_dirs:
+            ReportingSuite.generate_multi_run_kind_comparison_table(
+                args.output_dir,
+                args.result_dirs,
+            )
+
     if args.mode in ["full", "gradient_sim"]:
         print(f"\n{'='*70}\n[PHASE EXP4] Gradient Similarity Analysis\n{'='*70}")
         if args.mode == "gradient_sim" or not model_cache:
@@ -244,7 +253,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--output-dir", type=str, default="adversarial_results", help="Output directory for results.")
     parser.add_argument("--epsilon-attacks", type=str, nargs="+", default=["PGD", "FGSM", "BIM"])
-    parser.add_argument("--result-dirs", type=str, nargs="+", default=None)
+    parser.add_argument(
+        "--result-dirs",
+        type=str,
+        nargs="+",
+        default=None,
+        help=(
+            "Optional list of run directories for multi-run aggregation, e.g. "
+            "adversarial_results_ep100_pre300 adversarial_results_ep200_pre200 "
+            "adversarial_results_ep300_pre100"
+        ),
+    )
     parser.add_argument("--cka-max-samples", type=int, default=512)
     parser.add_argument("--cka-max-layers", type=int, default=8)
     parser.add_argument("--shap-max-samples", type=int, default=64)
