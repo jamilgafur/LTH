@@ -38,14 +38,12 @@ KIND=${KIND:-ALL}
 # Ensure the output directory exists
 mkdir -p "$OUTPUT_DIR"
 
-# Prefer node-local scratch for temporary artifact writes; Python code will stage
-# writes there before moving to the final output directory.
-# Use node-local TMPDIR if available; otherwise fall back to a temp directory inside the job's output folder.
+# Prefer node-local scratch for temporary artifact writes when the scheduler provides it.
+# Otherwise keep temporary artifacts in the job's working directory so the save path stays local.
 if [ -n "${TMPDIR:-}" ] && [ -d "${TMPDIR}" ]; then
     export LTH_SAVE_TMPDIR="${TMPDIR}/lth_save_tmp_${PBS_JOBID:-manual}"
 else
-    # Place temporary artifacts alongside the final output to avoid cross‑filesystem moves.
-    export LTH_SAVE_TMPDIR="${OUTPUT_DIR}/lth_save_tmp_${PBS_JOBID:-manual}"
+    export LTH_SAVE_TMPDIR="${PWD}/lth_save_tmp_${PBS_JOBID:-manual}"
 fi
 mkdir -p "$LTH_SAVE_TMPDIR"
 
