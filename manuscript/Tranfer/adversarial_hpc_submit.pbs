@@ -38,6 +38,27 @@ KIND=${KIND:-ALL}
 # Ensure the output directory exists
 mkdir -p "$OUTPUT_DIR"
 
+# Prefer node-local scratch for temporary artifact writes; Python code will stage
+# writes there before moving to the final output directory.
+if [ -n "${TMPDIR:-}" ] && [ -d "${TMPDIR}" ]; then
+    export LTH_SAVE_TMPDIR="${TMPDIR}/lth_save_tmp_${PBS_JOBID:-manual}"
+else
+    export LTH_SAVE_TMPDIR="/tmp/${USER}/lth_save_tmp_${PBS_JOBID:-manual}"
+fi
+mkdir -p "$LTH_SAVE_TMPDIR"
+
+# Fail fast if output storage is not writable or nearly full.
+if ! touch "${OUTPUT_DIR}/.write_test_${PBS_JOBID:-manual}" 2>/dev/null; then
+    echo "[ERROR] Output directory is not writable: ${OUTPUT_DIR}" >&2
+    exit 1
+fi
+rm -f "${OUTPUT_DIR}/.write_test_${PBS_JOBID:-manual}"
+
+echo "Output filesystem usage:"
+df -h "$OUTPUT_DIR" || true
+echo "Temp filesystem usage:"
+df -h "$LTH_SAVE_TMPDIR" || true
+
 if [ "$PHASE" = "generate" ]; then
     if [ "$MODEL" = "ALL" ] || [ "$DATASET" = "ALL" ] || [ "$ATTACK" = "ALL" ]; then
         echo "Error: MODEL, DATASET and ATTACK are required for generate phase." >&2
@@ -100,6 +121,7 @@ echo "Attack:      $ATTACK"
 echo "Kind:        $KIND"
 echo "Phase:       $PHASE"
 echo "Output Dir:  $OUTPUT_DIR"
+echo "Save TMP:    $LTH_SAVE_TMPDIR"
 echo "========================================================================"
 echo "Job ID:      $PBS_JOBID"
 echo "Hostname:    $(hostname)"

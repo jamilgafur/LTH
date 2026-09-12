@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import shutil
+import tempfile
 import time
 import traceback
 from typing import Dict, List
@@ -47,6 +49,55 @@ class AdversarialCore:
         if any(k.startswith("module.") for k in sd.keys()):
             sd = {k.replace("module.", "", 1): v for k, v in sd.items()}
         return model.load_state_dict(sd, strict=False)
+
+    @staticmethod
+    def _disk_free_mb(path: str) -> float:
+        """Return free disk space (MB) for the filesystem containing ``path``."""
+        probe = path if os.path.exists(path) else os.path.dirname(path) or "."
+        usage = shutil.disk_usage(probe)
+        return usage.free / (1024.0 * 1024.0)
+
+    @classmethod
+    def safe_torch_save(cls, payload: dict, final_path: str) -> None:
+        """Safely persist tensors by writing to temp storage then moving atomically."""
+        final_dir = os.path.dirname(final_path) or "."
+        os.makedirs(final_dir, exist_ok=True)
+
+        tmp_root = os.environ.get("LTH_SAVE_TMPDIR") or os.environ.get("TMPDIR") or final_dir
+        os.makedirs(tmp_root, exist_ok=True)
+
+        fd, tmp_path = tempfile.mkstemp(prefix="adv_tmp_", suffix=".pt", dir=tmp_root)
+        os.close(fd)
+
+        try:
+            try:
+                torch.save(payload, tmp_path)
+            except Exception as exc:
+                # Some HPC filesystems intermittently fail with zip writer mode.
+                # Retry once using legacy serialization before giving up.
+                if os.path.exists(tmp_path):
+                    try:
+                        os.remove(tmp_path)
+                    except OSError:
+                        pass
+                torch.save(payload, tmp_path, _use_new_zipfile_serialization=False)
+
+            shutil.move(tmp_path, final_path)
+        except Exception as exc:
+            try:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except OSError:
+                pass
+
+            final_free = cls._disk_free_mb(final_dir)
+            tmp_free = cls._disk_free_mb(tmp_root)
+            raise RuntimeError(
+                "Failed to save adversarial artifact to "
+                f"{final_path}. free_mb(final_fs)={final_free:.1f}, "
+                f"free_mb(tmp_fs)={tmp_free:.1f}, tmp_root={tmp_root}. "
+                f"Original error: {exc}"
+            ) from exc
 
 
     @staticmethod
@@ -324,7 +375,7 @@ class AdversarialCore:
                 adv_acc = cls.evaluate_clean_accuracy(model, adv_loader)
 
                 adv_path = os.path.join(output_dir, f"{model_name}_{dataset_name}_{kind}_{attack_name}_adv.pt")
-                torch.save(
+                cls.safe_torch_save(
                     {
                         "source_model": model_name,
                         "dataset": dataset_name,
