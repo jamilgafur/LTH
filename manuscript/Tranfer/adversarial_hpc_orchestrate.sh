@@ -159,6 +159,7 @@ submit_and_log() {
     log "[CMD] $cmd"
     local out
     out=$(eval "$cmd" 2>&1)
+    LAST_QSUB_OUTPUT="$out"
     local rc=$?
     if [ $rc -ne 0 ]; then
         log "[FAIL] $label"
@@ -175,17 +176,40 @@ case "$PHASE" in
     generate)
         log "[PHASE: GENERATE] Submitting attack generation jobs..."
         job_count=0
+        generated_job_ids=()
         for model in "${models[@]}"; do
             for dataset in "${datasets[@]}"; do
                 for attack in "${attacks[@]}"; do
                     cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",ATTACK=\"$attack\",KIND=\"$KIND_FILTER\",PHASE=\"generate\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
                     submit_and_log "$cmd" "$model/$dataset/$attack/$KIND_FILTER" || fail "Submission failed for $model/$dataset/$attack/$KIND_FILTER"
+
+                    # Capture submitted job IDs so downstream phases can depend on all
+                    # generate jobs (prevents analyze/plot from starting too early).
+                    job_id=$(echo "$LAST_QSUB_OUTPUT" | sed -n 's/.*Your job \([0-9]\+\).*/\1/p' | head -n1)
+                    if [ -z "$job_id" ]; then
+                        job_id=$(echo "$LAST_QSUB_OUTPUT" | awk '{print $1}' | tr -cd '0-9')
+                    fi
+                    if [ -n "$job_id" ]; then
+                        generated_job_ids+=("$job_id")
+                    fi
+
                     ((job_count++))
                     # Optional: Add delay to avoid overwhelming scheduler
                     sleep 0.1
                 done
             done
         done
+
+        mkdir -p "$OUTPUT_DIR"
+        JOB_IDS_FILE="$OUTPUT_DIR/generate_job_ids.txt"
+        if [ ${#generated_job_ids[@]} -gt 0 ]; then
+            printf "%s\n" "${generated_job_ids[@]}" > "$JOB_IDS_FILE"
+            log "[INFO] Saved ${#generated_job_ids[@]} generate job IDs to: $JOB_IDS_FILE"
+        else
+            : > "$JOB_IDS_FILE"
+            log "[WARN] Could not parse generate job IDs from qsub output; wrote empty: $JOB_IDS_FILE"
+        fi
+
         log "[SUCCESS] Submitted $job_count jobs"
         log "Monitor progress with: qstat"
         ;;

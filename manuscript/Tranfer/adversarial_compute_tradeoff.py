@@ -83,6 +83,11 @@ class ComputeTradeoffSuite:
         transfer_path = os.path.join(output_dir, "transferability.csv")
         explain_path = os.path.join(output_dir, "collapsed_vs_original_explainability_summary.csv")
 
+        # If analyze was run from parallel shards, summary may still be split as
+        # summary_*.csv files. Merge them before loading to avoid empty metrics.
+        if not os.path.exists(summary_path):
+            ReportingSuite.merge_parallel_csvs(output_dir)
+
         summary_df = pd.read_csv(summary_path) if os.path.exists(summary_path) else pd.DataFrame()
         transfer_df = pd.read_csv(transfer_path) if os.path.exists(transfer_path) else pd.DataFrame()
         explain_df = pd.read_csv(explain_path) if os.path.exists(explain_path) else pd.DataFrame()
@@ -225,10 +230,24 @@ class ComputeTradeoffSuite:
     @staticmethod
     def _plot_tradeoff_figures(output_dir: str, df: pd.DataFrame) -> None:
         # Figure 1: Pareto (FLOPs vs robust accuracy)
+        fig1_df = df[(df["flops"] > 0) & np.isfinite(df["flops"]) & np.isfinite(df["robust_accuracy"])].copy()
+        x_col = "flops"
+        x_label = "FLOPs (log scale)"
+        x_scale = "log"
+
+        # Fallback when FLOPs estimation failed (e.g., ptflops unavailable).
+        if fig1_df.empty:
+            fig1_df = df[np.isfinite(df["param_count"]) & np.isfinite(df["robust_accuracy"])].copy()
+            x_col = "param_count"
+            x_label = "Parameter Count (log scale)"
+
         plt.figure(figsize=(8, 6))
-        sns.scatterplot(data=df, x="flops", y="robust_accuracy", hue="kind", style="model", s=120)
-        plt.xscale("log")
-        plt.xlabel("FLOPs (log scale)", fontweight="bold")
+        if not fig1_df.empty:
+            sns.scatterplot(data=fig1_df, x=x_col, y="robust_accuracy", hue="kind", style="model", s=120)
+            plt.xscale(x_scale)
+        else:
+            plt.text(0.5, 0.5, "No valid FLOPs/robustness data", ha="center", va="center")
+        plt.xlabel(x_label, fontweight="bold")
         plt.ylabel("Robust Accuracy", fontweight="bold")
         plt.title("Figure 1: Robustness-Compute Pareto", fontweight="bold")
         plt.tight_layout()
@@ -239,11 +258,17 @@ class ComputeTradeoffSuite:
         plt.close()
 
         # Figure 2: Transfer resistance vs latency
+        fig2_df = df[
+            np.isfinite(df["latency_ms"]) & np.isfinite(df["transfer_resistance"])
+        ].copy()
         plt.figure(figsize=(8, 6))
-        sizes = np.clip(df["param_count"] / max(1.0, df["param_count"].max()) * 700, 60, 700)
-        plt.scatter(df["latency_ms"], df["transfer_resistance"], s=sizes, alpha=0.7)
-        for _, row in df.iterrows():
-            plt.annotate(row["model_label"], (row["latency_ms"], row["transfer_resistance"]), fontsize=7)
+        if not fig2_df.empty:
+            sizes = np.clip(fig2_df["param_count"] / max(1.0, fig2_df["param_count"].max()) * 700, 60, 700)
+            plt.scatter(fig2_df["latency_ms"], fig2_df["transfer_resistance"], s=sizes, alpha=0.7)
+            for _, row in fig2_df.iterrows():
+                plt.annotate(row["model_label"], (row["latency_ms"], row["transfer_resistance"]), fontsize=7)
+        else:
+            plt.text(0.5, 0.5, "No valid transfer/latency data", ha="center", va="center")
         plt.xlabel("Latency (ms / batch)", fontweight="bold")
         plt.ylabel("Transfer Resistance (1 - transfer success)", fontweight="bold")
         plt.title("Figure 2: Transfer Resistance vs Latency", fontweight="bold")

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Stage 3: Submit adversarial attack generation jobs
+# Stage 3: Submit adversarial pipeline jobs
 # Usage:
 #   bash temp3.sh <discovery_epochs> <pretrain_epochs> [phase] [model] [dataset] [attack] [kind]
 # Examples:
@@ -57,11 +57,22 @@ echo "===================================================================="
 cd "$SCRIPT_DIR"
 # If the user requested the full pipeline, iterate over all phases in the desired order.
 if [ "$PHASE" = "full" ]; then
-    PHASES=(generate analyze plot compare gradient_sim epsilon_sweep statistics cka compute_tradeoff correlations)
-    for p in "${PHASES[@]}"; do
-        echo "--- Submitting phase: $p ---"
-        bash ./adversarial_hpc_orchestrate.sh "$p" "$OUTPUT_DIR" "$MODEL_FILTER" "$DATASET_FILTER" "$ATTACK_FILTER" "$KIND_FILTER"
-    done
+    echo "--- Submitting phase: generate ---"
+    bash ./adversarial_hpc_orchestrate.sh generate "$OUTPUT_DIR" "$MODEL_FILTER" "$DATASET_FILTER" "$ATTACK_FILTER" "$KIND_FILTER"
+
+    # The generate phase writes submitted qsub IDs here; use them so analyze
+    # waits for all generate jobs before starting the dependent post phases.
+    GEN_IDS_FILE="$OUTPUT_DIR/generate_job_ids.txt"
+    if [ ! -f "$GEN_IDS_FILE" ] || [ ! -s "$GEN_IDS_FILE" ]; then
+        echo "[WARN] Generate job-id file missing or empty: $GEN_IDS_FILE"
+        echo "[WARN] Submitting post phases without explicit generate dependency."
+        bash ./temp4.sh "$EPOCHS" "$PRETRAIN" full "$MODEL_FILTER" "$DATASET_FILTER" "$ATTACK_FILTER" "$KIND_FILTER"
+    else
+        HOLD_IDS=$(paste -sd, "$GEN_IDS_FILE")
+        echo "--- Submitting dependent post-processing phases (held on generate jobs) ---"
+        UPSTREAM_HOLD_JID="$HOLD_IDS" \
+            bash ./temp4.sh "$EPOCHS" "$PRETRAIN" full "$MODEL_FILTER" "$DATASET_FILTER" "$ATTACK_FILTER" "$KIND_FILTER"
+    fi
 else
     bash ./adversarial_hpc_orchestrate.sh "$PHASE" "$OUTPUT_DIR" "$MODEL_FILTER" "$DATASET_FILTER" "$ATTACK_FILTER" "$KIND_FILTER"
 fi

@@ -3,6 +3,9 @@
 # Stage 4: Submit full adversarial post-generation pipeline on HPC.
 # This submits dependent jobs in order:
 #   analyze -> plot -> compare -> gradient_sim -> epsilon_sweep -> statistics -> cka -> compute_tradeoff -> correlations
+# Optional env var:
+#   UPSTREAM_HOLD_JID="id1,id2,..." to force the analyze phase to wait for
+#   upstream jobs (e.g., all generate jobs) before starting.
 # Usage:
 #   bash temp4.sh <discovery_epochs> <pretrain_epochs> [model] [dataset] [attack] [kind]
 # Examples:
@@ -56,6 +59,7 @@ echo "===================================================================="
 submit_phase() {
     local phase=$1
     local dep_job=${2:-}
+    local upstream_dep=${3:-}
     local -a cmd
 
     cmd=(qsub -q all.q -l ngpus=1)
@@ -63,9 +67,20 @@ submit_phase() {
     # This environment uses SGE, which supports "-hold_jid <jobid>".
     # If you switch to a PBS/Torque scheduler, replace the line below with:
     #   cmd+=( -W depend=afterok:${dep_job} )
+    hold_targets=""
     if [ -n "$dep_job" ]; then
+        hold_targets="$dep_job"
+    fi
+    if [ -n "$upstream_dep" ]; then
+        if [ -n "$hold_targets" ]; then
+            hold_targets="$hold_targets,$upstream_dep"
+        else
+            hold_targets="$upstream_dep"
+        fi
+    fi
+    if [ -n "$hold_targets" ]; then
         # Use SGE-style dependency flag which is supported on this cluster.
-        cmd+=( -hold_jid ${dep_job} )
+        cmd+=( -hold_jid "$hold_targets" )
     fi
     cmd+=(
         -v "MODEL=$MODEL_FILTER,DATASET=$DATASET_FILTER,ATTACK=$ATTACK_FILTER,KIND=$KIND_FILTER,PHASE=$phase,OUTPUT_DIR=$OUTPUT_DIR,FORCE_RERUN=${FORCE_RERUN:-0}"
@@ -80,7 +95,7 @@ submit_phase() {
 if [ "$PHASE" = "full" ]; then
     echo "Submitting dependent post-generation pipeline..."
 
-    ANALYZE_JOBID=$(submit_phase analyze)
+    ANALYZE_JOBID=$(submit_phase analyze "" "${UPSTREAM_HOLD_JID:-}")
     echo "Analyze Job ID:          $ANALYZE_JOBID"
 
     PLOT_JOBID=$(submit_phase plot "$ANALYZE_JOBID")
