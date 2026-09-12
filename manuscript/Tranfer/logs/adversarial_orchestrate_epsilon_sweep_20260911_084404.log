@@ -1,0 +1,44 @@
+[2026-09-11 08:44:04] Starting orchestration script
+[2026-09-11 08:44:05] Script path: /Users/jgafur/LTH/manuscript/Tranfer
+[2026-09-11 08:44:05] Current working directory: /Users/jgafur/LTH/manuscript/Tranfer
+[2026-09-11 08:44:05] Phase: epsilon_sweep
+[2026-09-11 08:44:05] Output directory: adversarial_results_ep200_pre200
+[2026-09-11 08:44:05] Model filter: ALL
+[2026-09-11 08:44:05] Dataset filter: ALL
+[2026-09-11 08:44:08] Attack filter: ALL
+[2026-09-11 08:44:09] Kind filter: ALL
+[2026-09-11 08:44:09] Run log: /Users/jgafur/LTH/manuscript/Tranfer/logs/adversarial_orchestrate_epsilon_sweep_20260911_084404.log
+[2026-09-11 08:44:09] qsub command found: /opt/sge/bin/lx-amd64/qsub
+[2026-09-11 08:44:09] Found submission file: /Users/jgafur/LTH/manuscript/Tranfer/adversarial_hpc_submit.pbs
+[2026-09-11 08:44:09] ============================================================================
+[2026-09-11 08:44:09] Adversarial Analysis HPC Orchestration
+[2026-09-11 08:44:09] ============================================================================
+[2026-09-11 08:44:09] Phase:       epsilon_sweep
+[2026-09-11 08:44:09] Output Dir:  adversarial_results_ep200_pre200
+[2026-09-11 08:44:09] Models:      6 architectures
+[2026-09-11 08:44:09] Datasets:    3 datasets
+[2026-09-11 08:44:09] ============================================================================
+[2026-09-11 08:44:09] Run outputs will be written as txt files in manuscript/Tranfer/
+[2026-09-11 08:44:09]   - generate:      <MODEL>_<DATASET>_<ATTACK>_<KIND>_generate_run.txt
+[2026-09-11 08:44:09]   - analyze:       adversarial_analyze_run.txt
+[2026-09-11 08:44:09]   - plot:          adversarial_plot_run.txt
+[2026-09-11 08:44:09]   - gradient_sim:  adversarial_gradient_sim_run.txt
+[2026-09-11 08:44:09]   - epsilon_sweep: adversarial_epsilon_sweep_run.txt
+[2026-09-11 08:44:09]   - statistics:    adversarial_statistics_run.txt
+[2026-09-11 08:44:09]   - cka:           adversarial_cka_run.txt
+[2026-09-11 08:44:09]   - compare:       adversarial_compare_run.txt
+[2026-09-11 08:44:09]   - compute_tradeoff: adversarial_compute_tradeoff_run.txt
+[2026-09-11 08:44:09]   - correlations:  adversarial_correlations_run.txt
+[2026-09-11 08:44:09] [PHASE: EPSILON_SWEEP] Submitting Experiment 7 (epsilon sensitivity) job...
+[2026-09-11 08:44:09] Sweeps epsilon in {1,2,4,8,16}/255 for PGD, FGSM, BIM.
+[2026-09-11 08:44:09] Requires: model checkpoints accessible from the HPC node.
+[2026-09-11 08:44:09] [SUBMIT] epsilon_sweep
+[2026-09-11 08:44:09] [CMD] qsub -q all.q -l ngpus=1 -v MODEL="ALL",DATASET="ALL",ATTACK="ALL",KIND="ALL",PHASE="epsilon_sweep",OUTPUT_DIR="adversarial_results_ep200_pre200",EPSILON_ATTACKS="ALL" adversarial_hpc_submit.pbs </dev/null
+[2026-09-11 08:44:16] [OK] epsilon_sweep
+[2026-09-11 08:44:18] [OK] qsub output: Your job 6503649 ("adversarial_hpc_submit.pbs") has been submitted
+[2026-09-11 08:44:21] [SUCCESS] Epsilon sensitivity job submitted
+[2026-09-11 08:44:24] Output: epsilon_sensitivity.csv, epsilon_sensitivity_delta.csv, epsilon_sensitivity_*.png
+[2026-09-11 08:44:24] ============================================================================
+[2026-09-11 08:44:24] Job submission complete. Check logs/ for details.
+[2026-09-11 08:44:24] Run log saved to: /Users/jgafur/LTH/manuscript/Tranfer/logs/adversarial_orchestrate_epsilon_sweep_20260911_084404.log
+[2026-09-11 08:44:24] ============================================================================
