@@ -82,7 +82,47 @@ class AdversarialCore:
                         pass
                 torch.save(payload, tmp_path, _use_new_zipfile_serialization=False)
 
-            shutil.move(tmp_path, final_path)
+            try:
+                # Fast path: atomic move if temp and destination are on same filesystem.
+                os.replace(tmp_path, final_path)
+            except OSError:
+                # Cross-device / flaky NFS path: copy into destination filesystem first,
+                # then atomically replace final target there.
+                last_copy_error = None
+                for attempt in range(3):
+                    staged_final = None
+                    try:
+                        fd2, staged_final = tempfile.mkstemp(
+                            prefix="adv_stage_", suffix=".pt", dir=final_dir
+                        )
+                        os.close(fd2)
+                        with open(tmp_path, "rb") as src, open(staged_final, "wb") as dst:
+                            shutil.copyfileobj(src, dst, length=16 * 1024 * 1024)
+                            dst.flush()
+                            os.fsync(dst.fileno())
+                        os.replace(staged_final, final_path)
+                        staged_final = None
+                        last_copy_error = None
+                        break
+                    except OSError as copy_exc:
+                        last_copy_error = copy_exc
+                        # Backoff to ride out transient stale-handle errors on shared FS.
+                        time.sleep(0.4 * (attempt + 1))
+                    finally:
+                        if staged_final and os.path.exists(staged_final):
+                            try:
+                                os.remove(staged_final)
+                            except OSError:
+                                pass
+
+                if os.path.exists(tmp_path):
+                    try:
+                        os.remove(tmp_path)
+                    except OSError:
+                        pass
+
+                if last_copy_error is not None:
+                    raise last_copy_error
         except Exception as exc:
             try:
                 if os.path.exists(tmp_path):
