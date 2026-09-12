@@ -45,6 +45,8 @@ if [ -n "${TMPDIR:-}" ] && [ -d "${TMPDIR}" ]; then
 else
     export LTH_SAVE_TMPDIR="${PWD}/lth_save_tmp_${PBS_JOBID:-manual}"
 fi
+# Log the temporary directory being used for artifact staging
+echo "[INFO] Using temporary save directory: $LTH_SAVE_TMPDIR"
 mkdir -p "$LTH_SAVE_TMPDIR"
 
 # Fail fast if output storage is not writable or nearly full.
