@@ -180,39 +180,73 @@
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [DEBUG] load_state_dict result: missing=0, unexpected=0
+Traceback (most recent call last):
+  File "/Users/jgafur/env/lth_env/lib/python3.11/shutil.py", line 853, in move
+    os.rename(src, real_dst)
+OSError: [Errno 18] Invalid cross-device link: '/localscratch/6508698.1.all.q/lth_save_tmp_manual/adv_tmp_x8__uud1.pt' -> 'adversarial_results_ep300_pre100/VGG16_Cifar10_epochs300_pretrain100_Control_Continuted_PGD_adv.pt'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 85, in safe_torch_save
+    shutil.move(tmp_path, final_path)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/shutil.py", line 873, in move
+    copy_function(src, real_dst)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/shutil.py", line 448, in copy2
+    copyfile(src, dst, follow_symlinks=follow_symlinks)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/shutil.py", line 258, in copyfile
+    with open(dst, 'wb') as fdst:
+OSError: [Errno 116] Stale file handle
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_analysis.py", line 17, in <module>
+    main()
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 278, in main
+    run_pipeline(args)
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 110, in run_pipeline
+    records, model_cache, loader_cache, adv_datasets = AdversarialCore.generate_attacks_phase(
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 378, in generate_attacks_phase
+    cls.safe_torch_save(
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 95, in safe_torch_save
+    raise RuntimeError(
+RuntimeError: Failed to save adversarial artifact to adversarial_results_ep300_pre100/VGG16_Cifar10_epochs300_pretrain100_Control_Continuted_PGD_adv.pt. free_mb(final_fs)=601221.0, free_mb(tmp_fs)=901702.0, tmp_root=/localscratch/6508698.1.all.q/lth_save_tmp_manual. Original error: [Errno 116] Stale file handle
 [ATTACK][SETUP] Initializing attack='PGD' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: PGD
 [ATTACK][BATCH] PGD batch=1/40 seen=32 clean_acc=100.00% adv_acc=12.50%
-[ATTACK][BATCH] PGD batch=10/40 seen=320 clean_acc=93.12% adv_acc=20.62%
-[ATTACK][BATCH] PGD batch=20/40 seen=640 clean_acc=94.06% adv_acc=19.22%
-[ATTACK][BATCH] PGD batch=30/40 seen=960 clean_acc=93.02% adv_acc=19.69%
-[ATTACK][BATCH] PGD batch=40/40 seen=1280 clean_acc=92.50% adv_acc=20.39%
-[ATTACK][BATCH] PGD batch=50/40 seen=1600 clean_acc=92.81% adv_acc=20.69%
+[ATTACK][BATCH] PGD batch=10/40 seen=320 clean_acc=93.12% adv_acc=20.94%
+[ATTACK][BATCH] PGD batch=20/40 seen=640 clean_acc=94.06% adv_acc=19.84%
+[ATTACK][BATCH] PGD batch=30/40 seen=960 clean_acc=93.02% adv_acc=20.00%
+[ATTACK][BATCH] PGD batch=40/40 seen=1280 clean_acc=92.50% adv_acc=20.47%
+[ATTACK][BATCH] PGD batch=50/40 seen=1600 clean_acc=92.81% adv_acc=20.62%
 [ATTACK][BATCH] PGD batch=60/40 seen=1920 clean_acc=92.76% adv_acc=20.36%
-[ATTACK][BATCH] PGD batch=70/40 seen=2240 clean_acc=92.41% adv_acc=20.67%
-[ATTACK][BATCH] PGD batch=80/40 seen=2560 clean_acc=92.34% adv_acc=20.27%
-[ATTACK][BATCH] PGD batch=90/40 seen=2880 clean_acc=92.29% adv_acc=20.07%
-[ATTACK][BATCH] PGD batch=100/40 seen=3200 clean_acc=92.47% adv_acc=20.28%
-[ATTACK][BATCH] PGD batch=110/40 seen=3520 clean_acc=92.59% adv_acc=20.31%
-[ATTACK][BATCH] PGD batch=120/40 seen=3840 clean_acc=92.40% adv_acc=20.78%
-[ATTACK][BATCH] PGD batch=130/40 seen=4160 clean_acc=92.33% adv_acc=20.72%
-[ATTACK][BATCH] PGD batch=140/40 seen=4480 clean_acc=92.50% adv_acc=21.07%
-[ATTACK][BATCH] PGD batch=150/40 seen=4800 clean_acc=92.42% adv_acc=21.02%
-[ATTACK][BATCH] PGD batch=160/40 seen=5120 clean_acc=92.54% adv_acc=21.00%
-[ATTACK][BATCH] PGD batch=170/40 seen=5440 clean_acc=92.59% adv_acc=20.79%
-[ATTACK][BATCH] PGD batch=180/40 seen=5760 clean_acc=92.57% adv_acc=20.80%
-[ATTACK][BATCH] PGD batch=190/40 seen=6080 clean_acc=92.55% adv_acc=20.72%
-[ATTACK][BATCH] PGD batch=200/40 seen=6400 clean_acc=92.64% adv_acc=20.75%
-[ATTACK][BATCH] PGD batch=210/40 seen=6720 clean_acc=92.63% adv_acc=20.79%
-[ATTACK][BATCH] PGD batch=220/40 seen=7040 clean_acc=92.56% adv_acc=20.58%
-[ATTACK][BATCH] PGD batch=230/40 seen=7360 clean_acc=92.65% adv_acc=20.57%
-[ATTACK][BATCH] PGD batch=240/40 seen=7680 clean_acc=92.63% adv_acc=20.43%
-[ATTACK][BATCH] PGD batch=250/40 seen=8000 clean_acc=92.53% adv_acc=20.55%
-[ATTACK][BATCH] PGD batch=260/40 seen=8320 clean_acc=92.49% adv_acc=20.56%
-[ATTACK][BATCH] PGD batch=270/40 seen=8640 clean_acc=92.50% adv_acc=20.43%
-[ATTACK][BATCH] PGD batch=280/40 seen=8960 clean_acc=92.51% adv_acc=20.54%
-[ATTACK][BATCH] PGD batch=290/40 seen=9280 clean_acc=92.53% adv_acc=20.53%
-[ATTACK][BATCH] PGD batch=300/40 seen=9600 clean_acc=92.57% adv_acc=20.44%
-[ATTACK][BATCH] PGD batch=310/40 seen=9920 clean_acc=92.65% adv_acc=20.47%
-[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.67% adv_acc=20.46% asr=79.54% runtime=96.01s
-[INFO] Summary written to adversarial_results_ep300_pre100/summary_VGG16_Cifar10_PGD_ALL.csv
+[ATTACK][BATCH] PGD batch=70/40 seen=2240 clean_acc=92.41% adv_acc=20.54%
+[ATTACK][BATCH] PGD batch=80/40 seen=2560 clean_acc=92.34% adv_acc=20.20%
+[ATTACK][BATCH] PGD batch=90/40 seen=2880 clean_acc=92.29% adv_acc=19.90%
+[ATTACK][BATCH] PGD batch=100/40 seen=3200 clean_acc=92.47% adv_acc=20.12%
+[ATTACK][BATCH] PGD batch=110/40 seen=3520 clean_acc=92.59% adv_acc=20.14%
+[ATTACK][BATCH] PGD batch=120/40 seen=3840 clean_acc=92.40% adv_acc=20.55%
+[ATTACK][BATCH] PGD batch=130/40 seen=4160 clean_acc=92.33% adv_acc=20.48%
+[ATTACK][BATCH] PGD batch=140/40 seen=4480 clean_acc=92.50% adv_acc=20.89%
+[ATTACK][BATCH] PGD batch=150/40 seen=4800 clean_acc=92.42% adv_acc=20.85%
+[ATTACK][BATCH] PGD batch=160/40 seen=5120 clean_acc=92.54% adv_acc=20.82%
+[ATTACK][BATCH] PGD batch=170/40 seen=5440 clean_acc=92.59% adv_acc=20.62%
+[ATTACK][BATCH] PGD batch=180/40 seen=5760 clean_acc=92.57% adv_acc=20.66%
+[ATTACK][BATCH] PGD batch=190/40 seen=6080 clean_acc=92.55% adv_acc=20.64%
+[ATTACK][BATCH] PGD batch=200/40 seen=6400 clean_acc=92.64% adv_acc=20.64%
+[ATTACK][BATCH] PGD batch=210/40 seen=6720 clean_acc=92.63% adv_acc=20.68%
+[ATTACK][BATCH] PGD batch=220/40 seen=7040 clean_acc=92.56% adv_acc=20.50%
+[ATTACK][BATCH] PGD batch=230/40 seen=7360 clean_acc=92.65% adv_acc=20.48%
+[ATTACK][BATCH] PGD batch=240/40 seen=7680 clean_acc=92.63% adv_acc=20.35%
+[ATTACK][BATCH] PGD batch=250/40 seen=8000 clean_acc=92.53% adv_acc=20.47%
+[ATTACK][BATCH] PGD batch=260/40 seen=8320 clean_acc=92.49% adv_acc=20.47%
+[ATTACK][BATCH] PGD batch=270/40 seen=8640 clean_acc=92.50% adv_acc=20.31%
+[ATTACK][BATCH] PGD batch=280/40 seen=8960 clean_acc=92.51% adv_acc=20.44%
+[ATTACK][BATCH] PGD batch=290/40 seen=9280 clean_acc=92.53% adv_acc=20.42%
+[ATTACK][BATCH] PGD batch=300/40 seen=9600 clean_acc=92.57% adv_acc=20.36%
+[ATTACK][BATCH] PGD batch=310/40 seen=9920 clean_acc=92.65% adv_acc=20.41%
+[ATTACK][DONE] attack='PGD' samples=10000 clean_acc=92.67% adv_acc=20.41% asr=79.59% runtime=125.10s

@@ -179,3 +179,73 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 [DEBUG] load_state_dict result: missing=0, unexpected=0
+Traceback (most recent call last):
+  File "/Users/jgafur/env/lth_env/lib/python3.11/shutil.py", line 853, in move
+    os.rename(src, real_dst)
+OSError: [Errno 18] Invalid cross-device link: '/localscratch/6509022.1.all.q/lth_save_tmp_manual/adv_tmp_3edubzb8.pt' -> 'adversarial_results_ep300_pre100/XceptionNet_tinyimagenet_epochs300_pretrain100_Control_Continuted_BIM_adv.pt'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 85, in safe_torch_save
+    shutil.move(tmp_path, final_path)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/shutil.py", line 873, in move
+    copy_function(src, real_dst)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/shutil.py", line 449, in copy2
+    copystat(src, dst, follow_symlinks=follow_symlinks)
+  File "/Users/jgafur/env/lth_env/lib/python3.11/shutil.py", line 380, in copystat
+    lookup("utime")(dst, ns=(st.st_atime_ns, st.st_mtime_ns),
+FileNotFoundError: [Errno 2] No such file or directory
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_analysis.py", line 17, in <module>
+    main()
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 278, in main
+    run_pipeline(args)
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 110, in run_pipeline
+    records, model_cache, loader_cache, adv_datasets = AdversarialCore.generate_attacks_phase(
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 378, in generate_attacks_phase
+    cls.safe_torch_save(
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 95, in safe_torch_save
+    raise RuntimeError(
+RuntimeError: Failed to save adversarial artifact to adversarial_results_ep300_pre100/XceptionNet_tinyimagenet_epochs300_pretrain100_Control_Continuted_BIM_adv.pt. free_mb(final_fs)=598105.0, free_mb(tmp_fs)=877375.1, tmp_root=/localscratch/6509022.1.all.q/lth_save_tmp_manual. Original error: [Errno 2] No such file or directory
+[ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: BIM
+[ATTACK][BATCH] BIM batch=1/40 seen=32 clean_acc=0.00% adv_acc=0.00%
+[ATTACK][BATCH] BIM batch=10/40 seen=320 clean_acc=0.94% adv_acc=0.00%
+[ATTACK][BATCH] BIM batch=20/40 seen=640 clean_acc=0.62% adv_acc=0.16%
+[ATTACK][BATCH] BIM batch=30/40 seen=960 clean_acc=0.62% adv_acc=0.10%
+[ATTACK][BATCH] BIM batch=40/40 seen=1280 clean_acc=0.62% adv_acc=0.23%
+[ATTACK][BATCH] BIM batch=50/40 seen=1600 clean_acc=0.62% adv_acc=0.25%
+[ATTACK][BATCH] BIM batch=60/40 seen=1920 clean_acc=0.57% adv_acc=0.21%
+[ATTACK][BATCH] BIM batch=70/40 seen=2240 clean_acc=0.54% adv_acc=0.22%
+[ATTACK][BATCH] BIM batch=80/40 seen=2560 clean_acc=0.47% adv_acc=0.20%
+[ATTACK][BATCH] BIM batch=90/40 seen=2880 clean_acc=0.49% adv_acc=0.21%
+[ATTACK][BATCH] BIM batch=100/40 seen=3200 clean_acc=0.53% adv_acc=0.22%
+[ATTACK][BATCH] BIM batch=110/40 seen=3520 clean_acc=0.48% adv_acc=0.20%
+[ATTACK][BATCH] BIM batch=120/40 seen=3840 clean_acc=0.49% adv_acc=0.21%
+[ATTACK][BATCH] BIM batch=130/40 seen=4160 clean_acc=0.46% adv_acc=0.22%
+[ATTACK][BATCH] BIM batch=140/40 seen=4480 clean_acc=0.42% adv_acc=0.20%
+[ATTACK][BATCH] BIM batch=150/40 seen=4800 clean_acc=0.40% adv_acc=0.19%
+[ATTACK][BATCH] BIM batch=160/40 seen=5120 clean_acc=0.37% adv_acc=0.18%
+[ATTACK][BATCH] BIM batch=170/40 seen=5440 clean_acc=0.35% adv_acc=0.17%
+[ATTACK][BATCH] BIM batch=180/40 seen=5760 clean_acc=0.36% adv_acc=0.19%
+[ATTACK][BATCH] BIM batch=190/40 seen=6080 clean_acc=0.35% adv_acc=0.18%
+[ATTACK][BATCH] BIM batch=200/40 seen=6400 clean_acc=0.36% adv_acc=0.20%
+[ATTACK][BATCH] BIM batch=210/40 seen=6720 clean_acc=0.39% adv_acc=0.19%
+[ATTACK][BATCH] BIM batch=220/40 seen=7040 clean_acc=0.41% adv_acc=0.21%
+[ATTACK][BATCH] BIM batch=230/40 seen=7360 clean_acc=0.39% adv_acc=0.20%
+[ATTACK][BATCH] BIM batch=240/40 seen=7680 clean_acc=0.38% adv_acc=0.20%
+[ATTACK][BATCH] BIM batch=250/40 seen=8000 clean_acc=0.36% adv_acc=0.19%
+[ATTACK][BATCH] BIM batch=260/40 seen=8320 clean_acc=0.36% adv_acc=0.19%
+[ATTACK][BATCH] BIM batch=270/40 seen=8640 clean_acc=0.37% adv_acc=0.20%
+[ATTACK][BATCH] BIM batch=280/40 seen=8960 clean_acc=0.39% adv_acc=0.20%
+[ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=0.39% adv_acc=0.20%
+[ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=0.43% adv_acc=0.23%
+[ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=0.41% adv_acc=0.22%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=0.41% adv_acc=0.22% asr=99.78% runtime=201.17s

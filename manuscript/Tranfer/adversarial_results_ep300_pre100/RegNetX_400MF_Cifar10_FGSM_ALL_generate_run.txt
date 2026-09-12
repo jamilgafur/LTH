@@ -1,5 +1,3 @@
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
-  return torch._C._cuda_getDeviceCount() > 0
 
 ======================================================================
 [PHASE 1] Generating adversarial examples
@@ -216,13 +214,13 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=290/40 seen=9280 clean_acc=76.64% adv_acc=27.74%
 [ATTACK][BATCH] FGSM batch=300/40 seen=9600 clean_acc=76.68% adv_acc=27.73%
 [ATTACK][BATCH] FGSM batch=310/40 seen=9920 clean_acc=76.68% adv_acc=27.69%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=76.69% adv_acc=27.74% asr=72.26% runtime=59.96s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=76.69% adv_acc=27.74% asr=72.26% runtime=20.38s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/RegNetX_400MF_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 17
 [DEBUG] Rebuilding collapsed architecture for RegNetX_400MF (Cifar10_epochs300_pretrain100)
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (RegNetX_400MF)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -250,7 +248,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block2.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block2.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -259,7 +257,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block2.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block2.block.conv2' → 'stage3.stage3_block2.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.39s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.08s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 66 in-place ReLU(s) with out-of-place variants.
@@ -285,7 +283,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block3.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block3.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -294,7 +292,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block3.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block3.block.conv2' → 'stage3.stage3_block3.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3) in 0.40s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -319,7 +317,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block4.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block4.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -328,7 +326,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block4.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block4.block.conv2' → 'stage3.stage3_block4.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3) in 0.42s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -353,7 +351,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block5.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block5.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -362,7 +360,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block5.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block5.block.conv2' → 'stage3.stage3_block5.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3) in 0.44s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -387,7 +385,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block6.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block6.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -396,7 +394,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block6.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block6.block.conv2' → 'stage3.stage3_block6.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3) in 0.45s
+[INFO] ✅ Successfully collapsed block 'collapse_4' (stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -421,7 +419,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block0.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block0.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -430,7 +428,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block0.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block0.block.conv2' → 'stage4.stage4_block0.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.46s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -455,7 +453,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block1.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block1.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -464,7 +462,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block1.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block1.block.conv2' → 'stage4.stage4_block1.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_6' (stage4.stage4_block1.block.conv2 → stage4.stage4_block1.block.conv3) in 0.45s
+[INFO] ✅ Successfully collapsed block 'collapse_6' (stage4.stage4_block1.block.conv2 → stage4.stage4_block1.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -489,7 +487,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block2.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block2.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -498,7 +496,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block2.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block2.block.conv2' → 'stage4.stage4_block2.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_7' (stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3) in 0.45s
+[INFO] ✅ Successfully collapsed block 'collapse_7' (stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -523,7 +521,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block3.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block3.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -532,7 +530,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block3.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block3.block.conv2' → 'stage4.stage4_block3.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3) in 0.45s
+[INFO] ✅ Successfully collapsed block 'collapse_8' (stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -557,7 +555,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block4.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block4.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -566,7 +564,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block4.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block4.block.conv2' → 'stage4.stage4_block4.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_9' (stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3) in 0.44s
+[INFO] ✅ Successfully collapsed block 'collapse_9' (stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -591,7 +589,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block5.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block5.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -600,7 +598,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block5.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block5.block.conv2' → 'stage4.stage4_block5.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_10' (stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3) in 0.44s
+[INFO] ✅ Successfully collapsed block 'collapse_10' (stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -625,7 +623,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block6.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block6.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -634,7 +632,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block6.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block6.block.conv2' → 'stage4.stage4_block6.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_11' (stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3) in 0.44s
+[INFO] ✅ Successfully collapsed block 'collapse_11' (stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -659,7 +657,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block7.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block7.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -668,7 +666,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block7.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block7.block.conv2' → 'stage4.stage4_block7.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_12' (stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3) in 0.44s
+[INFO] ✅ Successfully collapsed block 'collapse_12' (stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -693,7 +691,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block8.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block8.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -702,7 +700,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block8.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block8.block.conv2' → 'stage4.stage4_block8.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_13' (stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3) in 0.44s
+[INFO] ✅ Successfully collapsed block 'collapse_13' (stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -727,7 +725,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block9.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block9.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -736,7 +734,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block9.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block9.block.conv2' → 'stage4.stage4_block9.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_14' (stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3) in 0.44s
+[INFO] ✅ Successfully collapsed block 'collapse_14' (stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -761,7 +759,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block10.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block10.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -770,7 +768,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block10.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block10.block.conv2' → 'stage4.stage4_block10.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_15' (stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3) in 0.44s
+[INFO] ✅ Successfully collapsed block 'collapse_15' (stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -795,7 +793,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block11.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block11.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -804,7 +802,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block11.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block11.block.conv2' → 'stage4.stage4_block11.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_16' (stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3) in 0.43s
+[INFO] ✅ Successfully collapsed block 'collapse_16' (stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -815,7 +813,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 3,997,610
 [INFO] ΔParams = +778,752 (expected ≤ 0)
 [INFO] Collapse counts: success=17, failed=0, skipped=0
-[INFO] Total collapse runtime: 7.50s
+[INFO] Total collapse runtime: 0.81s
 [RESULT] ✅ collapse_only complete. Total targets: 17 | success=17 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
@@ -827,38 +825,38 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=40/40 seen=1280 clean_acc=80.47% adv_acc=29.53%
 [ATTACK][BATCH] FGSM batch=50/40 seen=1600 clean_acc=80.25% adv_acc=29.62%
 [ATTACK][BATCH] FGSM batch=60/40 seen=1920 clean_acc=79.84% adv_acc=30.16%
-[ATTACK][BATCH] FGSM batch=70/40 seen=2240 clean_acc=79.15% adv_acc=29.91%
-[ATTACK][BATCH] FGSM batch=80/40 seen=2560 clean_acc=78.83% adv_acc=29.96%
-[ATTACK][BATCH] FGSM batch=90/40 seen=2880 clean_acc=78.99% adv_acc=30.35%
-[ATTACK][BATCH] FGSM batch=100/40 seen=3200 clean_acc=78.91% adv_acc=30.06%
-[ATTACK][BATCH] FGSM batch=110/40 seen=3520 clean_acc=78.55% adv_acc=29.86%
-[ATTACK][BATCH] FGSM batch=120/40 seen=3840 clean_acc=78.41% adv_acc=29.61%
-[ATTACK][BATCH] FGSM batch=130/40 seen=4160 clean_acc=78.46% adv_acc=29.69%
-[ATTACK][BATCH] FGSM batch=140/40 seen=4480 clean_acc=78.53% adv_acc=29.89%
-[ATTACK][BATCH] FGSM batch=150/40 seen=4800 clean_acc=78.50% adv_acc=29.60%
-[ATTACK][BATCH] FGSM batch=160/40 seen=5120 clean_acc=78.42% adv_acc=29.43%
-[ATTACK][BATCH] FGSM batch=170/40 seen=5440 clean_acc=78.57% adv_acc=29.14%
-[ATTACK][BATCH] FGSM batch=180/40 seen=5760 clean_acc=78.70% adv_acc=28.98%
-[ATTACK][BATCH] FGSM batch=190/40 seen=6080 clean_acc=78.65% adv_acc=28.83%
-[ATTACK][BATCH] FGSM batch=200/40 seen=6400 clean_acc=78.86% adv_acc=28.88%
-[ATTACK][BATCH] FGSM batch=210/40 seen=6720 clean_acc=78.79% adv_acc=28.79%
-[ATTACK][BATCH] FGSM batch=220/40 seen=7040 clean_acc=78.62% adv_acc=28.72%
-[ATTACK][BATCH] FGSM batch=230/40 seen=7360 clean_acc=78.76% adv_acc=28.61%
-[ATTACK][BATCH] FGSM batch=240/40 seen=7680 clean_acc=78.72% adv_acc=28.44%
-[ATTACK][BATCH] FGSM batch=250/40 seen=8000 clean_acc=78.65% adv_acc=28.40%
-[ATTACK][BATCH] FGSM batch=260/40 seen=8320 clean_acc=78.69% adv_acc=28.55%
-[ATTACK][BATCH] FGSM batch=270/40 seen=8640 clean_acc=78.60% adv_acc=28.52%
-[ATTACK][BATCH] FGSM batch=280/40 seen=8960 clean_acc=78.68% adv_acc=28.55%
-[ATTACK][BATCH] FGSM batch=290/40 seen=9280 clean_acc=78.74% adv_acc=28.51%
-[ATTACK][BATCH] FGSM batch=300/40 seen=9600 clean_acc=78.71% adv_acc=28.48%
-[ATTACK][BATCH] FGSM batch=310/40 seen=9920 clean_acc=78.71% adv_acc=28.44%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=78.67% adv_acc=28.49% asr=71.51% runtime=65.97s
+[ATTACK][BATCH] FGSM batch=70/40 seen=2240 clean_acc=79.15% adv_acc=29.96%
+[ATTACK][BATCH] FGSM batch=80/40 seen=2560 clean_acc=78.83% adv_acc=30.04%
+[ATTACK][BATCH] FGSM batch=90/40 seen=2880 clean_acc=78.99% adv_acc=30.45%
+[ATTACK][BATCH] FGSM batch=100/40 seen=3200 clean_acc=78.91% adv_acc=30.16%
+[ATTACK][BATCH] FGSM batch=110/40 seen=3520 clean_acc=78.55% adv_acc=29.94%
+[ATTACK][BATCH] FGSM batch=120/40 seen=3840 clean_acc=78.41% adv_acc=29.69%
+[ATTACK][BATCH] FGSM batch=130/40 seen=4160 clean_acc=78.46% adv_acc=29.76%
+[ATTACK][BATCH] FGSM batch=140/40 seen=4480 clean_acc=78.53% adv_acc=29.96%
+[ATTACK][BATCH] FGSM batch=150/40 seen=4800 clean_acc=78.50% adv_acc=29.67%
+[ATTACK][BATCH] FGSM batch=160/40 seen=5120 clean_acc=78.42% adv_acc=29.49%
+[ATTACK][BATCH] FGSM batch=170/40 seen=5440 clean_acc=78.57% adv_acc=29.19%
+[ATTACK][BATCH] FGSM batch=180/40 seen=5760 clean_acc=78.70% adv_acc=29.03%
+[ATTACK][BATCH] FGSM batch=190/40 seen=6080 clean_acc=78.65% adv_acc=28.88%
+[ATTACK][BATCH] FGSM batch=200/40 seen=6400 clean_acc=78.86% adv_acc=28.92%
+[ATTACK][BATCH] FGSM batch=210/40 seen=6720 clean_acc=78.79% adv_acc=28.84%
+[ATTACK][BATCH] FGSM batch=220/40 seen=7040 clean_acc=78.62% adv_acc=28.76%
+[ATTACK][BATCH] FGSM batch=230/40 seen=7360 clean_acc=78.76% adv_acc=28.65%
+[ATTACK][BATCH] FGSM batch=240/40 seen=7680 clean_acc=78.72% adv_acc=28.49%
+[ATTACK][BATCH] FGSM batch=250/40 seen=8000 clean_acc=78.65% adv_acc=28.45%
+[ATTACK][BATCH] FGSM batch=260/40 seen=8320 clean_acc=78.69% adv_acc=28.59%
+[ATTACK][BATCH] FGSM batch=270/40 seen=8640 clean_acc=78.60% adv_acc=28.56%
+[ATTACK][BATCH] FGSM batch=280/40 seen=8960 clean_acc=78.68% adv_acc=28.59%
+[ATTACK][BATCH] FGSM batch=290/40 seen=9280 clean_acc=78.74% adv_acc=28.57%
+[ATTACK][BATCH] FGSM batch=300/40 seen=9600 clean_acc=78.71% adv_acc=28.53%
+[ATTACK][BATCH] FGSM batch=310/40 seen=9920 clean_acc=78.71% adv_acc=28.49%
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=78.67% adv_acc=28.54% asr=71.46% runtime=14.43s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/RegNetX_400MF_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 17
 [DEBUG] Rebuilding collapsed architecture for RegNetX_400MF (Cifar10_epochs300_pretrain100)
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (RegNetX_400MF)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -886,7 +884,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block2.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block2.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -895,7 +893,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block2.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block2.block.conv2' → 'stage3.stage3_block2.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.39s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 66 in-place ReLU(s) with out-of-place variants.
@@ -921,7 +919,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block3.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block3.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -930,7 +928,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block3.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block3.block.conv2' → 'stage3.stage3_block3.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3) in 0.39s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -955,7 +953,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block4.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block4.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -964,7 +962,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block4.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block4.block.conv2' → 'stage3.stage3_block4.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3) in 0.41s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -989,7 +987,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block5.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block5.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -998,7 +996,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block5.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block5.block.conv2' → 'stage3.stage3_block5.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3) in 0.43s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1023,7 +1021,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block6.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block6.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -1032,7 +1030,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block6.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block6.block.conv2' → 'stage3.stage3_block6.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_4' (stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3) in 0.44s
+[INFO] ✅ Successfully collapsed block 'collapse_4' (stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1057,7 +1055,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block0.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block0.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -1066,7 +1064,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block0.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block0.block.conv2' → 'stage4.stage4_block0.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.45s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1091,7 +1089,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block1.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block1.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -1100,7 +1098,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block1.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block1.block.conv2' → 'stage4.stage4_block1.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_6' (stage4.stage4_block1.block.conv2 → stage4.stage4_block1.block.conv3) in 0.44s
+[INFO] ✅ Successfully collapsed block 'collapse_6' (stage4.stage4_block1.block.conv2 → stage4.stage4_block1.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1125,7 +1123,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block2.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block2.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -1134,7 +1132,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block2.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block2.block.conv2' → 'stage4.stage4_block2.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_7' (stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3) in 0.44s
+[INFO] ✅ Successfully collapsed block 'collapse_7' (stage4.stage4_block2.block.conv2 → stage4.stage4_block2.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1159,7 +1157,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block3.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block3.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -1168,7 +1166,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block3.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block3.block.conv2' → 'stage4.stage4_block3.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_8' (stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3) in 0.44s
+[INFO] ✅ Successfully collapsed block 'collapse_8' (stage4.stage4_block3.block.conv2 → stage4.stage4_block3.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1193,7 +1191,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block4.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block4.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -1202,7 +1200,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block4.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block4.block.conv2' → 'stage4.stage4_block4.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_9' (stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3) in 0.44s
+[INFO] ✅ Successfully collapsed block 'collapse_9' (stage4.stage4_block4.block.conv2 → stage4.stage4_block4.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1227,7 +1225,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block5.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block5.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -1236,7 +1234,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block5.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block5.block.conv2' → 'stage4.stage4_block5.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_10' (stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3) in 0.43s
+[INFO] ✅ Successfully collapsed block 'collapse_10' (stage4.stage4_block5.block.conv2 → stage4.stage4_block5.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1261,7 +1259,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block6.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block6.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -1270,7 +1268,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block6.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block6.block.conv2' → 'stage4.stage4_block6.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_11' (stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3) in 0.43s
+[INFO] ✅ Successfully collapsed block 'collapse_11' (stage4.stage4_block6.block.conv2 → stage4.stage4_block6.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1295,7 +1293,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block7.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block7.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -1304,7 +1302,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block7.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block7.block.conv2' → 'stage4.stage4_block7.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_12' (stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3) in 0.43s
+[INFO] ✅ Successfully collapsed block 'collapse_12' (stage4.stage4_block7.block.conv2 → stage4.stage4_block7.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1329,7 +1327,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block8.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block8.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -1338,7 +1336,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block8.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block8.block.conv2' → 'stage4.stage4_block8.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_13' (stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3) in 0.43s
+[INFO] ✅ Successfully collapsed block 'collapse_13' (stage4.stage4_block8.block.conv2 → stage4.stage4_block8.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1363,7 +1361,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block9.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block9.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -1372,7 +1370,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block9.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block9.block.conv2' → 'stage4.stage4_block9.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_14' (stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3) in 0.43s
+[INFO] ✅ Successfully collapsed block 'collapse_14' (stage4.stage4_block9.block.conv2 → stage4.stage4_block9.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1397,7 +1395,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block10.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block10.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -1406,7 +1404,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block10.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block10.block.conv2' → 'stage4.stage4_block10.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_15' (stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3) in 0.43s
+[INFO] ✅ Successfully collapsed block 'collapse_15' (stage4.stage4_block10.block.conv2 → stage4.stage4_block10.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1431,7 +1429,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block11.block' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block11.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -1440,7 +1438,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block11.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block11.block.conv2' → 'stage4.stage4_block11.block.conv3'
-[INFO] ✅ Successfully collapsed block 'collapse_16' (stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3) in 0.43s
+[INFO] ✅ Successfully collapsed block 'collapse_16' (stage4.stage4_block11.block.conv2 → stage4.stage4_block11.block.conv3) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -1451,7 +1449,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 3,997,610
 [INFO] ΔParams = +778,752 (expected ≤ 0)
 [INFO] Collapse counts: success=17, failed=0, skipped=0
-[INFO] Total collapse runtime: 7.35s
+[INFO] Total collapse runtime: 0.77s
 [RESULT] ✅ collapse_only complete. Total targets: 17 | success=17 | failed=0 | skipped=0
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
@@ -1469,24 +1467,24 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=100/40 seen=3200 clean_acc=73.28% adv_acc=24.75%
 [ATTACK][BATCH] FGSM batch=110/40 seen=3520 clean_acc=73.18% adv_acc=24.74%
 [ATTACK][BATCH] FGSM batch=120/40 seen=3840 clean_acc=73.02% adv_acc=24.48%
-[ATTACK][BATCH] FGSM batch=130/40 seen=4160 clean_acc=73.00% adv_acc=24.59%
-[ATTACK][BATCH] FGSM batch=140/40 seen=4480 clean_acc=73.21% adv_acc=24.93%
-[ATTACK][BATCH] FGSM batch=150/40 seen=4800 clean_acc=72.96% adv_acc=24.92%
-[ATTACK][BATCH] FGSM batch=160/40 seen=5120 clean_acc=72.60% adv_acc=24.73%
-[ATTACK][BATCH] FGSM batch=170/40 seen=5440 clean_acc=72.57% adv_acc=24.61%
-[ATTACK][BATCH] FGSM batch=180/40 seen=5760 clean_acc=72.57% adv_acc=24.53%
-[ATTACK][BATCH] FGSM batch=190/40 seen=6080 clean_acc=72.45% adv_acc=24.39%
-[ATTACK][BATCH] FGSM batch=200/40 seen=6400 clean_acc=72.58% adv_acc=24.47%
-[ATTACK][BATCH] FGSM batch=210/40 seen=6720 clean_acc=72.50% adv_acc=24.54%
-[ATTACK][BATCH] FGSM batch=220/40 seen=7040 clean_acc=72.30% adv_acc=24.46%
-[ATTACK][BATCH] FGSM batch=230/40 seen=7360 clean_acc=72.35% adv_acc=24.59%
-[ATTACK][BATCH] FGSM batch=240/40 seen=7680 clean_acc=72.43% adv_acc=24.47%
-[ATTACK][BATCH] FGSM batch=250/40 seen=8000 clean_acc=72.46% adv_acc=24.36%
-[ATTACK][BATCH] FGSM batch=260/40 seen=8320 clean_acc=72.52% adv_acc=24.45%
-[ATTACK][BATCH] FGSM batch=270/40 seen=8640 clean_acc=72.47% adv_acc=24.31%
-[ATTACK][BATCH] FGSM batch=280/40 seen=8960 clean_acc=72.44% adv_acc=24.30%
-[ATTACK][BATCH] FGSM batch=290/40 seen=9280 clean_acc=72.64% adv_acc=24.39%
-[ATTACK][BATCH] FGSM batch=300/40 seen=9600 clean_acc=72.47% adv_acc=24.27%
-[ATTACK][BATCH] FGSM batch=310/40 seen=9920 clean_acc=72.46% adv_acc=24.30%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=72.45% adv_acc=24.37% asr=75.63% runtime=61.53s
+[ATTACK][BATCH] FGSM batch=130/40 seen=4160 clean_acc=73.00% adv_acc=24.57%
+[ATTACK][BATCH] FGSM batch=140/40 seen=4480 clean_acc=73.21% adv_acc=24.91%
+[ATTACK][BATCH] FGSM batch=150/40 seen=4800 clean_acc=72.96% adv_acc=24.90%
+[ATTACK][BATCH] FGSM batch=160/40 seen=5120 clean_acc=72.60% adv_acc=24.71%
+[ATTACK][BATCH] FGSM batch=170/40 seen=5440 clean_acc=72.57% adv_acc=24.60%
+[ATTACK][BATCH] FGSM batch=180/40 seen=5760 clean_acc=72.57% adv_acc=24.51%
+[ATTACK][BATCH] FGSM batch=190/40 seen=6080 clean_acc=72.45% adv_acc=24.38%
+[ATTACK][BATCH] FGSM batch=200/40 seen=6400 clean_acc=72.58% adv_acc=24.45%
+[ATTACK][BATCH] FGSM batch=210/40 seen=6720 clean_acc=72.50% adv_acc=24.52%
+[ATTACK][BATCH] FGSM batch=220/40 seen=7040 clean_acc=72.30% adv_acc=24.45%
+[ATTACK][BATCH] FGSM batch=230/40 seen=7360 clean_acc=72.35% adv_acc=24.58%
+[ATTACK][BATCH] FGSM batch=240/40 seen=7680 clean_acc=72.43% adv_acc=24.45%
+[ATTACK][BATCH] FGSM batch=250/40 seen=8000 clean_acc=72.46% adv_acc=24.35%
+[ATTACK][BATCH] FGSM batch=260/40 seen=8320 clean_acc=72.52% adv_acc=24.44%
+[ATTACK][BATCH] FGSM batch=270/40 seen=8640 clean_acc=72.47% adv_acc=24.29%
+[ATTACK][BATCH] FGSM batch=280/40 seen=8960 clean_acc=72.44% adv_acc=24.29%
+[ATTACK][BATCH] FGSM batch=290/40 seen=9280 clean_acc=72.64% adv_acc=24.38%
+[ATTACK][BATCH] FGSM batch=300/40 seen=9600 clean_acc=72.47% adv_acc=24.26%
+[ATTACK][BATCH] FGSM batch=310/40 seen=9920 clean_acc=72.46% adv_acc=24.29%
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=72.45% adv_acc=24.36% asr=75.64% runtime=14.46s
 [INFO] Summary written to adversarial_results_ep300_pre100/summary_RegNetX_400MF_Cifar10_FGSM_ALL.csv

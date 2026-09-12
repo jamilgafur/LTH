@@ -180,32 +180,6 @@
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [DEBUG] load_state_dict result: missing=0, unexpected=0
-Traceback (most recent call last):
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/serialization.py", line 944, in save
-    _save(
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/serialization.py", line 1216, in _save
-    zip_file.write_record(name, storage, num_bytes)
-RuntimeError: [enforce fail at inline_container.cc:815] . PytorchStreamWriter failed writing file data/0: file write failed
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_analysis.py", line 17, in <module>
-    main()
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 259, in main
-    run_pipeline(args)
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 110, in run_pipeline
-    records, model_cache, loader_cache, adv_datasets = AdversarialCore.generate_attacks_phase(
-                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 327, in generate_attacks_phase
-    torch.save(
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/serialization.py", line 943, in save
-    with _open_zipfile_writer(f) as opened_zipfile:
-  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/serialization.py", line 784, in __exit__
-    self.file_like.write_end_of_file()
-RuntimeError: [enforce fail at inline_container.cc:626] . unexpected pos 1088 vs 982
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: FGSM
 [ATTACK][BATCH] FGSM batch=1/40 seen=32 clean_acc=100.00% adv_acc=37.50%
@@ -240,4 +214,5 @@ RuntimeError: [enforce fail at inline_container.cc:626] . unexpected pos 1088 vs
 [ATTACK][BATCH] FGSM batch=290/40 seen=9280 clean_acc=92.53% adv_acc=43.37%
 [ATTACK][BATCH] FGSM batch=300/40 seen=9600 clean_acc=92.57% adv_acc=43.23%
 [ATTACK][BATCH] FGSM batch=310/40 seen=9920 clean_acc=92.65% adv_acc=43.24%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.67% adv_acc=43.25% asr=56.75% runtime=10.43s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=92.67% adv_acc=43.25% asr=56.75% runtime=11.68s
+[INFO] Summary written to adversarial_results_ep300_pre100/summary_VGG16_Cifar10_FGSM_ALL.csv
