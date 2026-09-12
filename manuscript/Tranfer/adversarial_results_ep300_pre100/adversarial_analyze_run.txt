@@ -7713,3 +7713,574 @@ CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Collapse counts: success=10, failed=0, skipped=1
 [INFO] Total collapse runtime: 0.63s
 [RESULT] ✅ collapse_only complete. Total targets: 11 | success=10 | failed=0 | skipped=1
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_tinyimagenet_epochs300_pretrain100_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 11
+[DEBUG] Rebuilding collapsed architecture for ConvNeXt (tinyimagenet_epochs300_pretrain100)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (ConvNeXt)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 27,973,928
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': features.2.1.pwconv1 → features.2.1.pwconv2
+[STEP] Calling _collapse_block('features.2.1.pwconv1', 'features.2.1.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.2.1.pwconv1
+[INFO] End Target   : features.2.1.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.2.1.pwconv1' -> 'features.2.1.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.2.1' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.2.1' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.2.1' -> 'features.2.1'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.2.1.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.2' =====
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.2'...
+[DEBUG] Found inserted block candidate at index 1: '1'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (256, 192, 8, 8)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.2' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.2.1.pwconv1' → 'features.2.1.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.pwconv1 → features.2.1.pwconv2) in 0.07s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_1': features.2.2.pwconv1 → features.3.1
+[STEP] Calling _collapse_block('features.2.2.pwconv1', 'features.3.1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.2.2.pwconv1
+[INFO] End Target   : features.3.1
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.2.2.pwconv1' -> 'features.3.1'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.2' -> 'features.3'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.3.1'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 2: '2'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.2.2.pwconv1' → 'features.3.1'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.2.2.pwconv1 → features.3.1) in 0.07s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_2': features.4.1.pwconv1 → features.4.1.pwconv2
+[STEP] Calling _collapse_block('features.4.1.pwconv1', 'features.4.1.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.1.pwconv1
+[INFO] End Target   : features.4.1.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.1.pwconv1' -> 'features.4.1.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.1' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.1' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.4.1' -> 'features.4.1'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.1.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 1: '1'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.4.1.pwconv1' → 'features.4.1.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_2' (features.4.1.pwconv1 → features.4.1.pwconv2) in 0.05s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_3': features.4.2.pwconv1 → features.4.2.pwconv2
+[STEP] Calling _collapse_block('features.4.2.pwconv1', 'features.4.2.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.2.pwconv1
+[INFO] End Target   : features.4.2.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.2.pwconv1' -> 'features.4.2.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.2' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.2' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.4.2' -> 'features.4.2'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.2.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 2: '2'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.4.2.pwconv1' → 'features.4.2.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_3' (features.4.2.pwconv1 → features.4.2.pwconv2) in 0.05s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_4': features.4.3.pwconv1 → features.4.3.pwconv2
+[STEP] Calling _collapse_block('features.4.3.pwconv1', 'features.4.3.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.3.pwconv1
+[INFO] End Target   : features.4.3.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.3.pwconv1' -> 'features.4.3.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.3' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.3' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.4.3' -> 'features.4.3'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.3.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 3: '3'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.4.3.pwconv1' → 'features.4.3.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_4' (features.4.3.pwconv1 → features.4.3.pwconv2) in 0.05s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_5': features.4.4.pwconv1 → features.4.4.pwconv2
+[STEP] Calling _collapse_block('features.4.4.pwconv1', 'features.4.4.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.4.pwconv1
+[INFO] End Target   : features.4.4.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.4.pwconv1' -> 'features.4.4.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.4' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.4' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.4.4' -> 'features.4.4'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.4.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.4.4.pwconv1' → 'features.4.4.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_5' (features.4.4.pwconv1 → features.4.4.pwconv2) in 0.05s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_6': features.4.5.pwconv1 → features.4.5.pwconv2
+[STEP] Calling _collapse_block('features.4.5.pwconv1', 'features.4.5.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.5.pwconv1
+[INFO] End Target   : features.4.5.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.5.pwconv1' -> 'features.4.5.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.5' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.5' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.4.5' -> 'features.4.5'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.5.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=5, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 5: '5'
+[STEP] Validating inserted module 'Sequential' at index 5...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.4.5.pwconv1' → 'features.4.5.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_6' (features.4.5.pwconv1 → features.4.5.pwconv2) in 0.05s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_7': features.4.6.pwconv1 → features.4.6.pwconv2
+[STEP] Calling _collapse_block('features.4.6.pwconv1', 'features.4.6.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.6.pwconv1
+[INFO] End Target   : features.4.6.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.6.pwconv1' -> 'features.4.6.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.6' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.6' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.4.6' -> 'features.4.6'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.6.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=6, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 6: '6'
+[STEP] Validating inserted module 'Sequential' at index 6...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.4.6.pwconv1' → 'features.4.6.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_7' (features.4.6.pwconv1 → features.4.6.pwconv2) in 0.05s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_8': features.4.7.pwconv1 → features.4.7.pwconv2
+[STEP] Calling _collapse_block('features.4.7.pwconv1', 'features.4.7.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.7.pwconv1
+[INFO] End Target   : features.4.7.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.7.pwconv1' -> 'features.4.7.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.7' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.7' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.4.7' -> 'features.4.7'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.7.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=7, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 7: '7'
+[STEP] Validating inserted module 'Sequential' at index 7...
+[DEBUG] Inserted module forward successful, output shape: (256, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.4.7.pwconv1' → 'features.4.7.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_8' (features.4.7.pwconv1 → features.4.7.pwconv2) in 0.05s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_9': features.4.8.pwconv1 → features.6.0.pwconv1
+[STEP] Calling _collapse_block('features.4.8.pwconv1', 'features.6.0.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.8.pwconv1
+[INFO] End Target   : features.6.0.pwconv1
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.8.pwconv1' -> 'features.6.0.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.4' -> 'features.6'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.6.0.pwconv1'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (256, 768, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.4.8.pwconv1' → 'features.6.0.pwconv1'
+[INFO] ✅ Successfully collapsed block 'collapse_9' (features.4.8.pwconv1 → features.6.0.pwconv1) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'collapse_10': features.6.1.dwconv → features.6.1.pwconv1
+[STEP] Calling _collapse_block('features.6.1.dwconv', 'features.6.1.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.6.1.dwconv
+[INFO] End Target   : features.6.1.pwconv1
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.6.1.dwconv' -> 'features.6.1.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.6.1' | Type: SmartIdentity
+[WARN] ⚠ Could not map start/end layers into LCA container 'features.6.1'
+[DEBUG]   start_layer_name=features.6.1.dwconv, found start_idx=None
+[DEBUG]   end_layer_name=features.6.1.pwconv1, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'collapse_10' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,973,928
+[INFO] Parameters after : 843,176
+[INFO] ΔParams = +27,130,752 (expected ≤ 0)
+[INFO] Collapse counts: success=10, failed=0, skipped=1
+[INFO] Total collapse runtime: 0.61s
+[RESULT] ✅ collapse_only complete. Total targets: 11 | success=10 | failed=0 | skipped=1
+
+======================================================================
+[CHECKPOINT DISCOVERY] Scanning for available models and datasets...
+======================================================================
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: VGG16           | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: VGG16           | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: VGG16           | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: RegNetX_400MF   | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: InceptionNet    | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: MobileNet       | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: MobileNet       | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: MobileNet       | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: XceptionNet     | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs3_pretrain3      | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs100_pretrain300  | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs300_pretrain100  | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs200_pretrain200  | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs3_pretrain3      | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs100_pretrain300  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs300_pretrain100  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar10_epochs200_pretrain200  | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs3_pretrain3     | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs3_pretrain3     | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: Cifar100_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Control_Continuted
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs100_pretrain300 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs300_pretrain100 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs200_pretrain200 | Kind: Dynamic_Region_All_Combined_quant
+  [FOUND] Model: ConvNeXt        | Dataset: tinyimagenet_epochs3_pretrain3 | Kind: Dynamic_Region_All_Combined_quant
+======================================================================
+[CHECKPOINT DISCOVERY] Total valid checkpoint pairs found: 167
+======================================================================
+
+[INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
+[INFO] Transferability matrix saved to adversarial_results_ep300_pre100/transferability.csv
+
+======================================================================
+[PHASE 4] Comparing Control Continued vs collapsed variants
+======================================================================
+[INFO] Saved: adversarial_results_ep300_pre100/accuracy_parameter_comparison.csv
+[INFO] Saved: adversarial_results_ep300_pre100/collapsed_vs_original_explainability_by_attack.csv
+[INFO] Saved: adversarial_results_ep300_pre100/collapsed_vs_original_explainability_summary.csv
