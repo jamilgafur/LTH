@@ -180,3 +180,255 @@
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-100 data shape:  torch.Size([256, 3, 32, 32])
 [DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='DeepFool' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: DeepFool
+[ATTACK][BATCH] DeepFool batch=1/40 seen=32 clean_acc=68.75% adv_acc=6.25%
+[ATTACK][BATCH] DeepFool batch=10/40 seen=320 clean_acc=65.94% adv_acc=5.00%
+[ATTACK][BATCH] DeepFool batch=20/40 seen=640 clean_acc=61.72% adv_acc=4.38%
+[ATTACK][BATCH] DeepFool batch=30/40 seen=960 clean_acc=61.88% adv_acc=4.38%
+[ATTACK][BATCH] DeepFool batch=40/40 seen=1280 clean_acc=62.42% adv_acc=4.30%
+[ATTACK][BATCH] DeepFool batch=50/40 seen=1600 clean_acc=61.50% adv_acc=4.06%
+[ATTACK][BATCH] DeepFool batch=60/40 seen=1920 clean_acc=60.99% adv_acc=3.91%
+[ATTACK][BATCH] DeepFool batch=70/40 seen=2240 clean_acc=61.21% adv_acc=4.11%
+[ATTACK][BATCH] DeepFool batch=80/40 seen=2560 clean_acc=61.13% adv_acc=4.02%
+[ATTACK][BATCH] DeepFool batch=90/40 seen=2880 clean_acc=60.76% adv_acc=3.85%
+[ATTACK][BATCH] DeepFool batch=100/40 seen=3200 clean_acc=60.66% adv_acc=3.88%
+[ATTACK][BATCH] DeepFool batch=110/40 seen=3520 clean_acc=60.43% adv_acc=3.92%
+[ATTACK][BATCH] DeepFool batch=120/40 seen=3840 clean_acc=60.49% adv_acc=4.04%
+[ATTACK][BATCH] DeepFool batch=130/40 seen=4160 clean_acc=60.60% adv_acc=3.94%
+[ATTACK][BATCH] DeepFool batch=140/40 seen=4480 clean_acc=60.62% adv_acc=3.93%
+[ATTACK][BATCH] DeepFool batch=150/40 seen=4800 clean_acc=60.35% adv_acc=4.02%
+[ATTACK][BATCH] DeepFool batch=160/40 seen=5120 clean_acc=60.55% adv_acc=4.02%
+[ATTACK][BATCH] DeepFool batch=170/40 seen=5440 clean_acc=60.66% adv_acc=3.95%
+[ATTACK][BATCH] DeepFool batch=180/40 seen=5760 clean_acc=60.87% adv_acc=3.99%
+[ATTACK][BATCH] DeepFool batch=190/40 seen=6080 clean_acc=60.76% adv_acc=4.00%
+[ATTACK][BATCH] DeepFool batch=200/40 seen=6400 clean_acc=60.91% adv_acc=4.02%
+[ATTACK][BATCH] DeepFool batch=210/40 seen=6720 clean_acc=60.88% adv_acc=4.00%
+[ATTACK][BATCH] DeepFool batch=220/40 seen=7040 clean_acc=60.82% adv_acc=3.99%
+[ATTACK][BATCH] DeepFool batch=230/40 seen=7360 clean_acc=60.87% adv_acc=3.99%
+[ATTACK][BATCH] DeepFool batch=240/40 seen=7680 clean_acc=60.87% adv_acc=3.93%
+[ATTACK][BATCH] DeepFool batch=250/40 seen=8000 clean_acc=60.81% adv_acc=3.96%
+[ATTACK][BATCH] DeepFool batch=260/40 seen=8320 clean_acc=60.85% adv_acc=3.92%
+[ATTACK][BATCH] DeepFool batch=270/40 seen=8640 clean_acc=61.06% adv_acc=3.90%
+[ATTACK][BATCH] DeepFool batch=280/40 seen=8960 clean_acc=60.94% adv_acc=3.86%
+[ATTACK][BATCH] DeepFool batch=290/40 seen=9280 clean_acc=60.85% adv_acc=3.84%
+[ATTACK][BATCH] DeepFool batch=300/40 seen=9600 clean_acc=60.76% adv_acc=3.89%
+[ATTACK][BATCH] DeepFool batch=310/40 seen=9920 clean_acc=60.84% adv_acc=3.97%
+[ATTACK][DONE] attack='DeepFool' samples=10000 clean_acc=60.87% adv_acc=3.98% asr=96.02% runtime=5494.43s
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/VGG16_Cifar100_epochs100_pretrain300_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 2
+[DEBUG] Rebuilding collapsed architecture for VGG16 (Cifar100_epochs100_pretrain300)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 34,031,780
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': features.conv_6 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_6', 'features.conv_10')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_6
+[INFO] End Target   : features.conv_10
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_6' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_6' -> 'features.conv_10'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=17, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 17: 'conv_6'
+[STEP] Validating inserted module 'Sequential' at index 17...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_6' → 'features.conv_10'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_6 → features.conv_10) in 0.16s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 11 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': features.conv_12 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_12', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_12
+[INFO] End Target   : features.conv_13
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_12' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_12' -> 'features.conv_13'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=37, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 37: 'conv_12'
+[STEP] Validating inserted module 'Sequential' at index 37...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 34,031,780
+[INFO] Parameters after : 22,623,396
+[INFO] ΔParams = +11,408,384 (expected ≤ 0)
+[INFO] Collapse counts: success=2, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.24s
+[RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
+[DEBUG] load_state_dict result: missing=0, unexpected=0
+[ATTACK][SETUP] Initializing attack='DeepFool' eps=0.030000 steps=40
+[ATTACK][SETUP] Ready: DeepFool
+[ATTACK][BATCH] DeepFool batch=1/40 seen=32 clean_acc=71.88% adv_acc=12.50%
+[ATTACK][BATCH] DeepFool batch=10/40 seen=320 clean_acc=69.06% adv_acc=7.81%
+[ATTACK][BATCH] DeepFool batch=20/40 seen=640 clean_acc=65.78% adv_acc=7.03%
+[ATTACK][BATCH] DeepFool batch=30/40 seen=960 clean_acc=66.98% adv_acc=6.67%
+[ATTACK][BATCH] DeepFool batch=40/40 seen=1280 clean_acc=67.42% adv_acc=6.17%
+[ATTACK][BATCH] DeepFool batch=50/40 seen=1600 clean_acc=66.81% adv_acc=5.69%
+[ATTACK][BATCH] DeepFool batch=60/40 seen=1920 clean_acc=66.41% adv_acc=5.89%
+[ATTACK][BATCH] DeepFool batch=70/40 seen=2240 clean_acc=66.83% adv_acc=5.67%
+[ATTACK][BATCH] DeepFool batch=80/40 seen=2560 clean_acc=67.19% adv_acc=5.47%
+[ATTACK][BATCH] DeepFool batch=90/40 seen=2880 clean_acc=67.19% adv_acc=5.42%
+[ATTACK][BATCH] DeepFool batch=100/40 seen=3200 clean_acc=66.88% adv_acc=5.38%
+[ATTACK][BATCH] DeepFool batch=110/40 seen=3520 clean_acc=66.39% adv_acc=5.31%
+[ATTACK][BATCH] DeepFool batch=120/40 seen=3840 clean_acc=66.54% adv_acc=5.44%
+[ATTACK][BATCH] DeepFool batch=130/40 seen=4160 clean_acc=66.51% adv_acc=5.58%
+[ATTACK][BATCH] DeepFool batch=140/40 seen=4480 clean_acc=66.65% adv_acc=5.60%
+[ATTACK][BATCH] DeepFool batch=150/40 seen=4800 clean_acc=66.50% adv_acc=5.73%
+[ATTACK][BATCH] DeepFool batch=160/40 seen=5120 clean_acc=66.45% adv_acc=5.86%
+[ATTACK][BATCH] DeepFool batch=170/40 seen=5440 clean_acc=66.78% adv_acc=5.85%
+[ATTACK][BATCH] DeepFool batch=180/40 seen=5760 clean_acc=66.88% adv_acc=5.75%
+[ATTACK][BATCH] DeepFool batch=190/40 seen=6080 clean_acc=66.83% adv_acc=5.67%
+[ATTACK][BATCH] DeepFool batch=200/40 seen=6400 clean_acc=67.03% adv_acc=5.75%
+[ATTACK][BATCH] DeepFool batch=210/40 seen=6720 clean_acc=67.17% adv_acc=5.74%
+[ATTACK][BATCH] DeepFool batch=220/40 seen=7040 clean_acc=67.24% adv_acc=5.77%
+[ATTACK][BATCH] DeepFool batch=230/40 seen=7360 clean_acc=67.38% adv_acc=5.79%
+[ATTACK][BATCH] DeepFool batch=240/40 seen=7680 clean_acc=67.27% adv_acc=5.79%
+[ATTACK][BATCH] DeepFool batch=250/40 seen=8000 clean_acc=67.31% adv_acc=5.78%
+[ATTACK][BATCH] DeepFool batch=260/40 seen=8320 clean_acc=67.25% adv_acc=5.78%
+[ATTACK][BATCH] DeepFool batch=270/40 seen=8640 clean_acc=67.43% adv_acc=5.81%
+[ATTACK][BATCH] DeepFool batch=280/40 seen=8960 clean_acc=67.48% adv_acc=5.84%
+[ATTACK][BATCH] DeepFool batch=290/40 seen=9280 clean_acc=67.52% adv_acc=5.84%
+[ATTACK][BATCH] DeepFool batch=300/40 seen=9600 clean_acc=67.64% adv_acc=5.93%
+[ATTACK][BATCH] DeepFool batch=310/40 seen=9920 clean_acc=67.82% adv_acc=6.00%
+[ATTACK][DONE] attack='DeepFool' samples=10000 clean_acc=67.84% adv_acc=6.00% asr=94.00% runtime=6792.33s
+[DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/VGG16_Cifar100_epochs100_pretrain300_JF_discovered_regions.json
+[DEBUG] Collapse ranges loaded: 2
+[DEBUG] Rebuilding collapsed architecture for VGG16 (Cifar100_epochs100_pretrain300)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 34,031,780
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': features.conv_6 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_6', 'features.conv_10')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_6
+[INFO] End Target   : features.conv_10
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_6' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_6' -> 'features.conv_10'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=17, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 17: 'conv_6'
+[STEP] Validating inserted module 'Sequential' at index 17...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_6' → 'features.conv_10'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_6 → features.conv_10) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 11 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'collapse_1': features.conv_12 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_12', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_12
+[INFO] End Target   : features.conv_13
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_12' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_12' -> 'features.conv_13'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=37, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 37: 'conv_12'
+[STEP] Validating inserted module 'Sequential' at index 37...
+[DEBUG] Inserted module forward successful, output shape: (256, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 34,031,780
+[INFO] Parameters after : 22,623,396
+[INFO] ΔParams = +11,408,384 (expected ≤ 0)
+[INFO] Collapse counts: success=2, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.11s
+[RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
+[DEBUG] load_state_dict result: missing=0, unexpected=0

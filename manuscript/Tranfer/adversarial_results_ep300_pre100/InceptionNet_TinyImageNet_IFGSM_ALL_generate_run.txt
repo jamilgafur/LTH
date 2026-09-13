@@ -214,7 +214,7 @@
 [ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=0.43% adv_acc=0.20%
 [ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=0.47% adv_acc=0.23%
 [ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=0.45% adv_acc=0.22%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=0.45% adv_acc=0.22% asr=99.78% runtime=152.88s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=0.45% adv_acc=0.22% asr=99.78% runtime=227.27s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_tinyimagenet_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 6
 [DEBUG] Rebuilding collapsed architecture for InceptionNet (tinyimagenet_epochs300_pretrain100)
@@ -257,7 +257,7 @@
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch4.1.conv' → 'stage4.inception_4b.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch4.1.conv → stage4.inception_4b.branch2.0.conv) in 0.17s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch4.1.conv → stage4.inception_4b.branch2.0.conv) in 2.95s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
@@ -293,7 +293,7 @@
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4c.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4c.branch3.0.conv → stage4.inception_4c.branch4.1.conv) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4c.branch3.0.conv → stage4.inception_4c.branch4.1.conv) in 0.12s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -409,7 +409,7 @@
 [INFO] Parameters after : 3,294,184
 [INFO] ΔParams = +2,891,648 (expected ≤ 0)
 [INFO] Collapse counts: success=4, failed=0, skipped=2
-[INFO] Total collapse runtime: 0.36s
+[INFO] Total collapse runtime: 3.95s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=4 | failed=0 | skipped=2
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
@@ -446,7 +446,7 @@
 [ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=0.40% adv_acc=0.20%
 [ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=0.43% adv_acc=0.23%
 [ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=0.41% adv_acc=0.22%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=0.41% adv_acc=0.22% asr=99.78% runtime=78.65s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=0.41% adv_acc=0.22% asr=99.78% runtime=91.96s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_tinyimagenet_epochs300_pretrain100_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 6
 [DEBUG] Rebuilding collapsed architecture for InceptionNet (tinyimagenet_epochs300_pretrain100)
@@ -641,44 +641,9 @@
 [INFO] Parameters after : 3,294,184
 [INFO] ΔParams = +2,891,648 (expected ≤ 0)
 [INFO] Collapse counts: success=4, failed=0, skipped=2
-[INFO] Total collapse runtime: 0.23s
+[INFO] Total collapse runtime: 0.22s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=4 | failed=0 | skipped=2
 [DEBUG] load_state_dict result: missing=0, unexpected=0
-Traceback (most recent call last):
-  File "/Users/jgafur/env/lth_env/lib/python3.11/shutil.py", line 853, in move
-    os.rename(src, real_dst)
-OSError: [Errno 18] Invalid cross-device link: '/localscratch/6508875.1.all.q/lth_save_tmp_manual/adv_tmp_xijbms_v.pt' -> 'adversarial_results_ep300_pre100/InceptionNet_tinyimagenet_epochs300_pretrain100_Dynamic_Region_All_Combined_quant_BIM_adv.pt'
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 85, in safe_torch_save
-    shutil.move(tmp_path, final_path)
-  File "/Users/jgafur/env/lth_env/lib/python3.11/shutil.py", line 873, in move
-    copy_function(src, real_dst)
-  File "/Users/jgafur/env/lth_env/lib/python3.11/shutil.py", line 448, in copy2
-    copyfile(src, dst, follow_symlinks=follow_symlinks)
-  File "/Users/jgafur/env/lth_env/lib/python3.11/shutil.py", line 258, in copyfile
-    with open(dst, 'wb') as fdst:
-OSError: [Errno 116] Stale file handle
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_analysis.py", line 17, in <module>
-    main()
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 278, in main
-    run_pipeline(args)
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_pipeline.py", line 110, in run_pipeline
-    records, model_cache, loader_cache, adv_datasets = AdversarialCore.generate_attacks_phase(
-                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 378, in generate_attacks_phase
-    cls.safe_torch_save(
-  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 95, in safe_torch_save
-    raise RuntimeError(
-RuntimeError: Failed to save adversarial artifact to adversarial_results_ep300_pre100/InceptionNet_tinyimagenet_epochs300_pretrain100_Dynamic_Region_All_Combined_quant_BIM_adv.pt. free_mb(final_fs)=602535.0, free_mb(tmp_fs)=3651807.1, tmp_root=/localscratch/6508875.1.all.q/lth_save_tmp_manual. Original error: [Errno 116] Stale file handle
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=32 clean_acc=0.00% adv_acc=0.00%
@@ -713,4 +678,5 @@ RuntimeError: Failed to save adversarial artifact to adversarial_results_ep300_p
 [ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=0.38% adv_acc=0.22%
 [ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=0.42% adv_acc=0.23%
 [ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=0.40% adv_acc=0.22%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=0.41% adv_acc=0.22% asr=99.78% runtime=78.90s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=0.41% adv_acc=0.22% asr=99.78% runtime=81.84s
+[INFO] Summary written to adversarial_results_ep300_pre100/summary_InceptionNet_TinyImageNet_IFGSM_ALL.csv
