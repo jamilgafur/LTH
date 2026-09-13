@@ -38,13 +38,10 @@ KIND=${KIND:-ALL}
 # Ensure the output directory exists
 mkdir -p "$OUTPUT_DIR"
 
-# Prefer node-local scratch for temporary artifact writes when the scheduler provides it.
-# Otherwise keep temporary artifacts in the job's working directory so the save path stays local.
-if [ -n "${TMPDIR:-}" ] && [ -d "${TMPDIR}" ]; then
-    export LTH_SAVE_TMPDIR="${TMPDIR}/lth_save_tmp_${PBS_JOBID:-manual}"
-else
-    export LTH_SAVE_TMPDIR="${PWD}/lth_save_tmp_${PBS_JOBID:-manual}"
-fi
+# Use the job's working directory for temporary artifact writes.
+# Previously we preferred node‑local scratch (TMPDIR), but that caused cross‑filesystem moves.
+# For robustness we now always stage files in the current working directory.
+export LTH_SAVE_TMPDIR="${PWD}/lth_save_tmp_${PBS_JOBID:-manual}"
 # Log the temporary directory being used for artifact staging
 echo "[INFO] Using temporary save directory: $LTH_SAVE_TMPDIR"
 mkdir -p "$LTH_SAVE_TMPDIR"
