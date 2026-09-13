@@ -92,10 +92,29 @@ class ComputeTradeoffSuite:
         transfer_df = pd.read_csv(transfer_path) if os.path.exists(transfer_path) else pd.DataFrame()
         explain_df = pd.read_csv(explain_path) if os.path.exists(explain_path) else pd.DataFrame()
 
+        # Checkpoint and transfer files may differ only in case, whitespace, or the
+        # historical Continued/Continuted spelling. Use private normalized keys for joins.
+        def _key(value):
+            return str(value).strip().lower().replace("continued", "continuted")
+
+        if not summary_df.empty:
+            summary_df["_model_key"] = summary_df["model"].map(_key)
+            summary_df["_dataset_key"] = summary_df["dataset"].map(_key)
+            summary_df["_kind_key"] = summary_df["kind"].map(_key)
+        if not transfer_df.empty:
+            transfer_df["_target_model_key"] = transfer_df["target_model"].map(_key)
+            transfer_df["_dataset_key"] = transfer_df["dataset"].map(_key)
+            transfer_df["_target_kind_key"] = transfer_df["target_kind"].map(_key)
+        if not explain_df.empty:
+            explain_df["_model_key"] = explain_df["model"].map(_key)
+            explain_df["_dataset_key"] = explain_df["dataset"].map(_key)
+            explain_df["_variant_kind_key"] = explain_df["variant_kind"].map(_key)
+
         for (model_name, dataset_name, kind), model in model_cache.items():
             # dataset_name may include a split tag; use the base name for loader lookup.
             base_dataset = CheckpointManager.base_dataset_name(dataset_name)
             if base_dataset not in loader_cache:
+                print(f"[WARN] Tradeoff: no loader for {model_name}/{dataset_name}; skipping {kind}")
                 continue
             _, test_loader = loader_cache[base_dataset]
             sample_batch = next(iter(test_loader))[0]
@@ -118,9 +137,9 @@ class ComputeTradeoffSuite:
 
             if not summary_df.empty:
                 s = summary_df[
-                    (summary_df["model"] == model_name)
-                    & (summary_df["dataset"] == dataset_name)
-                    & (summary_df["kind"] == kind)
+                    (summary_df["_model_key"] == _key(model_name))
+                    & (summary_df["_dataset_key"] == _key(dataset_name))
+                    & (summary_df["_kind_key"] == _key(kind))
                 ]
                 if not s.empty:
                     robust_acc = float(s["adv_acc"].mean())
@@ -128,18 +147,18 @@ class ComputeTradeoffSuite:
 
             if not transfer_df.empty:
                 t = transfer_df[
-                    (transfer_df["target_model"] == model_name)
-                    & (transfer_df["dataset"] == dataset_name)
-                    & (transfer_df["target_kind"] == kind)
+                    (transfer_df["_target_model_key"] == _key(model_name))
+                    & (transfer_df["_dataset_key"] == _key(dataset_name))
+                    & (transfer_df["_target_kind_key"] == _key(kind))
                 ]
                 if not t.empty:
                     transfer_success = float(t["transfer_success_rate"].mean())
 
             if not explain_df.empty and kind != ReportingSuite.baseline_kind():
                 e = explain_df[
-                    (explain_df["model"] == model_name)
-                    & (explain_df["dataset"] == dataset_name)
-                    & (explain_df["variant_kind"] == kind)
+                    (explain_df["_model_key"] == _key(model_name))
+                    & (explain_df["_dataset_key"] == _key(dataset_name))
+                    & (explain_df["_variant_kind_key"] == _key(kind))
                 ]
                 if not e.empty:
                     explain_delta = float(e["mean_delta_attack_success_rate"].mean())
@@ -276,7 +295,9 @@ class ComputeTradeoffSuite:
         plt.savefig(os.path.join(output_dir, f"{prefix}_figure2_transfer_resistance_vs_latency.png"), dpi=300)
         plt.close()
 
-        # Figure 3: Variant vs baseline deltas for core metrics
+        # Figure 3: Variant vs baseline deltas for core metrics.
+        # Keep metrics in compatible units: accuracy/resistance are absolute deltas;
+        # latency/FLOPs are percentage changes. Missing metrics are omitted, not plotted as zero.
         delta_rows = []
         for (model_name, dataset_name), g in df.groupby(["model", "dataset"]):
             baseline = g[g["kind"] == ReportingSuite.baseline_kind()]
@@ -286,42 +307,69 @@ class ComputeTradeoffSuite:
                 variant = g[g["kind"] == variant_kind]
                 if variant.empty:
                     continue
-                label = f"{model_name}-{dataset_name}-{variant_kind}"
-                delta_rows.extend(
-                    [
-                        {"label": label, "metric": "robust_accuracy", "delta": float(variant["robust_accuracy"].mean() - baseline["robust_accuracy"].mean())},
-                        {"label": label, "metric": "transfer_resistance", "delta": float(variant["transfer_resistance"].mean() - baseline["transfer_resistance"].mean())},
-                        {"label": label, "metric": "latency_ms", "delta": float(variant["latency_ms"].mean() - baseline["latency_ms"].mean())},
-                        {"label": label, "metric": "flops", "delta": float(variant["flops"].mean() - baseline["flops"].mean())},
-                    ]
-                )
+                label = f"{model_name} | {dataset_name} | {variant_kind}"
+                pairs = {
+                    "robust_accuracy": ("Robust accuracy delta", False),
+                    "transfer_resistance": ("Transfer resistance delta", False),
+                    "latency_ms": ("Latency change (%)", True),
+                    "flops": ("FLOPs change (%)", True),
+                }
+                for column, (metric, relative) in pairs.items():
+                    b = pd.to_numeric(baseline[column], errors="coerce").mean()
+                    v = pd.to_numeric(variant[column], errors="coerce").mean()
+                    if not np.isfinite(b) or not np.isfinite(v):
+                        continue
+                    if relative:
+                        if b == 0:
+                            continue
+                        delta = 100.0 * (v - b) / b
+                    else:
+                        delta = v - b
+                    delta_rows.append({"label": label, "metric": metric, "delta": delta})
+
         if delta_rows:
             delta_df = pd.DataFrame(delta_rows)
-            plt.figure(figsize=(12, 6))
-            sns.barplot(data=delta_df, x="label", y="delta", hue="metric")
-            plt.xticks(rotation=45, ha="right")
-            plt.ylabel("Variant - Control Continued", fontweight="bold")
-            plt.title("Figure 3: Variant vs Control Continued Metric Deltas", fontweight="bold")
-            plt.tight_layout()
-            plt.savefig(os.path.join(output_dir, f"{prefix}_figure3_collapsed_original_deltas.png"), dpi=300)
-            plt.close()
+            metric_order = delta_df["metric"].unique().tolist()
+            fig, axes = plt.subplots(len(metric_order), 1, figsize=(14, 3.2 * len(metric_order)), squeeze=False)
+            for ax, metric in zip(axes[:, 0], metric_order):
+                sub = delta_df[delta_df["metric"] == metric]
+                sns.barplot(data=sub, x="label", y="delta", ax=ax, color="#0082c9")
+                ax.axhline(0, color="black", linewidth=0.8)
+                ax.set_title(metric)
+                ax.set_xlabel("")
+                ax.tick_params(axis="x", rotation=60, labelsize=7)
+            fig.suptitle("Figure 3: Variant vs Control Continued Metric Deltas", fontweight="bold")
+            fig.tight_layout()
+            fig.savefig(os.path.join(output_dir, f"{prefix}_figure3_collapsed_original_deltas.png"), dpi=300)
+            plt.close(fig)
 
-        # Figure 4: normalized tradeoff heatmap
+        # Figure 4: normalized tradeoff heatmap. Keep rows unique and preserve NA cells.
         plot_cols = [
-            "robust_accuracy",
-            "transfer_resistance",
+            "robust_accuracy", "transfer_resistance",
             "explainability_delta_asr",
             "explainability_shap_cosine_similarity",
             "explainability_shap_topk_jaccard",
-            "flops",
-            "latency_ms",
-            "peak_memory_mb",
+            "flops", "latency_ms", "peak_memory_mb",
         ]
-        mat = df.set_index("model_label")[plot_cols]
-        mat_norm = (mat - mat.mean()) / (mat.std(ddof=0) + 1e-9)
-        plt.figure(figsize=(10, 7))
-        sns.heatmap(mat_norm, cmap="coolwarm", center=0)
-        plt.title("Figure 4: Normalized Compute-Performance Tradeoff", fontweight="bold")
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, f"{prefix}_figure4_tradeoff_heatmap.png"), dpi=300)
-        plt.close()
+        plot_cols = [c for c in plot_cols if c in df.columns and df[c].notna().any()]
+        if plot_cols:
+            heat_df = df.copy()
+            heat_df["row_label"] = (
+                heat_df["model"].astype(str) + " | "
+                + heat_df["dataset"].astype(str) + " | "
+                + heat_df["kind"].astype(str)
+            )
+            mat = heat_df.set_index("row_label")[plot_cols]
+            mat = mat[~mat.index.duplicated(keep="first")]
+            mat_norm = (mat - mat.mean()) / (mat.std(ddof=0).replace(0, np.nan) + 1e-9)
+            plt.figure(figsize=(12, max(7, 0.35 * len(mat_norm))))
+            sns.heatmap(
+                mat_norm, cmap="coolwarm", center=0, mask=mat_norm.isna(),
+                annot=False, cbar_kws={"label": "Standardized score; blank = unavailable"}
+            )
+            plt.title("Figure 4: Normalized Compute-Performance Tradeoff", fontweight="bold")
+            plt.tight_layout()
+            plt.savefig(os.path.join(output_dir, f"{prefix}_figure4_tradeoff_heatmap.png"), dpi=300)
+            plt.close()
+        else:
+            print("[WARN] Figure 4: no metrics contain valid values")

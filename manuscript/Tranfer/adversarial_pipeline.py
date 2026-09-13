@@ -119,6 +119,17 @@ def run_pipeline(args) -> None:
     if args.mode in ["full", "analyze"]:
         print(f"\n{'='*70}\n[PHASE 2] Analyzing transferability\n{'='*70}")
         ReportingSuite.merge_parallel_csvs(args.output_dir)
+        merged_path = os.path.join(args.output_dir, "summary.csv")
+        if os.path.exists(merged_path):
+            merged_df = pd.read_csv(merged_path)
+            required_kinds = {
+                ReportingSuite.baseline_kind(),
+                *ReportingSuite.variant_kinds(),
+            }
+            for keys, group in merged_df.groupby(["model", "dataset", "attack"]):
+                missing = required_kinds - set(group["kind"].dropna())
+                if missing:
+                    print(f"[WARN] Incomplete comparison {keys}: missing {sorted(missing)}")
 
         if args.mode == "analyze":
             records = _load_records_from_csv(args.output_dir)
