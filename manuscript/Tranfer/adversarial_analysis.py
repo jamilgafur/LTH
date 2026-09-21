@@ -159,7 +159,16 @@ def compute_transfer_metrics(output_dir: str, model_cache: dict, adv_datasets: d
     records = AdversarialCore.analyze_transferability_phase(output_dir, model_cache, adv_datasets)
     if records:
         transfer_df = pd.DataFrame(records)
-        transfer_df.to_csv(os.path.join(output_dir, "transferability.csv"), index=False)
+        transfer_path = os.path.join(output_dir, "transferability.csv")
+        lock_path = os.path.join(output_dir, ".transferability.lock")
+        if _acquire_lock(lock_path, timeout_seconds=120.0):
+            try:
+                _atomic_write_csv(transfer_path, transfer_df)
+                print(f"[INFO] Saved transferability CSV to {transfer_path} ({len(transfer_df)} rows)")
+            finally:
+                _release_lock(lock_path)
+        else:
+            print(f"[WARN] Could not acquire lock for {transfer_path}; skipping write.")
     return records
 
 

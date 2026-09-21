@@ -409,7 +409,10 @@ class AdvancedExperimentSuite:
 
         df_out = pd.DataFrame(records)
         csv_path = os.path.join(output_dir, "statistical_significance.csv")
-        df_out.to_csv(csv_path, index=False)
+        if _write_locked_csv(csv_path, df_out, "statistical_significance"):
+            print(f"[EXP9] Saved: {csv_path}")
+        else:
+            print(f"[WARN] Skipped saving {csv_path}")
 
         if not df_out.empty:
             for dataset_name in df_out["dataset"].unique():
@@ -801,8 +804,10 @@ class AdvancedExperimentSuite:
 
         csv_path = os.path.join(output_dir, f"shap_class_examples_{dataset_name}_{model_name}.csv")
         df = pd.DataFrame(output_rows)
-        df.to_csv(csv_path, index=False)
-        print(f"[EXP11] Saved: {csv_path}")
+        if _write_locked_csv(csv_path, df, f"shap_class_examples_{dataset_name}_{model_name}"):
+            print(f"[EXP11] Saved: {csv_path}")
+        else:
+            print(f"[WARN] Skipped saving {csv_path}")
 
         npz_path = os.path.join(output_dir, f"shap_class_examples_{dataset_name}_{model_name}.npz")
         np.savez_compressed(
