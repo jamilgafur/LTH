@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import argparse
 import os
+import tempfile
+import time
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -26,9 +29,86 @@ VALID_PHASES = [
 ]
 
 
-def check_summary_ready(output_dir: str) -> tuple[bool, str]:
-    """Return whether a summary.csv exists and is non-empty."""
+def _atomic_write_csv(path: str, df: pd.DataFrame) -> None:
+    """Write CSV atomically to avoid partial writes from concurrent jobs."""
+    path_obj = Path(path)
+    path_obj.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix=".tmp_", suffix=".csv", dir=str(path_obj.parent))
+    os.close(fd)
+    try:
+        df.to_csv(tmp_path, index=False)
+        os.replace(tmp_path, path_obj)
+    finally:
+        if os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
+def _acquire_lock(lock_path: str, timeout_seconds: float = 60.0) -> bool:
+    """Acquire an exclusive lock via a lock file for shared result directories."""
+    lock_dir = Path(lock_path).parent
+    lock_dir.mkdir(parents=True, exist_ok=True)
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            return True
+        except FileExistsError:
+            time.sleep(0.2)
+    return False
+
+
+def _release_lock(lock_path: str) -> None:
+    try:
+        if os.path.exists(lock_path):
+            os.unlink(lock_path)
+    except OSError:
+        pass
+
+
+def _merge_summary_if_ready(output_dir: str) -> str | None:
+    """Merge summary shards into canonical summary.csv when all shards are present."""
     summary_path = os.path.join(output_dir, "summary.csv")
+    shard_paths = sorted(
+        [os.path.join(output_dir, p) for p in os.listdir(output_dir) if p.startswith("summary_") and p.endswith(".csv")]
+    ) if os.path.isdir(output_dir) else []
+    if not shard_paths:
+        return summary_path if os.path.exists(summary_path) else None
+
+    lock_path = os.path.join(output_dir, ".summary_merge.lock")
+    if not _acquire_lock(lock_path, timeout_seconds=120.0):
+        print(f"[WARN] Could not acquire summary merge lock in {output_dir}; skipping merge.")
+        return summary_path if os.path.exists(summary_path) else None
+    try:
+        summary_df = pd.concat(
+            [pd.read_csv(p) for p in shard_paths if os.path.exists(p) and os.path.getsize(p) > 0],
+            ignore_index=True,
+        )
+        if not summary_df.empty:
+            summary_df = summary_df.drop_duplicates().reset_index(drop=True)
+            _atomic_write_csv(summary_path, summary_df)
+            print(f"[INFO] Merged {len(shard_paths)} summary shards into {summary_path}")
+    finally:
+        _release_lock(lock_path)
+    return summary_path if os.path.exists(summary_path) else None
+
+
+def check_summary_ready(output_dir: str) -> tuple[bool, str]:
+    """Return whether a summary.csv exists and is non-empty.
+
+    This function first checks for the canonical summary.csv, then falls back to
+    shard files and merges them atomically to make the downstream phases safe under
+    parallel generate jobs.
+    """
+    summary_path = os.path.join(output_dir, "summary.csv")
+    if not os.path.exists(summary_path):
+        merged_path = _merge_summary_if_ready(output_dir)
+        if merged_path is not None:
+            summary_path = merged_path
+
     if not os.path.exists(summary_path):
         return False, summary_path
     try:
@@ -54,7 +134,13 @@ def run_generate_phase(
     attack_filter: str | None = None,
     kind_filter: str | None = None,
 ) -> list[dict]:
-    """Run the attack-generation phase and persist summary.csv when records are available."""
+    """Run the attack-generation phase and persist a per-job summary shard.
+
+    Multiple generate jobs can execute in parallel against the same result directory.
+    To avoid races on summary.csv, each job writes a unique shard file instead of
+    writing the top-level summary file directly. Downstream phases merge shards before
+    reading the canonical summary.
+    """
     records, model_cache, loader_cache, adv_datasets = AdversarialCore.generate_attacks_phase(
         output_dir=output_dir,
         model_filter=model_filter,
@@ -64,9 +150,23 @@ def run_generate_phase(
     )
 
     if records:
-        summary_df = pd.DataFrame(records)
-        summary_df.to_csv(os.path.join(output_dir, "summary.csv"), index=False)
-        print(f"[INFO] Generated {len(records)} summary rows in {output_dir}/summary.csv")
+        parts = [
+            model_filter or "ALL",
+            dataset_filter or "ALL",
+            attack_filter or "ALL",
+            kind_filter or "ALL",
+        ]
+        shard_name = "_".join(part for part in parts if part and part != "ALL") or f"job_{os.getpid()}"
+        shard_path = os.path.join(output_dir, f"summary_{shard_name}.csv")
+        _atomic_write_csv(shard_path, pd.DataFrame(records))
+        print(f"[INFO] Generated {len(records)} summary rows in {shard_path}")
+
+        merge_flag = os.path.join(output_dir, ".summary_merge_complete")
+        if os.path.exists(merge_flag):
+            try:
+                os.remove(merge_flag)
+            except OSError:
+                pass
     else:
         print(f"[WARN] No attack-generation records were produced for {output_dir}")
     return records
@@ -161,6 +261,12 @@ def main() -> None:
         return
 
     if args.mode == "analyze":
+        merge_flag = os.path.join(args.output_dir, ".summary_merge_complete")
+        if os.path.exists(merge_flag):
+            print(f"[INFO] Summary merge completed; proceeding with analyze for {args.output_dir}")
+        else:
+            print(f"[INFO] Summary shards present; ensuring canonical summary is merged before analyze in {args.output_dir}")
+            _merge_summary_if_ready(args.output_dir)
         print(f"[INFO] Running analyze phase for {args.output_dir}")
         model_cache, loader_cache = AdversarialCore.rebuild_model_and_loader_cache(
             argparse.Namespace(output_dir=args.output_dir, model=args.model, dataset=args.dataset, kind=args.kind)
