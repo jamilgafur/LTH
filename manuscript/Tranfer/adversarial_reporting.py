@@ -9,10 +9,76 @@ from __future__ import annotations
 
 import glob
 import os
+import tempfile
+import time
 from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
+
+
+def _atomic_write_csv(path: str, df: pd.DataFrame) -> None:
+    """Write CSV atomically to avoid partial writes from concurrent jobs."""
+    path_obj = os.path.abspath(path)
+    directory = os.path.dirname(path_obj) or "."
+    os.makedirs(directory, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix=".tmp_", suffix=".csv", dir=directory)
+    os.close(fd)
+    try:
+        df.to_csv(tmp_path, index=False)
+        os.replace(tmp_path, path_obj)
+    finally:
+        if os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
+def _acquire_lock(lock_path: str, timeout_seconds: float = 60.0, stale_seconds: float = 300.0) -> bool:
+    """Acquire a lock file with stale-lock cleanup."""
+    lock_dir = os.path.dirname(lock_path) or "."
+    os.makedirs(lock_dir, exist_ok=True)
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            return True
+        except FileExistsError:
+            try:
+                if (time.time() - os.path.getmtime(lock_path)) > stale_seconds:
+                    os.unlink(lock_path)
+                    print(f"[DEBUG] Removed stale lock {lock_path}")
+                    continue
+            except OSError:
+                pass
+            time.sleep(0.2)
+    return False
+
+
+def _release_lock(lock_path: str) -> None:
+    try:
+        if os.path.exists(lock_path):
+            os.unlink(lock_path)
+    except OSError:
+        pass
+
+
+def _write_locked_csv(path: str, df: pd.DataFrame, lock_name: str) -> bool:
+    lock_path = os.path.join(os.path.dirname(path) or ".", f".{lock_name}.lock")
+    if not _acquire_lock(lock_path, timeout_seconds=120.0):
+        print(f"[WARN] Could not acquire lock for {path}; skipping write.")
+        return False
+    try:
+        _atomic_write_csv(path, df)
+        try:
+            open(os.path.join(os.path.dirname(path) or ".", f".{lock_name}_complete"), "a").close()
+        except OSError:
+            pass
+        return True
+    finally:
+        _release_lock(lock_path)
 
 
 BASELINE_KIND = "Control_Continuted"
@@ -44,8 +110,10 @@ class ReportingSuite:
 
         merged = pd.concat(dfs, ignore_index=True).drop_duplicates()
         merged_path = os.path.join(output_dir, f"{base_name}.csv")
-        merged.to_csv(merged_path, index=False)
-        print(f"[INFO] Merged {len(csv_paths)} files into {merged_path}")
+        if _write_locked_csv(merged_path, merged, base_name):
+            print(f"[INFO] Merged {len(csv_paths)} files into {merged_path}")
+        else:
+            print(f"[WARN] Skipped merge write for {merged_path}")
         # Keep summary shards. They are needed to audit missing model/dataset/kind rows
         # and to reproduce an incomplete merge.
 
@@ -290,8 +358,10 @@ class ReportingSuite:
 
         out_df = pd.DataFrame(rows)
         out_path = os.path.join(output_dir, "multi_run_kind_comparison_table.csv")
-        out_df.to_csv(out_path, index=False)
-        print(f"[INFO] Saved: {out_path}")
+        if _write_locked_csv(out_path, out_df, "multi_run_kind_comparison_table"):
+            print(f"[INFO] Saved: {out_path}")
+        else:
+            print(f"[WARN] Skipped saving {out_path}")
         return True
 
     @staticmethod
@@ -515,8 +585,10 @@ class ReportingSuite:
 
         acc_param_df = pd.concat(acc_param_frames, ignore_index=True) if acc_param_frames else pd.DataFrame()
         acc_param_path = os.path.join(output_dir, "accuracy_parameter_comparison.csv")
-        acc_param_df.to_csv(acc_param_path, index=False)
-        print(f"[INFO] Saved: {acc_param_path}")
+        if _write_locked_csv(acc_param_path, acc_param_df, "accuracy_parameter_comparison"):
+            print(f"[INFO] Saved: {acc_param_path}")
+        else:
+            print(f"[WARN] Skipped saving {acc_param_path}")
 
         by_attack = (
             df.groupby(["model", "dataset", "attack", "kind"], as_index=False)
@@ -604,8 +676,10 @@ class ReportingSuite:
             output_dir,
             "collapsed_vs_original_explainability_by_attack.csv",
         )
-        explainability_df.to_csv(explainability_path, index=False)
-        print(f"[INFO] Saved: {explainability_path}")
+        if _write_locked_csv(explainability_path, explainability_df, "collapsed_vs_original_explainability_by_attack"):
+            print(f"[INFO] Saved: {explainability_path}")
+        else:
+            print(f"[WARN] Skipped saving {explainability_path}")
 
         explainability_summary_df = (
             explainability_df.groupby(["model", "dataset", "baseline_kind", "variant_kind"], as_index=False)
@@ -658,8 +732,10 @@ class ReportingSuite:
             output_dir,
             "collapsed_vs_original_explainability_summary.csv",
         )
-        explainability_summary_df.to_csv(explainability_summary_path, index=False)
-        print(f"[INFO] Saved: {explainability_summary_path}")
+        if _write_locked_csv(explainability_summary_path, explainability_summary_df, "collapsed_vs_original_explainability_summary"):
+            print(f"[INFO] Saved: {explainability_summary_path}")
+        else:
+            print(f"[WARN] Skipped saving {explainability_summary_path}")
 
     @classmethod
     def generate_comparison_tables_from_csv(cls, output_dir: str) -> bool:

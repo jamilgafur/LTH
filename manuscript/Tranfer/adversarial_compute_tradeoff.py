@@ -9,11 +9,75 @@ Addresses:
 
 import os
 import json
+import tempfile
+import time
 import pandas as pd
 import numpy as np
 from pathlib import Path
 from typing import Dict, List, Tuple
 import logging
+
+
+def _atomic_write_csv(path: str | Path, df: pd.DataFrame) -> None:
+    """Write CSV atomically to avoid partial writes from concurrent jobs."""
+    path_obj = Path(path)
+    path_obj.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix=".tmp_", suffix=".csv", dir=str(path_obj.parent))
+    os.close(fd)
+    try:
+        df.to_csv(tmp_path, index=False)
+        os.replace(tmp_path, path_obj)
+    finally:
+        if os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
+def _acquire_lock(lock_path: str | Path, timeout_seconds: float = 60.0, stale_seconds: float = 300.0) -> bool:
+    """Acquire an exclusive file lock with stale-lock cleanup."""
+    lock_obj = Path(lock_path)
+    lock_obj.parent.mkdir(parents=True, exist_ok=True)
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        try:
+            fd = os.open(lock_obj, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            return True
+        except FileExistsError:
+            try:
+                if (time.time() - os.path.getmtime(lock_obj)) > stale_seconds:
+                    os.unlink(lock_obj)
+                    logger.info(f"[DEBUG] Removed stale lock {lock_obj}")
+                    continue
+            except OSError:
+                pass
+            time.sleep(0.2)
+    return False
+
+
+def _release_lock(lock_path: str | Path) -> None:
+    try:
+        if os.path.exists(lock_path):
+            os.unlink(lock_path)
+    except OSError:
+        pass
+
+
+def _write_locked_csv(path: str | Path, df: pd.DataFrame, lock_name: str) -> bool:
+    path_obj = Path(path)
+    lock_path = path_obj.parent / f".{lock_name}.lock"
+    if not _acquire_lock(lock_path, timeout_seconds=120.0):
+        logger.warning(f"[WARN] Could not acquire lock for {path_obj}; skipping write.")
+        return False
+    try:
+        _atomic_write_csv(path_obj, df)
+        (path_obj.parent / f".{lock_name}_complete").touch(exist_ok=True)
+        return True
+    finally:
+        _release_lock(lock_path)
+
 
 # Setup logging
 logging.basicConfig(
@@ -92,8 +156,10 @@ class TradeoffComputer:
         
         # Save aggregated summary
         summary_csv = self.output_dir / 'summary.csv'
-        combined.to_csv(summary_csv, index=False)
-        logger.info(f"Saved aggregated summary to {summary_csv}")
+        if _write_locked_csv(summary_csv, combined, 'summary'):
+            logger.info(f"Saved aggregated summary to {summary_csv}")
+        else:
+            logger.warning(f"Skipped writing aggregated summary to {summary_csv}")
         
         return combined
     
@@ -126,8 +192,10 @@ class TradeoffComputer:
         
         # Save compute profile
         compute_csv = self.output_dir / 'compute_profile.csv'
-        compute_df.to_csv(compute_csv, index=False)
-        logger.info(f"Saved compute profile ({len(compute_df)} rows) to {compute_csv}")
+        if _write_locked_csv(compute_csv, compute_df, 'compute_profile'):
+            logger.info(f"Saved compute profile ({len(compute_df)} rows) to {compute_csv}")
+        else:
+            logger.warning(f"Skipped writing compute profile to {compute_csv}")
         
         return compute_df
     
@@ -158,8 +226,10 @@ class TradeoffComputer:
         
         # Save gradient similarity
         grad_csv = self.output_dir / 'gradient_similarity.csv'
-        grad_df.to_csv(grad_csv, index=False)
-        logger.info(f"Saved gradient similarity ({len(grad_df)} rows) to {grad_csv}")
+        if _write_locked_csv(grad_csv, grad_df, 'gradient_similarity'):
+            logger.info(f"Saved gradient similarity ({len(grad_df)} rows) to {grad_csv}")
+        else:
+            logger.warning(f"Skipped writing gradient similarity to {grad_csv}")
         
         return grad_df
     
@@ -201,8 +271,10 @@ class TradeoffComputer:
             
             # Save tradeoff summary
             tradeoff_csv = self.output_dir / 'tradeoff_summary.csv'
-            tradeoff_df.to_csv(tradeoff_csv, index=False)
-            logger.info(f"Saved tradeoff summary ({len(tradeoff_df)} rows) to {tradeoff_csv}")
+            if _write_locked_csv(tradeoff_csv, tradeoff_df, 'tradeoff_summary'):
+                logger.info(f"Saved tradeoff summary ({len(tradeoff_df)} rows) to {tradeoff_csv}")
+            else:
+                logger.warning(f"Skipped writing tradeoff summary to {tradeoff_csv}")
             
             return tradeoff_df
             

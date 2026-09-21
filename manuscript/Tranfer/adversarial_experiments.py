@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import tempfile
+import time
 from typing import Callable
 
 import matplotlib.pyplot as plt
@@ -18,6 +20,70 @@ from adversarial_cka import CKASuite
 from adversarial_reporting import ReportingSuite
 
 EPSILON_VALUES = [1 / 255, 2 / 255, 4 / 255, 8 / 255, 16 / 255]
+
+
+def _atomic_write_csv(path: str, df: pd.DataFrame) -> None:
+    """Write CSV atomically to avoid partial writes from concurrent jobs."""
+    path_obj = os.path.abspath(path)
+    directory = os.path.dirname(path_obj) or "."
+    os.makedirs(directory, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix=".tmp_", suffix=".csv", dir=directory)
+    os.close(fd)
+    try:
+        df.to_csv(tmp_path, index=False)
+        os.replace(tmp_path, path_obj)
+    finally:
+        if os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
+def _acquire_lock(lock_path: str, timeout_seconds: float = 60.0, stale_seconds: float = 300.0) -> bool:
+    """Acquire a lock file with stale-lock cleanup."""
+    lock_dir = os.path.dirname(lock_path) or "."
+    os.makedirs(lock_dir, exist_ok=True)
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            return True
+        except FileExistsError:
+            try:
+                if (time.time() - os.path.getmtime(lock_path)) > stale_seconds:
+                    os.unlink(lock_path)
+                    print(f"[DEBUG] Removed stale lock {lock_path}")
+                    continue
+            except OSError:
+                pass
+            time.sleep(0.2)
+    return False
+
+
+def _release_lock(lock_path: str) -> None:
+    try:
+        if os.path.exists(lock_path):
+            os.unlink(lock_path)
+    except OSError:
+        pass
+
+
+def _write_locked_csv(path: str, df: pd.DataFrame, lock_name: str) -> bool:
+    lock_path = os.path.join(os.path.dirname(path) or ".", f".{lock_name}.lock")
+    if not _acquire_lock(lock_path, timeout_seconds=120.0):
+        print(f"[WARN] Could not acquire lock for {path}; skipping write.")
+        return False
+    try:
+        _atomic_write_csv(path, df)
+        try:
+            open(os.path.join(os.path.dirname(path) or ".", f".{lock_name}_complete"), "a").close()
+        except OSError:
+            pass
+        return True
+    finally:
+        _release_lock(lock_path)
 
 
 class AdvancedExperimentSuite:
@@ -108,8 +174,10 @@ class AdvancedExperimentSuite:
 
         df = pd.DataFrame(rows)
         csv_path = os.path.join(output_dir, "gradient_similarity.csv")
-        df.to_csv(csv_path, index=False)
-        print(f"[EXP4] Saved: {csv_path}")
+        if _write_locked_csv(csv_path, df, "gradient_similarity"):
+            print(f"[EXP4] Saved: {csv_path}")
+        else:
+            print(f"[WARN] Skipped saving {csv_path}")
         return rows
 
     def epsilon_sensitivity_phase(
@@ -170,8 +238,10 @@ class AdvancedExperimentSuite:
 
         df = pd.DataFrame(records)
         csv_path = os.path.join(output_dir, "epsilon_sensitivity.csv")
-        df.to_csv(csv_path, index=False)
-        print(f"[EXP7] Saved: {csv_path}")
+        if _write_locked_csv(csv_path, df, "epsilon_sensitivity"):
+            print(f"[EXP7] Saved: {csv_path}")
+        else:
+            print(f"[WARN] Skipped saving {csv_path}")
 
         if df.empty:
             print("[WARN] EXP7: no epsilon sensitivity records were generated.")
@@ -206,8 +276,10 @@ class AdvancedExperimentSuite:
         if delta_rows:
             delta_df = pd.DataFrame(delta_rows)
             delta_csv = os.path.join(output_dir, "epsilon_sensitivity_delta.csv")
-            delta_df.to_csv(delta_csv, index=False)
-            print(f"[EXP7] Saved: {delta_csv}")
+            if _write_locked_csv(delta_csv, delta_df, "epsilon_sensitivity_delta"):
+                print(f"[EXP7] Saved: {delta_csv}")
+            else:
+                print(f"[WARN] Skipped saving {delta_csv}")
 
         for dataset_name in df["dataset"].unique():
             for attack_name in df["attack"].unique():
@@ -866,18 +938,23 @@ class AdvancedExperimentSuite:
 
         vectors_df = pd.DataFrame(vector_rows)
         vectors_path = os.path.join(output_dir, "shap_reference_vectors.csv")
-        vectors_df.to_csv(vectors_path, index=False)
-        print(f"[EXP11] Saved: {vectors_path}")
+        if _write_locked_csv(vectors_path, vectors_df, "shap_reference_vectors"):
+            print(f"[EXP11] Saved: {vectors_path}")
+        else:
+            print(f"[WARN] Skipped saving {vectors_path}")
 
         sample_df = pd.DataFrame(sample_rows)
         sample_path = os.path.join(output_dir, "shap_sample_stats.csv")
-        sample_df.to_csv(sample_path, index=False)
-        print(f"[EXP11] Saved: {sample_path}")
+        if _write_locked_csv(sample_path, sample_df, "shap_sample_stats"):
+            print(f"[EXP11] Saved: {sample_path}")
+        else:
+            print(f"[WARN] Skipped saving {sample_path}")
 
         if not ref_vectors:
             print("[WARN] EXP11: no SHAP vectors generated; skipping similarity plots.")
             empty_pair = pd.DataFrame()
-            empty_pair.to_csv(os.path.join(output_dir, "shap_pairwise_similarity.csv"), index=False)
+            empty_path = os.path.join(output_dir, "shap_pairwise_similarity.csv")
+            _write_locked_csv(empty_path, empty_pair, "shap_pairwise_similarity")
             return []
 
         # --- Plot SHAP attribution profiles (PNG + SVG) ---
@@ -993,8 +1070,10 @@ class AdvancedExperimentSuite:
 
         pair_df = pd.DataFrame(pair_rows)
         pair_path = os.path.join(output_dir, "shap_pairwise_similarity.csv")
-        pair_df.to_csv(pair_path, index=False)
-        print(f"[EXP11] Saved: {pair_path}")
+        if _write_locked_csv(pair_path, pair_df, "shap_pairwise_similarity"):
+            print(f"[EXP11] Saved: {pair_path}")
+        else:
+            print(f"[WARN] Skipped saving {pair_path}")
 
         collapsed_vs_original = pair_df[
             (pair_df["same_architecture"])
@@ -1002,8 +1081,10 @@ class AdvancedExperimentSuite:
             & (pair_df["target_kind"].isin(ReportingSuite.variant_kinds()))
         ].copy()
         collapsed_vs_original_path = os.path.join(output_dir, "shap_original_vs_collapsed_similarity.csv")
-        collapsed_vs_original.to_csv(collapsed_vs_original_path, index=False)
-        print(f"[EXP11] Saved: {collapsed_vs_original_path}")
+        if _write_locked_csv(collapsed_vs_original_path, collapsed_vs_original, "shap_original_vs_collapsed_similarity"):
+            print(f"[EXP11] Saved: {collapsed_vs_original_path}")
+        else:
+            print(f"[WARN] Skipped saving {collapsed_vs_original_path}")
 
         for dataset_name in pair_df["dataset"].unique():
             sub = pair_df[pair_df["dataset"] == dataset_name]
@@ -1067,7 +1148,11 @@ class AdvancedExperimentSuite:
                     topk_jaccard=("topk_jaccard", "mean"),
                 )
             )
-            cv.to_csv(os.path.join(output_dir, "shap_original_vs_collapsed_summary.csv"), index=False)
+            cv_path = os.path.join(output_dir, "shap_original_vs_collapsed_summary.csv")
+            if _write_locked_csv(cv_path, cv, "shap_original_vs_collapsed_summary"):
+                print(f"[EXP11] Saved: {cv_path}")
+            else:
+                print(f"[WARN] Skipped saving {cv_path}")
 
             melt = cv.melt(
                 id_vars=["dataset", "source_model", "target_kind"],

@@ -28,6 +28,70 @@ from adversarial_checkpointing import CheckpointManager
 from adversarial_reporting import ReportingSuite
 
 
+def _atomic_write_csv(path: str, df) -> None:
+    """Write CSV atomically to avoid partial writes from concurrent jobs."""
+    path_obj = os.path.abspath(path)
+    directory = os.path.dirname(path_obj) or "."
+    os.makedirs(directory, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix=".tmp_", suffix=".csv", dir=directory)
+    os.close(fd)
+    try:
+        df.to_csv(tmp_path, index=False)
+        os.replace(tmp_path, path_obj)
+    finally:
+        if os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
+def _acquire_lock(lock_path: str, timeout_seconds: float = 60.0, stale_seconds: float = 300.0) -> bool:
+    """Acquire a lock file with stale-lock cleanup."""
+    lock_dir = os.path.dirname(lock_path) or "."
+    os.makedirs(lock_dir, exist_ok=True)
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            return True
+        except FileExistsError:
+            try:
+                if (time.time() - os.path.getmtime(lock_path)) > stale_seconds:
+                    os.unlink(lock_path)
+                    print(f"[DEBUG] Removed stale lock {lock_path}")
+                    continue
+            except OSError:
+                pass
+            time.sleep(0.2)
+    return False
+
+
+def _release_lock(lock_path: str) -> None:
+    try:
+        if os.path.exists(lock_path):
+            os.unlink(lock_path)
+    except OSError:
+        pass
+
+
+def _write_locked_csv(path: str, df, lock_name: str) -> bool:
+    lock_path = os.path.join(os.path.dirname(path) or ".", f".{lock_name}.lock")
+    if not _acquire_lock(lock_path, timeout_seconds=120.0):
+        print(f"[WARN] Could not acquire lock for {path}; skipping write.")
+        return False
+    try:
+        _atomic_write_csv(path, df)
+        try:
+            open(os.path.join(os.path.dirname(path) or ".", f".{lock_name}_complete"), "a").close()
+        except OSError:
+            pass
+        return True
+    finally:
+        _release_lock(lock_path)
+
+
 class AdversarialCore:
     """Shared core functionality for adversarial experiments."""
 
@@ -580,8 +644,10 @@ class AdversarialCore:
         transfer_df = pd.DataFrame(transfer_records)
         if not transfer_df.empty:
             transfer_path = os.path.join(output_dir, "transferability.csv")
-            transfer_df.to_csv(transfer_path, index=False)
-            print(f"[INFO] Saved transferability CSV to {transfer_path} ({len(transfer_df)} rows)")
+            if _write_locked_csv(transfer_path, transfer_df, "transferability"):
+                print(f"[INFO] Saved transferability CSV to {transfer_path} ({len(transfer_df)} rows)")
+            else:
+                print(f"[WARN] Skipped saving {transfer_path}")
         else:
             print("[WARN] No transferability rows were generated.")
 

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import os
+import tempfile
+import time
 from collapse import _capture_preblock_activation
 from adversarial_checkpointing import CheckpointManager
 from adversarial_reporting import ReportingSuite
@@ -12,6 +14,70 @@ import pandas as pd
 import seaborn as sns
 import torch
 import torch.nn as nn
+
+
+def _atomic_write_csv(path: str, df: pd.DataFrame) -> None:
+    """Write CSV atomically to avoid partial writes from concurrent jobs."""
+    path_obj = os.path.abspath(path)
+    directory = os.path.dirname(path_obj) or "."
+    os.makedirs(directory, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix=".tmp_", suffix=".csv", dir=directory)
+    os.close(fd)
+    try:
+        df.to_csv(tmp_path, index=False)
+        os.replace(tmp_path, path_obj)
+    finally:
+        if os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
+def _acquire_lock(lock_path: str, timeout_seconds: float = 60.0, stale_seconds: float = 300.0) -> bool:
+    """Acquire a lock file with stale-lock cleanup."""
+    lock_dir = os.path.dirname(lock_path) or "."
+    os.makedirs(lock_dir, exist_ok=True)
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            return True
+        except FileExistsError:
+            try:
+                if (time.time() - os.path.getmtime(lock_path)) > stale_seconds:
+                    os.unlink(lock_path)
+                    print(f"[DEBUG] Removed stale lock {lock_path}")
+                    continue
+            except OSError:
+                pass
+            time.sleep(0.2)
+    return False
+
+
+def _release_lock(lock_path: str) -> None:
+    try:
+        if os.path.exists(lock_path):
+            os.unlink(lock_path)
+    except OSError:
+        pass
+
+
+def _write_locked_csv(path: str, df: pd.DataFrame, lock_name: str) -> bool:
+    lock_path = os.path.join(os.path.dirname(path) or ".", f".{lock_name}.lock")
+    if not _acquire_lock(lock_path, timeout_seconds=120.0):
+        print(f"[WARN] Could not acquire lock for {path}; skipping write.")
+        return False
+    try:
+        _atomic_write_csv(path, df)
+        try:
+            open(os.path.join(os.path.dirname(path) or ".", f".{lock_name}_complete"), "a").close()
+        except OSError:
+            pass
+        return True
+    finally:
+        _release_lock(lock_path)
 
 
 class CKASuite:
@@ -158,7 +224,8 @@ class CKASuite:
                         )
 
         df = pd.DataFrame(records)
-        df.to_csv(os.path.join(output_dir, "cka_similarity.csv"), index=False)
+        cka_path = os.path.join(output_dir, "cka_similarity.csv")
+        _write_locked_csv(cka_path, df, "cka_similarity")
 
         # -----------------------------------------------------------------
         # Optional: compute CKA at exact collapsed block boundaries.
@@ -228,9 +295,8 @@ class CKASuite:
                 )
 
         if boundary_records:
-            pd.DataFrame(boundary_records).to_csv(
-                os.path.join(output_dir, "cka_boundary.csv"), index=False
-            )
+            boundary_path = os.path.join(output_dir, "cka_boundary.csv")
+            _write_locked_csv(boundary_path, pd.DataFrame(boundary_records), "cka_boundary")
 
         if df.empty:
             print("[WARN] CKA: no records generated; skipping CKA plots.")
@@ -267,6 +333,7 @@ class CKASuite:
                 plt.tight_layout()
                 plt.savefig(os.path.join(output_dir, f"cka_mean_heatmap_{dataset_name}.png"), dpi=300)
                 plt.close()
-                pivot.to_csv(os.path.join(output_dir, f"cka_mean_matrix_{dataset_name}.csv"))
+                matrix_path = os.path.join(output_dir, f"cka_mean_matrix_{dataset_name}.csv")
+                _write_locked_csv(matrix_path, pivot.reset_index(), f"cka_mean_matrix_{dataset_name}")
 
         return records

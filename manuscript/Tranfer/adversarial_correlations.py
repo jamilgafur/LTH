@@ -3,11 +3,77 @@
 from __future__ import annotations
 
 import os
+import tempfile
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+
+
+def _atomic_write_csv(path: str, df: pd.DataFrame) -> None:
+    """Write CSV atomically to avoid partial writes from concurrent jobs."""
+    path_obj = os.path.abspath(path)
+    directory = os.path.dirname(path_obj) or "."
+    os.makedirs(directory, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix=".tmp_", suffix=".csv", dir=directory)
+    os.close(fd)
+    try:
+        df.to_csv(tmp_path, index=False)
+        os.replace(tmp_path, path_obj)
+    finally:
+        if os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+
+def _acquire_lock(lock_path: str, timeout_seconds: float = 60.0, stale_seconds: float = 300.0) -> bool:
+    """Acquire a lock file with stale-lock cleanup."""
+    lock_dir = os.path.dirname(lock_path) or "."
+    os.makedirs(lock_dir, exist_ok=True)
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            return True
+        except FileExistsError:
+            try:
+                if (time.time() - os.path.getmtime(lock_path)) > stale_seconds:
+                    os.unlink(lock_path)
+                    print(f"[DEBUG] Removed stale lock {lock_path}")
+                    continue
+            except OSError:
+                pass
+            time.sleep(0.2)
+    return False
+
+
+def _release_lock(lock_path: str) -> None:
+    try:
+        if os.path.exists(lock_path):
+            os.unlink(lock_path)
+    except OSError:
+        pass
+
+
+def _write_locked_csv(path: str, df: pd.DataFrame, lock_name: str) -> bool:
+    lock_path = os.path.join(os.path.dirname(path) or ".", f".{lock_name}.lock")
+    if not _acquire_lock(lock_path, timeout_seconds=120.0):
+        print(f"[WARN] Could not acquire lock for {path}; skipping write.")
+        return False
+    try:
+        _atomic_write_csv(path, df)
+        try:
+            open(os.path.join(os.path.dirname(path) or ".", f".{lock_name}_complete"), "a").close()
+        except OSError:
+            pass
+        return True
+    finally:
+        _release_lock(lock_path)
 
 
 class CorrelationSuite:
@@ -234,8 +300,10 @@ class CorrelationSuite:
         corr_df["spearman_p_fdr"] = cls._bh_fdr(corr_df["spearman_p"].tolist())
 
         out_path = os.path.join(output_dir, "correlation_summary.csv")
-        corr_df.to_csv(out_path, index=False)
-        print(f"[CORR] Saved: {out_path}")
+        if _write_locked_csv(out_path, corr_df, "correlation_summary"):
+            print(f"[CORR] Saved: {out_path}")
+        else:
+            print(f"[WARN] Skipped saving {out_path}")
 
         cls._plot_scatter_panels(output_dir, df)
         available_numeric = [col for col in numeric_cols if col in df.columns]
@@ -349,4 +417,8 @@ class CorrelationSuite:
             )
 
         if rows:
-            pd.DataFrame(rows).to_csv(os.path.join(output_dir, "partial_correlation_summary.csv"), index=False)
+            partial_path = os.path.join(output_dir, "partial_correlation_summary.csv")
+            if _write_locked_csv(partial_path, pd.DataFrame(rows), "partial_correlation_summary"):
+                print(f"[CORR] Saved: {partial_path}")
+            else:
+                print(f"[WARN] Skipped saving {partial_path}")
