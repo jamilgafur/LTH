@@ -141,18 +141,34 @@ class AdversarialCore:
 
 
     @staticmethod
-    def evaluate_clean_accuracy(model: nn.Module, loader) -> float:
+    def evaluate_model(model: nn.Module, loader, return_latency_ms: bool = False):
+        """Evaluate accuracy and, optionally, mean inference latency in milliseconds."""
         model.eval()
         device = next(AdversarialCore._unwrap_model(model).parameters()).device
         correct = total = 0
+        batch_latency_ms = []
         with torch.no_grad():
             for imgs, lbls in loader:
                 imgs, lbls = imgs.to(device), lbls.to(device)
+                start = time.perf_counter()
                 outputs = model(imgs)
+                if device.type == "cuda":
+                    torch.cuda.synchronize(device)
+                elapsed_ms = (time.perf_counter() - start) * 1000.0
+                batch_latency_ms.append(float(elapsed_ms))
                 preds = outputs.argmax(dim=1)
                 correct += (preds == lbls).sum().item()
                 total += lbls.size(0)
-        return correct / total if total > 0 else 0.0
+
+        accuracy = correct / total if total > 0 else 0.0
+        if return_latency_ms:
+            return accuracy, float(np.mean(batch_latency_ms)) if batch_latency_ms else 0.0
+        return accuracy
+
+    @staticmethod
+    def evaluate_clean_accuracy(model: nn.Module, loader) -> float:
+        accuracy, _ = AdversarialCore.evaluate_model(model, loader, return_latency_ms=True)
+        return accuracy
 
     @staticmethod
     def get_available_attacks() -> list[str]:
@@ -399,7 +415,7 @@ class AdversarialCore:
                 model = torch.nn.DataParallel(model)
             model_cache[(model_name, dataset_name, kind)] = model
 
-            clean_acc = cls.evaluate_clean_accuracy(model, test_loader)
+            clean_acc, latency_ms = cls.evaluate_model(model, test_loader, return_latency_ms=True)
             for attack_name in attacks:
                 adv_bundle = cls.generate_adversarial_dataset(model, test_loader, attack_name)
                 if adv_bundle is None:
@@ -435,6 +451,7 @@ class AdversarialCore:
                         "attack": attack_name,
                         "model_label": ReportingSuite.model_kind_label(model_name, kind),
                         "param_count": param_count,
+                        "latency_ms": float(latency_ms),
                         "clean_acc": clean_acc,
                         "adv_acc": adv_acc,
                         **ReportingSuite.summarize_direct_metrics(clean_acc, adv_acc),
@@ -442,6 +459,53 @@ class AdversarialCore:
                 )
 
         return records, model_cache, loader_cache, adv_datasets
+
+    @classmethod
+    def compute_transfer_metrics(
+        cls,
+        source_model: nn.Module,
+        target_model: nn.Module,
+        adversarial_loader,
+        source_clean_predictions=None,
+        source_adversarial_predictions=None,
+        true_labels=None,
+        source_attack_success_rate: float | None = None,
+    ) -> dict:
+        """Compute aggregate transfer success between a source and target model."""
+        target_acc = cls.evaluate_clean_accuracy(target_model, adversarial_loader)
+        transfer_success_rate = 1.0 - target_acc
+
+        conditioned_success_rate = np.nan
+        if source_clean_predictions is not None and source_adversarial_predictions is not None and true_labels is not None:
+            device = next(cls._unwrap_model(target_model).parameters()).device
+            target_predictions = []
+            with torch.no_grad():
+                for imgs, _ in adversarial_loader:
+                    imgs = imgs.to(device)
+                    preds = target_model(imgs).argmax(dim=1).cpu()
+                    target_predictions.append(preds)
+            if target_predictions:
+                target_preds = torch.cat(target_predictions)
+                mask = (source_clean_predictions == true_labels) & (source_adversarial_predictions != true_labels)
+                if mask.sum().item() > 0:
+                    target_correct = (target_preds == true_labels)
+                    conditioned_success_rate = 1.0 - float(target_correct[mask].float().mean())
+
+        normalized_transfer_rate = np.nan
+        normalized_conditioned_rate = np.nan
+        if source_attack_success_rate is not None and float(source_attack_success_rate) > 0:
+            normalized_transfer_rate = transfer_success_rate / float(source_attack_success_rate)
+            if not np.isnan(conditioned_success_rate):
+                normalized_conditioned_rate = conditioned_success_rate / float(source_attack_success_rate)
+
+        return {
+            "transfer_acc": float(target_acc),
+            "transfer_success_rate": float(transfer_success_rate),
+            "conditioned_transfer_success_rate": float(conditioned_success_rate) if not np.isnan(conditioned_success_rate) else np.nan,
+            "source_attack_success_rate": float(source_attack_success_rate) if source_attack_success_rate is not None else np.nan,
+            "normalized_transfer_rate": float(normalized_transfer_rate) if not np.isnan(normalized_transfer_rate) else np.nan,
+            "normalized_conditioned_transfer_rate": float(normalized_conditioned_rate) if not np.isnan(normalized_conditioned_rate) else np.nan,
+        }
 
     @classmethod
     def analyze_transferability_phase(cls, output_dir: str, model_cache: dict, adv_datasets: dict):
@@ -454,7 +518,6 @@ class AdversarialCore:
 
         for (src_model, src_dataset, src_kind, src_attack), adv_path in adv_datasets.items():
             adv_bundle = cls.load_adversarial_bundle(adv_path)
-            # Loader for evaluating target model on the full adversarial set (aggregate metric).
             adv_loader = torch.utils.data.DataLoader(
                 torch.utils.data.TensorDataset(
                     adv_bundle["adversarial_images"], adv_bundle["true_labels"]
@@ -463,7 +526,6 @@ class AdversarialCore:
                 shuffle=False,
             )
 
-            # Extract per‑example source predictions for the conditioned metric.
             src_clean_preds = adv_bundle.get("source_clean_predictions")
             src_adv_preds = adv_bundle.get("source_adversarial_predictions")
             true_labels = adv_bundle["true_labels"]
@@ -472,34 +534,7 @@ class AdversarialCore:
                 if tgt_dataset != src_dataset:
                     continue
 
-                # ----- Aggregate transfer success (existing) -----
-                tgt_acc = cls.evaluate_clean_accuracy(tgt_model_obj, adv_loader)
-                transfer_success_rate = 1.0 - tgt_acc
-
-                # ----- Conditioned transfer success (new) -----
-                conditioned_success_rate = np.nan
-                if src_clean_preds is not None and src_adv_preds is not None:
-                    # Gather target predictions per example.
-                    device = next(tgt_model_obj.parameters()).device
-                    tgt_preds_all = []
-                    for imgs, _ in adv_loader:
-                        imgs = imgs.to(device)
-                        with torch.no_grad():
-                            preds = tgt_model_obj(imgs).argmax(dim=1).cpu()
-                        tgt_preds_all.append(preds)
-                    tgt_preds = torch.cat(tgt_preds_all)
-
-                    # Boolean mask: source correctly classified clean AND fooled on adversarial.
-                    mask = (src_clean_preds == true_labels) & (src_adv_preds != true_labels)
-                    if mask.sum().item() > 0:
-                        # Transfer success = proportion where target misclassifies.
-                        target_correct = (tgt_preds == true_labels)
-                        conditioned_success_rate = 1.0 - float(target_correct[mask].float().mean())
-
-                # ----- Normalized rates -----
                 source_attack_success_rate = np.nan
-                normalized_transfer_rate = np.nan
-                normalized_conditioned_rate = np.nan
                 if not records_df.empty:
                     match = records_df[
                         (records_df["model"] == src_model)
@@ -508,11 +543,17 @@ class AdversarialCore:
                         & (records_df["attack"] == src_attack)
                     ]
                     if not match.empty:
-                        source_attack_success_rate = float(match.iloc[0]["attack_success_rate"])
-                        if source_attack_success_rate > 0:
-                            normalized_transfer_rate = transfer_success_rate / source_attack_success_rate
-                            if not np.isnan(conditioned_success_rate):
-                                normalized_conditioned_rate = conditioned_success_rate / source_attack_success_rate
+                        source_attack_success_rate = float(match.iloc[0].get("attack_success_rate", np.nan))
+
+                transfer_metrics = cls.compute_transfer_metrics(
+                    source_model=None,
+                    target_model=tgt_model_obj,
+                    adversarial_loader=adv_loader,
+                    source_clean_predictions=src_clean_preds,
+                    source_adversarial_predictions=src_adv_preds,
+                    true_labels=true_labels,
+                    source_attack_success_rate=source_attack_success_rate,
+                )
 
                 transfer_records.append(
                     {
@@ -524,17 +565,25 @@ class AdversarialCore:
                         "target_kind": tgt_kind,
                         "target_label": ReportingSuite.model_kind_label(tgt_model, tgt_kind),
                         "dataset": src_dataset,
-                        "transfer_acc": tgt_acc,
-                        "transfer_success_rate": transfer_success_rate,
-                        "conditioned_transfer_success_rate": conditioned_success_rate,
-                        "source_attack_success_rate": source_attack_success_rate,
-                        "normalized_transfer_rate": normalized_transfer_rate,
-                        "normalized_conditioned_transfer_rate": normalized_conditioned_rate,
+                        "transfer_acc": transfer_metrics["transfer_acc"],
+                        "transfer_success_rate": transfer_metrics["transfer_success_rate"],
+                        "conditioned_transfer_success_rate": transfer_metrics["conditioned_transfer_success_rate"],
+                        "source_attack_success_rate": transfer_metrics["source_attack_success_rate"],
+                        "normalized_transfer_rate": transfer_metrics["normalized_transfer_rate"],
+                        "normalized_conditioned_transfer_rate": transfer_metrics["normalized_conditioned_transfer_rate"],
                         "same_architecture": src_model == tgt_model,
                         "same_kind": src_kind == tgt_kind,
                         "pair_type": ReportingSuite.classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
                     }
                 )
+
+        transfer_df = pd.DataFrame(transfer_records)
+        if not transfer_df.empty:
+            transfer_path = os.path.join(output_dir, "transferability.csv")
+            transfer_df.to_csv(transfer_path, index=False)
+            print(f"[INFO] Saved transferability CSV to {transfer_path} ({len(transfer_df)} rows)")
+        else:
+            print("[WARN] No transferability rows were generated.")
 
         return transfer_records
 
