@@ -46,8 +46,13 @@ def _atomic_write_csv(path: str, df: pd.DataFrame) -> None:
                 pass
 
 
-def _acquire_lock(lock_path: str, timeout_seconds: float = 60.0) -> bool:
-    """Acquire an exclusive lock via a lock file for shared result directories."""
+def _acquire_lock(lock_path: str, timeout_seconds: float = 60.0, stale_seconds: float = 300.0) -> bool:
+    """Acquire an exclusive lock via a lock file for shared result directories.
+
+    If a lock file already exists, its modification time is inspected. If the
+    lock is older than ``stale_seconds`` it is considered stale and removed
+    before retrying. This prevents dead‑locks caused by crashed jobs.
+    """
     lock_dir = Path(lock_path).parent
     lock_dir.mkdir(parents=True, exist_ok=True)
     deadline = time.time() + timeout_seconds
@@ -55,9 +60,20 @@ def _acquire_lock(lock_path: str, timeout_seconds: float = 60.0) -> bool:
         try:
             fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             os.close(fd)
+            print(f"[DEBUG] Acquired lock {lock_path}")
             return True
         except FileExistsError:
+            # Check for stale lock
+            try:
+                mtime = os.path.getmtime(lock_path)
+                if (time.time() - mtime) > stale_seconds:
+                    os.unlink(lock_path)
+                    print(f"[DEBUG] Removed stale lock {lock_path}")
+                    continue
+            except OSError:
+                pass
             time.sleep(0.2)
+    print(f"[WARN] Timeout acquiring lock {lock_path}")
     return False
 
 
@@ -70,19 +86,31 @@ def _release_lock(lock_path: str) -> None:
 
 
 def _merge_summary_if_ready(output_dir: str) -> str | None:
-    """Merge summary shards into canonical summary.csv when all shards are present."""
+    """Merge summary shards into canonical ``summary.csv`` when all shards are present.
+
+    The function acquires a lock, concatenates all ``summary_*.csv`` shards, writes
+    the merged CSV atomically, and creates a ``.summary_merge_complete`` flag file.
+    Debug statements are emitted to aid troubleshooting.
+    """
     summary_path = os.path.join(output_dir, "summary.csv")
-    shard_paths = sorted(
-        [os.path.join(output_dir, p) for p in os.listdir(output_dir) if p.startswith("summary_") and p.endswith(".csv")]
-    ) if os.path.isdir(output_dir) else []
+    shard_paths = (
+        sorted(
+            [os.path.join(output_dir, p) for p in os.listdir(output_dir) if p.startswith("summary_") and p.endswith(".csv")]
+        )
+        if os.path.isdir(output_dir)
+        else []
+    )
     if not shard_paths:
+        # No shards – either a pre‑existing summary or nothing yet.
         return summary_path if os.path.exists(summary_path) else None
 
     lock_path = os.path.join(output_dir, ".summary_merge.lock")
     if not _acquire_lock(lock_path, timeout_seconds=120.0):
         print(f"[WARN] Could not acquire summary merge lock in {output_dir}; skipping merge.")
         return summary_path if os.path.exists(summary_path) else None
+    print(f"[DEBUG] Acquired merge lock {lock_path}")
     try:
+        # Read all existing shard CSVs, ignoring empty or missing files.
         summary_df = pd.concat(
             [pd.read_csv(p) for p in shard_paths if os.path.exists(p) and os.path.getsize(p) > 0],
             ignore_index=True,
@@ -91,8 +119,16 @@ def _merge_summary_if_ready(output_dir: str) -> str | None:
             summary_df = summary_df.drop_duplicates().reset_index(drop=True)
             _atomic_write_csv(summary_path, summary_df)
             print(f"[INFO] Merged {len(shard_paths)} summary shards into {summary_path}")
+            # Write completion flag so downstream phases know merge succeeded.
+            flag_path = os.path.join(output_dir, ".summary_merge_complete")
+            try:
+                Path(flag_path).touch()
+                print(f"[DEBUG] Created merge‑completion flag {flag_path}")
+            except OSError as e:
+                print(f"[WARN] Failed to create merge‑completion flag {flag_path}: {e}")
     finally:
         _release_lock(lock_path)
+        print(f"[DEBUG] Released merge lock {lock_path}")
     return summary_path if os.path.exists(summary_path) else None
 
 
