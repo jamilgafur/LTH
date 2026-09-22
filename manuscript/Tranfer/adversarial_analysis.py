@@ -324,11 +324,24 @@ def main() -> None:
 
     if args.mode == "plot":
         print(f"[INFO] Running plot phase for {args.output_dir}")
-        # Actually call the plotting function
-        from adversarial_plotting import PlottingSuite  # or whatever your class is
-        suite = PlottingSuite()
-        suite.generate_all_plots(args.output_dir)  # or whatever method generates plots
-        print(f"[INFO] Plotting complete. Figures saved to {args.output_dir}/figures/")
+        
+        # Import and run the plotter
+        from adversarial_plotting import AdversarialPlotter
+        
+        plotter = AdversarialPlotter(args.output_dir)
+        
+        # Load data
+        summary_path = os.path.join(args.output_dir, "summary.csv")
+        compute_path = os.path.join(args.output_dir, "compute_profile.csv")
+        tradeoff_path = os.path.join(args.output_dir, "tradeoff_summary.csv")
+        
+        summary_df = pd.read_csv(summary_path) if os.path.exists(summary_path) else pd.DataFrame()
+        compute_df = pd.read_csv(compute_path) if os.path.exists(compute_path) else pd.DataFrame()
+        tradeoff_df = pd.read_csv(tradeoff_path) if os.path.exists(tradeoff_path) else pd.DataFrame()
+        
+        # Generate figures
+        plotter.run(summary_df, compute_df, tradeoff_df)
+        print(f"[INFO] ✅ Plotting complete. Figures saved to {args.output_dir}")
         return
 
     if args.mode == "compare":
