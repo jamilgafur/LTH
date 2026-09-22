@@ -100,12 +100,19 @@ if [ "${FORCE_RERUN:-0}" != "1" ]; then
         exit 0
     fi
 
-    if [ -s "$OUTPUT_FILE" ]; then
-        echo "[SKIP] Existing output detected: $OUTPUT_FILE"
-        echo "[SKIP] Treating as already processed to prevent accidental overwrite."
-        echo "[SKIP] Use FORCE_RERUN=1 if you intentionally want to regenerate."
-        exit 0
-    fi
+    # NOTE: Previously, the script would skip execution if the output file already existed and was non‑empty.
+    # This caused downstream phases (e.g., gradient_sim and cka) to be considered "ready" without actually running
+    # the underlying Python logic, because the main entrypoint prints a ready message which populates the file.
+    # The presence of a non‑empty output file should not be treated as completion; instead we rely on the DONE_MARKER
+    # file created after successful execution (added later in the script). Therefore, we no longer skip based on
+    # output file size alone.
+    # The block is retained as a comment for reference.
+    # if [ -s "$OUTPUT_FILE" ]; then
+    #     echo "[SKIP] Existing output detected: $OUTPUT_FILE"
+    #     echo "[SKIP] Treating as already processed to prevent accidental overwrite."
+    #     echo "[SKIP] Use FORCE_RERUN=1 if you intentionally want to regenerate."
+    #     exit 0
+    # fi
 fi
 
 # Mark this unit as in-progress and always release lock on exit.

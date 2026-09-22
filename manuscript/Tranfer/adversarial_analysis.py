@@ -12,9 +12,13 @@ from typing import Any
 
 import pandas as pd
 
-from adversarial_core import AdversarialCore
-from adversarial_experiments import AdvancedExperimentSuite
-from adversarial_reporting import ReportingSuite
+# Import sibling modules using relative imports to work correctly when the
+# package is executed with ``python -m manuscript.Tranfer.adversarial_analysis``.
+# Absolute imports (e.g., ``from adversarial_core import ...``) fail because the
+# top‑level module name ``adversarial_core`` is not found on ``sys.path``.
+from .adversarial_core import AdversarialCore
+from .adversarial_experiments import AdvancedExperimentSuite
+from .adversarial_reporting import ReportingSuite
 
 VALID_PHASES = [
     "generate",
@@ -383,6 +387,58 @@ def main() -> None:
 
     if args.mode == "compare":
         print(f"[INFO] Compare phase will proceed using {summary_path}")
+        return
+
+    # ---------------------------------------------------------------------
+    # Optional phases that were previously missing from the dispatcher.
+    # These phases rely on the AdvancedExperimentSuite and need the model
+    # and loader caches built from the existing checkpoints.
+    # ---------------------------------------------------------------------
+    if args.mode == "gradient_sim":
+        print(f"[INFO] Running gradient similarity phase for {args.output_dir}")
+        # Rebuild caches (model and data loaders) for the selected filters.
+        cache_args = argparse.Namespace(
+            output_dir=args.output_dir,
+            model=args.model,
+            dataset=args.dataset,
+            kind=args.kind,
+        )
+        model_cache, loader_cache = AdversarialCore.rebuild_model_and_loader_cache(cache_args)
+        suite = AdvancedExperimentSuite(
+            instantiate_attack=lambda *a, **kw: None,
+            model_kind_label=ReportingSuite.model_kind_label,
+            classify_transfer_pair=ReportingSuite.classify_transfer_pair,
+        )
+        records = suite.gradient_similarity_phase(
+            output_dir=args.output_dir,
+            model_cache=model_cache,
+            loader_cache=loader_cache,
+        )
+        print(f"[INFO] Gradient similarity phase produced {len(records)} records.")
+        return
+
+    if args.mode == "cka":
+        print(f"[INFO] Running CKA similarity phase for {args.output_dir}")
+        cache_args = argparse.Namespace(
+            output_dir=args.output_dir,
+            model=args.model,
+            dataset=args.dataset,
+            kind=args.kind,
+        )
+        model_cache, loader_cache = AdversarialCore.rebuild_model_and_loader_cache(cache_args)
+        suite = AdvancedExperimentSuite(
+            instantiate_attack=lambda *a, **kw: None,
+            model_kind_label=ReportingSuite.model_kind_label,
+            classify_transfer_pair=ReportingSuite.classify_transfer_pair,
+        )
+        records = suite.cka_similarity_phase(
+            output_dir=args.output_dir,
+            model_cache=model_cache,
+            loader_cache=loader_cache,
+            max_samples=args.max_samples,
+            max_layers=args.max_layers if hasattr(args, "max_layers") else 8,
+        )
+        print(f"[INFO] CKA similarity phase produced {len(records)} records.")
         return
 
     if args.compute_shap:
