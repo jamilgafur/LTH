@@ -1,7 +1,17 @@
 """
-Fixed adversarial_plotting.py
-Works with individual summary_*.csv files organized by model-dataset-attack
-Generates 4 publication-quality figures
+adversarial_plotting.py - REVISED FOR STANDARD (NON-ADVERSARIAL) MODELS
+Focus: How does pruning affect clean accuracy, attack vulnerability, and SHAP explainability?
+
+Research Question:
+  - Control (baseline unpruned) vs
+  - Dynamic_Region_All_Combined (pruned) vs  
+  - Dynamic_Region_All_Combined_quant (pruned + quantized)
+  
+Key metrics:
+  - Clean accuracy (does pruning hurt standard accuracy?)
+  - Attack success rate (are pruned models MORE or LESS vulnerable?)
+  - Parameter efficiency (pruning compression ratio)
+  - SHAP explainability (do pruned models have different feature importance?)
 """
 
 import matplotlib.pyplot as plt
@@ -15,295 +25,364 @@ logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
 class AdversarialPlotter:
-    """Creates publication-quality adversarial robustness plots."""
+    """Analyzes pruning impact on standard models' accuracy and vulnerability."""
     
     def __init__(self, output_dir: str):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Set publication-quality defaults
-        plt.rcParams['figure.figsize'] = (12, 8)
+        plt.rcParams['figure.figsize'] = (14, 9)
         plt.rcParams['font.size'] = 11
         plt.rcParams['axes.labelsize'] = 12
         plt.rcParams['axes.titlesize'] = 14
         plt.rcParams['xtick.labelsize'] = 10
         plt.rcParams['ytick.labelsize'] = 10
         plt.rcParams['legend.fontsize'] = 10
-        plt.rcParams['lines.linewidth'] = 2
         plt.rcParams['figure.dpi'] = 300
 
     def load_all_summaries(self) -> pd.DataFrame:
-        """Load and merge all summary_*.csv files."""
-        logger.info("Loading all summary CSV files...")
+        """Load all summary CSVs and extract variant info from filenames."""
+        logger.info("Loading summary files...")
         
         summary_files = sorted(glob.glob(str(self.output_dir / "summary_*.csv")))
-        if not summary_files:
-            logger.warning("No summary_*.csv files found!")
-            return pd.DataFrame()
-        
         dfs = []
+        
         for file in summary_files:
             try:
                 df = pd.read_csv(file)
-                # Extract model, dataset, attack from filename
-                filename = Path(file).stem  # e.g., "summary_ConvNeXt_Cifar10_APGD"
-                parts = filename.replace("summary_", "").split("_")
+                filename = Path(file).stem.replace("summary_", "")
+                parts = filename.split("_")
                 
-                # Parse filename: summary_Model_Dataset_Attack
+                # Parse: Model_Dataset_Attack
                 if len(parts) >= 3:
-                    model = parts[0]  # ConvNeXt
-                    dataset = parts[1]  # Cifar10, Cifar100, TinyImageNet
-                    attack = "_".join(parts[2:])  # APGD, BIM, CW, etc.
+                    model = parts[0]
+                    dataset = parts[1]
+                    attack = "_".join(parts[2:])
                     
                     df['model'] = model
                     df['dataset'] = dataset
                     df['attack'] = attack
                     
+                    # Extract variant from 'kind' column if it exists
+                    if 'kind' in df.columns:
+                        df['variant'] = df['kind']
+                    else:
+                        # Fallback: assume all rows in file are same variant
+                        # (you may need to adjust this based on your data structure)
+                        df['variant'] = 'Unknown'
+                    
                     dfs.append(df)
-                    logger.info(f"  ✓ Loaded {Path(file).name}: {len(df)} rows ({model}, {dataset}, {attack})")
+                    logger.info(f"  ✓ {Path(file).name}: {len(df)} rows")
             except Exception as e:
-                logger.warning(f"  ✗ Failed to load {file}: {e}")
+                logger.warning(f"  ✗ {file}: {e}")
         
-        if not dfs:
-            logger.error("No summary files could be loaded!")
-            return pd.DataFrame()
+        merged = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
         
-        merged = pd.concat(dfs, ignore_index=True)
-        logger.info(f"\n✓ Total merged rows: {len(merged)}")
-        logger.info(f"✓ Columns: {merged.columns.tolist()}\n")
+        if not merged.empty:
+            logger.info(f"\n✓ Total rows: {len(merged)}")
+            logger.info(f"✓ Models: {merged['model'].nunique()}")
+            logger.info(f"✓ Datasets: {merged['dataset'].nunique()}")
+            logger.info(f"✓ Attacks: {merged['attack'].nunique()}")
+            logger.info(f"✓ Variants: {merged['variant'].unique().tolist()}\n")
+        
         return merged
 
-    def plot_attack_success_by_model(self, df: pd.DataFrame):
-        """Figure 1: Attack success rates by model and dataset."""
-        logger.info("Generating Figure 1: Attack Success Rates by Model and Dataset")
+    def plot_clean_accuracy_preservation(self, df: pd.DataFrame):
+        """Figure 1: Does pruning hurt clean accuracy?"""
+        logger.info("Generating Figure 1: Clean Accuracy Preservation")
         
-        if df.empty or 'model' not in df.columns:
-            logger.warning("Cannot generate Figure 1: missing data")
+        if df.empty or 'clean_accuracy' not in df.columns:
+            logger.warning("  ⚠ Missing clean_accuracy column")
             return
         
-        # Group by model and compute mean robust accuracy
-        model_stats = df.groupby('model').agg({
-            'robust_accuracy': ['mean', 'std', 'count'],
-            'attack_success_rate': ['mean', 'std']
-        }).reset_index()
+        fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+        fig.suptitle('Figure 1: Impact of Pruning on Clean Accuracy\n(Control vs Pruned vs Pruned+Quant)', 
+                     fontsize=15, fontweight='bold')
         
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
+        models = sorted(df['model'].unique())[:6]
+        colors = {
+            'Control_Continued': '#27ae60',
+            'Dynamic_Region_All_Combined': '#f39c12',
+            'Dynamic_Region_All_Combined_quant': '#e74c3c'
+        }
         
-        # Plot 1: Robust Accuracy by Model
-        models = model_stats['model'].values
-        robust_mean = model_stats[('robust_accuracy', 'mean')].values
-        robust_std = model_stats[('robust_accuracy', 'std')].values
-        
-        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
-        ax1.bar(models, robust_mean, yerr=robust_std, capsize=5, alpha=0.7, 
-                color=colors[:len(models)], edgecolor='black', linewidth=1.5)
-        ax1.set_ylabel('Robust Accuracy (%)', fontsize=12, fontweight='bold')
-        ax1.set_xlabel('Model', fontsize=12, fontweight='bold')
-        ax1.set_title('Figure 1a: Robust Accuracy by Model\n(Error bars = ±1 std dev)', 
-                      fontsize=13, fontweight='bold')
-        ax1.set_ylim([0, 105])
-        ax1.grid(True, alpha=0.3, axis='y', linestyle='--')
-        ax1.set_axisbelow(True)
-        plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45, ha='right')
-        
-        # Plot 2: Attack Success Rate by Model
-        attack_mean = model_stats[('attack_success_rate', 'mean')].values
-        attack_std = model_stats[('attack_success_rate', 'std')].values
-        
-        ax2.bar(models, attack_mean, yerr=attack_std, capsize=5, alpha=0.7, 
-                color=colors[:len(models)], edgecolor='black', linewidth=1.5)
-        ax2.set_ylabel('Attack Success Rate (%)', fontsize=12, fontweight='bold')
-        ax2.set_xlabel('Model', fontsize=12, fontweight='bold')
-        ax2.set_title('Figure 1b: Attack Success Rate by Model\n(Error bars = ±1 std dev)', 
-                      fontsize=13, fontweight='bold')
-        ax2.set_ylim([0, 105])
-        ax2.grid(True, alpha=0.3, axis='y', linestyle='--')
-        ax2.set_axisbelow(True)
-        plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45, ha='right')
+        for idx, model in enumerate(models):
+            ax = axes[idx // 3, idx % 3]
+            model_data = df[df['model'] == model]
+            
+            # Group by variant, aggregate across all attacks/datasets
+            variant_stats = model_data.groupby('variant').agg({
+                'clean_accuracy': ['mean', 'std', 'count']
+            }).reset_index()
+            
+            if variant_stats.empty:
+                ax.text(0.5, 0.5, f'{model}\n(No data)', ha='center', va='center')
+                ax.set_title(model)
+                continue
+            
+            variants = variant_stats['variant'].values
+            means = variant_stats[('clean_accuracy', 'mean')].values
+            stds = variant_stats[('clean_accuracy', 'std')].values
+            
+            bars = ax.bar(variants, means, yerr=stds, capsize=8, alpha=0.75,
+                         color=[colors.get(v, '#95a5a6') for v in variants],
+                         edgecolor='black', linewidth=2)
+            
+            # Add value labels on bars
+            for bar, mean in zip(bars, means):
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height,
+                       f'{mean:.1f}%', ha='center', va='bottom', fontweight='bold', fontsize=10)
+            
+            ax.set_ylabel('Clean Accuracy (%)', fontweight='bold')
+            ax.set_title(f'{model}', fontweight='bold', fontsize=12)
+            ax.set_ylim([0, 105])
+            ax.grid(True, alpha=0.3, axis='y', linestyle='--')
+            ax.set_axisbelow(True)
+            plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right', fontsize=9)
         
         plt.tight_layout()
-        fig.savefig(self.output_dir / 'Figure_1_attack_success_by_model.png', dpi=300, bbox_inches='tight')
-        logger.info(f"✓ Saved Figure 1: Figure_1_attack_success_by_model.png\n")
+        fig.savefig(self.output_dir / 'Figure_1_clean_accuracy_preservation.png', dpi=300, bbox_inches='tight')
+        logger.info(f"  ✓ Saved Figure 1\n")
         plt.close()
 
-    def plot_robustness_by_dataset(self, df: pd.DataFrame):
-        """Figure 2: Robustness by dataset."""
-        logger.info("Generating Figure 2: Robustness by Dataset and Model")
+    def plot_attack_vulnerability_increase(self, df: pd.DataFrame):
+        """Figure 2: Does pruning INCREASE vulnerability to attacks?"""
+        logger.info("Generating Figure 2: Attack Vulnerability by Variant")
         
-        if df.empty or 'dataset' not in df.columns:
-            logger.warning("Cannot generate Figure 2: missing data")
+        if df.empty or 'attack_success_rate' not in df.columns:
+            logger.warning("  ⚠ Missing attack_success_rate column")
             return
         
         fig, ax = plt.subplots(figsize=(14, 8))
         
-        # Group by dataset and model
-        dataset_model = df.groupby(['dataset', 'model'])['robust_accuracy'].agg(['mean', 'std']).reset_index()
+        # Group by variant and attack
+        attack_variant = df.groupby(['attack', 'variant']).agg({
+            'attack_success_rate': ['mean', 'std']
+        }).reset_index()
         
         # Pivot for grouped bar chart
-        pivot_mean = dataset_model.pivot(index='dataset', columns='model', values='mean')
-        pivot_std = dataset_model.pivot(index='dataset', columns='model', values='std')
+        pivot_mean = attack_variant.pivot(index='attack', columns='variant', values=('attack_success_rate', 'mean'))
+        pivot_std = attack_variant.pivot(index='attack', columns='variant', values=('attack_success_rate', 'std'))
         
-        # Create grouped bar chart
+        # Flatten column names
+        pivot_mean.columns = pivot_mean.columns.droplevel(0)
+        pivot_std.columns = pivot_std.columns.droplevel(0)
+        
+        colors = {
+            'Control_Continued': '#27ae60',
+            'Dynamic_Region_All_Combined': '#f39c12',
+            'Dynamic_Region_All_Combined_quant': '#e74c3c'
+        }
+        
         x = np.arange(len(pivot_mean.index))
-        width = 0.13
-        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+        width = 0.25
         
-        for i, (col, color) in enumerate(zip(pivot_mean.columns, colors)):
-            offset = (i - len(pivot_mean.columns)/2) * width
-            ax.bar(x + offset, pivot_mean[col], width, label=col, 
-                   yerr=pivot_std[col], capsize=3, alpha=0.8, color=color, edgecolor='black', linewidth=1)
+        for i, variant in enumerate(sorted(pivot_mean.columns)):
+            if variant in pivot_mean.columns:
+                ax.bar(x + i*width, pivot_mean[variant], width, 
+                       label=variant, alpha=0.8,
+                       color=colors.get(variant, '#95a5a6'),
+                       edgecolor='black', linewidth=1.5,
+                       yerr=pivot_std[variant], capsize=4)
         
-        ax.set_ylabel('Robust Accuracy (%)', fontsize=12, fontweight='bold')
-        ax.set_xlabel('Dataset', fontsize=12, fontweight='bold')
-        ax.set_title('Figure 2: Robustness Across Datasets and Models\n(Error bars = ±1 std dev)', 
-                     fontsize=13, fontweight='bold')
-        ax.set_xticks(x)
-        ax.set_xticklabels(pivot_mean.index)
+        ax.set_xlabel('Attack Method', fontweight='bold', fontsize=12)
+        ax.set_ylabel('Attack Success Rate (%)', fontweight='bold', fontsize=12)
+        ax.set_title('Figure 2: Vulnerability to Adversarial Attacks\n(Higher = More Vulnerable)\nControl vs Pruned vs Pruned+Quant', 
+                     fontsize=14, fontweight='bold', pad=20)
+        ax.set_xticks(x + width)
+        ax.set_xticklabels(pivot_mean.index, rotation=45, ha='right', fontsize=10)
         ax.set_ylim([0, 105])
-        ax.legend(title='Model', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=10)
+        ax.legend(loc='upper right', fontsize=11, framealpha=0.95)
         ax.grid(True, alpha=0.3, axis='y', linestyle='--')
         ax.set_axisbelow(True)
         
         plt.tight_layout()
-        fig.savefig(self.output_dir / 'Figure_2_robustness_by_dataset.png', dpi=300, bbox_inches='tight')
-        logger.info(f"✓ Saved Figure 2: Figure_2_robustness_by_dataset.png\n")
+        fig.savefig(self.output_dir / 'Figure_2_attack_vulnerability.png', dpi=300, bbox_inches='tight')
+        logger.info(f"  ✓ Saved Figure 2\n")
         plt.close()
 
-    def plot_attack_comparison(self, df: pd.DataFrame):
-        """Figure 3: Attack method comparison."""
-        logger.info("Generating Figure 3: Attack Method Comparison")
+    def plot_variant_summary_statistics(self, df: pd.DataFrame):
+        """Figure 3: Summary statistics for Control vs Pruned vs Pruned+Quant."""
+        logger.info("Generating Figure 3: Variant Summary Statistics")
         
-        if df.empty or 'attack' not in df.columns:
-            logger.warning("Cannot generate Figure 3: missing attack column")
+        if df.empty:
             return
         
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
+        fig, axes = plt.subplots(2, 2, figsize=(16, 10))
+        fig.suptitle('Figure 3: Summary Comparison Across All Models\n(Control vs Pruned vs Pruned+Quant)', 
+                     fontsize=15, fontweight='bold')
         
-        # Group by attack
-        attack_stats = df.groupby('attack').agg({
-            'robust_accuracy': ['mean', 'std'],
-            'attack_success_rate': ['mean', 'std']
+        colors = {
+            'Control_Continued': '#27ae60',
+            'Dynamic_Region_All_Combined': '#f39c12',
+            'Dynamic_Region_All_Combined_quant': '#e74c3c'
+        }
+        
+        # Plot 1: Clean Accuracy
+        if 'clean_accuracy' in df.columns:
+            ax = axes[0, 0]
+            clean_stats = df.groupby('variant')['clean_accuracy'].agg(['mean', 'std']).reset_index()
+            variants = clean_stats['variant'].values
+            means = clean_stats['mean'].values
+            stds = clean_stats['std'].values
+            
+            bars = ax.bar(variants, means, yerr=stds, capsize=10, alpha=0.75,
+                         color=[colors.get(v, '#95a5a6') for v in variants],
+                         edgecolor='black', linewidth=2)
+            
+            for bar, mean in zip(bars, means):
+                ax.text(bar.get_x() + bar.get_width()/2., bar.get_height(),
+                       f'{mean:.1f}%', ha='center', va='bottom', fontweight='bold')
+            
+            ax.set_ylabel('Clean Accuracy (%)', fontweight='bold', fontsize=11)
+            ax.set_title('Clean Accuracy (Unpruned Performance)', fontweight='bold')
+            ax.set_ylim([0, 105])
+            ax.grid(True, alpha=0.3, axis='y', linestyle='--')
+            plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+        
+        # Plot 2: Attack Success Rate
+        if 'attack_success_rate' in df.columns:
+            ax = axes[0, 1]
+            attack_stats = df.groupby('variant')['attack_success_rate'].agg(['mean', 'std']).reset_index()
+            variants = attack_stats['variant'].values
+            means = attack_stats['mean'].values
+            stds = attack_stats['std'].values
+            
+            bars = ax.bar(variants, means, yerr=stds, capsize=10, alpha=0.75,
+                         color=[colors.get(v, '#95a5a6') for v in variants],
+                         edgecolor='black', linewidth=2)
+            
+            for bar, mean in zip(bars, means):
+                ax.text(bar.get_x() + bar.get_width()/2., bar.get_height(),
+                       f'{mean:.1f}%', ha='center', va='bottom', fontweight='bold')
+            
+            ax.set_ylabel('Attack Success Rate (%)', fontweight='bold', fontsize=11)
+            ax.set_title('Attack Success Rate (Vulnerability)', fontweight='bold')
+            ax.set_ylim([0, 105])
+            ax.grid(True, alpha=0.3, axis='y', linestyle='--')
+            plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+        
+        # Plot 3: Sample Count
+        ax = axes[1, 0]
+        counts = df.groupby('variant').size().reset_index(name='count')
+        variants = counts['variant'].values
+        counts_vals = counts['count'].values
+        
+        bars = ax.bar(variants, counts_vals, alpha=0.75,
+                     color=[colors.get(v, '#95a5a6') for v in variants],
+                     edgecolor='black', linewidth=2)
+        
+        for bar, count in zip(bars, counts_vals):
+            ax.text(bar.get_x() + bar.get_width()/2., bar.get_height(),
+                   f'{count:,}', ha='center', va='bottom', fontweight='bold')
+        
+        ax.set_ylabel('Sample Count', fontweight='bold', fontsize=11)
+        ax.set_title('Data Coverage by Variant', fontweight='bold')
+        ax.grid(True, alpha=0.3, axis='y', linestyle='--')
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+        
+        # Plot 4: Models Tested
+        ax = axes[1, 1]
+        model_counts = df.groupby('variant')['model'].nunique().reset_index()
+        variants = model_counts['variant'].values
+        model_vals = model_counts['model'].values
+        
+        bars = ax.bar(variants, model_vals, alpha=0.75,
+                     color=[colors.get(v, '#95a5a6') for v in variants],
+                     edgecolor='black', linewidth=2)
+        
+        for bar, count in zip(bars, model_vals):
+            ax.text(bar.get_x() + bar.get_width()/2., bar.get_height(),
+                   f'{count}', ha='center', va='bottom', fontweight='bold', fontsize=12)
+        
+        ax.set_ylabel('Number of Models', fontweight='bold', fontsize=11)
+        ax.set_title('Model Coverage', fontweight='bold')
+        ax.grid(True, alpha=0.3, axis='y', linestyle='--')
+        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+        
+        plt.tight_layout()
+        fig.savefig(self.output_dir / 'Figure_3_summary_statistics.png', dpi=300, bbox_inches='tight')
+        logger.info(f"  ✓ Saved Figure 3\n")
+        plt.close()
+
+    def plot_accuracy_robustness_correlation(self, df: pd.DataFrame):
+        """Figure 4: Does higher clean accuracy correlate with higher vulnerability?"""
+        logger.info("Generating Figure 4: Clean Accuracy vs Vulnerability Correlation")
+        
+        if df.empty or 'clean_accuracy' not in df.columns or 'attack_success_rate' not in df.columns:
+            logger.warning("  ⚠ Missing required columns")
+            return
+        
+        fig, ax = plt.subplots(figsize=(12, 8))
+        
+        # Aggregate by model and variant
+        model_variant = df.groupby(['model', 'variant']).agg({
+            'clean_accuracy': 'mean',
+            'attack_success_rate': 'mean'
         }).reset_index()
         
-        attacks = attack_stats['attack'].values
-        x = np.arange(len(attacks))
-        width = 0.35
+        colors = {
+            'Control_Continued': '#27ae60',
+            'Dynamic_Region_All_Combined': '#f39c12',
+            'Dynamic_Region_All_Combined_quant': '#e74c3c'
+        }
         
-        # Plot 1: Robust Accuracy by Attack
-        robust_mean = attack_stats[('robust_accuracy', 'mean')].values
-        robust_std = attack_stats[('robust_accuracy', 'std')].values
+        for variant in sorted(model_variant['variant'].unique()):
+            variant_data = model_variant[model_variant['variant'] == variant]
+            ax.scatter(variant_data['clean_accuracy'], 
+                      variant_data['attack_success_rate'],
+                      s=250, alpha=0.7, label=variant,
+                      color=colors.get(variant, '#95a5a6'),
+                      edgecolors='black', linewidth=2)
         
-        ax1.bar(x, robust_mean, width, label='Robust Accuracy', 
-                yerr=robust_std, capsize=5, alpha=0.7, color='steelblue', edgecolor='black', linewidth=1.5)
-        ax1.set_ylabel('Robust Accuracy (%)', fontsize=12, fontweight='bold')
-        ax1.set_xlabel('Attack Method', fontsize=12, fontweight='bold')
-        ax1.set_title('Figure 3a: Robust Accuracy by Attack Method\n(Error bars = ±1 std dev)', 
-                      fontsize=13, fontweight='bold')
-        ax1.set_xticks(x)
-        ax1.set_xticklabels(attacks, rotation=45, ha='right')
-        ax1.set_ylim([0, 105])
-        ax1.grid(True, alpha=0.3, axis='y', linestyle='--')
-        ax1.set_axisbelow(True)
-        
-        # Plot 2: Attack Success Rate by Attack
-        attack_mean = attack_stats[('attack_success_rate', 'mean')].values
-        attack_std = attack_stats[('attack_success_rate', 'std')].values
-        
-        ax2.bar(x, attack_mean, width, label='Attack Success Rate', 
-                yerr=attack_std, capsize=5, alpha=0.7, color='coral', edgecolor='black', linewidth=1.5)
-        ax2.set_ylabel('Attack Success Rate (%)', fontsize=12, fontweight='bold')
-        ax2.set_xlabel('Attack Method', fontsize=12, fontweight='bold')
-        ax2.set_title('Figure 3b: Attack Success Rate by Method\n(Error bars = ±1 std dev)', 
-                      fontsize=13, fontweight='bold')
-        ax2.set_xticks(x)
-        ax2.set_xticklabels(attacks, rotation=45, ha='right')
-        ax2.set_ylim([0, 105])
-        ax2.grid(True, alpha=0.3, axis='y', linestyle='--')
-        ax2.set_axisbelow(True)
+        ax.set_xlabel('Clean Accuracy (%)', fontweight='bold', fontsize=12)
+        ax.set_ylabel('Attack Success Rate (%)', fontweight='bold', fontsize=12)
+        ax.set_title('Figure 4: Clean Accuracy vs Vulnerability\n(Does pruning change the accuracy-vulnerability trade-off?)', 
+                     fontsize=14, fontweight='bold', pad=20)
+        ax.set_xlim([0, 105])
+        ax.set_ylim([0, 105])
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.set_axisbelow(True)
+        ax.legend(loc='best', fontsize=11, framealpha=0.95)
         
         plt.tight_layout()
-        fig.savefig(self.output_dir / 'Figure_3_attack_comparison.png', dpi=300, bbox_inches='tight')
-        logger.info(f"✓ Saved Figure 3: Figure_3_attack_comparison.png\n")
-        plt.close()
-
-    def plot_heatmap_model_dataset_attack(self, df: pd.DataFrame):
-        """Figure 4: Heatmap of robustness by model and dataset."""
-        logger.info("Generating Figure 4: Robustness Heatmap (Model × Dataset)")
-        
-        if df.empty or 'model' not in df.columns or 'dataset' not in df.columns:
-            logger.warning("Cannot generate Figure 4: missing data")
-            return
-        
-        # Create pivot table: rows=model, cols=dataset, values=mean robust_accuracy
-        pivot = df.pivot_table(values='robust_accuracy', index='model', columns='dataset', aggfunc='mean')
-        
-        fig, ax = plt.subplots(figsize=(10, 8))
-        
-        # Create heatmap
-        im = ax.imshow(pivot.values, cmap='RdYlGn', aspect='auto', vmin=0, vmax=100)
-        
-        # Set ticks and labels
-        ax.set_xticks(np.arange(len(pivot.columns)))
-        ax.set_yticks(np.arange(len(pivot.index)))
-        ax.set_xticklabels(pivot.columns, fontsize=11, fontweight='bold')
-        ax.set_yticklabels(pivot.index, fontsize=11, fontweight='bold')
-        
-        # Add colorbar
-        cbar = plt.colorbar(im, ax=ax)
-        cbar.set_label('Robust Accuracy (%)', fontsize=12, fontweight='bold')
-        
-        # Add text annotations
-        for i in range(len(pivot.index)):
-            for j in range(len(pivot.columns)):
-                value = pivot.values[i, j]
-                if not np.isnan(value):
-                    text = ax.text(j, i, f'{value:.1f}%', ha="center", va="center", 
-                                 color="black", fontsize=11, fontweight='bold')
-        
-        ax.set_title('Figure 4: Robustness Heatmap (Model × Dataset)\nGreen = Better, Red = Worse', 
-                     fontsize=13, fontweight='bold', pad=20)
-        ax.set_xlabel('Dataset', fontsize=12, fontweight='bold')
-        ax.set_ylabel('Model', fontsize=12, fontweight='bold')
-        
-        plt.tight_layout()
-        fig.savefig(self.output_dir / 'Figure_4_robustness_heatmap.png', dpi=300, bbox_inches='tight')
-        logger.info(f"✓ Saved Figure 4: Figure_4_robustness_heatmap.png\n")
+        fig.savefig(self.output_dir / 'Figure_4_accuracy_vulnerability_correlation.png', dpi=300, bbox_inches='tight')
+        logger.info(f"  ✓ Saved Figure 4\n")
         plt.close()
 
     def run(self):
         """Generate all figures."""
         logger.info("\n" + "=" * 80)
-        logger.info("GENERATING PUBLICATION-QUALITY FIGURES")
+        logger.info("PRUNING IMPACT ANALYSIS: Standard (Non-Adversarial) Models")
         logger.info("=" * 80 + "\n")
         
-        # Load all data
         df = self.load_all_summaries()
         
         if df.empty:
-            logger.error("✗ No data loaded. Cannot generate figures.")
+            logger.error("✗ No data loaded!")
             return
         
-        logger.info(f"DataFrame shape: {df.shape}")
-        logger.info(f"Models: {df['model'].unique().tolist()}")
-        logger.info(f"Datasets: {df['dataset'].unique().tolist()}")
-        logger.info(f"Attacks: {df['attack'].unique().tolist()}\n")
-        
         # Generate figures
-        self.plot_attack_success_by_model(df)
-        self.plot_robustness_by_dataset(df)
-        self.plot_attack_comparison(df)
-        self.plot_heatmap_model_dataset_attack(df)
+        self.plot_clean_accuracy_preservation(df)
+        self.plot_attack_vulnerability_increase(df)
+        self.plot_variant_summary_statistics(df)
+        self.plot_accuracy_robustness_correlation(df)
         
         logger.info("=" * 80)
-        logger.info("✓ FIGURE GENERATION COMPLETE")
-        logger.info("=" * 80 + "\n")
+        logger.info("✓ ANALYSIS COMPLETE")
+        logger.info("=" * 80)
+        logger.info("\nKey Research Questions Answered:")
+        logger.info("  1. Does pruning hurt clean accuracy? (Figure 1)")
+        logger.info("  2. Does pruning increase adversarial vulnerability? (Figure 2)")
+        logger.info("  3. Summary comparison across all models (Figure 3)")
+        logger.info("  4. Accuracy-vulnerability trade-off (Figure 4)")
+        logger.info("\nNext: Run SHAP analysis (temp4.sh) to understand feature importance changes\n")
 
 
 def main():
-    """Main entry point."""
     import sys
     output_dir = sys.argv[1] if len(sys.argv) > 1 else "."
-    
     plotter = AdversarialPlotter(output_dir)
     plotter.run()
 
