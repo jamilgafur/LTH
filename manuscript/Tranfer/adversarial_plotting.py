@@ -88,7 +88,10 @@ class AdversarialPlotter:
         """Load all summary CSVs and extract variant info from filenames."""
         logger.info("Loading summary files...")
         
-        summary_files = sorted(glob.glob(str(self.output_dir / "summary_*.csv")))
+        # Search recursively for any summary_*.csv files under the output directory.
+        # This works whether the user points to the results folder itself or its
+        # parent directory.
+        summary_files = sorted(glob.glob(str(self.output_dir / "**/summary_*.csv"), recursive=True))
         dfs = []
         
         for file in summary_files:
@@ -143,7 +146,8 @@ class AdversarialPlotter:
         # can exceed the memory limits of the container when rendering many sub‑
         # plots. A 14×8 in figure at 150 dpi is sufficient for publication‑quality
         # PNGs while keeping the memory footprint low.
-        fig, axes = plt.subplots(2, 3, figsize=(14, 8))
+        # Reduce figure size and DPI further to stay within container memory.
+        fig, axes = plt.subplots(2, 3, figsize=(12, 6))
         fig.suptitle('Figure 1: Impact of Pruning on Clean Accuracy\n(Control vs Pruned vs Pruned+Quant)', 
                      fontsize=15, fontweight='bold')
         
@@ -185,9 +189,9 @@ class AdversarialPlotter:
             ax.set_axisbelow(True)
             plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right', fontsize=9)
         
-        plt.tight_layout()
-        # Save with a lower DPI to further reduce memory consumption.
-        fig.savefig(self.output_dir / 'Figure_1_clean_accuracy_preservation.png', dpi=150, bbox_inches='tight')
+        # Avoid tight-layout and bbox expansion here: both can greatly enlarge the
+        # rendered canvas and trigger MemoryError on constrained systems.
+        fig.savefig(self.output_dir / 'Figure_1_clean_accuracy_preservation.png', dpi=100)
         logger.info(f"  ✓ Saved Figure 1\n")
         plt.close()
 
@@ -241,8 +245,8 @@ class AdversarialPlotter:
         ax.set_axisbelow(True)
         
         plt.tight_layout()
-        # Save with reduced DPI to limit memory consumption.
-        fig.savefig(self.output_dir / 'Figure_2_attack_vulnerability.png', dpi=150, bbox_inches='tight')
+        # Save at moderate DPI without bbox expansion to keep memory usage stable.
+        fig.savefig(self.output_dir / 'Figure_2_attack_vulnerability.png', dpi=120)
         logger.info(f"  ✓ Saved Figure 2\n")
         plt.close()
 
@@ -343,7 +347,7 @@ class AdversarialPlotter:
         plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
         
         plt.tight_layout()
-        fig.savefig(self.output_dir / 'Figure_3_summary_statistics.png', dpi=300, bbox_inches='tight')
+        fig.savefig(self.output_dir / 'Figure_3_summary_statistics.png', dpi=120)
         logger.info(f"  ✓ Saved Figure 3\n")
         plt.close()
 
@@ -385,7 +389,7 @@ class AdversarialPlotter:
         ax.legend(loc='best', fontsize=11, framealpha=0.95)
         
         plt.tight_layout()
-        fig.savefig(self.output_dir / 'Figure_4_accuracy_vulnerability_correlation.png', dpi=300, bbox_inches='tight')
+        fig.savefig(self.output_dir / 'Figure_4_accuracy_vulnerability_correlation.png', dpi=120)
         logger.info(f"  ✓ Saved Figure 4\n")
         plt.close()
 
