@@ -127,22 +127,42 @@ class CheckpointManager:
         ``epochs300_pretrain100``). To expose each regimen we now return a list of
         ``(path, split)`` tuples, where *split* is the ``epochsX_pretrainY`` tag
         extracted from the directory name. Callers should iterate over the list
-        to obtain all available checkpoints.
-        """
+        to obtain all available checkpoints.        
+        Searches in the current working directory and up to 2 levels of parent
+        directories (., .., ../..) to handle various working directory scenarios.        """
         prefix = f"{model}_{dataset}_"
-        dirs = [d for d in os.listdir(".") if os.path.isdir(d) and d.startswith(prefix)]
-        if not dirs:
-            return []
-
+        search_dirs = ["."]
+        
+        # Also search in parent directories to handle different working directory scenarios
+        if os.path.exists(".."):
+            search_dirs.append("..")
+        if os.path.exists("../.."):
+            search_dirs.append("../..")
+        
         results = []
-        for d in dirs:
-            # Extract the split tag (e.g. epochs100_pretrain300) from the directory name.
-            match = SPLIT_TAG_PATTERN.search(d)
-            split_tag = match.group(1) if match else "unknown"
-            filename = KIND_SPECS[kind]["checkpoint"]
-            full_path = os.path.abspath(os.path.join(d, "checkpoints", filename))
-            if os.path.exists(full_path):
-                results.append((full_path, split_tag))
+        seen_paths = set()  # Avoid duplicates if same checkpoint is found in multiple search paths
+        
+        for search_dir in search_dirs:
+            try:
+                all_dirs = os.listdir(search_dir)
+            except OSError:
+                continue
+                
+            dirs = [os.path.join(search_dir, d) for d in all_dirs 
+                   if os.path.isdir(os.path.join(search_dir, d)) and d.startswith(prefix)]
+            
+            for d in dirs:
+                # Extract the split tag (e.g. epochs100_pretrain300) from the directory name.
+                dir_basename = os.path.basename(d)
+                match = SPLIT_TAG_PATTERN.search(dir_basename)
+                split_tag = match.group(1) if match else "unknown"
+                filename = KIND_SPECS[kind]["checkpoint"]
+                full_path = os.path.abspath(os.path.join(d, "checkpoints", filename))
+                
+                if os.path.exists(full_path) and full_path not in seen_paths:
+                    results.append((full_path, split_tag))
+                    seen_paths.add(full_path)
+        
         return results
 
     @staticmethod
