@@ -323,7 +323,12 @@ def main() -> None:
         return
 
     if args.mode == "plot":
-        print(f"[INFO] Plot phase will proceed using {summary_path}")
+        print(f"[INFO] Running plot phase for {args.output_dir}")
+        # Actually call the plotting function
+        from adversarial_plotting import PlottingSuite  # or whatever your class is
+        suite = PlottingSuite()
+        suite.generate_all_plots(args.output_dir)  # or whatever method generates plots
+        print(f"[INFO] Plotting complete. Figures saved to {args.output_dir}/figures/")
         return
 
     if args.mode == "compare":
