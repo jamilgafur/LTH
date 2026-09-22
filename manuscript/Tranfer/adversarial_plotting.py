@@ -174,6 +174,8 @@ class AdversarialPlotter:
         plot_data['clean_accuracy_delta_from_control'] = (
             plot_data['clean_accuracy_mean'] - plot_data['control_clean_accuracy']
         )
+        # For the control variant the delta is zero and the error bar should be zero as well.
+        plot_data.loc[plot_data['variant'] == control_variant, 'clean_accuracy_std'] = 0.0
         plot_data.to_csv(self.output_dir / 'Figure_1_clean_accuracy_data.csv', index=False)
 
         fig, axes = plt.subplots(2, 3, figsize=(12, 6))
@@ -195,17 +197,17 @@ class AdversarialPlotter:
             deltas = model_data['clean_accuracy_delta_from_control'].values
             stds = model_data['clean_accuracy_std'].fillna(0).values
 
-            bars = ax.bar(variants, deltas, yerr=stds, capsize=8, alpha=0.75,
+            bars = ax.bar(variants, deltas, alpha=0.75,
                          color=[colors.get(v, '#95a5a6') for v in variants],
                          edgecolor='black', linewidth=2)
 
             for bar, delta in zip(bars, deltas):
                 height = bar.get_height()
                 ax.text(bar.get_x() + bar.get_width()/2., height,
-                       f'{delta:.1f} pp', ha='center', va='bottom', fontweight='bold', fontsize=10)
+                         f'{delta:.1f}%', ha='center', va='bottom', fontweight='bold', fontsize=10)
 
             ax.axhline(0, color='black', linewidth=1.0)
-            ax.set_ylabel('Change vs Control (percentage points)', fontweight='bold')
+            ax.set_ylabel('Change vs Control (%)', fontweight='bold')
             ax.set_title(f'{model}', fontweight='bold', fontsize=12)
             ax.grid(True, alpha=0.3, axis='y', linestyle='--')
             ax.set_axisbelow(True)
@@ -216,8 +218,8 @@ class AdversarialPlotter:
         plt.close()
 
     def plot_attack_vulnerability_increase(self, df: pd.DataFrame):
-        """Figure 2: Change in attack success rate relative to the control variant."""
-        logger.info("Generating Figure 2: Attack Vulnerability by Variant")
+        """Figure 2: Change in attack success rate relative to the control variant, broken out per model."""
+        logger.info("Generating Figure 2: Attack Vulnerability by Variant (per model)")
         df = self._normalize_summary_df(df)
 
         if df.empty or 'attack_success_rate' not in df.columns:
@@ -229,47 +231,63 @@ class AdversarialPlotter:
             logger.warning("  ⚠ No variant information found for baseline comparison")
             return
 
-        attack_variant = df.groupby(['attack', 'variant'], as_index=False).agg(
+        # Compute delta ASR per model, attack, variant
+        attack_variant = df.groupby(['model', 'attack', 'variant'], as_index=False).agg(
             mean_attack_success_rate=('attack_success_rate', 'mean'),
             std_attack_success_rate=('attack_success_rate', 'std'),
         )
-        control_by_attack = (
+        control_by_model_attack = (
             attack_variant[attack_variant['variant'] == control_variant]
-            [['attack', 'mean_attack_success_rate']]
+            [['model', 'attack', 'mean_attack_success_rate']]
             .rename(columns={'mean_attack_success_rate': 'control_attack_success_rate'})
         )
-        plot_data = attack_variant.merge(control_by_attack, on='attack', how='left')
+        plot_data = attack_variant.merge(control_by_model_attack, on=['model', 'attack'], how='left')
         plot_data['asr_delta_from_control'] = (
             plot_data['mean_attack_success_rate'] - plot_data['control_attack_success_rate']
         )
         plot_data.to_csv(self.output_dir / 'Figure_2_attack_vulnerability_data.csv', index=False)
 
-        pivot_mean = plot_data.pivot(index='attack', columns='variant', values='asr_delta_from_control')
-        pivot_std = plot_data.pivot(index='attack', columns='variant', values='std_attack_success_rate')
-
-        fig, ax = plt.subplots(figsize=(14, 8))
+        # Create a grid of sub‑plots – one per model (max 6 models → 2×3 grid)
+        models = sorted(df['model'].unique())
+        n_models = len(models)
+        ncols = 3
+        nrows = (n_models + ncols - 1) // ncols
+        fig, axes = plt.subplots(nrows, ncols, figsize=(14, 4 * nrows), squeeze=False)
         colors = VARIANT_COLORS
-        x = np.arange(len(pivot_mean.index))
-        width = 0.25
 
-        for i, variant in enumerate(sorted(pivot_mean.columns)):
-            if variant in pivot_mean.columns:
-                ax.bar(x + i * width, pivot_mean[variant], width,
-                       label=variant, alpha=0.8,
-                       color=colors.get(variant, '#95a5a6'),
-                       edgecolor='black', linewidth=1.5,
-                       yerr=pivot_std[variant], capsize=4)
+        for idx, model in enumerate(models):
+            ax = axes[idx // ncols, idx % ncols]
+            model_data = plot_data[plot_data['model'] == model]
+            if model_data.empty:
+                ax.text(0.5, 0.5, f'{model}\n(No data)', ha='center', va='center')
+                ax.set_title(model)
+                continue
 
-        ax.axhline(0, color='black', linewidth=1.0)
-        ax.set_xlabel('Attack Method', fontweight='bold', fontsize=12)
-        ax.set_ylabel('Change in ASR vs Control (percentage points)', fontweight='bold', fontsize=12)
-        ax.set_title('Figure 2: Change in ASR vs Control\n(Higher = More Vulnerable)',
-                     fontsize=14, fontweight='bold', pad=20)
-        ax.set_xticks(x + width)
-        ax.set_xticklabels(pivot_mean.index, rotation=45, ha='right', fontsize=10)
-        ax.legend(loc='upper right', fontsize=11, framealpha=0.95)
-        ax.grid(True, alpha=0.3, axis='y', linestyle='--')
-        ax.set_axisbelow(True)
+            pivot_mean = model_data.pivot(index='attack', columns='variant', values='asr_delta_from_control')
+            pivot_std = model_data.pivot(index='attack', columns='variant', values='std_attack_success_rate')
+            x = np.arange(len(pivot_mean.index))
+            width = 0.25
+            for i, variant in enumerate(sorted(pivot_mean.columns)):
+                if variant in pivot_mean.columns:
+                          ax.bar(x + i * width, pivot_mean[variant], width,
+                              label=variant, alpha=0.8,
+                              color=colors.get(variant, '#95a5a6'),
+                              edgecolor='black', linewidth=1.5)
+            ax.axhline(0, color='black', linewidth=1.0)
+            ax.set_xlabel('Attack', fontsize=10)
+            ax.set_ylabel('Δ ASR (pp)', fontsize=10)
+            ax.set_title(model, fontsize=11)
+            ax.set_xticks(x + width)
+            ax.set_xticklabels(pivot_mean.index, rotation=45, ha='right', fontsize=8)
+            ax.grid(True, alpha=0.3, axis='y', linestyle='--')
+            ax.set_axisbelow(True)
+            if idx == 0:
+                ax.legend(loc='upper right', fontsize=8, framealpha=0.95)
+
+        # Hide any unused sub‑plots
+        total_axes = nrows * ncols
+        for empty_idx in range(n_models, total_axes):
+            fig.delaxes(axes[empty_idx // ncols, empty_idx % ncols])
 
         plt.tight_layout()
         fig.savefig(self.output_dir / 'Figure_2_attack_vulnerability.png', dpi=120)
@@ -277,109 +295,109 @@ class AdversarialPlotter:
         plt.close()
 
     def plot_variant_summary_statistics(self, df: pd.DataFrame):
-        """Figure 3: Summary statistics for Control vs Pruned vs Pruned+Quant."""
-        logger.info("Generating Figure 3: Variant Summary Statistics")
+        """Figure 3: Summary statistics for Control vs Pruned vs Pruned+Quant, split per model."""
+        logger.info("Generating Figure 3: Variant Summary Statistics (per model)")
         df = self._normalize_summary_df(df)
 
         if df.empty:
             return
-        
-        fig, axes = plt.subplots(2, 2, figsize=(16, 10))
-        fig.suptitle('Figure 3: Summary Comparison Across All Models\n(Control vs Pruned vs Pruned+Quant)', 
-                     fontsize=15, fontweight='bold')
 
         colors = VARIANT_COLORS
-        
-        # Plot 1: Clean Accuracy
-        if 'clean_accuracy' in df.columns:
-            ax = axes[0, 0]
-            clean_stats = df.groupby('variant')['clean_accuracy'].agg(['mean', 'std']).reset_index()
-            variants = clean_stats['variant'].values
-            means = clean_stats['mean'].values
-            stds = clean_stats['std'].values
-            
-            bars = ax.bar(variants, means, yerr=stds, capsize=10, alpha=0.75,
+        models = sorted(df['model'].unique())
+        n_models = len(models)
+        ncols = 3
+        nrows = (n_models + ncols - 1) // ncols
+
+        # Create a grid where each cell will contain a 2×2 block of sub‑plots for a model.
+        # We'll generate a separate figure for each model to keep layout simple.
+        for model in models:
+            model_df = df[df['model'] == model]
+            if model_df.empty:
+                continue
+
+            fig, axes = plt.subplots(2, 2, figsize=(16, 10))
+            fig.suptitle(f'Figure 3: Summary for {model}\n(Control vs Pruned vs Pruned+Quant)',
+                         fontsize=15, fontweight='bold')
+
+            # Plot 1: Clean Accuracy
+            if 'clean_accuracy' in model_df.columns:
+                ax = axes[0, 0]
+                clean_stats = model_df.groupby('variant')['clean_accuracy'].agg(['mean', 'std']).reset_index()
+                variants = clean_stats['variant'].values
+                means = clean_stats['mean'].values
+                stds = clean_stats['std'].values
+                bars = ax.bar(variants, means, alpha=0.75,
+                               color=[colors.get(v, '#95a5a6') for v in variants],
+                               edgecolor='black', linewidth=2)
+                for bar, mean in zip(bars, means):
+                    ax.text(bar.get_x() + bar.get_width()/2., bar.get_height(),
+                           f'{mean:.1f}%', ha='center', va='bottom', fontweight='bold')
+                ax.set_ylabel('Clean Accuracy (%)', fontweight='bold', fontsize=11)
+                ax.set_title('Clean Accuracy', fontweight='bold')
+                ax.set_ylim([0, 105])
+                ax.grid(True, alpha=0.3, axis='y', linestyle='--')
+                plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+
+            # Plot 2: Attack Success Rate
+            if 'attack_success_rate' in model_df.columns:
+                ax = axes[0, 1]
+                attack_stats = model_df.groupby('variant')['attack_success_rate'].agg(['mean', 'std']).reset_index()
+                variants = attack_stats['variant'].values
+                means = attack_stats['mean'].values
+                stds = attack_stats['std'].values
+                bars = ax.bar(variants, means, alpha=0.75,
+                               color=[colors.get(v, '#95a5a6') for v in variants],
+                               edgecolor='black', linewidth=2)
+                for bar, mean in zip(bars, means):
+                    ax.text(bar.get_x() + bar.get_width()/2., bar.get_height(),
+                           f'{mean:.1f}%', ha='center', va='bottom', fontweight='bold')
+                ax.set_ylabel('Attack Success Rate (%)', fontweight='bold', fontsize=11)
+                ax.set_title('Attack Success Rate', fontweight='bold')
+                ax.set_ylim([0, 105])
+                ax.grid(True, alpha=0.3, axis='y', linestyle='--')
+                plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+
+            # Plot 3: Sample Count
+            ax = axes[1, 0]
+            counts = model_df.groupby('variant').size().reset_index(name='count')
+            variants = counts['variant'].values
+            counts_vals = counts['count'].values
+            bars = ax.bar(variants, counts_vals, alpha=0.75,
                          color=[colors.get(v, '#95a5a6') for v in variants],
                          edgecolor='black', linewidth=2)
-            
-            for bar, mean in zip(bars, means):
+            for bar, count in zip(bars, counts_vals):
                 ax.text(bar.get_x() + bar.get_width()/2., bar.get_height(),
-                       f'{mean:.1f}%', ha='center', va='bottom', fontweight='bold')
-            
-            ax.set_ylabel('Clean Accuracy (%)', fontweight='bold', fontsize=11)
-            ax.set_title('Clean Accuracy (Unpruned Performance)', fontweight='bold')
-            ax.set_ylim([0, 105])
+                       f'{count:,}', ha='center', va='bottom', fontweight='bold')
+            ax.set_ylabel('Sample Count', fontweight='bold', fontsize=11)
+            ax.set_title('Data Coverage', fontweight='bold')
             ax.grid(True, alpha=0.3, axis='y', linestyle='--')
             plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
-        
-        # Plot 2: Attack Success Rate
-        if 'attack_success_rate' in df.columns:
-            ax = axes[0, 1]
-            attack_stats = df.groupby('variant')['attack_success_rate'].agg(['mean', 'std']).reset_index()
-            variants = attack_stats['variant'].values
-            means = attack_stats['mean'].values
-            stds = attack_stats['std'].values
-            
-            bars = ax.bar(variants, means, yerr=stds, capsize=10, alpha=0.75,
+
+            # Plot 4: Models Tested (will always be 1 for a single model, but kept for consistency)
+            ax = axes[1, 1]
+            model_counts = model_df.groupby('variant')['model'].nunique().reset_index()
+            variants = model_counts['variant'].values
+            model_vals = model_counts['model'].values
+            bars = ax.bar(variants, model_vals, alpha=0.75,
                          color=[colors.get(v, '#95a5a6') for v in variants],
                          edgecolor='black', linewidth=2)
-            
-            for bar, mean in zip(bars, means):
+            for bar, cnt in zip(bars, model_vals):
                 ax.text(bar.get_x() + bar.get_width()/2., bar.get_height(),
-                       f'{mean:.1f}%', ha='center', va='bottom', fontweight='bold')
-            
-            ax.set_ylabel('Attack Success Rate (%)', fontweight='bold', fontsize=11)
-            ax.set_title('Attack Success Rate (Vulnerability)', fontweight='bold')
-            ax.set_ylim([0, 105])
+                       f'{cnt}', ha='center', va='bottom', fontweight='bold')
+            ax.set_ylabel('Number of Models', fontweight='bold', fontsize=11)
+            ax.set_title('Model Coverage', fontweight='bold')
             ax.grid(True, alpha=0.3, axis='y', linestyle='--')
             plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
-        
-        # Plot 3: Sample Count
-        ax = axes[1, 0]
-        counts = df.groupby('variant').size().reset_index(name='count')
-        variants = counts['variant'].values
-        counts_vals = counts['count'].values
-        
-        bars = ax.bar(variants, counts_vals, alpha=0.75,
-                     color=[colors.get(v, '#95a5a6') for v in variants],
-                     edgecolor='black', linewidth=2)
-        
-        for bar, count in zip(bars, counts_vals):
-            ax.text(bar.get_x() + bar.get_width()/2., bar.get_height(),
-                   f'{count:,}', ha='center', va='bottom', fontweight='bold')
-        
-        ax.set_ylabel('Sample Count', fontweight='bold', fontsize=11)
-        ax.set_title('Data Coverage by Variant', fontweight='bold')
-        ax.grid(True, alpha=0.3, axis='y', linestyle='--')
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
-        
-        # Plot 4: Models Tested
-        ax = axes[1, 1]
-        model_counts = df.groupby('variant')['model'].nunique().reset_index()
-        variants = model_counts['variant'].values
-        model_vals = model_counts['model'].values
-        
-        bars = ax.bar(variants, model_vals, alpha=0.75,
-                     color=[colors.get(v, '#95a5a6') for v in variants],
-                     edgecolor='black', linewidth=2)
-        
-        for bar, count in zip(bars, model_vals):
-            ax.text(bar.get_x() + bar.get_width()/2., bar.get_height(),
-                   f'{count}', ha='center', va='bottom', fontweight='bold', fontsize=12)
-        
-        ax.set_ylabel('Number of Models', fontweight='bold', fontsize=11)
-        ax.set_title('Model Coverage', fontweight='bold')
-        ax.grid(True, alpha=0.3, axis='y', linestyle='--')
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
-        
-        plt.tight_layout()
-        fig.savefig(self.output_dir / 'Figure_3_summary_statistics.png', dpi=120)
-        logger.info(f"  ✓ Saved Figure 3\n")
-        plt.close()
+
+            plt.tight_layout()
+            fig_path = self.output_dir / f'Figure_3_{model}_summary_statistics.png'
+            fig.savefig(fig_path, dpi=120)
+            logger.info(f"  ✓ Saved Figure 3 for {model}\n")
+            plt.close()
 
     def plot_accuracy_robustness_correlation(self, df: pd.DataFrame):
-        """Figure 4: Correlation between clean-accuracy change and ASR change vs control."""
-        logger.info("Generating Figure 4: Clean Accuracy vs Vulnerability Correlation")
+        """Figure 4: Correlation between clean‑accuracy change and ASR change vs control, broken out per model."""
+        logger.info("Generating Figure 4: Clean Accuracy vs Vulnerability Correlation (per model)")
         df = self._normalize_summary_df(df)
 
         if df.empty or 'clean_accuracy' not in df.columns or 'attack_success_rate' not in df.columns:
@@ -414,29 +432,45 @@ class AdversarialPlotter:
         plot_data.to_csv(self.output_dir / 'Figure_4_accuracy_vulnerability_data.csv', index=False)
 
         if plot_data.empty:
-            logger.warning("  ⚠ Figure 4 has no non-control variant data to plot")
+            logger.warning("  ⚠ Figure 4 has no non‑control variant data to plot")
             return
 
-        fig, ax = plt.subplots(figsize=(12, 8))
+        # Create a grid of sub‑plots – one per model (max 6 → 2×3)
+        models = sorted(df['model'].unique())
+        n_models = len(models)
+        ncols = 3
+        nrows = (n_models + ncols - 1) // ncols
+        fig, axes = plt.subplots(nrows, ncols, figsize=(14, 4 * nrows), squeeze=False)
         colors = VARIANT_COLORS
 
-        for variant in sorted(plot_data['variant'].unique()):
-            variant_data = plot_data[plot_data['variant'] == variant]
-            ax.scatter(variant_data['clean_accuracy_delta_from_control'],
-                       variant_data['asr_delta_from_control'],
-                       s=250, alpha=0.7, label=variant,
-                       color=colors.get(variant, '#95a5a6'),
-                       edgecolors='black', linewidth=2)
+        for idx, model in enumerate(models):
+            ax = axes[idx // ncols, idx % ncols]
+            model_data = plot_data[plot_data['model'] == model]
+            if model_data.empty:
+                ax.text(0.5, 0.5, f'{model}\n(No data)', ha='center', va='center')
+                ax.set_title(model)
+                continue
+            for variant in sorted(model_data['variant'].unique()):
+                variant_data = model_data[model_data['variant'] == variant]
+                ax.scatter(variant_data['clean_accuracy_delta_from_control'],
+                           variant_data['asr_delta_from_control'],
+                           s=150, alpha=0.7, label=variant,
+                           color=colors.get(variant, '#95a5a6'),
+                           edgecolors='black', linewidth=1.5)
+            ax.axhline(0, color='black', linewidth=1.0, alpha=0.8)
+            ax.axvline(0, color='black', linewidth=1.0, alpha=0.8)
+            ax.set_xlabel('Δ Clean Acc (pp)', fontsize=10)
+            ax.set_ylabel('Δ ASR (pp)', fontsize=10)
+            ax.set_title(model, fontsize=11)
+            ax.grid(True, alpha=0.3, linestyle='--')
+            ax.set_axisbelow(True)
+            if idx == 0:
+                ax.legend(loc='best', fontsize=8, framealpha=0.95)
 
-        ax.axhline(0, color='black', linewidth=1.0, alpha=0.8)
-        ax.axvline(0, color='black', linewidth=1.0, alpha=0.8)
-        ax.set_xlabel('Change in Clean Accuracy vs Control (percentage points)', fontweight='bold', fontsize=12)
-        ax.set_ylabel('Change in ASR vs Control (percentage points)', fontweight='bold', fontsize=12)
-        ax.set_title('Figure 4: Accuracy Change vs Vulnerability Change\nRelative to the Control Variant',
-                     fontsize=14, fontweight='bold', pad=20)
-        ax.grid(True, alpha=0.3, linestyle='--')
-        ax.set_axisbelow(True)
-        ax.legend(loc='best', fontsize=11, framealpha=0.95)
+        # Hide any unused axes
+        total_axes = nrows * ncols
+        for empty_idx in range(n_models, total_axes):
+            fig.delaxes(axes[empty_idx // ncols, empty_idx % ncols])
 
         plt.tight_layout()
         fig.savefig(self.output_dir / 'Figure_4_accuracy_vulnerability_correlation.png', dpi=120)
