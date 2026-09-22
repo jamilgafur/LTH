@@ -138,7 +138,12 @@ class AdversarialPlotter:
             logger.warning("  ⚠ Missing clean_accuracy column")
             return
         
-        fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+        # Use a more modest figure size and DPI to avoid excessive memory usage.
+        # The original 18×10 in at 300 dpi produced a ~5400×3000 pixel image which
+        # can exceed the memory limits of the container when rendering many sub‑
+        # plots. A 14×8 in figure at 150 dpi is sufficient for publication‑quality
+        # PNGs while keeping the memory footprint low.
+        fig, axes = plt.subplots(2, 3, figsize=(14, 8))
         fig.suptitle('Figure 1: Impact of Pruning on Clean Accuracy\n(Control vs Pruned vs Pruned+Quant)', 
                      fontsize=15, fontweight='bold')
         
@@ -181,7 +186,8 @@ class AdversarialPlotter:
             plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right', fontsize=9)
         
         plt.tight_layout()
-        fig.savefig(self.output_dir / 'Figure_1_clean_accuracy_preservation.png', dpi=300, bbox_inches='tight')
+        # Save with a lower DPI to further reduce memory consumption.
+        fig.savefig(self.output_dir / 'Figure_1_clean_accuracy_preservation.png', dpi=150, bbox_inches='tight')
         logger.info(f"  ✓ Saved Figure 1\n")
         plt.close()
 
@@ -194,6 +200,9 @@ class AdversarialPlotter:
             logger.warning("  ⚠ Missing attack_success_rate column")
             return
         
+        # Use a moderate figure size; the original DPI of 300 caused high memory
+        # usage when rendering the grouped bar chart. We keep the size but will
+        # save at a lower DPI (see below).
         fig, ax = plt.subplots(figsize=(14, 8))
         
         # Group by variant and attack
@@ -232,7 +241,8 @@ class AdversarialPlotter:
         ax.set_axisbelow(True)
         
         plt.tight_layout()
-        fig.savefig(self.output_dir / 'Figure_2_attack_vulnerability.png', dpi=300, bbox_inches='tight')
+        # Save with reduced DPI to limit memory consumption.
+        fig.savefig(self.output_dir / 'Figure_2_attack_vulnerability.png', dpi=150, bbox_inches='tight')
         logger.info(f"  ✓ Saved Figure 2\n")
         plt.close()
 
