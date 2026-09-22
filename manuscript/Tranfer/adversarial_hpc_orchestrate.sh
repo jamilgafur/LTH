@@ -278,7 +278,7 @@ case "$PHASE" in
         cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"cka\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
         submit_and_log "$cmd" "cka" || fail "Failed to submit cka phase"
         log "[SUCCESS] CKA feature similarity job submitted"
-        log "Output: cka_similarity.csv, cka_mean_matrix_*.csv, cka_mean_heatmap_*.png, cka_layerwise_*.png"
+        log "Output: cka_similarity.csv, Figure_5_cka_*.png, Figure_5_cka_*.svg, Figure_5_cka_matrix_*.csv"
         ;;
 
     compare)

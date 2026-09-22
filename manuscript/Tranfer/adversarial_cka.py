@@ -83,6 +83,8 @@ def _write_locked_csv(path: str, df: pd.DataFrame, lock_name: str) -> bool:
 class CKASuite:
     """Layer-wise CKA experiment implementation."""
 
+    FIGURE_PREFIX = "Figure_5"
+
     @staticmethod
     def _compute_linear_cka(X: torch.Tensor, Y: torch.Tensor) -> float:
         X = X - X.mean(0, keepdim=True)
@@ -302,38 +304,76 @@ class CKASuite:
             print("[WARN] CKA: no records generated; skipping CKA plots.")
             return records
 
-        for dataset_name in df["dataset"].unique():
-            for src_label in df["source_label"].unique():
-                sub = df[(df["dataset"] == dataset_name) & (df["source_label"] == src_label)]
-                if sub.empty:
-                    continue
-                plt.figure(figsize=(11, 5))
-                for tgt_label, grp in sub.groupby("target_label"):
-                    plt.plot(range(len(grp)), grp["cka"].values, marker="o", label=f"-> {tgt_label}")
-                plt.xlabel("Layer Index (shallow -> deep)", fontweight="bold")
-                plt.ylabel("CKA", fontweight="bold")
-                plt.ylim(0, 1.05)
-                plt.title(f"Layer-wise CKA from {src_label} - {dataset_name}", fontsize=12, fontweight="bold")
-                plt.legend(fontsize=7, ncol=2)
-                plt.tight_layout()
-                safe_label = src_label.replace(" ", "_").replace("/", "_")
-                plt.savefig(os.path.join(output_dir, f"cka_layerwise_{dataset_name}_{safe_label}.png"), dpi=300)
-                plt.close()
+        # Figure 5: model-separated CKA summaries that explicitly compare the
+        # original / pruned / pruned_quant variants for each model.
+        variant_order = [ReportingSuite.baseline_kind(), *ReportingSuite.variant_kinds()]
+        variant_label_map = {
+            ReportingSuite.baseline_kind(): "original",
+            ReportingSuite.variant_kinds()[0]: "pruned",
+            ReportingSuite.variant_kinds()[1]: "pruned_quant",
+        }
 
-        if not df.empty:
-            for dataset_name in df["dataset"].unique():
-                sub = df[df["dataset"] == dataset_name]
-                mean_cka = sub.groupby(["source_label", "target_label"])["cka"].mean().reset_index()
-                pivot = mean_cka.pivot(index="source_label", columns="target_label", values="cka")
-                plt.figure(figsize=(12, 9))
-                sns.heatmap(pivot, annot=True, fmt=".3f", cmap="YlOrRd", vmin=0, vmax=1, cbar_kws={"label": "Mean CKA (all layers)"})
-                plt.title(f"Mean Layer-wise CKA - {dataset_name}", fontsize=14, fontweight="bold")
-                plt.xlabel("Target Model Variant", fontweight="bold")
-                plt.ylabel("Source Model Variant", fontweight="bold")
-                plt.tight_layout()
-                plt.savefig(os.path.join(output_dir, f"cka_mean_heatmap_{dataset_name}.png"), dpi=300)
-                plt.close()
-                matrix_path = os.path.join(output_dir, f"cka_mean_matrix_{dataset_name}.csv")
-                _write_locked_csv(matrix_path, pivot.reset_index(), f"cka_mean_matrix_{dataset_name}")
+        for dataset_name in df["dataset"].unique():
+            dataset_df = df[df["dataset"] == dataset_name].copy()
+            if dataset_df.empty:
+                continue
+
+            model_names = sorted(dataset_df["source_model"].unique())
+            n_models = len(model_names)
+            ncols = 3
+            nrows = (n_models + ncols - 1) // ncols
+            fig, axes = plt.subplots(nrows, ncols, figsize=(15, 4.5 * nrows), squeeze=False)
+            fig.suptitle(
+                f"Figure 5: CKA Similarity by Model and Variant - {dataset_name}",
+                fontsize=15,
+                fontweight="bold",
+            )
+
+            for idx, model_name in enumerate(model_names):
+                ax = axes[idx // ncols, idx % ncols]
+                model_df = dataset_df[dataset_df["source_model"] == model_name]
+                if model_df.empty:
+                    ax.axis("off")
+                    continue
+
+                summary = (
+                    model_df.groupby(["source_kind", "target_kind"], as_index=False)["cka"]
+                    .mean()
+                    .pivot(index="source_kind", columns="target_kind", values="cka")
+                )
+                summary = summary.reindex(index=variant_order, columns=variant_order)
+                sns.heatmap(
+                    summary,
+                    annot=True,
+                    fmt=".3f",
+                    cmap="YlOrRd",
+                    vmin=0,
+                    vmax=1,
+                    cbar_kws={"label": "Mean CKA"},
+                    ax=ax,
+                )
+                ax.set_title(model_name, fontweight="bold")
+                ax.set_xlabel("Target kind")
+                ax.set_ylabel("Source kind")
+                ax.set_xticklabels([variant_label_map.get(v.get_text(), v.get_text()) for v in ax.get_xticklabels()], rotation=25, ha="right")
+                ax.set_yticklabels([variant_label_map.get(v.get_text(), v.get_text()) for v in ax.get_yticklabels()], rotation=0)
+
+                model_matrix_path = os.path.join(output_dir, f"Figure_5_cka_matrix_{dataset_name}_{model_name}.csv")
+                _write_locked_csv(model_matrix_path, summary.reset_index(), f"Figure_5_cka_matrix_{dataset_name}_{model_name}")
+
+            total_axes = nrows * ncols
+            for empty_idx in range(n_models, total_axes):
+                fig.delaxes(axes[empty_idx // ncols, empty_idx % ncols])
+
+            plt.tight_layout()
+            fig.savefig(os.path.join(output_dir, f"{self.FIGURE_PREFIX}_cka_{dataset_name}.png"), dpi=300)
+            fig.savefig(os.path.join(output_dir, f"{self.FIGURE_PREFIX}_cka_{dataset_name}.svg"))
+            plt.close(fig)
+
+            # Keep the legacy CSV for downstream consumers, but name it with the figure prefix.
+            mean_cka = dataset_df.groupby(["source_label", "target_label"])['cka'].mean().reset_index()
+            pivot = mean_cka.pivot(index="source_label", columns="target_label", values="cka")
+            matrix_path = os.path.join(output_dir, f"{self.FIGURE_PREFIX}_cka_matrix_{dataset_name}.csv")
+            _write_locked_csv(matrix_path, pivot.reset_index(), f"{self.FIGURE_PREFIX}_cka_matrix_{dataset_name}")
 
         return records

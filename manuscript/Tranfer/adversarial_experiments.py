@@ -89,6 +89,8 @@ def _write_locked_csv(path: str, df: pd.DataFrame, lock_name: str) -> bool:
 class AdvancedExperimentSuite:
     """Collection of optional experiment phases (Exp 4/7/9/10/11)."""
 
+    FIGURE_PREFIX = "Figure_6"
+
     def __init__(
         self,
         instantiate_attack: Callable,
@@ -707,7 +709,7 @@ class AdvancedExperimentSuite:
                 fig.tight_layout()
                 safe = label.replace(" ", "_").replace("(", "").replace(")", "")
                 AdvancedExperimentSuite._save_fig(
-                    os.path.join(output_dir, f"shap_attribution_{dataset_name}_{safe}")
+                    os.path.join(output_dir, f"Figure_6_shap_attribution_{dataset_name}_{safe}")
                 )
                 plt.close(fig)
 
@@ -725,7 +727,7 @@ class AdvancedExperimentSuite:
             ax.legend(fontsize=7, ncol=2, loc="upper right")
             fig.tight_layout()
             AdvancedExperimentSuite._save_fig(
-                os.path.join(output_dir, f"shap_attribution_overlay_{dataset_name}")
+                os.path.join(output_dir, f"Figure_6_shap_attribution_overlay_{dataset_name}")
             )
             plt.close(fig)
 
@@ -879,7 +881,7 @@ class AdvancedExperimentSuite:
             fontweight="bold",
         )
         fig.tight_layout(rect=(0, 0, 1, 0.98))
-        cls._save_fig(os.path.join(output_dir, f"shap_class_examples_{dataset_name}_{model_name}"))
+        cls._save_fig(os.path.join(output_dir, f"Figure_6_shap_class_examples_{dataset_name}_{model_name}"))
         plt.close(fig)
 
     def explainability_similarity_phase(
@@ -1080,6 +1082,73 @@ class AdvancedExperimentSuite:
         else:
             print(f"[WARN] Skipped saving {pair_path}")
 
+        # Figure 6: model-separated SHAP similarity heatmaps over the
+        # original / pruned / pruned_quant variants.
+        for dataset_name in pair_df["dataset"].unique():
+            dataset_df = pair_df[pair_df["dataset"] == dataset_name].copy()
+            if dataset_df.empty:
+                continue
+
+            model_names = sorted(dataset_df["source_model"].unique())
+            n_models = len(model_names)
+            ncols = 3
+            nrows = (n_models + ncols - 1) // ncols
+            fig, axes = plt.subplots(nrows, ncols, figsize=(15, 4.5 * nrows), squeeze=False)
+            fig.suptitle(
+                f"Figure 6: SHAP Similarity by Model and Variant - {dataset_name}",
+                fontsize=15,
+                fontweight="bold",
+            )
+
+            variant_order = [ReportingSuite.baseline_kind(), *ReportingSuite.variant_kinds()]
+            variant_label_map = {
+                ReportingSuite.baseline_kind(): "original",
+                ReportingSuite.variant_kinds()[0]: "pruned",
+                ReportingSuite.variant_kinds()[1]: "pruned_quant",
+            }
+
+            for idx, model_name in enumerate(model_names):
+                ax = axes[idx // ncols, idx % ncols]
+                model_df = dataset_df[dataset_df["source_model"] == model_name]
+                if model_df.empty:
+                    ax.axis("off")
+                    continue
+
+                summary = (
+                    model_df.groupby(["source_kind", "target_kind"], as_index=False)["cosine_similarity"]
+                    .mean()
+                    .pivot(index="source_kind", columns="target_kind", values="cosine_similarity")
+                )
+                summary = summary.reindex(index=variant_order, columns=variant_order)
+                sns.heatmap(
+                    summary,
+                    annot=True,
+                    fmt=".3f",
+                    cmap="vlag",
+                    center=0,
+                    vmin=-1,
+                    vmax=1,
+                    cbar_kws={"label": "Mean cosine similarity"},
+                    ax=ax,
+                )
+                ax.set_title(model_name, fontweight="bold")
+                ax.set_xlabel("Target kind")
+                ax.set_ylabel("Source kind")
+                ax.set_xticklabels([variant_label_map.get(t.get_text(), t.get_text()) for t in ax.get_xticklabels()], rotation=25, ha="right")
+                ax.set_yticklabels([variant_label_map.get(t.get_text(), t.get_text()) for t in ax.get_yticklabels()], rotation=0)
+
+                model_matrix_path = os.path.join(output_dir, f"Figure_6_shap_matrix_{dataset_name}_{model_name}.csv")
+                _write_locked_csv(model_matrix_path, summary.reset_index(), f"Figure_6_shap_matrix_{dataset_name}_{model_name}")
+
+            total_axes = nrows * ncols
+            for empty_idx in range(n_models, total_axes):
+                fig.delaxes(axes[empty_idx // ncols, empty_idx % ncols])
+
+            plt.tight_layout()
+            fig.savefig(os.path.join(output_dir, f"{self.FIGURE_PREFIX}_shap_{dataset_name}.png"), dpi=300)
+            fig.savefig(os.path.join(output_dir, f"{self.FIGURE_PREFIX}_shap_{dataset_name}.svg"))
+            plt.close(fig)
+
         collapsed_vs_original = pair_df[
             (pair_df["same_architecture"])
             & (pair_df["source_kind"] == ReportingSuite.baseline_kind())
@@ -1094,9 +1163,9 @@ class AdvancedExperimentSuite:
         for dataset_name in pair_df["dataset"].unique():
             sub = pair_df[pair_df["dataset"] == dataset_name]
             for metric, fname_stem in [
-                ("cosine_similarity", f"shap_cosine_heatmap_{dataset_name}"),
-                ("pearson_r", f"shap_pearson_heatmap_{dataset_name}"),
-                ("spearman_r", f"shap_spearman_heatmap_{dataset_name}"),
+                ("cosine_similarity", f"Figure_6_shap_cosine_heatmap_{dataset_name}"),
+                ("pearson_r", f"Figure_6_shap_pearson_heatmap_{dataset_name}"),
+                ("spearman_r", f"Figure_6_shap_spearman_heatmap_{dataset_name}"),
             ]:
                 mat = sub.pivot(index="source_label", columns="target_label", values=metric)
                 if mat.empty:
@@ -1137,7 +1206,7 @@ class AdvancedExperimentSuite:
                     plt.ylabel("Control Continued", fontweight="bold")
                     plt.tight_layout()
                     self._save_fig(
-                        os.path.join(output_dir, f"shap_orig_vs_collapsed_cosine_{dataset_name}")
+                        os.path.join(output_dir, f"Figure_6_shap_orig_vs_collapsed_cosine_{dataset_name}")
                     )
                     plt.close()
 
@@ -1173,7 +1242,7 @@ class AdvancedExperimentSuite:
             plt.ylabel("Similarity", fontweight="bold")
             plt.xticks(rotation=25, ha="right")
             plt.tight_layout()
-            self._save_fig(os.path.join(output_dir, "shap_original_vs_collapsed_similarity_metrics"))
+            self._save_fig(os.path.join(output_dir, "Figure_6_shap_original_vs_collapsed_similarity_metrics"))
             plt.close()
 
         return pair_rows
