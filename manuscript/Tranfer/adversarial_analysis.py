@@ -35,6 +35,16 @@ VALID_PHASES = [
 ]
 
 
+def _log_phase_context(args: argparse.Namespace) -> None:
+    """Emit a concise phase banner so batch-job logs show the actual dispatch context."""
+    print(
+        "[INFO] Dispatching phase="
+        f"{args.mode} output_dir={args.output_dir} "
+        f"model={args.model or 'ALL'} dataset={args.dataset or 'ALL'} "
+        f"attack={args.attack or 'ALL'} kind={args.kind or 'ALL'}"
+    )
+
+
 def _atomic_write_csv(path: str, df: pd.DataFrame) -> None:
     """Write CSV atomically to avoid partial writes from concurrent jobs."""
     path_obj = Path(path)
@@ -306,13 +316,28 @@ def main() -> None:
     parser.add_argument("--dataset", default=None, help="Optional dataset filter")
     parser.add_argument("--kind", default=None, help="Optional kind filter")
     parser.add_argument("--attack", default=None, help="Optional attack filter")
+    parser.add_argument(
+        "--epsilon-attacks",
+        nargs="+",
+        default=None,
+        help="Optional attack list used by the epsilon sweep phase",
+    )
+    parser.add_argument(
+        "--result-dirs",
+        nargs="+",
+        default=None,
+        help="Optional list of result directories used by multi-run phases",
+    )
     parser.add_argument("--compute-shap", action="store_true", help="Compute SHAP explainability metrics for the selected run")
     parser.add_argument("--max-samples", type=int, default=64, help="Max number of samples used to build SHAP reference vectors")
     parser.add_argument("--background-samples", type=int, default=32, help="Number of background samples used by SHAP explainer")
     parser.add_argument("--topk-ratio", type=float, default=0.05, help="Top-k ratio used in SHAP feature vector comparisons")
+    parser.add_argument("--cka-max-samples", type=int, default=64, help="Max number of samples used in the CKA phase")
+    parser.add_argument("--cka-max-layers", type=int, default=8, help="Maximum number of layers sampled in the CKA phase")
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
+    _log_phase_context(args)
 
     if args.mode == "generate":
         print(f"[INFO] Running generate phase for {args.output_dir}")
@@ -418,6 +443,41 @@ def main() -> None:
         print(f"[INFO] Gradient similarity phase produced {len(records)} records.")
         return
 
+    if args.mode == "epsilon_sweep":
+        selected_attacks = args.epsilon_attacks or ["PGD", "FGSM", "BIM"]
+        print(
+            f"[INFO] Running epsilon sensitivity phase for {args.output_dir} "
+            f"with attacks={selected_attacks}"
+        )
+        cache_args = argparse.Namespace(
+            output_dir=args.output_dir,
+            model=args.model,
+            dataset=args.dataset,
+            kind=args.kind,
+        )
+        model_cache, loader_cache = AdversarialCore.rebuild_model_and_loader_cache(cache_args)
+        print(
+            f"[INFO] Rebuilt epsilon-sweep caches: "
+            f"models={len(model_cache)} datasets={len(loader_cache)}"
+        )
+        suite = AdvancedExperimentSuite(
+            instantiate_attack=lambda *a, **kw: None,
+            model_kind_label=ReportingSuite.model_kind_label,
+            classify_transfer_pair=ReportingSuite.classify_transfer_pair,
+        )
+        records = suite.epsilon_sensitivity_phase(
+            output_dir=args.output_dir,
+            model_cache=model_cache,
+            loader_cache=loader_cache,
+            attacks=selected_attacks,
+        )
+        print(
+            f"[INFO] Epsilon sensitivity phase produced {len(records)} records. "
+            f"Expected outputs: {os.path.join(args.output_dir, 'epsilon_sensitivity.csv')} and "
+            f"{os.path.join(args.output_dir, 'epsilon_sensitivity_delta.csv')}"
+        )
+        return
+
     if args.mode == "cka":
         print(f"[INFO] Running CKA similarity phase for {args.output_dir}")
         cache_args = argparse.Namespace(
@@ -436,8 +496,8 @@ def main() -> None:
             output_dir=args.output_dir,
             model_cache=model_cache,
             loader_cache=loader_cache,
-            max_samples=args.max_samples,
-            max_layers=args.max_layers if hasattr(args, "max_layers") else 8,
+            max_samples=args.cka_max_samples,
+            max_layers=args.cka_max_layers,
         )
         print(f"[INFO] CKA similarity phase produced {len(records)} records.")
         return
