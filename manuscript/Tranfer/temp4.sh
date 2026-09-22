@@ -2,7 +2,7 @@
 
 # Stage 4: Submit full adversarial post-generation pipeline on HPC.
 # This submits dependent jobs in order:
-#   analyze -> plot -> compare -> gradient_sim -> epsilon_sweep -> statistics -> cka -> compute_tradeoff -> correlations
+#   analyze -> plot -> compare -> gradient_sim -> epsilon_sweep -> statistics -> cka -> compute_shap -> compute_tradeoff -> correlations
 # Optional env var:
 #   UPSTREAM_HOLD_JID="id1,id2,..." to force the analyze phase to wait for
 #   upstream jobs (e.g., all generate jobs) before starting.
@@ -131,7 +131,10 @@ if [ "$PHASE" = "full" ]; then
     CKA_JOBID=$(submit_phase cka "$STATS_JOBID")
     echo "CKA Job ID:              $CKA_JOBID"
 
-    COST_JOBID=$(submit_phase compute_tradeoff "$CKA_JOBID")
+    SHAP_JOBID=$(submit_phase compute_shap "$CKA_JOBID")
+    echo "SHAP Job ID:             $SHAP_JOBID"
+
+    COST_JOBID=$(submit_phase compute_tradeoff "$SHAP_JOBID")
     echo "Compute Tradeoff Job ID: $COST_JOBID"
 
     CORR_JOBID=$(submit_phase correlations "$COST_JOBID")

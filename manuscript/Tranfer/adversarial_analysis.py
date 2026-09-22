@@ -29,6 +29,7 @@ VALID_PHASES = [
     "epsilon_sweep",
     "statistics",
     "cka",
+    "compute_shap",
     "compute_tradeoff",
     "correlations",
 ]
@@ -439,6 +440,20 @@ def main() -> None:
             max_layers=args.max_layers if hasattr(args, "max_layers") else 8,
         )
         print(f"[INFO] CKA similarity phase produced {len(records)} records.")
+        return
+
+    if args.mode == "compute_shap":
+        print(f"[INFO] Running SHAP explainability phase for {args.output_dir}")
+        pairs = compute_shap_for_results(
+            output_dir=args.output_dir,
+            model_filter=args.model,
+            dataset_filter=args.dataset,
+            kind_filter=args.kind,
+            max_samples=args.max_samples,
+            background_samples=args.background_samples,
+            topk_ratio=args.topk_ratio,
+        )
+        print(f"[INFO] SHAP analysis produced {len(pairs)} pairwise records.")
         return
 
     if args.compute_shap:

@@ -5,7 +5,7 @@
 #PBS -l select=1:ncpus=8:mem=64gb:ngpus=1
 #PBS -o logs/adversarial_%J.log
 #PBS -e logs/adversarial_%J.err
-#PBS -v MODEL,DATASET,ATTACK,KIND,PHASE,OUTPUT_DIR,EPSILON_ATTACKS,RESULT_DIRS,CKA_MAX_SAMPLES,CKA_MAX_LAYERS,FORCE_RERUN
+#PBS -v MODEL,DATASET,ATTACK,KIND,PHASE,OUTPUT_DIR,EPSILON_ATTACKS,RESULT_DIRS,CKA_MAX_SAMPLES,CKA_MAX_LAYERS,SHAP_MAX_SAMPLES,SHAP_BACKGROUND_SAMPLES,SHAP_TOPK_RATIO,FORCE_RERUN
 
 set -e
 
@@ -189,6 +189,15 @@ case "$PHASE" in
         if [ "$KIND" != "ALL" ]; then CMD+=(--kind "$KIND"); fi
         if [ -n "${CKA_MAX_SAMPLES:-}" ]; then CMD+=(--cka-max-samples "$CKA_MAX_SAMPLES"); fi
         if [ -n "${CKA_MAX_LAYERS:-}" ]; then CMD+=(--cka-max-layers "$CKA_MAX_LAYERS"); fi
+        ;;
+    compute_shap)
+        if [ "$MODEL" != "ALL" ]; then CMD+=(--model "$MODEL"); fi
+        if [ "$DATASET" != "ALL" ]; then CMD+=(--dataset "$DATASET"); fi
+        if [ "$KIND" != "ALL" ]; then CMD+=(--kind "$KIND"); fi
+        CMD+=(--compute-shap)
+        if [ -n "${SHAP_MAX_SAMPLES:-}" ]; then CMD+=(--max-samples "$SHAP_MAX_SAMPLES"); fi
+        if [ -n "${SHAP_BACKGROUND_SAMPLES:-}" ]; then CMD+=(--background-samples "$SHAP_BACKGROUND_SAMPLES"); fi
+        if [ -n "${SHAP_TOPK_RATIO:-}" ]; then CMD+=(--topk-ratio "$SHAP_TOPK_RATIO"); fi
         ;;
     compute_tradeoff)
         if [ "$MODEL" != "ALL" ]; then CMD+=(--model "$MODEL"); fi
