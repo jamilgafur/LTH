@@ -67,20 +67,24 @@ class AdversarialPlotter:
         # The raw CSV stores accuracies and attack success rates as **fractions**
         # in the range [0, 1] (e.g. 0.42 for 42%).  All plotting functions label
         # the y‑axis as a percentage and set limits assuming values up to 100.
-        # Without conversion the bars would appear near zero and the printed
-        # value labels would be misleading (e.g. "0.4%" instead of "40%").
-        #
-        # To keep the rest of the code unchanged we convert the relevant
-        # columns to percentages here.  This is done after any column‑renaming
-        # so that downstream code can continue to reference the canonical
-        # names (``clean_accuracy`` and ``attack_success_rate``).
+        # We convert only once when the values are still in the raw [0, 1] range.
+        # If a column is already percentage-scaled then we leave it untouched.
         # -----------------------------------------------------------------
+        def _convert_if_fraction(series: pd.Series, eps: float = 1e-9) -> pd.Series:
+            if series.empty:
+                return series
+            non_null = pd.to_numeric(series, errors='coerce').dropna()
+            if non_null.empty:
+                return series
+            if (non_null >= 0).all() and (non_null <= 1.0 + eps).all():
+                return non_null.mul(100.0)
+            return series
+
         if 'clean_accuracy' in normalized.columns:
-            # Convert fraction → percent
-            normalized['clean_accuracy'] = normalized['clean_accuracy'] * 100.0
+            normalized['clean_accuracy'] = _convert_if_fraction(normalized['clean_accuracy'])
 
         if 'attack_success_rate' in normalized.columns:
-            normalized['attack_success_rate'] = normalized['attack_success_rate'] * 100.0
+            normalized['attack_success_rate'] = _convert_if_fraction(normalized['attack_success_rate'])
 
         return normalized
 
@@ -132,120 +136,142 @@ class AdversarialPlotter:
         
         return merged
 
+    @staticmethod
+    def _control_variant_name(variant_values):
+        """Return the control variant if present, else the first variant in a stable order."""
+        variant_values = [str(v) for v in variant_values if pd.notna(v)]
+        if not variant_values:
+            return None
+        for preferred in ['Control_Continuted', 'Control_Continued']:
+            if preferred in variant_values:
+                return preferred
+        return sorted(set(variant_values))[0]
+
     def plot_clean_accuracy_preservation(self, df: pd.DataFrame):
-        """Figure 1: Does pruning hurt clean accuracy?"""
+        """Figure 1: Change in clean accuracy relative to the control variant."""
         logger.info("Generating Figure 1: Clean Accuracy Preservation")
         df = self._normalize_summary_df(df)
 
         if df.empty or 'clean_accuracy' not in df.columns:
             logger.warning("  ⚠ Missing clean_accuracy column")
             return
-        
-        # Use a more modest figure size and DPI to avoid excessive memory usage.
-        # The original 18×10 in at 300 dpi produced a ~5400×3000 pixel image which
-        # can exceed the memory limits of the container when rendering many sub‑
-        # plots. A 14×8 in figure at 150 dpi is sufficient for publication‑quality
-        # PNGs while keeping the memory footprint low.
-        # Reduce figure size and DPI further to stay within container memory.
+
+        control_variant = self._control_variant_name(df['variant'].dropna().unique())
+        if control_variant is None:
+            logger.warning("  ⚠ No variant information found for baseline comparison")
+            return
+
+        model_variant_stats = df.groupby(['model', 'variant'], as_index=False).agg(
+            clean_accuracy_mean=('clean_accuracy', 'mean'),
+            clean_accuracy_std=('clean_accuracy', 'std'),
+        )
+        control_by_model = (
+            model_variant_stats[model_variant_stats['variant'] == control_variant]
+            [['model', 'clean_accuracy_mean']]
+            .rename(columns={'clean_accuracy_mean': 'control_clean_accuracy'})
+        )
+        plot_data = model_variant_stats.merge(control_by_model, on='model', how='left')
+        plot_data['clean_accuracy_delta_from_control'] = (
+            plot_data['clean_accuracy_mean'] - plot_data['control_clean_accuracy']
+        )
+        plot_data.to_csv(self.output_dir / 'Figure_1_clean_accuracy_data.csv', index=False)
+
         fig, axes = plt.subplots(2, 3, figsize=(12, 6))
-        fig.suptitle('Figure 1: Impact of Pruning on Clean Accuracy\n(Control vs Pruned vs Pruned+Quant)', 
+        fig.suptitle('Figure 1: Change in Clean Accuracy vs Control\n(Control vs Pruned vs Pruned+Quant)', 
                      fontsize=15, fontweight='bold')
-        
+
         models = sorted(df['model'].unique())[:6]
         colors = VARIANT_COLORS
-        
+
         for idx, model in enumerate(models):
             ax = axes[idx // 3, idx % 3]
-            model_data = df[df['model'] == model]
-            
-            # Group by variant, aggregate across all attacks/datasets
-            variant_stats = model_data.groupby('variant').agg({
-                'clean_accuracy': ['mean', 'std', 'count']
-            }).reset_index()
-            
-            if variant_stats.empty:
+            model_data = plot_data[plot_data['model'] == model].copy()
+            if model_data.empty:
                 ax.text(0.5, 0.5, f'{model}\n(No data)', ha='center', va='center')
                 ax.set_title(model)
                 continue
-            
-            variants = variant_stats['variant'].values
-            means = variant_stats[('clean_accuracy', 'mean')].values
-            stds = variant_stats[('clean_accuracy', 'std')].values
-            
-            bars = ax.bar(variants, means, yerr=stds, capsize=8, alpha=0.75,
+
+            variants = model_data['variant'].values
+            deltas = model_data['clean_accuracy_delta_from_control'].values
+            stds = model_data['clean_accuracy_std'].fillna(0).values
+
+            bars = ax.bar(variants, deltas, yerr=stds, capsize=8, alpha=0.75,
                          color=[colors.get(v, '#95a5a6') for v in variants],
                          edgecolor='black', linewidth=2)
-            
-            # Add value labels on bars
-            for bar, mean in zip(bars, means):
+
+            for bar, delta in zip(bars, deltas):
                 height = bar.get_height()
                 ax.text(bar.get_x() + bar.get_width()/2., height,
-                       f'{mean:.1f}%', ha='center', va='bottom', fontweight='bold', fontsize=10)
-            
-            ax.set_ylabel('Clean Accuracy (%)', fontweight='bold')
+                       f'{delta:.1f} pp', ha='center', va='bottom', fontweight='bold', fontsize=10)
+
+            ax.axhline(0, color='black', linewidth=1.0)
+            ax.set_ylabel('Change vs Control (percentage points)', fontweight='bold')
             ax.set_title(f'{model}', fontweight='bold', fontsize=12)
-            ax.set_ylim([0, 105])
             ax.grid(True, alpha=0.3, axis='y', linestyle='--')
             ax.set_axisbelow(True)
             plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right', fontsize=9)
-        
-        # Avoid tight-layout and bbox expansion here: both can greatly enlarge the
-        # rendered canvas and trigger MemoryError on constrained systems.
+
         fig.savefig(self.output_dir / 'Figure_1_clean_accuracy_preservation.png', dpi=100)
         logger.info(f"  ✓ Saved Figure 1\n")
         plt.close()
 
     def plot_attack_vulnerability_increase(self, df: pd.DataFrame):
-        """Figure 2: Does pruning INCREASE vulnerability to attacks?"""
+        """Figure 2: Change in attack success rate relative to the control variant."""
         logger.info("Generating Figure 2: Attack Vulnerability by Variant")
         df = self._normalize_summary_df(df)
 
         if df.empty or 'attack_success_rate' not in df.columns:
             logger.warning("  ⚠ Missing attack_success_rate column")
             return
-        
-        # Use a moderate figure size; the original DPI of 300 caused high memory
-        # usage when rendering the grouped bar chart. We keep the size but will
-        # save at a lower DPI (see below).
+
+        control_variant = self._control_variant_name(df['variant'].dropna().unique())
+        if control_variant is None:
+            logger.warning("  ⚠ No variant information found for baseline comparison")
+            return
+
+        attack_variant = df.groupby(['attack', 'variant'], as_index=False).agg(
+            mean_attack_success_rate=('attack_success_rate', 'mean'),
+            std_attack_success_rate=('attack_success_rate', 'std'),
+        )
+        control_by_attack = (
+            attack_variant[attack_variant['variant'] == control_variant]
+            [['attack', 'mean_attack_success_rate']]
+            .rename(columns={'mean_attack_success_rate': 'control_attack_success_rate'})
+        )
+        plot_data = attack_variant.merge(control_by_attack, on='attack', how='left')
+        plot_data['asr_delta_from_control'] = (
+            plot_data['mean_attack_success_rate'] - plot_data['control_attack_success_rate']
+        )
+        plot_data.to_csv(self.output_dir / 'Figure_2_attack_vulnerability_data.csv', index=False)
+
+        pivot_mean = plot_data.pivot(index='attack', columns='variant', values='asr_delta_from_control')
+        pivot_std = plot_data.pivot(index='attack', columns='variant', values='std_attack_success_rate')
+
         fig, ax = plt.subplots(figsize=(14, 8))
-        
-        # Group by variant and attack
-        attack_variant = df.groupby(['attack', 'variant']).agg({
-            'attack_success_rate': ['mean', 'std']
-        }).reset_index()
-        attack_variant.columns = ['attack', 'variant', 'mean', 'std']
-
-        # Pivot for grouped bar chart. After reset_index above, these are plain columns,
-        # not a MultiIndex, so there is no level to drop.
-        pivot_mean = attack_variant.pivot(index='attack', columns='variant', values='mean')
-        pivot_std = attack_variant.pivot(index='attack', columns='variant', values='std')
-
         colors = VARIANT_COLORS
-        
         x = np.arange(len(pivot_mean.index))
         width = 0.25
-        
+
         for i, variant in enumerate(sorted(pivot_mean.columns)):
             if variant in pivot_mean.columns:
-                ax.bar(x + i*width, pivot_mean[variant], width, 
+                ax.bar(x + i * width, pivot_mean[variant], width,
                        label=variant, alpha=0.8,
                        color=colors.get(variant, '#95a5a6'),
                        edgecolor='black', linewidth=1.5,
                        yerr=pivot_std[variant], capsize=4)
-        
+
+        ax.axhline(0, color='black', linewidth=1.0)
         ax.set_xlabel('Attack Method', fontweight='bold', fontsize=12)
-        ax.set_ylabel('Attack Success Rate (%)', fontweight='bold', fontsize=12)
-        ax.set_title('Figure 2: Vulnerability to Adversarial Attacks\n(Higher = More Vulnerable)\nControl vs Pruned vs Pruned+Quant', 
+        ax.set_ylabel('Change in ASR vs Control (percentage points)', fontweight='bold', fontsize=12)
+        ax.set_title('Figure 2: Change in ASR vs Control\n(Higher = More Vulnerable)',
                      fontsize=14, fontweight='bold', pad=20)
         ax.set_xticks(x + width)
         ax.set_xticklabels(pivot_mean.index, rotation=45, ha='right', fontsize=10)
-        ax.set_ylim([0, 105])
         ax.legend(loc='upper right', fontsize=11, framealpha=0.95)
         ax.grid(True, alpha=0.3, axis='y', linestyle='--')
         ax.set_axisbelow(True)
-        
+
         plt.tight_layout()
-        # Save at moderate DPI without bbox expansion to keep memory usage stable.
         fig.savefig(self.output_dir / 'Figure_2_attack_vulnerability.png', dpi=120)
         logger.info(f"  ✓ Saved Figure 2\n")
         plt.close()
@@ -352,42 +378,66 @@ class AdversarialPlotter:
         plt.close()
 
     def plot_accuracy_robustness_correlation(self, df: pd.DataFrame):
-        """Figure 4: Does higher clean accuracy correlate with higher vulnerability?"""
+        """Figure 4: Correlation between clean-accuracy change and ASR change vs control."""
         logger.info("Generating Figure 4: Clean Accuracy vs Vulnerability Correlation")
         df = self._normalize_summary_df(df)
 
         if df.empty or 'clean_accuracy' not in df.columns or 'attack_success_rate' not in df.columns:
             logger.warning("  ⚠ Missing required columns")
             return
-        
-        fig, ax = plt.subplots(figsize=(12, 8))
-        
-        # Aggregate by model and variant
-        model_variant = df.groupby(['model', 'variant']).agg({
+
+        control_variant = self._control_variant_name(df['variant'].dropna().unique())
+        if control_variant is None:
+            logger.warning("  ⚠ No variant information found for control comparison")
+            return
+
+        model_variant = df.groupby(['model', 'variant'], as_index=False).agg({
             'clean_accuracy': 'mean',
             'attack_success_rate': 'mean'
-        }).reset_index()
+        })
+        control_by_model = (
+            model_variant[model_variant['variant'] == control_variant]
+            [['model', 'clean_accuracy', 'attack_success_rate']]
+            .rename(columns={
+                'clean_accuracy': 'control_clean_accuracy',
+                'attack_success_rate': 'control_attack_success_rate',
+            })
+        )
+        plot_data = model_variant.merge(control_by_model, on='model', how='left')
+        plot_data['clean_accuracy_delta_from_control'] = (
+            plot_data['clean_accuracy'] - plot_data['control_clean_accuracy']
+        )
+        plot_data['asr_delta_from_control'] = (
+            plot_data['attack_success_rate'] - plot_data['control_attack_success_rate']
+        )
+        plot_data = plot_data[plot_data['variant'] != control_variant].copy()
+        plot_data.to_csv(self.output_dir / 'Figure_4_accuracy_vulnerability_data.csv', index=False)
 
+        if plot_data.empty:
+            logger.warning("  ⚠ Figure 4 has no non-control variant data to plot")
+            return
+
+        fig, ax = plt.subplots(figsize=(12, 8))
         colors = VARIANT_COLORS
-        
-        for variant in sorted(model_variant['variant'].unique()):
-            variant_data = model_variant[model_variant['variant'] == variant]
-            ax.scatter(variant_data['clean_accuracy'], 
-                      variant_data['attack_success_rate'],
-                      s=250, alpha=0.7, label=variant,
-                      color=colors.get(variant, '#95a5a6'),
-                      edgecolors='black', linewidth=2)
-        
-        ax.set_xlabel('Clean Accuracy (%)', fontweight='bold', fontsize=12)
-        ax.set_ylabel('Attack Success Rate (%)', fontweight='bold', fontsize=12)
-        ax.set_title('Figure 4: Clean Accuracy vs Vulnerability\n(Does pruning change the accuracy-vulnerability trade-off?)', 
+
+        for variant in sorted(plot_data['variant'].unique()):
+            variant_data = plot_data[plot_data['variant'] == variant]
+            ax.scatter(variant_data['clean_accuracy_delta_from_control'],
+                       variant_data['asr_delta_from_control'],
+                       s=250, alpha=0.7, label=variant,
+                       color=colors.get(variant, '#95a5a6'),
+                       edgecolors='black', linewidth=2)
+
+        ax.axhline(0, color='black', linewidth=1.0, alpha=0.8)
+        ax.axvline(0, color='black', linewidth=1.0, alpha=0.8)
+        ax.set_xlabel('Change in Clean Accuracy vs Control (percentage points)', fontweight='bold', fontsize=12)
+        ax.set_ylabel('Change in ASR vs Control (percentage points)', fontweight='bold', fontsize=12)
+        ax.set_title('Figure 4: Accuracy Change vs Vulnerability Change\nRelative to the Control Variant',
                      fontsize=14, fontweight='bold', pad=20)
-        ax.set_xlim([0, 105])
-        ax.set_ylim([0, 105])
         ax.grid(True, alpha=0.3, linestyle='--')
         ax.set_axisbelow(True)
         ax.legend(loc='best', fontsize=11, framealpha=0.95)
-        
+
         plt.tight_layout()
         fig.savefig(self.output_dir / 'Figure_4_accuracy_vulnerability_correlation.png', dpi=120)
         logger.info(f"  ✓ Saved Figure 4\n")
