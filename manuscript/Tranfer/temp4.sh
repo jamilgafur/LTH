@@ -61,13 +61,19 @@ submit_phase() {
     local dep_job=${2:-}
     local upstream_dep=${3:-}
     local -a cmd
+    local hold_targets=""
 
-    cmd=(qsub -q all.q -l ngpus=1)
+    # Use terse mode so qsub returns only the numeric job ID.
+    # Without this, default SGE output looks like:
+    #   Your job 6537467 ("adversarial_analysis") has been submitted
+    # and the old awk parser captured the first token ("Your") instead of
+    # the real ID. That breaks -hold_jid chaining and causes phases to run
+    # concurrently instead of sequentially.
+    cmd=(qsub -terse -q all.q -l ngpus=1)
     # Use dependency flag compatible with the scheduler.
     # This environment uses SGE, which supports "-hold_jid <jobid>".
     # If you switch to a PBS/Torque scheduler, replace the line below with:
     #   cmd+=( -W depend=afterok:${dep_job} )
-    hold_targets=""
     if [ -n "$dep_job" ]; then
         hold_targets="$dep_job"
     fi
@@ -89,7 +95,16 @@ submit_phase() {
 
     local out
     out=$("${cmd[@]}")
-    echo "$out" | awk '{print $1}'
+
+    # In SGE terse mode the output is just the job id, optionally suffixed by
+    # a task range for array jobs. We validate aggressively so dependency
+    # chains fail fast instead of silently running in parallel.
+    if [[ ! "$out" =~ ^[0-9]+([.].*)?$ ]]; then
+        echo "[ERROR] Unexpected qsub output while submitting phase '$phase': $out" >&2
+        exit 1
+    fi
+
+    echo "$out"
 }
 
 if [ "$PHASE" = "full" ]; then
