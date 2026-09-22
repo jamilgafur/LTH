@@ -61,6 +61,27 @@ class AdversarialPlotter:
         if 'variant' not in normalized.columns and 'kind' in normalized.columns:
             normalized['variant'] = normalized['kind']
 
+        # -----------------------------------------------------------------
+        # NOTE ABOUT UNITS
+        # -----------------------------------------------------------------
+        # The raw CSV stores accuracies and attack success rates as **fractions**
+        # in the range [0, 1] (e.g. 0.42 for 42%).  All plotting functions label
+        # the y‑axis as a percentage and set limits assuming values up to 100.
+        # Without conversion the bars would appear near zero and the printed
+        # value labels would be misleading (e.g. "0.4%" instead of "40%").
+        #
+        # To keep the rest of the code unchanged we convert the relevant
+        # columns to percentages here.  This is done after any column‑renaming
+        # so that downstream code can continue to reference the canonical
+        # names (``clean_accuracy`` and ``attack_success_rate``).
+        # -----------------------------------------------------------------
+        if 'clean_accuracy' in normalized.columns:
+            # Convert fraction → percent
+            normalized['clean_accuracy'] = normalized['clean_accuracy'] * 100.0
+
+        if 'attack_success_rate' in normalized.columns:
+            normalized['attack_success_rate'] = normalized['attack_success_rate'] * 100.0
+
         return normalized
 
     def load_all_summaries(self) -> pd.DataFrame:

@@ -6,6 +6,7 @@ import argparse
 import os
 import tempfile
 import time
+import traceback
 from pathlib import Path
 from typing import Any
 
@@ -172,6 +173,25 @@ def compute_transfer_metrics(output_dir: str, model_cache: dict, adv_datasets: d
     return records
 
 
+def _persist_rebuilt_summary_records(output_dir: str, records: list[dict]) -> str | None:
+    """Persist rebuilt summary rows as a shard and merge them into summary.csv."""
+    if not records:
+        return None
+
+    shard_path = os.path.join(output_dir, "summary_rebuilt_from_artifacts.csv")
+    _atomic_write_csv(shard_path, pd.DataFrame(records))
+    print(f"[INFO] Wrote rebuilt summary shard to {shard_path}")
+
+    merge_flag = os.path.join(output_dir, ".summary_merge_complete")
+    if os.path.exists(merge_flag):
+        try:
+            os.remove(merge_flag)
+        except OSError:
+            pass
+
+    return _merge_summary_if_ready(output_dir)
+
+
 def run_generate_phase(
     output_dir: str,
     model_filter: str | None = None,
@@ -300,26 +320,52 @@ def main() -> None:
         )
         return
 
+    if args.mode == "analyze":
+        try:
+            merge_flag = os.path.join(args.output_dir, ".summary_merge_complete")
+            if os.path.exists(merge_flag):
+                print(f"[INFO] Summary merge completed; proceeding with analyze for {args.output_dir}")
+            else:
+                print(f"[INFO] Summary shards present; ensuring canonical summary is merged before analyze in {args.output_dir}")
+                _merge_summary_if_ready(args.output_dir)
+
+            print(f"[INFO] Running analyze phase for {args.output_dir}")
+            cache_args = argparse.Namespace(
+                output_dir=args.output_dir,
+                model=args.model,
+                dataset=args.dataset,
+                kind=args.kind,
+            )
+            model_cache, loader_cache = AdversarialCore.rebuild_model_and_loader_cache(cache_args)
+            adv_datasets = AdversarialCore.discover_existing_adversarial_artifacts(
+                output_dir=args.output_dir,
+                model_filter=args.model,
+                dataset_filter=args.dataset,
+                attack_filter=args.attack,
+                kind_filter=args.kind,
+            )
+
+            rebuilt_records = AdversarialCore.rebuild_summary_records_from_artifacts(
+                output_dir=args.output_dir,
+                model_cache=model_cache,
+                loader_cache=loader_cache,
+                adv_datasets=adv_datasets,
+            )
+            if rebuilt_records:
+                rebuilt_summary_path = _persist_rebuilt_summary_records(args.output_dir, rebuilt_records)
+                if rebuilt_summary_path:
+                    print(f"[INFO] Reconciled canonical summary at {rebuilt_summary_path}")
+
+            compute_transfer_metrics(args.output_dir, model_cache, adv_datasets)
+        except Exception as exc:
+            print(f"[ERROR] Analyze phase failed for {args.output_dir}: {exc}")
+            print(traceback.format_exc().rstrip())
+            raise
+        return
+
     ready, summary_path = check_summary_ready(args.output_dir)
     if not ready:
         print(f"[WARN] Missing or empty summary.csv in {args.output_dir}. Run the generate phase first.")
-        return
-
-    if args.mode == "analyze":
-        merge_flag = os.path.join(args.output_dir, ".summary_merge_complete")
-        if os.path.exists(merge_flag):
-            print(f"[INFO] Summary merge completed; proceeding with analyze for {args.output_dir}")
-        else:
-            print(f"[INFO] Summary shards present; ensuring canonical summary is merged before analyze in {args.output_dir}")
-            _merge_summary_if_ready(args.output_dir)
-        print(f"[INFO] Running analyze phase for {args.output_dir}")
-        model_cache, loader_cache = AdversarialCore.rebuild_model_and_loader_cache(
-            argparse.Namespace(output_dir=args.output_dir, model=args.model, dataset=args.dataset, kind=args.kind)
-        )
-        adv_datasets = {}
-        for model_name, dataset_name, kind, attack_name in AdversarialCore.get_available_attacks():
-            pass
-        compute_transfer_metrics(args.output_dir, model_cache, adv_datasets)
         return
 
     if args.mode == "plot":
@@ -329,18 +375,9 @@ def main() -> None:
         from adversarial_plotting import AdversarialPlotter
         
         plotter = AdversarialPlotter(args.output_dir)
-        
-        # Load data
-        summary_path = os.path.join(args.output_dir, "summary.csv")
-        compute_path = os.path.join(args.output_dir, "compute_profile.csv")
-        tradeoff_path = os.path.join(args.output_dir, "tradeoff_summary.csv")
-        
-        summary_df = pd.read_csv(summary_path) if os.path.exists(summary_path) else pd.DataFrame()
-        compute_df = pd.read_csv(compute_path) if os.path.exists(compute_path) else pd.DataFrame()
-        tradeoff_df = pd.read_csv(tradeoff_path) if os.path.exists(tradeoff_path) else pd.DataFrame()
-        
-        # Generate figures
-        plotter.run(summary_df, compute_df, tradeoff_df)
+
+        # Generate figures from the summaries already present in the output directory.
+        plotter.run()
         print(f"[INFO] ✅ Plotting complete. Figures saved to {args.output_dir}")
         return
 
