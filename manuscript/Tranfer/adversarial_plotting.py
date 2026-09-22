@@ -24,6 +24,14 @@ import glob
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 logger = logging.getLogger(__name__)
 
+
+VARIANT_COLORS = {
+    'Control_Continuted': '#27ae60',
+    'Control_Continued': '#27ae60',
+    'Dynamic_Region_All_Combined': '#f39c12',
+    'Dynamic_Region_All_Combined_quant': '#e74c3c'
+}
+
 class AdversarialPlotter:
     """Analyzes pruning impact on standard models' accuracy and vulnerability."""
     
@@ -40,6 +48,21 @@ class AdversarialPlotter:
         plt.rcParams['legend.fontsize'] = 10
         plt.rcParams['figure.dpi'] = 300
 
+    def _normalize_summary_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Normalize plotting inputs to the current summary schema."""
+        if df.empty:
+            return df
+
+        normalized = df.copy()
+
+        if 'clean_accuracy' not in normalized.columns and 'clean_acc' in normalized.columns:
+            normalized['clean_accuracy'] = normalized['clean_acc']
+
+        if 'variant' not in normalized.columns and 'kind' in normalized.columns:
+            normalized['variant'] = normalized['kind']
+
+        return normalized
+
     def load_all_summaries(self) -> pd.DataFrame:
         """Load all summary CSVs and extract variant info from filenames."""
         logger.info("Loading summary files...")
@@ -52,31 +75,29 @@ class AdversarialPlotter:
                 df = pd.read_csv(file)
                 filename = Path(file).stem.replace("summary_", "")
                 parts = filename.split("_")
-                
-                # Parse: Model_Dataset_Attack
-                if len(parts) >= 3:
-                    model = parts[0]
-                    dataset = parts[1]
-                    attack = "_".join(parts[2:])
-                    
-                    df['model'] = model
-                    df['dataset'] = dataset
-                    df['attack'] = attack
-                    
-                    # Extract variant from 'kind' column if it exists
+
+                # Prefer the canonical columns already stored in each summary shard.
+                # Only fall back to filename parsing when a column is missing.
+                if 'model' not in df.columns and len(parts) >= 1:
+                    df['model'] = parts[0]
+                if 'dataset' not in df.columns and len(parts) >= 2:
+                    df['dataset'] = parts[1]
+                if 'attack' not in df.columns and len(parts) >= 3:
+                    df['attack'] = "_".join(parts[2:])
+                if 'variant' not in df.columns:
                     if 'kind' in df.columns:
                         df['variant'] = df['kind']
                     else:
-                        # Fallback: assume all rows in file are same variant
-                        # (you may need to adjust this based on your data structure)
                         df['variant'] = 'Unknown'
-                    
-                    dfs.append(df)
-                    logger.info(f"  ✓ {Path(file).name}: {len(df)} rows")
+
+                df = self._normalize_summary_df(df)
+                dfs.append(df)
+                logger.info(f"  ✓ {Path(file).name}: {len(df)} rows")
             except Exception as e:
                 logger.warning(f"  ✗ {file}: {e}")
         
         merged = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
+        merged = self._normalize_summary_df(merged)
         
         if not merged.empty:
             logger.info(f"\n✓ Total rows: {len(merged)}")
@@ -90,7 +111,8 @@ class AdversarialPlotter:
     def plot_clean_accuracy_preservation(self, df: pd.DataFrame):
         """Figure 1: Does pruning hurt clean accuracy?"""
         logger.info("Generating Figure 1: Clean Accuracy Preservation")
-        
+        df = self._normalize_summary_df(df)
+
         if df.empty or 'clean_accuracy' not in df.columns:
             logger.warning("  ⚠ Missing clean_accuracy column")
             return
@@ -100,11 +122,7 @@ class AdversarialPlotter:
                      fontsize=15, fontweight='bold')
         
         models = sorted(df['model'].unique())[:6]
-        colors = {
-            'Control_Continued': '#27ae60',
-            'Dynamic_Region_All_Combined': '#f39c12',
-            'Dynamic_Region_All_Combined_quant': '#e74c3c'
-        }
+        colors = VARIANT_COLORS
         
         for idx, model in enumerate(models):
             ax = axes[idx // 3, idx % 3]
@@ -149,7 +167,8 @@ class AdversarialPlotter:
     def plot_attack_vulnerability_increase(self, df: pd.DataFrame):
         """Figure 2: Does pruning INCREASE vulnerability to attacks?"""
         logger.info("Generating Figure 2: Attack Vulnerability by Variant")
-        
+        df = self._normalize_summary_df(df)
+
         if df.empty or 'attack_success_rate' not in df.columns:
             logger.warning("  ⚠ Missing attack_success_rate column")
             return
@@ -160,20 +179,14 @@ class AdversarialPlotter:
         attack_variant = df.groupby(['attack', 'variant']).agg({
             'attack_success_rate': ['mean', 'std']
         }).reset_index()
-        
-        # Pivot for grouped bar chart
-        pivot_mean = attack_variant.pivot(index='attack', columns='variant', values=('attack_success_rate', 'mean'))
-        pivot_std = attack_variant.pivot(index='attack', columns='variant', values=('attack_success_rate', 'std'))
-        
-        # Flatten column names
-        pivot_mean.columns = pivot_mean.columns.droplevel(0)
-        pivot_std.columns = pivot_std.columns.droplevel(0)
-        
-        colors = {
-            'Control_Continued': '#27ae60',
-            'Dynamic_Region_All_Combined': '#f39c12',
-            'Dynamic_Region_All_Combined_quant': '#e74c3c'
-        }
+        attack_variant.columns = ['attack', 'variant', 'mean', 'std']
+
+        # Pivot for grouped bar chart. After reset_index above, these are plain columns,
+        # not a MultiIndex, so there is no level to drop.
+        pivot_mean = attack_variant.pivot(index='attack', columns='variant', values='mean')
+        pivot_std = attack_variant.pivot(index='attack', columns='variant', values='std')
+
+        colors = VARIANT_COLORS
         
         x = np.arange(len(pivot_mean.index))
         width = 0.25
@@ -205,19 +218,16 @@ class AdversarialPlotter:
     def plot_variant_summary_statistics(self, df: pd.DataFrame):
         """Figure 3: Summary statistics for Control vs Pruned vs Pruned+Quant."""
         logger.info("Generating Figure 3: Variant Summary Statistics")
-        
+        df = self._normalize_summary_df(df)
+
         if df.empty:
             return
         
         fig, axes = plt.subplots(2, 2, figsize=(16, 10))
         fig.suptitle('Figure 3: Summary Comparison Across All Models\n(Control vs Pruned vs Pruned+Quant)', 
                      fontsize=15, fontweight='bold')
-        
-        colors = {
-            'Control_Continued': '#27ae60',
-            'Dynamic_Region_All_Combined': '#f39c12',
-            'Dynamic_Region_All_Combined_quant': '#e74c3c'
-        }
+
+        colors = VARIANT_COLORS
         
         # Plot 1: Clean Accuracy
         if 'clean_accuracy' in df.columns:
@@ -309,7 +319,8 @@ class AdversarialPlotter:
     def plot_accuracy_robustness_correlation(self, df: pd.DataFrame):
         """Figure 4: Does higher clean accuracy correlate with higher vulnerability?"""
         logger.info("Generating Figure 4: Clean Accuracy vs Vulnerability Correlation")
-        
+        df = self._normalize_summary_df(df)
+
         if df.empty or 'clean_accuracy' not in df.columns or 'attack_success_rate' not in df.columns:
             logger.warning("  ⚠ Missing required columns")
             return
@@ -321,12 +332,8 @@ class AdversarialPlotter:
             'clean_accuracy': 'mean',
             'attack_success_rate': 'mean'
         }).reset_index()
-        
-        colors = {
-            'Control_Continued': '#27ae60',
-            'Dynamic_Region_All_Combined': '#f39c12',
-            'Dynamic_Region_All_Combined_quant': '#e74c3c'
-        }
+
+        colors = VARIANT_COLORS
         
         for variant in sorted(model_variant['variant'].unique()):
             variant_data = model_variant[model_variant['variant'] == variant]
