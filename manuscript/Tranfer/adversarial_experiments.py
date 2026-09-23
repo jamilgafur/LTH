@@ -129,8 +129,8 @@ class AdvancedExperimentSuite:
             loss_t = torch.nn.functional.cross_entropy(out_t, labels)
             grad_t = torch.autograd.grad(loss_t, images, create_graph=False)[0]
 
-            g_s = grad_s.view(grad_s.size(0), -1)
-            g_t = grad_t.view(grad_t.size(0), -1)
+            g_s = grad_s.reshape(grad_s.size(0), -1)
+            g_t = grad_t.reshape(grad_t.size(0), -1)
             cos = torch.nn.functional.cosine_similarity(g_s, g_t, dim=1)
             similarities.append(cos.mean().item())
             count += images.size(0)
@@ -145,9 +145,9 @@ class AdvancedExperimentSuite:
 
         pairs = list(model_cache.keys())
         for dataset_name in set(k[1] for k in pairs):
-            if dataset_name not in loader_cache:
-                continue
             base_dataset = CheckpointManager.base_dataset_name(dataset_name)
+            if base_dataset not in loader_cache:
+                continue
             _, test_loader = loader_cache[base_dataset]
             dataset_pairs = [k for k in pairs if k[1] == dataset_name]
 

@@ -146,7 +146,7 @@ class CKASuite:
         if not reps:
             return None
         out = torch.cat(reps, dim=0)[:max_samples]
-        return out.view(out.size(0), -1)
+        return out.reshape(out.size(0), -1)
 
     @classmethod
     def run(
