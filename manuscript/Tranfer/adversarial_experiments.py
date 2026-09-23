@@ -519,17 +519,14 @@ class AdvancedExperimentSuite:
     def _extract_loader_samples(loader, max_samples: int, device: str) -> tuple[torch.Tensor | None, torch.Tensor | None]:
         image_chunks = []
         label_chunks = []
-        total = 0
         for images, labels in loader:
             images = images.to(device)
-            take = min(images.size(0), max_samples - total)
+            take = min(images.size(0), max_samples)
             if take <= 0:
                 break
             image_chunks.append(images[:take].detach().cpu())
             label_chunks.append(labels[:take].detach().cpu())
-            total += take
-            if total >= max_samples:
-                break
+            break
         if not image_chunks:
             return None, None
         return torch.cat(image_chunks, dim=0), torch.cat(label_chunks, dim=0)
@@ -775,6 +772,119 @@ class AdvancedExperimentSuite:
             )
             plt.close(fig)
 
+    def _plot_shap_variant_change_summary(self, output_dir: str, pair_df: pd.DataFrame) -> None:
+        """Figure 6: per-model, per-dataset SHAP change summary from one training batch."""
+        required_columns = {
+            "source_model",
+            "source_kind",
+            "target_kind",
+            "dataset",
+            "same_architecture",
+            "cosine_similarity",
+            "l1_mean_abs_diff",
+            "l2_distance",
+            "topk_jaccard",
+        }
+        if pair_df.empty or not required_columns.issubset(pair_df.columns):
+            return
+
+        baseline_kind = ReportingSuite.baseline_kind()
+        variant_kinds = ReportingSuite.variant_kinds()
+        variant_order = [baseline_kind, *variant_kinds]
+        variant_label_map = {
+            baseline_kind: "original",
+            variant_kinds[0]: "pruned",
+            variant_kinds[1]: "pruned_quant",
+        }
+        variant_color_map = {
+            baseline_kind: "#27ae60",
+            variant_kinds[0]: "#f39c12",
+            variant_kinds[1]: "#e74c3c",
+        }
+
+        collapsed_vs_original = pair_df[
+            (pair_df["same_architecture"])
+            & (pair_df["source_kind"] == baseline_kind)
+            & (pair_df["target_kind"].isin(variant_kinds))
+        ].copy()
+        if collapsed_vs_original.empty:
+            return
+
+        summary = (
+            collapsed_vs_original.groupby(["dataset", "source_model", "target_kind"], as_index=False)
+            .agg(
+                cosine_similarity=("cosine_similarity", "mean"),
+                pearson_r=("pearson_r", "mean"),
+                spearman_r=("spearman_r", "mean"),
+                l1_mean_abs_diff=("l1_mean_abs_diff", "mean"),
+                l2_distance=("l2_distance", "mean"),
+                topk_jaccard=("topk_jaccard", "mean"),
+            )
+            .rename(columns={"source_model": "model", "target_kind": "variant"})
+        )
+
+        baseline_rows: list[dict] = []
+        for row in summary[["dataset", "model"]].drop_duplicates().to_dict("records"):
+            baseline_rows.append(
+                {
+                    "dataset": row["dataset"],
+                    "model": row["model"],
+                    "variant": baseline_kind,
+                    "cosine_similarity": 1.0,
+                    "pearson_r": 1.0,
+                    "spearman_r": 1.0,
+                    "l1_mean_abs_diff": 0.0,
+                    "l2_distance": 0.0,
+                    "topk_jaccard": 1.0,
+                }
+            )
+        summary = pd.concat([pd.DataFrame(baseline_rows), summary], ignore_index=True)
+        _write_locked_csv(os.path.join(output_dir, "Figure_6_shap_change_summary.csv"), summary, "Figure_6_shap_change_summary")
+
+        metric_specs = [
+            ("cosine_similarity", "Cosine Similarity vs Baseline", (0.0, 1.05)),
+            ("l1_mean_abs_diff", "Mean |SHAP delta|", None),
+            ("l2_distance", "L2 Distance", None),
+            ("topk_jaccard", "Top-k Jaccard vs Baseline", (0.0, 1.05)),
+        ]
+
+        for (dataset_name, model_name), group in summary.groupby(["dataset", "model"]):
+            group = group.set_index("variant").reindex(variant_order).reset_index()
+            labels = [variant_label_map.get(v, v) for v in group["variant"]]
+            colors = [variant_color_map.get(v, "#95a5a6") for v in group["variant"]]
+
+            fig, axes = plt.subplots(2, 2, figsize=(16, 10))
+            fig.suptitle(
+                f"Figure 6: SHAP Change Summary for {model_name} - {dataset_name}\n"
+                f"Single training batch, baseline = {variant_label_map.get(baseline_kind, baseline_kind)}",
+                fontsize=15,
+                fontweight="bold",
+            )
+
+            for ax, (metric_name, title, ylim) in zip(axes.flatten(), metric_specs):
+                values = pd.to_numeric(group[metric_name], errors="coerce").fillna(0.0).to_numpy(dtype=float)
+                bars = ax.bar(labels, values, alpha=0.8, color=colors, edgecolor="black", linewidth=1.5)
+                for bar, value in zip(bars, values):
+                    ax.text(
+                        bar.get_x() + bar.get_width() / 2.0,
+                        bar.get_height(),
+                        f"{value:.3f}",
+                        ha="center",
+                        va="bottom",
+                        fontweight="bold",
+                        fontsize=9,
+                    )
+                ax.set_title(title, fontweight="bold")
+                ax.grid(True, alpha=0.3, axis="y", linestyle="--")
+                plt.setp(ax.xaxis.get_majorticklabels(), rotation=25, ha="right")
+                if ylim is not None:
+                    ax.set_ylim(ylim)
+
+            plt.tight_layout()
+            safe_dataset = str(dataset_name).replace(" ", "_")
+            self._save_fig(os.path.join(output_dir, f"Figure_6_{model_name}_{safe_dataset}_shap_change_summary"))
+            plt.close(fig)
+
     @staticmethod
     def _to_display_image(image: np.ndarray) -> np.ndarray:
         arr = np.asarray(image, dtype=float)
@@ -952,11 +1062,11 @@ class AdvancedExperimentSuite:
             base_dataset = CheckpointManager.base_dataset_name(dataset_name)
             if base_dataset not in loader_cache:
                 continue
-            _, test_loader = loader_cache[base_dataset]
+            train_loader, _ = loader_cache[base_dataset]
 
             ref_vec, stats, class_bundle = self._compute_shap_reference_vector(
                 model=model,
-                loader=test_loader,
+                loader=train_loader,
                 device=device,
                 max_samples=max_samples,
                 background_samples=background_samples,
@@ -1028,8 +1138,8 @@ class AdvancedExperimentSuite:
                 base_dataset = CheckpointManager.base_dataset_name(dataset_name)
                 if base_dataset not in loader_cache:
                     continue
-                test_loader = loader_cache[base_dataset][1]
-                class_names = getattr(getattr(test_loader, "dataset", None), "classes", None)
+                train_loader = loader_cache[base_dataset][0]
+                class_names = getattr(getattr(train_loader, "dataset", None), "classes", None)
 
                 for variant_kind in ReportingSuite.variant_kinds():
                     variant_key = (model_name, dataset_name, variant_kind)
@@ -1127,72 +1237,7 @@ class AdvancedExperimentSuite:
         else:
             print(f"[WARN] Skipped saving {pair_path}")
 
-        # Figure 6: model-separated SHAP similarity heatmaps over the
-        # original / pruned / pruned_quant variants.
-        for dataset_name in pair_df["dataset"].unique():
-            dataset_df = pair_df[pair_df["dataset"] == dataset_name].copy()
-            if dataset_df.empty:
-                continue
-
-            model_names = sorted(dataset_df["source_model"].unique())
-            n_models = len(model_names)
-            ncols = 3
-            nrows = (n_models + ncols - 1) // ncols
-            fig, axes = plt.subplots(nrows, ncols, figsize=(15, 4.5 * nrows), squeeze=False)
-            fig.suptitle(
-                f"Figure 6: SHAP Similarity by Model and Variant - {dataset_name}",
-                fontsize=15,
-                fontweight="bold",
-            )
-
-            variant_order = [ReportingSuite.baseline_kind(), *ReportingSuite.variant_kinds()]
-            variant_label_map = {
-                ReportingSuite.baseline_kind(): "original",
-                ReportingSuite.variant_kinds()[0]: "pruned",
-                ReportingSuite.variant_kinds()[1]: "pruned_quant",
-            }
-
-            for idx, model_name in enumerate(model_names):
-                ax = axes[idx // ncols, idx % ncols]
-                model_df = dataset_df[dataset_df["source_model"] == model_name]
-                if model_df.empty:
-                    ax.axis("off")
-                    continue
-
-                summary = (
-                    model_df.groupby(["source_kind", "target_kind"], as_index=False)["cosine_similarity"]
-                    .mean()
-                    .pivot(index="source_kind", columns="target_kind", values="cosine_similarity")
-                )
-                summary = summary.reindex(index=variant_order, columns=variant_order)
-                sns.heatmap(
-                    summary,
-                    annot=True,
-                    fmt=".3f",
-                    cmap="vlag",
-                    center=0,
-                    vmin=-1,
-                    vmax=1,
-                    cbar_kws={"label": "Mean cosine similarity"},
-                    ax=ax,
-                )
-                ax.set_title(model_name, fontweight="bold")
-                ax.set_xlabel("Target kind")
-                ax.set_ylabel("Source kind")
-                ax.set_xticklabels([variant_label_map.get(t.get_text(), t.get_text()) for t in ax.get_xticklabels()], rotation=25, ha="right")
-                ax.set_yticklabels([variant_label_map.get(t.get_text(), t.get_text()) for t in ax.get_yticklabels()], rotation=0)
-
-                model_matrix_path = os.path.join(output_dir, f"Figure_6_shap_matrix_{dataset_name}_{model_name}.csv")
-                _write_locked_csv(model_matrix_path, summary.reset_index(), f"Figure_6_shap_matrix_{dataset_name}_{model_name}")
-
-            total_axes = nrows * ncols
-            for empty_idx in range(n_models, total_axes):
-                fig.delaxes(axes[empty_idx // ncols, empty_idx % ncols])
-
-            plt.tight_layout()
-            fig.savefig(os.path.join(output_dir, f"{self.FIGURE_PREFIX}_shap_{dataset_name}.png"), dpi=300)
-            fig.savefig(os.path.join(output_dir, f"{self.FIGURE_PREFIX}_shap_{dataset_name}.svg"))
-            plt.close(fig)
+        self._plot_shap_variant_change_summary(output_dir, pair_df)
 
         collapsed_vs_original = pair_df[
             (pair_df["same_architecture"])
@@ -1338,8 +1383,8 @@ class AdvancedExperimentSuite:
                 base_dataset = CheckpointManager.base_dataset_name(dataset_name)
                 if base_dataset not in loader_cache:
                     continue
-                test_loader = loader_cache[base_dataset][1]
-                class_names = getattr(getattr(test_loader, "dataset", None), "classes", None)
+                train_loader = loader_cache[base_dataset][0]
+                class_names = getattr(getattr(train_loader, "dataset", None), "classes", None)
                 for model_name in model_names:
                     baseline_key = (model_name, dataset_name, baseline_kind)
                     if baseline_key not in class_example_bundles:
@@ -1431,6 +1476,7 @@ class AdvancedExperimentSuite:
 
             pair_df = pd.DataFrame(pair_rows)
             _write_locked_csv(os.path.join(output_dir, "shap_pairwise_similarity.csv"), pair_df, "shap_pairwise_similarity")
+            self._plot_shap_variant_change_summary(output_dir, pair_df)
             latest_pair_rows = pair_rows
 
         for base_dataset, checkpoints in grouped_checkpoints.items():
@@ -1462,7 +1508,7 @@ class AdvancedExperimentSuite:
                 try:
                     ref_vec, stats, class_bundle = self._compute_shap_reference_vector(
                         model=model,
-                        loader=test_loader,
+                        loader=train_loader,
                         device=device,
                         max_samples=max_samples,
                         background_samples=background_samples,
