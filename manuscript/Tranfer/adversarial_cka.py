@@ -268,6 +268,7 @@ class CKASuite:
                 except Exception:
                     continue
                 try:
+                    hook_model = model.module if hasattr(model, "module") else model
                     for block in compression_set:
                         if isinstance(block, dict):
                             start = block.get("start_layer_name") or block.get("start_layer")
@@ -278,7 +279,7 @@ class CKASuite:
                             continue
                         try:
                             x_in, y_out, _ = _capture_preblock_activation(
-                                model, start, end, input_shape, [], None, device, debug=False
+                                hook_model, start, end, input_shape, [], None, device, debug=False
                             )
                             if x_in is None or y_out is None:
                                 continue
@@ -356,8 +357,9 @@ class CKASuite:
         """
         activations: list[torch.Tensor] = []
         handle = None
+        hook_model = model.module if hasattr(model, "module") else model
         try:
-            for name, module in model.named_modules():
+            for name, module in hook_model.named_modules():
                 if name == layer_name:
                     handle = module.register_forward_hook(lambda m, i, o: activations.append(o.detach().cpu()))
                     break
