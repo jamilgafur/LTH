@@ -780,10 +780,11 @@ class AdvancedExperimentSuite:
             "target_kind",
             "dataset",
             "same_architecture",
-            "cosine_similarity",
-            "l1_mean_abs_diff",
+            "source_total_shap",
+            "target_total_shap",
+            "delta_total_shap",
+            "delta_total_shap_abs",
             "l2_distance",
-            "topk_jaccard",
         }
         if pair_df.empty or not required_columns.issubset(pair_df.columns):
             return
@@ -813,45 +814,52 @@ class AdvancedExperimentSuite:
         summary = (
             collapsed_vs_original.groupby(["dataset", "source_model", "target_kind"], as_index=False)
             .agg(
-                cosine_similarity=("cosine_similarity", "mean"),
-                pearson_r=("pearson_r", "mean"),
-                spearman_r=("spearman_r", "mean"),
-                l1_mean_abs_diff=("l1_mean_abs_diff", "mean"),
+                source_total_shap=("source_total_shap", "mean"),
+                target_total_shap=("target_total_shap", "mean"),
+                delta_total_shap=("delta_total_shap", "mean"),
+                delta_total_shap_abs=("delta_total_shap_abs", "mean"),
                 l2_distance=("l2_distance", "mean"),
-                topk_jaccard=("topk_jaccard", "mean"),
             )
             .rename(columns={"source_model": "model", "target_kind": "variant"})
         )
 
+        baseline_lookup = summary.groupby(["dataset", "model"], as_index=False)["source_total_shap"].first()
         baseline_rows: list[dict] = []
-        for row in summary[["dataset", "model"]].drop_duplicates().to_dict("records"):
+        for row in baseline_lookup.to_dict("records"):
             baseline_rows.append(
                 {
                     "dataset": row["dataset"],
                     "model": row["model"],
                     "variant": baseline_kind,
-                    "cosine_similarity": 1.0,
-                    "pearson_r": 1.0,
-                    "spearman_r": 1.0,
-                    "l1_mean_abs_diff": 0.0,
+                    "source_total_shap": float(row["source_total_shap"]),
+                    "target_total_shap": float(row["source_total_shap"]),
+                    "delta_total_shap": 0.0,
+                    "delta_total_shap_abs": 0.0,
                     "l2_distance": 0.0,
-                    "topk_jaccard": 1.0,
                 }
             )
         summary = pd.concat([pd.DataFrame(baseline_rows), summary], ignore_index=True)
         _write_locked_csv(os.path.join(output_dir, "Figure_6_shap_change_summary.csv"), summary, "Figure_6_shap_change_summary")
 
         metric_specs = [
-            ("cosine_similarity", "Cosine Similarity vs Baseline", (0.0, 1.05)),
-            ("l1_mean_abs_diff", "Mean |SHAP delta|", None),
+            ("target_total_shap", "Total SHAP Explainability", None),
+            ("delta_total_shap", "Delta Total SHAP vs Original", None),
+            ("delta_total_shap_abs", "Total |SHAP Change|", None),
             ("l2_distance", "L2 Distance", None),
-            ("topk_jaccard", "Top-k Jaccard vs Baseline", (0.0, 1.05)),
         ]
 
         for (dataset_name, model_name), group in summary.groupby(["dataset", "model"]):
             group = group.set_index("variant").reindex(variant_order).reset_index()
             labels = [variant_label_map.get(v, v) for v in group["variant"]]
             colors = [variant_color_map.get(v, "#95a5a6") for v in group["variant"]]
+            safe_dataset = str(dataset_name).replace(" ", "_")
+            csv_group = group.copy()
+            csv_group["variant_label"] = labels
+            _write_locked_csv(
+                os.path.join(output_dir, f"Figure_6_{model_name}_{safe_dataset}_shap_change_summary.csv"),
+                csv_group,
+                f"Figure_6_{model_name}_{safe_dataset}_shap_change_summary",
+            )
 
             fig, axes = plt.subplots(2, 2, figsize=(16, 10))
             fig.suptitle(
@@ -881,7 +889,6 @@ class AdvancedExperimentSuite:
                     ax.set_ylim(ylim)
 
             plt.tight_layout()
-            safe_dataset = str(dataset_name).replace(" ", "_")
             self._save_fig(os.path.join(output_dir, f"Figure_6_{model_name}_{safe_dataset}_shap_change_summary"))
             plt.close(fig)
 
@@ -1119,11 +1126,6 @@ class AdvancedExperimentSuite:
             _write_locked_csv(empty_path, empty_pair, "shap_pairwise_similarity")
             return []
 
-        # --- Plot SHAP attribution profiles (PNG + SVG) ---
-        self._plot_shap_attribution_profiles(
-            output_dir, ref_vectors, self.model_kind_label
-        )
-
         baseline_kind = ReportingSuite.baseline_kind()
         for dataset_name in sorted({dataset for (_model, dataset, _kind) in class_example_bundles}):
             model_names = sorted({model for (model, dataset, _kind) in class_example_bundles if dataset == dataset_name})
@@ -1226,6 +1228,10 @@ class AdvancedExperimentSuite:
                         "same_architecture": src_model == tgt_model,
                         "same_kind": src_kind == tgt_kind,
                         "pair_type": self.classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
+                            "source_total_shap": float(np.sum(np.abs(src_vec))),
+                            "target_total_shap": float(np.sum(np.abs(tgt_vec))),
+                            "delta_total_shap": float(np.sum(np.abs(tgt_vec)) - np.sum(np.abs(src_vec))),
+                            "delta_total_shap_abs": float(np.sum(np.abs(tgt_vec - src_vec))),
                         **metrics,
                     }
                 )
@@ -1250,66 +1256,15 @@ class AdvancedExperimentSuite:
         else:
             print(f"[WARN] Skipped saving {collapsed_vs_original_path}")
 
-        for dataset_name in pair_df["dataset"].unique():
-            sub = pair_df[pair_df["dataset"] == dataset_name]
-            for metric, fname_stem in [
-                ("cosine_similarity", f"Figure_6_shap_cosine_heatmap_{dataset_name}"),
-                ("pearson_r", f"Figure_6_shap_pearson_heatmap_{dataset_name}"),
-                ("spearman_r", f"Figure_6_shap_spearman_heatmap_{dataset_name}"),
-            ]:
-                mat = sub.pivot(index="source_label", columns="target_label", values=metric)
-                if mat.empty:
-                    continue
-                plt.figure(figsize=(12, 9))
-                sns.heatmap(mat, annot=True, fmt=".3f", cmap="vlag", center=0)
-                plt.title(f"SHAP {metric} Similarity - {dataset_name}", fontweight="bold")
-                plt.xlabel("Target Model Variant", fontweight="bold")
-                plt.ylabel("Source Model Variant", fontweight="bold")
-                plt.tight_layout()
-                self._save_fig(os.path.join(output_dir, fname_stem))
-                plt.close()
-
-            # Dedicated Control-Continuted-vs-variant cosine similarity heatmap
-            ov_sub = sub[sub["same_architecture"] & (sub["source_kind"] != sub["target_kind"])]
-            if not ov_sub.empty:
-                ov_mat = ov_sub.pivot(
-                    index="source_label", columns="target_label", values="cosine_similarity"
-                )
-                if not ov_mat.empty:
-                    plt.figure(figsize=(max(6, len(ov_mat.columns) * 1.2), max(4, len(ov_mat) * 0.8)))
-                    sns.heatmap(
-                        ov_mat,
-                        annot=True,
-                        fmt=".3f",
-                        cmap="RdYlGn",
-                        center=0,
-                        vmin=-1,
-                        vmax=1,
-                        linewidths=0.5,
-                        cbar_kws={"label": "Cosine similarity"},
-                    )
-                    plt.title(
-                        f"SHAP Cosine Similarity: Control Continued vs Variants – {dataset_name}",
-                        fontweight="bold",
-                    )
-                    plt.xlabel("Variant", fontweight="bold")
-                    plt.ylabel("Control Continued", fontweight="bold")
-                    plt.tight_layout()
-                    self._save_fig(
-                        os.path.join(output_dir, f"Figure_6_shap_orig_vs_collapsed_cosine_{dataset_name}")
-                    )
-                    plt.close()
-
         if not collapsed_vs_original.empty:
             cv = (
                 collapsed_vs_original.groupby(["dataset", "source_model", "source_kind", "target_kind"], as_index=False)
                 .agg(
-                    cosine_similarity=("cosine_similarity", "mean"),
-                    pearson_r=("pearson_r", "mean"),
-                    spearman_r=("spearman_r", "mean"),
-                    l1_mean_abs_diff=("l1_mean_abs_diff", "mean"),
+                    source_total_shap=("source_total_shap", "mean"),
+                    target_total_shap=("target_total_shap", "mean"),
+                    delta_total_shap=("delta_total_shap", "mean"),
+                    delta_total_shap_abs=("delta_total_shap_abs", "mean"),
                     l2_distance=("l2_distance", "mean"),
-                    topk_jaccard=("topk_jaccard", "mean"),
                 )
             )
             cv_path = os.path.join(output_dir, "shap_original_vs_collapsed_summary.csv")
@@ -1317,23 +1272,6 @@ class AdvancedExperimentSuite:
                 print(f"[EXP11] Saved: {cv_path}")
             else:
                 print(f"[WARN] Skipped saving {cv_path}")
-
-            melt = cv.melt(
-                id_vars=["dataset", "source_model", "target_kind"],
-                value_vars=["cosine_similarity", "pearson_r", "spearman_r", "topk_jaccard"],
-                var_name="metric",
-                value_name="value",
-            )
-            melt["comparison_metric"] = melt["target_kind"] + " | " + melt["metric"]
-            plt.figure(figsize=(12, 6))
-            sns.barplot(data=melt, x="source_model", y="value", hue="comparison_metric", errorbar=None)
-            plt.title("Control Continued vs Variant SHAP Similarity Metrics", fontweight="bold")
-            plt.xlabel("Model Architecture", fontweight="bold")
-            plt.ylabel("Similarity", fontweight="bold")
-            plt.xticks(rotation=25, ha="right")
-            plt.tight_layout()
-            self._save_fig(os.path.join(output_dir, "Figure_6_shap_original_vs_collapsed_similarity_metrics"))
-            plt.close()
 
         return pair_rows
 
@@ -1374,8 +1312,6 @@ class AdvancedExperimentSuite:
 
             if not ref_vectors:
                 return
-
-            self._plot_shap_attribution_profiles(output_dir, ref_vectors, self.model_kind_label)
 
             baseline_kind = ReportingSuite.baseline_kind()
             for dataset_name in sorted({dataset for (_model, dataset, _kind) in class_example_bundles}):
@@ -1470,6 +1406,10 @@ class AdvancedExperimentSuite:
                             "same_architecture": src_model == tgt_model,
                             "same_kind": src_kind == tgt_kind,
                             "pair_type": self.classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
+                            "source_total_shap": float(np.sum(np.abs(src_vec))),
+                            "target_total_shap": float(np.sum(np.abs(tgt_vec))),
+                            "delta_total_shap": float(np.sum(np.abs(tgt_vec)) - np.sum(np.abs(src_vec))),
+                            "delta_total_shap_abs": float(np.sum(np.abs(tgt_vec - src_vec))),
                             **metrics,
                         }
                     )

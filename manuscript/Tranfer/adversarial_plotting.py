@@ -321,6 +321,11 @@ class AdversarialPlotter:
                 if model_dataset_df.empty:
                     continue
 
+                clean_stats = pd.DataFrame(columns=['variant', 'mean', 'std'])
+                attack_stats = pd.DataFrame(columns=['variant', 'mean', 'std'])
+                counts = pd.DataFrame(columns=['variant', 'count'])
+                model_counts = pd.DataFrame(columns=['variant', 'model'])
+
                 fig, axes = plt.subplots(2, 2, figsize=(16, 10))
                 fig.suptitle(
                     f'Figure 3: Summary for {model} - {dataset_name}\n(Control vs Pruned vs Pruned+Quant)',
@@ -398,7 +403,20 @@ class AdversarialPlotter:
 
                 plt.tight_layout()
                 safe_dataset = str(dataset_name).replace(' ', '_')
+                figure_csv = model_dataset_df.groupby(['model', 'dataset', 'variant'], as_index=False).agg(
+                    clean_accuracy_mean=('clean_accuracy', 'mean') if 'clean_accuracy' in model_dataset_df.columns else ('variant', 'size'),
+                    clean_accuracy_std=('clean_accuracy', 'std') if 'clean_accuracy' in model_dataset_df.columns else ('variant', 'size'),
+                    attack_success_rate_mean=('attack_success_rate', 'mean') if 'attack_success_rate' in model_dataset_df.columns else ('variant', 'size'),
+                    attack_success_rate_std=('attack_success_rate', 'std') if 'attack_success_rate' in model_dataset_df.columns else ('variant', 'size'),
+                    sample_count=('variant', 'size'),
+                    model_count=('model', 'nunique'),
+                )
+                for missing_col in ['clean_accuracy_mean', 'clean_accuracy_std', 'attack_success_rate_mean', 'attack_success_rate_std']:
+                    if missing_col in figure_csv.columns and figure_csv[missing_col].dtype.kind in 'iu':
+                        figure_csv[missing_col] = np.nan
                 fig_path = self.output_dir / f'Figure_3_{model}_{safe_dataset}_summary_statistics.png'
+                csv_path = self.output_dir / f'Figure_3_{model}_{safe_dataset}_summary_statistics.csv'
+                figure_csv.to_csv(csv_path, index=False)
                 fig.savefig(fig_path, dpi=120)
                 logger.info(f"  ✓ Saved Figure 3 for {model} - {dataset_name}\n")
                 plt.close()

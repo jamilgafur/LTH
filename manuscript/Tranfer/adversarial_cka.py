@@ -111,16 +111,21 @@ class CKASuite:
             base_dataset = CheckpointManager.base_dataset_name(dataset_name)
             grouped.setdefault(base_dataset, []).append((model_name, dataset_name, kind, ckpt_path))
 
-        records: list[dict] = []
+        pairwise_records: list[dict] = []
+        boundary_records: list[dict] = []
         repr_bank: dict[str, dict[tuple[str, str, str], dict[str, torch.Tensor]]] = {}
         layer_bank: dict[tuple[str, str, str], list[str]] = {}
 
         def flush_outputs() -> None:
-            df = pd.DataFrame(records)
-            _write_locked_csv(os.path.join(output_dir, "cka_similarity.csv"), df, "cka_similarity")
-            if {"source_model", "target_model", "source_kind", "target_kind", "dataset", "cka"}.issubset(df.columns):
-                pairwise_df = df[df["source_model"].notna() & df["target_model"].notna()].copy()
-                cls._plot_cka_from_dataframe(output_dir, pairwise_df)
+            pairwise_df = pd.DataFrame(pairwise_records)
+            _write_locked_csv(os.path.join(output_dir, "cka_similarity.csv"), pairwise_df, "cka_similarity")
+            if boundary_records:
+                _write_locked_csv(
+                    os.path.join(output_dir, "cka_boundary.csv"),
+                    pd.DataFrame(boundary_records),
+                    "cka_boundary",
+                )
+            cls._plot_cka_from_dataframe(output_dir, pairwise_df)
 
         for base_dataset, checkpoints in grouped.items():
             try:
@@ -178,19 +183,25 @@ class CKASuite:
 
                 flush_outputs()
 
-            # Pairwise CKA across models of the same base dataset
+            # CKA only between the original model and its collapsed variants.
             dataset_pairs = list(repr_bank[base_dataset].keys())
+            baseline_kind = ReportingSuite.baseline_kind()
+            variant_kinds = set(ReportingSuite.variant_kinds())
             for src_key in dataset_pairs:
-                src_name, _, src_kind = src_key
+                src_name, src_dataset, src_kind = src_key
+                if src_kind != baseline_kind:
+                    continue
                 src_layers = layer_bank.get(src_key, [])
                 src_reps = repr_bank[base_dataset].get(src_key, {})
                 for tgt_key in dataset_pairs:
-                    tgt_name, _, tgt_kind = tgt_key
+                    tgt_name, tgt_dataset, tgt_kind = tgt_key
+                    if tgt_name != src_name or tgt_dataset != src_dataset or tgt_kind not in variant_kinds:
+                        continue
                     tgt_layers = layer_bank.get(tgt_key, [])
                     tgt_reps = repr_bank[base_dataset].get(tgt_key, {})
                     for layer_name in src_layers:
                         tgt_layer = layer_name if layer_name in tgt_layers else None
-                        if tgt_layer is None and layer_name in src_layers:
+                        if tgt_layer is None:
                             idx = src_layers.index(layer_name)
                             if idx < len(tgt_layers):
                                 tgt_layer = tgt_layers[idx]
@@ -208,7 +219,7 @@ class CKASuite:
                         except Exception:
                             cka_val = float("nan")
 
-                        records.append(
+                        pairwise_records.append(
                             {
                                 "source_model": src_name,
                                 "source_kind": src_kind,
@@ -216,11 +227,11 @@ class CKASuite:
                                 "target_model": tgt_name,
                                 "target_kind": tgt_kind,
                                 "target_label": model_kind_label(tgt_name, tgt_kind),
-                                "dataset": dataset_name,
+                                "dataset": src_dataset,
                                 "layer": layer_name,
                                 "cka": cka_val,
-                                "same_architecture": src_name == tgt_name,
-                                "same_kind": src_kind == tgt_kind,
+                                "same_architecture": True,
+                                "same_kind": False,
                                 "pair_type": classify_transfer_pair(src_name, src_kind, tgt_name, tgt_kind),
                             }
                         )
@@ -276,7 +287,7 @@ class CKASuite:
                             cka_val = CKASuite._compute_linear_cka(X, Y)
                         except Exception:
                             cka_val = float("nan")
-                        records.append(
+                        boundary_records.append(
                             {
                                 "model": model_name,
                                 "dataset": dataset_name,
@@ -298,7 +309,7 @@ class CKASuite:
 
         # Final flush to ensure everything is written
         flush_outputs()
-        return records
+        return pairwise_records
 
     # ---------------------------------------------------------------------
     # Helper utilities (private)
@@ -389,11 +400,7 @@ class CKASuite:
 
     @classmethod
     def _plot_cka_from_dataframe(cls, output_dir: str, df: pd.DataFrame) -> None:
-        """Generate Figure 5 heat‑maps from a CKA results DataFrame.
-
-        Creates one figure per dataset and writes both PNG and SVG files. Also
-        writes per‑model CSV matrices for downstream analysis.
-        """
+        """Generate Figure 5 as original-versus-collapsed mean CKA summaries."""
         if df.empty:
             print("[WARN] CKA: no records generated; skipping CKA plots.")
             return
@@ -408,11 +415,17 @@ class CKASuite:
             print("[WARN] CKA: no pairwise records generated; skipping CKA plots.")
             return
 
-        variant_order = [ReportingSuite.baseline_kind(), *ReportingSuite.variant_kinds()]
+        baseline_kind = ReportingSuite.baseline_kind()
+        variant_order = [baseline_kind, *ReportingSuite.variant_kinds()]
         variant_label_map = {
-            ReportingSuite.baseline_kind(): "original",
+            baseline_kind: "original",
             ReportingSuite.variant_kinds()[0]: "pruned",
             ReportingSuite.variant_kinds()[1]: "pruned_quant",
+        }
+        variant_color_map = {
+            baseline_kind: "#27ae60",
+            ReportingSuite.variant_kinds()[0]: "#f39c12",
+            ReportingSuite.variant_kinds()[1]: "#e74c3c",
         }
 
         for dataset_name in df["dataset"].unique():
@@ -421,68 +434,54 @@ class CKASuite:
                 continue
 
             model_names = sorted(dataset_df["source_model"].unique())
-            n_models = len(model_names)
-            ncols = 3
-            nrows = (n_models + ncols - 1) // ncols
-            fig, axes = plt.subplots(nrows, ncols, figsize=(15, 4.5 * nrows), squeeze=False)
-            fig.suptitle(
-                f"Figure 5: CKA Similarity by Model and Variant - {dataset_name}",
-                fontsize=15,
-                fontweight="bold",
-            )
-
-            for idx, model_name in enumerate(model_names):
-                ax = axes[idx // ncols, idx % ncols]
-                model_df = dataset_df[dataset_df["source_model"] == model_name]
+            for model_name in model_names:
+                model_df = dataset_df[
+                    (dataset_df["source_model"] == model_name)
+                    & (dataset_df["source_kind"] == baseline_kind)
+                    & (dataset_df["target_kind"].isin(ReportingSuite.variant_kinds()))
+                ].copy()
                 if model_df.empty:
-                    ax.axis("off")
                     continue
 
                 summary = (
-                    model_df.groupby(["source_kind", "target_kind"], as_index=False)["cka"]
+                    model_df.groupby("target_kind", as_index=False)["cka"]
                     .mean()
-                    .pivot(index="source_kind", columns="target_kind", values="cka")
+                    .rename(columns={"target_kind": "variant", "cka": "mean_cka"})
                 )
-                summary = summary.reindex(index=variant_order, columns=variant_order)
-                sns.heatmap(
-                    summary,
-                    annot=True,
-                    fmt=".3f",
-                    cmap="YlOrRd",
-                    vmin=0,
-                    vmax=1,
-                    cbar_kws={"label": "Mean CKA"},
-                    ax=ax,
-                )
-                ax.set_title(model_name, fontweight="bold")
-                ax.set_xlabel("Target kind")
-                ax.set_ylabel("Source kind")
-                ax.set_xticklabels(
-                    [variant_label_map.get(v.get_text(), v.get_text()) for v in ax.get_xticklabels()],
-                    rotation=25,
-                    ha="right",
-                )
-                ax.set_yticklabels(
-                    [variant_label_map.get(v.get_text(), v.get_text()) for v in ax.get_yticklabels()],
-                    rotation=0,
-                )
+                baseline_row = pd.DataFrame([{"variant": baseline_kind, "mean_cka": 1.0}])
+                summary = pd.concat([baseline_row, summary], ignore_index=True)
+                summary = summary.set_index("variant").reindex(variant_order).reset_index()
+                summary["variant_label"] = summary["variant"].map(variant_label_map)
 
-                model_matrix_path = os.path.join(
-                    output_dir, f"Figure_5_cka_matrix_{dataset_name}_{model_name}.csv"
+                csv_path = os.path.join(output_dir, f"Figure_5_{model_name}_{dataset_name}_cka_summary.csv")
+                _write_locked_csv(csv_path, summary, f"Figure_5_{model_name}_{dataset_name}_cka_summary")
+
+                fig, ax = plt.subplots(figsize=(8, 5))
+                bars = ax.bar(
+                    summary["variant_label"],
+                    summary["mean_cka"],
+                    color=[variant_color_map.get(v, "#95a5a6") for v in summary["variant"]],
+                    edgecolor="black",
+                    linewidth=1.2,
+                    alpha=0.85,
                 )
-                _write_locked_csv(model_matrix_path, summary.reset_index(), f"Figure_5_cka_matrix_{dataset_name}_{model_name}")
-
-            total_axes = nrows * ncols
-            for empty_idx in range(n_models, total_axes):
-                fig.delaxes(axes[empty_idx // ncols, empty_idx % ncols])
-
-            plt.tight_layout()
-            fig.savefig(os.path.join(output_dir, f"{cls.FIGURE_PREFIX}_cka_{dataset_name}.png"), dpi=300)
-            fig.savefig(os.path.join(output_dir, f"{cls.FIGURE_PREFIX}_cka_{dataset_name}.svg"))
-            plt.close(fig)
-
-            # Legacy CSV with source/target labels
-            mean_cka = dataset_df.groupby(["source_label", "target_label"])["cka"].mean().reset_index()
-            pivot = mean_cka.pivot(index="source_label", columns="target_label", values="cka")
-            matrix_path = os.path.join(output_dir, f"{cls.FIGURE_PREFIX}_cka_matrix_{dataset_name}.csv")
-            _write_locked_csv(matrix_path, pivot.reset_index(), f"{cls.FIGURE_PREFIX}_cka_matrix_{dataset_name}")
+                for bar, value in zip(bars, summary["mean_cka"]):
+                    if pd.isna(value):
+                        continue
+                    ax.text(
+                        bar.get_x() + bar.get_width() / 2.0,
+                        value,
+                        f"{value:.3f}",
+                        ha="center",
+                        va="bottom",
+                        fontweight="bold",
+                    )
+                ax.set_ylim(0.0, 1.05)
+                ax.set_ylabel("Mean CKA", fontweight="bold")
+                ax.set_xlabel("Variant", fontweight="bold")
+                ax.set_title(f"Figure 5: CKA vs Original - {model_name} - {dataset_name}", fontweight="bold")
+                ax.grid(True, alpha=0.3, axis="y", linestyle="--")
+                plt.tight_layout()
+                fig.savefig(os.path.join(output_dir, f"Figure_5_{model_name}_{dataset_name}_cka_summary.png"), dpi=300)
+                fig.savefig(os.path.join(output_dir, f"Figure_5_{model_name}_{dataset_name}_cka_summary.svg"))
+                plt.close(fig)
