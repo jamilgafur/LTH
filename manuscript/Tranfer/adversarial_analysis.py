@@ -17,6 +17,8 @@ import pandas as pd
 # Absolute imports (e.g., ``from adversarial_core import ...``) fail because the
 # top‑level module name ``adversarial_core`` is not found on ``sys.path``.
 from .adversarial_core import AdversarialCore
+from .adversarial_correlations import CorrelationSuite
+from .adversarial_compute_tradeoff import TradeoffComputer
 from .adversarial_experiments import AdvancedExperimentSuite
 from .adversarial_reporting import ReportingSuite
 
@@ -308,6 +310,18 @@ def compute_shap_for_results(
     )
 
 
+def compute_tradeoff_for_results(output_dir: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Compute the per-run compute profile and tradeoff summary from the canonical summary."""
+    summary_path = os.path.join(output_dir, "summary.csv")
+    summary_df = pd.read_csv(summary_path)
+    summary_df = ReportingSuite.enrich_summary_dataframe(summary_df)
+
+    computer = TradeoffComputer(base_dir=output_dir, output_dir=output_dir)
+    compute_df = computer.compute_compute_profile(summary_df)
+    tradeoff_df = computer.compute_tradeoff_summary(summary_df)
+    return compute_df, tradeoff_df
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Adversarial transfer analysis")
     parser.add_argument("--mode", default="analyze", choices=VALID_PHASES + ["full"], help="Pipeline phase to run")
@@ -412,7 +426,25 @@ def main() -> None:
         return
 
     if args.mode == "compare":
-        print(f"[INFO] Compare phase will proceed using {summary_path}")
+        print(f"[INFO] Running compare phase for {args.output_dir} using {summary_path}")
+        if args.result_dirs:
+            generated = ReportingSuite.generate_multi_run_kind_comparison_table(
+                output_dir=args.output_dir,
+                result_dirs=args.result_dirs,
+            )
+            if generated:
+                print(
+                    f"[INFO] Multi-run comparison table saved to "
+                    f"{os.path.join(args.output_dir, 'multi_run_kind_comparison_table.csv')}"
+                )
+            else:
+                print("[WARN] Multi-run comparison table was not generated.")
+        else:
+            generated = ReportingSuite.generate_comparison_tables_from_csv(args.output_dir)
+            if generated:
+                print(f"[INFO] Comparison tables generated for {args.output_dir}")
+            else:
+                print(f"[WARN] Comparison tables were not generated for {args.output_dir}")
         return
 
     # ---------------------------------------------------------------------
@@ -478,6 +510,20 @@ def main() -> None:
         )
         return
 
+    if args.mode == "statistics":
+        print(f"[INFO] Running statistical significance phase for {args.output_dir}")
+        suite = AdvancedExperimentSuite(
+            instantiate_attack=lambda *a, **kw: None,
+            model_kind_label=ReportingSuite.model_kind_label,
+            classify_transfer_pair=ReportingSuite.classify_transfer_pair,
+        )
+        records = suite.statistical_significance_phase(
+            output_dir=args.output_dir,
+            result_dirs=args.result_dirs,
+        )
+        print(f"[INFO] Statistical significance phase produced {len(records)} records.")
+        return
+
     if args.mode == "cka":
         print(f"[INFO] Running CKA similarity phase for {args.output_dir}")
         cache_args = argparse.Namespace(
@@ -514,6 +560,21 @@ def main() -> None:
             topk_ratio=args.topk_ratio,
         )
         print(f"[INFO] SHAP analysis produced {len(pairs)} pairwise records.")
+        return
+
+    if args.mode == "compute_tradeoff":
+        print(f"[INFO] Running compute tradeoff phase for {args.output_dir}")
+        compute_df, tradeoff_df = compute_tradeoff_for_results(args.output_dir)
+        print(
+            f"[INFO] Compute tradeoff phase produced {len(compute_df)} compute-profile rows and "
+            f"{len(tradeoff_df)} tradeoff rows."
+        )
+        return
+
+    if args.mode == "correlations":
+        print(f"[INFO] Running correlations phase for {args.output_dir}")
+        records = CorrelationSuite.run(args.output_dir)
+        print(f"[INFO] Correlations phase produced {len(records)} records.")
         return
 
     if args.compute_shap:
