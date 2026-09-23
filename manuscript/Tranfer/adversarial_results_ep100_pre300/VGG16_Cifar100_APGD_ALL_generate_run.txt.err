@@ -1,0 +1,52 @@
+Traceback (most recent call last):
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1251, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/queues.py", line 122, in get
+    return _ForkingPickler.loads(res)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/multiprocessing/reductions.py", line 541, in rebuild_storage_fd
+    fd = df.detach()
+         ^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/resource_sharer.py", line 58, in detach
+    return reduction.recv_handle(conn)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/reduction.py", line 189, in recv_handle
+    return recvfds(s, 1)[0]
+           ^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/multiprocessing/reduction.py", line 157, in recvfds
+    msg, ancdata, flags, addr = sock.recvmsg(1, socket.CMSG_SPACE(bytes_size))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/_utils/signal_handling.py", line 73, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 8848) is killed by signal: Killed. 
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_analysis.py", line 682, in <module>
+    main()
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_analysis.py", line 417, in main
+    run_generate_phase(
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_analysis.py", line 271, in run_generate_phase
+    records, model_cache, loader_cache, adv_datasets = AdversarialCore.generate_attacks_phase(
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 548, in generate_attacks_phase
+    clean_acc, latency_ms = cls.evaluate_model(model, test_loader, return_latency_ms=True)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/old_Users/jgafur/LTH/manuscript/Tranfer/adversarial_core.py", line 232, in evaluate_model
+    for imgs, lbls in loader:
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 708, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1458, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1420, in _get_data
+    success, data = self._try_get_data()
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/utils/data/dataloader.py", line 1264, in _try_get_data
+    raise RuntimeError(
+RuntimeError: DataLoader worker (pid(s) 8847, 8848) exited unexpectedly
