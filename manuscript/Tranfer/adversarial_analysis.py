@@ -366,6 +366,7 @@ def main() -> None:
 
     if args.mode == "analyze":
         try:
+            analyze_start = time.perf_counter()
             merge_flag = os.path.join(args.output_dir, ".summary_merge_complete")
             if os.path.exists(merge_flag):
                 print(f"[INFO] Summary merge completed; proceeding with analyze for {args.output_dir}")
@@ -380,7 +381,14 @@ def main() -> None:
                 dataset=args.dataset,
                 kind=args.kind,
             )
+            cache_start = time.perf_counter()
             model_cache, loader_cache = AdversarialCore.rebuild_model_and_loader_cache(cache_args)
+            print(
+                f"[INFO] Rebuilt caches in {time.perf_counter() - cache_start:.2f}s: "
+                f"models={len(model_cache)} datasets={len(loader_cache)}"
+            )
+
+            artifact_start = time.perf_counter()
             adv_datasets = AdversarialCore.discover_existing_adversarial_artifacts(
                 output_dir=args.output_dir,
                 model_filter=args.model,
@@ -388,19 +396,33 @@ def main() -> None:
                 attack_filter=args.attack,
                 kind_filter=args.kind,
             )
+            print(
+                f"[INFO] Discovered {len(adv_datasets)} adversarial artifacts in "
+                f"{time.perf_counter() - artifact_start:.2f}s"
+            )
 
+            rebuild_start = time.perf_counter()
             rebuilt_records = AdversarialCore.rebuild_summary_records_from_artifacts(
                 output_dir=args.output_dir,
                 model_cache=model_cache,
                 loader_cache=loader_cache,
                 adv_datasets=adv_datasets,
             )
+            print(
+                f"[INFO] Rebuilt {len(rebuilt_records)} summary records from artifacts in "
+                f"{time.perf_counter() - rebuild_start:.2f}s"
+            )
             if rebuilt_records:
                 rebuilt_summary_path = _persist_rebuilt_summary_records(args.output_dir, rebuilt_records)
                 if rebuilt_summary_path:
                     print(f"[INFO] Reconciled canonical summary at {rebuilt_summary_path}")
 
+            transfer_start = time.perf_counter()
             compute_transfer_metrics(args.output_dir, model_cache, adv_datasets)
+            print(
+                f"[INFO] Analyze phase completed in {time.perf_counter() - analyze_start:.2f}s "
+                f"(transfer stage {time.perf_counter() - transfer_start:.2f}s)"
+            )
         except Exception as exc:
             print(f"[ERROR] Analyze phase failed for {args.output_dir}: {exc}")
             print(traceback.format_exc().rstrip())

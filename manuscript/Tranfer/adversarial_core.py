@@ -92,6 +92,23 @@ def _write_locked_csv(path: str, df, lock_name: str) -> bool:
         _release_lock(lock_path)
 
 
+def _append_locked_csv(path: str, df, lock_name: str) -> bool:
+    """Append rows to a CSV under a file lock, writing the header once."""
+    lock_path = os.path.join(os.path.dirname(path) or ".", f".{lock_name}.lock")
+    if not _acquire_lock(lock_path, timeout_seconds=120.0):
+        print(f"[WARN] Could not acquire lock for {path}; skipping append.")
+        return False
+    try:
+        path_obj = os.path.abspath(path)
+        directory = os.path.dirname(path_obj) or "."
+        os.makedirs(directory, exist_ok=True)
+        write_header = not os.path.exists(path_obj) or os.path.getsize(path_obj) == 0
+        df.to_csv(path_obj, mode="a", header=write_header, index=False)
+        return True
+    finally:
+        _release_lock(lock_path)
+
+
 class AdversarialCore:
     """Shared core functionality for adversarial experiments."""
 
@@ -624,12 +641,31 @@ class AdversarialCore:
     def analyze_transferability_phase(cls, output_dir: str, model_cache: dict, adv_datasets: dict):
         import pandas as pd
 
+        phase_start = time.perf_counter()
         transfer_records = []
         summary_path = os.path.join(output_dir, "summary.csv")
         records_df = pd.read_csv(summary_path) if os.path.exists(summary_path) else pd.DataFrame()
         records_df = ReportingSuite.enrich_summary_dataframe(records_df)
+        transfer_path = os.path.join(output_dir, "transferability.csv")
 
-        for (src_model, src_dataset, src_kind, src_attack), adv_path in adv_datasets.items():
+        if os.path.exists(transfer_path):
+            try:
+                os.remove(transfer_path)
+                print(f"[INFO] Removed stale transferability CSV before rebuild: {transfer_path}")
+            except OSError as exc:
+                print(f"[WARN] Could not remove stale transferability CSV {transfer_path}: {exc}")
+
+        print(
+            f"[INFO] Starting transferability analysis for {len(adv_datasets)} adversarial artifacts "
+            f"across {len(model_cache)} cached models."
+        )
+
+        for source_index, ((src_model, src_dataset, src_kind, src_attack), adv_path) in enumerate(adv_datasets.items(), start=1):
+            source_start = time.perf_counter()
+            print(
+                f"[INFO] Transfer source {source_index}/{len(adv_datasets)}: "
+                f"model={src_model} dataset={src_dataset} kind={src_kind} attack={src_attack}"
+            )
             adv_bundle = cls.load_adversarial_bundle(adv_path)
             adv_loader = torch.utils.data.DataLoader(
                 torch.utils.data.TensorDataset(
@@ -642,10 +678,22 @@ class AdversarialCore:
             src_clean_preds = adv_bundle.get("source_clean_predictions")
             src_adv_preds = adv_bundle.get("source_adversarial_predictions")
             true_labels = adv_bundle["true_labels"]
+            source_records = []
+            compatible_targets = sum(1 for (_tgt_model, tgt_dataset, _tgt_kind) in model_cache if tgt_dataset == src_dataset)
+            print(
+                f"[INFO] Compatible transfer targets for {src_model}/{src_attack}: {compatible_targets}"
+            )
 
-            for (tgt_model, tgt_dataset, tgt_kind), tgt_model_obj in model_cache.items():
+            matched_targets = 0
+            for target_index, ((tgt_model, tgt_dataset, tgt_kind), tgt_model_obj) in enumerate(model_cache.items(), start=1):
                 if tgt_dataset != src_dataset:
                     continue
+                matched_targets += 1
+                if matched_targets == 1 or matched_targets % 10 == 0 or matched_targets == compatible_targets:
+                    print(
+                        f"[DEBUG] Source {source_index}/{len(adv_datasets)} progress: "
+                        f"target {matched_targets}/{compatible_targets} -> {tgt_model} ({tgt_kind})"
+                    )
 
                 source_attack_success_rate = np.nan
                 if not records_df.empty:
@@ -668,35 +716,53 @@ class AdversarialCore:
                     source_attack_success_rate=source_attack_success_rate,
                 )
 
-                transfer_records.append(
-                    {
-                        "source_model": src_model,
-                        "source_kind": src_kind,
-                        "source_label": ReportingSuite.model_kind_label(src_model, src_kind),
-                        "source_attack": src_attack,
-                        "target_model": tgt_model,
-                        "target_kind": tgt_kind,
-                        "target_label": ReportingSuite.model_kind_label(tgt_model, tgt_kind),
-                        "dataset": src_dataset,
-                        "transfer_acc": transfer_metrics["transfer_acc"],
-                        "transfer_success_rate": transfer_metrics["transfer_success_rate"],
-                        "conditioned_transfer_success_rate": transfer_metrics["conditioned_transfer_success_rate"],
-                        "source_attack_success_rate": transfer_metrics["source_attack_success_rate"],
-                        "normalized_transfer_rate": transfer_metrics["normalized_transfer_rate"],
-                        "normalized_conditioned_transfer_rate": transfer_metrics["normalized_conditioned_transfer_rate"],
-                        "same_architecture": src_model == tgt_model,
-                        "same_kind": src_kind == tgt_kind,
-                        "pair_type": ReportingSuite.classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
-                    }
+                record = {
+                    "source_model": src_model,
+                    "source_kind": src_kind,
+                    "source_label": ReportingSuite.model_kind_label(src_model, src_kind),
+                    "source_attack": src_attack,
+                    "target_model": tgt_model,
+                    "target_kind": tgt_kind,
+                    "target_label": ReportingSuite.model_kind_label(tgt_model, tgt_kind),
+                    "dataset": src_dataset,
+                    "transfer_acc": transfer_metrics["transfer_acc"],
+                    "transfer_success_rate": transfer_metrics["transfer_success_rate"],
+                    "conditioned_transfer_success_rate": transfer_metrics["conditioned_transfer_success_rate"],
+                    "source_attack_success_rate": transfer_metrics["source_attack_success_rate"],
+                    "normalized_transfer_rate": transfer_metrics["normalized_transfer_rate"],
+                    "normalized_conditioned_transfer_rate": transfer_metrics["normalized_conditioned_transfer_rate"],
+                    "same_architecture": src_model == tgt_model,
+                    "same_kind": src_kind == tgt_kind,
+                    "pair_type": ReportingSuite.classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
+                }
+                source_records.append(record)
+                transfer_records.append(record)
+
+            source_df = pd.DataFrame(source_records)
+            if not source_df.empty:
+                if _append_locked_csv(transfer_path, source_df, "transferability"):
+                    print(
+                        f"[INFO] Appended {len(source_df)} transferability rows for "
+                        f"{src_model}/{src_attack} to {transfer_path} in "
+                        f"{time.perf_counter() - source_start:.2f}s"
+                    )
+                else:
+                    print(
+                        f"[WARN] Failed to append transferability rows for {src_model}/{src_attack} "
+                        f"to {transfer_path}"
+                    )
+            else:
+                print(
+                    f"[WARN] No transferability rows generated for source "
+                    f"{src_model}/{src_dataset}/{src_kind}/{src_attack}"
                 )
 
         transfer_df = pd.DataFrame(transfer_records)
         if not transfer_df.empty:
-            transfer_path = os.path.join(output_dir, "transferability.csv")
-            if _write_locked_csv(transfer_path, transfer_df, "transferability"):
-                print(f"[INFO] Saved transferability CSV to {transfer_path} ({len(transfer_df)} rows)")
-            else:
-                print(f"[WARN] Skipped saving {transfer_path}")
+            print(
+                f"[INFO] Completed transferability analysis with {len(transfer_df)} total rows "
+                f"in {time.perf_counter() - phase_start:.2f}s"
+            )
         else:
             print("[WARN] No transferability rows were generated.")
 
@@ -707,8 +773,13 @@ class AdversarialCore:
         model_cache: dict = {}
         loader_cache: dict = {}
         device = cls._default_device()
+        checkpoints = list(CheckpointManager.discover_checkpoints())
+        print(
+            f"[INFO] rebuild_model_and_loader_cache starting on device={device} "
+            f"with {len(checkpoints)} discovered checkpoints"
+        )
 
-        for model_name, dataset_name, kind, ckpt_path in CheckpointManager.discover_checkpoints():
+        for checkpoint_index, (model_name, dataset_name, kind, ckpt_path) in enumerate(checkpoints, start=1):
             if not CheckpointManager.dataset_matches_output_dir(dataset_name, args.output_dir):
                 continue
             if args.model and model_name != args.model:
@@ -744,18 +815,37 @@ class AdversarialCore:
                 # Skip unsupported datasets.
                 continue
 
+            checkpoint_start = time.perf_counter()
+            print(
+                f"[INFO] Cache rebuild checkpoint {checkpoint_index}/{len(checkpoints)}: "
+                f"model={model_name} dataset={dataset_name} kind={kind}"
+            )
             one_batch = next(iter(train_loader))[0]
             try:
+                print(
+                    f"[DEBUG] Building model skeleton for {model_name} ({dataset_name}, {kind}); "
+                    f"checkpoint={ckpt_path}"
+                )
                 model = CheckpointManager.build_model_for_checkpoint(
                     model_name, dataset_name, kind, num_classes, one_batch, ckpt_path, device
                 )
+                print(f"[DEBUG] Model skeleton ready for {model_name} ({dataset_name}, {kind}); loading state dict")
                 cls.robust_load_state_dict(model, ckpt_path)
+                print(
+                    f"[DEBUG] State dict loaded for {model_name} ({dataset_name}, {kind}) "
+                    f"in {time.perf_counter() - checkpoint_start:.2f}s"
+                )
             except Exception as exc:
                 print(f"[WARN] Could not load {model_name}({kind}) on {dataset_name}: {exc}")
                 continue
 
             if device == "cuda":
+                print(f"[DEBUG] Wrapping {model_name} ({dataset_name}, {kind}) with DataParallel")
                 model = torch.nn.DataParallel(model)
             model_cache[(model_name, dataset_name, kind)] = model
+            print(
+                f"[INFO] Cached {model_name} ({dataset_name}, {kind}); total cached models={len(model_cache)}; "
+                f"elapsed={time.perf_counter() - checkpoint_start:.2f}s"
+            )
 
         return model_cache, loader_cache

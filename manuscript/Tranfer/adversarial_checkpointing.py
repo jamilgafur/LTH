@@ -6,6 +6,7 @@ import glob
 import json
 import os
 import re
+import time
 
 import torch
 import torch.nn as nn
@@ -258,6 +259,7 @@ class CheckpointManager:
         if KIND_SPECS[kind]["collapsed"]:
             compression_set = cls.get_compression_set_for_checkpoint(model_name, dataset_name, ckpt_path)
             print(f"[DEBUG] Rebuilding collapsed architecture for {model_name} ({dataset_name})")
+            collapse_start = time.perf_counter()
             model = collapse_only(
                 model=model,
                 compression_set=compression_set,
@@ -267,8 +269,13 @@ class CheckpointManager:
                 debug=False,
                 handle_skips=True,
             )
+            print(
+                f"[DEBUG] collapse_only returned for {model_name} ({dataset_name}) "
+                f"in {time.perf_counter() - collapse_start:.2f}s"
+            )
         else:
             model = model.to(device)
+            print(f"[DEBUG] Loaded non-collapsed architecture for {model_name} ({dataset_name}) onto {device}")
 
         return model
 
