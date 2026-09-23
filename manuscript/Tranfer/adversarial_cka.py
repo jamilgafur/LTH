@@ -27,7 +27,11 @@ from adversarial_core import AdversarialCore
 from adversarial_reporting import ReportingSuite
 # Import the atomic CSV helper from ``adversarial_reporting`` to avoid a circular import.
 from adversarial_reporting import _write_locked_csv
-from .collapse import _capture_preblock_activation
+
+try:
+    from .collapse import _capture_preblock_activation
+except ImportError:
+    from collapse import _capture_preblock_activation
 
 
 class CKASuite:
