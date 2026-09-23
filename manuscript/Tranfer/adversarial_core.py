@@ -382,6 +382,55 @@ class AdversarialCore:
             }
         raise RuntimeError(f"Unsupported adversarial dataset format in {adv_path}")
 
+    @classmethod
+    def discover_existing_adversarial_artifacts(
+        cls,
+        output_dir: str,
+        model_filter: str = None,
+        dataset_filter: str = None,
+        attack_filter: str = None,
+        kind_filter: str = None,
+    ) -> dict:
+        """Reconstruct saved adversarial artifact mapping from an output directory."""
+        adv_datasets: dict[tuple[str, str, str, str], str] = {}
+        if not os.path.isdir(output_dir):
+            return adv_datasets
+
+        for name in sorted(os.listdir(output_dir)):
+            if not name.endswith("_adv.pt"):
+                continue
+
+            adv_path = os.path.join(output_dir, name)
+            try:
+                payload = cls.load_adversarial_bundle(adv_path)
+            except Exception as exc:
+                print(f"[WARN] Could not read adversarial artifact {adv_path}: {exc}")
+                continue
+
+            model_name = payload.get("source_model") or payload.get("model")
+            dataset_name = payload.get("dataset")
+            kind = payload.get("kind")
+            attack_name = payload.get("attack")
+            if not all([model_name, dataset_name, kind, attack_name]):
+                print(f"[WARN] Skipping adversarial artifact with missing metadata: {adv_path}")
+                continue
+
+            if model_filter and model_filter != "ALL" and model_name != model_filter:
+                continue
+            if dataset_filter and dataset_filter != "ALL":
+                base_dataset = CheckpointManager.base_dataset_name(dataset_name).lower()
+                if base_dataset != dataset_filter.lower():
+                    continue
+            if attack_filter and attack_filter != "ALL" and attack_name != attack_filter:
+                continue
+            if kind_filter and kind_filter != "ALL" and kind != kind_filter:
+                continue
+
+            adv_datasets[(model_name, dataset_name, kind, attack_name)] = adv_path
+
+        print(f"[INFO] Discovered {len(adv_datasets)} saved adversarial artifacts in {output_dir}")
+        return adv_datasets
+
     @staticmethod
     def count_model_parameters(model: nn.Module) -> int:
         return int(sum(p.numel() for p in model.parameters()))
