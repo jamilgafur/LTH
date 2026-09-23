@@ -651,6 +651,8 @@ class AdversarialCore:
         summary_path = os.path.join(output_dir, "summary.csv")
         records_df = pd.read_csv(summary_path) if os.path.exists(summary_path) else pd.DataFrame()
         records_df = ReportingSuite.enrich_summary_dataframe(records_df)
+        loader_cache: dict = {}
+        checkpoint_catalog = list(CheckpointManager.discover_checkpoints())
         if transferability_output:
             transfer_path = transferability_output if os.path.isabs(transferability_output) else os.path.join(output_dir, transferability_output)
         else:
@@ -665,122 +667,206 @@ class AdversarialCore:
 
         print(
             f"[INFO] Starting transferability analysis for {len(adv_datasets)} adversarial artifacts "
-            f"across {len(model_cache)} cached models."
+            f"across {len(checkpoint_catalog)} discovered checkpoints."
         )
 
+        def _loader_for_dataset(dataset_name: str):
+            base_dataset = CheckpointManager.base_dataset_name(dataset_name)
+            if base_dataset == "Cifar10":
+                if "Cifar10" not in loader_cache:
+                    loader_cache["Cifar10"] = load_cifar10(batch_size=256, num_workers=4)
+                return loader_cache["Cifar10"], 10
+            if base_dataset == "Cifar100":
+                if "Cifar100" not in loader_cache:
+                    loader_cache["Cifar100"] = load_cifar100(batch_size=256, num_workers=4)
+                return loader_cache["Cifar100"], 100
+            if base_dataset.lower() == "tinyimagenet":
+                if "tinyimagenet" not in loader_cache:
+                    loader_cache["tinyimagenet"] = load_tiny_imagenet(batch_size=256, num_workers=4)
+                return loader_cache["tinyimagenet"], 200
+            raise ValueError(f"Unsupported dataset for transfer analysis: {dataset_name}")
+
+        def _source_attack_success_rate(src_model: str, src_dataset: str, src_kind: str, src_attack: str) -> float:
+            if records_df.empty:
+                return np.nan
+            match = records_df[
+                (records_df["model"] == src_model)
+                & (records_df["dataset"] == src_dataset)
+                & (records_df["kind"] == src_kind)
+                & (records_df["attack"] == src_attack)
+            ]
+            if match.empty:
+                return np.nan
+            return float(match.iloc[0].get("attack_success_rate", np.nan))
+
+        # Group source artifacts by base dataset so we can load one target model at a time.
+        source_groups: dict[str, list[tuple[tuple[str, str, str, str], str]]] = {}
+        for source_key, adv_path in adv_datasets.items():
+            _src_model, src_dataset, _src_kind, _src_attack = source_key
+            base_dataset = CheckpointManager.base_dataset_name(src_dataset)
+            source_groups.setdefault(base_dataset, []).append((source_key, adv_path))
+
         rows_written = 0
-        for source_index, ((src_model, src_dataset, src_kind, src_attack), adv_path) in enumerate(adv_datasets.items(), start=1):
-            source_start = time.perf_counter()
+        for dataset_index, (base_dataset, sources) in enumerate(source_groups.items(), start=1):
+            dataset_start = time.perf_counter()
             print(
-                f"[INFO] Transfer source {source_index}/{len(adv_datasets)}: "
-                f"model={src_model} dataset={src_dataset} kind={src_kind} attack={src_attack}"
+                f"[INFO] Dataset group {dataset_index}/{len(source_groups)}: {base_dataset} "
+                f"with {len(sources)} adversarial artifacts"
             )
-            # Load the adversarial artifact bundle with robust error handling.
+
             try:
-                adv_bundle = cls.load_adversarial_bundle(adv_path)
+                (loader_pair, num_classes) = _loader_for_dataset(base_dataset)
             except Exception as exc:
-                print(f"[ERROR] Failed to load adversarial bundle at {adv_path}: {exc}")
+                print(f"[ERROR] Could not load dataset helpers for {base_dataset}: {exc}")
                 continue
-            adv_loader = torch.utils.data.DataLoader(
-                torch.utils.data.TensorDataset(
-                    adv_bundle["adversarial_images"], adv_bundle["true_labels"]
-                ),
-                batch_size=256,
-                shuffle=False,
-            )
 
-            src_clean_preds = adv_bundle.get("source_clean_predictions")
-            src_adv_preds = adv_bundle.get("source_adversarial_predictions")
-            true_labels = adv_bundle.get("true_labels")
-            if true_labels is None:
-                print(f"[WARN] true_labels missing in bundle for {src_model}/{src_dataset}/{src_attack}")
-                continue
-            source_records = []
-            compatible_targets = sum(1 for (_tgt_model, tgt_dataset, _tgt_kind) in model_cache if tgt_dataset == src_dataset)
+            train_loader, _ = loader_pair
+            one_batch = next(iter(train_loader))[0]
+
+            dataset_checkpoints = [
+                (model_name, dataset_name, kind, ckpt_path)
+                for model_name, dataset_name, kind, ckpt_path in checkpoint_catalog
+                if CheckpointManager.dataset_matches_output_dir(dataset_name, output_dir)
+                and CheckpointManager.base_dataset_name(dataset_name) == base_dataset
+            ]
             print(
-                f"[INFO] Compatible transfer targets for {src_model}/{src_attack}: {compatible_targets}"
+                f"[INFO] Compatible target checkpoints for {base_dataset}: {len(dataset_checkpoints)}"
             )
 
-            matched_targets = 0
-            for target_index, ((tgt_model, tgt_dataset, tgt_kind), tgt_model_obj) in enumerate(model_cache.items(), start=1):
-                if tgt_dataset != src_dataset:
-                    continue
-                matched_targets += 1
-                if matched_targets == 1 or matched_targets % 10 == 0 or matched_targets == compatible_targets:
-                    print(
-                        f"[DEBUG] Source {source_index}/{len(adv_datasets)} progress: "
-                        f"target {matched_targets}/{compatible_targets} -> {tgt_model} ({tgt_kind})"
-                    )
+            if not dataset_checkpoints:
+                print(f"[WARN] No target checkpoints found for dataset {base_dataset}")
+                continue
 
-                source_attack_success_rate = np.nan
-                if not records_df.empty:
-                    match = records_df[
-                        (records_df["model"] == src_model)
-                        & (records_df["dataset"] == src_dataset)
-                        & (records_df["kind"] == src_kind)
-                        & (records_df["attack"] == src_attack)
-                    ]
-                    if not match.empty:
-                        source_attack_success_rate = float(match.iloc[0].get("attack_success_rate", np.nan))
-
+            for source_index, ((src_model, src_dataset, src_kind, src_attack), adv_path) in enumerate(sources, start=1):
+                source_start = time.perf_counter()
+                print(
+                    f"[INFO] Transfer source {source_index}/{len(sources)} in {base_dataset}: "
+                    f"model={src_model} dataset={src_dataset} kind={src_kind} attack={src_attack}"
+                )
                 try:
-                    transfer_metrics = cls.compute_transfer_metrics(
-                        source_model=None,
-                        target_model=tgt_model_obj,
-                        adversarial_loader=adv_loader,
-                        source_clean_predictions=src_clean_preds,
-                        source_adversarial_predictions=src_adv_preds,
-                        true_labels=true_labels,
-                        source_attack_success_rate=source_attack_success_rate,
-                    )
+                    adv_bundle = cls.load_adversarial_bundle(adv_path)
                 except Exception as exc:
-                    print(f"[ERROR] Transfer metric computation failed for target {tgt_model} ({tgt_kind}): {exc}")
+                    print(f"[ERROR] Failed to load adversarial bundle at {adv_path}: {exc}")
                     continue
 
-                record = {
-                    "source_model": src_model,
-                    "source_kind": src_kind,
-                    "source_label": ReportingSuite.model_kind_label(src_model, src_kind),
-                    "source_attack": src_attack,
-                    "target_model": tgt_model,
-                    "target_kind": tgt_kind,
-                    "target_label": ReportingSuite.model_kind_label(tgt_model, tgt_kind),
-                    "dataset": src_dataset,
-                    "transfer_acc": transfer_metrics["transfer_acc"],
-                    "transfer_success_rate": transfer_metrics["transfer_success_rate"],
-                    "conditioned_transfer_success_rate": transfer_metrics["conditioned_transfer_success_rate"],
-                    "source_attack_success_rate": transfer_metrics["source_attack_success_rate"],
-                    "normalized_transfer_rate": transfer_metrics["normalized_transfer_rate"],
-                    "normalized_conditioned_transfer_rate": transfer_metrics["normalized_conditioned_transfer_rate"],
-                    "same_architecture": src_model == tgt_model,
-                    "same_kind": src_kind == tgt_kind,
-                    "pair_type": ReportingSuite.classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
-                }
-                source_records.append(record)
+                true_labels = adv_bundle.get("true_labels")
+                if true_labels is None:
+                    print(f"[WARN] true_labels missing in bundle for {src_model}/{src_dataset}/{src_attack}")
+                    continue
 
-            if source_records:
-                source_df = pd.DataFrame(source_records)
-                if _append_locked_csv(transfer_path, source_df, "transferability"):
-                    rows_written += len(source_df)
+                adv_images = adv_bundle.get("adversarial_images")
+                if adv_images is None:
+                    print(f"[WARN] adversarial_images missing in bundle for {src_model}/{src_dataset}/{src_attack}")
+                    continue
+
+                adv_loader = torch.utils.data.DataLoader(
+                    torch.utils.data.TensorDataset(adv_images, true_labels),
+                    batch_size=256,
+                    shuffle=False,
+                )
+
+                src_clean_preds = adv_bundle.get("source_clean_predictions")
+                src_adv_preds = adv_bundle.get("source_adversarial_predictions")
+                source_attack_success_rate = _source_attack_success_rate(src_model, src_dataset, src_kind, src_attack)
+
+                source_records = []
+                for target_index, (tgt_model, tgt_dataset, tgt_kind, ckpt_path) in enumerate(dataset_checkpoints, start=1):
+                    target_start = time.perf_counter()
+                    tgt_model_obj = None
                     print(
-                        f"[INFO] Appended {len(source_df)} transferability rows for "
-                        f"{src_model}/{src_attack} to {transfer_path} in "
-                        f"{time.perf_counter() - source_start:.2f}s"
+                        f"[DEBUG] Loading target model {target_index}/{len(dataset_checkpoints)}: "
+                        f"{tgt_model} ({tgt_kind}) from {ckpt_path}"
                     )
+                    try:
+                        tgt_model_obj = CheckpointManager.build_model_for_checkpoint(
+                            tgt_model,
+                            tgt_dataset,
+                            tgt_kind,
+                            num_classes,
+                            one_batch,
+                            ckpt_path,
+                            device=cls._default_device(),
+                        )
+                        cls.robust_load_state_dict(tgt_model_obj, ckpt_path)
+                        if torch.cuda.is_available():
+                            tgt_model_obj = torch.nn.DataParallel(tgt_model_obj)
+
+                        transfer_metrics = cls.compute_transfer_metrics(
+                            source_model=None,
+                            target_model=tgt_model_obj,
+                            adversarial_loader=adv_loader,
+                            source_clean_predictions=src_clean_preds,
+                            source_adversarial_predictions=src_adv_preds,
+                            true_labels=true_labels,
+                            source_attack_success_rate=source_attack_success_rate,
+                        )
+                    except Exception as exc:
+                        print(f"[ERROR] Transfer metric computation failed for target {tgt_model} ({tgt_kind}): {exc}")
+                        continue
+                    finally:
+                        try:
+                            if tgt_model_obj is not None:
+                                del tgt_model_obj
+                        except Exception:
+                            pass
+                        if torch.cuda.is_available():
+                            torch.cuda.empty_cache()
+
+                    record = {
+                        "source_model": src_model,
+                        "source_kind": src_kind,
+                        "source_label": ReportingSuite.model_kind_label(src_model, src_kind),
+                        "source_attack": src_attack,
+                        "target_model": tgt_model,
+                        "target_kind": tgt_kind,
+                        "target_label": ReportingSuite.model_kind_label(tgt_model, tgt_kind),
+                        "dataset": src_dataset,
+                        "transfer_acc": transfer_metrics["transfer_acc"],
+                        "transfer_success_rate": transfer_metrics["transfer_success_rate"],
+                        "conditioned_transfer_success_rate": transfer_metrics["conditioned_transfer_success_rate"],
+                        "source_attack_success_rate": transfer_metrics["source_attack_success_rate"],
+                        "normalized_transfer_rate": transfer_metrics["normalized_transfer_rate"],
+                        "normalized_conditioned_transfer_rate": transfer_metrics["normalized_conditioned_transfer_rate"],
+                        "same_architecture": src_model == tgt_model,
+                        "same_kind": src_kind == tgt_kind,
+                        "pair_type": ReportingSuite.classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
+                    }
+                    source_records.append(record)
+
+                    if target_index == 1 or target_index % 10 == 0 or target_index == len(dataset_checkpoints):
+                        print(
+                            f"[DEBUG] Completed target {target_index}/{len(dataset_checkpoints)} for {src_model}/{src_attack} "
+                            f"in {time.perf_counter() - target_start:.2f}s"
+                        )
+
+                if source_records:
+                    source_df = pd.DataFrame(source_records)
+                    if _append_locked_csv(transfer_path, source_df, "transferability"):
+                        rows_written += len(source_df)
+                        print(
+                            f"[INFO] Appended {len(source_df)} transferability rows for "
+                            f"{src_model}/{src_attack} to {transfer_path} in "
+                            f"{time.perf_counter() - source_start:.2f}s"
+                        )
+                    else:
+                        print(
+                            f"[WARN] Failed to append transferability rows for {src_model}/{src_attack} "
+                            f"to {transfer_path}"
+                        )
                 else:
                     print(
-                        f"[WARN] Failed to append transferability rows for {src_model}/{src_attack} "
-                        f"to {transfer_path}"
+                        f"[WARN] No transferability rows generated for source "
+                        f"{src_model}/{src_dataset}/{src_kind}/{src_attack}"
                     )
+
                 print(
-                    f"[INFO] Completed transfer source {source_index}/{len(adv_datasets)} for "
+                    f"[INFO] Completed transfer source {source_index}/{len(sources)} for "
                     f"{src_model}/{src_attack} in {time.perf_counter() - source_start:.2f}s"
                 )
-            else:
-                print(
-                    f"[WARN] No transferability rows generated for source "
-                    f"{src_model}/{src_dataset}/{src_kind}/{src_attack}"
-                )
+
+            print(
+                f"[INFO] Completed dataset group {base_dataset} in {time.perf_counter() - dataset_start:.2f}s"
+            )
 
         if rows_written > 0:
             print(
