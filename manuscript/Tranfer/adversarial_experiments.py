@@ -18,6 +18,7 @@ from adversarial_checkpointing import CheckpointManager
 from adversarial_core import AdversarialCore
 from adversarial_cka import CKASuite
 from adversarial_reporting import ReportingSuite
+from pyPrune.utils import load_cifar10, load_cifar100, load_tiny_imagenet
 
 EPSILON_VALUES = [1 / 255, 2 / 255, 4 / 255, 8 / 255, 16 / 255]
 
@@ -100,6 +101,45 @@ class AdvancedExperimentSuite:
         self.instantiate_attack = instantiate_attack
         self.model_kind_label = model_kind_label
         self.classify_transfer_pair = classify_transfer_pair
+
+    @staticmethod
+    def _loader_for_dataset(base_dataset: str, loader_cache: dict):
+        if base_dataset == "Cifar10":
+            if "Cifar10" not in loader_cache:
+                loader_cache["Cifar10"] = load_cifar10(batch_size=256, num_workers=4)
+            return loader_cache["Cifar10"]
+        if base_dataset == "Cifar100":
+            if "Cifar100" not in loader_cache:
+                loader_cache["Cifar100"] = load_cifar100(batch_size=256, num_workers=4)
+            return loader_cache["Cifar100"]
+        if base_dataset.lower() == "tinyimagenet":
+            if "tinyimagenet" not in loader_cache:
+                loader_cache["tinyimagenet"] = load_tiny_imagenet(batch_size=256, num_workers=4)
+            return loader_cache["tinyimagenet"]
+        raise ValueError(f"Unsupported dataset: {base_dataset}")
+
+    @staticmethod
+    def _discover_dataset_checkpoints(
+        output_dir: str,
+        model_filter: str | None = None,
+        dataset_filter: str | None = None,
+        kind_filter: str | None = None,
+    ) -> dict[str, list[tuple[str, str, str, str]]]:
+        grouped: dict[str, list[tuple[str, str, str, str]]] = {}
+        for model_name, dataset_name, kind, ckpt_path in CheckpointManager.discover_checkpoints():
+            if not CheckpointManager.dataset_matches_output_dir(dataset_name, output_dir):
+                continue
+            if model_filter and model_filter != "ALL" and model_name != model_filter:
+                continue
+            if dataset_filter and dataset_filter != "ALL":
+                base_check = CheckpointManager.base_dataset_name(dataset_name)
+                if base_check.lower() != dataset_filter.lower():
+                    continue
+            if kind_filter and kind_filter != "ALL" and kind != kind_filter:
+                continue
+            base_dataset = CheckpointManager.base_dataset_name(dataset_name)
+            grouped.setdefault(base_dataset, []).append((model_name, dataset_name, kind, ckpt_path))
+        return grouped
 
     def compute_gradient_similarity(
         self,
@@ -1249,4 +1289,216 @@ class AdvancedExperimentSuite:
             self._save_fig(os.path.join(output_dir, "Figure_6_shap_original_vs_collapsed_similarity_metrics"))
             plt.close()
 
+        return pair_rows
+
+    def explainability_similarity_phase_standalone(
+        self,
+        output_dir: str,
+        model_filter: str | None = None,
+        dataset_filter: str | None = None,
+        kind_filter: str | None = None,
+        max_samples: int = 64,
+        background_samples: int = 32,
+        topk_ratio: float = 0.05,
+    ) -> list[dict]:
+        """Standalone SHAP phase that loads one checkpoint model at a time."""
+        os.makedirs(output_dir, exist_ok=True)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        loader_cache: dict = {}
+        grouped_checkpoints = self._discover_dataset_checkpoints(
+            output_dir,
+            model_filter=model_filter,
+            dataset_filter=dataset_filter,
+            kind_filter=kind_filter,
+        )
+
+        vector_rows: list[dict] = []
+        sample_rows: list[dict] = []
+        ref_vectors: dict[tuple[str, str, str], np.ndarray] = {}
+        class_example_bundles: dict[tuple[str, str, str], dict] = {}
+
+        for base_dataset, checkpoints in grouped_checkpoints.items():
+            try:
+                train_loader, test_loader = self._loader_for_dataset(base_dataset, loader_cache)
+            except Exception as exc:
+                print(f"[WARN] SHAP standalone could not load dataset {base_dataset}: {exc}")
+                continue
+
+            for model_name, dataset_name, kind, ckpt_path in checkpoints:
+                one_batch = next(iter(train_loader))[0]
+                try:
+                    model = CheckpointManager.build_model_for_checkpoint(
+                        model_name,
+                        dataset_name,
+                        kind,
+                        10 if base_dataset == "Cifar10" else 100 if base_dataset == "Cifar100" else 200,
+                        one_batch,
+                        ckpt_path,
+                        device,
+                    )
+                    AdversarialCore.robust_load_state_dict(model, ckpt_path)
+                    if torch.cuda.is_available():
+                        model = torch.nn.DataParallel(model)
+                except Exception as exc:
+                    print(f"[WARN] SHAP standalone failed to load {model_name} ({kind}) on {dataset_name}: {exc}")
+                    continue
+
+                try:
+                    ref_vec, stats, class_bundle = self._compute_shap_reference_vector(
+                        model=model,
+                        loader=test_loader,
+                        device=device,
+                        max_samples=max_samples,
+                        background_samples=background_samples,
+                    )
+                finally:
+                    try:
+                        del model
+                    except Exception:
+                        pass
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+
+                if ref_vec is None:
+                    continue
+
+                key = (model_name, dataset_name, kind)
+                ref_vectors[key] = ref_vec
+                if class_bundle is not None:
+                    class_example_bundles[key] = class_bundle
+                vector_rows.append(
+                    {
+                        "model": model_name,
+                        "dataset": dataset_name,
+                        "kind": kind,
+                        "model_label": self.model_kind_label(model_name, kind),
+                        "feature_dim": int(ref_vec.size),
+                        **{f"feature_{i}": float(v) for i, v in enumerate(ref_vec)},
+                    }
+                )
+                for row in stats:
+                    sample_rows.append(
+                        {
+                            "model": model_name,
+                            "dataset": dataset_name,
+                            "kind": kind,
+                            "model_label": self.model_kind_label(model_name, kind),
+                            **row,
+                        }
+                    )
+
+        vectors_df = pd.DataFrame(vector_rows)
+        vectors_path = os.path.join(output_dir, "shap_reference_vectors.csv")
+        _write_locked_csv(vectors_path, vectors_df, "shap_reference_vectors")
+
+        sample_df = pd.DataFrame(sample_rows)
+        sample_path = os.path.join(output_dir, "shap_sample_stats.csv")
+        _write_locked_csv(sample_path, sample_df, "shap_sample_stats")
+
+        if not ref_vectors:
+            print("[WARN] SHAP standalone: no vectors generated.")
+            _write_locked_csv(os.path.join(output_dir, "shap_pairwise_similarity.csv"), pd.DataFrame(), "shap_pairwise_similarity")
+            return []
+
+        self._plot_shap_attribution_profiles(output_dir, ref_vectors, self.model_kind_label)
+
+        baseline_kind = ReportingSuite.baseline_kind()
+        for dataset_name in sorted({dataset for (_model, dataset, _kind) in class_example_bundles}):
+            model_names = sorted({model for (model, dataset, _kind) in class_example_bundles if dataset == dataset_name})
+            base_dataset = CheckpointManager.base_dataset_name(dataset_name)
+            if base_dataset not in loader_cache:
+                continue
+            test_loader = loader_cache[base_dataset][1]
+            class_names = getattr(getattr(test_loader, "dataset", None), "classes", None)
+            for model_name in model_names:
+                baseline_key = (model_name, dataset_name, baseline_kind)
+                if baseline_key not in class_example_bundles:
+                    continue
+
+                baseline_bundle = class_example_bundles[baseline_key]
+                baseline_rows = {int(row["true_label"]): row for row in baseline_bundle["rows"]}
+                for variant_kind in ReportingSuite.variant_kinds():
+                    variant_key = (model_name, dataset_name, variant_kind)
+                    if variant_key not in class_example_bundles:
+                        continue
+                    variant_bundle = class_example_bundles[variant_key]
+                    variant_rows = {int(row["true_label"]): row for row in variant_bundle["rows"]}
+                    class_ids = sorted(set(baseline_rows) & set(variant_rows))
+                    pair_rows: list[dict] = []
+                    for class_id in class_ids:
+                        baseline_row = baseline_rows[class_id]
+                        variant_row = variant_rows[class_id]
+                        baseline_vec = np.asarray(baseline_row["shap_map"], dtype=np.float32).reshape(-1)
+                        variant_vec = np.asarray(variant_row["shap_map"], dtype=np.float32).reshape(-1)
+                        delta_vec = variant_vec - baseline_vec
+                        denom = float(np.linalg.norm(baseline_vec) * np.linalg.norm(variant_vec))
+                        delta_cos = float(np.dot(baseline_vec, variant_vec) / denom) if denom > 0 else float("nan")
+                        pair_rows.append(
+                            {
+                                "dataset": dataset_name,
+                                "model": model_name,
+                                "true_label": class_id,
+                                "class_name": class_names[class_id] if class_names and class_id < len(class_names) else str(class_id),
+                                "sample_index": int(baseline_row["sample_index"]),
+                                "original_pred_class": int(baseline_row["pred_class"]),
+                                "collapsed_pred_class": int(variant_row["pred_class"]),
+                                "original_attr_mean_abs": float(baseline_row["attr_mean_abs"]),
+                                "collapsed_attr_mean_abs": float(variant_row["attr_mean_abs"]),
+                                "delta_attr_mean_abs": float(np.mean(np.abs(delta_vec))),
+                                "delta_attr_l1": float(np.sum(np.abs(delta_vec))),
+                                "delta_attr_l2": float(np.linalg.norm(delta_vec)),
+                                "delta_cosine_similarity": delta_cos,
+                                "input_image": baseline_row["input_image"],
+                                "original_shap_map": baseline_row["shap_map"],
+                                "collapsed_shap_map": variant_row["shap_map"],
+                            }
+                        )
+                    if pair_rows:
+                        self._save_shap_class_example_artifacts(
+                            output_dir=output_dir,
+                            dataset_name=dataset_name,
+                            model_name=model_name,
+                            class_rows=pair_rows,
+                            original_kind=baseline_kind,
+                            collapsed_kind=variant_kind,
+                        )
+                        self._plot_shap_class_example_grid(
+                            output_dir=output_dir,
+                            dataset_name=dataset_name,
+                            model_name=model_name,
+                            class_rows=pair_rows,
+                            class_names=class_names,
+                            original_kind=baseline_kind,
+                            collapsed_kind=variant_kind,
+                        )
+
+        pair_rows: list[dict] = []
+        keys = list(ref_vectors.keys())
+        for src_key in keys:
+            src_model, src_dataset, src_kind = src_key
+            src_vec = ref_vectors[src_key]
+            for tgt_key in keys:
+                tgt_model, tgt_dataset, tgt_kind = tgt_key
+                if src_dataset != tgt_dataset:
+                    continue
+                tgt_vec = ref_vectors[tgt_key]
+                metrics = self._feature_vector_metrics(src_vec, tgt_vec, topk_ratio=topk_ratio)
+                pair_rows.append(
+                    {
+                        "source_model": src_model,
+                        "source_kind": src_kind,
+                        "source_label": self.model_kind_label(src_model, src_kind),
+                        "target_model": tgt_model,
+                        "target_kind": tgt_kind,
+                        "target_label": self.model_kind_label(tgt_model, tgt_kind),
+                        "dataset": src_dataset,
+                        "same_architecture": src_model == tgt_model,
+                        "same_kind": src_kind == tgt_kind,
+                        "pair_type": self.classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
+                        **metrics,
+                    }
+                )
+
+        pair_df = pd.DataFrame(pair_rows)
+        _write_locked_csv(os.path.join(output_dir, "shap_pairwise_similarity.csv"), pair_df, "shap_pairwise_similarity")
         return pair_rows

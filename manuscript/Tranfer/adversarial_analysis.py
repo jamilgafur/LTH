@@ -17,6 +17,7 @@ import pandas as pd
 # Absolute imports (e.g., ``from adversarial_core import ...``) fail because the
 # top‑level module name ``adversarial_core`` is not found on ``sys.path``.
 from .adversarial_core import AdversarialCore
+from .adversarial_cka import CKASuite
 from .adversarial_correlations import CorrelationSuite
 from .adversarial_compute_tradeoff import TradeoffComputer
 from .adversarial_experiments import AdvancedExperimentSuite
@@ -302,21 +303,29 @@ def compute_shap_explainability(
     output_dir: str,
     model_cache: dict | None = None,
     loader_cache: dict | None = None,
+    model_filter: str | None = None,
+    dataset_filter: str | None = None,
+    kind_filter: str | None = None,
     max_samples: int = 64,
     background_samples: int = 32,
     topk_ratio: float = 0.05,
 ) -> list[dict]:
     """Compute SHAP reference vectors and pairwise similarity metrics."""
-    if model_cache is None or loader_cache is None:
-        model_cache, loader_cache = AdversarialCore.rebuild_model_and_loader_cache(
-            argparse.Namespace(output_dir=output_dir, model=None, dataset=None, kind=None)
-        )
-
     suite = AdvancedExperimentSuite(
         instantiate_attack=lambda *args, **kwargs: None,
         model_kind_label=ReportingSuite.model_kind_label,
         classify_transfer_pair=ReportingSuite.classify_transfer_pair,
     )
+    if model_cache is None or loader_cache is None:
+        return suite.explainability_similarity_phase_standalone(
+            output_dir=output_dir,
+            model_filter=model_filter,
+            dataset_filter=dataset_filter,
+            kind_filter=kind_filter,
+            max_samples=max_samples,
+            background_samples=background_samples,
+            topk_ratio=topk_ratio,
+        )
     return suite.explainability_similarity_phase(
         output_dir=output_dir,
         model_cache=model_cache,
@@ -337,17 +346,13 @@ def compute_shap_for_results(
     topk_ratio: float = 0.05,
 ) -> list[dict]:
     """Build the model and loader cache for the selected output dir and run SHAP analysis."""
-    args = argparse.Namespace(
-        output_dir=output_dir,
-        model=model_filter,
-        dataset=dataset_filter,
-        kind=kind_filter,
-    )
-    model_cache, loader_cache = AdversarialCore.rebuild_model_and_loader_cache(args)
     return compute_shap_explainability(
         output_dir,
-        model_cache=model_cache,
-        loader_cache=loader_cache,
+        model_cache=None,
+        loader_cache=None,
+        model_filter=model_filter,
+        dataset_filter=dataset_filter,
+        kind_filter=kind_filter,
         max_samples=max_samples,
         background_samples=background_samples,
         topk_ratio=topk_ratio,
@@ -614,22 +619,13 @@ def main() -> None:
 
     if args.mode == "cka":
         print(f"[INFO] Running CKA similarity phase for {args.output_dir}")
-        cache_args = argparse.Namespace(
+        records = CKASuite.run_standalone(
             output_dir=args.output_dir,
-            model=args.model,
-            dataset=args.dataset,
-            kind=args.kind,
-        )
-        model_cache, loader_cache = AdversarialCore.rebuild_model_and_loader_cache(cache_args)
-        suite = AdvancedExperimentSuite(
-            instantiate_attack=lambda *a, **kw: None,
             model_kind_label=ReportingSuite.model_kind_label,
             classify_transfer_pair=ReportingSuite.classify_transfer_pair,
-        )
-        records = suite.cka_similarity_phase(
-            output_dir=args.output_dir,
-            model_cache=model_cache,
-            loader_cache=loader_cache,
+            model_filter=args.model,
+            dataset_filter=args.dataset,
+            kind_filter=args.kind,
             max_samples=args.cka_max_samples,
             max_layers=args.cka_max_layers,
         )

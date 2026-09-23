@@ -7,7 +7,9 @@ import tempfile
 import time
 from collapse import _capture_preblock_activation
 from adversarial_checkpointing import CheckpointManager
+from adversarial_core import AdversarialCore
 from adversarial_reporting import ReportingSuite
+from pyPrune.utils import load_cifar10, load_cifar100, load_tiny_imagenet
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -102,6 +104,22 @@ class CKASuite:
             for name, mod in model.named_modules()
             if isinstance(mod, (nn.Conv2d, nn.Linear))
         ]
+
+    @staticmethod
+    def _loader_for_dataset(base_dataset: str, loader_cache: dict):
+        if base_dataset == "Cifar10":
+            if "Cifar10" not in loader_cache:
+                loader_cache["Cifar10"] = load_cifar10(batch_size=256, num_workers=4)
+            return loader_cache["Cifar10"]
+        if base_dataset == "Cifar100":
+            if "Cifar100" not in loader_cache:
+                loader_cache["Cifar100"] = load_cifar100(batch_size=256, num_workers=4)
+            return loader_cache["Cifar100"]
+        if base_dataset.lower() == "tinyimagenet":
+            if "tinyimagenet" not in loader_cache:
+                loader_cache["tinyimagenet"] = load_tiny_imagenet(batch_size=256, num_workers=4)
+            return loader_cache["tinyimagenet"]
+        raise ValueError(f"Unsupported dataset: {base_dataset}")
 
     @staticmethod
     def _extract_representations(
@@ -366,14 +384,223 @@ class CKASuite:
                 fig.delaxes(axes[empty_idx // ncols, empty_idx % ncols])
 
             plt.tight_layout()
-            fig.savefig(os.path.join(output_dir, f"{self.FIGURE_PREFIX}_cka_{dataset_name}.png"), dpi=300)
-            fig.savefig(os.path.join(output_dir, f"{self.FIGURE_PREFIX}_cka_{dataset_name}.svg"))
+            fig.savefig(os.path.join(output_dir, f"{cls.FIGURE_PREFIX}_cka_{dataset_name}.png"), dpi=300)
+            fig.savefig(os.path.join(output_dir, f"{cls.FIGURE_PREFIX}_cka_{dataset_name}.svg"))
             plt.close(fig)
 
             # Keep the legacy CSV for downstream consumers, but name it with the figure prefix.
             mean_cka = dataset_df.groupby(["source_label", "target_label"])['cka'].mean().reset_index()
             pivot = mean_cka.pivot(index="source_label", columns="target_label", values="cka")
-            matrix_path = os.path.join(output_dir, f"{self.FIGURE_PREFIX}_cka_matrix_{dataset_name}.csv")
-            _write_locked_csv(matrix_path, pivot.reset_index(), f"{self.FIGURE_PREFIX}_cka_matrix_{dataset_name}")
+            matrix_path = os.path.join(output_dir, f"{cls.FIGURE_PREFIX}_cka_matrix_{dataset_name}.csv")
+            _write_locked_csv(matrix_path, pivot.reset_index(), f"{cls.FIGURE_PREFIX}_cka_matrix_{dataset_name}")
 
+        return records
+
+    @classmethod
+    def run_standalone(
+        cls,
+        output_dir: str,
+        model_kind_label,
+        classify_transfer_pair,
+        model_filter: str | None = None,
+        dataset_filter: str | None = None,
+        kind_filter: str | None = None,
+        max_samples: int = 512,
+        max_layers: int = 8,
+    ) -> list[dict]:
+        """Standalone CKA phase that loads one checkpoint model at a time."""
+        os.makedirs(output_dir, exist_ok=True)
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        loader_cache: dict = {}
+        grouped: dict[str, list[tuple[str, str, str, str]]] = {}
+        for model_name, dataset_name, kind, ckpt_path in CheckpointManager.discover_checkpoints():
+            if not CheckpointManager.dataset_matches_output_dir(dataset_name, output_dir):
+                continue
+            if model_filter and model_filter != "ALL" and model_name != model_filter:
+                continue
+            if dataset_filter and dataset_filter != "ALL":
+                base_check = CheckpointManager.base_dataset_name(dataset_name)
+                if base_check.lower() != dataset_filter.lower():
+                    continue
+            if kind_filter and kind_filter != "ALL" and kind != kind_filter:
+                continue
+            base_dataset = CheckpointManager.base_dataset_name(dataset_name)
+            grouped.setdefault(base_dataset, []).append((model_name, dataset_name, kind, ckpt_path))
+
+        records: list[dict] = []
+        repr_bank: dict[str, dict[tuple[str, str, str], dict[str, torch.Tensor]]] = {}
+        layer_bank: dict[tuple[str, str, str], list[str]] = {}
+
+        for base_dataset, checkpoints in grouped.items():
+            try:
+                train_loader, test_loader = cls._loader_for_dataset(base_dataset, loader_cache)
+            except Exception as exc:
+                print(f"[WARN] CKA standalone could not load dataset {base_dataset}: {exc}")
+                continue
+
+            repr_bank[base_dataset] = {}
+            sample_batch = next(iter(train_loader))[0]
+            input_shape = tuple(sample_batch.shape)
+
+            for model_name, dataset_name, kind, ckpt_path in checkpoints:
+                one_batch = next(iter(train_loader))[0]
+                model = None
+                try:
+                    model = CheckpointManager.build_model_for_checkpoint(
+                        model_name,
+                        dataset_name,
+                        kind,
+                        10 if base_dataset == "Cifar10" else 100 if base_dataset == "Cifar100" else 200,
+                        one_batch,
+                        ckpt_path,
+                        device,
+                    )
+                    AdversarialCore.robust_load_state_dict(model, ckpt_path)
+                    if torch.cuda.is_available():
+                        model = torch.nn.DataParallel(model)
+                except Exception as exc:
+                    print(f"[WARN] CKA standalone failed to load {model_name} ({kind}) on {dataset_name}: {exc}")
+                    continue
+
+                try:
+                    base_model = model.module if hasattr(model, "module") else model
+                    all_layers = cls._candidate_layers(base_model)
+                    if not all_layers:
+                        continue
+                    step = max(1, len(all_layers) // max_layers)
+                    probe_layers = all_layers[::step][:max_layers]
+                    layer_bank[(model_name, dataset_name, kind)] = probe_layers
+
+                    model_layers: dict[str, torch.Tensor] = {}
+                    for layer_name in probe_layers:
+                        reps = cls._extract_representations(model, test_loader, layer_name, device, max_samples)
+                        if reps is not None and reps.size(0) >= 4:
+                            model_layers[layer_name] = reps
+                    repr_bank[base_dataset][(model_name, dataset_name, kind)] = model_layers
+                finally:
+                    try:
+                        del model
+                    except Exception:
+                        pass
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+
+            dataset_pairs = list(repr_bank[base_dataset].keys())
+            for src_key in dataset_pairs:
+                src_name, _, src_kind = src_key
+                src_layers = layer_bank.get(src_key, [])
+                src_reps = repr_bank[base_dataset].get(src_key, {})
+                for tgt_key in dataset_pairs:
+                    tgt_name, _, tgt_kind = tgt_key
+                    tgt_layers = layer_bank.get(tgt_key, [])
+                    tgt_reps = repr_bank[base_dataset].get(tgt_key, {})
+                    for layer_name in src_layers:
+                        tgt_layer = layer_name if layer_name in tgt_layers else None
+                        if tgt_layer is None and layer_name in src_layers:
+                            idx = src_layers.index(layer_name)
+                            if idx < len(tgt_layers):
+                                tgt_layer = tgt_layers[idx]
+                        if tgt_layer is None:
+                            continue
+                        X = src_reps.get(layer_name)
+                        Y = tgt_reps.get(tgt_layer)
+                        if X is None or Y is None:
+                            continue
+                        n = min(X.size(0), Y.size(0))
+                        if n < 4:
+                            continue
+                        try:
+                            cka_val = cls._compute_linear_cka(X[:n].float(), Y[:n].float())
+                        except Exception:
+                            cka_val = float("nan")
+
+                        records.append(
+                            {
+                                "source_model": src_name,
+                                "source_kind": src_kind,
+                                "source_label": model_kind_label(src_name, src_kind),
+                                "target_model": tgt_name,
+                                "target_kind": tgt_kind,
+                                "target_label": model_kind_label(tgt_name, tgt_kind),
+                                "dataset": dataset_name,
+                                "layer": layer_name,
+                                "cka": cka_val,
+                                "same_architecture": src_name == tgt_name,
+                                "same_kind": src_kind == tgt_kind,
+                                "pair_type": classify_transfer_pair(src_name, src_kind, tgt_name, tgt_kind),
+                            }
+                        )
+
+            # Preserve boundary CKA for collapsed variants without keeping models alive.
+            for model_name, dataset_name, kind, ckpt_path in checkpoints:
+                if kind not in ReportingSuite.variant_kinds():
+                    continue
+                try:
+                    compression_set = CheckpointManager.get_compression_set_for_checkpoint(
+                        model_name, base_dataset, ckpt_path
+                    )
+                except Exception:
+                    continue
+                if base_dataset not in loader_cache:
+                    continue
+                train_loader, _ = loader_cache[base_dataset]
+                sample_batch = next(iter(train_loader))[0]
+                input_shape = tuple(sample_batch.shape)
+                model = None
+                try:
+                    model = CheckpointManager.build_model_for_checkpoint(
+                        model_name,
+                        dataset_name,
+                        kind,
+                        10 if base_dataset == "Cifar10" else 100 if base_dataset == "Cifar100" else 200,
+                        sample_batch,
+                        ckpt_path,
+                        device,
+                    )
+                    AdversarialCore.robust_load_state_dict(model, ckpt_path)
+                    if torch.cuda.is_available():
+                        model = torch.nn.DataParallel(model)
+                except Exception:
+                    continue
+                try:
+                    for block in compression_set:
+                        if isinstance(block, dict):
+                            start = block.get("start_layer_name") or block.get("start_layer")
+                            end = block.get("end_layer_name") or block.get("end_layer")
+                        else:
+                            start, end = block[0], block[1]
+                        if not start or not end:
+                            continue
+                        try:
+                            x_in, y_out, _ = _capture_preblock_activation(
+                                model, start, end, input_shape, [], None, device, debug=False
+                            )
+                            if x_in is None or y_out is None:
+                                continue
+                            X = x_in.view(x_in.size(0), -1).float()
+                            Y = y_out.view(y_out.size(0), -1).float()
+                            cka_val = CKASuite._compute_linear_cka(X, Y)
+                        except Exception:
+                            cka_val = float("nan")
+                        records.append(
+                            {
+                                "model": model_name,
+                                "dataset": dataset_name,
+                                "kind": kind,
+                                "block_start": start,
+                                "block_end": end,
+                                "boundary_cka": cka_val,
+                            }
+                        )
+                finally:
+                    try:
+                        del model
+                    except Exception:
+                        pass
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+
+        df = pd.DataFrame(records)
+        cka_path = os.path.join(output_dir, "cka_similarity.csv")
+        _write_locked_csv(cka_path, df, "cka_similarity")
         return records
