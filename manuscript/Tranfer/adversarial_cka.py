@@ -151,7 +151,11 @@ class CKASuite:
                         ckpt_path,
                         device,
                     )
-                    AdversarialCore.robust_load_state_dict(model, ckpt_path)
+                    load_result = AdversarialCore.robust_load_state_dict(model, ckpt_path)
+                    print(
+                        f"[DEBUG] CKA load_state_dict for {model_name} ({dataset_name}, {kind}): "
+                        f"missing={len(load_result.missing_keys)}, unexpected={len(load_result.unexpected_keys)}"
+                    )
                     if torch.cuda.is_available():
                         model = torch.nn.DataParallel(model)
                 except Exception as exc:
@@ -197,18 +201,13 @@ class CKASuite:
                     tgt_name, tgt_dataset, tgt_kind = tgt_key
                     if tgt_name != src_name or tgt_dataset != src_dataset or tgt_kind not in variant_kinds:
                         continue
-                    tgt_layers = layer_bank.get(tgt_key, [])
+                    tgt_layers = set(layer_bank.get(tgt_key, []))
                     tgt_reps = repr_bank[base_dataset].get(tgt_key, {})
                     for layer_name in src_layers:
-                        tgt_layer = layer_name if layer_name in tgt_layers else None
-                        if tgt_layer is None:
-                            idx = src_layers.index(layer_name)
-                            if idx < len(tgt_layers):
-                                tgt_layer = tgt_layers[idx]
-                        if tgt_layer is None:
+                        if layer_name not in tgt_layers:
                             continue
                         X = src_reps.get(layer_name)
-                        Y = tgt_reps.get(tgt_layer)
+                        Y = tgt_reps.get(layer_name)
                         if X is None or Y is None:
                             continue
                         n = min(X.size(0), Y.size(0))
@@ -229,6 +228,7 @@ class CKASuite:
                                 "target_label": model_kind_label(tgt_name, tgt_kind),
                                 "dataset": src_dataset,
                                 "layer": layer_name,
+                                "matched_layer": layer_name,
                                 "cka": cka_val,
                                 "same_architecture": True,
                                 "same_kind": False,
@@ -262,7 +262,11 @@ class CKASuite:
                         ckpt_path,
                         device,
                     )
-                    AdversarialCore.robust_load_state_dict(model, ckpt_path)
+                    load_result = AdversarialCore.robust_load_state_dict(model, ckpt_path)
+                    print(
+                        f"[DEBUG] CKA boundary load_state_dict for {model_name} ({dataset_name}, {kind}): "
+                        f"missing={len(load_result.missing_keys)}, unexpected={len(load_result.unexpected_keys)}"
+                    )
                     if torch.cuda.is_available():
                         model = torch.nn.DataParallel(model)
                 except Exception:
