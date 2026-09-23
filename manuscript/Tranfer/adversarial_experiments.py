@@ -945,6 +945,7 @@ class AdvancedExperimentSuite:
         sample_rows: list[dict] = []
         ref_vectors: dict[tuple[str, str, str], np.ndarray] = {}
         class_example_bundles: dict[tuple[str, str, str], dict] = {}
+        latest_pair_rows: list[dict] = []
 
         for key, model in model_cache.items():
             model_name, dataset_name, kind = key
@@ -1317,6 +1318,120 @@ class AdvancedExperimentSuite:
         ref_vectors: dict[tuple[str, str, str], np.ndarray] = {}
         class_example_bundles: dict[tuple[str, str, str], dict] = {}
 
+        def flush_outputs() -> None:
+            nonlocal latest_pair_rows
+            vectors_df = pd.DataFrame(vector_rows)
+            _write_locked_csv(os.path.join(output_dir, "shap_reference_vectors.csv"), vectors_df, "shap_reference_vectors")
+
+            sample_df = pd.DataFrame(sample_rows)
+            _write_locked_csv(os.path.join(output_dir, "shap_sample_stats.csv"), sample_df, "shap_sample_stats")
+
+            if not ref_vectors:
+                return
+
+            self._plot_shap_attribution_profiles(output_dir, ref_vectors, self.model_kind_label)
+
+            baseline_kind = ReportingSuite.baseline_kind()
+            for dataset_name in sorted({dataset for (_model, dataset, _kind) in class_example_bundles}):
+                model_names = sorted({model for (model, dataset, _kind) in class_example_bundles if dataset == dataset_name})
+                base_dataset = CheckpointManager.base_dataset_name(dataset_name)
+                if base_dataset not in loader_cache:
+                    continue
+                test_loader = loader_cache[base_dataset][1]
+                class_names = getattr(getattr(test_loader, "dataset", None), "classes", None)
+                for model_name in model_names:
+                    baseline_key = (model_name, dataset_name, baseline_kind)
+                    if baseline_key not in class_example_bundles:
+                        continue
+
+                    baseline_bundle = class_example_bundles[baseline_key]
+                    baseline_rows = {int(row["true_label"]): row for row in baseline_bundle["rows"]}
+                    for variant_kind in ReportingSuite.variant_kinds():
+                        variant_key = (model_name, dataset_name, variant_kind)
+                        if variant_key not in class_example_bundles:
+                            continue
+                        variant_bundle = class_example_bundles[variant_key]
+                        variant_rows = {int(row["true_label"]): row for row in variant_bundle["rows"]}
+                        class_ids = sorted(set(baseline_rows) & set(variant_rows))
+                        pair_rows: list[dict] = []
+                        for class_id in class_ids:
+                            baseline_row = baseline_rows[class_id]
+                            variant_row = variant_rows[class_id]
+                            baseline_vec = np.asarray(baseline_row["shap_map"], dtype=np.float32).reshape(-1)
+                            variant_vec = np.asarray(variant_row["shap_map"], dtype=np.float32).reshape(-1)
+                            delta_vec = variant_vec - baseline_vec
+                            denom = float(np.linalg.norm(baseline_vec) * np.linalg.norm(variant_vec))
+                            delta_cos = float(np.dot(baseline_vec, variant_vec) / denom) if denom > 0 else float("nan")
+                            pair_rows.append(
+                                {
+                                    "dataset": dataset_name,
+                                    "model": model_name,
+                                    "true_label": class_id,
+                                    "class_name": class_names[class_id] if class_names and class_id < len(class_names) else str(class_id),
+                                    "sample_index": int(baseline_row["sample_index"]),
+                                    "original_pred_class": int(baseline_row["pred_class"]),
+                                    "collapsed_pred_class": int(variant_row["pred_class"]),
+                                    "original_attr_mean_abs": float(baseline_row["attr_mean_abs"]),
+                                    "collapsed_attr_mean_abs": float(variant_row["attr_mean_abs"]),
+                                    "delta_attr_mean_abs": float(np.mean(np.abs(delta_vec))),
+                                    "delta_attr_l1": float(np.sum(np.abs(delta_vec))),
+                                    "delta_attr_l2": float(np.linalg.norm(delta_vec)),
+                                    "delta_cosine_similarity": delta_cos,
+                                    "input_image": baseline_row["input_image"],
+                                    "original_shap_map": baseline_row["shap_map"],
+                                    "collapsed_shap_map": variant_row["shap_map"],
+                                }
+                            )
+                        if pair_rows:
+                            self._save_shap_class_example_artifacts(
+                                output_dir=output_dir,
+                                dataset_name=dataset_name,
+                                model_name=model_name,
+                                class_rows=pair_rows,
+                                original_kind=baseline_kind,
+                                collapsed_kind=variant_kind,
+                            )
+                            self._plot_shap_class_example_grid(
+                                output_dir=output_dir,
+                                dataset_name=dataset_name,
+                                model_name=model_name,
+                                class_rows=pair_rows,
+                                class_names=class_names,
+                                original_kind=baseline_kind,
+                                collapsed_kind=variant_kind,
+                            )
+
+            pair_rows: list[dict] = []
+            keys = list(ref_vectors.keys())
+            for src_key in keys:
+                src_model, src_dataset, src_kind = src_key
+                src_vec = ref_vectors[src_key]
+                for tgt_key in keys:
+                    tgt_model, tgt_dataset, tgt_kind = tgt_key
+                    if src_dataset != tgt_dataset:
+                        continue
+                    tgt_vec = ref_vectors[tgt_key]
+                    metrics = self._feature_vector_metrics(src_vec, tgt_vec, topk_ratio=topk_ratio)
+                    pair_rows.append(
+                        {
+                            "source_model": src_model,
+                            "source_kind": src_kind,
+                            "source_label": self.model_kind_label(src_model, src_kind),
+                            "target_model": tgt_model,
+                            "target_kind": tgt_kind,
+                            "target_label": self.model_kind_label(tgt_model, tgt_kind),
+                            "dataset": src_dataset,
+                            "same_architecture": src_model == tgt_model,
+                            "same_kind": src_kind == tgt_kind,
+                            "pair_type": self.classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
+                            **metrics,
+                        }
+                    )
+
+            pair_df = pd.DataFrame(pair_rows)
+            _write_locked_csv(os.path.join(output_dir, "shap_pairwise_similarity.csv"), pair_df, "shap_pairwise_similarity")
+            latest_pair_rows = pair_rows
+
         for base_dataset, checkpoints in grouped_checkpoints.items():
             try:
                 train_loader, test_loader = self._loader_for_dataset(base_dataset, loader_cache)
@@ -1387,118 +1502,12 @@ class AdvancedExperimentSuite:
                         }
                     )
 
-        vectors_df = pd.DataFrame(vector_rows)
-        vectors_path = os.path.join(output_dir, "shap_reference_vectors.csv")
-        _write_locked_csv(vectors_path, vectors_df, "shap_reference_vectors")
-
-        sample_df = pd.DataFrame(sample_rows)
-        sample_path = os.path.join(output_dir, "shap_sample_stats.csv")
-        _write_locked_csv(sample_path, sample_df, "shap_sample_stats")
+                flush_outputs()
 
         if not ref_vectors:
             print("[WARN] SHAP standalone: no vectors generated.")
             _write_locked_csv(os.path.join(output_dir, "shap_pairwise_similarity.csv"), pd.DataFrame(), "shap_pairwise_similarity")
             return []
 
-        self._plot_shap_attribution_profiles(output_dir, ref_vectors, self.model_kind_label)
-
-        baseline_kind = ReportingSuite.baseline_kind()
-        for dataset_name in sorted({dataset for (_model, dataset, _kind) in class_example_bundles}):
-            model_names = sorted({model for (model, dataset, _kind) in class_example_bundles if dataset == dataset_name})
-            base_dataset = CheckpointManager.base_dataset_name(dataset_name)
-            if base_dataset not in loader_cache:
-                continue
-            test_loader = loader_cache[base_dataset][1]
-            class_names = getattr(getattr(test_loader, "dataset", None), "classes", None)
-            for model_name in model_names:
-                baseline_key = (model_name, dataset_name, baseline_kind)
-                if baseline_key not in class_example_bundles:
-                    continue
-
-                baseline_bundle = class_example_bundles[baseline_key]
-                baseline_rows = {int(row["true_label"]): row for row in baseline_bundle["rows"]}
-                for variant_kind in ReportingSuite.variant_kinds():
-                    variant_key = (model_name, dataset_name, variant_kind)
-                    if variant_key not in class_example_bundles:
-                        continue
-                    variant_bundle = class_example_bundles[variant_key]
-                    variant_rows = {int(row["true_label"]): row for row in variant_bundle["rows"]}
-                    class_ids = sorted(set(baseline_rows) & set(variant_rows))
-                    pair_rows: list[dict] = []
-                    for class_id in class_ids:
-                        baseline_row = baseline_rows[class_id]
-                        variant_row = variant_rows[class_id]
-                        baseline_vec = np.asarray(baseline_row["shap_map"], dtype=np.float32).reshape(-1)
-                        variant_vec = np.asarray(variant_row["shap_map"], dtype=np.float32).reshape(-1)
-                        delta_vec = variant_vec - baseline_vec
-                        denom = float(np.linalg.norm(baseline_vec) * np.linalg.norm(variant_vec))
-                        delta_cos = float(np.dot(baseline_vec, variant_vec) / denom) if denom > 0 else float("nan")
-                        pair_rows.append(
-                            {
-                                "dataset": dataset_name,
-                                "model": model_name,
-                                "true_label": class_id,
-                                "class_name": class_names[class_id] if class_names and class_id < len(class_names) else str(class_id),
-                                "sample_index": int(baseline_row["sample_index"]),
-                                "original_pred_class": int(baseline_row["pred_class"]),
-                                "collapsed_pred_class": int(variant_row["pred_class"]),
-                                "original_attr_mean_abs": float(baseline_row["attr_mean_abs"]),
-                                "collapsed_attr_mean_abs": float(variant_row["attr_mean_abs"]),
-                                "delta_attr_mean_abs": float(np.mean(np.abs(delta_vec))),
-                                "delta_attr_l1": float(np.sum(np.abs(delta_vec))),
-                                "delta_attr_l2": float(np.linalg.norm(delta_vec)),
-                                "delta_cosine_similarity": delta_cos,
-                                "input_image": baseline_row["input_image"],
-                                "original_shap_map": baseline_row["shap_map"],
-                                "collapsed_shap_map": variant_row["shap_map"],
-                            }
-                        )
-                    if pair_rows:
-                        self._save_shap_class_example_artifacts(
-                            output_dir=output_dir,
-                            dataset_name=dataset_name,
-                            model_name=model_name,
-                            class_rows=pair_rows,
-                            original_kind=baseline_kind,
-                            collapsed_kind=variant_kind,
-                        )
-                        self._plot_shap_class_example_grid(
-                            output_dir=output_dir,
-                            dataset_name=dataset_name,
-                            model_name=model_name,
-                            class_rows=pair_rows,
-                            class_names=class_names,
-                            original_kind=baseline_kind,
-                            collapsed_kind=variant_kind,
-                        )
-
-        pair_rows: list[dict] = []
-        keys = list(ref_vectors.keys())
-        for src_key in keys:
-            src_model, src_dataset, src_kind = src_key
-            src_vec = ref_vectors[src_key]
-            for tgt_key in keys:
-                tgt_model, tgt_dataset, tgt_kind = tgt_key
-                if src_dataset != tgt_dataset:
-                    continue
-                tgt_vec = ref_vectors[tgt_key]
-                metrics = self._feature_vector_metrics(src_vec, tgt_vec, topk_ratio=topk_ratio)
-                pair_rows.append(
-                    {
-                        "source_model": src_model,
-                        "source_kind": src_kind,
-                        "source_label": self.model_kind_label(src_model, src_kind),
-                        "target_model": tgt_model,
-                        "target_kind": tgt_kind,
-                        "target_label": self.model_kind_label(tgt_model, tgt_kind),
-                        "dataset": src_dataset,
-                        "same_architecture": src_model == tgt_model,
-                        "same_kind": src_kind == tgt_kind,
-                        "pair_type": self.classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
-                        **metrics,
-                    }
-                )
-
-        pair_df = pd.DataFrame(pair_rows)
-        _write_locked_csv(os.path.join(output_dir, "shap_pairwise_similarity.csv"), pair_df, "shap_pairwise_similarity")
-        return pair_rows
+        flush_outputs()
+        return latest_pair_rows
