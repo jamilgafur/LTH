@@ -585,23 +585,27 @@ class AdvancedExperimentSuite:
         if eval_images is None or eval_images.size(0) < 2 or eval_labels is None:
             return None, [], None
 
-        bg_n = int(max(2, min(background_samples, eval_images.size(0))))
-        background = eval_images[:bg_n]
-        eval_batch = eval_images[:max_samples]
-        eval_label_batch = eval_labels[:max_samples]
-
         base_model = model.module if hasattr(model, "module") else model
         base_model.eval()
+        model_device = next(base_model.parameters()).device
+
+        bg_n = int(max(2, min(background_samples, eval_images.size(0))))
+        background = eval_images[:bg_n].to(model_device)
+        eval_batch = eval_images[:max_samples].to(model_device)
+        eval_label_batch = eval_labels[:max_samples]
 
         explainer = None
+        init_errors: list[str] = []
         for explainer_cls in (shap.DeepExplainer, shap.GradientExplainer):
             try:
                 explainer = explainer_cls(base_model, background)
                 break
-            except Exception:
+            except Exception as exc:
+                init_errors.append(f"{explainer_cls.__name__}: {exc}")
                 explainer = None
         if explainer is None:
-            print("[WARN] Could not initialize SHAP explainer for a model; skipping.")
+            detail = "; ".join(init_errors) if init_errors else "unknown error"
+            print(f"[WARN] Could not initialize SHAP explainer for a model; skipping. Details: {detail}")
             return None, [], None
 
         try:
