@@ -39,10 +39,9 @@ KIND=${KIND:-ALL}
 # Ensure the output directory exists
 mkdir -p "$OUTPUT_DIR"
 
-# Use the job's working directory for temporary artifact writes.
-# Previously we preferred node‑local scratch (TMPDIR), but that caused cross‑filesystem moves.
-# For robustness we now always stage files in the current working directory.
-export LTH_SAVE_TMPDIR="${PWD}/lth_save_tmp_${PBS_JOBID:-manual}"
+# Stage temporary artifacts in the output directory so atomic writes stay on the
+# same filesystem and the files appear beside the final results.
+export LTH_SAVE_TMPDIR="$OUTPUT_DIR"
 # Log the temporary directory being used for artifact staging
 echo "[INFO] Using temporary save directory: $LTH_SAVE_TMPDIR"
 mkdir -p "$LTH_SAVE_TMPDIR"
@@ -69,7 +68,7 @@ if [ "$PHASE" = "generate" ]; then
 elif [ "$PHASE" = "analyze" ] && [ "${ANALYZE_MERGE_TRANSFERABILITY:-0}" = "1" ]; then
     OUTPUT_FILE="${OUTPUT_DIR}/adversarial_analyze_merge_run.txt"
 elif [ "$PHASE" = "analyze" ] && [ "$DATASET" != "ALL" ]; then
-    OUTPUT_FILE="${OUTPUT_DIR}/adversarial_analyze_${DATASET}_run.txt"
+    OUTPUT_FILE="${OUTPUT_DIR}/adversarial_analyze_${MODEL}_${DATASET}_run.txt"
 else
     # For non‑generate phases use a generic name but scoped to the result folder
     OUTPUT_FILE="${OUTPUT_DIR}/adversarial_${PHASE}_run.txt"
@@ -87,7 +86,7 @@ if [ "$PHASE" = "generate" ]; then
 elif [ "$PHASE" = "analyze" ] && [ "${ANALYZE_MERGE_TRANSFERABILITY:-0}" = "1" ]; then
     JOB_KEY="${PHASE}_merge"
 elif [ "$PHASE" = "analyze" ] && [ "$DATASET" != "ALL" ]; then
-    JOB_KEY="${PHASE}_${DATASET}"
+    JOB_KEY="${PHASE}_${MODEL}_${DATASET}"
 else
     JOB_KEY="${PHASE}"
 fi

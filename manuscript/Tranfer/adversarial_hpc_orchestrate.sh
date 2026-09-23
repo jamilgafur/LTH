@@ -223,6 +223,13 @@ case "$PHASE" in
             hold_prefix="-W \"depend=afterok:${UPSTREAM_HOLD_JID}\" "
         fi
 
+        analyze_models=()
+        if [ "$MODEL_FILTER" = "ALL" ]; then
+            analyze_models=("VGG16" "RegNetX_400MF" "InceptionNet" "MobileNet" "XceptionNet" "ConvNeXt")
+        else
+            analyze_models=("$MODEL_FILTER")
+        fi
+
         analyze_datasets=()
         if [ "$DATASET_FILTER" = "ALL" ]; then
             analyze_datasets=("Cifar10" "Cifar100" "TinyImageNet")
@@ -231,18 +238,20 @@ case "$PHASE" in
         fi
 
         analyze_job_ids=()
-        for dataset in "${analyze_datasets[@]}"; do
-            transferability_output="transferability_${dataset}.csv"
-            cmd="qsub ${hold_prefix}-q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$dataset\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"analyze\",OUTPUT_DIR=\"$OUTPUT_DIR\",TRANSFERABILITY_OUTPUT=\"$transferability_output\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
-            submit_and_log "$cmd" "analyze/$dataset" || fail "Failed to submit analyze shard for $dataset"
+        for model in "${analyze_models[@]}"; do
+            for dataset in "${analyze_datasets[@]}"; do
+                transferability_output="transferability_${model}_${dataset}.csv"
+                cmd="qsub ${hold_prefix}-q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"analyze\",OUTPUT_DIR=\"$OUTPUT_DIR\",TRANSFERABILITY_OUTPUT=\"$transferability_output\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
+                submit_and_log "$cmd" "analyze/$model/$dataset" || fail "Failed to submit analyze shard for $model/$dataset"
 
-            job_id=$(echo "$LAST_QSUB_OUTPUT" | sed -n 's/.*Your job \([0-9]\+\).*/\1/p' | head -n1)
-            if [ -z "$job_id" ]; then
-                job_id=$(echo "$LAST_QSUB_OUTPUT" | awk '{print $1}' | tr -cd '0-9')
-            fi
-            if [ -n "$job_id" ]; then
-                analyze_job_ids+=("$job_id")
-            fi
+                job_id=$(echo "$LAST_QSUB_OUTPUT" | sed -n 's/.*Your job \([0-9]\+\).*/\1/p' | head -n1)
+                if [ -z "$job_id" ]; then
+                    job_id=$(echo "$LAST_QSUB_OUTPUT" | awk '{print $1}' | tr -cd '0-9')
+                fi
+                if [ -n "$job_id" ]; then
+                    analyze_job_ids+=("$job_id")
+                fi
+            done
         done
 
         if [ ${#analyze_job_ids[@]} -eq 0 ]; then
