@@ -1317,6 +1317,7 @@ class AdvancedExperimentSuite:
         sample_rows: list[dict] = []
         ref_vectors: dict[tuple[str, str, str], np.ndarray] = {}
         class_example_bundles: dict[tuple[str, str, str], dict] = {}
+        latest_pair_rows: list[dict] = []
 
         def flush_outputs() -> None:
             nonlocal latest_pair_rows
