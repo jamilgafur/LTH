@@ -201,13 +201,22 @@ class CKASuite:
                     tgt_name, tgt_dataset, tgt_kind = tgt_key
                     if tgt_name != src_name or tgt_dataset != src_dataset or tgt_kind not in variant_kinds:
                         continue
-                    tgt_layers = set(layer_bank.get(tgt_key, []))
+                    tgt_layers = layer_bank.get(tgt_key, [])
                     tgt_reps = repr_bank[base_dataset].get(tgt_key, {})
-                    for layer_name in src_layers:
-                        if layer_name not in tgt_layers:
-                            continue
-                        X = src_reps.get(layer_name)
-                        Y = tgt_reps.get(layer_name)
+                    available_src_layers = [layer_name for layer_name in src_layers if layer_name in src_reps]
+                    available_tgt_layers = [layer_name for layer_name in tgt_layers if layer_name in tgt_reps]
+                    pair_count = min(len(available_src_layers), len(available_tgt_layers))
+                    if pair_count == 0:
+                        print(
+                            f"[DEBUG] CKA found no usable probe-layer pairs for {src_name} "
+                            f"({src_kind} -> {tgt_kind}) on {src_dataset}"
+                        )
+                        continue
+                    for layer_index in range(pair_count):
+                        src_layer_name = available_src_layers[layer_index]
+                        tgt_layer_name = available_tgt_layers[layer_index]
+                        X = src_reps.get(src_layer_name)
+                        Y = tgt_reps.get(tgt_layer_name)
                         if X is None or Y is None:
                             continue
                         n = min(X.size(0), Y.size(0))
@@ -227,8 +236,8 @@ class CKASuite:
                                 "target_kind": tgt_kind,
                                 "target_label": model_kind_label(tgt_name, tgt_kind),
                                 "dataset": src_dataset,
-                                "layer": layer_name,
-                                "matched_layer": layer_name,
+                                "layer": src_layer_name,
+                                "matched_layer": tgt_layer_name,
                                 "cka": cka_val,
                                 "same_architecture": True,
                                 "same_kind": False,
@@ -391,15 +400,35 @@ class CKASuite:
     def _compute_linear_cka(X: torch.Tensor, Y: torch.Tensor) -> float:
         """Compute linear CKA between two representation matrices.
 
-        Implements the standard linear CKA formula using centered Gram matrices.
+        The inputs may come from different architectures and therefore can have
+        different feature widths. We only require that both tensors share the
+        same number of samples in the first dimension. All remaining dimensions
+        are flattened into a feature axis, then CKA is computed from centered
+        sample-similarity Gram matrices.
         """
-        X_centered = X - X.mean(0, keepdim=True)
-        Y_centered = Y - Y.mean(0, keepdim=True)
-        XTX = X_centered.t() @ X_centered
-        YTY = Y_centered.t() @ Y_centered
-        XY = X_centered.t() @ Y_centered
-        numerator = (XY * XY).sum().item()
-        denominator = (XTX * XTX).sum().item() * (YTY * YTY).sum().item()
+        if X.ndim < 2 or Y.ndim < 2:
+            return float("nan")
+
+        X = X.reshape(X.size(0), -1).float()
+        Y = Y.reshape(Y.size(0), -1).float()
+        if X.size(0) != Y.size(0):
+            n = min(X.size(0), Y.size(0))
+            X = X[:n]
+            Y = Y[:n]
+        if X.size(0) < 2:
+            return float("nan")
+
+        K = X @ X.t()
+        L = Y @ Y.t()
+        n = K.size(0)
+        identity = torch.eye(n, device=K.device, dtype=K.dtype)
+        ones = torch.full((n, n), 1.0 / n, device=K.device, dtype=K.dtype)
+        center = identity - ones
+        K_centered = center @ K @ center
+        L_centered = center @ L @ center
+
+        numerator = (K_centered * L_centered).sum().item()
+        denominator = (K_centered * K_centered).sum().item() * (L_centered * L_centered).sum().item()
         if denominator == 0:
             return float("nan")
         return numerator / (denominator ** 0.5)
@@ -449,13 +478,19 @@ class CKASuite:
                 if model_df.empty:
                     continue
 
+                # Compute mean CKA per variant. If no pairwise records exist for a variant
+                # (e.g., because the pruned model removed all matching layers), the groupby
+                # will produce an empty DataFrame. In that case we still want a row for the
+                # variant so the plot shows a missing/NaN value instead of omitting the bar.
                 summary = (
                     model_df.groupby("target_kind", as_index=False)["cka"]
                     .mean()
                     .rename(columns={"target_kind": "variant", "cka": "mean_cka"})
                 )
+                # Ensure baseline row is always present (cka = 1.0)
                 baseline_row = pd.DataFrame([{"variant": baseline_kind, "mean_cka": 1.0}])
                 summary = pd.concat([baseline_row, summary], ignore_index=True)
+                # Re‑index to include all expected variants, filling missing ones with NaN
                 summary = summary.set_index("variant").reindex(variant_order).reset_index()
                 summary["variant_label"] = summary["variant"].map(variant_label_map)
 
