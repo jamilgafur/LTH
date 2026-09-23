@@ -177,20 +177,32 @@ case "$PHASE" in
         log "[PHASE: GENERATE] Submitting attack generation jobs..."
         job_count=0
         generated_job_ids=()
+        # Track the most recent TinyImageNet job ID to create a serial dependency chain.
+        prev_tiny_job=""
         for model in "${models[@]}"; do
             for dataset in "${datasets[@]}"; do
                 for attack in "${attacks[@]}"; do
-                    cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",ATTACK=\"$attack\",KIND=\"$KIND_FILTER\",PHASE=\"generate\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
+                    # Base qsub command
+                    cmd="qsub -q all.q -l ngpus=1"
+                    # If this is a TinyImageNet job and we have a previous job ID, add a hold dependency.
+                    if [ "$dataset" = "TinyImageNet" ] && [ -n "$prev_tiny_job" ]; then
+                        cmd+=" -hold_jid \"$prev_tiny_job\""
+                    fi
+                    cmd+=" -v MODEL=\"$model\",DATASET=\"$dataset\",ATTACK=\"$attack\",KIND=\"$KIND_FILTER\",PHASE=\"generate\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
+
                     submit_and_log "$cmd" "$model/$dataset/$attack/$KIND_FILTER" || fail "Submission failed for $model/$dataset/$attack/$KIND_FILTER"
 
-                    # Capture submitted job IDs so downstream phases can depend on all
-                    # generate jobs (prevents analyze/plot from starting too early).
+                    # Capture submitted job IDs so downstream phases can depend on all generate jobs.
                     job_id=$(echo "$LAST_QSUB_OUTPUT" | sed -n 's/.*Your job \([0-9]\+\).*/\1/p' | head -n1)
                     if [ -z "$job_id" ]; then
                         job_id=$(echo "$LAST_QSUB_OUTPUT" | awk '{print $1}' | tr -cd '0-9')
                     fi
                     if [ -n "$job_id" ]; then
                         generated_job_ids+=("$job_id")
+                        # Update the TinyImageNet chain if applicable.
+                        if [ "$dataset" = "TinyImageNet" ]; then
+                            prev_tiny_job="$job_id"
+                        fi
                     fi
 
                     ((job_count++))

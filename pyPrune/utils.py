@@ -258,24 +258,40 @@ def load_caltech101(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoa
     return train_loader, test_loader
 
 def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
-    data_dir = '/Users/jgafur/LTH/manuscript/structured_study/.temp/tiny-imagenet-200/'
-    train_dir = os.path.join(data_dir, 'train')
-    val_dir = os.path.join(data_dir, 'val')
-    val_img_dir = os.path.join(val_dir, 'images')
-    val_annot_path = os.path.join(val_dir, 'val_annotations.txt')
+    """Load Tiny ImageNet (200 classes) from the repository's ``structured_study/.temp`` directory.
+
+    The original implementation used an absolute path pointing to a user’s home
+    directory (``/Users/jgafur/...``), which does not exist on the HPC nodes where
+    the analysis jobs run. This caused ``FileNotFoundError`` during the analyze
+    phase for models that rely on the Tiny ImageNet loader.
+
+    The function now constructs the data directory relative to the repository
+    root, ensuring the path is valid regardless of the execution environment.
+    """
+    # Resolve the repository‑relative path to the Tiny ImageNet data.
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    data_dir = os.path.join(
+        repo_root,
+        "manuscript",
+        "structured_study",
+        ".temp",
+        "tiny-imagenet-200",
+    )
+    train_dir = os.path.join(data_dir, "train")
+    val_dir = os.path.join(data_dir, "val")
 
     # Define transforms
     transform_train = transforms.Compose([
         transforms.RandomResizedCrop(64),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize((0.480, 0.448, 0.398), (0.277, 0.269, 0.282))
+        transforms.Normalize((0.480, 0.448, 0.398), (0.277, 0.269, 0.282)),
     ])
 
     transform_val = transforms.Compose([
         transforms.Resize((64, 64)),
         transforms.ToTensor(),
-        transforms.Normalize((0.480, 0.448, 0.398), (0.277, 0.269, 0.282))
+        transforms.Normalize((0.480, 0.448, 0.398), (0.277, 0.269, 0.282)),
     ])
 
     # Datasets
@@ -283,67 +299,59 @@ def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 1) -> tuple[Data
     val_dataset = datasets.ImageFolder(val_dir, transform=transform_val)
 
     # Dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
+    )
+    val_loader = DataLoader(
+        val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers
+    )
 
     return train_loader, val_loader
 
 def load_imagenet(batch_size: int = 64, num_workers: int = 1):
+    """Load the Imagenette2‑160 dataset from the repository's ``structured_study/.temp`` directory.
+
+    Similar to :func:`load_tiny_imagenet`, the previous implementation relied on a
+    hard‑coded absolute path that is unavailable on the compute nodes. The path is
+    now built relative to the repository root.
     """
-    Returns train and validation DataLoaders for the Imagenette2-160 dataset using torchvision.datasets.Imagenette.
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    root = os.path.join(repo_root, "manuscript", "structured_study", ".temp", "imagenette2")
+    dataset_dir = os.path.join(root, "imagenette2-160")
 
-    Args:
-        batch_size (int): Number of samples per batch.
-        num_workers (int): Number of subprocesses for data loading.
-
-    Returns:
-        (train_loader, val_loader): Tuple of DataLoaders.
-    """
-
-    root = '/Users/jgafur/LTH/manuscript/structured_study/.temp/imagenette2'
-    dataset_dir = os.path.join(root, 'imagenette2-160')
-    
-    # Check if the dataset is already downloaded
+    # Determine whether the dataset has already been downloaded.
     already_downloaded = os.path.exists(dataset_dir)
 
-    # Define image transforms (standard ImageNet normalization)
+    # Define image transforms (standard ImageNet normalization).
     transform = transforms.Compose([
         transforms.Resize((160, 160)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225])
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
-    # Load datasets using torchvision.datasets.Imagenette
+    # Load datasets using torchvision.datasets.Imagenette.
     train_dataset = Imagenette(
         root=root,
-        split='train',
-        size='160px',
+        split="train",
+        size="160px",
         download=not already_downloaded,
-        transform=transform
+        transform=transform,
     )
 
     val_dataset = Imagenette(
         root=root,
-        split='val',
-        size='160px',
+        split="val",
+        size="160px",
         download=not already_downloaded,
-        transform=transform
+        transform=transform,
     )
 
-    # Create DataLoaders
+    # Create DataLoaders.
     train_loader = DataLoader(
-        train_dataset,
-        batch_size=batch_size,
-        shuffle=True,
-        num_workers=num_workers
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
     )
-
     val_loader = DataLoader(
-        val_dataset,
-        batch_size=batch_size,
-        shuffle=False,
-        num_workers=num_workers
+        val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers
     )
 
     return train_loader, val_loader

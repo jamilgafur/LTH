@@ -221,9 +221,12 @@ case "$PHASE" in
 esac
 
 echo "Executing: ${CMD[*]}"
-echo "Writing output to: $OUTPUT_FILE"
+echo "Writing stdout to: $OUTPUT_FILE"
+# Capture stderr separately for easier debugging of individual shard jobs.
+ERR_FILE="${OUTPUT_FILE}.err"
+echo "Writing stderr to: $ERR_FILE"
 
-time "${CMD[@]}" > "$OUTPUT_FILE" 2>&1
+time "${CMD[@]}" > "$OUTPUT_FILE" 2> "$ERR_FILE"
 
 printf "job_id=%s\noutput_file=%s\ncompleted_at=%s\n" \
     "${PBS_JOBID:-unknown}" \

@@ -177,7 +177,7 @@ def compute_transfer_metrics(
     model_cache: dict,
     adv_datasets: dict,
     transferability_output: str | None = None,
-) -> list[dict]:
+) -> int:
     """Compute transferability metrics and persist them to transferability.csv."""
     records = AdversarialCore.analyze_transferability_phase(
         output_dir,

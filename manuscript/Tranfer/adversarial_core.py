@@ -648,7 +648,6 @@ class AdversarialCore:
         import pandas as pd
 
         phase_start = time.perf_counter()
-        transfer_records = []
         summary_path = os.path.join(output_dir, "summary.csv")
         records_df = pd.read_csv(summary_path) if os.path.exists(summary_path) else pd.DataFrame()
         records_df = ReportingSuite.enrich_summary_dataframe(records_df)
@@ -669,13 +668,19 @@ class AdversarialCore:
             f"across {len(model_cache)} cached models."
         )
 
+        rows_written = 0
         for source_index, ((src_model, src_dataset, src_kind, src_attack), adv_path) in enumerate(adv_datasets.items(), start=1):
             source_start = time.perf_counter()
             print(
                 f"[INFO] Transfer source {source_index}/{len(adv_datasets)}: "
                 f"model={src_model} dataset={src_dataset} kind={src_kind} attack={src_attack}"
             )
-            adv_bundle = cls.load_adversarial_bundle(adv_path)
+            # Load the adversarial artifact bundle with robust error handling.
+            try:
+                adv_bundle = cls.load_adversarial_bundle(adv_path)
+            except Exception as exc:
+                print(f"[ERROR] Failed to load adversarial bundle at {adv_path}: {exc}")
+                continue
             adv_loader = torch.utils.data.DataLoader(
                 torch.utils.data.TensorDataset(
                     adv_bundle["adversarial_images"], adv_bundle["true_labels"]
@@ -686,7 +691,10 @@ class AdversarialCore:
 
             src_clean_preds = adv_bundle.get("source_clean_predictions")
             src_adv_preds = adv_bundle.get("source_adversarial_predictions")
-            true_labels = adv_bundle["true_labels"]
+            true_labels = adv_bundle.get("true_labels")
+            if true_labels is None:
+                print(f"[WARN] true_labels missing in bundle for {src_model}/{src_dataset}/{src_attack}")
+                continue
             source_records = []
             compatible_targets = sum(1 for (_tgt_model, tgt_dataset, _tgt_kind) in model_cache if tgt_dataset == src_dataset)
             print(
@@ -715,15 +723,19 @@ class AdversarialCore:
                     if not match.empty:
                         source_attack_success_rate = float(match.iloc[0].get("attack_success_rate", np.nan))
 
-                transfer_metrics = cls.compute_transfer_metrics(
-                    source_model=None,
-                    target_model=tgt_model_obj,
-                    adversarial_loader=adv_loader,
-                    source_clean_predictions=src_clean_preds,
-                    source_adversarial_predictions=src_adv_preds,
-                    true_labels=true_labels,
-                    source_attack_success_rate=source_attack_success_rate,
-                )
+                try:
+                    transfer_metrics = cls.compute_transfer_metrics(
+                        source_model=None,
+                        target_model=tgt_model_obj,
+                        adversarial_loader=adv_loader,
+                        source_clean_predictions=src_clean_preds,
+                        source_adversarial_predictions=src_adv_preds,
+                        true_labels=true_labels,
+                        source_attack_success_rate=source_attack_success_rate,
+                    )
+                except Exception as exc:
+                    print(f"[ERROR] Transfer metric computation failed for target {tgt_model} ({tgt_kind}): {exc}")
+                    continue
 
                 record = {
                     "source_model": src_model,
@@ -745,9 +757,21 @@ class AdversarialCore:
                     "pair_type": ReportingSuite.classify_transfer_pair(src_model, src_kind, tgt_model, tgt_kind),
                 }
                 source_records.append(record)
-                transfer_records.append(record)
 
             if source_records:
+                source_df = pd.DataFrame(source_records)
+                if _append_locked_csv(transfer_path, source_df, "transferability"):
+                    rows_written += len(source_df)
+                    print(
+                        f"[INFO] Appended {len(source_df)} transferability rows for "
+                        f"{src_model}/{src_attack} to {transfer_path} in "
+                        f"{time.perf_counter() - source_start:.2f}s"
+                    )
+                else:
+                    print(
+                        f"[WARN] Failed to append transferability rows for {src_model}/{src_attack} "
+                        f"to {transfer_path}"
+                    )
                 print(
                     f"[INFO] Completed transfer source {source_index}/{len(adv_datasets)} for "
                     f"{src_model}/{src_attack} in {time.perf_counter() - source_start:.2f}s"
@@ -758,40 +782,64 @@ class AdversarialCore:
                     f"{src_model}/{src_dataset}/{src_kind}/{src_attack}"
                 )
 
-        transfer_df = pd.DataFrame(transfer_records)
-        if not transfer_df.empty:
-            _atomic_write_csv(transfer_path, transfer_df)
+        if rows_written > 0:
             print(
-                f"[INFO] Wrote transferability CSV to {transfer_path} with {len(transfer_df)} rows "
+                f"[INFO] Wrote transferability CSV to {transfer_path} with {rows_written} rows "
                 f"in {time.perf_counter() - phase_start:.2f}s"
             )
         else:
             print("[WARN] No transferability rows were generated.")
 
-        return transfer_records
+        return rows_written
 
     @classmethod
     def rebuild_model_and_loader_cache(cls, args) -> tuple[dict, dict]:
-        model_cache: dict = {}
+        """Rebuild the model and loader cache for a single analysis shard.
+
+        The analysis jobs already receive a shard-specific ``--dataset`` filter
+        from the orchestrator, so we only need to cache checkpoints that belong
+        to that dataset. This keeps the shard from loading unrelated models and
+        makes the logging more useful when a shard ends up empty.
+        """
+        from collections import OrderedDict
+
+        model_cache: OrderedDict = OrderedDict()
         loader_cache: dict = {}
         device = cls._default_device()
         checkpoints = list(CheckpointManager.discover_checkpoints())
+        selected_dataset = None
+        if getattr(args, "dataset", None):
+            selected_dataset = CheckpointManager.base_dataset_name(args.dataset).lower()
         print(
             f"[INFO] rebuild_model_and_loader_cache starting on device={device} "
             f"with {len(checkpoints)} discovered checkpoints"
         )
+        print(
+            f"[INFO] Cache filters: model={getattr(args, 'model', None) or 'ALL'} "
+            f"dataset={getattr(args, 'dataset', None) or 'ALL'} kind={getattr(args, 'kind', None) or 'ALL'}"
+        )
+
+        skipped_output_dir = 0
+        skipped_model = 0
+        skipped_dataset = 0
+        skipped_kind = 0
+        cached_count = 0
 
         for checkpoint_index, (model_name, dataset_name, kind, ckpt_path) in enumerate(checkpoints, start=1):
             if not CheckpointManager.dataset_matches_output_dir(dataset_name, args.output_dir):
+                skipped_output_dir += 1
                 continue
             if args.model and model_name != args.model:
+                skipped_model += 1
                 continue
             # Allow args.dataset to match base name, ignoring split tag.
-            if args.dataset:
+            if selected_dataset:
                 base_check = CheckpointManager.base_dataset_name(dataset_name)
-                if base_check != args.dataset:
+                if base_check.lower() != selected_dataset:
+                    skipped_dataset += 1
                     continue
             if args.kind and kind != args.kind:
+                skipped_kind += 1
                 continue
 
             # Dataset may include a split tag (e.g. "Cifar10_epochs100_pretrain300").
@@ -845,9 +893,23 @@ class AdversarialCore:
                 print(f"[DEBUG] Wrapping {model_name} ({dataset_name}, {kind}) with DataParallel")
                 model = torch.nn.DataParallel(model)
             model_cache[(model_name, dataset_name, kind)] = model
+            cached_count += 1
+
             print(
                 f"[INFO] Cached {model_name} ({dataset_name}, {kind}); total cached models={len(model_cache)}; "
                 f"elapsed={time.perf_counter() - checkpoint_start:.2f}s"
+            )
+
+        print(
+            f"[INFO] rebuild_model_and_loader_cache summary: cached={cached_count} "
+            f"skipped_output_dir={skipped_output_dir} skipped_model={skipped_model} "
+            f"skipped_dataset={skipped_dataset} skipped_kind={skipped_kind}"
+        )
+
+        if selected_dataset and cached_count == 0:
+            print(
+                f"[WARN] No checkpoints matched dataset filter '{args.dataset}'. "
+                f"Check that the shard dataset name matches the saved checkpoint naming."
             )
 
         return model_cache, loader_cache
