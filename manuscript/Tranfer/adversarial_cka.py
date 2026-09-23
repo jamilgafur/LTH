@@ -118,7 +118,9 @@ class CKASuite:
         def flush_outputs() -> None:
             df = pd.DataFrame(records)
             _write_locked_csv(os.path.join(output_dir, "cka_similarity.csv"), df, "cka_similarity")
-            cls._plot_cka_from_dataframe(output_dir, df)
+            if {"source_model", "target_model", "source_kind", "target_kind", "dataset", "cka"}.issubset(df.columns):
+                pairwise_df = df[df["source_model"].notna() & df["target_model"].notna()].copy()
+                cls._plot_cka_from_dataframe(output_dir, pairwise_df)
 
         for base_dataset, checkpoints in grouped.items():
             try:
@@ -394,6 +396,16 @@ class CKASuite:
         """
         if df.empty:
             print("[WARN] CKA: no records generated; skipping CKA plots.")
+            return
+
+        required_columns = {"source_model", "source_kind", "target_model", "target_kind", "dataset", "cka"}
+        if not required_columns.issubset(df.columns):
+            print("[WARN] CKA: pairwise columns missing; skipping CKA plots.")
+            return
+
+        df = df[df["source_model"].notna() & df["target_model"].notna()].copy()
+        if df.empty:
+            print("[WARN] CKA: no pairwise records generated; skipping CKA plots.")
             return
 
         variant_order = [ReportingSuite.baseline_kind(), *ReportingSuite.variant_kinds()]
