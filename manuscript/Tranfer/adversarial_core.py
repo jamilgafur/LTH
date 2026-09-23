@@ -638,7 +638,13 @@ class AdversarialCore:
         }
 
     @classmethod
-    def analyze_transferability_phase(cls, output_dir: str, model_cache: dict, adv_datasets: dict):
+    def analyze_transferability_phase(
+        cls,
+        output_dir: str,
+        model_cache: dict,
+        adv_datasets: dict,
+        transferability_output: str | None = None,
+    ):
         import pandas as pd
 
         phase_start = time.perf_counter()
@@ -646,7 +652,10 @@ class AdversarialCore:
         summary_path = os.path.join(output_dir, "summary.csv")
         records_df = pd.read_csv(summary_path) if os.path.exists(summary_path) else pd.DataFrame()
         records_df = ReportingSuite.enrich_summary_dataframe(records_df)
-        transfer_path = os.path.join(output_dir, "transferability.csv")
+        if transferability_output:
+            transfer_path = transferability_output if os.path.isabs(transferability_output) else os.path.join(output_dir, transferability_output)
+        else:
+            transfer_path = os.path.join(output_dir, "transferability.csv")
 
         if os.path.exists(transfer_path):
             try:
@@ -738,19 +747,11 @@ class AdversarialCore:
                 source_records.append(record)
                 transfer_records.append(record)
 
-            source_df = pd.DataFrame(source_records)
-            if not source_df.empty:
-                if _append_locked_csv(transfer_path, source_df, "transferability"):
-                    print(
-                        f"[INFO] Appended {len(source_df)} transferability rows for "
-                        f"{src_model}/{src_attack} to {transfer_path} in "
-                        f"{time.perf_counter() - source_start:.2f}s"
-                    )
-                else:
-                    print(
-                        f"[WARN] Failed to append transferability rows for {src_model}/{src_attack} "
-                        f"to {transfer_path}"
-                    )
+            if source_records:
+                print(
+                    f"[INFO] Completed transfer source {source_index}/{len(adv_datasets)} for "
+                    f"{src_model}/{src_attack} in {time.perf_counter() - source_start:.2f}s"
+                )
             else:
                 print(
                     f"[WARN] No transferability rows generated for source "
@@ -759,8 +760,9 @@ class AdversarialCore:
 
         transfer_df = pd.DataFrame(transfer_records)
         if not transfer_df.empty:
+            _atomic_write_csv(transfer_path, transfer_df)
             print(
-                f"[INFO] Completed transferability analysis with {len(transfer_df)} total rows "
+                f"[INFO] Wrote transferability CSV to {transfer_path} with {len(transfer_df)} rows "
                 f"in {time.perf_counter() - phase_start:.2f}s"
             )
         else:

@@ -56,6 +56,21 @@ echo "Attack Filter:    $ATTACK_FILTER"
 echo "Kind Filter:      $KIND_FILTER"
 echo "===================================================================="
 
+if [ "$PHASE" = "analyze" ]; then
+    echo "Submitting analyze via orchestrator so it fans out into parallel shard jobs..."
+    if [ -n "${UPSTREAM_HOLD_JID:-}" ]; then
+        echo "Upstream Hold:    $UPSTREAM_HOLD_JID"
+    fi
+    if [ -n "${UPSTREAM_HOLD_JID:-}" ]; then
+        UPSTREAM_HOLD_JID="$UPSTREAM_HOLD_JID" \
+            bash ./adversarial_hpc_orchestrate.sh analyze "$OUTPUT_DIR" "$MODEL_FILTER" "$DATASET_FILTER" "$ATTACK_FILTER" "$KIND_FILTER"
+    else
+        bash ./adversarial_hpc_orchestrate.sh analyze "$OUTPUT_DIR" "$MODEL_FILTER" "$DATASET_FILTER" "$ATTACK_FILTER" "$KIND_FILTER"
+    fi
+    echo "[DONE] Analyze submissions complete. Monitor with: qstat"
+    exit 0
+fi
+
 submit_phase() {
     local phase=$1
     local dep_job=${2:-}

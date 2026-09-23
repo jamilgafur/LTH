@@ -172,22 +172,66 @@ def check_summary_ready(output_dir: str) -> tuple[bool, str]:
         return False, summary_path
 
 
-def compute_transfer_metrics(output_dir: str, model_cache: dict, adv_datasets: dict) -> list[dict]:
+def compute_transfer_metrics(
+    output_dir: str,
+    model_cache: dict,
+    adv_datasets: dict,
+    transferability_output: str | None = None,
+) -> list[dict]:
     """Compute transferability metrics and persist them to transferability.csv."""
-    records = AdversarialCore.analyze_transferability_phase(output_dir, model_cache, adv_datasets)
-    if records:
-        transfer_df = pd.DataFrame(records)
-        transfer_path = os.path.join(output_dir, "transferability.csv")
-        lock_path = os.path.join(output_dir, ".transferability.lock")
-        if _acquire_lock(lock_path, timeout_seconds=120.0):
-            try:
-                _atomic_write_csv(transfer_path, transfer_df)
-                print(f"[INFO] Saved transferability CSV to {transfer_path} ({len(transfer_df)} rows)")
-            finally:
-                _release_lock(lock_path)
-        else:
-            print(f"[WARN] Could not acquire lock for {transfer_path}; skipping write.")
+    records = AdversarialCore.analyze_transferability_phase(
+        output_dir,
+        model_cache,
+        adv_datasets,
+        transferability_output=transferability_output,
+    )
     return records
+
+
+def _merge_transferability_if_ready(output_dir: str) -> str | None:
+    """Merge transferability shards into canonical ``transferability.csv``.
+
+    Parallel analyze jobs write dataset-specific shards. This helper collects the
+    shards, deduplicates rows, and writes the canonical CSV atomically under a
+    lock so downstream phases see an all-or-nothing result.
+    """
+    canonical_path = os.path.join(output_dir, "transferability.csv")
+    shard_paths: list[str] = []
+    if os.path.isdir(output_dir):
+        for name in sorted(os.listdir(output_dir)):
+            if not name.startswith("transferability_") or not name.endswith(".csv"):
+                continue
+            if name == "transferability.csv":
+                continue
+            shard_paths.append(os.path.join(output_dir, name))
+
+    if not shard_paths:
+        return canonical_path if os.path.exists(canonical_path) else None
+
+    lock_path = os.path.join(output_dir, ".transferability_merge.lock")
+    if not _acquire_lock(lock_path, timeout_seconds=120.0):
+        print(f"[WARN] Could not acquire transferability merge lock in {output_dir}; skipping merge.")
+        return canonical_path if os.path.exists(canonical_path) else None
+
+    print(f"[DEBUG] Acquired transferability merge lock {lock_path}")
+    try:
+        frames = []
+        for path in shard_paths:
+            if not os.path.exists(path) or os.path.getsize(path) == 0:
+                continue
+            frames.append(pd.read_csv(path))
+
+        if not frames:
+            print(f"[WARN] No non-empty transferability shards found in {output_dir}")
+            return canonical_path if os.path.exists(canonical_path) else None
+
+        merged_df = pd.concat(frames, ignore_index=True).drop_duplicates().reset_index(drop=True)
+        _atomic_write_csv(canonical_path, merged_df)
+        print(f"[INFO] Merged {len(frames)} transferability shards into {canonical_path}")
+        return canonical_path
+    finally:
+        _release_lock(lock_path)
+        print(f"[DEBUG] Released transferability merge lock {lock_path}")
 
 
 def _persist_rebuilt_summary_records(output_dir: str, records: list[dict]) -> str | None:
@@ -348,6 +392,16 @@ def main() -> None:
     parser.add_argument("--topk-ratio", type=float, default=0.05, help="Top-k ratio used in SHAP feature vector comparisons")
     parser.add_argument("--cka-max-samples", type=int, default=64, help="Max number of samples used in the CKA phase")
     parser.add_argument("--cka-max-layers", type=int, default=8, help="Maximum number of layers sampled in the CKA phase")
+    parser.add_argument(
+        "--transferability-output",
+        default=None,
+        help="Optional CSV filename for transferability output (used by parallel analyze shards)",
+    )
+    parser.add_argument(
+        "--merge-transferability",
+        action="store_true",
+        help="Merge transferability shards into canonical transferability.csv and exit",
+    )
     args = parser.parse_args()
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -365,6 +419,13 @@ def main() -> None:
         return
 
     if args.mode == "analyze":
+        if args.merge_transferability:
+            merged_path = _merge_transferability_if_ready(args.output_dir)
+            if merged_path:
+                print(f"[INFO] Transferability merge ready at {merged_path}")
+            else:
+                print(f"[WARN] No transferability shards were merged for {args.output_dir}")
+            return
         try:
             analyze_start = time.perf_counter()
             merge_flag = os.path.join(args.output_dir, ".summary_merge_complete")
@@ -418,7 +479,12 @@ def main() -> None:
                     print(f"[INFO] Reconciled canonical summary at {rebuilt_summary_path}")
 
             transfer_start = time.perf_counter()
-            compute_transfer_metrics(args.output_dir, model_cache, adv_datasets)
+            compute_transfer_metrics(
+                args.output_dir,
+                model_cache,
+                adv_datasets,
+                transferability_output=args.transferability_output,
+            )
             print(
                 f"[INFO] Analyze phase completed in {time.perf_counter() - analyze_start:.2f}s "
                 f"(transfer stage {time.perf_counter() - transfer_start:.2f}s)"

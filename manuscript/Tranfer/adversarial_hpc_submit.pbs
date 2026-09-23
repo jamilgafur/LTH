@@ -5,7 +5,7 @@
 #PBS -l select=1:ncpus=8:mem=64gb:ngpus=1
 #PBS -o logs/adversarial_%J.log
 #PBS -e logs/adversarial_%J.err
-#PBS -v MODEL,DATASET,ATTACK,KIND,PHASE,OUTPUT_DIR,EPSILON_ATTACKS,RESULT_DIRS,CKA_MAX_SAMPLES,CKA_MAX_LAYERS,SHAP_MAX_SAMPLES,SHAP_BACKGROUND_SAMPLES,SHAP_TOPK_RATIO,FORCE_RERUN
+#PBS -v MODEL,DATASET,ATTACK,KIND,PHASE,OUTPUT_DIR,EPSILON_ATTACKS,RESULT_DIRS,CKA_MAX_SAMPLES,CKA_MAX_LAYERS,SHAP_MAX_SAMPLES,SHAP_BACKGROUND_SAMPLES,SHAP_TOPK_RATIO,FORCE_RERUN,TRANSFERABILITY_OUTPUT,ANALYZE_MERGE_TRANSFERABILITY
 
 set -e
 
@@ -66,6 +66,10 @@ if [ "$PHASE" = "generate" ]; then
     fi
     # Include the result folder name in the filename to avoid collisions across runs
     OUTPUT_FILE="${OUTPUT_DIR}/${MODEL}_${DATASET}_${ATTACK}_${KIND}_${PHASE}_run.txt"
+elif [ "$PHASE" = "analyze" ] && [ "${ANALYZE_MERGE_TRANSFERABILITY:-0}" = "1" ]; then
+    OUTPUT_FILE="${OUTPUT_DIR}/adversarial_analyze_merge_run.txt"
+elif [ "$PHASE" = "analyze" ] && [ "$DATASET" != "ALL" ]; then
+    OUTPUT_FILE="${OUTPUT_DIR}/adversarial_analyze_${DATASET}_run.txt"
 else
     # For non‑generate phases use a generic name but scoped to the result folder
     OUTPUT_FILE="${OUTPUT_DIR}/adversarial_${PHASE}_run.txt"
@@ -80,6 +84,10 @@ mkdir -p "$STATUS_DIR"
 
 if [ "$PHASE" = "generate" ]; then
     JOB_KEY="${MODEL}_${DATASET}_${ATTACK}_${KIND}_${PHASE}"
+elif [ "$PHASE" = "analyze" ] && [ "${ANALYZE_MERGE_TRANSFERABILITY:-0}" = "1" ]; then
+    JOB_KEY="${PHASE}_merge"
+elif [ "$PHASE" = "analyze" ] && [ "$DATASET" != "ALL" ]; then
+    JOB_KEY="${PHASE}_${DATASET}"
 else
     JOB_KEY="${PHASE}"
 fi
@@ -146,10 +154,14 @@ case "$PHASE" in
         fi
         ;;
     analyze)
+        if [ "${ANALYZE_MERGE_TRANSFERABILITY:-0}" = "1" ]; then
+            CMD+=(--merge-transferability)
+        fi
         if [ "$MODEL" != "ALL" ]; then CMD+=(--model "$MODEL"); fi
         if [ "$DATASET" != "ALL" ]; then CMD+=(--dataset "$DATASET"); fi
         if [ "$ATTACK" != "ALL" ]; then CMD+=(--attack "$ATTACK"); fi
         if [ "$KIND" != "ALL" ]; then CMD+=(--kind "$KIND"); fi
+        if [ -n "${TRANSFERABILITY_OUTPUT:-}" ]; then CMD+=(--transferability-output "$TRANSFERABILITY_OUTPUT"); fi
         ;;
     plot)
         # plot phase consumes existing CSV outputs.

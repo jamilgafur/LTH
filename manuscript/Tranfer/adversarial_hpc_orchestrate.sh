@@ -27,7 +27,7 @@ if [ "$#" -lt 1 ]; then
     echo ""
     echo "Phases:"
     echo "  generate      - Parallelize attack generation across models/datasets/attacks"
-    echo "  analyze       - Compute transferability (single job; requires generated attacks)"
+    echo "  analyze       - Compute transferability (parallel per-dataset jobs; requires generated attacks)"
     echo "  plot          - Generate visualizations (single job; requires summary.csv)"
     echo "  gradient_sim  - Exp 4: pairwise input-gradient cosine similarity (single job)"
     echo "  epsilon_sweep - Exp 7: sweep epsilon values for PGD/FGSM/BIM (single job)"
@@ -142,7 +142,7 @@ mkdir -p logs
 
 log "Run outputs will be written as txt files in manuscript/Tranfer/"
 log "  - generate:      <MODEL>_<DATASET>_<ATTACK>_<KIND>_generate_run.txt"
-log "  - analyze:       adversarial_analyze_run.txt"
+log "  - analyze:       adversarial_analyze_<DATASET>_run.txt + adversarial_analyze_merge_run.txt"
 log "  - plot:          adversarial_plot_run.txt"
 log "  - gradient_sim:  adversarial_gradient_sim_run.txt"
 log "  - epsilon_sweep: adversarial_epsilon_sweep_run.txt"
@@ -215,11 +215,44 @@ case "$PHASE" in
         ;;
     
     analyze)
-        log "[PHASE: ANALYZE] Submitting transferability analysis job..."
+        log "[PHASE: ANALYZE] Submitting transferability analysis jobs..."
         log "WARNING: This requires all attacks from --generate to be completed first."
-        cmd="qsub -q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$DATASET_FILTER\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"analyze\",OUTPUT_DIR=\"$OUTPUT_DIR\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
-        submit_and_log "$cmd" "analyze" || fail "Failed to submit analyze phase"
-        log "[SUCCESS] Transferability analysis job submitted"
+
+        hold_prefix=""
+        if [ -n "${UPSTREAM_HOLD_JID:-}" ]; then
+            hold_prefix="-W \"depend=afterok:${UPSTREAM_HOLD_JID}\" "
+        fi
+
+        analyze_datasets=()
+        if [ "$DATASET_FILTER" = "ALL" ]; then
+            analyze_datasets=("Cifar10" "Cifar100" "TinyImageNet")
+        else
+            analyze_datasets=("$DATASET_FILTER")
+        fi
+
+        analyze_job_ids=()
+        for dataset in "${analyze_datasets[@]}"; do
+            transferability_output="transferability_${dataset}.csv"
+            cmd="qsub ${hold_prefix}-q all.q -l ngpus=1 -v MODEL=\"$MODEL_FILTER\",DATASET=\"$dataset\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"analyze\",OUTPUT_DIR=\"$OUTPUT_DIR\",TRANSFERABILITY_OUTPUT=\"$transferability_output\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
+            submit_and_log "$cmd" "analyze/$dataset" || fail "Failed to submit analyze shard for $dataset"
+
+            job_id=$(echo "$LAST_QSUB_OUTPUT" | sed -n 's/.*Your job \([0-9]\+\).*/\1/p' | head -n1)
+            if [ -z "$job_id" ]; then
+                job_id=$(echo "$LAST_QSUB_OUTPUT" | awk '{print $1}' | tr -cd '0-9')
+            fi
+            if [ -n "$job_id" ]; then
+                analyze_job_ids+=("$job_id")
+            fi
+        done
+
+        if [ ${#analyze_job_ids[@]} -eq 0 ]; then
+            fail "Could not parse any analyze job IDs from qsub output"
+        fi
+
+        depend_spec="depend=afterok:$(IFS=:; echo "${analyze_job_ids[*]}")"
+        merge_cmd="qsub -q all.q -l ngpus=1 -W \"$depend_spec\" -v MODEL=\"$MODEL_FILTER\",DATASET=\"ALL\",ATTACK=\"$ATTACK_FILTER\",KIND=\"$KIND_FILTER\",PHASE=\"analyze\",OUTPUT_DIR=\"$OUTPUT_DIR\",ANALYZE_MERGE_TRANSFERABILITY=\"1\",FORCE_RERUN=\"${FORCE_RERUN:-0}\" adversarial_hpc_submit.pbs </dev/null"
+        submit_and_log "$merge_cmd" "analyze-merge" || fail "Failed to submit analyze merge job"
+        log "[SUCCESS] Transferability analysis shards submitted: ${#analyze_job_ids[@]}"
         ;;
     
     plot)
