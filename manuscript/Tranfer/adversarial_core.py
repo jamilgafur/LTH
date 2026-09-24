@@ -127,13 +127,23 @@ class AdversarialCore:
             raise RuntimeError(f"Unexpected checkpoint format for {ckpt_path}: {type(state)}")
 
         sd = state.get("model_state_dict") or state.get("model") or state.get("state_dict") or state
+        
+        # Fix 1: Remove DataParallel prefix
         if any(k.startswith("module.") for k in sd.keys()):
             sd = {k.replace("module.", "", 1): v for k, v in sd.items()}
-
-        load_result = model.load_state_dict(sd, strict=False)
-        if len(load_result.missing_keys) > 0:
-            print(f"Missing keys: {load_result.missing_keys}")
-            print(f"Unexpected keys: {load_result.unexpected_keys}")
+            
+        # Fix 2: Map ConvNeXt's original depthwise convs to the collapsed grouped 1x1 convs
+        mapped_sd = {}
+        for k, v in sd.items():
+            new_k = k.replace(".conv_dw.", ".conv_g1x1.")
+            mapped_sd[new_k] = v
+            
+        load_result = model.load_state_dict(mapped_sd, strict=False)
+        
+        # Optional: Print to verify it worked
+        if len(load_result.missing_keys) > 0 or len(load_result.unexpected_keys) > 0:
+            print(f"[DEBUG] load_state_dict result: missing={len(load_result.missing_keys)}, unexpected={len(load_result.unexpected_keys)}")
+            
         return load_result
         
     @staticmethod
