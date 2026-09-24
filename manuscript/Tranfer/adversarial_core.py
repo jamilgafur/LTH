@@ -129,8 +129,13 @@ class AdversarialCore:
         sd = state.get("model_state_dict") or state.get("model") or state.get("state_dict") or state
         if any(k.startswith("module.") for k in sd.keys()):
             sd = {k.replace("module.", "", 1): v for k, v in sd.items()}
-        return model.load_state_dict(sd, strict=False)
 
+        load_result = model.load_state_dict(sd, strict=False)
+        if len(load_result.missing_keys) > 0:
+            print(f"Missing keys: {load_result.missing_keys}")
+            print(f"Unexpected keys: {load_result.unexpected_keys}")
+        return load_result
+        
     @staticmethod
     def _disk_free_mb(path: str) -> float:
         """Return free disk space (MB) for the filesystem containing ``path``."""
