@@ -177,7 +177,7 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Loaded non-collapsed architecture for VGG16 (Cifar10_epochs100_pretrain300) onto cuda
+[DEBUG] Loaded non-collapsed architecture for VGG16 (Cifar10_epochs100_pretrain300) onto cpu
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
@@ -200,26 +200,26 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=160/40 seen=5120 clean_acc=92.70% adv_acc=67.36%
 [ATTACK][BATCH] BIM batch=170/40 seen=5440 clean_acc=92.68% adv_acc=67.37%
 [ATTACK][BATCH] BIM batch=180/40 seen=5760 clean_acc=92.74% adv_acc=67.31%
-[ATTACK][BATCH] BIM batch=190/40 seen=6080 clean_acc=92.66% adv_acc=67.32%
-[ATTACK][BATCH] BIM batch=200/40 seen=6400 clean_acc=92.75% adv_acc=67.44%
-[ATTACK][BATCH] BIM batch=210/40 seen=6720 clean_acc=92.77% adv_acc=67.38%
-[ATTACK][BATCH] BIM batch=220/40 seen=7040 clean_acc=92.68% adv_acc=67.22%
-[ATTACK][BATCH] BIM batch=230/40 seen=7360 clean_acc=92.70% adv_acc=67.24%
-[ATTACK][BATCH] BIM batch=240/40 seen=7680 clean_acc=92.66% adv_acc=67.20%
-[ATTACK][BATCH] BIM batch=250/40 seen=8000 clean_acc=92.66% adv_acc=67.25%
-[ATTACK][BATCH] BIM batch=260/40 seen=8320 clean_acc=92.66% adv_acc=67.22%
-[ATTACK][BATCH] BIM batch=270/40 seen=8640 clean_acc=92.65% adv_acc=67.23%
-[ATTACK][BATCH] BIM batch=280/40 seen=8960 clean_acc=92.69% adv_acc=67.27%
-[ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=92.69% adv_acc=67.36%
-[ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=92.75% adv_acc=67.38%
-[ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=92.81% adv_acc=67.46%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.82% adv_acc=67.47% asr=32.53% runtime=97.69s
+[ATTACK][BATCH] BIM batch=190/40 seen=6080 clean_acc=92.66% adv_acc=67.34%
+[ATTACK][BATCH] BIM batch=200/40 seen=6400 clean_acc=92.75% adv_acc=67.45%
+[ATTACK][BATCH] BIM batch=210/40 seen=6720 clean_acc=92.77% adv_acc=67.40%
+[ATTACK][BATCH] BIM batch=220/40 seen=7040 clean_acc=92.68% adv_acc=67.23%
+[ATTACK][BATCH] BIM batch=230/40 seen=7360 clean_acc=92.70% adv_acc=67.26%
+[ATTACK][BATCH] BIM batch=240/40 seen=7680 clean_acc=92.66% adv_acc=67.21%
+[ATTACK][BATCH] BIM batch=250/40 seen=8000 clean_acc=92.66% adv_acc=67.26%
+[ATTACK][BATCH] BIM batch=260/40 seen=8320 clean_acc=92.66% adv_acc=67.24%
+[ATTACK][BATCH] BIM batch=270/40 seen=8640 clean_acc=92.65% adv_acc=67.25%
+[ATTACK][BATCH] BIM batch=280/40 seen=8960 clean_acc=92.69% adv_acc=67.28%
+[ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=92.69% adv_acc=67.37%
+[ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=92.75% adv_acc=67.39%
+[ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=92.81% adv_acc=67.47%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=92.82% adv_acc=67.48% asr=32.52% runtime=7511.85s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/VGG16_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 2
 [DEBUG] Rebuilding collapsed architecture for VGG16 (Cifar10_epochs100_pretrain300)
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (VGG16)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -247,7 +247,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=14, device=cuda, has_next_linear=True
+[DEBUG] start_idx=14, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features'...
 [DEBUG] Found inserted block candidate at index 14: 'conv_5'
 [STEP] Validating inserted module 'Sequential' at index 14...
@@ -256,7 +256,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.conv_5' → 'features.conv_10'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_5 → features.conv_10) in 0.07s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_5 → features.conv_10) in 4.07s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 10 in-place ReLU(s) with out-of-place variants.
@@ -282,7 +282,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=37, device=cuda, has_next_linear=True
+[DEBUG] start_idx=37, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features'...
 [DEBUG] Found inserted block candidate at index 37: 'conv_12'
 [STEP] Validating inserted module 'Sequential' at index 37...
@@ -291,7 +291,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 2.75s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -302,9 +302,9 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 21,893,450
 [INFO] ΔParams = +11,769,600 (expected ≤ 0)
 [INFO] Collapse counts: success=2, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.20s
+[INFO] Total collapse runtime: 6.87s
 [RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
-[DEBUG] collapse_only returned for VGG16 (Cifar10_epochs100_pretrain300) in 0.20s
+[DEBUG] collapse_only returned for VGG16 (Cifar10_epochs100_pretrain300) in 6.87s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
@@ -317,36 +317,36 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=60/40 seen=1920 clean_acc=91.46% adv_acc=52.81%
 [ATTACK][BATCH] BIM batch=70/40 seen=2240 clean_acc=90.98% adv_acc=52.59%
 [ATTACK][BATCH] BIM batch=80/40 seen=2560 clean_acc=90.66% adv_acc=52.30%
-[ATTACK][BATCH] BIM batch=90/40 seen=2880 clean_acc=90.87% adv_acc=51.98%
-[ATTACK][BATCH] BIM batch=100/40 seen=3200 clean_acc=91.03% adv_acc=51.91%
-[ATTACK][BATCH] BIM batch=110/40 seen=3520 clean_acc=90.97% adv_acc=51.70%
-[ATTACK][BATCH] BIM batch=120/40 seen=3840 clean_acc=90.78% adv_acc=51.72%
-[ATTACK][BATCH] BIM batch=130/40 seen=4160 clean_acc=90.79% adv_acc=52.12%
-[ATTACK][BATCH] BIM batch=140/40 seen=4480 clean_acc=91.05% adv_acc=52.19%
-[ATTACK][BATCH] BIM batch=150/40 seen=4800 clean_acc=91.10% adv_acc=52.10%
-[ATTACK][BATCH] BIM batch=160/40 seen=5120 clean_acc=91.13% adv_acc=51.95%
-[ATTACK][BATCH] BIM batch=170/40 seen=5440 clean_acc=91.14% adv_acc=51.80%
-[ATTACK][BATCH] BIM batch=180/40 seen=5760 clean_acc=91.23% adv_acc=51.77%
-[ATTACK][BATCH] BIM batch=190/40 seen=6080 clean_acc=91.43% adv_acc=51.73%
-[ATTACK][BATCH] BIM batch=200/40 seen=6400 clean_acc=91.53% adv_acc=51.80%
-[ATTACK][BATCH] BIM batch=210/40 seen=6720 clean_acc=91.61% adv_acc=51.80%
-[ATTACK][BATCH] BIM batch=220/40 seen=7040 clean_acc=91.53% adv_acc=51.59%
-[ATTACK][BATCH] BIM batch=230/40 seen=7360 clean_acc=91.67% adv_acc=51.78%
-[ATTACK][BATCH] BIM batch=240/40 seen=7680 clean_acc=91.61% adv_acc=51.82%
-[ATTACK][BATCH] BIM batch=250/40 seen=8000 clean_acc=91.56% adv_acc=51.89%
+[ATTACK][BATCH] BIM batch=90/40 seen=2880 clean_acc=90.87% adv_acc=51.94%
+[ATTACK][BATCH] BIM batch=100/40 seen=3200 clean_acc=91.03% adv_acc=51.88%
+[ATTACK][BATCH] BIM batch=110/40 seen=3520 clean_acc=90.97% adv_acc=51.68%
+[ATTACK][BATCH] BIM batch=120/40 seen=3840 clean_acc=90.78% adv_acc=51.69%
+[ATTACK][BATCH] BIM batch=130/40 seen=4160 clean_acc=90.79% adv_acc=52.09%
+[ATTACK][BATCH] BIM batch=140/40 seen=4480 clean_acc=91.05% adv_acc=52.17%
+[ATTACK][BATCH] BIM batch=150/40 seen=4800 clean_acc=91.10% adv_acc=52.08%
+[ATTACK][BATCH] BIM batch=160/40 seen=5120 clean_acc=91.13% adv_acc=51.93%
+[ATTACK][BATCH] BIM batch=170/40 seen=5440 clean_acc=91.14% adv_acc=51.78%
+[ATTACK][BATCH] BIM batch=180/40 seen=5760 clean_acc=91.23% adv_acc=51.75%
+[ATTACK][BATCH] BIM batch=190/40 seen=6080 clean_acc=91.43% adv_acc=51.71%
+[ATTACK][BATCH] BIM batch=200/40 seen=6400 clean_acc=91.53% adv_acc=51.78%
+[ATTACK][BATCH] BIM batch=210/40 seen=6720 clean_acc=91.61% adv_acc=51.79%
+[ATTACK][BATCH] BIM batch=220/40 seen=7040 clean_acc=91.53% adv_acc=51.58%
+[ATTACK][BATCH] BIM batch=230/40 seen=7360 clean_acc=91.67% adv_acc=51.77%
+[ATTACK][BATCH] BIM batch=240/40 seen=7680 clean_acc=91.61% adv_acc=51.81%
+[ATTACK][BATCH] BIM batch=250/40 seen=8000 clean_acc=91.56% adv_acc=51.88%
 [ATTACK][BATCH] BIM batch=260/40 seen=8320 clean_acc=91.60% adv_acc=51.95%
 [ATTACK][BATCH] BIM batch=270/40 seen=8640 clean_acc=91.56% adv_acc=52.00%
 [ATTACK][BATCH] BIM batch=280/40 seen=8960 clean_acc=91.58% adv_acc=51.95%
 [ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=91.65% adv_acc=51.95%
 [ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=91.66% adv_acc=52.08%
 [ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=91.68% adv_acc=52.10%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=91.67% adv_acc=52.11% asr=47.89% runtime=54.15s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=91.67% adv_acc=52.11% asr=47.89% runtime=4316.14s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/VGG16_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 2
 [DEBUG] Rebuilding collapsed architecture for VGG16 (Cifar10_epochs100_pretrain300)
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (VGG16)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -374,7 +374,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=14, device=cuda, has_next_linear=True
+[DEBUG] start_idx=14, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features'...
 [DEBUG] Found inserted block candidate at index 14: 'conv_5'
 [STEP] Validating inserted module 'Sequential' at index 14...
@@ -383,7 +383,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.conv_5' → 'features.conv_10'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_5 → features.conv_10) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_5 → features.conv_10) in 4.06s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 10 in-place ReLU(s) with out-of-place variants.
@@ -409,7 +409,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=37, device=cuda, has_next_linear=True
+[DEBUG] start_idx=37, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features'...
 [DEBUG] Found inserted block candidate at index 37: 'conv_12'
 [STEP] Validating inserted module 'Sequential' at index 37...
@@ -418,7 +418,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 2.72s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -429,22 +429,22 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 21,893,450
 [INFO] ΔParams = +11,769,600 (expected ≤ 0)
 [INFO] Collapse counts: success=2, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.16s
+[INFO] Total collapse runtime: 6.83s
 [RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
-[DEBUG] collapse_only returned for VGG16 (Cifar10_epochs100_pretrain300) in 0.16s
+[DEBUG] collapse_only returned for VGG16 (Cifar10_epochs100_pretrain300) in 6.83s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=32 clean_acc=93.75% adv_acc=68.75%
-[ATTACK][BATCH] BIM batch=10/40 seen=320 clean_acc=91.56% adv_acc=59.69%
-[ATTACK][BATCH] BIM batch=20/40 seen=640 clean_acc=92.19% adv_acc=60.78%
-[ATTACK][BATCH] BIM batch=30/40 seen=960 clean_acc=90.73% adv_acc=59.90%
-[ATTACK][BATCH] BIM batch=40/40 seen=1280 clean_acc=90.62% adv_acc=59.84%
-[ATTACK][BATCH] BIM batch=50/40 seen=1600 clean_acc=91.38% adv_acc=60.81%
-[ATTACK][BATCH] BIM batch=60/40 seen=1920 clean_acc=91.04% adv_acc=60.62%
-[ATTACK][BATCH] BIM batch=70/40 seen=2240 clean_acc=90.71% adv_acc=60.36%
-[ATTACK][BATCH] BIM batch=80/40 seen=2560 clean_acc=90.62% adv_acc=59.73%
-[ATTACK][BATCH] BIM batch=90/40 seen=2880 clean_acc=90.94% adv_acc=59.55%
+[ATTACK][BATCH] BIM batch=10/40 seen=320 clean_acc=91.56% adv_acc=60.00%
+[ATTACK][BATCH] BIM batch=20/40 seen=640 clean_acc=92.19% adv_acc=60.94%
+[ATTACK][BATCH] BIM batch=30/40 seen=960 clean_acc=90.73% adv_acc=60.00%
+[ATTACK][BATCH] BIM batch=40/40 seen=1280 clean_acc=90.62% adv_acc=59.92%
+[ATTACK][BATCH] BIM batch=50/40 seen=1600 clean_acc=91.38% adv_acc=60.88%
+[ATTACK][BATCH] BIM batch=60/40 seen=1920 clean_acc=91.04% adv_acc=60.68%
+[ATTACK][BATCH] BIM batch=70/40 seen=2240 clean_acc=90.71% adv_acc=60.40%
+[ATTACK][BATCH] BIM batch=80/40 seen=2560 clean_acc=90.62% adv_acc=59.77%
+[ATTACK][BATCH] BIM batch=90/40 seen=2880 clean_acc=90.94% adv_acc=59.58%
 [ATTACK][BATCH] BIM batch=100/40 seen=3200 clean_acc=91.16% adv_acc=59.69%
 [ATTACK][BATCH] BIM batch=110/40 seen=3520 clean_acc=90.99% adv_acc=59.46%
 [ATTACK][BATCH] BIM batch=120/40 seen=3840 clean_acc=91.04% adv_acc=59.40%
@@ -455,17 +455,17 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=170/40 seen=5440 clean_acc=91.25% adv_acc=59.41%
 [ATTACK][BATCH] BIM batch=180/40 seen=5760 clean_acc=91.30% adv_acc=59.44%
 [ATTACK][BATCH] BIM batch=190/40 seen=6080 clean_acc=91.41% adv_acc=59.23%
-[ATTACK][BATCH] BIM batch=200/40 seen=6400 clean_acc=91.42% adv_acc=59.19%
-[ATTACK][BATCH] BIM batch=210/40 seen=6720 clean_acc=91.50% adv_acc=59.12%
-[ATTACK][BATCH] BIM batch=220/40 seen=7040 clean_acc=91.42% adv_acc=58.92%
-[ATTACK][BATCH] BIM batch=230/40 seen=7360 clean_acc=91.54% adv_acc=58.89%
-[ATTACK][BATCH] BIM batch=240/40 seen=7680 clean_acc=91.43% adv_acc=58.91%
-[ATTACK][BATCH] BIM batch=250/40 seen=8000 clean_acc=91.33% adv_acc=58.95%
-[ATTACK][BATCH] BIM batch=260/40 seen=8320 clean_acc=91.42% adv_acc=59.05%
-[ATTACK][BATCH] BIM batch=270/40 seen=8640 clean_acc=91.41% adv_acc=58.98%
-[ATTACK][BATCH] BIM batch=280/40 seen=8960 clean_acc=91.44% adv_acc=59.04%
-[ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=91.44% adv_acc=59.14%
-[ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=91.44% adv_acc=59.27%
-[ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=91.43% adv_acc=59.18%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=91.45% adv_acc=59.16% asr=40.84% runtime=57.16s
+[ATTACK][BATCH] BIM batch=200/40 seen=6400 clean_acc=91.42% adv_acc=59.17%
+[ATTACK][BATCH] BIM batch=210/40 seen=6720 clean_acc=91.50% adv_acc=59.11%
+[ATTACK][BATCH] BIM batch=220/40 seen=7040 clean_acc=91.42% adv_acc=58.91%
+[ATTACK][BATCH] BIM batch=230/40 seen=7360 clean_acc=91.54% adv_acc=58.87%
+[ATTACK][BATCH] BIM batch=240/40 seen=7680 clean_acc=91.43% adv_acc=58.89%
+[ATTACK][BATCH] BIM batch=250/40 seen=8000 clean_acc=91.33% adv_acc=58.94%
+[ATTACK][BATCH] BIM batch=260/40 seen=8320 clean_acc=91.42% adv_acc=59.04%
+[ATTACK][BATCH] BIM batch=270/40 seen=8640 clean_acc=91.41% adv_acc=58.97%
+[ATTACK][BATCH] BIM batch=280/40 seen=8960 clean_acc=91.44% adv_acc=59.03%
+[ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=91.44% adv_acc=59.13%
+[ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=91.44% adv_acc=59.26%
+[ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=91.43% adv_acc=59.17%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=91.45% adv_acc=59.15% asr=40.85% runtime=4283.98s
 [INFO] Generated 3 summary rows in adversarial_results_ep100_pre300/summary_VGG16_Cifar10_BIM.csv
