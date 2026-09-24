@@ -29,9 +29,12 @@ from adversarial_reporting import ReportingSuite
 from adversarial_reporting import _write_locked_csv
 
 try:
-    from .collapse import _capture_preblock_activation
+    from pyPrune.collapse import _capture_preblock_activation
 except ImportError:
-    from collapse import _capture_preblock_activation
+    try:
+        from .collapse import _capture_preblock_activation
+    except ImportError:
+        from collapse import _capture_preblock_activation
 
 
 class CKASuite:

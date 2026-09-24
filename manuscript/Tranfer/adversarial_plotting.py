@@ -326,7 +326,7 @@ class AdversarialPlotter:
                 counts = pd.DataFrame(columns=['variant', 'count'])
                 model_counts = pd.DataFrame(columns=['variant', 'model'])
 
-                fig, axes = plt.subplots(2, 2, figsize=(16, 10))
+                fig, axes = plt.subplots(1, 2, figsize=(16, 5))
                 fig.suptitle(
                     f'Figure 3: Summary for {model} - {dataset_name}\n(Control vs Pruned vs Pruned+Quant)',
                     fontsize=15,
@@ -335,7 +335,7 @@ class AdversarialPlotter:
 
                 # Plot 1: Clean Accuracy
                 if 'clean_accuracy' in model_dataset_df.columns:
-                    ax = axes[0, 0]
+                    ax = axes[0]
                     clean_stats = model_dataset_df.groupby('variant')['clean_accuracy'].agg(['mean', 'std']).reset_index()
                     variants = clean_stats['variant'].values
                     means = clean_stats['mean'].values
@@ -353,7 +353,7 @@ class AdversarialPlotter:
 
                 # Plot 2: Attack Success Rate
                 if 'attack_success_rate' in model_dataset_df.columns:
-                    ax = axes[0, 1]
+                    ax = axes[1]
                     attack_stats = model_dataset_df.groupby('variant')['attack_success_rate'].agg(['mean', 'std']).reset_index()
                     variants = attack_stats['variant'].values
                     means = attack_stats['mean'].values
@@ -368,38 +368,6 @@ class AdversarialPlotter:
                     ax.set_ylim([0, 105])
                     ax.grid(True, alpha=0.3, axis='y', linestyle='--')
                     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
-
-                # Plot 3: Sample Count
-                ax = axes[1, 0]
-                counts = model_dataset_df.groupby('variant').size().reset_index(name='count')
-                variants = counts['variant'].values
-                counts_vals = counts['count'].values
-                bars = ax.bar(variants, counts_vals, alpha=0.75,
-                             color=[colors.get(v, '#95a5a6') for v in variants],
-                             edgecolor='black', linewidth=2)
-                for bar, count in zip(bars, counts_vals):
-                    ax.text(bar.get_x() + bar.get_width()/2., bar.get_height(),
-                           f'{count:,}', ha='center', va='bottom', fontweight='bold')
-                ax.set_ylabel('Sample Count', fontweight='bold', fontsize=11)
-                ax.set_title('Data Coverage', fontweight='bold')
-                ax.grid(True, alpha=0.3, axis='y', linestyle='--')
-                plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
-
-                # Plot 4: Models Tested (will always be 1 for a single model, but kept for consistency)
-                ax = axes[1, 1]
-                model_counts = model_dataset_df.groupby('variant')['model'].nunique().reset_index()
-                variants = model_counts['variant'].values
-                model_vals = model_counts['model'].values
-                bars = ax.bar(variants, model_vals, alpha=0.75,
-                             color=[colors.get(v, '#95a5a6') for v in variants],
-                             edgecolor='black', linewidth=2)
-                for bar, cnt in zip(bars, model_vals):
-                    ax.text(bar.get_x() + bar.get_width()/2., bar.get_height(),
-                           f'{cnt}', ha='center', va='bottom', fontweight='bold')
-                ax.set_ylabel('Number of Models', fontweight='bold', fontsize=11)
-                ax.set_title('Model Coverage', fontweight='bold')
-                ax.grid(True, alpha=0.3, axis='y', linestyle='--')
-                plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
 
                 plt.tight_layout()
                 safe_dataset = str(dataset_name).replace(' ', '_')
@@ -485,8 +453,8 @@ class AdversarialPlotter:
                            edgecolors='black', linewidth=1.5)
             ax.axhline(0, color='black', linewidth=1.0, alpha=0.8)
             ax.axvline(0, color='black', linewidth=1.0, alpha=0.8)
-            ax.set_xlabel('Δ Clean Acc (pp)', fontsize=10)
-            ax.set_ylabel('Δ ASR (pp)', fontsize=10)
+            ax.set_xlabel('Δ Clean Acc (%)', fontsize=10)
+            ax.set_ylabel('Δ ASR (%)', fontsize=10)
             ax.set_title(model, fontsize=11)
             ax.grid(True, alpha=0.3, linestyle='--')
             ax.set_axisbelow(True)

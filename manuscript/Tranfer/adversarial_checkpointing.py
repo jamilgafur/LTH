@@ -11,7 +11,10 @@ import time
 import torch
 import torch.nn as nn
 
-from collapse import _wrap_pools_safe, collapse_only
+try:
+    from pyPrune.collapse import _wrap_pools_safe, collapse_only
+except ImportError:
+    from collapse import _wrap_pools_safe, collapse_only
 from pyPrune.models.ConvNetX import ConvNeXt
 from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.models.MobileNet import MobileNet
