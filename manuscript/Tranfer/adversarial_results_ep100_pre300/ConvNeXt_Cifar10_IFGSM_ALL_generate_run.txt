@@ -178,7 +178,7 @@
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 [INFO] Requested attack 'IFGSM' not available. Using 'BIM'.
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Loaded non-collapsed architecture for ConvNeXt (Cifar10_epochs100_pretrain300) onto cuda
+[DEBUG] Loaded non-collapsed architecture for ConvNeXt (Cifar10_epochs100_pretrain300) onto cpu
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
@@ -214,13 +214,13 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=75.72% adv_acc=57.28%
 [ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=75.79% adv_acc=57.43%
 [ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=75.72% adv_acc=57.39%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=75.68% adv_acc=57.34% asr=42.66% runtime=198.07s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=75.68% adv_acc=57.34% asr=42.66% runtime=3663.56s
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 7
 [DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar10_epochs100_pretrain300)
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (ConvNeXt)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -249,7 +249,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[DEBUG] start_idx=1, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.2'...
 [DEBUG] Found inserted block candidate at index 1: '1'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -258,7 +258,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.1.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 1.18s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -284,7 +284,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[DEBUG] start_idx=2, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.2'...
 [DEBUG] Found inserted block candidate at index 2: '2'
 [STEP] Validating inserted module 'Sequential' at index 2...
@@ -293,7 +293,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.2.dwconv' → 'features.2.2.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.2.2.dwconv → features.2.2.pwconv1) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.2.2.dwconv → features.2.2.pwconv1) in 1.10s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -318,7 +318,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features'...
 [DEBUG] Found inserted block candidate at index 3: '3'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -327,7 +327,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.3.1' → 'features.4.0.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (features.3.1 → features.4.0.pwconv1) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (features.3.1 → features.4.0.pwconv1) in 1.71s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -389,7 +389,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[DEBUG] start_idx=0, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.6'...
 [DEBUG] Found inserted block candidate at index 0: '0'
 [STEP] Validating inserted module 'Sequential' at index 0...
@@ -398,7 +398,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (features.6.0.dwconv → features.6.0.pwconv2) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (features.6.0.dwconv → features.6.0.pwconv2) in 1.37s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -423,7 +423,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[DEBUG] start_idx=1, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.6'...
 [DEBUG] Found inserted block candidate at index 1: '1'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -432,7 +432,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_6' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_6' (features.6.1.pwconv1 → features.6.2.pwconv2) in 1.14s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -443,53 +443,19 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 2,482,666
 [INFO] ΔParams = +25,345,152 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=2
-[INFO] Total collapse runtime: 0.23s
+[INFO] Total collapse runtime: 6.55s
 [RESULT] ✅ collapse_only complete. Total targets: 7 | success=5 | failed=0 | skipped=2
-[DEBUG] collapse_only returned for ConvNeXt (Cifar10_epochs100_pretrain300) in 0.23s
-Missing keys: ['features.2.1.conv_g1x1.weight', 'features.2.2.conv_g1x1.weight', 'features.6.0.conv_g1x1.weight']
-Unexpected keys: ['features.2.1.conv_dw.weight', 'features.2.2.conv_dw.weight', 'features.6.0.conv_dw.weight']
-[DEBUG] load_state_dict result: missing=3, unexpected=3
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=32 clean_acc=3.12% adv_acc=0.00%
-[ATTACK][BATCH] BIM batch=10/40 seen=320 clean_acc=6.25% adv_acc=1.25%
-[ATTACK][BATCH] BIM batch=20/40 seen=640 clean_acc=8.12% adv_acc=2.03%
-[ATTACK][BATCH] BIM batch=30/40 seen=960 clean_acc=7.92% adv_acc=2.08%
-[ATTACK][BATCH] BIM batch=40/40 seen=1280 clean_acc=7.50% adv_acc=2.11%
-[ATTACK][BATCH] BIM batch=50/40 seen=1600 clean_acc=7.19% adv_acc=2.25%
-[ATTACK][BATCH] BIM batch=60/40 seen=1920 clean_acc=7.60% adv_acc=2.40%
-[ATTACK][BATCH] BIM batch=70/40 seen=2240 clean_acc=7.59% adv_acc=2.37%
-[ATTACK][BATCH] BIM batch=80/40 seen=2560 clean_acc=7.66% adv_acc=2.42%
-[ATTACK][BATCH] BIM batch=90/40 seen=2880 clean_acc=7.74% adv_acc=2.47%
-[ATTACK][BATCH] BIM batch=100/40 seen=3200 clean_acc=7.91% adv_acc=2.62%
-[ATTACK][BATCH] BIM batch=110/40 seen=3520 clean_acc=7.87% adv_acc=2.67%
-[ATTACK][BATCH] BIM batch=120/40 seen=3840 clean_acc=7.81% adv_acc=2.71%
-[ATTACK][BATCH] BIM batch=130/40 seen=4160 clean_acc=7.81% adv_acc=2.81%
-[ATTACK][BATCH] BIM batch=140/40 seen=4480 clean_acc=7.88% adv_acc=2.81%
-[ATTACK][BATCH] BIM batch=150/40 seen=4800 clean_acc=7.96% adv_acc=2.85%
-[ATTACK][BATCH] BIM batch=160/40 seen=5120 clean_acc=7.95% adv_acc=2.87%
-[ATTACK][BATCH] BIM batch=170/40 seen=5440 clean_acc=8.05% adv_acc=2.89%
-[ATTACK][BATCH] BIM batch=180/40 seen=5760 clean_acc=7.95% adv_acc=2.83%
-[ATTACK][BATCH] BIM batch=190/40 seen=6080 clean_acc=8.01% adv_acc=2.81%
-[ATTACK][BATCH] BIM batch=200/40 seen=6400 clean_acc=8.08% adv_acc=2.86%
-[ATTACK][BATCH] BIM batch=210/40 seen=6720 clean_acc=8.10% adv_acc=2.81%
-[ATTACK][BATCH] BIM batch=220/40 seen=7040 clean_acc=8.07% adv_acc=2.78%
-[ATTACK][BATCH] BIM batch=230/40 seen=7360 clean_acc=8.18% adv_acc=2.87%
-[ATTACK][BATCH] BIM batch=240/40 seen=7680 clean_acc=8.28% adv_acc=2.90%
-[ATTACK][BATCH] BIM batch=250/40 seen=8000 clean_acc=8.25% adv_acc=2.88%
-[ATTACK][BATCH] BIM batch=260/40 seen=8320 clean_acc=8.11% adv_acc=2.80%
-[ATTACK][BATCH] BIM batch=270/40 seen=8640 clean_acc=8.12% adv_acc=2.79%
-[ATTACK][BATCH] BIM batch=280/40 seen=8960 clean_acc=8.14% adv_acc=2.81%
-[ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=8.14% adv_acc=2.86%
-[ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=8.16% adv_acc=2.86%
-[ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=8.19% adv_acc=2.89%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=8.15% adv_acc=2.87% asr=97.13% runtime=151.75s
+[DEBUG] collapse_only returned for ConvNeXt (Cifar10_epochs100_pretrain300) in 6.55s
+[WARN] Failed to load checkpoint for ConvNeXt (Dynamic_Region_All_Combined) on Cifar10_epochs100_pretrain300: Error(s) in loading state_dict for ConvNeXt:
+	size mismatch for features.2.1.conv_g1x1.weight: copying a param with shape torch.Size([192, 1, 7, 7]) from checkpoint, the shape in current model is torch.Size([192, 1, 1, 1]).
+	size mismatch for features.2.2.conv_g1x1.weight: copying a param with shape torch.Size([192, 1, 7, 7]) from checkpoint, the shape in current model is torch.Size([192, 1, 1, 1]).
+	size mismatch for features.6.0.conv_g1x1.weight: copying a param with shape torch.Size([768, 1, 7, 7]) from checkpoint, the shape in current model is torch.Size([768, 1, 1, 1]).
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 7
 [DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar10_epochs100_pretrain300)
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (ConvNeXt)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -518,7 +484,7 @@ Unexpected keys: ['features.2.1.conv_dw.weight', 'features.2.2.conv_dw.weight', 
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[DEBUG] start_idx=1, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.2'...
 [DEBUG] Found inserted block candidate at index 1: '1'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -527,7 +493,7 @@ Unexpected keys: ['features.2.1.conv_dw.weight', 'features.2.2.conv_dw.weight', 
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.1.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.2.1.dwconv → features.2.1.pwconv1) in 1.18s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -553,7 +519,7 @@ Unexpected keys: ['features.2.1.conv_dw.weight', 'features.2.2.conv_dw.weight', 
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[DEBUG] start_idx=2, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.2'...
 [DEBUG] Found inserted block candidate at index 2: '2'
 [STEP] Validating inserted module 'Sequential' at index 2...
@@ -562,7 +528,7 @@ Unexpected keys: ['features.2.1.conv_dw.weight', 'features.2.2.conv_dw.weight', 
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.2.dwconv' → 'features.2.2.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (features.2.2.dwconv → features.2.2.pwconv1) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.2.2.dwconv → features.2.2.pwconv1) in 1.11s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -587,7 +553,7 @@ Unexpected keys: ['features.2.1.conv_dw.weight', 'features.2.2.conv_dw.weight', 
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features'...
 [DEBUG] Found inserted block candidate at index 3: '3'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -596,7 +562,7 @@ Unexpected keys: ['features.2.1.conv_dw.weight', 'features.2.2.conv_dw.weight', 
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.3.1' → 'features.4.0.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (features.3.1 → features.4.0.pwconv1) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (features.3.1 → features.4.0.pwconv1) in 1.71s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -658,7 +624,7 @@ Unexpected keys: ['features.2.1.conv_dw.weight', 'features.2.2.conv_dw.weight', 
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[DEBUG] start_idx=0, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.6'...
 [DEBUG] Found inserted block candidate at index 0: '0'
 [STEP] Validating inserted module 'Sequential' at index 0...
@@ -667,7 +633,7 @@ Unexpected keys: ['features.2.1.conv_dw.weight', 'features.2.2.conv_dw.weight', 
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (features.6.0.dwconv → features.6.0.pwconv2) in 0.02s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (features.6.0.dwconv → features.6.0.pwconv2) in 1.37s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -692,7 +658,7 @@ Unexpected keys: ['features.2.1.conv_dw.weight', 'features.2.2.conv_dw.weight', 
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[DEBUG] start_idx=1, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.6'...
 [DEBUG] Found inserted block candidate at index 1: '1'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -701,7 +667,7 @@ Unexpected keys: ['features.2.1.conv_dw.weight', 'features.2.2.conv_dw.weight', 
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'collapse_6' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_6' (features.6.1.pwconv1 → features.6.2.pwconv2) in 1.15s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -712,45 +678,11 @@ Unexpected keys: ['features.2.1.conv_dw.weight', 'features.2.2.conv_dw.weight', 
 [INFO] Parameters after : 2,482,666
 [INFO] ΔParams = +25,345,152 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=2
-[INFO] Total collapse runtime: 0.21s
+[INFO] Total collapse runtime: 6.56s
 [RESULT] ✅ collapse_only complete. Total targets: 7 | success=5 | failed=0 | skipped=2
-[DEBUG] collapse_only returned for ConvNeXt (Cifar10_epochs100_pretrain300) in 0.21s
-Missing keys: ['features.2.1.conv_g1x1.weight', 'features.2.2.conv_g1x1.weight', 'features.6.0.conv_g1x1.weight']
-Unexpected keys: ['features.2.1.conv_dw.weight', 'features.2.2.conv_dw.weight', 'features.6.0.conv_dw.weight']
-[DEBUG] load_state_dict result: missing=3, unexpected=3
-[ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
-[ATTACK][SETUP] Ready: BIM
-[ATTACK][BATCH] BIM batch=1/40 seen=32 clean_acc=3.12% adv_acc=3.12%
-[ATTACK][BATCH] BIM batch=10/40 seen=320 clean_acc=7.81% adv_acc=2.50%
-[ATTACK][BATCH] BIM batch=20/40 seen=640 clean_acc=8.75% adv_acc=3.28%
-[ATTACK][BATCH] BIM batch=30/40 seen=960 clean_acc=9.79% adv_acc=4.27%
-[ATTACK][BATCH] BIM batch=40/40 seen=1280 clean_acc=9.30% adv_acc=4.38%
-[ATTACK][BATCH] BIM batch=50/40 seen=1600 clean_acc=9.00% adv_acc=4.50%
-[ATTACK][BATCH] BIM batch=60/40 seen=1920 clean_acc=9.32% adv_acc=4.74%
-[ATTACK][BATCH] BIM batch=70/40 seen=2240 clean_acc=9.11% adv_acc=4.55%
-[ATTACK][BATCH] BIM batch=80/40 seen=2560 clean_acc=9.22% adv_acc=4.77%
-[ATTACK][BATCH] BIM batch=90/40 seen=2880 clean_acc=9.24% adv_acc=4.72%
-[ATTACK][BATCH] BIM batch=100/40 seen=3200 clean_acc=9.16% adv_acc=4.59%
-[ATTACK][BATCH] BIM batch=110/40 seen=3520 clean_acc=9.32% adv_acc=4.69%
-[ATTACK][BATCH] BIM batch=120/40 seen=3840 clean_acc=9.40% adv_acc=4.71%
-[ATTACK][BATCH] BIM batch=130/40 seen=4160 clean_acc=9.33% adv_acc=4.66%
-[ATTACK][BATCH] BIM batch=140/40 seen=4480 clean_acc=9.33% adv_acc=4.73%
-[ATTACK][BATCH] BIM batch=150/40 seen=4800 clean_acc=9.10% adv_acc=4.65%
-[ATTACK][BATCH] BIM batch=160/40 seen=5120 clean_acc=8.93% adv_acc=4.59%
-[ATTACK][BATCH] BIM batch=170/40 seen=5440 clean_acc=8.81% adv_acc=4.50%
-[ATTACK][BATCH] BIM batch=180/40 seen=5760 clean_acc=8.72% adv_acc=4.48%
-[ATTACK][BATCH] BIM batch=190/40 seen=6080 clean_acc=8.70% adv_acc=4.44%
-[ATTACK][BATCH] BIM batch=200/40 seen=6400 clean_acc=8.83% adv_acc=4.62%
-[ATTACK][BATCH] BIM batch=210/40 seen=6720 clean_acc=8.74% adv_acc=4.55%
-[ATTACK][BATCH] BIM batch=220/40 seen=7040 clean_acc=8.64% adv_acc=4.59%
-[ATTACK][BATCH] BIM batch=230/40 seen=7360 clean_acc=8.64% adv_acc=4.58%
-[ATTACK][BATCH] BIM batch=240/40 seen=7680 clean_acc=8.71% adv_acc=4.65%
-[ATTACK][BATCH] BIM batch=250/40 seen=8000 clean_acc=8.71% adv_acc=4.62%
-[ATTACK][BATCH] BIM batch=260/40 seen=8320 clean_acc=8.62% adv_acc=4.58%
-[ATTACK][BATCH] BIM batch=270/40 seen=8640 clean_acc=8.58% adv_acc=4.57%
-[ATTACK][BATCH] BIM batch=280/40 seen=8960 clean_acc=8.59% adv_acc=4.58%
-[ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=8.66% adv_acc=4.60%
-[ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=8.62% adv_acc=4.55%
-[ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=8.65% adv_acc=4.58%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=8.65% adv_acc=4.57% asr=95.43% runtime=158.19s
-[INFO] Generated 3 summary rows in adversarial_results_ep100_pre300/summary_ConvNeXt_Cifar10_IFGSM.csv
+[DEBUG] collapse_only returned for ConvNeXt (Cifar10_epochs100_pretrain300) in 6.56s
+[WARN] Failed to load checkpoint for ConvNeXt (Dynamic_Region_All_Combined_quant) on Cifar10_epochs100_pretrain300: Error(s) in loading state_dict for ConvNeXt:
+	size mismatch for features.2.1.conv_g1x1.weight: copying a param with shape torch.Size([192, 1, 7, 7]) from checkpoint, the shape in current model is torch.Size([192, 1, 1, 1]).
+	size mismatch for features.2.2.conv_g1x1.weight: copying a param with shape torch.Size([192, 1, 7, 7]) from checkpoint, the shape in current model is torch.Size([192, 1, 1, 1]).
+	size mismatch for features.6.0.conv_g1x1.weight: copying a param with shape torch.Size([768, 1, 7, 7]) from checkpoint, the shape in current model is torch.Size([768, 1, 1, 1]).
+[INFO] Generated 1 summary rows in adversarial_results_ep100_pre300/summary_ConvNeXt_Cifar10_IFGSM.csv
