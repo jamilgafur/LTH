@@ -121,29 +121,62 @@ class AdversarialCore:
         return model.module if hasattr(model, "module") else model
 
     @staticmethod
-    def robust_load_state_dict(model: nn.Module, ckpt_path: str):
-        state = torch.load(ckpt_path, map_location="cpu")
-        if not isinstance(state, dict):
-            raise RuntimeError(f"Unexpected checkpoint format for {ckpt_path}: {type(state)}")
+    def robust_load_state_dict(
+        model: nn.Module,
+        ckpt_path: str | None = None,
+        checkpoint: dict | None = None,
+    ):
+        if checkpoint is None:
+            if ckpt_path is None:
+                raise ValueError("Either ckpt_path or checkpoint must be provided")
+            checkpoint = torch.load(ckpt_path, map_location="cpu")
 
-        sd = state.get("model_state_dict") or state.get("model") or state.get("state_dict") or state
-        
-        # Fix 1: Remove DataParallel prefix
+        if not isinstance(checkpoint, dict):
+            source = ckpt_path if ckpt_path is not None else "<in-memory checkpoint>"
+            raise RuntimeError(f"Unexpected checkpoint format for {source}: {type(checkpoint)}")
+
+        sd = checkpoint.get("model_state_dict") or checkpoint.get("model") or checkpoint.get("state_dict") or checkpoint
+
+        # Fix 1: Remove DataParallel prefix.
         if any(k.startswith("module.") for k in sd.keys()):
             sd = {k.replace("module.", "", 1): v for k, v in sd.items()}
-            
-        # Fix 2: Map ConvNeXt's original depthwise convs to the collapsed grouped 1x1 convs
+
+        # Fix 2: Map ConvNeXt's original depthwise convs to the collapsed grouped 1x1 convs.
         mapped_sd = {}
         for k, v in sd.items():
             new_k = k.replace(".conv_dw.", ".conv_g1x1.")
             mapped_sd[new_k] = v
-            
-        load_result = model.load_state_dict(mapped_sd, strict=False)
-        
-        # Optional: Print to verify it worked
+
+        current_state = model.state_dict()
+        filtered_sd = {}
+        skipped_shape = []
+        skipped_unknown = []
+        for key, value in mapped_sd.items():
+            target_value = current_state.get(key)
+            if target_value is None:
+                skipped_unknown.append(key)
+                continue
+            if target_value.shape != value.shape:
+                skipped_shape.append((key, tuple(value.shape), tuple(target_value.shape)))
+                continue
+            filtered_sd[key] = value
+
+        load_result = model.load_state_dict(filtered_sd, strict=False)
+
+        if skipped_shape:
+            preview = ", ".join(
+                f"{name}: ckpt{src_shape}->model{dst_shape}"
+                for name, src_shape, dst_shape in skipped_shape[:4]
+            )
+            more = "..." if len(skipped_shape) > 4 else ""
+            print(f"[WARN] Skipped {len(skipped_shape)} shape-mismatched tensor(s): {preview}{more}")
+
+        if skipped_unknown:
+            print(f"[DEBUG] Skipped {len(skipped_unknown)} checkpoint key(s) not present in the target model")
+
         if len(load_result.missing_keys) > 0 or len(load_result.unexpected_keys) > 0:
             print(f"[DEBUG] load_state_dict result: missing={len(load_result.missing_keys)}, unexpected={len(load_result.unexpected_keys)}")
-            
+
         return load_result
         
     @staticmethod
