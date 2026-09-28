@@ -125,6 +125,7 @@ def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[flo
     return decay_list
 
 def load_cifar100(batch_size: int = 512, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+    effective_num_workers = 0
     train_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.RandomHorizontalFlip(),
@@ -139,18 +140,19 @@ def load_cifar100(batch_size: int = 512, num_workers: int = 4) -> tuple[DataLoad
 
     train_loader = DataLoader(
         datasets.CIFAR100('data', train=True, download=True, transform=train_transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers
+        batch_size=batch_size, shuffle=True, num_workers=effective_num_workers
     )
 
     test_loader = DataLoader(
         datasets.CIFAR100('data', train=False, transform=test_transform),
-        batch_size=batch_size, shuffle=False, num_workers=num_workers
+        batch_size=batch_size, shuffle=False, num_workers=effective_num_workers
     )
 
     print("CIFAR-100 data shape: ", next(iter(train_loader))[0].shape)
     return train_loader, test_loader
 
 def load_cifar10(batch_size: int = 512, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
+    effective_num_workers = 0
     train_transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.RandomHorizontalFlip(),
@@ -164,12 +166,12 @@ def load_cifar10(batch_size: int = 512, num_workers: int = 4) -> tuple[DataLoade
     ])
     train_loader = DataLoader(
         datasets.CIFAR10('data', train=True, download=True, transform=train_transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers
+        batch_size=batch_size, shuffle=True, num_workers=effective_num_workers
     )
 
     test_loader = DataLoader(
         datasets.CIFAR10('data', train=False, transform=test_transform),
-        batch_size=batch_size, shuffle=False, num_workers=num_workers
+        batch_size=batch_size, shuffle=False, num_workers=effective_num_workers
     )
     
     print("CIFAR-10 data shape: ", next(iter(train_loader))[0].shape)
