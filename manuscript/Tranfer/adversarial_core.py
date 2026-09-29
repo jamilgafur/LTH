@@ -574,7 +574,15 @@ class AdversarialCore:
                 # Skip unsupported datasets.
                 continue
 
+            print(
+                f"[DEBUG] Checkpoint context: model={model_name} dataset={dataset_name} kind={kind} "
+                f"ckpt={ckpt_path}"
+            )
             one_batch = next(iter(train_loader))[0]
+            print(
+                f"[DEBUG] Loader batch shape: train_batch={tuple(one_batch.shape)} | "
+                f"num_classes={num_classes}"
+            )
             try:
                 model = CheckpointManager.build_model_for_checkpoint(
                     model_name, dataset_name, kind, num_classes, one_batch, ckpt_path, device

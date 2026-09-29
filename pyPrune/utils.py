@@ -10,6 +10,7 @@ import os
 import torchvision.transforms as transforms
 from torchvision.datasets import Imagenette
 from torch.utils.data import DataLoader
+from PIL import Image
 
 import os
 from torchvision.datasets import Imagenette
@@ -282,6 +283,15 @@ def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 1) -> tuple[Data
     train_dir = os.path.join(data_dir, "train")
     val_dir = os.path.join(data_dir, "val")
 
+    print(f"[DEBUG] TinyImageNet root: {data_dir}")
+    print(f"[DEBUG] TinyImageNet train dir exists: {os.path.isdir(train_dir)}")
+    print(f"[DEBUG] TinyImageNet val dir exists: {os.path.isdir(val_dir)}")
+
+    if not os.path.isdir(train_dir):
+        raise FileNotFoundError(f"TinyImageNet train directory not found: {train_dir}")
+    if not os.path.isdir(val_dir):
+        raise FileNotFoundError(f"TinyImageNet val directory not found: {val_dir}")
+
     # Define transforms
     transform_train = transforms.Compose([
         transforms.RandomResizedCrop(64),
@@ -298,7 +308,61 @@ def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 1) -> tuple[Data
 
     # Datasets
     train_dataset = datasets.ImageFolder(train_dir, transform=transform_train)
-    val_dataset = datasets.ImageFolder(val_dir, transform=transform_val)
+
+    def _build_val_dataset():
+        class_dirs = [
+            entry for entry in os.listdir(val_dir)
+            if os.path.isdir(os.path.join(val_dir, entry))
+        ]
+        if class_dirs:
+            return datasets.ImageFolder(val_dir, transform=transform_val)
+
+        annotations_path = os.path.join(val_dir, "val_annotations.txt")
+        images_dir = os.path.join(val_dir, "images")
+        if os.path.isfile(annotations_path) and os.path.isdir(images_dir):
+            samples = []
+            with open(annotations_path, "r") as handle:
+                for line in handle:
+                    parts = line.strip().split("\t")
+                    if len(parts) >= 2:
+                        filename, class_name = parts[0], parts[1]
+                        image_path = os.path.join(images_dir, filename)
+                        if class_name in train_dataset.class_to_idx and os.path.isfile(image_path):
+                            samples.append((image_path, train_dataset.class_to_idx[class_name]))
+
+            class TinyImageNetValidationDataset(torch.utils.data.Dataset):
+                def __init__(self, data_samples, transform=None):
+                    self.samples = data_samples
+                    self.transform = transform
+
+                def __len__(self):
+                    return len(self.samples)
+
+                def __getitem__(self, index):
+                    image_path, target = self.samples[index]
+                    image = Image.open(image_path).convert("RGB")
+                    if self.transform is not None:
+                        image = self.transform(image)
+                    return image, target
+
+            return TinyImageNetValidationDataset(samples, transform=transform_val)
+
+        return datasets.ImageFolder(val_dir, transform=transform_val)
+
+    val_dataset = _build_val_dataset()
+
+    print(f"[DEBUG] TinyImageNet train samples: {len(train_dataset)} | classes: {len(train_dataset.classes)}")
+    print(f"[DEBUG] TinyImageNet val samples: {len(val_dataset)}")
+    if len(train_dataset) > 0:
+        try:
+            print(f"[DEBUG] TinyImageNet train sample tensor shape: {tuple(train_dataset[0][0].shape)}")
+        except Exception as exc:
+            print(f"[WARN] Could not inspect TinyImageNet train sample shape: {exc}")
+    if len(val_dataset) > 0:
+        try:
+            print(f"[DEBUG] TinyImageNet val sample tensor shape: {tuple(val_dataset[0][0].shape)}")
+        except Exception as exc:
+            print(f"[WARN] Could not inspect TinyImageNet val sample shape: {exc}")
 
     # Dataloaders
     train_loader = DataLoader(
