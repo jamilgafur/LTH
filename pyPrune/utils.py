@@ -312,7 +312,7 @@ def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 1) -> tuple[Data
     def _build_val_dataset():
         class_dirs = [
             entry for entry in os.listdir(val_dir)
-            if os.path.isdir(os.path.join(val_dir, entry))
+            if os.path.isdir(os.path.join(val_dir, entry)) and entry not in {"images"}
         ]
         if class_dirs:
             return datasets.ImageFolder(val_dir, transform=transform_val)
