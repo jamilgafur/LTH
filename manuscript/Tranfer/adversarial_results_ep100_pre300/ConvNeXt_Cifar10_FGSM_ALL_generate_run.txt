@@ -177,6 +177,8 @@
 
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
+[DEBUG] Checkpoint context: model=ConvNeXt dataset=Cifar10_epochs100_pretrain300 kind=Control_Continuted ckpt=/old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[DEBUG] Loader batch shape: train_batch=(256, 3, 32, 32) | num_classes=10
 [DEBUG] Loaded non-collapsed architecture for ConvNeXt (Cifar10_epochs100_pretrain300) onto cuda
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
@@ -213,7 +215,9 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=290/40 seen=9280 clean_acc=75.72% adv_acc=30.94%
 [ATTACK][BATCH] FGSM batch=300/40 seen=9600 clean_acc=75.79% adv_acc=30.79%
 [ATTACK][BATCH] FGSM batch=310/40 seen=9920 clean_acc=75.72% adv_acc=30.82%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=75.68% adv_acc=30.78% asr=69.22% runtime=13.13s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=75.68% adv_acc=30.78% asr=69.22% runtime=12.15s
+[DEBUG] Checkpoint context: model=ConvNeXt dataset=Cifar10_epochs100_pretrain300 kind=Dynamic_Region_All_Combined ckpt=/old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[DEBUG] Loader batch shape: train_batch=(256, 3, 32, 32) | num_classes=10
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 7
 [DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar10_epochs100_pretrain300)
@@ -326,7 +330,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.3.1' → 'features.4.0.pwconv1'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (features.3.1 → features.4.0.pwconv1) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (features.3.1 → features.4.0.pwconv1) in 0.07s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -442,9 +446,9 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 2,537,962
 [INFO] ΔParams = +25,289,856 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=2
-[INFO] Total collapse runtime: 0.26s
+[INFO] Total collapse runtime: 0.31s
 [RESULT] ✅ collapse_only complete. Total targets: 7 | success=5 | failed=0 | skipped=2
-[DEBUG] collapse_only returned for ConvNeXt (Cifar10_epochs100_pretrain300) in 0.26s
+[DEBUG] collapse_only returned for ConvNeXt (Cifar10_epochs100_pretrain300) in 0.31s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='FGSM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: FGSM
@@ -480,7 +484,9 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=290/40 seen=9280 clean_acc=71.95% adv_acc=27.44%
 [ATTACK][BATCH] FGSM batch=300/40 seen=9600 clean_acc=71.93% adv_acc=27.49%
 [ATTACK][BATCH] FGSM batch=310/40 seen=9920 clean_acc=71.93% adv_acc=27.48%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=71.87% adv_acc=27.49% asr=72.51% runtime=8.11s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=71.87% adv_acc=27.49% asr=72.51% runtime=8.26s
+[DEBUG] Checkpoint context: model=ConvNeXt dataset=Cifar10_epochs100_pretrain300 kind=Dynamic_Region_All_Combined_quant ckpt=/old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_quant.pt
+[DEBUG] Loader batch shape: train_batch=(256, 3, 32, 32) | num_classes=10
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/ConvNeXt_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 7
 [DEBUG] Rebuilding collapsed architecture for ConvNeXt (Cifar10_epochs100_pretrain300)
@@ -747,5 +753,5 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] FGSM batch=290/40 seen=9280 clean_acc=71.68% adv_acc=27.80%
 [ATTACK][BATCH] FGSM batch=300/40 seen=9600 clean_acc=71.60% adv_acc=27.84%
 [ATTACK][BATCH] FGSM batch=310/40 seen=9920 clean_acc=71.54% adv_acc=27.75%
-[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=71.50% adv_acc=27.74% asr=72.26% runtime=8.09s
+[ATTACK][DONE] attack='FGSM' samples=10000 clean_acc=71.50% adv_acc=27.74% asr=72.26% runtime=8.20s
 [INFO] Generated 3 summary rows in adversarial_results_ep100_pre300/summary_ConvNeXt_Cifar10_FGSM.csv

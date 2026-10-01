@@ -178,7 +178,9 @@
 [INFO] Available attacks in torchattacks: ['PGD', 'FGSM', 'BIM', 'APGD', 'CW', 'DeepFool', 'Square', 'AutoAttack']
 [INFO] Requested attack 'IFGSM' not available. Using 'BIM'.
 CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
-[DEBUG] Loaded non-collapsed architecture for InceptionNet (Cifar10_epochs100_pretrain300) onto cuda
+[DEBUG] Checkpoint context: model=InceptionNet dataset=Cifar10_epochs100_pretrain300 kind=Control_Continuted ckpt=/old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[DEBUG] Loader batch shape: train_batch=(256, 3, 32, 32) | num_classes=10
+[DEBUG] Loaded non-collapsed architecture for InceptionNet (Cifar10_epochs100_pretrain300) onto cpu
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
@@ -214,13 +216,15 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=85.85% adv_acc=67.81%
 [ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=85.85% adv_acc=67.96%
 [ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=85.96% adv_acc=68.01%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.96% adv_acc=67.98% asr=32.02% runtime=214.41s
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=85.96% adv_acc=67.98% asr=32.02% runtime=3245.27s
+[DEBUG] Checkpoint context: model=InceptionNet dataset=Cifar10_epochs100_pretrain300 kind=Dynamic_Region_All_Combined ckpt=/old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[DEBUG] Loader batch shape: train_batch=(256, 3, 32, 32) | num_classes=10
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 6
 [DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar10_epochs100_pretrain300)
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (InceptionNet)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -248,7 +252,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[DEBUG] start_idx=0, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 0: 'inception_4a'
 [STEP] Validating inserted module 'Sequential' at index 0...
@@ -257,7 +261,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 0.05s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 1.85s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
@@ -283,7 +287,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[DEBUG] start_idx=1, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 1: 'inception_4b'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -292,7 +296,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4b.branch3.0.conv' → 'stage4.inception_4c.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 1.73s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -317,7 +321,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[DEBUG] start_idx=2, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 2: 'inception_4c'
 [STEP] Validating inserted module 'Sequential' at index 2...
@@ -326,7 +330,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 1.66s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -351,7 +355,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 3: 'inception_4d'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -360,7 +364,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.0.conv' → 'stage4.inception_4e.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv) in 1.64s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -404,7 +408,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage5' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[DEBUG] start_idx=1, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage5'...
 [DEBUG] Found inserted block candidate at index 1: 'inception_5b'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -413,7 +417,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage5' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage5.inception_5b.branch2.1.conv' → 'stage5.inception_5b.branch3.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch2.1.conv → stage5.inception_5b.branch3.1.conv) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch2.1.conv → stage5.inception_5b.branch3.1.conv) in 1.67s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -424,9 +428,9 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 3,809,226
 [INFO] ΔParams = +2,181,856 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.25s
+[INFO] Total collapse runtime: 8.60s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
-[DEBUG] collapse_only returned for InceptionNet (Cifar10_epochs100_pretrain300) in 0.25s
+[DEBUG] collapse_only returned for InceptionNet (Cifar10_epochs100_pretrain300) in 8.60s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
@@ -453,22 +457,24 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=200/40 seen=6400 clean_acc=86.56% adv_acc=68.05%
 [ATTACK][BATCH] BIM batch=210/40 seen=6720 clean_acc=86.55% adv_acc=67.93%
 [ATTACK][BATCH] BIM batch=220/40 seen=7040 clean_acc=86.36% adv_acc=67.60%
-[ATTACK][BATCH] BIM batch=230/40 seen=7360 clean_acc=86.40% adv_acc=67.60%
-[ATTACK][BATCH] BIM batch=240/40 seen=7680 clean_acc=86.35% adv_acc=67.67%
-[ATTACK][BATCH] BIM batch=250/40 seen=8000 clean_acc=86.31% adv_acc=67.70%
-[ATTACK][BATCH] BIM batch=260/40 seen=8320 clean_acc=86.30% adv_acc=67.64%
-[ATTACK][BATCH] BIM batch=270/40 seen=8640 clean_acc=86.25% adv_acc=67.74%
-[ATTACK][BATCH] BIM batch=280/40 seen=8960 clean_acc=86.18% adv_acc=67.81%
-[ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=86.26% adv_acc=67.88%
-[ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=86.33% adv_acc=68.05%
-[ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=86.33% adv_acc=68.02%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=86.33% adv_acc=68.02% asr=31.98% runtime=113.20s
+[ATTACK][BATCH] BIM batch=230/40 seen=7360 clean_acc=86.40% adv_acc=67.58%
+[ATTACK][BATCH] BIM batch=240/40 seen=7680 clean_acc=86.35% adv_acc=67.66%
+[ATTACK][BATCH] BIM batch=250/40 seen=8000 clean_acc=86.31% adv_acc=67.69%
+[ATTACK][BATCH] BIM batch=260/40 seen=8320 clean_acc=86.30% adv_acc=67.63%
+[ATTACK][BATCH] BIM batch=270/40 seen=8640 clean_acc=86.25% adv_acc=67.73%
+[ATTACK][BATCH] BIM batch=280/40 seen=8960 clean_acc=86.18% adv_acc=67.80%
+[ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=86.26% adv_acc=67.87%
+[ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=86.33% adv_acc=68.04%
+[ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=86.33% adv_acc=68.01%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=86.33% adv_acc=68.01% asr=31.99% runtime=2707.14s
+[DEBUG] Checkpoint context: model=InceptionNet dataset=Cifar10_epochs100_pretrain300 kind=Dynamic_Region_All_Combined_quant ckpt=/old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_quant.pt
+[DEBUG] Loader batch shape: train_batch=(256, 3, 32, 32) | num_classes=10
 [DEBUG] Discovered regions path: /old_Users/jgafur/LTH/manuscript/Tranfer/InceptionNet_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
 [DEBUG] Collapse ranges loaded: 6
 [DEBUG] Rebuilding collapsed architecture for InceptionNet (Cifar10_epochs100_pretrain300)
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (InceptionNet)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -496,7 +502,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[DEBUG] start_idx=0, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 0: 'inception_4a'
 [STEP] Validating inserted module 'Sequential' at index 0...
@@ -505,7 +511,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 1.84s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
@@ -531,7 +537,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[DEBUG] start_idx=1, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 1: 'inception_4b'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -540,7 +546,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4b.branch3.0.conv' → 'stage4.inception_4c.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 0.04s
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 1.73s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -565,7 +571,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[DEBUG] start_idx=2, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 2: 'inception_4c'
 [STEP] Validating inserted module 'Sequential' at index 2...
@@ -574,7 +580,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 1.66s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -599,7 +605,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 3: 'inception_4d'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -608,7 +614,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.0.conv' → 'stage4.inception_4e.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv) in 1.64s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -652,7 +658,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage5' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[DEBUG] start_idx=1, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage5'...
 [DEBUG] Found inserted block candidate at index 1: 'inception_5b'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -661,7 +667,7 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage5' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage5.inception_5b.branch2.1.conv' → 'stage5.inception_5b.branch3.1.conv'
-[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch2.1.conv → stage5.inception_5b.branch3.1.conv) in 0.03s
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage5.inception_5b.branch2.1.conv → stage5.inception_5b.branch3.1.conv) in 1.66s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -672,21 +678,21 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [INFO] Parameters after : 3,809,226
 [INFO] ΔParams = +2,181,856 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.23s
+[INFO] Total collapse runtime: 8.76s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
-[DEBUG] collapse_only returned for InceptionNet (Cifar10_epochs100_pretrain300) in 0.23s
+[DEBUG] collapse_only returned for InceptionNet (Cifar10_epochs100_pretrain300) in 8.76s
 [DEBUG] load_state_dict result: missing=0, unexpected=0
 [ATTACK][SETUP] Initializing attack='BIM' eps=0.030000 steps=40
 [ATTACK][SETUP] Ready: BIM
 [ATTACK][BATCH] BIM batch=1/40 seen=32 clean_acc=96.88% adv_acc=71.88%
 [ATTACK][BATCH] BIM batch=10/40 seen=320 clean_acc=85.00% adv_acc=69.69%
-[ATTACK][BATCH] BIM batch=20/40 seen=640 clean_acc=85.78% adv_acc=70.31%
-[ATTACK][BATCH] BIM batch=30/40 seen=960 clean_acc=85.83% adv_acc=70.31%
-[ATTACK][BATCH] BIM batch=40/40 seen=1280 clean_acc=86.88% adv_acc=70.70%
-[ATTACK][BATCH] BIM batch=50/40 seen=1600 clean_acc=87.19% adv_acc=71.31%
-[ATTACK][BATCH] BIM batch=60/40 seen=1920 clean_acc=86.72% adv_acc=70.68%
-[ATTACK][BATCH] BIM batch=70/40 seen=2240 clean_acc=86.21% adv_acc=70.54%
-[ATTACK][BATCH] BIM batch=80/40 seen=2560 clean_acc=85.70% adv_acc=70.12%
+[ATTACK][BATCH] BIM batch=20/40 seen=640 clean_acc=85.78% adv_acc=70.16%
+[ATTACK][BATCH] BIM batch=30/40 seen=960 clean_acc=85.83% adv_acc=70.21%
+[ATTACK][BATCH] BIM batch=40/40 seen=1280 clean_acc=86.88% adv_acc=70.62%
+[ATTACK][BATCH] BIM batch=50/40 seen=1600 clean_acc=87.19% adv_acc=71.25%
+[ATTACK][BATCH] BIM batch=60/40 seen=1920 clean_acc=86.72% adv_acc=70.62%
+[ATTACK][BATCH] BIM batch=70/40 seen=2240 clean_acc=86.21% adv_acc=70.49%
+[ATTACK][BATCH] BIM batch=80/40 seen=2560 clean_acc=85.70% adv_acc=70.08%
 [ATTACK][BATCH] BIM batch=90/40 seen=2880 clean_acc=85.90% adv_acc=69.79%
 [ATTACK][BATCH] BIM batch=100/40 seen=3200 clean_acc=85.97% adv_acc=69.66%
 [ATTACK][BATCH] BIM batch=110/40 seen=3520 clean_acc=85.68% adv_acc=69.52%
@@ -702,13 +708,13 @@ CIFAR-10 data shape:  torch.Size([256, 3, 32, 32])
 [ATTACK][BATCH] BIM batch=210/40 seen=6720 clean_acc=86.34% adv_acc=69.05%
 [ATTACK][BATCH] BIM batch=220/40 seen=7040 clean_acc=86.18% adv_acc=68.76%
 [ATTACK][BATCH] BIM batch=230/40 seen=7360 clean_acc=86.32% adv_acc=68.82%
-[ATTACK][BATCH] BIM batch=240/40 seen=7680 clean_acc=86.33% adv_acc=68.89%
-[ATTACK][BATCH] BIM batch=250/40 seen=8000 clean_acc=86.31% adv_acc=68.89%
-[ATTACK][BATCH] BIM batch=260/40 seen=8320 clean_acc=86.29% adv_acc=68.75%
-[ATTACK][BATCH] BIM batch=270/40 seen=8640 clean_acc=86.12% adv_acc=68.63%
-[ATTACK][BATCH] BIM batch=280/40 seen=8960 clean_acc=86.17% adv_acc=68.69%
-[ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=86.19% adv_acc=68.75%
-[ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=86.12% adv_acc=68.83%
-[ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=86.21% adv_acc=68.84%
-[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=86.20% adv_acc=68.79% asr=31.21% runtime=118.15s
+[ATTACK][BATCH] BIM batch=240/40 seen=7680 clean_acc=86.33% adv_acc=68.91%
+[ATTACK][BATCH] BIM batch=250/40 seen=8000 clean_acc=86.31% adv_acc=68.90%
+[ATTACK][BATCH] BIM batch=260/40 seen=8320 clean_acc=86.29% adv_acc=68.76%
+[ATTACK][BATCH] BIM batch=270/40 seen=8640 clean_acc=86.12% adv_acc=68.65%
+[ATTACK][BATCH] BIM batch=280/40 seen=8960 clean_acc=86.17% adv_acc=68.71%
+[ATTACK][BATCH] BIM batch=290/40 seen=9280 clean_acc=86.19% adv_acc=68.76%
+[ATTACK][BATCH] BIM batch=300/40 seen=9600 clean_acc=86.12% adv_acc=68.84%
+[ATTACK][BATCH] BIM batch=310/40 seen=9920 clean_acc=86.21% adv_acc=68.85%
+[ATTACK][DONE] attack='BIM' samples=10000 clean_acc=86.20% adv_acc=68.80% asr=31.20% runtime=2704.24s
 [INFO] Generated 3 summary rows in adversarial_results_ep100_pre300/summary_InceptionNet_Cifar10_IFGSM.csv
