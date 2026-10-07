@@ -304,7 +304,7 @@ def main():
     # 1. Find model checkpoints only for the requested model/dataset
     print("[INFO] Searching for model checkpoints...")
 
-    base_pattern = f"../Tranfer/{model_name_arg}_{dataset_name_arg}_*epochs{args.post}_*pre{args.pre}"
+    base_pattern = f"../Tranfer/{model_name_arg}_{dataset_name_arg}_*epochs{args.post}_*pre*{args.pre}"
 
     original_model_before = glob.glob(
         f"{base_pattern}/checkpoints/JF_Control_Continuted_epoch*.pt"
