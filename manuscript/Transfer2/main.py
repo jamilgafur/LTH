@@ -16,7 +16,7 @@ from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
 from utils import load_dataset 
-from pyPrune.collapse import collapse_only
+from collapse import collapse_only
 
 # =========================================================
 # Utility Functions
