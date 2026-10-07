@@ -17,6 +17,7 @@ from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
 from utils import load_dataset 
 from collapse import collapse_only
+import argparse
 
 # =========================================================
 # Utility Functions
@@ -245,29 +246,74 @@ def compare_CKA(features_x: torch.Tensor, features_y: torch.Tensor) -> float:
 # =========================================================
 
 def main():
-    total_start_time = time.time()
+    parser = argparse.ArgumentParser(
+        description="CKA comparison post-processing"
+    )
+
+    parser.add_argument(
+        "--model",
+        required=True,
+        help="Model name, e.g. VGG16"
+    )
+    parser.add_argument(
+            "--pre",
+            default=300
+            help="pre collapse epochs"
+        )
     
+    parser.add_argument(
+            "--post",
+            default=100
+            help="post collapse epochs"
+        )
+
+    parser.add_argument(
+        "--dataset",
+        required=True,
+        help="Dataset name, e.g. Cifar10"
+    )
+
+    parser.add_argument(
+        "--output",
+        default="cka_comparison_results.csv",
+        help="Output CSV filename (default: cka_comparison_results.csv)"
+    )
+
+    args = parser.parse_args()
+
+    model_name_arg = args.model
+    dataset_name_arg = args.dataset
+
+    total_start_time = time.time()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     results = []
 
     print("=" * 70)
     print("Starting CKA comparison post-processing")
+    print(f"Model: {model_name_arg}")
+    print(f"Dataset: {dataset_name_arg}")
     print(f"Device: {device}")
+
     if torch.cuda.is_available():
         print(f"CUDA device: {torch.cuda.get_device_name(0)}")
+
     print("=" * 70)
 
-    # 1. Find all model checkpoints
+    # 1. Find model checkpoints only for the requested model/dataset
     print("[INFO] Searching for model checkpoints...")
-    
+
+    base_pattern = f"../Tranfer/{model_name_arg}_{dataset_name_arg}_*epochs{args.post}_*pre{args.pre}"
+
     original_model_before = glob.glob(
-        "../Tranfer/*/checkpoints/JF_Control_Continuted_epoch*.pt"
+        f"{base_pattern}/checkpoints/JF_Control_Continuted_epoch*.pt"
     )
+
     full_collapsed_model = glob.glob(
-        "../Tranfer/*/checkpoints/final_JF_Dynamic_Region_All_Combined_quant.pt"
+        f"{base_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined_quant.pt"
     )
+
     original_model_after = glob.glob(
-        "../Tranfer/*/checkpoints/final_JF_Control_Continuted.pt"
+        f"{base_pattern}/checkpoints/final_JF_Control_Continuted.pt"
     )
 
     print(f"[INFO] Found {len(original_model_before)} 'before' checkpoints.")
@@ -275,9 +321,12 @@ def main():
     print(f"[INFO] Found {len(original_model_after)} 'after' checkpoints.")
 
     # 2. For each "before" checkpoint
-    for checkpoint_idx, model_before_path in enumerate(original_model_before, start=1):
+    for checkpoint_idx, model_before_path in enumerate(
+        original_model_before,
+        start=1
+    ):
         checkpoint_start_time = time.time()
-        
+
         print("\n" + "=" * 70)
         print(
             f"Processing checkpoint {checkpoint_idx}/"
@@ -285,104 +334,110 @@ def main():
         )
         print(f"Path: {model_before_path}")
         print("=" * 70)
-        
+
         try:
-            # 2a. Parse directory string to identify architecture and budgets
+            # Parse directory string to identify architecture and budgets
             print("[INFO] Parsing experiment directory...")
-            
-            model_name, dataset_name, epochs_str, pretrain_str, ckpt_epoch, base_dir = (
-                parse_directory_context(model_before_path)
-            )
-            
+
+            (
+                model_name,
+                dataset_name,
+                epochs_str,
+                pretrain_str,
+                ckpt_epoch,
+                base_dir
+            ) = parse_directory_context(model_before_path)
+
             print(
                 f"[INFO] Experiment context: "
                 f"model={model_name}, dataset={dataset_name}, "
                 f"epochs={epochs_str}, pretrain={pretrain_str}, "
                 f"checkpoint_epoch={ckpt_epoch}"
             )
-            
-            # 2b. Apply unstructured pruning to the intermediate baseline
+
+            # Apply unstructured pruning to the intermediate baseline
             print("[INFO] Initializing baseline model...")
-            
+
             base_model, test_loader, dummy_input = initialize_architecture(
-                model_name, dataset_name
+                model_name,
+                dataset_name
             )
-            
+
             model_before = load_weights(
                 base_model,
                 model_before_path,
                 device
             )
-            
+
             unstructured_pruning_model = apply_unstructured_pruning(
                 model_before,
                 amount=0.2
             )
-            
-            # 2c. Find/load the corresponding original model after finetuning
+
+            # Find/load corresponding original model after finetuning
             print("[INFO] Loading original post-finetuning model...")
-            
+
             model_after_path = find_matching_checkpoint(
                 model_before_path,
                 original_model_after
             )
-            
+
             original_after_base, _, _ = initialize_architecture(
                 model_name,
                 dataset_name
             )
-            
+
             original_after_model = load_weights(
                 original_after_base,
                 model_after_path,
                 device
             )
 
-            # 2d. Find/load the corresponding fully collapsed model
+            # Find/load corresponding fully collapsed model
             print("[INFO] Preparing collapsed model...")
-            
+
             collapsed_model_path = find_matching_checkpoint(
                 model_before_path,
                 full_collapsed_model
             )
-            
+
             print(f"[INFO] Collapsed checkpoint: {collapsed_model_path}")
-            
+
             full_collapsed_base, _, _ = initialize_architecture(
                 model_name,
                 dataset_name
             )
-            
-            # Locate the JSON map generated during the discovery phase
+
+            # Locate JSON map generated during discovery phase
             json_filename = (
-                f"../Tranfer/{model_name}_{dataset_name}_{epochs_str}_"
-                f"{pretrain_str}_JF_discovered_regions.json"
+                f"../Tranfer/{model_name}_{dataset_name}_{args.post}_*"
+                f"{args.pre}_JF_discovered_regions.json"
             )
-            
+
             print(f"[INFO] Loading discovered regions: {json_filename}")
-            
+
             with open(json_filename, "r") as f:
                 discovered_regions = json.load(f)
-                
+
             json_to_collapse = discovered_regions.get(
                 "Dynamic_Region_All_Combined"
             )
-            
+
             if not json_to_collapse:
                 print(
                     f"[WARN] No combined collapse regions found in "
                     f"{json_filename}. Skipping CKA collapse comparison."
                 )
                 continue
-            
+
             print(
                 f"[INFO] Found {len(json_to_collapse)} collapse regions."
             )
 
-            # Execute structural collapse BEFORE loading the finetuned collapsed weights
+            # Execute structural collapse
             print("[INFO] Executing structural collapse...")
             collapse_start_time = time.time()
-            
+
             full_collapsed_structure = collapse_only(
                 model=full_collapsed_base,
                 compression_set={
@@ -394,58 +449,58 @@ def main():
                 debug=False,
                 handle_skips=True
             )
-            
+
             print(
                 f"[INFO] Structural collapse completed in "
                 f"{time.time() - collapse_start_time:.2f}s"
             )
-            
+
             full_collapsed_model_ready = load_weights(
                 full_collapsed_structure,
                 collapsed_model_path,
                 device
             )
 
-            # Evaluate Top-1 Accuracy for each model configuration
+            # Evaluate accuracy
             print("[INFO] Evaluating model accuracies...")
-            
+
             acc_original_after = evaluate_accuracy(
                 original_after_model,
                 test_loader,
                 device
             )
-            
+
             acc_unstructured = evaluate_accuracy(
                 unstructured_pruning_model,
                 test_loader,
                 device
             )
-            
+
             acc_collapsed = evaluate_accuracy(
                 full_collapsed_model_ready,
                 test_loader,
                 device
             )
-            
+
             print(f"[RESULT] Accuracy Original:     {acc_original_after:.4f}")
             print(f"[RESULT] Accuracy Unstructured: {acc_unstructured:.4f}")
             print(f"[RESULT] Accuracy Collapsed:    {acc_collapsed:.4f}")
 
-            # 2e. Compare all models against the original model after training using CKA
+            # Extract features and compute CKA
             print("[INFO] Extracting features and computing CKA...")
-            
+
             features_unstructured = extract_features(
                 unstructured_pruning_model,
                 test_loader,
                 device
             )
-            
+
             features_original = extract_features(
                 original_after_model,
                 test_loader,
                 device
             )
-            
+
             features_collapsed = extract_features(
                 full_collapsed_model_ready,
                 test_loader,
@@ -453,12 +508,14 @@ def main():
             )
 
             print("[INFO] Computing CKA: original vs unstructured...")
+
             cka_unstructured = compare_CKA(
                 features_original,
                 features_unstructured
             )
-            
+
             print("[INFO] Computing CKA: original vs collapsed...")
+
             cka_collapsed = compare_CKA(
                 features_original,
                 features_collapsed
@@ -467,7 +524,7 @@ def main():
             print(f"[RESULT] CKA Unstructured: {cka_unstructured:.6f}")
             print(f"[RESULT] CKA Collapsed:    {cka_collapsed:.6f}")
 
-            # 2f. Store results
+            # Store results
             results.append({
                 "model": model_name,
                 "dataset": dataset_name,
@@ -479,12 +536,12 @@ def main():
                 "cka_unstructured": cka_unstructured,
                 "cka_collapsed": cka_collapsed,
             })
-            
+
             print(
                 f"[INFO] Checkpoint completed in "
                 f"{time.time() - checkpoint_start_time:.2f}s"
             )
-            
+
         except Exception as e:
             print(
                 f"[ERROR] Failed processing checkpoint: "
@@ -496,22 +553,30 @@ def main():
     # 3. Analyze / save results
     print("\n" + "=" * 70)
     print("[INFO] Saving final results...")
-    
+
     df = pd.DataFrame(results)
-    df.to_csv("cka_comparison_results.csv", index=False)
-    
+
+    df.to_csv(args.output, index=False)
+
     print(
         f"[INFO] Results successfully saved to "
-        f"'cka_comparison_results.csv'"
+        f"'{args.output}'"
     )
+
     print(f"[INFO] Total successful experiments: {len(results)}")
-    print(f"[INFO] Total runtime: {time.time() - total_start_time:.2f}s")
-    
+    print(
+        f"[INFO] Total runtime: "
+        f"{time.time() - total_start_time:.2f}s"
+    )
+
     print("\n" + "=" * 70)
     print("FINAL RESULTS")
     print("=" * 70)
     print(df.to_string())
 
+
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()
