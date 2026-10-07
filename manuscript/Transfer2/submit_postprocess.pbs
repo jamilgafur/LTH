@@ -1,4 +1,5 @@
 #!/bin/bash
+
 #PBS -N cka_postprocess
 #PBS -q all.q
 #PBS -l walltime=12:00:00
@@ -20,8 +21,8 @@ module load cuda/11.1.1_gcc-9.3.0
 module load gcc/9.3.0
 
 # --- Move to script directory ---
-cd ~/LTH/manuscript/Tranfer/ || {
-    echo "Failed to change directory to ~/LTH/manuscript/Tranfer/"
+cd ~/LTH/manuscript/Transfer2/ || {
+    echo "Failed to change directory to ~/LTH/manuscript/Transfer2/"
     exit 1
 }
 
@@ -47,9 +48,9 @@ echo "========================================================================"
 # --- Run the Python script ---
 OUTPUT_FILE="cka_run_${MODEL}_${DATASET}.log"
 
-echo "Executing: ~/env/lth_env/bin/python post_process_cka.py --model $MODEL --dataset $DATASET"
+echo "Executing: ~/env/lth_env/bin/python main.py --model $MODEL --dataset $DATASET"
 
-time ~/env/lth_env/bin/python post_process_cka.py \
+time ~/env/lth_env/bin/python main.py \
     --model "$MODEL" \
     --dataset "$DATASET" > "$OUTPUT_FILE" 2>&1
 
