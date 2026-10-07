@@ -25,7 +25,7 @@ from collapse import collapse_only
 def parse_directory_context(filepath: str):
     """
     Extracts the model, dataset, epoch budget, and pretrain budget from the directory name.
-    Example: ../Transfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/...
+    Example: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/...
     """
     base_dir = filepath.split("/checkpoints/")[0].split("/")[-1]
     parts = base_dir.split("_")
@@ -261,13 +261,13 @@ def main():
     print("[INFO] Searching for model checkpoints...")
     
     original_model_before = glob.glob(
-        "../Transfer/*/checkpoints/JF_Control_Continuted_epoch*.pt"
+        "../Tranfer/*/checkpoints/JF_Control_Continuted_epoch*.pt"
     )
     full_collapsed_model = glob.glob(
-        "../Transfer/*/checkpoints/final_JF_Dynamic_Region_All_Combined_quant.pt"
+        "../Tranfer/*/checkpoints/final_JF_Dynamic_Region_All_Combined_quant.pt"
     )
     original_model_after = glob.glob(
-        "../Transfer/*/checkpoints/final_JF_Control_Continuted.pt"
+        "../Tranfer/*/checkpoints/final_JF_Control_Continuted.pt"
     )
 
     print(f"[INFO] Found {len(original_model_before)} 'before' checkpoints.")
