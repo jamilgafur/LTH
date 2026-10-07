@@ -15,7 +15,7 @@ from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
 from utils import load_dataset 
-from .collapse import collapse_only
+from pyPrune.collapse import collapse_only
 
 # =========================================================
 # Utility Functions
@@ -87,6 +87,21 @@ def apply_unstructured_pruning(model: nn.Module, amount: float = 0.2) -> nn.Modu
         
     return model
 
+def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device):
+    """Evaluates the top-1 accuracy of the model over the full dataset."""
+    model.eval()
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for inputs, targets in dataloader:
+            inputs, targets = inputs.to(device), targets.to(device)
+            outputs = model(inputs)
+            _, predicted = outputs.max(1)
+            total += targets.size(0)
+            correct += predicted.eq(targets).sum().item()
+            
+    return correct / total if total > 0 else 0.0
+
 def extract_features(model: nn.Module, dataloader, device: torch.device, max_batches: int = 10):
     """Extracts flattened activations from the penultimate layer for CKA."""
     features = []
@@ -154,8 +169,7 @@ def main():
         full_collapsed_base, _, _ = initialize_architecture(model_name, dataset_name)
         
         # Locate the JSON map generated during the discovery phase
-        # Format: <Model>_<dataset>_epochs<X>_pretrain<Y>_JF_discovered_regions.json
-        json_filename = f"{model_name}_{dataset_name}_{epochs_str}_{pretrain_str}_JF_discovered_regions.json"
+        json_filename = f"../Tranfer/{model_name}_{dataset_name}_{epochs_str}_{pretrain_str}_JF_discovered_regions.json"
         
         with open(json_filename, "r") as f:
             discovered_regions = json.load(f)
@@ -179,6 +193,16 @@ def main():
         
         full_collapsed_model_ready = load_weights(full_collapsed_structure, collapsed_model_path, device)
 
+        # Evaluate Top-1 Accuracy for each model configuration
+        print("Evaluating model accuracies...")
+        acc_original_after = evaluate_accuracy(original_after_model, test_loader, device)
+        acc_unstructured = evaluate_accuracy(unstructured_pruning_model, test_loader, device)
+        acc_collapsed = evaluate_accuracy(full_collapsed_model_ready, test_loader, device)
+        
+        print(f" -> Accuracy Original: {acc_original_after:.4f}")
+        print(f" -> Accuracy Unstructured: {acc_unstructured:.4f}")
+        print(f" -> Accuracy Collapsed: {acc_collapsed:.4f}")
+
         # 2e. Compare all models against the original model after training using CKA
         print("Extracting features and computing CKA...")
         features_unstructured = extract_features(unstructured_pruning_model, test_loader, device)
@@ -194,6 +218,9 @@ def main():
             "dataset": dataset_name,
             "model_before": model_before_path,
             "intermediate_epoch": ckpt_epoch,
+            "acc_original_after": acc_original_after,
+            "acc_unstructured": acc_unstructured,
+            "acc_collapsed": acc_collapsed,
             "cka_unstructured": cka_unstructured,
             "cka_collapsed": cka_collapsed,
         })
