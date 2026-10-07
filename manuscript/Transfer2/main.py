@@ -294,6 +294,7 @@ def main():
     print(f"Model: {model_name_arg}")
     print(f"Dataset: {dataset_name_arg}")
     print(f"Device: {device}")
+    print(f"{args}")
 
     if torch.cuda.is_available():
         print(f"CUDA device: {torch.cuda.get_device_name(0)}")
