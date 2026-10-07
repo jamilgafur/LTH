@@ -257,16 +257,18 @@ def main():
     )
 
     parser.add_argument(
-            "--pre",
-            default=300,
-            help="pre collapse epochs"
-        )
-    
+        "--pre",
+        type=int,
+        default=300,
+        help="pre collapse epochs"
+    )
+
     parser.add_argument(
-            "--post",
-            default=100,
-            help="post collapse epochs"
-        )
+        "--post",
+        type=int,
+        default=100,
+        help="post collapse epochs"
+    )
 
     parser.add_argument(
         "--dataset",
@@ -294,35 +296,56 @@ def main():
     print(f"Model: {model_name_arg}")
     print(f"Dataset: {dataset_name_arg}")
     print(f"Device: {device}")
-    print(f"{args}")
+    print(f"Arguments: {args}")
 
     if torch.cuda.is_available():
         print(f"CUDA device: {torch.cuda.get_device_name(0)}")
 
     print("=" * 70)
 
+    # ------------------------------------------------------------------
     # 1. Find model checkpoints only for the requested model/dataset
+    # ------------------------------------------------------------------
     print("[INFO] Searching for model checkpoints...")
 
-    base_pattern = f"../Tranfer/{model_name_arg}_{dataset_name_arg}_*epochs{args.post}_*pre*{args.pre}"
+    base_pattern = (
+        f"../Tranfer/"
+        f"{model_name_arg}_{dataset_name_arg}_"
+        f"*epochs{args.post}_*pre*{args.pre}"
+    )
 
     original_model_before = glob.glob(
         f"{base_pattern}/checkpoints/JF_Control_Continuted_epoch*.pt"
     )
 
     full_collapsed_model = glob.glob(
-        f"{base_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined_quant.pt"
+        f"{base_pattern}/checkpoints/"
+        f"final_JF_Dynamic_Region_All_Combined_quant.pt"
     )
 
     original_model_after = glob.glob(
-        f"{base_pattern}/checkpoints/final_JF_Control_Continuted.pt"
+        f"{base_pattern}/checkpoints/"
+        f"final_JF_Control_Continuted.pt"
     )
 
-    print(f"[INFO] Found {len(original_model_before)} 'before' checkpoints.")
-    print(f"[INFO] Found {len(full_collapsed_model)} collapsed checkpoints.")
-    print(f"[INFO] Found {len(original_model_after)} 'after' checkpoints.")
+    print(
+        f"[INFO] Found {len(original_model_before)} "
+        f"'before' checkpoints."
+    )
 
-    # 2. For each "before" checkpoint
+    print(
+        f"[INFO] Found {len(full_collapsed_model)} "
+        f"collapsed checkpoints."
+    )
+
+    print(
+        f"[INFO] Found {len(original_model_after)} "
+        f"'after' checkpoints."
+    )
+
+    # ------------------------------------------------------------------
+    # 2. Process each "before" checkpoint
+    # ------------------------------------------------------------------
     for checkpoint_idx, model_before_path in enumerate(
         original_model_before,
         start=1
@@ -338,7 +361,9 @@ def main():
         print("=" * 70)
 
         try:
-            # Parse directory string to identify architecture and budgets
+            # ----------------------------------------------------------
+            # Parse directory context
+            # ----------------------------------------------------------
             print("[INFO] Parsing experiment directory...")
 
             (
@@ -352,12 +377,16 @@ def main():
 
             print(
                 f"[INFO] Experiment context: "
-                f"model={model_name}, dataset={dataset_name}, "
-                f"epochs={epochs_str}, pretrain={pretrain_str}, "
+                f"model={model_name}, "
+                f"dataset={dataset_name}, "
+                f"epochs={epochs_str}, "
+                f"pretrain={pretrain_str}, "
                 f"checkpoint_epoch={ckpt_epoch}"
             )
 
-            # Apply unstructured pruning to the intermediate baseline
+            # ----------------------------------------------------------
+            # Load baseline model
+            # ----------------------------------------------------------
             print("[INFO] Initializing baseline model...")
 
             base_model, test_loader, dummy_input = initialize_architecture(
@@ -371,12 +400,17 @@ def main():
                 device
             )
 
+            # ----------------------------------------------------------
+            # Apply 20% global unstructured pruning
+            # ----------------------------------------------------------
             unstructured_pruning_model = apply_unstructured_pruning(
                 model_before,
                 amount=0.2
             )
 
-            # Find/load corresponding original model after finetuning
+            # ----------------------------------------------------------
+            # Load original post-finetuning model
+            # ----------------------------------------------------------
             print("[INFO] Loading original post-finetuning model...")
 
             model_after_path = find_matching_checkpoint(
@@ -395,7 +429,9 @@ def main():
                 device
             )
 
+            # ----------------------------------------------------------
             # Find/load corresponding fully collapsed model
+            # ----------------------------------------------------------
             print("[INFO] Preparing collapsed model...")
 
             collapsed_model_path = find_matching_checkpoint(
@@ -403,24 +439,53 @@ def main():
                 full_collapsed_model
             )
 
-            print(f"[INFO] Collapsed checkpoint: {collapsed_model_path}")
+            print(
+                f"[INFO] Collapsed checkpoint: "
+                f"{collapsed_model_path}"
+            )
 
             full_collapsed_base, _, _ = initialize_architecture(
                 model_name,
                 dataset_name
             )
 
+            # ----------------------------------------------------------
             # Locate JSON map generated during discovery phase
+            #
+            # IMPORTANT:
+            # Do NOT use '*' here because open() does not expand
+            # shell wildcards.
+            # ----------------------------------------------------------
             json_filename = (
-                f"../Tranfer/{model_name}_{dataset_name}_epochs{args.post}_*"
-                f"*pretrain{args.pre}*_JF_discovered_regions.json"
+                f"../Tranfer/"
+                f"{model_name}_{dataset_name}_"
+                f"epochs{args.post}_"
+                f"pretrain{args.pre}_"
+                f"JF_discovered_regions.json"
             )
 
-            print(f"[INFO] Loading discovered regions: {json_filename}")
+            print(
+                f"[INFO] Loading discovered regions: "
+                f"{json_filename}"
+            )
+
+            # Explicitly check that the file exists
+            if not os.path.isfile(json_filename):
+                raise FileNotFoundError(
+                    f"Discovered regions file not found: "
+                    f"{json_filename}"
+                )
 
             with open(json_filename, "r") as f:
                 discovered_regions = json.load(f)
 
+            print(
+                f"[INFO] Discovered regions JSON loaded successfully."
+            )
+
+            # ----------------------------------------------------------
+            # Extract combined collapse regions
+            # ----------------------------------------------------------
             json_to_collapse = discovered_regions.get(
                 "Dynamic_Region_All_Combined"
             )
@@ -428,16 +493,21 @@ def main():
             if not json_to_collapse:
                 print(
                     f"[WARN] No combined collapse regions found in "
-                    f"{json_filename}. Skipping CKA collapse comparison."
+                    f"{json_filename}. "
+                    f"Skipping CKA collapse comparison."
                 )
                 continue
 
             print(
-                f"[INFO] Found {len(json_to_collapse)} collapse regions."
+                f"[INFO] Found {len(json_to_collapse)} "
+                f"collapse regions."
             )
 
+            # ----------------------------------------------------------
             # Execute structural collapse
+            # ----------------------------------------------------------
             print("[INFO] Executing structural collapse...")
+
             collapse_start_time = time.time()
 
             full_collapsed_structure = collapse_only(
@@ -457,13 +527,18 @@ def main():
                 f"{time.time() - collapse_start_time:.2f}s"
             )
 
+            # ----------------------------------------------------------
+            # Load weights into collapsed structure
+            # ----------------------------------------------------------
             full_collapsed_model_ready = load_weights(
                 full_collapsed_structure,
                 collapsed_model_path,
                 device
             )
 
-            # Evaluate accuracy
+            # ----------------------------------------------------------
+            # Evaluate model accuracies
+            # ----------------------------------------------------------
             print("[INFO] Evaluating model accuracies...")
 
             acc_original_after = evaluate_accuracy(
@@ -484,12 +559,27 @@ def main():
                 device
             )
 
-            print(f"[RESULT] Accuracy Original:     {acc_original_after:.4f}")
-            print(f"[RESULT] Accuracy Unstructured: {acc_unstructured:.4f}")
-            print(f"[RESULT] Accuracy Collapsed:    {acc_collapsed:.4f}")
+            print(
+                f"[RESULT] Accuracy Original:     "
+                f"{acc_original_after:.4f}"
+            )
 
-            # Extract features and compute CKA
-            print("[INFO] Extracting features and computing CKA...")
+            print(
+                f"[RESULT] Accuracy Unstructured: "
+                f"{acc_unstructured:.4f}"
+            )
+
+            print(
+                f"[RESULT] Accuracy Collapsed:    "
+                f"{acc_collapsed:.4f}"
+            )
+
+            # ----------------------------------------------------------
+            # Extract features
+            # ----------------------------------------------------------
+            print(
+                "[INFO] Extracting features and computing CKA..."
+            )
 
             features_unstructured = extract_features(
                 unstructured_pruning_model,
@@ -509,24 +599,42 @@ def main():
                 device
             )
 
-            print("[INFO] Computing CKA: original vs unstructured...")
+            # ----------------------------------------------------------
+            # Compute CKA
+            # ----------------------------------------------------------
+            print(
+                "[INFO] Computing CKA: "
+                "original vs unstructured..."
+            )
 
             cka_unstructured = compare_CKA(
                 features_original,
                 features_unstructured
             )
 
-            print("[INFO] Computing CKA: original vs collapsed...")
+            print(
+                "[INFO] Computing CKA: "
+                "original vs collapsed..."
+            )
 
             cka_collapsed = compare_CKA(
                 features_original,
                 features_collapsed
             )
 
-            print(f"[RESULT] CKA Unstructured: {cka_unstructured:.6f}")
-            print(f"[RESULT] CKA Collapsed:    {cka_collapsed:.6f}")
+            print(
+                f"[RESULT] CKA Unstructured: "
+                f"{cka_unstructured:.6f}"
+            )
 
+            print(
+                f"[RESULT] CKA Collapsed:    "
+                f"{cka_collapsed:.6f}"
+            )
+
+            # ----------------------------------------------------------
             # Store results
+            # ----------------------------------------------------------
             results.append({
                 "model": model_name,
                 "dataset": dataset_name,
@@ -549,23 +657,36 @@ def main():
                 f"[ERROR] Failed processing checkpoint: "
                 f"{model_before_path}"
             )
-            print(f"[ERROR] {type(e).__name__}: {e}")
+
+            print(
+                f"[ERROR] {type(e).__name__}: {e}"
+            )
+
             continue
 
+    # ------------------------------------------------------------------
     # 3. Analyze / save results
+    # ------------------------------------------------------------------
     print("\n" + "=" * 70)
     print("[INFO] Saving final results...")
 
     df = pd.DataFrame(results)
 
-    df.to_csv(args.output, index=False)
+    df.to_csv(
+        args.output,
+        index=False
+    )
 
     print(
         f"[INFO] Results successfully saved to "
         f"'{args.output}'"
     )
 
-    print(f"[INFO] Total successful experiments: {len(results)}")
+    print(
+        f"[INFO] Total successful experiments: "
+        f"{len(results)}"
+    )
+
     print(
         f"[INFO] Total runtime: "
         f"{time.time() - total_start_time:.2f}s"
@@ -574,8 +695,8 @@ def main():
     print("\n" + "=" * 70)
     print("FINAL RESULTS")
     print("=" * 70)
-    print(df.to_string())
 
+    print(df.to_string())
 
 if __name__ == "__main__":
     main()
