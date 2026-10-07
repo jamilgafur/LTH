@@ -1,89 +1,104 @@
 import os
 import glob
 import re
+import json
 import torch
 import torch.nn as nn
 import torch.nn.utils.prune as prune
 import pandas as pd
 
+# Import architectures and utilities from your framework
+from pyPrune.models.Vgg16 import VGG16
+from pyPrune.models.RegNetX import RegNetX_400MF
+from pyPrune.models.ConvNetX import ConvNeXt
+from pyPrune.models.InceptionNet import InceptionNet
+from pyPrune.models.XceptionNet import XceptionNet
+from pyPrune.models.MobileNet import MobileNet
+from utils import load_dataset 
+from .collapse import collapse_only
+
 # =========================================================
 # Utility Functions
 # =========================================================
 
-def parse_epoch_number(filepath: str) -> int:
-    """Extracts the epoch number from the checkpoint filename."""
+def parse_directory_context(filepath: str):
+    """
+    Extracts the model, dataset, epoch budget, and pretrain budget from the directory name.
+    Example: ../Transfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/...
+    """
+    base_dir = filepath.split("/checkpoints/")[0].split("/")[-1]
+    parts = base_dir.split("_")
+    
+    model_name = parts[0]
+    dataset_name = parts[1]
+    
+    epochs_str = next(p for p in parts if p.startswith("epochs"))
+    pretrain_str = next(p for p in parts if p.startswith("pretrain"))
+    
     match = re.search(r'epoch(\d+)\.pt', filepath)
-    if match:
-        return int(match.group(1))
-    raise ValueError(f"Could not parse epoch number from {filepath}")
+    ckpt_epoch = int(match.group(1)) if match else 0
+    
+    return model_name, dataset_name, epochs_str, pretrain_str, ckpt_epoch, base_dir
+
+def initialize_architecture(model_name: str, dataset_name: str):
+    """Dynamically loads the dataset and initializes the correct model architecture."""
+    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name, model_name)
+    
+    model_kwargs = {"num_classes": num_classes}
+    # Capture a dummy batch for collapse input shape inference
+    dummy_input = next(iter(train_loader))[0][0:1] 
+    
+    if model_name == "InceptionNet":
+        model_kwargs["aux_logits"] = False
+        
+    model_class = eval(model_name)
+    model = model_class(**model_kwargs)
+    
+    return model, test_loader, dummy_input
 
 def find_matching_checkpoint(before_path: str, candidate_paths: list) -> str:
-    """
-    Matches the 'after' or 'collapsed' checkpoint to the 'before' checkpoint
-    by ensuring they belong to the same base experiment directory.
-    """
-    # Assumes structure: <base_experiment_dir>/checkpoints/<model_file>.pt
+    """Matches the corresponding checkpoint within the same base experiment directory."""
     base_dir = before_path.split("/checkpoints/")[0]
-    
     for candidate in candidate_paths:
         if candidate.startswith(base_dir):
             return candidate
-            
     raise FileNotFoundError(f"No matching checkpoint found for {base_dir}")
 
-def load_model(filepath: str, device: torch.device):
-    """
-    Loads a PyTorch model checkpoint. 
-    Note: You must instantiate your base architecture (e.g., from transfer.py) 
-    before loading the state_dict. This returns the loaded state dict for now.
-    """
-    checkpoint = torch.load(filepath, map_location=device)
-    # Handle both wrapped dictionaries and raw state dicts
-    if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
-        return checkpoint['model_state_dict']
-    elif isinstance(checkpoint, dict) and 'model' in checkpoint:
-        return checkpoint['model']
-    return checkpoint
+def load_weights(model: nn.Module, filepath: str, device: torch.device):
+    """Loads a PyTorch model checkpoint state_dict into the instantiated model."""
+    checkpoint = torch.load(filepath, map_location=device, weights_only=False)
+    state_dict = checkpoint.get('model_state_dict', checkpoint.get('model', checkpoint))
+    model.load_state_dict(state_dict, strict=False)
+    model.to(device)
+    model.eval()
+    return model
 
 def apply_unstructured_pruning(model: nn.Module, amount: float = 0.2) -> nn.Module:
-    """
-    Applies L1 Unstructured Pruning globally to all convolutional and linear layers.
-    Note: The pseudo-code mentioned training for `epochs`. If active finetuning 
-    is required post-pruning, integrate your training loop from transfer.py here.
-    """
+    """Applies L1 Unstructured Pruning globally to all convolutional and linear layers."""
     parameters_to_prune = []
     for module in model.modules():
         if isinstance(module, (nn.Conv2d, nn.Linear)):
             parameters_to_prune.append((module, 'weight'))
             
-    prune.global_unstructured(
-        parameters_to_prune,
-        pruning_method=prune.L1Unstructured,
-        amount=amount,
-    )
+    prune.global_unstructured(parameters_to_prune, pruning_method=prune.L1Unstructured, amount=amount)
     
-    # Make pruning permanent
     for module, name in parameters_to_prune:
         prune.remove(module, name)
         
     return model
 
-def extract_features(model: nn.Module, dataloader, device: torch.device):
+def extract_features(model: nn.Module, dataloader, device: torch.device, max_batches: int = 10):
     """Extracts flattened activations from the penultimate layer for CKA."""
-    model.eval()
     features = []
-    
-    # Hook to capture features before the final classifier
     def hook(module, input, output):
         features.append(output.flatten(start_dim=1).detach())
         
-    # Assuming standard architectures, attach hook to average pooling or final block
-    # Modify the target module based on your specific architecture from "collapse.py"
     target_layer = list(model.modules())[-2] 
     handle = target_layer.register_forward_hook(hook)
     
     with torch.no_grad():
-        for inputs, _ in dataloader:
+        for i, (inputs, _) in enumerate(dataloader):
+            if i >= max_batches: break
             inputs = inputs.to(device)
             model(inputs)
             
@@ -91,14 +106,10 @@ def extract_features(model: nn.Module, dataloader, device: torch.device):
     return torch.cat(features, dim=0)
 
 def compare_CKA(features_x: torch.Tensor, features_y: torch.Tensor) -> float:
-    """
-    Computes Linear Centered Kernel Alignment (CKA) between two feature matrices.
-    """
-    # Center the features
+    """Computes Linear Centered Kernel Alignment (CKA) between two feature matrices."""
     features_x = features_x - features_x.mean(dim=0, keepdim=True)
     features_y = features_y - features_y.mean(dim=0, keepdim=True)
     
-    # Compute dot products
     dot_prod_xx = torch.norm(features_x.T @ features_x, p='fro')
     dot_prod_yy = torch.norm(features_y.T @ features_y, p='fro')
     dot_prod_xy = torch.norm(features_y.T @ features_x, p='fro')
@@ -112,9 +123,6 @@ def compare_CKA(features_x: torch.Tensor, features_y: torch.Tensor) -> float:
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
-    # Dummy dataloader placeholder - replace with load_dataset() from transfer.py
-    dummy_dataloader = [(torch.randn(16, 3, 32, 32), torch.randint(0, 10, (16,)))]
     results = []
 
     # 1. Find all model checkpoints
@@ -126,44 +134,66 @@ def main():
 
     # 2. For each "before" checkpoint
     for model_before_path in original_model_before:
-        print(f"Processing: {model_before_path}")
+        print(f"\nProcessing: {model_before_path}")
         
-        # 2a. Get the number of epochs from the checkpoint name
-        epochs = parse_epoch_number(model_before_path)
-
-        # 2b. Apply unstructured pruning
-        # NOTE: You must instantiate your base model architecture here before loading state
-        # base_model = MyModelClass().to(device)
-        # base_model.load_state_dict(load_model(model_before_path, device))
-        base_model = nn.Sequential(nn.Conv2d(3, 64, 3), nn.AdaptiveAvgPool2d(1), nn.Flatten(), nn.Linear(64, 10)).to(device) # Placeholder
+        # 2a. Parse directory string to identify architecture and budgets
+        model_name, dataset_name, epochs_str, pretrain_str, ckpt_epoch, base_dir = parse_directory_context(model_before_path)
         
-        unstructured_pruning_model = apply_unstructured_pruning(base_model, amount=0.2)
+        # 2b. Apply unstructured pruning to the intermediate baseline
+        base_model, test_loader, dummy_input = initialize_architecture(model_name, dataset_name)
+        model_before = load_weights(base_model, model_before_path, device)
+        unstructured_pruning_model = apply_unstructured_pruning(model_before, amount=0.2)
         
-        # 2c. Find/load the corresponding original model after
+        # 2c. Find/load the corresponding original model after finetuning
         model_after_path = find_matching_checkpoint(model_before_path, original_model_after)
-        # original_after_model = MyModelClass().to(device)
-        # original_after_model.load_state_dict(load_model(model_after_path, device))
-        original_after_model = nn.Sequential(nn.Conv2d(3, 64, 3), nn.AdaptiveAvgPool2d(1), nn.Flatten(), nn.Linear(64, 10)).to(device) # Placeholder
+        original_after_base, _, _ = initialize_architecture(model_name, dataset_name)
+        original_after_model = load_weights(original_after_base, model_after_path, device)
 
         # 2d. Find/load the corresponding fully collapsed model
         collapsed_model_path = find_matching_checkpoint(model_before_path, full_collapsed_model)
-        # full_collapsed = MyModelClass().to(device)
-        # full_collapsed.load_state_dict(load_model(collapsed_model_path, device))
-        full_collapsed = nn.Sequential(nn.Conv2d(3, 64, 3), nn.AdaptiveAvgPool2d(1), nn.Flatten(), nn.Linear(64, 10)).to(device) # Placeholder
+        full_collapsed_base, _, _ = initialize_architecture(model_name, dataset_name)
+        
+        # Locate the JSON map generated during the discovery phase
+        # Format: <Model>_<dataset>_epochs<X>_pretrain<Y>_JF_discovered_regions.json
+        json_filename = f"{model_name}_{dataset_name}_{epochs_str}_{pretrain_str}_JF_discovered_regions.json"
+        
+        with open(json_filename, "r") as f:
+            discovered_regions = json.load(f)
+            
+        json_to_collapse = discovered_regions.get("Dynamic_Region_All_Combined")
+        
+        if not json_to_collapse:
+            print(f"[WARN] No combined collapse regions found in {json_filename}. Skipping CKA collapse comparison.")
+            continue
 
-        # Extract features for CKA
-        features_unstructured = extract_features(unstructured_pruning_model, dummy_dataloader, device)
-        features_original = extract_features(original_after_model, dummy_dataloader, device)
-        features_collapsed = extract_features(full_collapsed, dummy_dataloader, device)
+        # Execute structural collapse BEFORE loading the finetuned collapsed weights
+        full_collapsed_structure = collapse_only(
+            model=full_collapsed_base,
+            compression_set={"Dynamic_Region_All_Combined": json_to_collapse},
+            input_shape=dummy_input.shape,
+            device=device,
+            dry_run=False,
+            debug=False,
+            handle_skips=True
+        )
+        
+        full_collapsed_model_ready = load_weights(full_collapsed_structure, collapsed_model_path, device)
 
         # 2e. Compare all models against the original model after training using CKA
+        print("Extracting features and computing CKA...")
+        features_unstructured = extract_features(unstructured_pruning_model, test_loader, device)
+        features_original = extract_features(original_after_model, test_loader, device)
+        features_collapsed = extract_features(full_collapsed_model_ready, test_loader, device)
+
         cka_unstructured = compare_CKA(features_original, features_unstructured)
         cka_collapsed = compare_CKA(features_original, features_collapsed)
 
         # 2f. Store results
         results.append({
+            "model": model_name,
+            "dataset": dataset_name,
             "model_before": model_before_path,
-            "epochs": epochs,
+            "intermediate_epoch": ckpt_epoch,
             "cka_unstructured": cka_unstructured,
             "cka_collapsed": cka_collapsed,
         })
