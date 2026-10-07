@@ -412,8 +412,8 @@ def main():
 
             # Locate JSON map generated during discovery phase
             json_filename = (
-                f"../Tranfer/{model_name}_{dataset_name}_{args.post}_*"
-                f"{args.pre}_JF_discovered_regions.json"
+                f"../Tranfer/{model_name}_{dataset_name}_epochs{args.post}_*"
+                f"*pretrain{args.pre}*_JF_discovered_regions.json"
             )
 
             print(f"[INFO] Loading discovered regions: {json_filename}")
@@ -576,9 +576,6 @@ def main():
     print("=" * 70)
     print(df.to_string())
 
-
-if __name__ == "__main__":
-    main()
 
 if __name__ == "__main__":
     main()
