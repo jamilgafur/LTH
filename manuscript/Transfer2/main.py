@@ -255,15 +255,16 @@ def main():
         required=True,
         help="Model name, e.g. VGG16"
     )
+
     parser.add_argument(
             "--pre",
-            default=300
+            default=300,
             help="pre collapse epochs"
         )
     
     parser.add_argument(
             "--post",
-            default=100
+            default=100,
             help="post collapse epochs"
         )
 
