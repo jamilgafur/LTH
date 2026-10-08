@@ -1,496 +1,163 @@
-# experiments.py
-
-# Standard libraries
 import os
 import glob
-import json
-import time
-from datetime import datetime
-from copy import deepcopy
-from collections import OrderedDict
-import tempfile
-import numpy as np
-
-# Third-party libraries
+import re
+import argparse
 import torch
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from fvcore.nn import FlopCountAnalysis
+import torch.nn.utils.prune as prune
+import pandas as pd
 
-# Local modules
+# Replicating imports from your pipeline to instantiate dynamically
 from pyPrune.models.Vgg16 import VGG16
-from pyPrune.utils import *
-from plots import *
-from diagnostic import *
-from utils import *
-from filemanager import *
-from pyPrune.collapse import collapse_only, _wrap_pools_safe
-from trainer import train_one_epoch
+from pyPrune.models.RegNetX import RegNetX_400MF
+from pyPrune.models.ConvNetX import ConvNeXt
+from pyPrune.models.InceptionNet import InceptionNet
+from pyPrune.models.XceptionNet import XceptionNet
+from pyPrune.models.MobileNet import MobileNet
+from utils import load_dataset 
 
-def ensure_dir(directory):
-    if not os.path.exists(directory):
-        os.makedirs(directory, exist_ok=True)
+# =========================================================
+# Utility Functions
+# =========================================================
 
-# -------------------------
-# Safe JSON Write (Per-job unique, no lock, no SLURM ID)
-# -------------------------
-def safe_update_metrics_json(model_root, exp_name, new_data, base_dir="./runs/metrics"):
-    """
-    Writes metrics to a per-job JSON file with a unique timestamp.
-    Fully preserves raw NumPy arrays by converting them to lists.
-    """
-    ensure_dir(base_dir)
+def parse_args():
+    parser = argparse.ArgumentParser(description="Standalone CKA Post-Processing")
+    parser.add_argument("--model", type=str, required=True, help="Model architecture")
+    parser.add_argument("--dataset", type=str, required=True, help="Dataset name")
+    return parser.parse_args()
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    pid = os.getpid()
-    json_path = os.path.join(
-        base_dir, f"{model_root}_metrics_{timestamp}_{pid}.json"
-    )
+def parse_directory_info(filepath: str):
+    base_dir = filepath.split("/checkpoints/")[0].split("/")[-1]
+    match = re.search(r'epoch(\d+)\.pt', filepath)
+    epochs = int(match.group(1)) if match else 0
+    return epochs, base_dir
 
-    try:
-        safe_data = convert_ndarrays_to_lists(new_data)
+def initialize_architecture(model_name: str, dataset_name: str):
+    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name, model_name)
+    model_kwargs = {"num_classes": num_classes}
+    if model_name == "InceptionNet":
+        model_kwargs["aux_logits"] = False
+        
+    model_class = eval(model_name)
+    model = model_class(**model_kwargs)
+    return model, test_loader
 
-        tmp_fd, tmp_path = tempfile.mkstemp(
-            dir=base_dir, prefix="tmp_metrics_", suffix=".json"
-        )
+def find_matching_checkpoint(before_path: str, candidate_paths: list) -> str:
+    base_dir = before_path.split("/checkpoints/")[0]
+    for candidate in candidate_paths:
+        if candidate.startswith(base_dir):
+            return candidate
+    raise FileNotFoundError(f"No matching checkpoint found for {base_dir}")
 
-        with os.fdopen(tmp_fd, "w") as f:
-            json.dump({exp_name: safe_data}, f, indent=4)
-
-        # Atomic replace (prevents corrupted files)
-        os.replace(tmp_path, json_path)
-
-        print(f"[✓] Saved metrics for '{exp_name}' → {json_path}")
-        return json_path
-
-    except Exception as e:
-        print(f"[!] Failed to save metrics JSON: {e}")
-        return None
-
-def convert_ndarrays_to_lists(obj):
-    """
-    Recursively convert NumPy arrays to Python lists so JSON can serialize them.
-    """
-    if isinstance(obj, dict):
-        return {k: convert_ndarrays_to_lists(v) for k, v in obj.items()}
-
-    if isinstance(obj, list):
-        return [convert_ndarrays_to_lists(v) for v in obj]
-
-    if isinstance(obj, tuple):
-        return [convert_ndarrays_to_lists(v) for v in obj]
-
-    if isinstance(obj, np.ndarray):
-        return obj.tolist()
-
-    if isinstance(obj, (np.float32, np.float64)):
-        return float(obj)
-
-    if isinstance(obj, (np.int32, np.int64)):
-        return int(obj)
-
-    return obj
-
-# -------------------------
-# Merge All Metrics (Hybrid mode)
-# -------------------------
-def merge_all_metrics(base_dir="./runs/metrics", merged_name="merged_metrics.json"):
-    """
-    Safely merges all metrics JSON files into one consolidated file.
-    Uses temp files and avoids concurrent write collisions.
-    """
-    ensure_dir(base_dir)
-    json_files = glob.glob(os.path.join(base_dir, "*_metrics_*.json"))
-    merged_data = {}
-
-    for jf in json_files:
-        try:
-            if os.path.getsize(jf) == 0:
-                print(f"[!] Skipping empty file: {jf}")
-                continue
-            with open(jf, "r") as f:
-                data = json.load(f)
-                if isinstance(data, dict):
-                    merged_data.update(data)
-        except Exception as e:
-            print(f"[!] Skipping {jf}: {e}")
-
-    # Write to a temp file first
-    tmp_fd, tmp_path = tempfile.mkstemp(dir=base_dir, prefix="tmp_merge_", suffix=".json")
-    with os.fdopen(tmp_fd, "w") as tmp_file:
-        json.dump(merged_data, tmp_file, indent=4)
-
-    merged_path = os.path.join(base_dir, merged_name)
-
-    # Atomic replace
-    os.replace(tmp_path, merged_path)
-
-    print(f"[✓] Merged {len(json_files)} metrics files → {merged_path}")
-    return merged_path
-
-# -------------------------
-# Helper: normalize collapse_range -> list of 2-tuples
-# -------------------------
-def _make_compression_set(collapse_range):
-    """
-    Normalize collapse_range into a flat list of (start_name, end_name) tuples.
-    Acceptable inputs:
-      - None
-      - ("a","b")
-      - ["a","b"]  (2-element list)
-      - [("a","b"), ("c","d")]
-    Returns None when collapse_range is falsy.
-    """
-    if not collapse_range:
-        return None
-
-    # Single pair (tuple or 2-element list of strings)
-    if isinstance(collapse_range, (tuple, list)) and len(collapse_range) == 2 and all(isinstance(x, str) for x in collapse_range):
-        return [(collapse_range[0], collapse_range[1])]
-
-    # Already a list of pairs
-    if isinstance(collapse_range, list):
-        compression_set = []
-        for idx, item in enumerate(collapse_range):
-            if not (isinstance(item, (tuple, list)) and len(item) == 2):
-                raise ValueError(f"collapse_range list element #{idx} must be a 2-tuple/list of strings, got: {item!r}")
-            if not all(isinstance(x, str) for x in item):
-                raise ValueError(f"collapse_range list element #{idx} must contain strings, got: {item!r}")
-            compression_set.append((item[0], item[1]))
-        return compression_set
-
-    raise ValueError("collapse_range must be None, a 2-tuple, or a list of 2-tuples")
-
-
-def run_experiment(
-    model,
-    model_kwargs=None,
-    train_loader=None,
-    test_loader=None,
-    device="cuda",
-    epochs=10,
-    workflow="default",
-    exp_name="experiment",
-    collapse_range=None,
-    data_shape=(1, 3, 32, 32),
-    save_path="./runs",
-    quant=False,
-    init_opt_state=None,        # Base Optimizer (if available)
-    init_sched_state=None       # Base Scheduler (if available)
-):
-    import os, glob, torch, torch.optim as optim
-
-    if quant:
-        exp_name += "_quant"
-
-    print(f"[•] Starting experiment '{exp_name}' in workflow '{workflow}' | Epoch Target: {epochs}")
-
-    # 1. Directory Setup
-    ckpt_dir = os.path.join(save_path, "checkpoints")
-    metrics_dir = os.path.join(save_path, "metrics")
-    plots_dir = os.path.join(save_path, "plots")
-    ensure_dir(ckpt_dir); ensure_dir(metrics_dir); ensure_dir(plots_dir)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def load_weights(model: nn.Module, filepath: str, device: torch.device):
+    checkpoint = torch.load(filepath, map_location=device, weights_only=False)
+    state_dict = checkpoint.get('model_state_dict', checkpoint.get('model', checkpoint))
+    model.load_state_dict(state_dict, strict=False)
     model.to(device)
+    model.eval()
+    return model
 
-    base_ckpt_name = f"{workflow}_{exp_name}"
-
-    # 2. Check for "Final" Completion
-    final_ckpt_path = os.path.join(ckpt_dir, f"final_{base_ckpt_name}.pt")
-    
-    if os.path.exists(final_ckpt_path):
-        print(f"[✓] Experiment '{exp_name}' already completed. Found: {os.path.basename(final_ckpt_path)}")
-        print(f"    Skipping training and reloading metrics...")
-        try:
-            checkpoint = torch.load(final_ckpt_path, map_location=device, weights_only=False)
-            return checkpoint.get("data", {})
-        except Exception as e:
-            print(f"[!] Corrupt final checkpoint found ({e}). Restarting experiment...")
-            pass
-
-    # 3. Initialize Default Training Components
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
-    scaler = torch.amp.GradScaler(device=device.type, enabled=quant)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
-    
-    # 4. Checkpoint Discovery (Intermediate Epochs)
-    ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
-    existing_ckpts = sorted(
-        glob.glob(ckpt_pattern),
-        key=lambda x: int(os.path.basename(x).split("epoch")[-1].split(".")[0]),
-    )
-
-    start_epoch = 0
-    all_data = {"accuracies": [], "losses": [], "best_acc": 0.0, "patience_counter": 0}
-
-    # 5. Resume Logic / Inheritance Logic
-    if existing_ckpts:
-        last_ckpt = existing_ckpts[-1]
-        print(f"[•] Loading intermediate checkpoint: {last_ckpt}")
-        checkpoint = torch.load(last_ckpt, map_location=device, weights_only=False)
-
-        model.load_state_dict(checkpoint['model_state_dict'], strict=False)
-        
-        try:
-            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        except ValueError:
-            print(f"[WARN] Optimizer state mismatch due to structural changes. Starting fresh optimizer.")
+def apply_unstructured_pruning(model: nn.Module, amount: float = 0.2) -> nn.Module:
+    parameters_to_prune = []
+    for module in model.modules():
+        if isinstance(module, (nn.Conv2d, nn.Linear)):
+            parameters_to_prune.append((module, 'weight'))
             
-        if 'scheduler_state_dict' in checkpoint:
-            try:
-                scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-            except ValueError:
-                print(f"[WARN] Scheduler state mismatch. Starting fresh scheduler.")
-                
-        if 'scaler_state_dict' in checkpoint:
-            try:
-                scaler.load_state_dict(checkpoint['scaler_state_dict'])
-            except RuntimeError:
-                print(f"[WARN] Bypassing empty scaler state dict from older checkpoint.")
-        
-        torch.set_rng_state(checkpoint['torch_rng_state'].cpu())
-        if torch.cuda.is_available() and checkpoint.get('cuda_rng_state') is not None:
-            torch.cuda.set_rng_state(checkpoint['cuda_rng_state'].cpu())
-
-        start_epoch = checkpoint['epoch'] + 1
-        all_data = checkpoint['data']
-        print(f"[✓] Resumed at epoch {start_epoch}")
-    
-    else:
-        print("[•] No intermediate checkpoint found — starting fresh or inheriting from base.")
-        # Attempt to inherit the extracted stage-1 ecosystem
-        if init_opt_state:
-            try:
-                optimizer.load_state_dict(init_opt_state)
-                print(f"[✓] Successfully inherited base Optimizer state.")
-            except ValueError:
-                print(f"[WARN] Optimizer structural mismatch (expected after layer collapse). Adjusting to stable fine-tune LR (1e-4).")
-                for param_group in optimizer.param_groups:
-                    param_group['lr'] = 1e-4
-        
-        if init_sched_state:
-            try:
-                scheduler.load_state_dict(init_sched_state)
-                print(f"[✓] Successfully inherited base Scheduler state.")
-            except ValueError:
-                print(f"[WARN] Scheduler structural mismatch. Starting fresh scheduler.")
-
-    # 6. Training Loop
-    for epoch in range(start_epoch, epochs):
-        print(f"[•] Epoch {epoch}")
-
-        avg_loss, acc = train_one_epoch(
-            model, train_loader, optimizer, device, 
-            scaler=scaler, use_autocast=quant
-        )
-        
-        scheduler.step() # Always step the scheduler
-
-        all_data["accuracies"].append(acc)
-        all_data["losses"].append(avg_loss)
-
-        if acc > all_data["best_acc"] + 0.05:
-            all_data["best_acc"] = acc
-            all_data["patience_counter"] = 0
-        else:
-            all_data["patience_counter"] += 1
-
-        # Save State-Aware Checkpoint
-        ckpt_path = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch}.pt")
-        tmp_path = ckpt_path + ".tmp"
-
-        torch.save({
-            "epoch": epoch,
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "scheduler_state_dict": scheduler.state_dict(), # Pack scheduler
-            "scaler_state_dict": scaler.state_dict() if quant else None,
-            "torch_rng_state": torch.get_rng_state(),
-            "cuda_rng_state": torch.cuda.get_rng_state() if torch.cuda.is_available() else None,
-            "data": all_data,
-        }, tmp_path)
-        
-        os.replace(tmp_path, ckpt_path) 
-        
-        if epoch > 1:
-            old_ckpt = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch - 1}.pt")
-            if os.path.exists(old_ckpt):
-                os.remove(old_ckpt)
-
-    # 7. Finalization & Diagnostics
-    torch.save({"model_state_dict": model.state_dict(), "data": all_data}, final_ckpt_path)
-
-    param_count = count_trainable_params(model)
-    infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device, quant=quant)
-
-    all_data.update({
-        "param_count": param_count,
-        "inference_time": infer_time,
-        "flops": flops,
-        "total_size_mb": total_size_mb,
-        "final_accuracy": all_data["accuracies"][-1] if all_data["accuracies"] else 0,
-    })
-
-    run_full_diagnostics(model, data_shape, {exp_name: all_data}, plots_dir, exp_name, 
-                         test_dataloader=test_loader, collapse_range=collapse_range, 
-                         device=device, quant=quant)
-
-    plot_accuracy_loss_curve(all_data["accuracies"], all_data["losses"], workflow, exp_name, plots_dir)
-
-    model_root = f"{model.__class__.__name__}_{train_loader.dataset.__class__.__name__}"
-    safe_update_metrics_json(model_root, f"{exp_name}_{workflow}", all_data, metrics_dir)
-    merge_all_metrics(metrics_dir)
-
-    print(f"[✓] Experiment '{exp_name}' completed.")
-    return all_data
-
-# =====================================================
-# === Experiment Entry Points (JF & Kevin) ===
-# =====================================================
-
-def run_jf_experiment(
-    experiments,
-    model_path_097,
-    train_loader,
-    test_loader,
-    device,
-    epochs,
-    pretrain,
-    model_class=VGG16,
-    model_kwargs=None,
-    data_shape=None,
-    save_path="./runs",
-    quant=False
-):
-    model_kwargs = model_kwargs or {}
-    print("\n=== Running JF experiment ===")
-    exp_name, collapse_range = list(experiments.items())[0]
-    
-    ckpt_dir = os.path.join(save_path, "checkpoints")
-    base_ckpt_name = f"JF_{exp_name}"
-    if quant: base_ckpt_name += "_quant"
-    
-    ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
-    existing_ckpts = glob.glob(ckpt_pattern)
-
-    base_model = model_class(**model_kwargs)
-    _wrap_pools_safe(base_model)
-    
-    init_opt_state = None
-    init_sched_state = None
-
-    if not existing_ckpts:
-        if model_path_097 and "None" not in model_path_097:
-            print(f"[•] Loading initial weights and training state from {model_path_097}")
-            ckpt = torch.load(model_path_097, map_location='cpu', weights_only=False) 
-            base_model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt['model'], strict=False)
-            
-            init_opt_state = ckpt.get('optimizer_state_dict')
-            init_sched_state = ckpt.get('scheduler_state_dict')
-    else:
-        print(f"[•] Resumption detected. Architecture will be prepared for checkpoint loading.")
-
-    compression_set = _make_compression_set(collapse_range)
-    if compression_set:
-        print(f"[•] Collapsing ranges {compression_set} for {exp_name}")
-        base_model = collapse_only(
-            model=base_model,
-            compression_set=compression_set,
-            input_shape=model_kwargs['one_batch'].shape,
-            device=device,
-            dry_run=False,
-            debug=True,
-            handle_skips=True
-        )
-
-    data = run_experiment(
-        model=base_model,
-        model_kwargs=model_kwargs,
-        train_loader=train_loader,
-        test_loader=test_loader,
-        device=device,
-        epochs=epochs,
-        workflow="JF",
-        exp_name=exp_name,
-        data_shape=data_shape,
-        save_path=save_path,
-        quant=quant,
-        init_opt_state=init_opt_state,     # Forward states
-        init_sched_state=init_sched_state  # Forward states
+    prune.global_unstructured(
+        parameters_to_prune, pruning_method=prune.L1Unstructured, amount=amount
     )
-    return base_model
+    for module, name in parameters_to_prune:
+        prune.remove(module, name)
+    return model
 
-def run_kevin_experiment(
-    experiments,
-    model_path_000,
-    train_loader,
-    test_loader,
-    device,
-    epochs,
-    model_class=VGG16,
-    model_kwargs=None,
-    data_shape=None,
-    save_path="./runs",
-    quant=False):
-    model_kwargs = model_kwargs or {}
-    print("\n=== Running Kevin experiment ===")
-    exp_name, collapse_range = list(experiments.items())[0]
-
-    ckpt_dir = os.path.join(save_path, "checkpoints")
-    base_ckpt_name = f"Kevin_{exp_name}"
-    if quant: base_ckpt_name += "_quant"
+def extract_features(model: nn.Module, dataloader, device: torch.device, num_batches: int = 10):
+    features = []
+    def hook(module, input, output):
+        features.append(output.flatten(start_dim=1).detach())
+        
+    target_layer = list(model.modules())[-2] 
+    handle = target_layer.register_forward_hook(hook)
     
-    ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
-    existing_ckpts = glob.glob(ckpt_pattern)
-
-    base_model = model_class(**model_kwargs)
-    _wrap_pools_safe(base_model)
-
-    init_opt_state = None
-    init_sched_state = None
-
-    if not existing_ckpts:
-        if model_path_000 and "None" not in model_path_000:
-            print(f"[•] Loading initial weights and training state from {model_path_000}")
-            ckpt = torch.load(model_path_000, map_location='cpu', weights_only=False) 
-            base_model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt['model'], strict=False)
+    with torch.no_grad():
+        for i, (inputs, _) in enumerate(dataloader):
+            if i >= num_batches: break
+            inputs = inputs.to(device)
+            model(inputs)
             
-            init_opt_state = ckpt.get('optimizer_state_dict')
-            init_sched_state = ckpt.get('scheduler_state_dict')
-    else:
-        print(f"[•] Resumption detected. Architecture will be prepared for checkpoint loading.")
+    handle.remove()
+    return torch.cat(features, dim=0)
 
-    compression_set = _make_compression_set(collapse_range)
-    if compression_set:
-        print(f"[•] Collapsing ranges {compression_set} for {exp_name}")
-        base_model = collapse_only(
-            model=base_model,
-            compression_set=compression_set,
-            input_shape=model_kwargs['one_batch'].shape,
-            device=device,
-            dry_run=False,
-            debug=True,
-            handle_skips=True
-        )
+def compare_CKA(features_x: torch.Tensor, features_y: torch.Tensor) -> float:
+    features_x = features_x - features_x.mean(dim=0, keepdim=True)
+    features_y = features_y - features_y.mean(dim=0, keepdim=True)
+    
+    dot_prod_xx = torch.norm(features_x.T @ features_x, p='fro')
+    dot_prod_yy = torch.norm(features_y.T @ features_y, p='fro')
+    dot_prod_xy = torch.norm(features_y.T @ features_x, p='fro')
+    
+    cka_score = (dot_prod_xy ** 2) / (dot_prod_xx * dot_prod_yy)
+    return cka_score.item()
 
-    data = run_experiment(
-        model=base_model,
-        model_kwargs=model_kwargs,
-        train_loader=train_loader,
-        test_loader=test_loader,
-        device=device,
-        epochs=epochs,
-        workflow="Kevin",
-        exp_name=exp_name,
-        data_shape=data_shape,
-        save_path=save_path,
-        quant=quant,
-        init_opt_state=init_opt_state,     # Forward states
-        init_sched_state=init_sched_state  # Forward states
-    )
-    return base_model
+# =========================================================
+# Main Post-Processing Routine
+# =========================================================
+
+def main():
+    args = parse_args()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    results = []
+
+    print(f"--- Starting CKA Post-Processing for {args.model} on {args.dataset} ---")
+
+    # 1. Find all model checkpoints specific to this job's model and dataset
+    search_pattern = f"{args.model}_{args.dataset}_*"
+    original_model_before = glob.glob(f"{search_pattern}/checkpoints/JF_Control_Continuted_epoch*.pt")
+    full_collapsed_model = glob.glob(f"{search_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined_quant.pt")
+    original_model_after = glob.glob(f"{search_pattern}/checkpoints/final_JF_Control_Continuted.pt")
+
+    print(f"Found {len(original_model_before)} 'before' checkpoints to process.")
+
+    # 2. Process each checkpoint
+    for model_before_path in original_model_before:
+        print(f"\nProcessing: {model_before_path}")
+        epochs, _ = parse_directory_info(model_before_path)
+        
+        base_model, test_loader = initialize_architecture(args.model, args.dataset)
+        
+        model_before = load_weights(base_model, model_before_path, device)
+        unstructured_pruning_model = apply_unstructured_pruning(model_before, amount=0.2)
+        
+        model_after_path = find_matching_checkpoint(model_before_path, original_model_after)
+        model_after_base, _ = initialize_architecture(args.model, args.dataset)
+        original_after_model = load_weights(model_after_base, model_after_path, device)
+
+        collapsed_model_path = find_matching_checkpoint(model_before_path, full_collapsed_model)
+        model_collapsed_base, _ = initialize_architecture(args.model, args.dataset)
+        full_collapsed = load_weights(model_collapsed_base, collapsed_model_path, device)
+
+        print("Extracting feature representations...")
+        features_unstructured = extract_features(unstructured_pruning_model, test_loader, device)
+        features_original = extract_features(original_after_model, test_loader, device)
+        features_collapsed = extract_features(full_collapsed, test_loader, device)
+
+        print("Computing CKA similarities...")
+        cka_unstructured = compare_CKA(features_original, features_unstructured)
+        cka_collapsed = compare_CKA(features_original, features_collapsed)
+
+        results.append({
+            "model": args.model,
+            "dataset": args.dataset,
+            "model_before": model_before_path,
+            "epochs": epochs,
+            "cka_unstructured": cka_unstructured,
+            "cka_collapsed": cka_collapsed,
+        })
+
+    # 3. Analyze / save results locally
+    df = pd.DataFrame(results)
+    output_csv = f"cka_results_{args.model}_{args.dataset}.csv"
+    df.to_csv(output_csv, index=False)
+    print(f"\nResults successfully saved to '{output_csv}'")
+
+if __name__ == "__main__":
+    main()

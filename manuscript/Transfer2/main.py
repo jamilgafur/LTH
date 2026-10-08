@@ -351,10 +351,24 @@ def main():
             model_before = load_weights(base_model, model_before_path, device)
 
             # ----------------------------------------------------------
-            # Apply 20% global unstructured pruning
+            # Load weights into collapsed structure
             # ----------------------------------------------------------
+            full_collapsed_model_ready = load_weights(
+                full_collapsed_structure, collapsed_model_path, device
+            )
+
+            # ----------------------------------------------------------
+            # Calculate dynamic sparsity and apply unstructured pruning
+            # ----------------------------------------------------------
+            print("[INFO] Calculating dynamic sparsity to match collapse...")
+            original_param_count = sum(p.numel() for p in model_before.parameters())
+            collapsed_param_count = sum(p.numel() for p in full_collapsed_model_ready.parameters())
+            
+            target_sparsity = 1.0 - (collapsed_param_count / original_param_count)
+            print(f"[INFO] Target unstructured sparsity calculated at: {target_sparsity * 100:.2f}%")
+
             unstructured_pruning_model = apply_unstructured_pruning(
-                model_before, amount=0.2
+                model_before, amount=float(target_sparsity)
             )
 
             # ----------------------------------------------------------
