@@ -133,9 +133,11 @@ def initialize_architecture(model_name: str, dataset_name: str):
 def process_checkpoint(model_before_path, checkpoints, args, device):
     checkpoint_start_time = time.time()
     
-    # 1. Parse Context & Load Baseline
+    # 1. Parse Context & Load Baseline (Pass args.model and args.dataset)
     print("[INFO] Parsing experiment directory...")
-    model_name, dataset_name, epochs_str, pre_str, ckpt_epoch, base_dir = parse_directory_context(model_before_path)
+    model_name, dataset_name, epochs_str, pre_str, ckpt_epoch, base_dir = parse_directory_context(
+        model_before_path, args.model, args.dataset
+    )
     
     print("[INFO] Initializing baseline model...")
     base_model, train_loader, test_loader, dummy_input = initialize_architecture(model_name, dataset_name)
@@ -151,6 +153,10 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     print("[INFO] Preparing and executing structural collapse...")
     full_collapsed_base, _, _, _ = initialize_architecture(model_name, dataset_name)
     compression_dict = load_collapse_regions(model_name, dataset_name, args.pre, args.post)
+    
+    if compression_dict is None:
+        print(f"[WARN] Skipping evaluation for {model_before_path} - No collapse regions available.")
+        return None
     
     collapse_start_time = time.time()
     full_collapsed_structure = collapse_only(
@@ -298,12 +304,8 @@ def main():
         print(f"Path: {model_before_path}")
         print("=" * 70)
 
-        try:
-            result_metrics = process_checkpoint(model_before_path, checkpoints, args, device)
-            results.append(result_metrics)
-        except Exception as e:
-            print(f"[ERROR] Failed processing checkpoint: {model_before_path}")
-            print(f"[ERROR] {type(e).__name__}: {e}")
+        result_metrics = process_checkpoint(model_before_path, checkpoints, args, device)
+        results.append(result_metrics)
 
     # 3. Save Results
     print("\n" + "=" * 70)

@@ -42,26 +42,20 @@ import re
 # Utility Functions
 # =========================================================
 
-
-def parse_directory_context(filepath: str):
-    """
-    Extracts the model, dataset, epoch budget, and pretrain budget from the directory name.
-    Example: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/...
-    """
+def parse_directory_context(filepath: str, expected_model: str, expected_dataset: str):
+    """Safely extracts context without relying on naive underscore splitting."""
     base_dir = filepath.split("/checkpoints/")[0].split("/")[-1]
     parts = base_dir.split("_")
-
-    model_name = parts[0]
-    dataset_name = parts[1]
-
-    epochs_str = next(p for p in parts if p.startswith("epochs"))
-    pretrain_str = next(p for p in parts if p.startswith("pretrain"))
-
+    
+    # Safely find epochs and pretrain tokens
+    epochs_str = next((p for p in parts if p.startswith("epochs")), "epochs100")
+    pretrain_str = next((p for p in parts if p.startswith("pretrain")), "pretrain300")
+    
     match = re.search(r"epoch(\d+)\.pt", filepath)
     ckpt_epoch = int(match.group(1)) if match else 0
-
-    return model_name, dataset_name, epochs_str, pretrain_str, ckpt_epoch, base_dir
-
+    
+    # Return the explicitly provided model and dataset names
+    return expected_model, expected_dataset, epochs_str, pretrain_str, ckpt_epoch, base_dir
 
 def initialize_architecture(model_name: str, dataset_name: str):
     """Dynamically loads the dataset and initializes the correct model architecture."""
@@ -270,29 +264,33 @@ def find_experiment_checkpoints(model_name, dataset_name, pre_epochs, post_epoch
     }
 
 def load_collapse_regions(model_name, dataset_name, pre_epochs, post_epochs):
-    """Loads and formats the discovered structural regions from the JSON map."""
-    json_filename = (
-        f"../Tranfer/{model_name}_{dataset_name}_"
-        f"epochs{post_epochs}_pretrain{pre_epochs}_JF_discovered_regions.json"
-    )
-    
-    print(f"[INFO] Loading discovered regions: {json_filename}")
-    if not os.path.isfile(json_filename):
-        raise FileNotFoundError(f"Discovered regions file not found: {json_filename}")
+    """Searches for discovered regions JSON across matching naming permutations."""
+    dataset_patterns = [dataset_name, dataset_name.lower(), dataset_name.capitalize()]
+    json_filename = None
 
+    for d_name in set(dataset_patterns):
+        candidate = f"../Tranfer/{model_name}_{d_name}_epochs{post_epochs}_pretrain{pre_epochs}_JF_discovered_regions.json"
+        if os.path.isfile(candidate):
+            json_filename = candidate
+            break
+
+    if json_filename is None:
+        raise FileNotFoundError(
+            f"Discovered regions file not found for {model_name}_{dataset_name} (pre={pre_epochs}, post={post_epochs})"
+        )
+
+    print(f"[INFO] Loading discovered regions: {json_filename}")
     with open(json_filename, "r") as f:
         discovered_regions = json.load(f)
 
     json_to_collapse = discovered_regions.get("Dynamic_Region_All_Combined")
-    if not json_to_collapse:
-        raise ValueError(f"No combined collapse regions found in {json_filename}.")
-        
-    print(f"[INFO] Found {len(json_to_collapse)} collapse regions.")
     
+    # FIX: Return None instead of crashing if no regions exist
+    if not json_to_collapse:
+        print(f"[WARN] No combined collapse regions found in {json_filename}. Skipping collapse.")
+        return None
+        
     return {f"Region_{i}": pair for i, pair in enumerate(json_to_collapse)}
-
-
-
 
 # -======================
 def plot_experiment_heuristics(model_name, dataset_name, stats_csv_path):
