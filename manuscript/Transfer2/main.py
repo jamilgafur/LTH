@@ -19,7 +19,7 @@ from utils import *
 
 from collapse import collapse_only
 import argparse
-from attacks import import fgsm_attack, pgd_attack
+from attacks import fgsm_attack, pgd_attack
 
 # =========================================================
 # Adversarial Attack Implementations
