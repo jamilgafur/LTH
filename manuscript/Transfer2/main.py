@@ -192,7 +192,6 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
             epochs=args.post, 
             target_sparsity=float(target_sparsity), 
             save_path=unstructured_ckpt_path,
-            power_interval=args.power_interval
         )
 
     # 6. Evaluate Accuracy, Power Draw, and Energy Consumption
