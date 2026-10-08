@@ -183,7 +183,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
     checkpoint_dir = os.path.dirname(model_before_path)
     unstructured_ckpt_path = os.path.join(checkpoint_dir, f"final_JF_Unstructured_IMP_post{args.post}.pt")
-    
+    print(f"Checking for unstructured ckpt path {unstructured_ckpt_path}")
     if os.path.exists(unstructured_ckpt_path):
         print(f"[INFO] Loading existing IMP unstructured checkpoint: {unstructured_ckpt_path}")
         unstructured_base, _, _, _ = initialize_architecture(model_name, dataset_name)
