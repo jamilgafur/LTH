@@ -73,7 +73,8 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path):
     print(f"[INFO] Calculated incremental prune rate: {incremental_amount*100:.2f}% per step over {pruning_steps} steps.")
 
     model.train()
-    for epoch in range(epochs):
+    from tqdm import tqdm
+    for epoch in tqdm(range(epochs)):
         if epoch < pruning_steps:
             prune.global_unstructured(
                 parameters_to_prune,
