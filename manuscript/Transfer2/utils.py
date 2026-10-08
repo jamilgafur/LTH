@@ -57,40 +57,6 @@ def parse_directory_context(filepath: str, expected_model: str, expected_dataset
     # Return the explicitly provided model and dataset names
     return expected_model, expected_dataset, epochs_str, pretrain_str, ckpt_epoch, base_dir
 
-def initialize_architecture(model_name: str, dataset_name: str):
-    """Dynamically loads the dataset and initializes the correct model architecture."""
-    print(
-        f"[INFO] Initializing architecture: model={model_name}, dataset={dataset_name}"
-    )
-
-    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(
-        dataset_name, model_name
-    )
-
-    print(
-        f"[INFO] Dataset loaded: input_size={input_size}, "
-        f"input_channels={input_channels}, num_classes={num_classes}"
-    )
-
-    model_kwargs = {"num_classes": num_classes}
-
-    # Capture a dummy batch for collapse input shape inference
-    dummy_input = next(iter(train_loader))[0][0:1]
-
-    if model_name == "InceptionNet":
-        model_kwargs["aux_logits"] = False
-
-    model_class = eval(model_name)
-    model = model_class(**model_kwargs)
-
-    print(
-        f"[INFO] Model initialized: {model_name} "
-        f"({sum(p.numel() for p in model.parameters()):,} parameters)"
-    )
-
-    return model, test_loader, dummy_input
-
-
 def find_matching_checkpoint(before_path: str, candidate_paths: list) -> str:
     """Matches the corresponding checkpoint within the same base experiment directory."""
     base_dir = before_path.split("/checkpoints/")[0]
@@ -148,38 +114,159 @@ def apply_unstructured_pruning(model: nn.Module, amount: float = 0.2) -> nn.Modu
     return model
 
 
-def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device):
-    """Evaluates the top-1 accuracy of the model over the full dataset."""
-    print("[INFO] Starting accuracy evaluation...")
-    start_time = time.time()
+# =========================================================
+# Model Evaluation with Energy Tracking
+# =========================================================
 
+def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_interval: int = 1):
+    """Evaluates top-1 accuracy while profiling power draw (W) and energy (J)."""
+    print("[INFO] Starting accuracy and energy evaluation...")
     model.eval()
     correct = 0
     total = 0
 
-    with torch.no_grad():
-        for batch_idx, (inputs, targets) in enumerate(dataloader):
-            inputs, targets = inputs.to(device), targets.to(device)
-            outputs = model(inputs)
-            _, predicted = outputs.max(1)
-            total += targets.size(0)
-            correct += predicted.eq(targets).sum().item()
+    with PowerTracker(device=device, interval_s=power_interval) as tracker:
+        with torch.no_grad():
+            for batch_idx, (inputs, targets) in enumerate(dataloader):
+                inputs, targets = inputs.to(device), targets.to(device)
+                outputs = model(inputs)
+                _, predicted = outputs.max(1)
+                total += targets.size(0)
+                correct += predicted.eq(targets).sum().item()
 
-            if (batch_idx + 1) % 50 == 0:
-                print(
-                    f"[INFO] Accuracy evaluation: "
-                    f"batch={batch_idx + 1}, samples={total}"
-                )
+                if (batch_idx + 1) % 50 == 0:
+                    print(f"[INFO] Accuracy evaluation: batch={batch_idx + 1}, samples={total}")
 
+    avg_watts, total_joules, elapsed_sec = tracker.get_results()
     accuracy = correct / total if total > 0 else 0.0
 
     print(
-        f"[INFO] Accuracy evaluation complete: "
-        f"correct={correct}, total={total}, accuracy={accuracy:.4f}, "
-        f"time={time.time() - start_time:.2f}s"
+        f"[INFO] Evaluation complete: acc={accuracy:.4f}, "
+        f"power={avg_watts:.2f}W, energy={total_joules:.2f}J, time={elapsed_sec:.2f}s"
     )
+    return accuracy, avg_watts, total_joules
 
-    return accuracy
+# =========================================================
+# Iterative Magnitude Pruning (IMP) Training Loop
+# =========================================================
+
+def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, power_interval: int = 1):
+    """Trains on-the-fly using Iterative Magnitude Pruning to match target sparsity."""
+    print(f"\n[INFO] Starting Iterative Magnitude Pruning (IMP) for {epochs} epochs...")
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
+    criterion = nn.CrossEntropyLoss()
+    
+    parameters_to_prune = []
+    for module in model.modules():
+        if isinstance(module, (nn.Conv2d, nn.Linear)):
+            parameters_to_prune.append((module, 'weight'))
+            
+    pruning_steps = max(1, int(epochs * 0.75))
+    incremental_amount = 1.0 - (1.0 - target_sparsity) ** (1.0 / pruning_steps)
+    print(f"[INFO] Compounding prune rate: {incremental_amount * 100:.2f}% per step over {pruning_steps} steps.")
+
+    model.train()
+    with PowerTracker(device=device, interval_s=power_interval) as tracker:
+        for epoch in range(epochs):
+            if epoch < pruning_steps:
+                prune.global_unstructured(
+                    parameters_to_prune,
+                    pruning_method=prune.L1Unstructured,
+                    amount=incremental_amount
+                )
+                
+            running_loss = 0.0
+            for inputs, targets in train_loader:
+                inputs, targets = inputs.to(device), targets.to(device)
+                
+                optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs, targets)
+                loss.backward()
+                optimizer.step()
+                running_loss += loss.item()
+                
+            print(f"[INFO] Epoch {epoch + 1}/{epochs} - Train Loss: {running_loss / len(train_loader):.4f}")
+
+    train_watts, train_joules, train_time = tracker.get_results()
+    print(f"[INFO] IMP training energy: {train_watts:.2f}W avg, {train_joules:.2f}J total ({train_time:.2f}s)")
+
+    for module, name in parameters_to_prune:
+        prune.remove(module, name)
+        
+    torch.save({'model_state_dict': model.state_dict()}, save_path)
+    print(f"[INFO] IMP model checkpoint saved to {save_path}\n")
+    
+    model.eval()
+    return model
+
+# =========================================================
+# Architecture and Region Utilities
+# =========================================================
+
+def initialize_architecture(model_name: str, dataset_name: str):
+    """Initializes architecture and returns data loaders and sample tensor."""
+    print(f"[INFO] Initializing architecture: model={model_name}, dataset={dataset_name}")
+    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name, model_name)
+    
+    model_kwargs = {"num_classes": num_classes}
+    dummy_input = next(iter(train_loader))[0][0:1]
+    
+    if model_name == "InceptionNet":
+        model_kwargs["aux_logits"] = False
+        
+    model_class = eval(model_name)
+    model = model_class(**model_kwargs)
+    return model, train_loader, test_loader, dummy_input
+
+def find_experiment_checkpoints(model_name, dataset_name, pre_epochs, post_epochs):
+    """
+    Finds model checkpoints across varied directory conventions (handles optional _None_ tags
+    and case-insensitive dataset matching).
+    """
+    dataset_patterns = [dataset_name, dataset_name.lower(), dataset_name.capitalize()]
+    before_ckpts = []
+    collapsed_ckpts = []
+    after_ckpts = []
+
+    for d_name in set(dataset_patterns):
+        base_pattern = f"../Tranfer/{model_name}_{d_name}*epochs{post_epochs}*pre*{pre_epochs}"
+        before_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Control.pt"))
+        collapsed_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined.pt"))
+        after_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Control_Continuted.pt"))
+
+    return {
+        "before": sorted(list(set(before_ckpts))),
+        "collapsed": sorted(list(set(collapsed_ckpts))),
+        "after": sorted(list(set(after_ckpts)))
+    }
+
+def load_collapse_regions(model_name, dataset_name, pre_epochs, post_epochs):
+    """Searches for discovered regions JSON across matching naming permutations."""
+    dataset_patterns = [dataset_name, dataset_name.lower(), dataset_name.capitalize()]
+    json_filename = None
+
+    for d_name in set(dataset_patterns):
+        candidate = f"../Tranfer/{model_name}_{d_name}_epochs{post_epochs}_pretrain{pre_epochs}_JF_discovered_regions.json"
+        if os.path.isfile(candidate):
+            json_filename = candidate
+            break
+
+    if json_filename is None:
+        raise FileNotFoundError(
+            f"Discovered regions file not found for {model_name}_{dataset_name} (pre={pre_epochs}, post={post_epochs})"
+        )
+
+    print(f"[INFO] Loading discovered regions: {json_filename}")
+    with open(json_filename, "r") as f:
+        discovered_regions = json.load(f)
+
+    json_to_collapse = discovered_regions.get("Dynamic_Region_All_Combined")
+    if not json_to_collapse:
+        raise ValueError(f"No combined collapse regions found in {json_filename}.")
+        
+    return {f"Region_{i}": pair for i, pair in enumerate(json_to_collapse)}
+
 
 
 def extract_features(
@@ -253,44 +340,6 @@ def compare_CKA(features_x: torch.Tensor, features_y: torch.Tensor) -> float:
 # =========================================================
 # Main Post-Processing Routine
 # =========================================================
-def find_experiment_checkpoints(model_name, dataset_name, pre_epochs, post_epochs):
-    """Finds all relevant checkpoints for the given experiment configuration."""
-    base_pattern = f"../Tranfer/{model_name}_{dataset_name}_*epochs{post_epochs}_*pre*{pre_epochs}"
-    
-    return {
-        "before": glob.glob(f"{base_pattern}/checkpoints/final_JF_Control.pt"),
-        "collapsed": glob.glob(f"{base_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined.pt"),
-        "after": glob.glob(f"{base_pattern}/checkpoints/final_JF_Control_Continuted.pt")
-    }
-
-def load_collapse_regions(model_name, dataset_name, pre_epochs, post_epochs):
-    """Searches for discovered regions JSON across matching naming permutations."""
-    dataset_patterns = [dataset_name, dataset_name.lower(), dataset_name.capitalize()]
-    json_filename = None
-
-    for d_name in set(dataset_patterns):
-        candidate = f"../Tranfer/{model_name}_{d_name}_epochs{post_epochs}_pretrain{pre_epochs}_JF_discovered_regions.json"
-        if os.path.isfile(candidate):
-            json_filename = candidate
-            break
-
-    if json_filename is None:
-        raise FileNotFoundError(
-            f"Discovered regions file not found for {model_name}_{dataset_name} (pre={pre_epochs}, post={post_epochs})"
-        )
-
-    print(f"[INFO] Loading discovered regions: {json_filename}")
-    with open(json_filename, "r") as f:
-        discovered_regions = json.load(f)
-
-    json_to_collapse = discovered_regions.get("Dynamic_Region_All_Combined")
-    
-    # FIX: Return None instead of crashing if no regions exist
-    if not json_to_collapse:
-        print(f"[WARN] No combined collapse regions found in {json_filename}. Skipping collapse.")
-        return None
-        
-    return {f"Region_{i}": pair for i, pair in enumerate(json_to_collapse)}
 
 # -======================
 def plot_experiment_heuristics(model_name, dataset_name, stats_csv_path):
