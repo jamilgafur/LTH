@@ -3,11 +3,15 @@ import glob
 import re
 import json
 import time
+import threading
+import subprocess
+import argparse
+from copy import deepcopy
+
 import torch
 import torch.nn as nn
 import torch.nn.utils.prune as prune
 import pandas as pd
-from copy import deepcopy
 
 # Import architectures and utilities from your framework
 from pyPrune.models.Vgg16 import VGG16
@@ -19,9 +23,106 @@ from pyPrune.models.MobileNet import MobileNet
 from utils import *
 
 from collapse import collapse_only
-import argparse
 from attacks import fgsm_attack, pgd_attack
+import measure_power_usage
 
+# =========================================================
+# Power and Energy Monitoring Context Manager
+# =========================================================
+
+class PowerTracker:
+    """
+    Context manager to track average power (Watts) and total energy (Joules)
+    using measure_power_usage.py parsers in a non-blocking background thread.
+    """
+    def __init__(self, device=None, interval_s: int = 1, max_watts: float = None):
+        self.device = device
+        self.interval_s = max(1, int(interval_s))
+        self.max_watts = max_watts
+        self.parser = None
+        self.proc = None
+        self.thread = None
+        self.stop_event = threading.Event()
+        self.start_time = None
+        self.elapsed_time = 0.0
+
+        if torch.cuda.is_available() and (device is None or device.type == "cuda"):
+            try:
+                self.parser = measure_power_usage.NvidiaSmiParser(max_watts=self.max_watts)
+            except Exception as e:
+                print(f"[WARN] Failed to initialize NvidiaSmiParser: {e}")
+                self.parser = None
+        else:
+            try:
+                self.parser = measure_power_usage.TurbostatParser(max_watts=self.max_watts)
+            except Exception as e:
+                print(f"[WARN] Failed to initialize TurbostatParser: {e}")
+                self.parser = None
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stop()
+
+    def _reader(self):
+        while not self.stop_event.is_set():
+            if self.proc and self.proc.stdout:
+                line = self.proc.stdout.readline()
+                if line:
+                    self.parser.parse(line)
+                else:
+                    break
+
+    def start(self):
+        self.start_time = time.time()
+        if self.parser:
+            try:
+                self.proc = self.parser.start_monitoring(self.interval_s)
+                self.thread = threading.Thread(target=self._reader, daemon=True)
+                self.thread.start()
+            except Exception as e:
+                print(f"[WARN] Could not spawn power monitoring process: {e}")
+                self.proc = None
+
+    def stop(self):
+        self.elapsed_time = time.time() - (self.start_time or time.time())
+        self.stop_event.set()
+        if self.proc:
+            try:
+                self.proc.terminate()
+                self.proc.kill()
+            except Exception:
+                pass
+        if self.thread and self.thread.is_alive():
+            self.thread.join(timeout=1.0)
+
+    def get_results(self):
+        if not self.parser:
+            return 0.0, 0.0, self.elapsed_time
+
+        avg_watts, _ = self.parser.get_results()
+
+        # Fallback for fast inference batches
+        if avg_watts == 0.0 and torch.cuda.is_available():
+            try:
+                res = subprocess.run(
+                    "nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits".split(),
+                    capture_output=True, text=True, check=True
+                )
+                vals = [float(x.strip()) for x in res.stdout.strip().splitlines() if x.strip()]
+                if vals:
+                    avg_watts = sum(vals)
+            except Exception:
+                pass
+
+        total_joules = avg_watts * self.elapsed_time
+        return float(avg_watts), float(total_joules), float(self.elapsed_time)
+
+# =========================================================
+# Adversarial Attack Robustness
+# =========================================================
 
 def evaluate_adversarial_robustness(models_dict, data_batch, device, epsilon=0.03):
     """Modular evaluation function for adversarial attacks."""
@@ -49,96 +150,16 @@ def evaluate_adversarial_robustness(models_dict, data_batch, device, epsilon=0.0
             results[f"adv_acc_{attack_name}_{model_name}"] = acc
             
     return results
-
 # =========================================================
-# Iterative Magnitude Pruning (IMP) Training Loop
-# =========================================================
-
-def train_imp(model, train_loader, device, epochs, target_sparsity, save_path):
-    """Trains a model on the fly using Iterative Magnitude Pruning to match target sparsity."""
-    print(f"\n[INFO] Starting Iterative Magnitude Pruning (IMP) for {epochs} epochs...")
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
-    criterion = nn.CrossEntropyLoss()
-    
-    parameters_to_prune = []
-    for module in model.modules():
-        if isinstance(module, (nn.Conv2d, nn.Linear)):
-            parameters_to_prune.append((module, 'weight'))
-            
-    # Prune over the first 75% of epochs, finetune for the rest
-    pruning_steps = max(1, int(epochs * 0.75))
-    
-    # Calculate incremental amount so that compounding hits exactly the target sparsity
-    incremental_amount = 1.0 - (1.0 - target_sparsity) ** (1.0 / pruning_steps)
-    print(f"[INFO] Calculated incremental prune rate: {incremental_amount*100:.2f}% per step over {pruning_steps} steps.")
-
-    model.train()
-    from tqdm import tqdm
-    for epoch in tqdm(range(epochs)):
-        if epoch < pruning_steps:
-            prune.global_unstructured(
-                parameters_to_prune,
-                pruning_method=prune.L1Unstructured,
-                amount=incremental_amount
-            )
-            print(f"[INFO] Pruned epoch {epoch+1}: applied incremental sparsity step.")
-            
-        running_loss = 0.0
-        for inputs, targets in train_loader:
-            inputs, targets = inputs.to(device), targets.to(device)
-            
-            optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, targets)
-            loss.backward()
-            optimizer.step()
-            
-            running_loss += loss.item()
-            
-        print(f"[INFO] Epoch {epoch+1}/{epochs} - Train Loss: {running_loss/len(train_loader):.4f}")
-        
-    # Make pruning permanent by removing the parameter hooks
-    for module, name in parameters_to_prune:
-        prune.remove(module, name)
-        
-    # Save the finetuned sparse weights
-    torch.save({'model_state_dict': model.state_dict()}, save_path)
-    print(f"[INFO] IMP model saved to {save_path}\n")
-    
-    model.eval()
-    return model
-
-# =========================================================
-# Updated Framework Initialization
+# Main Processing Pipeline
 # =========================================================
 
-def initialize_architecture(model_name: str, dataset_name: str):
-    """Updated to return the train_loader needed for on-the-fly finetuning."""
-    print(f"[INFO] Initializing architecture: model={model_name}, dataset={dataset_name}")
-    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name, model_name)
-    
-    model_kwargs = {"num_classes": num_classes}
-    dummy_input = next(iter(train_loader))[0][0:1]
-    
-    if model_name == "InceptionNet":
-        model_kwargs["aux_logits"] = False
-        
-    model_class = eval(model_name)
-    model = model_class(**model_kwargs)
-    
-    return model, train_loader, test_loader, dummy_input
-
-# =========================================================
-# Main Pipeline
-# =========================================================
 def process_checkpoint(model_before_path, checkpoints, args, device):
     checkpoint_start_time = time.time()
     
-    # 1. Parse Context & Load Baseline (Pass args.model and args.dataset)
+    # 1. Parse Context & Load Baseline
     print("[INFO] Parsing experiment directory...")
-    model_name, dataset_name, epochs_str, pre_str, ckpt_epoch, base_dir = parse_directory_context(
-        model_before_path, args.model, args.dataset
-    )
+    model_name, dataset_name, epochs_str, pre_str, ckpt_epoch, base_dir = parse_directory_context(model_before_path)
     
     print("[INFO] Initializing baseline model...")
     base_model, train_loader, test_loader, dummy_input = initialize_architecture(model_name, dataset_name)
@@ -154,10 +175,6 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     print("[INFO] Preparing and executing structural collapse...")
     full_collapsed_base, _, _, _ = initialize_architecture(model_name, dataset_name)
     compression_dict = load_collapse_regions(model_name, dataset_name, args.pre, args.post)
-    
-    if compression_dict is None:
-        print(f"[WARN] Skipping evaluation for {model_before_path} - No collapse regions available.")
-        return None
     
     collapse_start_time = time.time()
     full_collapsed_structure = collapse_only(
@@ -184,7 +201,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
     checkpoint_dir = os.path.dirname(model_before_path)
     unstructured_ckpt_path = os.path.join(checkpoint_dir, f"final_JF_Unstructured_IMP_post{args.post}.pt")
-    print(f"Checking for unstructured ckpt path {unstructured_ckpt_path}")
+    
     if os.path.exists(unstructured_ckpt_path):
         print(f"[INFO] Loading existing IMP unstructured checkpoint: {unstructured_ckpt_path}")
         unstructured_base, _, _, _ = initialize_architecture(model_name, dataset_name)
@@ -199,6 +216,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
             epochs=args.post, 
             target_sparsity=float(target_sparsity), 
             save_path=unstructured_ckpt_path,
+            power_interval=args.power_interval
         )
 
     # 6. Evaluate Accuracy, Power Draw, and Energy Consumption
@@ -263,6 +281,10 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     result_dict.update(adv_metrics)
     return result_dict
 
+# =========================================================
+# Entry Point
+# =========================================================
+
 def main():
     parser = argparse.ArgumentParser(description="CKA, Energy, and Adversarial comparison post-processing")
     parser.add_argument("--model", required=True, help="Model name, e.g. VGG16")
@@ -305,8 +327,12 @@ def main():
         print(f"Path: {model_before_path}")
         print("=" * 70)
 
-        result_metrics = process_checkpoint(model_before_path, checkpoints, args, device)
-        results.append(result_metrics)
+        try:
+            result_metrics = process_checkpoint(model_before_path, checkpoints, args, device)
+            results.append(result_metrics)
+        except Exception as e:
+            print(f"[ERROR] Failed processing checkpoint: {model_before_path}")
+            print(f"[ERROR] {type(e).__name__}: {e}")
 
     # 3. Save Results
     print("\n" + "=" * 70)
@@ -322,4 +348,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    

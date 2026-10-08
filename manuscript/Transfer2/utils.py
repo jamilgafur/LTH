@@ -230,7 +230,8 @@ def find_experiment_checkpoints(model_name, dataset_name, pre_epochs, post_epoch
     after_ckpts = []
 
     for d_name in set(dataset_patterns):
-        base_pattern = f"../Tranfer/{model_name}_{d_name}*epochs{post_epochs}*pre*{pre_epochs}"
+        # FIX: Added an underscore after {d_name} to prevent 'Cifar10' from matching 'Cifar100'
+        base_pattern = f"../Tranfer/{model_name}_{d_name}_*epochs{post_epochs}*pre*{pre_epochs}"
         before_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Control.pt"))
         collapsed_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined.pt"))
         after_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Control_Continuted.pt"))
@@ -240,7 +241,7 @@ def find_experiment_checkpoints(model_name, dataset_name, pre_epochs, post_epoch
         "collapsed": sorted(list(set(collapsed_ckpts))),
         "after": sorted(list(set(after_ckpts)))
     }
-
+    
 def load_collapse_regions(model_name, dataset_name, pre_epochs, post_epochs):
     """Searches for discovered regions JSON across matching naming permutations."""
     dataset_patterns = [dataset_name, dataset_name.lower(), dataset_name.capitalize()]
