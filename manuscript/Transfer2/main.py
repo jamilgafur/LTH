@@ -130,9 +130,7 @@ def initialize_architecture(model_name: str, dataset_name: str):
 # =========================================================
 # Main Pipeline
 # =========================================================
-
 def process_checkpoint(model_before_path, checkpoints, args, device):
-    """Executes the full loading, collapsing, pruning, training, and evaluation pipeline."""
     checkpoint_start_time = time.time()
     
     # 1. Parse Context & Load Baseline
@@ -170,19 +168,18 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     collapsed_model_path = find_matching_checkpoint(model_before_path, checkpoints["collapsed"])
     full_collapsed_model_ready = load_weights(full_collapsed_structure, collapsed_model_path, device)
 
-    # 5. Calculate Dynamic Sparsity & Handle Unstructured Training
+    # 5. Calculate Dynamic Sparsity & Handle IMP Unstructured Pruning
     print("[INFO] Calculating dynamic sparsity to match collapse...")
     original_param_count = sum(p.numel() for p in model_before.parameters())
     collapsed_param_count = sum(p.numel() for p in full_collapsed_model_ready.parameters())
     target_sparsity = 1.0 - (collapsed_param_count / original_param_count)
     print(f"[INFO] Target unstructured sparsity calculated at: {target_sparsity * 100:.2f}%")
 
-    # Check if a finetuned unstructured model already exists
     checkpoint_dir = os.path.dirname(model_before_path)
-    unstructured_ckpt_path = os.path.join(checkpoint_dir, "final_JF_Unstructured_IMP.pt")
+    unstructured_ckpt_path = os.path.join(checkpoint_dir, f"final_JF_Unstructured_IMP_post{args.post}.pt")
     
     if os.path.exists(unstructured_ckpt_path):
-        print(f"[INFO] Found existing IMP unstructured checkpoint: {unstructured_ckpt_path}")
+        print(f"[INFO] Loading existing IMP unstructured checkpoint: {unstructured_ckpt_path}")
         unstructured_base, _, _, _ = initialize_architecture(model_name, dataset_name)
         unstructured_pruning_model = load_weights(unstructured_base, unstructured_ckpt_path, device)
     else:
@@ -194,18 +191,25 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
             device=device, 
             epochs=args.post, 
             target_sparsity=float(target_sparsity), 
-            save_path=unstructured_ckpt_path
+            save_path=unstructured_ckpt_path,
+            power_interval=args.power_interval
         )
 
-    # 6. Evaluate Standard Accuracies
-    print("\n[INFO] Evaluating standard model accuracies...")
-    acc_original_after = evaluate_accuracy(original_after_model, test_loader, device)
-    acc_unstructured = evaluate_accuracy(unstructured_pruning_model, test_loader, device)
-    acc_collapsed = evaluate_accuracy(full_collapsed_model_ready, test_loader, device)
+    # 6. Evaluate Accuracy, Power Draw, and Energy Consumption
+    print("\n[INFO] Evaluating model accuracy, power draw, and energy consumption...")
+    acc_original, power_original, energy_original = evaluate_accuracy(
+        original_after_model, test_loader, device, power_interval=args.power_interval
+    )
+    acc_unstructured, power_unstructured, energy_unstructured = evaluate_accuracy(
+        unstructured_pruning_model, test_loader, device, power_interval=args.power_interval
+    )
+    acc_collapsed, power_collapsed, energy_collapsed = evaluate_accuracy(
+        full_collapsed_model_ready, test_loader, device, power_interval=args.power_interval
+    )
 
-    print(f"[RESULT] Standard Accuracy Original:     {acc_original_after:.4f}")
-    print(f"[RESULT] Standard Accuracy Unstructured: {acc_unstructured:.4f}")
-    print(f"[RESULT] Standard Accuracy Collapsed:    {acc_collapsed:.4f}")
+    print(f"[RESULT] Accuracy Original:     {acc_original:.4f} | Power: {power_original:.2f}W | Energy: {energy_original:.2f}J")
+    print(f"[RESULT] Accuracy Unstructured: {acc_unstructured:.4f} | Power: {power_unstructured:.2f}W | Energy: {energy_unstructured:.2f}J")
+    print(f"[RESULT] Accuracy Collapsed:    {acc_collapsed:.4f} | Power: {power_collapsed:.2f}W | Energy: {energy_collapsed:.2f}J")
 
     # 7. Extract Features & Compute CKA
     print("\n[INFO] Extracting features and computing CKA...")
@@ -213,9 +217,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     features_original = extract_features(original_after_model, test_loader, device)
     features_collapsed = extract_features(full_collapsed_model_ready, test_loader, device)
 
-    print("[INFO] Computing CKA: original vs unstructured...")
     cka_unstructured = compare_CKA(features_original, features_unstructured)
-    print("[INFO] Computing CKA: original vs collapsed...")
     cka_collapsed = compare_CKA(features_original, features_collapsed)
 
     print(f"[RESULT] CKA Unstructured: {cka_unstructured:.6f}")
@@ -224,13 +226,11 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     # 8. Evaluate Adversarial Robustness on First Batch
     print("\n[INFO] Extracting first batch for adversarial evaluation...")
     first_batch = next(iter(test_loader))
-    
     models_to_test = {
         "original": original_after_model,
         "unstructured": unstructured_pruning_model,
         "collapsed": full_collapsed_model_ready
     }
-    
     adv_metrics = evaluate_adversarial_robustness(models_to_test, first_batch, device)
 
     print(f"[INFO] Checkpoint completed in {time.time() - checkpoint_start_time:.2f}s")
@@ -238,33 +238,47 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     result_dict = {
         "model": model_name,
         "dataset": dataset_name,
+        "pre_epochs": args.pre,
+        "post_epochs": args.post,
         "model_before": model_before_path,
         "intermediate_epoch": ckpt_epoch,
-        "acc_original_after": acc_original_after,
+        "acc_original_after": acc_original,
         "acc_unstructured": acc_unstructured,
         "acc_collapsed": acc_collapsed,
+        "power_watts_original": round(power_original, 2),
+        "energy_joules_original": round(energy_original, 2),
+        "power_watts_unstructured": round(power_unstructured, 2),
+        "energy_joules_unstructured": round(energy_unstructured, 2),
+        "power_watts_collapsed": round(power_collapsed, 2),
+        "energy_joules_collapsed": round(energy_collapsed, 2),
         "cka_unstructured": cka_unstructured,
         "cka_collapsed": cka_collapsed,
     }
     result_dict.update(adv_metrics)
-    
     return result_dict
 
 def main():
-    parser = argparse.ArgumentParser(description="CKA and Adversarial comparison post-processing")
+    parser = argparse.ArgumentParser(description="CKA, Energy, and Adversarial comparison post-processing")
     parser.add_argument("--model", required=True, help="Model name, e.g. VGG16")
     parser.add_argument("--pre", type=int, default=300, help="pre collapse epochs")
     parser.add_argument("--post", type=int, default=100, help="post collapse epochs")
     parser.add_argument("--dataset", required=True, help="Dataset name, e.g. Cifar10")
-    parser.add_argument("--output", default="cka_comparison_results.csv", help="Output CSV filename")
+    parser.add_argument("--output", default="auto", help="Output CSV filename (set to 'auto' to avoid collisions)")
+    parser.add_argument("--power-interval", type=int, default=1, help="Query interval in seconds for power monitoring (default: 1)")
     args = parser.parse_args()
+
+    # Automatically format unique output path if 'auto' or default to prevent overwrite collisions
+    if args.output == "auto" or args.output == "cka_comparison_results.csv":
+        args.output = f"cka_results_{args.model}_{args.dataset}_pre{args.pre}_post{args.post}.csv"
 
     total_start_time = time.time()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     print("=" * 70)
-    print("Starting Comparison Post-Processing")
+    print("Starting Comparison Post-Processing Pipeline")
     print(f"Model: {args.model} | Dataset: {args.dataset} | Device: {device}")
+    print(f"Epochs Config: pre={args.pre}, post={args.post}")
+    print(f"Output File: {args.output}")
     if torch.cuda.is_available():
         print(f"CUDA device: {torch.cuda.get_device_name(0)}")
     print("=" * 70)
@@ -272,7 +286,6 @@ def main():
     # 1. Discover Checkpoints
     print("[INFO] Searching for model checkpoints...")
     checkpoints = find_experiment_checkpoints(args.model, args.dataset, args.pre, args.post)
-    
     print(f"[INFO] Found {len(checkpoints['before'])} 'before' checkpoints.")
     print(f"[INFO] Found {len(checkpoints['collapsed'])} collapsed checkpoints.")
     print(f"[INFO] Found {len(checkpoints['after'])} 'after' checkpoints.")
@@ -307,3 +320,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
