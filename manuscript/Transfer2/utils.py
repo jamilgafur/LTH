@@ -37,7 +37,7 @@ from collapse import collapse_only
 import argparse
 import glob
 import re
-
+from main import PowerTracker
 # =========================================================
 # Utility Functions
 # =========================================================
