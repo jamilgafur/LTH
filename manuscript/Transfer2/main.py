@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.utils.prune as prune
 import pandas as pd
+from copy import deepcopy
 
 # Import architectures and utilities from your framework
 from pyPrune.models.Vgg16 import VGG16
@@ -21,41 +22,28 @@ from collapse import collapse_only
 import argparse
 from attacks import fgsm_attack, pgd_attack
 
-# =========================================================
-# Adversarial Attack Implementations
-# =========================================================
 
 def evaluate_adversarial_robustness(models_dict, data_batch, device, epsilon=0.03):
-    """
-    Modular evaluation function for adversarial attacks.
-    Easily expandable by adding new attack functions to the 'attacks' dictionary.
-    """
+    """Modular evaluation function for adversarial attacks."""
     inputs, labels = data_batch
     inputs, labels = inputs.to(device), labels.to(device)
 
-    # Modular registry of attacks. Add new attacks here.
     attacks = {
         "FGSM": lambda m, x, y: fgsm_attack(m, x, y, device, epsilon=epsilon),
         "PGD":  lambda m, x, y: pgd_attack(m, x, y, device, epsilon=epsilon, alpha=0.01, iters=10)
     }
 
     results = {}
-
     for attack_name, attack_fn in attacks.items():
         print(f"[INFO] Running {attack_name} attack (epsilon={epsilon})...")
         for model_name, model in models_dict.items():
             model.eval()
-            
-            # Generate perturbed batch
             perturbed_inputs = attack_fn(model, inputs, labels)
             
-            # Evaluate model on the perturbed batch
             with torch.no_grad():
                 outputs = model(perturbed_inputs)
                 _, predicted = outputs.max(1)
-                correct = predicted.eq(labels).sum().item()
-                total = labels.size(0)
-                acc = correct / total
+                acc = predicted.eq(labels).sum().item() / labels.size(0)
                 
             print(f"       -> {model_name} Accuracy: {acc:.4f}")
             results[f"adv_acc_{attack_name}_{model_name}"] = acc
@@ -63,11 +51,88 @@ def evaluate_adversarial_robustness(models_dict, data_batch, device, epsilon=0.0
     return results
 
 # =========================================================
+# Iterative Magnitude Pruning (IMP) Training Loop
+# =========================================================
+
+def train_imp(model, train_loader, device, epochs, target_sparsity, save_path):
+    """Trains a model on the fly using Iterative Magnitude Pruning to match target sparsity."""
+    print(f"\n[INFO] Starting Iterative Magnitude Pruning (IMP) for {epochs} epochs...")
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
+    criterion = nn.CrossEntropyLoss()
+    
+    parameters_to_prune = []
+    for module in model.modules():
+        if isinstance(module, (nn.Conv2d, nn.Linear)):
+            parameters_to_prune.append((module, 'weight'))
+            
+    # Prune over the first 75% of epochs, finetune for the rest
+    pruning_steps = max(1, int(epochs * 0.75))
+    
+    # Calculate incremental amount so that compounding hits exactly the target sparsity
+    incremental_amount = 1.0 - (1.0 - target_sparsity) ** (1.0 / pruning_steps)
+    print(f"[INFO] Calculated incremental prune rate: {incremental_amount*100:.2f}% per step over {pruning_steps} steps.")
+
+    model.train()
+    for epoch in range(epochs):
+        if epoch < pruning_steps:
+            prune.global_unstructured(
+                parameters_to_prune,
+                pruning_method=prune.L1Unstructured,
+                amount=incremental_amount
+            )
+            print(f"[INFO] Pruned epoch {epoch+1}: applied incremental sparsity step.")
+            
+        running_loss = 0.0
+        for inputs, targets in train_loader:
+            inputs, targets = inputs.to(device), targets.to(device)
+            
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            loss.backward()
+            optimizer.step()
+            
+            running_loss += loss.item()
+            
+        print(f"[INFO] Epoch {epoch+1}/{epochs} - Train Loss: {running_loss/len(train_loader):.4f}")
+        
+    # Make pruning permanent by removing the parameter hooks
+    for module, name in parameters_to_prune:
+        prune.remove(module, name)
+        
+    # Save the finetuned sparse weights
+    torch.save({'model_state_dict': model.state_dict()}, save_path)
+    print(f"[INFO] IMP model saved to {save_path}\n")
+    
+    model.eval()
+    return model
+
+# =========================================================
+# Updated Framework Initialization
+# =========================================================
+
+def initialize_architecture(model_name: str, dataset_name: str):
+    """Updated to return the train_loader needed for on-the-fly finetuning."""
+    print(f"[INFO] Initializing architecture: model={model_name}, dataset={dataset_name}")
+    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name, model_name)
+    
+    model_kwargs = {"num_classes": num_classes}
+    dummy_input = next(iter(train_loader))[0][0:1]
+    
+    if model_name == "InceptionNet":
+        model_kwargs["aux_logits"] = False
+        
+    model_class = eval(model_name)
+    model = model_class(**model_kwargs)
+    
+    return model, train_loader, test_loader, dummy_input
+
+# =========================================================
 # Main Pipeline
 # =========================================================
 
 def process_checkpoint(model_before_path, checkpoints, args, device):
-    """Executes the full loading, collapsing, pruning, and evaluation pipeline."""
+    """Executes the full loading, collapsing, pruning, training, and evaluation pipeline."""
     checkpoint_start_time = time.time()
     
     # 1. Parse Context & Load Baseline
@@ -75,18 +140,18 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     model_name, dataset_name, epochs_str, pre_str, ckpt_epoch, base_dir = parse_directory_context(model_before_path)
     
     print("[INFO] Initializing baseline model...")
-    base_model, test_loader, dummy_input = initialize_architecture(model_name, dataset_name)
+    base_model, train_loader, test_loader, dummy_input = initialize_architecture(model_name, dataset_name)
     model_before = load_weights(base_model, model_before_path, device)
 
     # 2. Load Original Post-Finetuning Model
     print("[INFO] Loading original post-finetuning model...")
     model_after_path = find_matching_checkpoint(model_before_path, checkpoints["after"])
-    original_after_base, _, _ = initialize_architecture(model_name, dataset_name)
+    original_after_base, _, _, _ = initialize_architecture(model_name, dataset_name)
     original_after_model = load_weights(original_after_base, model_after_path, device)
 
     # 3. Execute Structural Collapse
     print("[INFO] Preparing and executing structural collapse...")
-    full_collapsed_base, _, _ = initialize_architecture(model_name, dataset_name)
+    full_collapsed_base, _, _, _ = initialize_architecture(model_name, dataset_name)
     compression_dict = load_collapse_regions(model_name, dataset_name, args.pre, args.post)
     
     collapse_start_time = time.time()
@@ -105,18 +170,35 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     collapsed_model_path = find_matching_checkpoint(model_before_path, checkpoints["collapsed"])
     full_collapsed_model_ready = load_weights(full_collapsed_structure, collapsed_model_path, device)
 
-    # 5. Calculate Dynamic Sparsity & Apply Unstructured Pruning
+    # 5. Calculate Dynamic Sparsity & Handle Unstructured Training
     print("[INFO] Calculating dynamic sparsity to match collapse...")
     original_param_count = sum(p.numel() for p in model_before.parameters())
     collapsed_param_count = sum(p.numel() for p in full_collapsed_model_ready.parameters())
-    
     target_sparsity = 1.0 - (collapsed_param_count / original_param_count)
     print(f"[INFO] Target unstructured sparsity calculated at: {target_sparsity * 100:.2f}%")
 
-    unstructured_pruning_model = apply_unstructured_pruning(model_before, amount=float(target_sparsity))
+    # Check if a finetuned unstructured model already exists
+    checkpoint_dir = os.path.dirname(model_before_path)
+    unstructured_ckpt_path = os.path.join(checkpoint_dir, "final_JF_Unstructured_IMP.pt")
+    
+    if os.path.exists(unstructured_ckpt_path):
+        print(f"[INFO] Found existing IMP unstructured checkpoint: {unstructured_ckpt_path}")
+        unstructured_base, _, _, _ = initialize_architecture(model_name, dataset_name)
+        unstructured_pruning_model = load_weights(unstructured_base, unstructured_ckpt_path, device)
+    else:
+        print("[INFO] IMP checkpoint not found. Starting on-the-fly finetuning...")
+        unstructured_clone = deepcopy(model_before)
+        unstructured_pruning_model = train_imp(
+            model=unstructured_clone, 
+            train_loader=train_loader, 
+            device=device, 
+            epochs=args.post, 
+            target_sparsity=float(target_sparsity), 
+            save_path=unstructured_ckpt_path
+        )
 
-    # 6. Evaluate Accuracies
-    print("[INFO] Evaluating standard model accuracies...")
+    # 6. Evaluate Standard Accuracies
+    print("\n[INFO] Evaluating standard model accuracies...")
     acc_original_after = evaluate_accuracy(original_after_model, test_loader, device)
     acc_unstructured = evaluate_accuracy(unstructured_pruning_model, test_loader, device)
     acc_collapsed = evaluate_accuracy(full_collapsed_model_ready, test_loader, device)
@@ -126,14 +208,13 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     print(f"[RESULT] Standard Accuracy Collapsed:    {acc_collapsed:.4f}")
 
     # 7. Extract Features & Compute CKA
-    print("[INFO] Extracting features and computing CKA...")
+    print("\n[INFO] Extracting features and computing CKA...")
     features_unstructured = extract_features(unstructured_pruning_model, test_loader, device)
     features_original = extract_features(original_after_model, test_loader, device)
     features_collapsed = extract_features(full_collapsed_model_ready, test_loader, device)
 
     print("[INFO] Computing CKA: original vs unstructured...")
     cka_unstructured = compare_CKA(features_original, features_unstructured)
-
     print("[INFO] Computing CKA: original vs collapsed...")
     cka_collapsed = compare_CKA(features_original, features_collapsed)
 
@@ -141,7 +222,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     print(f"[RESULT] CKA Collapsed:    {cka_collapsed:.6f}")
 
     # 8. Evaluate Adversarial Robustness on First Batch
-    print("[INFO] Extracting first batch for adversarial evaluation...")
+    print("\n[INFO] Extracting first batch for adversarial evaluation...")
     first_batch = next(iter(test_loader))
     
     models_to_test = {
@@ -154,7 +235,6 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
     print(f"[INFO] Checkpoint completed in {time.time() - checkpoint_start_time:.2f}s")
 
-    # Construct final results dictionary dynamically
     result_dict = {
         "model": model_name,
         "dataset": dataset_name,
@@ -166,12 +246,9 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         "cka_unstructured": cka_unstructured,
         "cka_collapsed": cka_collapsed,
     }
-    
-    # Merge the adversarial metrics into the final dictionary
     result_dict.update(adv_metrics)
     
     return result_dict
-
 
 def main():
     parser = argparse.ArgumentParser(description="CKA and Adversarial comparison post-processing")
