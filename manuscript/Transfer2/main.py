@@ -475,6 +475,7 @@ def main():
                 full_collapsed_structure, collapsed_model_path, device
             )
 
+
             # ----------------------------------------------------------
             # Evaluate model accuracies
             # ----------------------------------------------------------
