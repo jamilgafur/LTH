@@ -1,0 +1,415 @@
+======================================================================
+Starting Comparison Post-Processing Pipeline
+Model: InceptionNet | Dataset: tinyimagenet | Device: cuda
+Epochs Config: pre=300, post=100
+Output File: cka_results_InceptionNet_tinyimagenet_pre300_post100.csv
+CUDA device: NVIDIA GeForce RTX 2080 Ti
+======================================================================
+[INFO] Searching for model checkpoints...
+[INFO] Found 1 'before' checkpoints.
+[INFO] Found 1 collapsed checkpoints.
+[INFO] Found 1 'after' checkpoints.
+
+======================================================================
+Processing checkpoint 1/1
+Path: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory...
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=InceptionNet, dataset=tinyimagenet
+Loading Tiny ImageNet data for InceptionNet...
+[DEBUG] TinyImageNet root: /old_Users/jgafur/LTH/manuscript/structured_study/.temp/tiny-imagenet-200
+[DEBUG] TinyImageNet train dir exists: True
+[DEBUG] TinyImageNet val dir exists: True
+[DEBUG] TinyImageNet train samples: 100000 | classes: 200
+[DEBUG] TinyImageNet val samples: 10000
+[DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
+[DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
+[INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint loaded. State dict keys: 344
+[INFO] Weights loaded in 0.65s
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=InceptionNet, dataset=tinyimagenet
+Loading Tiny ImageNet data for InceptionNet...
+[DEBUG] TinyImageNet root: /old_Users/jgafur/LTH/manuscript/structured_study/.temp/tiny-imagenet-200
+[DEBUG] TinyImageNet train dir exists: True
+[DEBUG] TinyImageNet val dir exists: True
+[DEBUG] TinyImageNet train samples: 100000 | classes: 200
+[DEBUG] TinyImageNet val samples: 10000
+[DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
+[DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
+[INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint loaded. State dict keys: 344
+[INFO] Weights loaded in 0.10s
+[INFO] Preparing and executing structural collapse...
+[INFO] Initializing architecture: model=InceptionNet, dataset=tinyimagenet
+Loading Tiny ImageNet data for InceptionNet...
+[DEBUG] TinyImageNet root: /old_Users/jgafur/LTH/manuscript/structured_study/.temp/tiny-imagenet-200
+[DEBUG] TinyImageNet train dir exists: True
+[DEBUG] TinyImageNet val dir exists: True
+[DEBUG] TinyImageNet train samples: 100000 | classes: 200
+[DEBUG] TinyImageNet val samples: 10000
+[DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
+[DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
+[INFO] Loading discovered regions: ../Tranfer/InceptionNet_tinyimagenet_epochs100_pretrain300_JF_discovered_regions.json
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (InceptionNet)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 6,185,832
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'Region_0': stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4a.branch3.1.conv', 'stage4.inception_4a.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4a.branch3.1.conv
+[INFO] End Target   : stage4.inception_4a.branch4.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4a.branch3.1.conv' -> 'stage4.inception_4a.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4a' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage4.inception_4a' (InceptionBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4a' -> 'stage4.inception_4a'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4a.branch4.1.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 0: 'inception_4a'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (1, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4a.branch4.1.conv'
+[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv) in 0.37s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 51 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'Region_1': stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4c.branch3.0.conv', 'stage4.inception_4d.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4c.branch3.0.conv
+[INFO] End Target   : stage4.inception_4d.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.0.conv' -> 'stage4.inception_4d.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4c' -> 'stage4.inception_4d'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4d.branch2.0.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (1, 528, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'Region_1' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_2': stage4.inception_4d.branch3.0.conv → stage4.inception_4d.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4d.branch3.0.conv', 'stage4.inception_4d.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4d.branch3.0.conv
+[INFO] End Target   : stage4.inception_4d.branch4.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4d.branch3.0.conv' -> 'stage4.inception_4d.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4d' | Type: SmartIdentity
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4d'
+[DEBUG]   start_layer_name=stage4.inception_4d.branch3.0.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4d.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'Region_2' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'Region_3': stage5.inception_5a.branch3.0.conv → stage5.inception_5a.branch4.1.conv
+[STEP] Calling _collapse_block('stage5.inception_5a.branch3.0.conv', 'stage5.inception_5a.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage5.inception_5a.branch3.0.conv
+[INFO] End Target   : stage5.inception_5a.branch4.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage5.inception_5a.branch3.0.conv' -> 'stage5.inception_5a.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage5.inception_5a' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage5.inception_5a' (InceptionBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage5.inception_5a' -> 'stage5.inception_5a'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage5.inception_5a.branch4.1.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage5' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage5'...
+[DEBUG] Found inserted block candidate at index 0: 'inception_5a'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (1, 832, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage5' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage5.inception_5a.branch3.0.conv' → 'stage5.inception_5a.branch4.1.conv'
+[INFO] ✅ Successfully collapsed block 'Region_3' (stage5.inception_5a.branch3.0.conv → stage5.inception_5a.branch4.1.conv) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_4': stage4.inception_4e.branch2.0.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch2.0.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch2.0.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch2.0.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage4.inception_4e' (InceptionBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4e' -> 'stage4.inception_4e'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4e.branch4.1.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 4: 'inception_4e'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (1, 832, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4e.branch2.0.conv' → 'stage4.inception_4e.branch4.1.conv'
+[INFO] ✅ Successfully collapsed block 'Region_4' (stage4.inception_4e.branch2.0.conv → stage4.inception_4e.branch4.1.conv) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_5': stage4.inception_4e.branch2.1.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch2.1.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch2.1.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch2.1.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: Sequential
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4e'
+[DEBUG]   start_layer_name=stage4.inception_4e.branch2.1.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4e.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'Region_5' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'Region_6': stage4.inception_4e.branch3.0.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch3.0.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch3.0.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch3.0.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: Sequential
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4e'
+[DEBUG]   start_layer_name=stage4.inception_4e.branch3.0.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4e.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'Region_6' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'Region_7': stage5.inception_5a.branch1.conv → stage5.inception_5a.branch2.0.conv
+[STEP] Calling _collapse_block('stage5.inception_5a.branch1.conv', 'stage5.inception_5a.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage5.inception_5a.branch1.conv
+[INFO] End Target   : stage5.inception_5a.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage5.inception_5a.branch1.conv' -> 'stage5.inception_5a.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage5.inception_5a' | Type: Sequential
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage5.inception_5a'
+[DEBUG]   start_layer_name=stage5.inception_5a.branch1.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage5.inception_5a.branch2.0.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'Region_7' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'Region_8': stage4.inception_4e.branch3.1.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch3.1.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch3.1.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch3.1.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: Sequential
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4e'
+[DEBUG]   start_layer_name=stage4.inception_4e.branch3.1.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4e.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'Region_8' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 6,185,832
+[INFO] Parameters after : 4,431,352
+[INFO] ΔParams = +1,754,480 (expected ≤ 0)
+[INFO] Collapse counts: success=4, failed=0, skipped=5
+[INFO] Total collapse runtime: 0.54s
+[RESULT] ✅ collapse_only complete. Total targets: 9 | success=4 | failed=0 | skipped=5
+[INFO] Structural collapse completed in 0.54s
+[INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Checkpoint loaded. State dict keys: 188
+[INFO] Weights loaded in 0.05s
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 28.36%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Initializing architecture: model=InceptionNet, dataset=tinyimagenet
+Loading Tiny ImageNet data for InceptionNet...
+[DEBUG] TinyImageNet root: /old_Users/jgafur/LTH/manuscript/structured_study/.temp/tiny-imagenet-200
+[DEBUG] TinyImageNet train dir exists: True
+[DEBUG] TinyImageNet val dir exists: True
+[DEBUG] TinyImageNet train samples: 100000 | classes: 200
+[DEBUG] TinyImageNet val samples: 10000
+[DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
+[DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
+[INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Checkpoint loaded. State dict keys: 344
+[INFO] Weights loaded in 0.10s
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption...
+[INFO] Starting accuracy and energy evaluation...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4587, power=316.24W, energy=3133.91J, time=9.91s
+[INFO] Starting accuracy and energy evaluation...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.4212, power=322.33W, energy=2882.50J, time=8.94s
+[INFO] Starting accuracy and energy evaluation...
+[INFO] Accuracy evaluation: batch=50, samples=3200
+[INFO] Accuracy evaluation: batch=100, samples=6400
+[INFO] Accuracy evaluation: batch=150, samples=9600
+[INFO] Evaluation complete: acc=0.5197, power=347.06W, energy=3046.26J, time=8.78s
+[RESULT] Accuracy Original:     0.4587 | Power: 316.24W | Energy: 3133.91J
+[RESULT] Accuracy Unstructured: 0.4212 | Power: 322.33W | Energy: 2882.50J
+[RESULT] Accuracy Collapsed:    0.5197 | Power: 347.06W | Energy: 3046.26J
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches...
+[INFO] Feature extraction target layer: Dropout
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 1024), time=0.76s
+[INFO] Extracting features from 10 batches...
+[INFO] Feature extraction target layer: Dropout
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 1024), time=0.75s
+[INFO] Extracting features from 10 batches...
+[INFO] Feature extraction target layer: Dropout
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 1024), time=0.70s
+[INFO] Computing CKA: features_x=(640, 1024), features_y=(640, 1024)
+[INFO] CKA complete: score=0.031312, time=0.07s
+[INFO] Computing CKA: features_x=(640, 1024), features_y=(640, 1024)
+[INFO] CKA complete: score=0.031735, time=0.00s
+[RESULT] CKA Unstructured: 0.031312
+[RESULT] CKA Collapsed:    0.031735
+
+[INFO] Extracting first batch for adversarial evaluation...
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.0469
+       -> unstructured Accuracy: 0.1094
+       -> collapsed Accuracy: 0.0938
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.0156
+       -> unstructured Accuracy: 0.0781
+       -> collapsed Accuracy: 0.0156
+[INFO] Checkpoint completed in 61.44s
+
+======================================================================
+[INFO] Saving final results...
+[INFO] Results successfully saved to 'cka_results_InceptionNet_tinyimagenet_pre300_post100.csv'
+[INFO] Total successful experiments: 1
+[INFO] Total runtime: 61.62s
+
+======================================================================
+FINAL RESULTS
+======================================================================
+          model       dataset  pre_epochs  post_epochs                                                                                     model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0  InceptionNet  tinyimagenet         300          100  ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.4587            0.4212         0.5197                316.24                 3133.91                    322.33                      2882.5                 347.06                  3046.26          0.031312       0.031735               0.046875                   0.109375                 0.09375              0.015625                  0.078125               0.015625

@@ -1,0 +1,325 @@
+======================================================================
+Starting Comparison Post-Processing Pipeline
+Model: ConvNeXt | Dataset: Cifar100 | Device: cuda
+Epochs Config: pre=300, post=100
+Output File: cka_results_ConvNeXt_Cifar100_pre300_post100.csv
+CUDA device: NVIDIA GeForce RTX 2080 Ti
+======================================================================
+[INFO] Searching for model checkpoints...
+[INFO] Found 1 'before' checkpoints.
+[INFO] Found 1 collapsed checkpoints.
+[INFO] Found 1 'after' checkpoints.
+
+======================================================================
+Processing checkpoint 1/1
+Path: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory...
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar100
+Loading CIFAR-100 data for ConvNeXt...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint loaded. State dict keys: 182
+[INFO] Weights loaded in 4.35s
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar100
+Loading CIFAR-100 data for ConvNeXt...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint loaded. State dict keys: 182
+[INFO] Weights loaded in 5.32s
+[INFO] Preparing and executing structural collapse...
+[INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar100
+Loading CIFAR-100 data for ConvNeXt...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[INFO] Loading discovered regions: ../Tranfer/ConvNeXt_Cifar100_epochs100_pretrain300_JF_discovered_regions.json
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (ConvNeXt)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 27,897,028
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'Region_0': features.2.1.dwconv → features.2.1.pwconv1
+[STEP] Calling _collapse_block('features.2.1.dwconv', 'features.2.1.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.2.1.dwconv
+[INFO] End Target   : features.2.1.pwconv1
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.2.1.dwconv' -> 'features.2.1.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.2.1' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.2.1' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.2.1' -> 'features.2.1'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.2.1.pwconv1'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.2' =====
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.2'...
+[DEBUG] Found inserted block candidate at index 1: '1'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (1, 192, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.2' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.1.pwconv1'
+[INFO] ✅ Successfully collapsed block 'Region_0' (features.2.1.dwconv → features.2.1.pwconv1) in 2.09s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_1': features.2.2.dwconv → features.2.2.pwconv1
+[STEP] Calling _collapse_block('features.2.2.dwconv', 'features.2.2.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.2.2.dwconv
+[INFO] End Target   : features.2.2.pwconv1
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.2.2.dwconv' -> 'features.2.2.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.2.2' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.2.2' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.2.2' -> 'features.2.2'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.2.2.pwconv1'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.2' =====
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.2'...
+[DEBUG] Found inserted block candidate at index 2: '2'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (1, 192, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.2' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.2.2.dwconv' → 'features.2.2.pwconv1'
+[INFO] ✅ Successfully collapsed block 'Region_1' (features.2.2.dwconv → features.2.2.pwconv1) in 0.01s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_2': features.3.1 → features.4.0.pwconv1
+[STEP] Calling _collapse_block('features.3.1', 'features.4.0.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.3.1
+[INFO] End Target   : features.4.0.pwconv1
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.3.1' -> 'features.4.0.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.3' -> 'features.4'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.0.pwconv1'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 3: '3'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (1, 384, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.3.1' → 'features.4.0.pwconv1'
+[INFO] ✅ Successfully collapsed block 'Region_2' (features.3.1 → features.4.0.pwconv1) in 0.01s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_3': features.6.0.dwconv → features.6.0.pwconv2
+[STEP] Calling _collapse_block('features.6.0.dwconv', 'features.6.0.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.6.0.dwconv
+[INFO] End Target   : features.6.0.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.6.0.dwconv' -> 'features.6.0.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.6.0' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.6.0' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.6.0' -> 'features.6.0'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.6.0.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.6' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.6'...
+[DEBUG] Found inserted block candidate at index 0: '0'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (1, 768, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.6' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
+[INFO] ✅ Successfully collapsed block 'Region_3' (features.6.0.dwconv → features.6.0.pwconv2) in 0.01s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_4': features.6.1.pwconv1 → features.6.2.pwconv2
+[STEP] Calling _collapse_block('features.6.1.pwconv1', 'features.6.2.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.6.1.pwconv1
+[INFO] End Target   : features.6.2.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.6.1.pwconv1' -> 'features.6.2.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.6' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.6.1' -> 'features.6.2'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.6.2.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.6' =====
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.6'...
+[DEBUG] Found inserted block candidate at index 1: '1'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (1, 768, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.6' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
+[INFO] ✅ Successfully collapsed block 'Region_4' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,897,028
+[INFO] Parameters after : 2,607,172
+[INFO] ΔParams = +25,289,856 (expected ≤ 0)
+[INFO] Collapse counts: success=5, failed=0, skipped=0
+[INFO] Total collapse runtime: 2.21s
+[RESULT] ✅ collapse_only complete. Total targets: 5 | success=5 | failed=0 | skipped=0
+[INFO] Structural collapse completed in 2.21s
+[INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Checkpoint loaded. State dict keys: 67
+[INFO] Weights loaded in 0.51s
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 90.65%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar100
+Loading CIFAR-100 data for ConvNeXt...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Checkpoint loaded. State dict keys: 182
+[INFO] Weights loaded in 2.92s
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption...
+[INFO] Starting accuracy and energy evaluation...
+[INFO] Evaluation complete: acc=0.4149, power=176.59W, energy=668.91J, time=3.79s
+[INFO] Starting accuracy and energy evaluation...
+[INFO] Evaluation complete: acc=0.3788, power=201.97W, energy=528.58J, time=2.62s
+[INFO] Starting accuracy and energy evaluation...
+[INFO] Evaluation complete: acc=0.4365, power=206.79W, energy=500.90J, time=2.42s
+[RESULT] Accuracy Original:     0.4149 | Power: 176.59W | Energy: 668.91J
+[RESULT] Accuracy Unstructured: 0.3788 | Power: 201.97W | Energy: 528.58J
+[RESULT] Accuracy Collapsed:    0.4365 | Power: 206.79W | Energy: 500.90J
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches...
+[INFO] Feature extraction target layer: LayerNorm
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.31s
+[INFO] Extracting features from 10 batches...
+[INFO] Feature extraction target layer: LayerNorm
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.31s
+[INFO] Extracting features from 10 batches...
+[INFO] Feature extraction target layer: LayerNorm
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.28s
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=0.588519, time=0.03s
+[INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
+[INFO] CKA complete: score=0.420193, time=0.00s
+[RESULT] CKA Unstructured: 0.588519
+[RESULT] CKA Collapsed:    0.420193
+
+[INFO] Extracting first batch for adversarial evaluation...
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.1465
+       -> unstructured Accuracy: 0.0645
+       -> collapsed Accuracy: 0.1348
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.1133
+       -> unstructured Accuracy: 0.0508
+       -> collapsed Accuracy: 0.0996
+[INFO] Checkpoint completed in 43.37s
+
+======================================================================
+[INFO] Saving final results...
+[INFO] Results successfully saved to 'cka_results_ConvNeXt_Cifar100_pre300_post100.csv'
+[INFO] Total successful experiments: 1
+[INFO] Total runtime: 43.50s
+
+======================================================================
+FINAL RESULTS
+======================================================================
+      model   dataset  pre_epochs  post_epochs                                                                             model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0  ConvNeXt  Cifar100         300          100  ../Tranfer/ConvNeXt_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.4149            0.3788         0.4365                176.59                  668.91                    201.97                      528.58                 206.79                    500.9          0.588519       0.420193               0.146484                   0.064453                0.134766              0.113281                  0.050781               0.099609

@@ -1,0 +1,500 @@
+======================================================================
+Starting Comparison Post-Processing Pipeline
+Model: XceptionNet | Dataset: Cifar100 | Device: cuda
+Epochs Config: pre=300, post=100
+Output File: cka_results_XceptionNet_Cifar100_pre300_post100.csv
+CUDA device: NVIDIA GeForce RTX 2080 Ti
+======================================================================
+[INFO] Searching for model checkpoints...
+[INFO] Found 1 'before' checkpoints.
+[INFO] Found 1 collapsed checkpoints.
+[INFO] Found 1 'after' checkpoints.
+
+======================================================================
+Processing checkpoint 1/1
+Path: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory...
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar100
+Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint loaded. State dict keys: 276
+[INFO] Weights loaded in 7.47s
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar100
+Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint loaded. State dict keys: 276
+[INFO] Weights loaded in 13.06s
+[INFO] Preparing and executing structural collapse...
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar100
+Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[INFO] Loading discovered regions: ../Tranfer/XceptionNet_Cifar100_epochs100_pretrain300_JF_discovered_regions.json
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (XceptionNet)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 21,011,852
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'Region_0': middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.0.rep.4.depthwise', 'middle_flow.0.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.0.rep.4.depthwise
+[INFO] End Target   : middle_flow.0.rep.7.depthwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.0.rep.4.depthwise' -> 'middle_flow.0.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.0.rep' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'middle_flow.0.rep.4' -> 'middle_flow.0.rep.7'...
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.0.rep.7.depthwise'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.0.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.0.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (1, 728, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'Region_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.30s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'Region_1': middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.1.rep.4.depthwise', 'middle_flow.1.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.1.rep.4.depthwise
+[INFO] End Target   : middle_flow.1.rep.7.depthwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.1.rep.4.depthwise' -> 'middle_flow.1.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.1.rep' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'middle_flow.1.rep.4' -> 'middle_flow.1.rep.7'...
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.1.rep.7.depthwise'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.1.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.1.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (1, 728, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'middle_flow.1.rep' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'middle_flow.1.rep.4.depthwise' → 'middle_flow.1.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'Region_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_2': middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.2.rep.4.depthwise', 'middle_flow.2.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.2.rep.4.depthwise
+[INFO] End Target   : middle_flow.2.rep.7.depthwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.2.rep.4.depthwise' -> 'middle_flow.2.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.2.rep' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'middle_flow.2.rep.4' -> 'middle_flow.2.rep.7'...
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.2.rep.7.depthwise'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.2.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.2.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (1, 728, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'middle_flow.2.rep' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'middle_flow.2.rep.4.depthwise' → 'middle_flow.2.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'Region_2' (middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.depthwise) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_3': middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.3.rep.4.depthwise', 'middle_flow.3.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.3.rep.4.depthwise
+[INFO] End Target   : middle_flow.3.rep.7.depthwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.3.rep.4.depthwise' -> 'middle_flow.3.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.3.rep' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'middle_flow.3.rep.4' -> 'middle_flow.3.rep.7'...
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.3.rep.7.depthwise'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.3.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.3.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (1, 728, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'middle_flow.3.rep' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'middle_flow.3.rep.4.depthwise' → 'middle_flow.3.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'Region_3' (middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.depthwise) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_4': middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.4.rep.4.depthwise', 'middle_flow.4.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.4.rep.4.depthwise
+[INFO] End Target   : middle_flow.4.rep.7.depthwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.4.rep.4.depthwise' -> 'middle_flow.4.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.4.rep' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'middle_flow.4.rep.4' -> 'middle_flow.4.rep.7'...
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.4.rep.7.depthwise'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.4.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.4.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (1, 728, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'middle_flow.4.rep' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'middle_flow.4.rep.4.depthwise' → 'middle_flow.4.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'Region_4' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_5': middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.5.rep.4.depthwise', 'middle_flow.5.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.5.rep.4.depthwise
+[INFO] End Target   : middle_flow.5.rep.7.depthwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.5.rep.4.depthwise' -> 'middle_flow.5.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.5.rep' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'middle_flow.5.rep.4' -> 'middle_flow.5.rep.7'...
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.5.rep.7.depthwise'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.5.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.5.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (1, 728, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'middle_flow.5.rep' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'middle_flow.5.rep.4.depthwise' → 'middle_flow.5.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'Region_5' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_6': middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.6.rep.4.depthwise', 'middle_flow.6.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.6.rep.4.depthwise
+[INFO] End Target   : middle_flow.6.rep.7.depthwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.6.rep.4.depthwise' -> 'middle_flow.6.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.6.rep' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'middle_flow.6.rep.4' -> 'middle_flow.6.rep.7'...
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.6.rep.7.depthwise'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.6.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.6.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (1, 728, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'middle_flow.6.rep' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'middle_flow.6.rep.4.depthwise' → 'middle_flow.6.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'Region_6' (middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_7': middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise
+[STEP] Calling _collapse_block('middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.pointwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.7.rep.4.depthwise
+[INFO] End Target   : middle_flow.7.rep.7.pointwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.7.rep.4.depthwise' -> 'middle_flow.7.rep.7.pointwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.7.rep' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'middle_flow.7.rep.4' -> 'middle_flow.7.rep.7'...
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.7.rep.7.pointwise'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.7.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.7.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (1, 728, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'middle_flow.7.rep' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'middle_flow.7.rep.4.depthwise' → 'middle_flow.7.rep.7.pointwise'
+[INFO] ✅ Successfully collapsed block 'Region_7' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_8': block4.rep.1.depthwise → block4.rep.4.depthwise
+[STEP] Calling _collapse_block('block4.rep.1.depthwise', 'block4.rep.4.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : block4.rep.1.depthwise
+[INFO] End Target   : block4.rep.4.depthwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'block4.rep.1.depthwise' -> 'block4.rep.4.depthwise'
+[DEBUG] [LCA] Resolved Container: 'block4.rep' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'block4.rep.1' -> 'block4.rep.4'...
+
+[STEP 3] Probing graph for downstream classifier after 'block4.rep.4.depthwise'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'block4.rep' =====
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'block4.rep'...
+[DEBUG] Found inserted block candidate at index 1: '1'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (1, 1024, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'block4.rep' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'block4.rep.4.depthwise'
+[INFO] ✅ Successfully collapsed block 'Region_8' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.03s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_9': conv3.depthwise → conv4.pointwise
+[STEP] Calling _collapse_block('conv3.depthwise', 'conv4.pointwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : conv3.depthwise
+[INFO] End Target   : conv4.pointwise
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'conv3.depthwise' -> 'conv4.pointwise'
+[DEBUG] [LCA] Resolved Container: '' | Type: XceptionNet
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'conv3' -> 'conv4'...
+
+[STEP 3] Probing graph for downstream classifier after 'conv4.pointwise'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+[DEBUG] Updating root container in-place (Preserving attribute names).
+[ERROR] Replacement forward validation failed: ValueError: Expected more than 1 value per channel when training, got input size torch.Size([1, 2048, 1, 1])
+[ERROR]   container: <root>
+[ERROR]   start_idx: 6
+[ERROR]   input_shape: (1, 1024, 1, 1)
+[ERROR]   expected_out_channels: 2048
+
+[STEP] ===== Starting _validate_downstream for '' =====
+[DEBUG] start_idx=6, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within ''...
+[DEBUG] Found inserted block candidate at index 6: 'conv3'
+[STEP] Validating inserted module 'Sequential' at index 6...
+[DEBUG] Inserted module forward successful, output shape: (1, 2048, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[WARN] Downstream module '.fc' raised exception: mat1 and mat2 shapes cannot be multiplied (2048x1 and 2048x100)
+[INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
+
+[INFO] ✅ Framework successfully merged 'conv3.depthwise' → 'conv4.pointwise'
+[INFO] ✅ Successfully collapsed block 'Region_9' (conv3.depthwise → conv4.pointwise) in 0.04s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 21,011,852
+[INFO] Parameters after : 13,481,196
+[INFO] ΔParams = +7,530,656 (expected ≤ 0)
+[INFO] Collapse counts: success=10, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.66s
+[RESULT] ✅ collapse_only complete. Total targets: 10 | success=10 | failed=0 | skipped=0
+[INFO] Structural collapse completed in 0.66s
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Checkpoint loaded. State dict keys: 246
+[INFO] Weights loaded in 7.15s
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 35.84%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Initializing architecture: model=XceptionNet, dataset=Cifar100
+Loading CIFAR-100 data for XceptionNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Checkpoint loaded. State dict keys: 276
+[INFO] Weights loaded in 3.35s
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption...
+[INFO] Starting accuracy and energy evaluation...
+[INFO] Evaluation complete: acc=0.0116, power=322.41W, energy=967.34J, time=3.00s
+[INFO] Starting accuracy and energy evaluation...
+[INFO] Evaluation complete: acc=0.5935, power=343.13W, energy=1009.34J, time=2.94s
+[INFO] Starting accuracy and energy evaluation...
+[INFO] Evaluation complete: acc=0.5973, power=353.92W, energy=1136.90J, time=3.21s
+[RESULT] Accuracy Original:     0.0116 | Power: 322.41W | Energy: 967.34J
+[RESULT] Accuracy Unstructured: 0.5935 | Power: 343.13W | Energy: 1009.34J
+[RESULT] Accuracy Collapsed:    0.5973 | Power: 353.92W | Energy: 1136.90J
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches...
+[INFO] Feature extraction target layer: AdaptiveAvgPool2d
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 2048), time=1.41s
+[INFO] Extracting features from 10 batches...
+[INFO] Feature extraction target layer: AdaptiveAvgPool2d
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 2048), time=1.40s
+[INFO] Extracting features from 10 batches...
+[INFO] Feature extraction target layer: AdaptiveAvgPool2d
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 2048), time=1.40s
+[INFO] Computing CKA: features_x=(5120, 2048), features_y=(5120, 2048)
+[INFO] CKA complete: score=0.664729, time=0.06s
+[INFO] Computing CKA: features_x=(5120, 2048), features_y=(5120, 2048)
+[INFO] CKA complete: score=0.599634, time=0.01s
+[RESULT] CKA Unstructured: 0.664729
+[RESULT] CKA Collapsed:    0.599634
+
+[INFO] Extracting first batch for adversarial evaluation...
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.0078
+       -> unstructured Accuracy: 0.1738
+       -> collapsed Accuracy: 0.2031
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.0078
+       -> unstructured Accuracy: 0.0840
+       -> collapsed Accuracy: 0.1074
+[INFO] Checkpoint completed in 59.84s
+
+======================================================================
+[INFO] Saving final results...
+[INFO] Results successfully saved to 'cka_results_XceptionNet_Cifar100_pre300_post100.csv'
+[INFO] Total successful experiments: 1
+[INFO] Total runtime: 59.98s
+
+======================================================================
+FINAL RESULTS
+======================================================================
+         model   dataset  pre_epochs  post_epochs                                                                                model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0  XceptionNet  Cifar100         300          100  ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.0116            0.5935         0.5973                322.41                  967.34                    343.13                     1009.34                 353.92                   1136.9          0.664729       0.599634               0.007812                   0.173828                0.203125              0.007812                  0.083984               0.107422
