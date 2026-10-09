@@ -235,7 +235,7 @@ def initialize_architecture(model_name: str, dataset_name: str):
     train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name, model_name)
     
     model_kwargs = {"num_classes": num_classes}
-    dummy_input = next(iter(train_loader))[0][0:1]
+    dummy_input = next(iter(train_loader))[0][0:2]
     
     if model_name == "InceptionNet":
         model_kwargs["aux_logits"] = False
@@ -288,11 +288,15 @@ def load_collapse_regions(model_name, dataset_name, pre_epochs, post_epochs):
         discovered_regions = json.load(f)
 
     json_to_collapse = discovered_regions.get("Dynamic_Region_All_Combined")
+    
+    # Fallback for simpler JSON structures (like MobileNet)
     if not json_to_collapse:
-        raise ValueError(f"No combined collapse regions found in {json_filename}.")
+        json_to_collapse = discovered_regions.get("Set_0")
+        
+    if not json_to_collapse:
+        raise ValueError(f"No valid collapse regions (Dynamic_Region_All_Combined or Set_0) found in {json_filename}.")
         
     return {f"Region_{i}": pair for i, pair in enumerate(json_to_collapse)}
-
 
 
 def extract_features(
