@@ -33,6 +33,16 @@ import torch.nn.utils.prune as prune
 import pandas as pd
 import torch.nn as nn
 
+
+# Add this at the top of utils.py with your other imports
+from pyPrune.models.Vgg16 import VGG16
+from pyPrune.models.RegNetX import RegNetX_400MF
+from pyPrune.models.ConvNetX import ConvNeXt
+from pyPrune.models.InceptionNet import InceptionNet
+from pyPrune.models.XceptionNet import XceptionNet
+from pyPrune.models.MobileNet import MobileNet
+
+
 from collapse import collapse_only
 import argparse
 import glob
