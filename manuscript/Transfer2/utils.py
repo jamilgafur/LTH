@@ -241,7 +241,7 @@ def find_experiment_checkpoints(model_name, dataset_name, pre_epochs, post_epoch
         "collapsed": sorted(list(set(collapsed_ckpts))),
         "after": sorted(list(set(after_ckpts)))
     }
-    
+
 def load_collapse_regions(model_name, dataset_name, pre_epochs, post_epochs):
     """Searches for discovered regions JSON across matching naming permutations."""
     dataset_patterns = [dataset_name, dataset_name.lower(), dataset_name.capitalize()]
