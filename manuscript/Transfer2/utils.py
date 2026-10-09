@@ -312,7 +312,8 @@ def initialize_architecture(model_name: str, dataset_name: str):
 def find_experiment_checkpoints(model_name, dataset_name, pre_epochs, post_epochs):
     """
     Finds model checkpoints across varied directory conventions (handles optional _None_ tags
-    and case-insensitive dataset matching).
+    and case-insensitive dataset matching). Automatically falls back to Set_0 if 
+    Dynamic_Region_All_Combined is not present.
     """
     dataset_patterns = [dataset_name, dataset_name.lower(), dataset_name.capitalize()]
     before_ckpts = []
@@ -320,11 +321,19 @@ def find_experiment_checkpoints(model_name, dataset_name, pre_epochs, post_epoch
     after_ckpts = []
 
     for d_name in set(dataset_patterns):
-        # FIX: Added an underscore after {d_name} to prevent 'Cifar10' from matching 'Cifar100'
         base_pattern = f"../Tranfer/{model_name}_{d_name}_*epochs{post_epochs}*pre*{pre_epochs}"
+        
+        # Original and Control check
         before_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Control.pt"))
-        collapsed_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined.pt"))
         after_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Control_Continuted.pt"))
+        
+        # Collapsed check with fallback logic
+        combined_ckpts = glob.glob(f"{base_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined.pt")
+        if combined_ckpts:
+            collapsed_ckpts.extend(combined_ckpts)
+        else:
+            # Fallback to Set_0 if only one region was discovered
+            collapsed_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Set_0.pt"))
 
     return {
         "before": sorted(list(set(before_ckpts))),
