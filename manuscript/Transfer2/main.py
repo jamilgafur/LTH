@@ -159,7 +159,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     
     # 1. Parse Context & Load Baseline
     print("[INFO] Parsing experiment directory...")
-    model_name, dataset_name, epochs_str, pre_str, ckpt_epoch, base_dir = parse_directory_context(model_before_path)
+    model_name, dataset_name, epochs_str, pre_str, ckpt_epoch, base_dir = parse_directory_context(model_before_path, args.model, args.dataset)
     
     print("[INFO] Initializing baseline model...")
     base_model, train_loader, test_loader, dummy_input = initialize_architecture(model_name, dataset_name)
