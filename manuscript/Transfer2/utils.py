@@ -230,14 +230,21 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, p
             for inputs, targets in train_loader:
                 inputs, targets = inputs.to(device), targets.to(device)
                 
-                optimizer.zero_grad()
+                optimizer.zero_grad(set_to_none=True) # More memory efficient than zero_grad()
                 outputs = model(inputs)
                 loss = criterion(outputs, targets)
                 loss.backward()
                 optimizer.step()
-                running_loss += loss.item()
+                running_loss += loss.item() # .item() prevents memory leak
+                
+                # Aggressively delete tensors to free memory
+                del inputs, targets, outputs, loss
                 
             print(f"[INFO] Epoch {epoch + 1}/{epochs} - Train Loss: {running_loss / len(train_loader):.4f}")
+            
+            # Force CUDA cache clear at the end of every epoch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
     train_watts, train_joules, train_time = tracker.get_results()
     print(f"[INFO] IMP training energy: {train_watts:.2f}W avg, {train_joules:.2f}J total ({train_time:.2f}s)")
@@ -249,6 +256,11 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, p
     print(f"[INFO] IMP model checkpoint saved to {save_path}\n")
     
     model.eval()
+    
+    # Final cleanup before exiting IMP
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        
     return model
 
 # =========================================================
@@ -315,15 +327,25 @@ def load_collapse_regions(model_name, dataset_name, pre_epochs, post_epochs):
 
     json_to_collapse = discovered_regions.get("Dynamic_Region_All_Combined")
     
-    # Fallback for simpler JSON structures (like MobileNet)
+    # Fallback for simpler JSON structures (like MobileNet or VGG16)
     if not json_to_collapse:
         json_to_collapse = discovered_regions.get("Set_0")
         
     if not json_to_collapse:
         raise ValueError(f"No valid collapse regions (Dynamic_Region_All_Combined or Set_0) found in {json_filename}.")
         
-    return {f"Region_{i}": pair for i, pair in enumerate(json_to_collapse)}
-
+    # CRITICAL FIX: Ensure the JSON structure is properly paired for unpacking
+    formatted_regions = {}
+    if isinstance(json_to_collapse, list) and len(json_to_collapse) > 0:
+        if isinstance(json_to_collapse[0], list):
+            # Already paired lists (e.g., [["start1", "end1"], ["start2", "end2"]])
+            formatted_regions = {f"Region_{i}": pair for i, pair in enumerate(json_to_collapse)}
+        else:
+            # A flat list (e.g., ["start1", "end1", "start2", "end2"]) - pair them up sequentially
+            paired_list = [[json_to_collapse[i], json_to_collapse[i+1]] for i in range(0, len(json_to_collapse)-1, 2)]
+            formatted_regions = {f"Region_{i}": pair for i, pair in enumerate(paired_list)}
+            
+    return formatted_regions
 
 def extract_features(
     model: nn.Module, dataloader, device: torch.device, max_batches: int = 10
