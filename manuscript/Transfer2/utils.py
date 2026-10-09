@@ -272,14 +272,41 @@ def initialize_architecture(model_name: str, dataset_name: str):
     print(f"[INFO] Initializing architecture: model={model_name}, dataset={dataset_name}")
     train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name, model_name)
     
-    model_kwargs = {"num_classes": num_classes}
+    # Grab a batch of 2 to ensure BatchNorm doesn't crash on 1x1 spatial dimensions
     dummy_input = next(iter(train_loader))[0][0:2]
+    print(f"[DEBUG] dummy_input shape generated for initialization: {dummy_input.shape}")
+    
+    # Pass 'one_batch' so custom architectures can dynamically calculate their FC layer sizes
+    model_kwargs = {
+        "num_classes": num_classes,
+        "one_batch": dummy_input
+    }
     
     if model_name == "InceptionNet":
         model_kwargs["aux_logits"] = False
         
     model_class = eval(model_name)
-    model = model_class(**model_kwargs)
+    
+    try:
+        print(f"[DEBUG] Attempting to initialize {model_name} with kwargs: {model_kwargs.keys()}")
+        model = model_class(**model_kwargs)
+        print(f"[DEBUG] {model_name} successfully initialized WITH one_batch.")
+    except TypeError as e:
+        print(f"[CRITICAL WARNING] {model_name} rejected 'one_batch' kwarg! Error: {e}")
+        print(f"[DEBUG] Falling back to default initialization without 'one_batch'.")
+        model_kwargs.pop("one_batch", None)
+        model = model_class(**model_kwargs)
+
+    # --- BRUTE-FORCE SHAPE FIX FOR VGG16 TINYIMAGENET ---
+    # If the above failed and the classifier is still 512, we forcefully overwrite it.
+    if model_name == "VGG16" and dataset_name.lower() in ["tinyimagenet", "tiny_imagenet"]:
+        # Check if the first layer in the classifier (fc_1) has 512 in_features
+        if hasattr(model, 'classifier') and isinstance(model.classifier[0], torch.nn.Linear):
+            if model.classifier[0].in_features == 512:
+                print("[CRITICAL WARNING] VGG16 initialized with 512 dims for TinyImageNet. Forcefully hot-swapping to 2048 dims!")
+                model.classifier[0] = torch.nn.Linear(2048, 4096)
+    # ----------------------------------------------------
+
     return model, train_loader, test_loader, dummy_input
 
 def find_experiment_checkpoints(model_name, dataset_name, pre_epochs, post_epochs):
