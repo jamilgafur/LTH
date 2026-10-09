@@ -78,40 +78,66 @@ def find_matching_checkpoint(before_path: str, candidate_paths: list) -> str:
     raise FileNotFoundError(f"No matching checkpoint found for {base_dir}")
 
 def load_weights(model: nn.Module, filepath: str, device: torch.device):
-    """Loads a PyTorch model checkpoint state_dict into the instantiated model."""
+    """Loads a PyTorch model checkpoint state_dict into the instantiated model with extreme logging."""
     print(f"[INFO] Loading weights: {filepath}")
     start_time = time.time()
 
-    checkpoint = torch.load(filepath, map_location=device, weights_only=False)
-    raw_state_dict = checkpoint.get("model_state_dict", checkpoint.get("model", checkpoint))
+    try:
+        checkpoint = torch.load(filepath, map_location=device, weights_only=False)
+        raw_state_dict = checkpoint.get("model_state_dict", checkpoint.get("model", checkpoint))
+    except Exception as e:
+        print(f"[CRITICAL ERROR] Failed to open checkpoint file {filepath}. Error: {e}")
+        raise e
 
     # --- KEY MAPPING INTERCEPT ---
     state_dict = {}
     for key, value in raw_state_dict.items():
-        # Fix ConvNeXt collapse mismatch
-        new_key = key.replace("conv_dw", "conv_g1x1")
-        # Fix potential XceptionNet DataParallel artifacts
-        new_key = new_key.replace("module.", "")
-        
+        # Fix ConvNeXt collapse mismatch & XceptionNet DataParallel artifacts
+        new_key = key.replace("conv_dw", "conv_g1x1").replace("module.", "")
         state_dict[new_key] = value
-    # -----------------------------
 
-    print(f"[INFO] Checkpoint loaded. State dict keys: {len(state_dict)}")
+    print(f"[INFO] Checkpoint extracted. Candidate state dict keys: {len(state_dict)}")
 
-    incompatible_keys = model.load_state_dict(state_dict, strict=False)
+    # --- SHAPE MISMATCH DIAGNOSTICS & FILTERING ---
+    model_state = model.state_dict()
+    mismatched_keys = []
     
-    if incompatible_keys.missing_keys:
-        print(f"\n[CRITICAL WARNING] {len(incompatible_keys.missing_keys)} Missing keys!")
-        print(f"Sample missing: {incompatible_keys.missing_keys[:5]}\n")
+    for k, v in state_dict.items():
+        if k in model_state:
+            expected_shape = model_state[k].shape
+            checkpoint_shape = v.shape
+            if expected_shape != checkpoint_shape:
+                print(f"[SHAPE MISMATCH FATAL] Layer: '{k}'")
+                print(f"   -> Checkpoint holds : {checkpoint_shape}")
+                print(f"   -> Model expects    : {expected_shape}")
+                mismatched_keys.append(k)
+
+    # Prevent hard PyTorch crash by stripping out mismatched shapes
+    if mismatched_keys:
+        print(f"\n[CRITICAL WARNING] Dropping {len(mismatched_keys)} keys due to shape mismatches to prevent hard crash!")
+        for k in mismatched_keys:
+            del state_dict[k]
+
+    # --- LOAD WEIGHTS ---
+    try:
+        incompatible_keys = model.load_state_dict(state_dict, strict=False)
         
-    if incompatible_keys.unexpected_keys:
-        print(f"[CRITICAL WARNING] {len(incompatible_keys.unexpected_keys)} Unexpected keys in checkpoint!")
-        print(f"Sample unexpected: {incompatible_keys.unexpected_keys[:5]}\n")
+        if incompatible_keys.missing_keys:
+            print(f"\n[CRITICAL WARNING] {len(incompatible_keys.missing_keys)} Missing keys (Model expects these, but checkpoint lacks them)!")
+            print(f"Sample missing: {incompatible_keys.missing_keys[:10]}")
+            
+        if incompatible_keys.unexpected_keys:
+            print(f"\n[CRITICAL WARNING] {len(incompatible_keys.unexpected_keys)} Unexpected keys (Checkpoint has these, but model ignores them)!")
+            print(f"Sample unexpected: {incompatible_keys.unexpected_keys[:10]}")
+            
+    except RuntimeError as e:
+        print(f"\n[CRITICAL ERROR] PyTorch RuntimeError during load_state_dict: {e}")
+        raise e
 
     model.to(device)
     model.eval()
 
-    print(f"[INFO] Weights loaded in {time.time() - start_time:.2f}s")
+    print(f"[INFO] Weights loaded in {time.time() - start_time:.2f}s\n")
 
     return model
 
