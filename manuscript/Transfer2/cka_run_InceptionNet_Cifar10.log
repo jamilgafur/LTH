@@ -1,0 +1,445 @@
+======================================================================
+Starting Comparison Post-Processing Pipeline
+Model: InceptionNet | Dataset: Cifar10 | Device: cuda
+Epochs Config: pre=300, post=100
+Output File: cka_results_InceptionNet_Cifar10_pre300_post100.csv
+CUDA device: NVIDIA GeForce RTX 2080 Ti
+======================================================================
+[INFO] Searching for model checkpoints...
+[INFO] Found 1 'before' checkpoints.
+[INFO] Found 1 collapsed checkpoints.
+[INFO] Found 1 'after' checkpoints.
+
+======================================================================
+Processing checkpoint 1/1
+Path: ../Tranfer/InceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory...
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=InceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 0.71s
+
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar10_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=InceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 0.58s
+
+[INFO] Preparing and executing structural collapse...
+[INFO] Initializing architecture: model=InceptionNet, dataset=Cifar10
+Loading CIFAR-10 data for InceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[INFO] Loading discovered regions: ../Tranfer/InceptionNet_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (InceptionNet)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 5,991,082
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'Region_0': stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4a.branch3.1.conv', 'stage4.inception_4b.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4a.branch3.1.conv
+[INFO] End Target   : stage4.inception_4b.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4a.branch3.1.conv' -> 'stage4.inception_4b.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4a' -> 'stage4.inception_4b'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4b.branch2.0.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 0: 'inception_4a'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (2, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 4.43s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
+
+[INFO] Processing collapse task 'Region_1': stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4b.branch3.0.conv', 'stage4.inception_4c.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4b.branch3.0.conv
+[INFO] End Target   : stage4.inception_4c.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4b.branch3.0.conv' -> 'stage4.inception_4c.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4b' -> 'stage4.inception_4c'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4c.branch2.0.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 1: 'inception_4b'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (2, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4b.branch3.0.conv' → 'stage4.inception_4c.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'Region_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_2': stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4c.branch3.0.conv', 'stage4.inception_4d.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4c.branch3.0.conv
+[INFO] End Target   : stage4.inception_4d.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.0.conv' -> 'stage4.inception_4d.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4c' -> 'stage4.inception_4d'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4d.branch2.0.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (2, 528, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'Region_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_3': stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4d.branch3.0.conv', 'stage4.inception_4e.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4d.branch3.0.conv
+[INFO] End Target   : stage4.inception_4e.branch2.0.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4d.branch3.0.conv' -> 'stage4.inception_4e.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4d' -> 'stage4.inception_4e'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4e.branch2.0.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 3: 'inception_4d'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (2, 832, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.0.conv' → 'stage4.inception_4e.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'Region_3' (stage4.inception_4d.branch3.0.conv → stage4.inception_4e.branch2.0.conv) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_4': stage4.inception_4e.branch3.0.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch3.0.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch3.0.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch3.0.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: SmartIdentity
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4e'
+[DEBUG]   start_layer_name=stage4.inception_4e.branch3.0.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4e.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'Region_4' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'Region_5': stage5.inception_5b.branch2.1.conv → stage5.inception_5b.branch3.1.conv
+[STEP] Calling _collapse_block('stage5.inception_5b.branch2.1.conv', 'stage5.inception_5b.branch3.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage5.inception_5b.branch2.1.conv
+[INFO] End Target   : stage5.inception_5b.branch3.1.conv
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage5.inception_5b.branch2.1.conv' -> 'stage5.inception_5b.branch3.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage5.inception_5b' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage5.inception_5b' (InceptionBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'stage5.inception_5b' -> 'stage5.inception_5b'...
+
+[STEP 3] Probing graph for downstream classifier after 'stage5.inception_5b.branch3.1.conv'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'stage5' =====
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage5'...
+[DEBUG] Found inserted block candidate at index 1: 'inception_5b'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (2, 1024, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage5' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'stage5.inception_5b.branch2.1.conv' → 'stage5.inception_5b.branch3.1.conv'
+[INFO] ✅ Successfully collapsed block 'Region_5' (stage5.inception_5b.branch2.1.conv → stage5.inception_5b.branch3.1.conv) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 5,991,082
+[INFO] Parameters after : 3,809,226
+[INFO] ΔParams = +2,181,856 (expected ≤ 0)
+[INFO] Collapse counts: success=5, failed=0, skipped=1
+[INFO] Total collapse runtime: 4.58s
+[RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
+[INFO] Structural collapse completed in 4.58s
+[INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar10_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 158
+[INFO] Weights loaded in 4.27s
+
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 36.42%
+[INFO] IMP checkpoint not found. Starting on-the-fly finetuning...
+
+[INFO] Starting Iterative Magnitude Pruning (IMP) for 100 epochs...
+[INFO] Compounding prune rate: 0.60% per step over 75 steps.
+[INFO] Epoch 1/100 - Train Loss: 0.1564
+[INFO] Epoch 2/100 - Train Loss: 0.0915
+[INFO] Epoch 3/100 - Train Loss: 0.0755
+[INFO] Epoch 4/100 - Train Loss: 0.0753
+[INFO] Epoch 5/100 - Train Loss: 0.0705
+[INFO] Epoch 6/100 - Train Loss: 0.0567
+[INFO] Epoch 7/100 - Train Loss: 0.0631
+[INFO] Epoch 8/100 - Train Loss: 0.0545
+[INFO] Epoch 9/100 - Train Loss: 0.0582
+[INFO] Epoch 10/100 - Train Loss: 0.0540
+[INFO] Epoch 11/100 - Train Loss: 0.0533
+[INFO] Epoch 12/100 - Train Loss: 0.0540
+[INFO] Epoch 13/100 - Train Loss: 0.0475
+[INFO] Epoch 14/100 - Train Loss: 0.0484
+[INFO] Epoch 15/100 - Train Loss: 0.0478
+[INFO] Epoch 16/100 - Train Loss: 0.0489
+[INFO] Epoch 17/100 - Train Loss: 0.0458
+[INFO] Epoch 18/100 - Train Loss: 0.0474
+[INFO] Epoch 19/100 - Train Loss: 0.0471
+[INFO] Epoch 20/100 - Train Loss: 0.0459
+[INFO] Epoch 21/100 - Train Loss: 0.0427
+[INFO] Epoch 22/100 - Train Loss: 0.0438
+[INFO] Epoch 23/100 - Train Loss: 0.0462
+[INFO] Epoch 24/100 - Train Loss: 0.0482
+[INFO] Epoch 25/100 - Train Loss: 0.0462
+[INFO] Epoch 26/100 - Train Loss: 0.0447
+[INFO] Epoch 27/100 - Train Loss: 0.0414
+[INFO] Epoch 28/100 - Train Loss: 0.0411
+[INFO] Epoch 29/100 - Train Loss: 0.0412
+[INFO] Epoch 30/100 - Train Loss: 0.0455
+[INFO] Epoch 31/100 - Train Loss: 0.0400
+[INFO] Epoch 32/100 - Train Loss: 0.0388
+[INFO] Epoch 33/100 - Train Loss: 0.0383
+[INFO] Epoch 34/100 - Train Loss: 0.0400
+[INFO] Epoch 35/100 - Train Loss: 0.0365
+[INFO] Epoch 36/100 - Train Loss: 0.0381
+[INFO] Epoch 37/100 - Train Loss: 0.0391
+[INFO] Epoch 38/100 - Train Loss: 0.0383
+[INFO] Epoch 39/100 - Train Loss: 0.0385
+[INFO] Epoch 40/100 - Train Loss: 0.0406
+[INFO] Epoch 41/100 - Train Loss: 0.0395
+[INFO] Epoch 42/100 - Train Loss: 0.0393
+[INFO] Epoch 43/100 - Train Loss: 0.0385
+[INFO] Epoch 44/100 - Train Loss: 0.0386
+[INFO] Epoch 45/100 - Train Loss: 0.0415
+[INFO] Epoch 46/100 - Train Loss: 0.0353
+[INFO] Epoch 47/100 - Train Loss: 0.0359
+[INFO] Epoch 48/100 - Train Loss: 0.0370
+[INFO] Epoch 49/100 - Train Loss: 0.0378
+[INFO] Epoch 50/100 - Train Loss: 0.0327
+[INFO] Epoch 51/100 - Train Loss: 0.0381
+[INFO] Epoch 52/100 - Train Loss: 0.0362
+[INFO] Epoch 53/100 - Train Loss: 0.0402
+[INFO] Epoch 54/100 - Train Loss: 0.0383
+[INFO] Epoch 55/100 - Train Loss: 0.0381
+[INFO] Epoch 56/100 - Train Loss: 0.0371
+[INFO] Epoch 57/100 - Train Loss: 0.0348
+[INFO] Epoch 58/100 - Train Loss: 0.0369
+[INFO] Epoch 59/100 - Train Loss: 0.0355
+[INFO] Epoch 60/100 - Train Loss: 0.0347
+[INFO] Epoch 61/100 - Train Loss: 0.0354
+[INFO] Epoch 62/100 - Train Loss: 0.0368
+[INFO] Epoch 63/100 - Train Loss: 0.0368
+[INFO] Epoch 64/100 - Train Loss: 0.0394
+[INFO] Epoch 65/100 - Train Loss: 0.0342
+[INFO] Epoch 66/100 - Train Loss: 0.0347
+[INFO] Epoch 67/100 - Train Loss: 0.0338
+[INFO] Epoch 68/100 - Train Loss: 0.0389
+[INFO] Epoch 69/100 - Train Loss: 0.0387
+[INFO] Epoch 70/100 - Train Loss: 0.0384
+[INFO] Epoch 71/100 - Train Loss: 0.0353
+[INFO] Epoch 72/100 - Train Loss: 0.0353
+[INFO] Epoch 73/100 - Train Loss: 0.0349
+[INFO] Epoch 74/100 - Train Loss: 0.0335
+[INFO] Epoch 75/100 - Train Loss: 0.0414
+[INFO] Epoch 76/100 - Train Loss: 0.0323
+[INFO] Epoch 77/100 - Train Loss: 0.0345
+[INFO] Epoch 78/100 - Train Loss: 0.0331
+[INFO] Epoch 79/100 - Train Loss: 0.0345
+[INFO] Epoch 80/100 - Train Loss: 0.0327
+[INFO] Epoch 81/100 - Train Loss: 0.0332
+[INFO] Epoch 82/100 - Train Loss: 0.0323
+[INFO] Epoch 83/100 - Train Loss: 0.0319
+[INFO] Epoch 84/100 - Train Loss: 0.0329
+[INFO] Epoch 85/100 - Train Loss: 0.0338
+[INFO] Epoch 86/100 - Train Loss: 0.0354
+[INFO] Epoch 87/100 - Train Loss: 0.0341
+[INFO] Epoch 88/100 - Train Loss: 0.0381
+[INFO] Epoch 89/100 - Train Loss: 0.0359
+[INFO] Epoch 90/100 - Train Loss: 0.0376
+[INFO] Epoch 91/100 - Train Loss: 0.0403
+[INFO] Epoch 92/100 - Train Loss: 0.0373
+[INFO] Epoch 93/100 - Train Loss: 0.0384
+[INFO] Epoch 94/100 - Train Loss: 0.0353
+[INFO] Epoch 95/100 - Train Loss: 0.0350
+[INFO] Epoch 96/100 - Train Loss: 0.0351
+[INFO] Epoch 97/100 - Train Loss: 0.0357
+[INFO] Epoch 98/100 - Train Loss: 0.0346
+[INFO] Epoch 99/100 - Train Loss: 0.0404
+[INFO] Epoch 100/100 - Train Loss: 0.0318
+[INFO] IMP training energy: 106.33W avg, 275540.31J total (2591.28s)
+[INFO] IMP model checkpoint saved to ../Tranfer/InceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption...
+[INFO] Starting accuracy and energy evaluation...
+[INFO] Evaluation complete: acc=0.8371, power=97.29W, energy=421.39J, time=4.33s
+[INFO] Starting accuracy and energy evaluation...
+[INFO] Evaluation complete: acc=0.8407, power=97.35W, energy=242.49J, time=2.49s
+[INFO] Starting accuracy and energy evaluation...
+[INFO] Evaluation complete: acc=0.8633, power=103.90W, energy=309.97J, time=2.98s
+[RESULT] Accuracy Original:     0.8371 | Power: 97.29W | Energy: 421.39J
+[RESULT] Accuracy Unstructured: 0.8407 | Power: 97.35W | Energy: 242.49J
+[RESULT] Accuracy Collapsed:    0.8633 | Power: 103.90W | Energy: 309.97J
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches...
+[INFO] Feature extraction target layer: Dropout
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.59s
+[INFO] Extracting features from 10 batches...
+[INFO] Feature extraction target layer: Dropout
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.59s
+[INFO] Extracting features from 10 batches...
+[INFO] Feature extraction target layer: Dropout
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.54s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=0.762196, time=1.63s
+[INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
+[INFO] CKA complete: score=0.757058, time=0.00s
+[RESULT] CKA Unstructured: 0.762196
+[RESULT] CKA Collapsed:    0.757058
+
+[INFO] Extracting first batch for adversarial evaluation...
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.4238
+       -> unstructured Accuracy: 0.4141
+       -> collapsed Accuracy: 0.4492
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.2754
+       -> unstructured Accuracy: 0.2871
+       -> collapsed Accuracy: 0.3145
+[INFO] Checkpoint completed in 2627.67s
+
+======================================================================
+[INFO] Saving final results...
+[INFO] Results successfully saved to 'cka_results_InceptionNet_Cifar10_pre300_post100.csv'
+[INFO] Total successful experiments: 1
+[INFO] Total runtime: 2628.44s
+
+======================================================================
+FINAL RESULTS
+======================================================================
+          model  dataset  pre_epochs  post_epochs                                                                                model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0  InceptionNet  Cifar10         300          100  ../Tranfer/InceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.8371            0.8407         0.8633                 97.29                  421.39                     97.35                      242.49                  103.9                   309.97          0.762196       0.757058               0.423828                   0.414062                0.449219              0.275391                  0.287109               0.314453

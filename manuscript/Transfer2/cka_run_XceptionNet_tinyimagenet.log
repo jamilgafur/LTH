@@ -3,7 +3,7 @@ Starting Comparison Post-Processing Pipeline
 Model: XceptionNet | Dataset: tinyimagenet | Device: cuda
 Epochs Config: pre=300, post=100
 Output File: cka_results_XceptionNet_tinyimagenet_pre300_post100.csv
-CUDA device: Tesla V100S-PCIE-32GB
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
@@ -26,8 +26,9 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
 [DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
-[INFO] Checkpoint loaded. State dict keys: 276
-[INFO] Weights loaded in 0.28s
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 1.31s
+
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
@@ -41,8 +42,9 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
 [DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
-[INFO] Checkpoint loaded. State dict keys: 276
-[INFO] Weights loaded in 0.16s
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
+[INFO] Weights loaded in 0.13s
+
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
 Loading Tiny ImageNet data for XceptionNet...
@@ -88,12 +90,12 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP] Searching for inserted collapsed module within 'middle_flow.0.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
-[DEBUG] Inserted module forward successful, output shape: (1, 728, 4, 4)
+[DEBUG] Inserted module forward successful, output shape: (2, 728, 4, 4)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.39s
+[INFO] ✅ Successfully collapsed block 'Region_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.33s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -123,7 +125,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP] Searching for inserted collapsed module within 'middle_flow.5.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
-[DEBUG] Inserted module forward successful, output shape: (1, 728, 4, 4)
+[DEBUG] Inserted module forward successful, output shape: (2, 728, 4, 4)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'middle_flow.5.rep' completed successfully.
 
@@ -157,7 +159,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP] Searching for inserted collapsed module within 'middle_flow.6.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
-[DEBUG] Inserted module forward successful, output shape: (1, 728, 4, 4)
+[DEBUG] Inserted module forward successful, output shape: (2, 728, 4, 4)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'middle_flow.6.rep' completed successfully.
 
@@ -191,12 +193,12 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP] Searching for inserted collapsed module within 'middle_flow.7.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
-[DEBUG] Inserted module forward successful, output shape: (1, 728, 4, 4)
+[DEBUG] Inserted module forward successful, output shape: (2, 728, 4, 4)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'middle_flow.7.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.7.rep.4.depthwise' → 'middle_flow.7.rep.7.pointwise'
-[INFO] ✅ Successfully collapsed block 'Region_3' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_3' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise) in 0.02s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -226,13 +228,13 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP] Searching for inserted collapsed module within ''...
 [DEBUG] Found inserted block candidate at index 5: 'block4'
 [STEP] Validating inserted module 'Sequential' at index 5...
-[DEBUG] Inserted module forward successful, output shape: (1, 1536, 2, 2)
+[DEBUG] Inserted module forward successful, output shape: (2, 1536, 2, 2)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
-[WARN] Downstream module '.fc' raised exception: mat1 and mat2 shapes cannot be multiplied (2048x1 and 2048x200)
+[WARN] Downstream module '.fc' raised exception: mat1 and mat2 shapes cannot be multiplied (4096x1 and 2048x200)
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
 [INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'conv3.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_4' (block4.rep.1.depthwise → conv3.depthwise) in 0.04s
+[INFO] ✅ Successfully collapsed block 'Region_4' (block4.rep.1.depthwise → conv3.depthwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -243,14 +245,15 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Parameters after : 16,544,016
 [INFO] ΔParams = +4,672,736 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.64s
+[INFO] Total collapse runtime: 0.55s
 [RESULT] ✅ collapse_only complete. Total targets: 5 | success=5 | failed=0 | skipped=0
-[INFO] Structural collapse completed in 0.64s
+[INFO] Structural collapse completed in 0.55s
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
-[INFO] Checkpoint loaded. State dict keys: 248
-[INFO] Weights loaded in 0.10s
+[INFO] Checkpoint extracted. Candidate state dict keys: 248
+[INFO] Weights loaded in 0.22s
+
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 22.02%
 [INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
@@ -264,28 +267,29 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
 [DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
-[INFO] Checkpoint loaded. State dict keys: 276
+[INFO] Checkpoint extracted. Candidate state dict keys: 276
 [INFO] Weights loaded in 0.15s
+
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4789, power=46.23W, energy=498.55J, time=10.78s
+[INFO] Evaluation complete: acc=0.4789, power=379.24W, energy=3661.12J, time=9.65s
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4822, power=53.73W, energy=499.66J, time=9.30s
+[INFO] Evaluation complete: acc=0.4822, power=389.02W, energy=3350.65J, time=8.61s
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5127, power=47.51W, energy=452.74J, time=9.53s
-[RESULT] Accuracy Original:     0.4789 | Power: 46.23W | Energy: 498.55J
-[RESULT] Accuracy Unstructured: 0.4822 | Power: 53.73W | Energy: 499.66J
-[RESULT] Accuracy Collapsed:    0.5127 | Power: 47.51W | Energy: 452.74J
+[INFO] Evaluation complete: acc=0.5127, power=299.50W, energy=2576.65J, time=8.60s
+[RESULT] Accuracy Original:     0.4789 | Power: 379.24W | Energy: 3661.12J
+[RESULT] Accuracy Unstructured: 0.4822 | Power: 389.02W | Energy: 3350.65J
+[RESULT] Accuracy Collapsed:    0.5127 | Power: 299.50W | Energy: 2576.65J
 
 [INFO] Extracting features and computing CKA...
 [INFO] Extracting features from 10 batches...
@@ -300,7 +304,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=0.67s
+[INFO] Feature extraction complete: shape=(640, 2048), time=0.69s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: AdaptiveAvgPool2d
 [INFO] Feature extraction batch 1/10
@@ -326,7 +330,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=0.69s
+[INFO] Feature extraction complete: shape=(640, 2048), time=0.77s
 [INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
 [INFO] CKA complete: score=0.635449, time=0.07s
 [INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
@@ -338,21 +342,21 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Running FGSM attack (epsilon=0.03)...
        -> original Accuracy: 0.0312
        -> unstructured Accuracy: 0.0625
-       -> collapsed Accuracy: 0.0781
+       -> collapsed Accuracy: 0.0938
 [INFO] Running PGD attack (epsilon=0.03)...
        -> original Accuracy: 0.0156
        -> unstructured Accuracy: 0.0312
        -> collapsed Accuracy: 0.0312
-[INFO] Checkpoint completed in 56.10s
+[INFO] Checkpoint completed in 48.87s
 
 ======================================================================
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_XceptionNet_tinyimagenet_pre300_post100.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 56.19s
+[INFO] Total runtime: 49.09s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
          model       dataset  pre_epochs  post_epochs                                                                                    model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  XceptionNet  tinyimagenet         300          100  ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.4789            0.4822         0.5127                 46.23                  498.55                     53.73                      499.66                  47.51                   452.74          0.635449       0.812937                0.03125                     0.0625                0.078125              0.015625                   0.03125                0.03125
+0  XceptionNet  tinyimagenet         300          100  ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.4789            0.4822         0.5127                379.24                 3661.12                    389.02                     3350.65                  299.5                  2576.65          0.635449       0.812937                0.03125                     0.0625                 0.09375              0.015625                   0.03125                0.03125

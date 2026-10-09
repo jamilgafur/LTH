@@ -26,16 +26,66 @@ Loading Tiny ImageNet data...
 [DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
 [DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
-[INFO] Checkpoint loaded. State dict keys: 107
+[INFO] Checkpoint extracted. Candidate state dict keys: 107
+[SHAPE MISMATCH FATAL] Layer: 'classifier.fc_1.weight'
+   -> Checkpoint holds : torch.Size([4096, 2048])
+   -> Model expects    : torch.Size([4096, 512])
+
+[CRITICAL WARNING] Dropping 1 keys due to shape mismatches to prevent hard crash!
+
+[CRITICAL WARNING] 1 Missing keys (Model expects these, but checkpoint lacks them)!
+Sample missing: ['classifier.fc_1.weight']
+[INFO] Weights loaded in 2.43s
+
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
+Loading Tiny ImageNet data...
+[DEBUG] TinyImageNet root: /old_Users/jgafur/LTH/manuscript/structured_study/.temp/tiny-imagenet-200
+[DEBUG] TinyImageNet train dir exists: True
+[DEBUG] TinyImageNet val dir exists: True
+[DEBUG] TinyImageNet train samples: 100000 | classes: 200
+[DEBUG] TinyImageNet val samples: 10000
+[DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
+[DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
+[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 107
+[SHAPE MISMATCH FATAL] Layer: 'classifier.fc_1.weight'
+   -> Checkpoint holds : torch.Size([4096, 2048])
+   -> Model expects    : torch.Size([4096, 512])
+
+[CRITICAL WARNING] Dropping 1 keys due to shape mismatches to prevent hard crash!
+
+[CRITICAL WARNING] 1 Missing keys (Model expects these, but checkpoint lacks them)!
+Sample missing: ['classifier.fc_1.weight']
+[INFO] Weights loaded in 2.46s
+
+[INFO] Preparing and executing structural collapse...
+[INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
+Loading Tiny ImageNet data...
+[DEBUG] TinyImageNet root: /old_Users/jgafur/LTH/manuscript/structured_study/.temp/tiny-imagenet-200
+[DEBUG] TinyImageNet train dir exists: True
+[DEBUG] TinyImageNet val dir exists: True
+[DEBUG] TinyImageNet train samples: 100000 | classes: 200
+[DEBUG] TinyImageNet val samples: 10000
+[DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
+[DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
+[INFO] Loading discovered regions: ../Tranfer/VGG16_tinyimagenet_epochs100_pretrain300_JF_discovered_regions.json
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
 [ERROR] Failed processing checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
-[ERROR] RuntimeError: Error(s) in loading state_dict for VGG16:
-	size mismatch for classifier.fc_1.weight: copying a param with shape torch.Size([4096, 2048]) from checkpoint, the shape in current model is torch.Size([4096, 512]).
+[ERROR] ValueError: too many values to unpack (expected 2)
 
 ======================================================================
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_VGG16_tinyimagenet_pre300_post100.csv'
 [INFO] Total successful experiments: 0
-[INFO] Total runtime: 6.32s
+[INFO] Total runtime: 42.41s
 
 ======================================================================
 FINAL RESULTS

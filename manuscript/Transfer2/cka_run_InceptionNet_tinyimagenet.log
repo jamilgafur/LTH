@@ -26,8 +26,9 @@ Loading Tiny ImageNet data for InceptionNet...
 [DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
 [DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
 [INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
-[INFO] Checkpoint loaded. State dict keys: 344
-[INFO] Weights loaded in 0.65s
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 0.33s
+
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
@@ -41,8 +42,9 @@ Loading Tiny ImageNet data for InceptionNet...
 [DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
 [DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
 [INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
-[INFO] Checkpoint loaded. State dict keys: 344
-[INFO] Weights loaded in 0.10s
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 0.22s
+
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=InceptionNet, dataset=tinyimagenet
 Loading Tiny ImageNet data for InceptionNet...
@@ -89,12 +91,12 @@ Loading Tiny ImageNet data for InceptionNet...
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 0: 'inception_4a'
 [STEP] Validating inserted module 'Sequential' at index 0...
-[DEBUG] Inserted module forward successful, output shape: (1, 512, 4, 4)
+[DEBUG] Inserted module forward successful, output shape: (2, 512, 4, 4)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4a.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv) in 0.37s
+[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv) in 0.31s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 51 in-place ReLU(s) with out-of-place variants.
@@ -124,12 +126,12 @@ Loading Tiny ImageNet data for InceptionNet...
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 2: 'inception_4c'
 [STEP] Validating inserted module 'Sequential' at index 2...
-[DEBUG] Inserted module forward successful, output shape: (1, 528, 4, 4)
+[DEBUG] Inserted module forward successful, output shape: (2, 528, 4, 4)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'Region_1' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_1' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.02s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -177,12 +179,12 @@ Loading Tiny ImageNet data for InceptionNet...
 [STEP] Searching for inserted collapsed module within 'stage5'...
 [DEBUG] Found inserted block candidate at index 0: 'inception_5a'
 [STEP] Validating inserted module 'Sequential' at index 0...
-[DEBUG] Inserted module forward successful, output shape: (1, 832, 2, 2)
+[DEBUG] Inserted module forward successful, output shape: (2, 832, 2, 2)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'stage5' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage5.inception_5a.branch3.0.conv' → 'stage5.inception_5a.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'Region_3' (stage5.inception_5a.branch3.0.conv → stage5.inception_5a.branch4.1.conv) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_3' (stage5.inception_5a.branch3.0.conv → stage5.inception_5a.branch4.1.conv) in 0.02s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -212,7 +214,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 4: 'inception_4e'
 [STEP] Validating inserted module 'Sequential' at index 4...
-[DEBUG] Inserted module forward successful, output shape: (1, 832, 4, 4)
+[DEBUG] Inserted module forward successful, output shape: (2, 832, 4, 4)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
@@ -300,14 +302,15 @@ Loading Tiny ImageNet data for InceptionNet...
 [INFO] Parameters after : 4,431,352
 [INFO] ΔParams = +1,754,480 (expected ≤ 0)
 [INFO] Collapse counts: success=4, failed=0, skipped=5
-[INFO] Total collapse runtime: 0.54s
+[INFO] Total collapse runtime: 0.45s
 [RESULT] ✅ collapse_only complete. Total targets: 9 | success=4 | failed=0 | skipped=5
-[INFO] Structural collapse completed in 0.54s
+[INFO] Structural collapse completed in 0.45s
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
-[INFO] Checkpoint loaded. State dict keys: 188
-[INFO] Weights loaded in 0.05s
+[INFO] Checkpoint extracted. Candidate state dict keys: 188
+[INFO] Weights loaded in 0.07s
+
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 28.36%
 [INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
@@ -321,28 +324,29 @@ Loading Tiny ImageNet data for InceptionNet...
 [DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
 [DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
 [INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
-[INFO] Checkpoint loaded. State dict keys: 344
-[INFO] Weights loaded in 0.10s
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 0.23s
+
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4587, power=316.24W, energy=3133.91J, time=9.91s
+[INFO] Evaluation complete: acc=0.4587, power=78.42W, energy=4154.81J, time=52.98s
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4212, power=322.33W, energy=2882.50J, time=8.94s
+[INFO] Evaluation complete: acc=0.4212, power=69.72W, energy=542.81J, time=7.79s
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5197, power=347.06W, energy=3046.26J, time=8.78s
-[RESULT] Accuracy Original:     0.4587 | Power: 316.24W | Energy: 3133.91J
-[RESULT] Accuracy Unstructured: 0.4212 | Power: 322.33W | Energy: 2882.50J
-[RESULT] Accuracy Collapsed:    0.5197 | Power: 347.06W | Energy: 3046.26J
+[INFO] Evaluation complete: acc=0.5197, power=69.43W, energy=554.40J, time=7.99s
+[RESULT] Accuracy Original:     0.4587 | Power: 78.42W | Energy: 4154.81J
+[RESULT] Accuracy Unstructured: 0.4212 | Power: 69.72W | Energy: 542.81J
+[RESULT] Accuracy Collapsed:    0.5197 | Power: 69.43W | Energy: 554.40J
 
 [INFO] Extracting features and computing CKA...
 [INFO] Extracting features from 10 batches...
@@ -357,7 +361,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 1024), time=0.76s
+[INFO] Feature extraction complete: shape=(640, 1024), time=0.64s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: Dropout
 [INFO] Feature extraction batch 1/10
@@ -370,7 +374,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 1024), time=0.75s
+[INFO] Feature extraction complete: shape=(640, 1024), time=0.63s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: Dropout
 [INFO] Feature extraction batch 1/10
@@ -383,7 +387,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 1024), time=0.70s
+[INFO] Feature extraction complete: shape=(640, 1024), time=0.62s
 [INFO] Computing CKA: features_x=(640, 1024), features_y=(640, 1024)
 [INFO] CKA complete: score=0.031312, time=0.07s
 [INFO] Computing CKA: features_x=(640, 1024), features_y=(640, 1024)
@@ -400,16 +404,16 @@ Loading Tiny ImageNet data for InceptionNet...
        -> original Accuracy: 0.0156
        -> unstructured Accuracy: 0.0781
        -> collapsed Accuracy: 0.0156
-[INFO] Checkpoint completed in 61.44s
+[INFO] Checkpoint completed in 110.88s
 
 ======================================================================
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_InceptionNet_tinyimagenet_pre300_post100.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 61.62s
+[INFO] Total runtime: 111.24s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
           model       dataset  pre_epochs  post_epochs                                                                                     model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  InceptionNet  tinyimagenet         300          100  ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.4587            0.4212         0.5197                316.24                 3133.91                    322.33                      2882.5                 347.06                  3046.26          0.031312       0.031735               0.046875                   0.109375                 0.09375              0.015625                  0.078125               0.015625
+0  InceptionNet  tinyimagenet         300          100  ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.4587            0.4212         0.5197                 78.42                 4154.81                     69.72                      542.81                  69.43                    554.4          0.031312       0.031735               0.046875                   0.109375                 0.09375              0.015625                  0.078125               0.015625

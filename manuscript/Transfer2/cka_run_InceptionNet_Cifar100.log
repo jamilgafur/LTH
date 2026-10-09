@@ -20,8 +20,9 @@ Path: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/fi
 Loading CIFAR-100 data for InceptionNet...
 CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
-[INFO] Checkpoint loaded. State dict keys: 344
-[INFO] Weights loaded in 0.27s
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 1.69s
+
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
@@ -29,8 +30,9 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 Loading CIFAR-100 data for InceptionNet...
 CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
-[INFO] Checkpoint loaded. State dict keys: 344
-[INFO] Weights loaded in 0.09s
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 0.74s
+
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=InceptionNet, dataset=Cifar100
 Loading CIFAR-100 data for InceptionNet...
@@ -71,12 +73,12 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 0: 'inception_4a'
 [STEP] Validating inserted module 'Sequential' at index 0...
-[DEBUG] Inserted module forward successful, output shape: (1, 512, 2, 2)
+[DEBUG] Inserted module forward successful, output shape: (2, 512, 2, 2)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4a.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv) in 0.29s
+[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv) in 11.23s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 51 in-place ReLU(s) with out-of-place variants.
@@ -107,7 +109,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 1: 'inception_4b'
 [STEP] Validating inserted module 'Sequential' at index 1...
-[DEBUG] Inserted module forward successful, output shape: (1, 512, 2, 2)
+[DEBUG] Inserted module forward successful, output shape: (2, 512, 2, 2)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
@@ -141,7 +143,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 2: 'inception_4c'
 [STEP] Validating inserted module 'Sequential' at index 2...
-[DEBUG] Inserted module forward successful, output shape: (1, 528, 2, 2)
+[DEBUG] Inserted module forward successful, output shape: (2, 528, 2, 2)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
@@ -175,7 +177,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 3: 'inception_4d'
 [STEP] Validating inserted module 'Sequential' at index 3...
-[DEBUG] Inserted module forward successful, output shape: (1, 832, 2, 2)
+[DEBUG] Inserted module forward successful, output shape: (2, 832, 2, 2)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
@@ -222,18 +224,13 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [STEP 4] Analyzing topological characteristics for replacement...
 
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
-[ERROR] Replacement forward validation failed: ValueError: Expected more than 1 value per channel when training, got input size torch.Size([1, 1024, 1, 1])
-[ERROR]   container: stage5
-[ERROR]   start_idx: 1
-[ERROR]   input_shape: (1, 832, 1, 1)
-[ERROR]   expected_out_channels: 1024
 
 [STEP] ===== Starting _validate_downstream for 'stage5' =====
 [DEBUG] start_idx=1, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage5'...
 [DEBUG] Found inserted block candidate at index 1: 'inception_5b'
 [STEP] Validating inserted module 'Sequential' at index 1...
-[DEBUG] Inserted module forward successful, output shape: (1, 1024, 1, 1)
+[DEBUG] Inserted module forward successful, output shape: (2, 1024, 1, 1)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'stage5' completed successfully.
 
@@ -249,14 +246,15 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Parameters after : 3,901,476
 [INFO] ΔParams = +2,181,856 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.44s
+[INFO] Total collapse runtime: 11.38s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
-[INFO] Structural collapse completed in 0.44s
+[INFO] Structural collapse completed in 11.38s
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
-[INFO] Checkpoint loaded. State dict keys: 158
-[INFO] Weights loaded in 0.05s
+[INFO] Checkpoint extracted. Candidate state dict keys: 158
+[INFO] Weights loaded in 1.00s
+
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 35.87%
 [INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
@@ -264,19 +262,20 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 Loading CIFAR-100 data for InceptionNet...
 CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
-[INFO] Checkpoint loaded. State dict keys: 344
-[INFO] Weights loaded in 0.09s
+[INFO] Checkpoint extracted. Candidate state dict keys: 344
+[INFO] Weights loaded in 0.39s
+
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.3202, power=141.79W, energy=368.38J, time=2.60s
+[INFO] Evaluation complete: acc=0.3202, power=93.12W, energy=464.76J, time=4.99s
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.5355, power=129.75W, energy=321.78J, time=2.48s
+[INFO] Evaluation complete: acc=0.5355, power=114.54W, energy=279.70J, time=2.44s
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.5741, power=147.75W, energy=369.58J, time=2.50s
-[RESULT] Accuracy Original:     0.3202 | Power: 141.79W | Energy: 368.38J
-[RESULT] Accuracy Unstructured: 0.5355 | Power: 129.75W | Energy: 321.78J
-[RESULT] Accuracy Collapsed:    0.5741 | Power: 147.75W | Energy: 369.58J
+[INFO] Evaluation complete: acc=0.5741, power=116.03W, energy=288.41J, time=2.49s
+[RESULT] Accuracy Original:     0.3202 | Power: 93.12W | Energy: 464.76J
+[RESULT] Accuracy Unstructured: 0.5355 | Power: 114.54W | Energy: 279.70J
+[RESULT] Accuracy Collapsed:    0.5741 | Power: 116.03W | Energy: 288.41J
 
 [INFO] Extracting features and computing CKA...
 [INFO] Extracting features from 10 batches...
@@ -291,7 +290,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.29s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.28s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: Dropout
 [INFO] Feature extraction batch 1/10
@@ -304,7 +303,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.29s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.28s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: Dropout
 [INFO] Feature extraction batch 1/10
@@ -317,9 +316,9 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.26s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.25s
 [INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
-[INFO] CKA complete: score=0.426739, time=0.06s
+[INFO] CKA complete: score=0.426739, time=2.16s
 [INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
 [INFO] CKA complete: score=0.408697, time=0.00s
 [RESULT] CKA Unstructured: 0.426739
@@ -334,16 +333,16 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
        -> original Accuracy: 0.0469
        -> unstructured Accuracy: 0.1191
        -> collapsed Accuracy: 0.1562
-[INFO] Checkpoint completed in 22.66s
+[INFO] Checkpoint completed in 45.83s
 
 ======================================================================
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_InceptionNet_Cifar100_pre300_post100.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 22.72s
+[INFO] Total runtime: 46.17s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
           model   dataset  pre_epochs  post_epochs                                                                                 model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  InceptionNet  Cifar100         300          100  ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.3202            0.5355         0.5741                141.79                  368.38                    129.75                      321.78                 147.75                   369.58          0.426739       0.408697               0.095703                   0.210938                0.238281              0.046875                  0.119141                0.15625
+0  InceptionNet  Cifar100         300          100  ../Tranfer/InceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.3202            0.5355         0.5741                 93.12                  464.76                    114.54                       279.7                 116.03                   288.41          0.426739       0.408697               0.095703                   0.210938                0.238281              0.046875                  0.119141                0.15625
