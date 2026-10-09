@@ -33,15 +33,12 @@ import torch.nn.utils.prune as prune
 import pandas as pd
 import torch.nn as nn
 
-
-# Add this at the top of utils.py with your other imports
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.models.RegNetX import RegNetX_400MF
 from pyPrune.models.ConvNetX import ConvNeXt
 from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
-
 
 from collapse import collapse_only
 import argparse
@@ -80,7 +77,6 @@ def find_matching_checkpoint(before_path: str, candidate_paths: list) -> str:
 
     raise FileNotFoundError(f"No matching checkpoint found for {base_dir}")
 
-
 def load_weights(model: nn.Module, filepath: str, device: torch.device):
     """Loads a PyTorch model checkpoint state_dict into the instantiated model."""
     print(f"[INFO] Loading weights: {filepath}")
@@ -91,15 +87,23 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
 
     print(f"[INFO] Checkpoint loaded. State dict keys: {len(state_dict)}")
 
-    model.load_state_dict(state_dict, strict=False)
+    # Capture the output of load_state_dict to expose mapping failures
+    incompatible_keys = model.load_state_dict(state_dict, strict=False)
+    
+    if incompatible_keys.missing_keys:
+        print(f"\n[CRITICAL WARNING] {len(incompatible_keys.missing_keys)} Missing keys!")
+        print(f"Sample missing: {incompatible_keys.missing_keys[:5]}\n")
+        
+    if incompatible_keys.unexpected_keys:
+        print(f"[CRITICAL WARNING] {len(incompatible_keys.unexpected_keys)} Unexpected keys in checkpoint!")
+        print(f"Sample unexpected: {incompatible_keys.unexpected_keys[:5]}\n")
+
     model.to(device)
     model.eval()
 
     print(f"[INFO] Weights loaded in {time.time() - start_time:.2f}s")
 
     return model
-
-
 def apply_unstructured_pruning(model: nn.Module, amount: float = 0.2) -> nn.Module:
     """Applies L1 Unstructured Pruning globally to all convolutional and linear layers."""
     print(f"[INFO] Applying {amount * 100:.1f}% global unstructured pruning...")
