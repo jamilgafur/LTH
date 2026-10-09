@@ -83,11 +83,21 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
     start_time = time.time()
 
     checkpoint = torch.load(filepath, map_location=device, weights_only=False)
-    state_dict = checkpoint.get("model_state_dict", checkpoint.get("model", checkpoint))
+    raw_state_dict = checkpoint.get("model_state_dict", checkpoint.get("model", checkpoint))
+
+    # --- KEY MAPPING INTERCEPT ---
+    state_dict = {}
+    for key, value in raw_state_dict.items():
+        # Fix ConvNeXt collapse mismatch
+        new_key = key.replace("conv_dw", "conv_g1x1")
+        # Fix potential XceptionNet DataParallel artifacts
+        new_key = new_key.replace("module.", "")
+        
+        state_dict[new_key] = value
+    # -----------------------------
 
     print(f"[INFO] Checkpoint loaded. State dict keys: {len(state_dict)}")
 
-    # Capture the output of load_state_dict to expose mapping failures
     incompatible_keys = model.load_state_dict(state_dict, strict=False)
     
     if incompatible_keys.missing_keys:
@@ -104,6 +114,7 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
     print(f"[INFO] Weights loaded in {time.time() - start_time:.2f}s")
 
     return model
+
 def apply_unstructured_pruning(model: nn.Module, amount: float = 0.2) -> nn.Module:
     """Applies L1 Unstructured Pruning globally to all convolutional and linear layers."""
     print(f"[INFO] Applying {amount * 100:.1f}% global unstructured pruning...")
