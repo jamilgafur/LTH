@@ -1,8 +1,9 @@
 ======================================================================
 Starting Comparison Post-Processing Pipeline
-Model: ConvNeXt | Dataset: tinyimagenet | Device: cpu
-Epochs Config: pre=300, post=100
-Output File: cka_results_ConvNeXt_tinyimagenet_pre300_post100.csv
+Model: ConvNeXt | Dataset: tinyimagenet | Device: cuda
+Epochs Config: pre=200, post=200
+Output File: cka_results_ConvNeXt_tinyimagenet_pre200_post200.csv
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
@@ -11,7 +12,7 @@ Output File: cka_results_ConvNeXt_tinyimagenet_pre300_post100.csv
 
 ======================================================================
 Processing checkpoint 1/1
-Path: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+Path: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
 ======================================================================
 [INFO] Parsing experiment directory...
 [INFO] Initializing baseline model...
@@ -27,13 +28,13 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
 [DEBUG] Attempting to initialize ConvNeXt with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 0.10s
+[INFO] Weights loaded in 6.83s
 
 [INFO] Loading original post-finetuning model...
-[INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300
-[INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs200_pretrain200
+[INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Initializing architecture: model=ConvNeXt, dataset=tinyimagenet
 Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] TinyImageNet root: /old_Users/jgafur/LTH/manuscript/structured_study/.temp/tiny-imagenet-200
@@ -46,9 +47,9 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
 [DEBUG] Attempting to initialize ConvNeXt with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 0.10s
+[INFO] Weights loaded in 3.07s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=ConvNeXt, dataset=tinyimagenet
@@ -63,10 +64,10 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
 [DEBUG] Attempting to initialize ConvNeXt with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
-[INFO] Loading discovered regions: ../Tranfer/ConvNeXt_tinyimagenet_epochs100_pretrain300_JF_discovered_regions.json
+[INFO] Loading discovered regions: ../Tranfer/ConvNeXt_tinyimagenet_epochs200_pretrain200_JF_discovered_regions.json
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (ConvNeXt)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -95,7 +96,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=1, device=cpu, has_next_linear=True
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.2'...
 [DEBUG] Found inserted block candidate at index 1: '1'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -104,11 +105,45 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.pwconv1' → 'features.2.1.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_0' (features.2.1.pwconv1 → features.2.1.pwconv2) in 0.07s
+[INFO] ✅ Successfully collapsed block 'Region_0' (features.2.1.pwconv1 → features.2.1.pwconv2) in 0.60s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'Region_1': features.4.1.pwconv1 → features.4.1.pwconv2
+[INFO] Processing collapse task 'Region_1': features.2.2.pwconv1 → features.3.1
+[STEP] Calling _collapse_block('features.2.2.pwconv1', 'features.3.1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.2.2.pwconv1
+[INFO] End Target   : features.3.1
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.2.2.pwconv1' -> 'features.3.1'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.2' -> 'features.3'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.3.1'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 2: '2'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (2, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.2.2.pwconv1' → 'features.3.1'
+[INFO] ✅ Successfully collapsed block 'Region_1' (features.2.2.pwconv1 → features.3.1) in 0.02s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_2': features.4.1.pwconv1 → features.4.1.pwconv2
 [STEP] Calling _collapse_block('features.4.1.pwconv1', 'features.4.1.pwconv2')
 
 [INFO] ==================== Collapsing Block ====================
@@ -130,7 +165,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.4' =====
-[DEBUG] start_idx=1, device=cpu, has_next_linear=True
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.4'...
 [DEBUG] Found inserted block candidate at index 1: '1'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -139,11 +174,11 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.1.pwconv1' → 'features.4.1.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_1' (features.4.1.pwconv1 → features.4.1.pwconv2) in 0.07s
+[INFO] ✅ Successfully collapsed block 'Region_2' (features.4.1.pwconv1 → features.4.1.pwconv2) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'Region_2': features.4.2.pwconv1 → features.4.2.pwconv2
+[INFO] Processing collapse task 'Region_3': features.4.2.pwconv1 → features.4.2.pwconv2
 [STEP] Calling _collapse_block('features.4.2.pwconv1', 'features.4.2.pwconv2')
 
 [INFO] ==================== Collapsing Block ====================
@@ -165,7 +200,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.4' =====
-[DEBUG] start_idx=2, device=cpu, has_next_linear=True
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.4'...
 [DEBUG] Found inserted block candidate at index 2: '2'
 [STEP] Validating inserted module 'Sequential' at index 2...
@@ -174,11 +209,81 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.2.pwconv1' → 'features.4.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_2' (features.4.2.pwconv1 → features.4.2.pwconv2) in 0.06s
+[INFO] ✅ Successfully collapsed block 'Region_3' (features.4.2.pwconv1 → features.4.2.pwconv2) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'Region_3': features.4.5.pwconv1 → features.4.5.pwconv2
+[INFO] Processing collapse task 'Region_4': features.4.3.pwconv1 → features.4.3.pwconv2
+[STEP] Calling _collapse_block('features.4.3.pwconv1', 'features.4.3.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.3.pwconv1
+[INFO] End Target   : features.4.3.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.3.pwconv1' -> 'features.4.3.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.3' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.3' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.4.3' -> 'features.4.3'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.3.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 3: '3'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (2, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.4.3.pwconv1' → 'features.4.3.pwconv2'
+[INFO] ✅ Successfully collapsed block 'Region_4' (features.4.3.pwconv1 → features.4.3.pwconv2) in 0.01s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_5': features.4.4.pwconv1 → features.4.4.pwconv2
+[STEP] Calling _collapse_block('features.4.4.pwconv1', 'features.4.4.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.4.pwconv1
+[INFO] End Target   : features.4.4.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.4.pwconv1' -> 'features.4.4.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.4' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.4' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.4.4' -> 'features.4.4'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.4.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (2, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.4.4.pwconv1' → 'features.4.4.pwconv2'
+[INFO] ✅ Successfully collapsed block 'Region_5' (features.4.4.pwconv1 → features.4.4.pwconv2) in 0.01s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_6': features.4.5.pwconv1 → features.4.5.pwconv2
 [STEP] Calling _collapse_block('features.4.5.pwconv1', 'features.4.5.pwconv2')
 
 [INFO] ==================== Collapsing Block ====================
@@ -200,7 +305,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.4' =====
-[DEBUG] start_idx=5, device=cpu, has_next_linear=True
+[DEBUG] start_idx=5, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.4'...
 [DEBUG] Found inserted block candidate at index 5: '5'
 [STEP] Validating inserted module 'Sequential' at index 5...
@@ -209,23 +314,58 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.5.pwconv1' → 'features.4.5.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_3' (features.4.5.pwconv1 → features.4.5.pwconv2) in 0.06s
+[INFO] ✅ Successfully collapsed block 'Region_6' (features.4.5.pwconv1 → features.4.5.pwconv2) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'Region_4': features.5.1 → features.6.0.pwconv1
-[STEP] Calling _collapse_block('features.5.1', 'features.6.0.pwconv1')
+[INFO] Processing collapse task 'Region_7': features.4.6.pwconv1 → features.4.6.pwconv2
+[STEP] Calling _collapse_block('features.4.6.pwconv1', 'features.4.6.pwconv2')
 
 [INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.5.1
+[INFO] Start Target : features.4.6.pwconv1
+[INFO] End Target   : features.4.6.pwconv2
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.6.pwconv1' -> 'features.4.6.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.6' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.6' (ConvNeXtBlock) to parent for holistic replacement.
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.4.6' -> 'features.4.6'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.6.pwconv2'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=6, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 6: '6'
+[STEP] Validating inserted module 'Sequential' at index 6...
+[DEBUG] Inserted module forward successful, output shape: (2, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.4.6.pwconv1' → 'features.4.6.pwconv2'
+[INFO] ✅ Successfully collapsed block 'Region_7' (features.4.6.pwconv1 → features.4.6.pwconv2) in 0.01s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+
+[INFO] Processing collapse task 'Region_8': features.4.8.pwconv1 → features.6.0.pwconv1
+[STEP] Calling _collapse_block('features.4.8.pwconv1', 'features.6.0.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.8.pwconv1
 [INFO] End Target   : features.6.0.pwconv1
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.5.1' -> 'features.6.0.pwconv1'
+[DEBUG] [LCA] Locating block boundaries: 'features.4.8.pwconv1' -> 'features.6.0.pwconv1'
 [DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
 
 [STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.5' -> 'features.6'...
+[DEBUG] Capturing I/O hooks for 'features.4' -> 'features.6'...
 
 [STEP 3] Probing graph for downstream classifier after 'features.6.0.pwconv1'...
 
@@ -234,20 +374,20 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=5, device=cpu, has_next_linear=True
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features'...
-[DEBUG] Found inserted block candidate at index 5: '5'
-[STEP] Validating inserted module 'Sequential' at index 5...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
 [DEBUG] Inserted module forward successful, output shape: (2, 768, 2, 2)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
-[INFO] ✅ Framework successfully merged 'features.5.1' → 'features.6.0.pwconv1'
-[INFO] ✅ Successfully collapsed block 'Region_4' (features.5.1 → features.6.0.pwconv1) in 0.05s
+[INFO] ✅ Framework successfully merged 'features.4.8.pwconv1' → 'features.6.0.pwconv1'
+[INFO] ✅ Successfully collapsed block 'Region_8' (features.4.8.pwconv1 → features.6.0.pwconv1) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'Region_5': features.6.1.dwconv → features.6.1.pwconv1
+[INFO] Processing collapse task 'Region_9': features.6.1.dwconv → features.6.1.pwconv1
 [STEP] Calling _collapse_block('features.6.1.dwconv', 'features.6.1.pwconv1')
 
 [INFO] ==================== Collapsing Block ====================
@@ -262,10 +402,10 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG]   end_layer_name=features.6.1.pwconv1, found end_idx=None
 [DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
 [DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'Region_5' appears to be cross-branch (parallel paths).
+[WARN] ⚠ Collapse candidate 'Region_9' appears to be cross-branch (parallel paths).
 [WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
 
-[INFO] Processing collapse task 'Region_6': features.6.2.dwconv → features.6.2.pwconv1
+[INFO] Processing collapse task 'Region_10': features.6.2.dwconv → features.6.2.pwconv1
 [STEP] Calling _collapse_block('features.6.2.dwconv', 'features.6.2.pwconv1')
 
 [INFO] ==================== Collapsing Block ====================
@@ -280,36 +420,33 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG]   end_layer_name=features.6.2.pwconv1, found end_idx=None
 [DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
 [DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
-[WARN] ⚠ Collapse candidate 'Region_6' appears to be cross-branch (parallel paths).
+[WARN] ⚠ Collapse candidate 'Region_10' appears to be cross-branch (parallel paths).
 [WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
 
 [STEP] Wrapping pooling layers safely...
 
 [STEP] ===== Collapse summary =====
 [INFO] Parameters before: 27,973,928
-[INFO] Parameters after : 8,956,520
-[INFO] ΔParams = +19,017,408 (expected ≤ 0)
-[INFO] Collapse counts: success=5, failed=0, skipped=2
-[INFO] Total collapse runtime: 0.37s
-[RESULT] ✅ collapse_only complete. Total targets: 7 | success=5 | failed=0 | skipped=2
-[INFO] Structural collapse completed in 0.37s
-[INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300
-[INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
-[INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 130
-[INFO] Weights loaded in 0.03s
+[INFO] Parameters after : 843,176
+[INFO] ΔParams = +27,130,752 (expected ≤ 0)
+[INFO] Collapse counts: success=9, failed=0, skipped=2
+[INFO] Total collapse runtime: 0.78s
+[RESULT] ✅ collapse_only complete. Total targets: 11 | success=9 | failed=0 | skipped=2
+[INFO] Structural collapse completed in 0.78s
+[INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs200_pretrain200
+[INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 45
+[INFO] Weights loaded in 0.46s
 
 [INFO] Calculating dynamic sparsity to match collapse...
-[INFO] Target unstructured sparsity calculated at: 67.98%
+[INFO] Target unstructured sparsity calculated at: 96.99%
 [INFO] IMP checkpoint not found. Starting on-the-fly finetuning...
 
-[INFO] Starting Iterative Magnitude Pruning (IMP) for 100 epochs...
-[INFO] Compounding prune rate: 1.51% per step over 75 steps.
-[INFO] Epoch 1/100 - Train Loss: 0.7549
-[INFO] Epoch 2/100 - Train Loss: 0.7568
-[INFO] Epoch 3/100 - Train Loss: 0.7661
-[INFO] Epoch 4/100 - Train Loss: 0.7669
-[INFO] Epoch 5/100 - Train Loss: 0.7796
-[INFO] Epoch 6/100 - Train Loss: 0.7927
-[INFO] Epoch 7/100 - Train Loss: 0.8002
-[INFO] Epoch 8/100 - Train Loss: 0.8298
+[INFO] Starting Iterative Magnitude Pruning (IMP) for 200 epochs...
+[INFO] Compounding prune rate: 2.31% per step over 150 steps.
+[INFO] Epoch 1/200 - Train Loss: 0.4632
+[INFO] Epoch 2/200 - Train Loss: 0.4666
+[INFO] Epoch 3/200 - Train Loss: 0.4712
+[INFO] Epoch 4/200 - Train Loss: 0.4796
+[INFO] Epoch 5/200 - Train Loss: 0.4947
