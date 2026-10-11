@@ -3,11 +3,11 @@ Starting Comparison Post-Processing Pipeline
 Model: VGG16 | Dataset: tinyimagenet | Device: cuda
 Epochs Config: pre=300, post=100
 Output File: cka_results_VGG16_tinyimagenet_pre300_post100.csv
-CUDA device: Tesla V100S-PCIE-32GB
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
-[INFO] Found 0 collapsed checkpoints.
+[INFO] Found 1 collapsed checkpoints.
 [INFO] Found 1 'after' checkpoints.
 
 ======================================================================
@@ -25,17 +25,12 @@ Loading Tiny ImageNet data...
 [DEBUG] TinyImageNet val samples: 10000
 [DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
 [DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[SHAPE MISMATCH FATAL] Layer: 'classifier.fc_1.weight'
-   -> Checkpoint holds : torch.Size([4096, 2048])
-   -> Model expects    : torch.Size([4096, 512])
-
-[CRITICAL WARNING] Dropping 1 keys due to shape mismatches to prevent hard crash!
-
-[CRITICAL WARNING] 1 Missing keys (Model expects these, but checkpoint lacks them)!
-Sample missing: ['classifier.fc_1.weight']
-[INFO] Weights loaded in 2.43s
+[INFO] Weights loaded in 5.36s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300
@@ -49,17 +44,12 @@ Loading Tiny ImageNet data...
 [DEBUG] TinyImageNet val samples: 10000
 [DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
 [DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[SHAPE MISMATCH FATAL] Layer: 'classifier.fc_1.weight'
-   -> Checkpoint holds : torch.Size([4096, 2048])
-   -> Model expects    : torch.Size([4096, 512])
-
-[CRITICAL WARNING] Dropping 1 keys due to shape mismatches to prevent hard crash!
-
-[CRITICAL WARNING] 1 Missing keys (Model expects these, but checkpoint lacks them)!
-Sample missing: ['classifier.fc_1.weight']
-[INFO] Weights loaded in 2.46s
+[INFO] Weights loaded in 0.14s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
@@ -71,6 +61,9 @@ Loading Tiny ImageNet data...
 [DEBUG] TinyImageNet val samples: 10000
 [DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
 [DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading discovered regions: ../Tranfer/VGG16_tinyimagenet_epochs100_pretrain300_JF_discovered_regions.json
 
 [STEP] ===== Starting collapse_only process =====
@@ -78,14 +71,127 @@ Loading Tiny ImageNet data...
 [STEP] Using provided in-memory model instance (VGG16)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 40,732,936
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'Region_0': features.conv_11 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_11', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_11
+[INFO] End Target   : features.conv_13
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_11' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_11' -> 'features.conv_13'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=34, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 34: 'conv_11'
+[STEP] Validating inserted module 'Sequential' at index 34...
+[DEBUG] Inserted module forward successful, output shape: (2, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_11' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'Region_0' (features.conv_11 → features.conv_13) in 0.25s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 13 in-place ReLU(s) with out-of-place variants.
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 40,732,936
+[INFO] Parameters after : 33,914,632
+[INFO] ΔParams = +6,818,304 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.32s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+[INFO] Structural collapse completed in 0.32s
+[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Set_0.pt
+[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Set_0.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 97
+[INFO] Weights loaded in 4.92s
+
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 16.74%
+[INFO] IMP checkpoint not found. Starting on-the-fly finetuning...
+
+[INFO] Starting Iterative Magnitude Pruning (IMP) for 100 epochs...
+[INFO] Compounding prune rate: 0.24% per step over 75 steps.
+[INFO] Epoch 1/100 - Train Loss: 2.9215
+[INFO] Epoch 2/100 - Train Loss: 2.8025
+[INFO] Epoch 3/100 - Train Loss: 3.0260
+[INFO] Epoch 4/100 - Train Loss: 3.3711
+[INFO] Epoch 5/100 - Train Loss: 3.4182
+[INFO] Epoch 6/100 - Train Loss: 3.8328
+[INFO] Epoch 7/100 - Train Loss: 3.1423
+[INFO] Epoch 8/100 - Train Loss: 2.9887
+[INFO] Epoch 9/100 - Train Loss: 3.0159
+[INFO] Epoch 10/100 - Train Loss: 2.9642
+[INFO] Epoch 11/100 - Train Loss: 2.9057
+[INFO] Epoch 12/100 - Train Loss: 2.8671
+[INFO] Epoch 13/100 - Train Loss: 2.8635
+[INFO] Epoch 14/100 - Train Loss: 2.8233
+[INFO] Epoch 15/100 - Train Loss: 2.7871
+[INFO] Epoch 16/100 - Train Loss: 2.7760
+[INFO] Epoch 17/100 - Train Loss: 2.7595
+[INFO] Epoch 18/100 - Train Loss: 2.7006
+[INFO] Epoch 19/100 - Train Loss: 2.6878
+[INFO] Epoch 20/100 - Train Loss: 2.6845
+[INFO] Epoch 21/100 - Train Loss: 2.6924
+[INFO] Epoch 22/100 - Train Loss: 2.6958
+[INFO] Epoch 23/100 - Train Loss: 2.7009
+[INFO] Epoch 24/100 - Train Loss: 2.7070
+[INFO] Epoch 25/100 - Train Loss: 2.7167
+[INFO] Epoch 26/100 - Train Loss: 2.7183
+[INFO] Epoch 27/100 - Train Loss: 2.7273
+[INFO] Epoch 28/100 - Train Loss: 2.7313
+[INFO] Epoch 29/100 - Train Loss: 2.7383
+[INFO] Epoch 30/100 - Train Loss: 2.7463
+[INFO] Epoch 31/100 - Train Loss: 2.7493
+[INFO] Epoch 32/100 - Train Loss: 2.7559
+[INFO] Epoch 33/100 - Train Loss: 2.7609
+[INFO] Epoch 34/100 - Train Loss: 2.7571
+[INFO] Epoch 35/100 - Train Loss: 2.7623
+[INFO] Epoch 36/100 - Train Loss: 2.7620
+[INFO] Epoch 37/100 - Train Loss: 2.7605
+[INFO] Epoch 38/100 - Train Loss: 2.7617
+[INFO] Epoch 39/100 - Train Loss: 2.7567
+[INFO] Epoch 40/100 - Train Loss: 2.7554
+[INFO] Epoch 41/100 - Train Loss: 2.7563
+[INFO] Epoch 42/100 - Train Loss: 2.7541
+[INFO] Epoch 43/100 - Train Loss: 2.7444
+[INFO] Epoch 44/100 - Train Loss: 2.7391
+[INFO] Epoch 45/100 - Train Loss: 2.7191
+[INFO] Epoch 46/100 - Train Loss: 2.7145
+[INFO] Epoch 47/100 - Train Loss: 2.7034
+[INFO] Epoch 48/100 - Train Loss: 2.6946
+[INFO] Epoch 49/100 - Train Loss: 2.6886
+[INFO] Epoch 50/100 - Train Loss: 2.6771
+[INFO] Epoch 51/100 - Train Loss: 2.6690
+[INFO] Epoch 52/100 - Train Loss: 2.6523
+[INFO] Epoch 53/100 - Train Loss: 2.6387
 [ERROR] Failed processing checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
-[ERROR] ValueError: too many values to unpack (expected 2)
+[ERROR] OutOfMemoryError: CUDA out of memory. Tried to allocate 138.00 MiB. GPU 0 has a total capacity of 10.75 GiB of which 131.62 MiB is free. Including non-PyTorch memory, this process has 10.62 GiB memory in use. Of the allocated memory 9.90 GiB is allocated by PyTorch, and 541.22 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
 
 ======================================================================
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_VGG16_tinyimagenet_pre300_post100.csv'
 [INFO] Total successful experiments: 0
-[INFO] Total runtime: 42.41s
+[INFO] Total runtime: 7795.03s
 
 ======================================================================
 FINAL RESULTS
