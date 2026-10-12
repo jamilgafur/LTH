@@ -197,6 +197,15 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     original_param_count = sum(p.numel() for p in model_before.parameters())
     collapsed_param_count = sum(p.numel() for p in full_collapsed_model_ready.parameters())
     target_sparsity = 1.0 - (collapsed_param_count / original_param_count)
+
+    # --- NEW VRAM MANAGEMENT ---
+    # Move models to CPU to free VRAM for IMP training
+    model_before.to("cpu")
+    original_after_model.to("cpu")
+    full_collapsed_model_ready.to("cpu")
+    torch.cuda.empty_cache()
+    # ---------------------------
+    
     print(f"[INFO] Target unstructured sparsity calculated at: {target_sparsity * 100:.2f}%")
 
     checkpoint_dir = os.path.dirname(model_before_path)
