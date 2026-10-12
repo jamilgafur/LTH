@@ -56,7 +56,13 @@ def load_and_compute_deltas():
     df['delta_fgsm_collapse'] = df['adv_acc_FGSM_collapsed'] - df['adv_acc_FGSM_original']
     df['delta_pgd_imp'] = df['adv_acc_PGD_unstructured'] - df['adv_acc_PGD_original']
     df['delta_pgd_collapse'] = df['adv_acc_PGD_collapsed'] - df['adv_acc_PGD_original']
-    
+
+    if 'flops_original' in df.columns:
+        # Protect against division by zero
+        safe_original_flops = df['flops_original'].replace(0, np.nan)
+        df['flops_reduction_imp_pct'] = (df['flops_original'] - df['flops_unstructured']) / safe_original_flops
+        df['flops_reduction_collapse_pct'] = (df['flops_original'] - df['flops_collapsed']) / safe_original_flops
+
     # Ensure all canonical models plus any additional models found are in the master list
     all_models = sorted(list(set(df['model'].dropna().unique()).union(CANONICAL_MODELS)))
     return df, all_models

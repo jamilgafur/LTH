@@ -258,30 +258,26 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     print(f"[RESULT] Accuracy Unstructured: {acc_unstructured:.4f} | Power: {power_unstructured:.2f}W | Energy: {energy_unstructured:.2f}J")
     print(f"[RESULT] Accuracy Collapsed:    {acc_collapsed:.4f} | Power: {power_collapsed:.2f}W | Energy: {energy_collapsed:.2f}J")
 
+    # --- ADD THIS NEW BLOCK: Benchmark FLOPs ---
+    print("\n[INFO] Benchmarking theoretical and measured FLOPs...")
+    
+    # We only need 1 batch to calculate static FLOPs per inference
+    _, flops_original, _ = benchmark_model(original_after_model, test_loader, device, num_batches=1)
+    _, flops_collapsed, _ = benchmark_model(full_collapsed_model_ready, test_loader, device, num_batches=1)
+    
+    # Calculate Effective FLOPs for IMP (Standard PyTorch dense operations don't reflect IMP sparsity)
+    flops_unstructured = flops_original * (1.0 - float(target_sparsity))
+    
+    print(f"[RESULT] FLOPs Original:     {flops_original:.2e}")
+    print(f"[RESULT] FLOPs Unstructured: {flops_unstructured:.2e} (Theoretical/Effective)")
+    print(f"[RESULT] FLOPs Collapsed:    {flops_collapsed:.2e} (Measured)")
+    # -------------------------------------------
+
     # 7. Extract Features & Compute CKA
     print("\n[INFO] Extracting features and computing CKA...")
-    features_unstructured = extract_features(unstructured_pruning_model, test_loader, device)
-    features_original = extract_features(original_after_model, test_loader, device)
-    features_collapsed = extract_features(full_collapsed_model_ready, test_loader, device)
+    # [KEEP EXISTING CODE] ...
 
-    cka_unstructured = compare_CKA(features_original, features_unstructured)
-    cka_collapsed = compare_CKA(features_original, features_collapsed)
-
-    print(f"[RESULT] CKA Unstructured: {cka_unstructured:.6f}")
-    print(f"[RESULT] CKA Collapsed:    {cka_collapsed:.6f}")
-
-    # 8. Evaluate Adversarial Robustness on First Batch
-    print("\n[INFO] Extracting first batch for adversarial evaluation...")
-    first_batch = next(iter(test_loader))
-    models_to_test = {
-        "original": original_after_model,
-        "unstructured": unstructured_pruning_model,
-        "collapsed": full_collapsed_model_ready
-    }
-    adv_metrics = evaluate_adversarial_robustness(models_to_test, first_batch, device)
-
-    print(f"[INFO] Checkpoint completed in {time.time() - checkpoint_start_time:.2f}s")
-
+    # [UPDATE THE result_dict TO INCLUDE FLOPS]
     result_dict = {
         "model": model_name,
         "dataset": dataset_name,
@@ -298,12 +294,17 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         "energy_joules_unstructured": round(energy_unstructured, 2),
         "power_watts_collapsed": round(power_collapsed, 2),
         "energy_joules_collapsed": round(energy_collapsed, 2),
+        
+        # --- NEW FLOPS ENTRIES ---
+        "flops_original": float(flops_original),
+        "flops_unstructured": float(flops_unstructured),
+        "flops_collapsed": float(flops_collapsed),
+        
         "cka_unstructured": cka_unstructured,
         "cka_collapsed": cka_collapsed,
     }
     result_dict.update(adv_metrics)
-    return result_dict
-
+    return result_dict 
 # =========================================================
 # Entry Point
 # =========================================================
