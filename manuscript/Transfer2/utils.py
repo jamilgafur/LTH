@@ -124,13 +124,19 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
         for k in mismatched_keys:
             del state_dict[k]
 
-    # --- LOAD WEIGHTS ---
     try:
         incompatible_keys = model.load_state_dict(state_dict, strict=False)
+        
         if incompatible_keys.missing_keys:
-            print(f"\n[CRITICAL WARNING] {len(incompatible_keys.missing_keys)} Missing keys!")
+            print(f"\n[CRITICAL WARNING] {len(incompatible_keys.missing_keys)} Missing keys (Expected by Model, missing in Checkpoint File):")
+            for key in incompatible_keys.missing_keys:
+                print(f"   -> {key}")
+                
         if incompatible_keys.unexpected_keys:
-            print(f"\n[CRITICAL WARNING] {len(incompatible_keys.unexpected_keys)} Unexpected keys!")
+            print(f"\n[CRITICAL WARNING] {len(incompatible_keys.unexpected_keys)} Unexpected keys (Found in Checkpoint File, not in Model):")
+            for key in incompatible_keys.unexpected_keys:
+                print(f"   -> {key}")
+                
     except RuntimeError as e:
         print(f"\n[CRITICAL ERROR] PyTorch RuntimeError during load_state_dict: {e}")
         raise e
@@ -215,6 +221,9 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, p
     incremental_amount = 1.0 - (1.0 - target_sparsity) ** (1.0 / pruning_steps)
     print(f"[INFO] Compounding prune rate: {incremental_amount * 100:.2f}% per step over {pruning_steps} steps.")
 
+    # --- ADD THIS LINE TO FIX THE ERROR ---
+    model.to(device)
+    
     model.train()
     with PowerTracker(device=device, interval_s=power_interval) as tracker:
         for epoch in range(epochs):
