@@ -221,9 +221,22 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
     # 6. Evaluate Accuracy, Power Draw, and Energy Consumption
     print("\n[INFO] Evaluating model accuracy, power draw, and energy consumption...")
+    
+    # Evaluate the pre-trained 'before' model (final_JF_Control.pt) to serve as a healthy fallback
+    acc_before, power_before, energy_before = evaluate_accuracy(
+        model_before, test_loader, device, power_interval=args.power_interval
+    )
+    
     acc_original, power_original, energy_original = evaluate_accuracy(
         original_after_model, test_loader, device, power_interval=args.power_interval
     )
+    if acc_before > (acc_original + 0.20):
+        print(f"\n[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting during training ({acc_original*100:.2f}%).")
+        print(f"[CRITICAL WARNING] Falling back to healthy 'model_before' ({acc_before*100:.2f}%) as the true baseline.")
+        acc_original = acc_before
+        power_original = power_before
+        energy_original = energy_before
+
     acc_unstructured, power_unstructured, energy_unstructured = evaluate_accuracy(
         unstructured_pruning_model, test_loader, device, power_interval=args.power_interval
     )

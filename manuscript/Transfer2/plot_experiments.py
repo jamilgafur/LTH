@@ -3,6 +3,7 @@ import glob
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import numpy as np
 
 def load_and_compute_deltas():
     """Reads CSVs, skips empty files, and computes deltas."""
@@ -56,8 +57,8 @@ def load_and_compute_deltas():
     
     return df
 
-def plot_bar_chart(df, x_col, columns, labels, title, ylabel, filename, zero_line=False, df_annotations=None, is_percent=False):
-    """Helper function to plot standard grouped bar charts with optional text annotations."""
+def plot_bar_chart(df, x_col, columns, labels, title, ylabel, filename, zero_line=False, df_annotations=None, anno_fmt="{val:.2f}"):
+    """Helper function to plot standard grouped bar charts with robust text annotations and NaN handling."""
     plt.figure(figsize=(12, 7))
     sns.set_theme(style="whitegrid")
     
@@ -76,16 +77,24 @@ def plot_bar_chart(df, x_col, columns, labels, title, ylabel, filename, zero_lin
         # Expand Y-axis limits slightly so text annotations don't get cut off
         ymin, ymax = ax.get_ylim()
         yrange = ymax - ymin
-        ax.set_ylim(ymin - (yrange * 0.15) if ymin < 0 else ymin, ymax + (yrange * 0.15))
+        # Give more space for missing data labels
+        ax.set_ylim(ymin - (yrange * 0.15) if ymin < 0 else 0, ymax + (yrange * 0.20))
 
         for i, p in enumerate(ax.patches):
             val = anno_vals[i]
-            if pd.isna(val):
+            height = p.get_height()
+            
+            # Check for missing data (NaN)
+            if pd.isna(val) or pd.isna(height):
+                ax.annotate("Missing", 
+                            (p.get_x() + p.get_width() / 2., 0),
+                            ha='center', va='bottom',
+                            xytext=(0, 5), textcoords='offset points', 
+                            fontsize=10, fontweight='bold', color='red', rotation=90)
                 continue
             
-            height = p.get_height()
-            text_str = f"{val:.1%}" if is_percent else f"{val:.2f}"
-            
+            # Format and plot valid values
+            text_str = anno_fmt.format(val=val)
             xytext = (0, 5) if height >= 0 else (0, -15)
             ax.annotate(text_str, 
                         (p.get_x() + p.get_width() / 2., height),
@@ -106,7 +115,7 @@ def plot_bar_chart(df, x_col, columns, labels, title, ylabel, filename, zero_lin
     plt.close()
 
 def plot_adversarial_subplots(df, x_col, title, ylabel, filename):
-    """Specific function to plot FGSM and PGD adversarial attacks side-by-side."""
+    """Specific function to plot FGSM and PGD adversarial attacks side-by-side with NaN handling."""
     fig, axes = plt.subplots(1, 2, figsize=(16, 7), sharey=True)
     sns.set_theme(style="whitegrid")
 
@@ -136,18 +145,27 @@ def plot_adversarial_subplots(df, x_col, title, ylabel, filename):
     # Calculate global ylim to fit text annotations across both shared axes
     ymin, ymax = axes[0].get_ylim()
     yrange = ymax - ymin
-    axes[0].set_ylim(ymin - (yrange * 0.15) if ymin < 0 else ymin, ymax + (yrange * 0.15))
+    axes[0].set_ylim(ymin - (yrange * 0.15) if ymin < 0 else 0, ymax + (yrange * 0.20))
 
     # Helper function to annotate a specific axis
-    def add_annotations(ax, df_anno):
+    def add_annotations(ax, df_anno, anno_fmt="{val:.1%}"):
         anno_vals = df_anno.values.flatten('F')
         for i, p in enumerate(ax.patches):
             val = anno_vals[i]
-            if pd.isna(val):
-                continue
             height = p.get_height()
+            
+            # Handle Missing Data
+            if pd.isna(val) or pd.isna(height):
+                ax.annotate("Missing", 
+                            (p.get_x() + p.get_width() / 2., 0),
+                            ha='center', va='bottom',
+                            xytext=(0, 5), textcoords='offset points', 
+                            fontsize=10, fontweight='bold', color='red', rotation=90)
+                continue
+            
+            text_str = anno_fmt.format(val=val)
             xytext = (0, 5) if height >= 0 else (0, -15)
-            ax.annotate(f"{val:.1%}", 
+            ax.annotate(text_str, 
                         (p.get_x() + p.get_width() / 2., height),
                         ha='center', va='bottom' if height >= 0 else 'top',
                         xytext=xytext, textcoords='offset points', 
@@ -194,10 +212,10 @@ def main():
             filename=f'plot_1_delta_accuracy_{file_suffix}.png',
             zero_line=True,
             df_annotations=['acc_unstructured', 'acc_collapsed'],
-            is_percent=True
+            anno_fmt="{val:.1%}" # Formats as percentage (e.g. 74.5%)
         )
 
-        # Plot 2: Energy Savings
+        # Plot 2: Energy Savings (Annotations show Actual Energy Consumption)
         plot_bar_chart(
             df=group_df,
             x_col='model',
@@ -206,7 +224,9 @@ def main():
             title=f'Energy Savings (Joules Reduced from Baseline){title_suffix}',
             ylabel='Joules Saved\n(Higher is Better)',
             filename=f'plot_2_energy_savings_{file_suffix}.png',
-            zero_line=True
+            zero_line=True,
+            df_annotations=['energy_joules_unstructured', 'energy_joules_collapsed'],
+            anno_fmt="{val:.1f} J" # Formats as Joules float (e.g. 450.5 J)
         )
 
         # Plot 3: CKA Scores
@@ -218,7 +238,9 @@ def main():
             title=f'Representational Similarity (CKA) to Original{title_suffix}',
             ylabel='CKA Score\n(Higher = More Similar to Original)',
             filename=f'plot_3_cka_scores_{file_suffix}.png',
-            zero_line=False
+            zero_line=False,
+            df_annotations=['cka_unstructured', 'cka_collapsed'],
+            anno_fmt="{val:.3f}" # Formats to 3 decimal places (e.g. 0.852)
         )
 
         # Plot 4: Change in Adversarial Robustness (Subplots)
@@ -230,7 +252,7 @@ def main():
             filename=f'plot_4_delta_adversarial_{file_suffix}.png'
         )
         
-        # Plot 5: Percentage Pruned (Only generates if 'percent_pruned' exists in CSVs)
+        # Plot 5: Percentage Pruned (Only generates if 'percent_pruned' exists)
         if 'percent_pruned' in group_df.columns:
             plot_bar_chart(
                 df=group_df,
@@ -242,7 +264,7 @@ def main():
                 filename=f'plot_5_percent_pruned_{file_suffix}.png',
                 zero_line=False,
                 df_annotations=['percent_pruned'],
-                is_percent=True
+                anno_fmt="{val:.1%}" # Formats as percentage
             )
     
     print("\nAll delta comparisons generated successfully!")

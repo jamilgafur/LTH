@@ -77,6 +77,8 @@ def find_matching_checkpoint(before_path: str, candidate_paths: list) -> str:
 
     raise FileNotFoundError(f"No matching checkpoint found for {base_dir}")
 
+import re
+
 def load_weights(model: nn.Module, filepath: str, device: torch.device):
     """Loads a PyTorch model checkpoint state_dict into the instantiated model with extreme logging."""
     print(f"[INFO] Loading weights: {filepath}")
@@ -94,6 +96,11 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
     for key, value in raw_state_dict.items():
         # Fix ConvNeXt collapse mismatch & XceptionNet DataParallel artifacts
         new_key = key.replace("conv_dw", "conv_g1x1").replace("module.", "")
+        
+        # --- MOBILENET FIX ---
+        # Flatten unescalated nested keys from pyPrune (e.g., features.12.0.conv_g1x1 -> features.12.conv_g1x1)
+        new_key = re.sub(r'(features\.\d+)\.(?:depthwise|pointwise|0|1)\.(conv_1x1|conv_g1x1|bn|adaptive_pool|relu)', r'\1.\2', new_key)
+        
         state_dict[new_key] = value
 
     print(f"[INFO] Checkpoint extracted. Candidate state dict keys: {len(state_dict)}")
@@ -112,7 +119,6 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
                 print(f"   -> Model expects    : {expected_shape}")
                 mismatched_keys.append(k)
 
-    # Prevent hard PyTorch crash by stripping out mismatched shapes
     if mismatched_keys:
         print(f"\n[CRITICAL WARNING] Dropping {len(mismatched_keys)} keys due to shape mismatches to prevent hard crash!")
         for k in mismatched_keys:
@@ -121,24 +127,17 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
     # --- LOAD WEIGHTS ---
     try:
         incompatible_keys = model.load_state_dict(state_dict, strict=False)
-        
         if incompatible_keys.missing_keys:
-            print(f"\n[CRITICAL WARNING] {len(incompatible_keys.missing_keys)} Missing keys (Model expects these, but checkpoint lacks them)!")
-            print(f"Sample missing: {incompatible_keys.missing_keys[:10]}")
-            
+            print(f"\n[CRITICAL WARNING] {len(incompatible_keys.missing_keys)} Missing keys!")
         if incompatible_keys.unexpected_keys:
-            print(f"\n[CRITICAL WARNING] {len(incompatible_keys.unexpected_keys)} Unexpected keys (Checkpoint has these, but model ignores them)!")
-            print(f"Sample unexpected: {incompatible_keys.unexpected_keys[:10]}")
-            
+            print(f"\n[CRITICAL WARNING] {len(incompatible_keys.unexpected_keys)} Unexpected keys!")
     except RuntimeError as e:
         print(f"\n[CRITICAL ERROR] PyTorch RuntimeError during load_state_dict: {e}")
         raise e
 
     model.to(device)
     model.eval()
-
     print(f"[INFO] Weights loaded in {time.time() - start_time:.2f}s\n")
-
     return model
 
 def apply_unstructured_pruning(model: nn.Module, amount: float = 0.2) -> nn.Module:
