@@ -205,6 +205,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     full_collapsed_model_ready.to("cpu")
     torch.cuda.empty_cache()
     # ---------------------------
+
     
     print(f"[INFO] Target unstructured sparsity calculated at: {target_sparsity * 100:.2f}%")
 
