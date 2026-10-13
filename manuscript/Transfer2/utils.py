@@ -206,12 +206,27 @@ def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_
 # Iterative Magnitude Pruning (IMP) Training Loop
 # =========================================================
 
-def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, power_interval: int = 1):
-    """Trains on-the-fly using Iterative Magnitude Pruning to match target sparsity."""
+def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, checkpoint_path=None, power_interval: int = 1):
+    """Trains on-the-fly using Iterative Magnitude Pruning with SLURM-safe checkpointing."""
     print(f"\n[INFO] Starting Iterative Magnitude Pruning (IMP) for {epochs} epochs...")
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
-    criterion = nn.CrossEntropyLoss()
     
+    # Default checkpoint path based on save_path if none is provided
+    if checkpoint_path is None:
+        base, ext = os.path.splitext(save_path)
+        checkpoint_path = f"{base}_ resume_ckpt{ext}"
+
+    # 1. Move model to device BEFORE initializing pruning and optimizer
+    model.to(device)
+    
+    # 2. If final model already exists, load and return immediately
+    if os.path.exists(save_path):
+        print(f"[INFO] Final trained model already exists at {save_path}. Loading and skipping training...")
+        ckpt = torch.load(save_path, map_location=device)
+        model.load_state_dict(ckpt['model_state_dict'])
+        model.eval()
+        return model
+
+    # 3. Collect parameters to prune
     parameters_to_prune = []
     for module in model.modules():
         if isinstance(module, (nn.Conv2d, nn.Linear)):
@@ -221,56 +236,108 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, p
     incremental_amount = 1.0 - (1.0 - target_sparsity) ** (1.0 / pruning_steps)
     print(f"[INFO] Compounding prune rate: {incremental_amount * 100:.2f}% per step over {pruning_steps} steps.")
 
-    # --- ADD THIS LINE TO FIX THE ERROR ---
-    model.to(device)
-    
-    model.train()
-    with PowerTracker(device=device, interval_s=power_interval) as tracker:
-        for epoch in range(epochs):
-            if epoch < pruning_steps:
-                prune.global_unstructured(
-                    parameters_to_prune,
-                    pruning_method=prune.L1Unstructured,
-                    amount=incremental_amount
-                )
-                
-            running_loss = 0.0
-            for inputs, targets in train_loader:
-                inputs, targets = inputs.to(device), targets.to(device)
-                
-                optimizer.zero_grad(set_to_none=True) # More memory efficient than zero_grad()
-                outputs = model(inputs)
-                loss = criterion(outputs, targets)
-                loss.backward()
-                optimizer.step()
-                running_loss += loss.item() # .item() prevents memory leak
-                
-                # Aggressively delete tensors to free memory
-                del inputs, targets, outputs, loss
-                
-            print(f"[INFO] Epoch {epoch + 1}/{epochs} - Train Loss: {running_loss / len(train_loader):.4f}")
-            
-            # Force CUDA cache clear at the end of every epoch
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-
-    train_watts, train_joules, train_time = tracker.get_results()
-    print(f"[INFO] IMP training energy: {train_watts:.2f}W avg, {train_joules:.2f}J total ({train_time:.2f}s)")
-
+    # 4. Initialize pruning structures (`weight_orig` and `weight_mask`) BEFORE creating the optimizer.
+    # This ensures the optimizer tracks the trainable `weight_orig` leaf tensors and allows 
+    # load_state_dict() to match the pruned keys when resuming from a checkpoint.
     for module, name in parameters_to_prune:
-        prune.remove(module, name)
+        if not prune.is_pruned(module):
+            prune.identity(module, name)
+
+    # 5. Initialize optimizer and loss AFTER pruning hooks are attached
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
+    criterion = nn.CrossEntropyLoss()
+
+    # 6. Check for existing in-progress checkpoint
+    start_epoch = 0
+    prev_joules = 0.0
+    prev_time = 0.0
+
+    if os.path.exists(checkpoint_path):
+        print(f"[INFO] Found existing checkpoint at {checkpoint_path}. Resuming training...")
+        checkpoint = torch.load(checkpoint_path, map_location=device)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        start_epoch = checkpoint['epoch'] + 1
+        prev_joules = checkpoint.get('total_joules', 0.0)
+        prev_time = checkpoint.get('total_time', 0.0)
+        print(f"[INFO] Resuming from Epoch {start_epoch + 1}/{epochs} (Previous time: {prev_time:.2f}s)")
+
+    # 7. Main Training Loop
+    model.train()
+    if start_epoch < epochs:
+        with PowerTracker(device=device, interval_s=power_interval) as tracker:
+            for epoch in range(start_epoch, epochs):
+                if epoch < pruning_steps:
+                    prune.global_unstructured(
+                        parameters_to_prune,
+                        pruning_method=prune.L1Unstructured,
+                        amount=incremental_amount
+                    )
+                    
+                running_loss = 0.0
+                for inputs, targets in train_loader:
+                    inputs, targets = inputs.to(device), targets.to(device)
+                    
+                    optimizer.zero_grad(set_to_none=True)
+                    outputs = model(inputs)
+                    loss = criterion(outputs, targets)
+                    loss.backward()
+                    optimizer.step()
+                    running_loss += loss.item()
+                    
+                    # Aggressively delete tensors to free memory
+                    del inputs, targets, outputs, loss
+                    
+                print(f"[INFO] Epoch {epoch + 1}/{epochs} | Train Loss: {running_loss / len(train_loader):.4f}")
+                
+                # Query current energy statistics so far in this session
+                _, session_joules, session_time = tracker.get_results()
+                
+                # Save atomic checkpoint at the end of every epoch
+                # Writing to a temp file first prevents corrupt checkpoints if SLURM kills the job mid-save
+                temp_ckpt_path = checkpoint_path + ".tmp"
+                torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'total_joules': prev_joules + session_joules,
+                    'total_time': prev_time + session_time,
+                }, temp_ckpt_path)
+                os.replace(temp_ckpt_path, checkpoint_path)
+                
+                # Force CUDA cache clear at the end of every epoch
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+        _, session_joules, session_time = tracker.get_results()
+        total_joules = prev_joules + session_joules
+        total_time = prev_time + session_time
+        avg_watts = total_joules / total_time if total_time > 0 else 0.0
+    else:
+        total_joules = prev_joules
+        total_time = prev_time
+        avg_watts = total_joules / total_time if total_time > 0 else 0.0
+
+    print(f"[INFO] IMP total training energy: {avg_watts:.2f}W avg, {total_joules:.2f}J total ({total_time:.2f}s)")
+
+    # 8. Make pruning permanent (`weight_orig` * `weight_mask` -> `weight`)
+    for module, name in parameters_to_prune:
+        if prune.is_pruned(module):
+            prune.remove(module, name)
         
+    # 9. Save final clean weights and remove temporary resume checkpoint
     torch.save({'model_state_dict': model.state_dict()}, save_path)
-    print(f"[INFO] IMP model checkpoint saved to {save_path}\n")
+    print(f"[INFO] Final IMP model saved to {save_path}\n")
+    
+    if os.path.exists(checkpoint_path):
+        os.remove(checkpoint_path)
     
     model.eval()
     
-    # Final cleanup before exiting IMP
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
         
     return model
-
 # =========================================================
 # Architecture and Region Utilities
 # =========================================================
