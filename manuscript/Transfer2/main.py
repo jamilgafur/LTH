@@ -150,6 +150,7 @@ def evaluate_adversarial_robustness(models_dict, data_batch, device, epsilon=0.0
             results[f"adv_acc_{attack_name}_{model_name}"] = acc
             
     return results
+
 # =========================================================
 # Main Processing Pipeline
 # =========================================================
@@ -199,13 +200,12 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     target_sparsity = 1.0 - (collapsed_param_count / original_param_count)
 
     # --- NEW VRAM MANAGEMENT ---
-    # Move models to CPU to free VRAM for IMP training
+    # Move models to CPU to free VRAM for IMP training and avoid OOM during evaluation.
     model_before.to("cpu")
     original_after_model.to("cpu")
     full_collapsed_model_ready.to("cpu")
     torch.cuda.empty_cache()
     # ---------------------------
-
     
     print(f"[INFO] Target unstructured sparsity calculated at: {target_sparsity * 100:.2f}%")
 
@@ -216,7 +216,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         print(f"[INFO] Loading existing IMP unstructured checkpoint: {unstructured_ckpt_path}")
         unstructured_base, _, _, _ = initialize_architecture(model_name, dataset_name)
         unstructured_pruning_model = load_weights(unstructured_base, unstructured_ckpt_path, device)
-        unstructured_pruning_model.to(device)
+        unstructured_pruning_model.to("cpu") # Store on CPU until required
     else:
         print("[INFO] IMP checkpoint not found. Starting on-the-fly finetuning...")
         unstructured_clone = deepcopy(model_before)
@@ -229,15 +229,22 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
             save_path=unstructured_ckpt_path,
             power_interval=args.power_interval
         )
+        unstructured_pruning_model.to("cpu")
+        torch.cuda.empty_cache()
 
-    # 6. Evaluate Accuracy, Power Draw, and Energy Consumption
+    # 6. Evaluate Accuracy, Power Draw, and Energy Consumption (SEQUENTIAL GPU ALLOCATION)
     print("\n[INFO] Evaluating model accuracy, power draw, and energy consumption...")
     
-    # Evaluate the pre-trained 'before' model (final_JF_Control.pt) to serve as a healthy fallback
+    print("       -> Evaluating Baseline")
+    model_before = model_before.to(device)
     acc_before, power_before, energy_before = evaluate_accuracy(
         model_before, test_loader, device, power_interval=args.power_interval
     )
+    model_before = model_before.to("cpu")
+    torch.cuda.empty_cache()
     
+    print("       -> Evaluating Original After Finetuning")
+    original_after_model = original_after_model.to(device)
     acc_original, power_original, energy_original = evaluate_accuracy(
         original_after_model, test_loader, device, power_interval=args.power_interval
     )
@@ -247,38 +254,95 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         acc_original = acc_before
         power_original = power_before
         energy_original = energy_before
+    original_after_model = original_after_model.to("cpu")
+    torch.cuda.empty_cache()
 
+    print("       -> Evaluating Unstructured Pruned Model")
+    unstructured_pruning_model = unstructured_pruning_model.to(device)
     acc_unstructured, power_unstructured, energy_unstructured = evaluate_accuracy(
         unstructured_pruning_model, test_loader, device, power_interval=args.power_interval
     )
+    unstructured_pruning_model = unstructured_pruning_model.to("cpu")
+    torch.cuda.empty_cache()
+
+    print("       -> Evaluating Collapsed Model")
+    full_collapsed_model_ready = full_collapsed_model_ready.to(device)
     acc_collapsed, power_collapsed, energy_collapsed = evaluate_accuracy(
         full_collapsed_model_ready, test_loader, device, power_interval=args.power_interval
     )
+    full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
+    torch.cuda.empty_cache()
 
     print(f"[RESULT] Accuracy Original:     {acc_original:.4f} | Power: {power_original:.2f}W | Energy: {energy_original:.2f}J")
     print(f"[RESULT] Accuracy Unstructured: {acc_unstructured:.4f} | Power: {power_unstructured:.2f}W | Energy: {energy_unstructured:.2f}J")
     print(f"[RESULT] Accuracy Collapsed:    {acc_collapsed:.4f} | Power: {power_collapsed:.2f}W | Energy: {energy_collapsed:.2f}J")
 
-    # --- ADD THIS NEW BLOCK: Benchmark FLOPs ---
+    # 7. Benchmark Theoretical and Measured FLOPs (SEQUENTIAL GPU ALLOCATION)
     print("\n[INFO] Benchmarking theoretical and measured FLOPs...")
     
-    # We only need 1 batch to calculate static FLOPs per inference
+    original_after_model = original_after_model.to(device)
     _, flops_original, _ = benchmark_model(original_after_model, test_loader, device, num_batches=1)
-    _, flops_collapsed, _ = benchmark_model(full_collapsed_model_ready, test_loader, device, num_batches=1)
+    original_after_model = original_after_model.to("cpu")
+    torch.cuda.empty_cache()
     
-    # Calculate Effective FLOPs for IMP (Standard PyTorch dense operations don't reflect IMP sparsity)
+    full_collapsed_model_ready = full_collapsed_model_ready.to(device)
+    _, flops_collapsed, _ = benchmark_model(full_collapsed_model_ready, test_loader, device, num_batches=1)
+    full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
+    torch.cuda.empty_cache()
+    
+    # Calculate Effective FLOPs for IMP
     flops_unstructured = flops_original * (1.0 - float(target_sparsity))
     
     print(f"[RESULT] FLOPs Original:     {flops_original:.2e}")
     print(f"[RESULT] FLOPs Unstructured: {flops_unstructured:.2e} (Theoretical/Effective)")
     print(f"[RESULT] FLOPs Collapsed:    {flops_collapsed:.2e} (Measured)")
-    # -------------------------------------------
 
-    # 7. Extract Features & Compute CKA
+    # 8. Extract Features & Compute CKA (SEQUENTIAL GPU ALLOCATION)
     print("\n[INFO] Extracting features and computing CKA...")
-    # [KEEP EXISTING CODE] ...
+    
+    original_after_model = original_after_model.to(device)
+    features_original = extract_features(original_after_model, test_loader, device)
+    original_after_model = original_after_model.to("cpu")
+    torch.cuda.empty_cache()
 
-    # [UPDATE THE result_dict TO INCLUDE FLOPS]
+    unstructured_pruning_model = unstructured_pruning_model.to(device)
+    features_unstructured = extract_features(unstructured_pruning_model, test_loader, device)
+    unstructured_pruning_model = unstructured_pruning_model.to("cpu")
+    torch.cuda.empty_cache()
+
+    full_collapsed_model_ready = full_collapsed_model_ready.to(device)
+    features_collapsed = extract_features(full_collapsed_model_ready, test_loader, device)
+    full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
+    torch.cuda.empty_cache()
+    
+    cka_unstructured = compare_CKA(features_original, features_unstructured)
+    cka_collapsed = compare_CKA(features_original, features_collapsed)
+
+    # 9. Evaluate Adversarial Robustness
+    print("\n[INFO] Evaluating Adversarial Robustness...")
+    data_batch = next(iter(test_loader))
+    
+    # Load all three onto the GPU temporarily to allow simultaneous processing for the attacks
+    original_after_model = original_after_model.to(device)
+    unstructured_pruning_model = unstructured_pruning_model.to(device)
+    full_collapsed_model_ready = full_collapsed_model_ready.to(device)
+    
+    models_dict = {
+        "original": original_after_model,
+        "unstructured": unstructured_pruning_model,
+        "collapsed": full_collapsed_model_ready
+    }
+    
+    adv_metrics = evaluate_adversarial_robustness(models_dict, data_batch, device)
+
+    # Final cleanup to prevent cross-experiment bleed
+    original_after_model = original_after_model.to("cpu")
+    unstructured_pruning_model = unstructured_pruning_model.to("cpu")
+    full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
+    del data_batch, models_dict
+    torch.cuda.empty_cache()
+
+    # 10. Compile Results
     result_dict = {
         "model": model_name,
         "dataset": dataset_name,
@@ -295,17 +359,15 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         "energy_joules_unstructured": round(energy_unstructured, 2),
         "power_watts_collapsed": round(power_collapsed, 2),
         "energy_joules_collapsed": round(energy_collapsed, 2),
-        
-        # --- NEW FLOPS ENTRIES ---
         "flops_original": float(flops_original),
         "flops_unstructured": float(flops_unstructured),
         "flops_collapsed": float(flops_collapsed),
-        
         "cka_unstructured": cka_unstructured,
         "cka_collapsed": cka_collapsed,
     }
     result_dict.update(adv_metrics)
     return result_dict 
+
 # =========================================================
 # Entry Point
 # =========================================================
