@@ -216,6 +216,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         print(f"[INFO] Loading existing IMP unstructured checkpoint: {unstructured_ckpt_path}")
         unstructured_base, _, _, _ = initialize_architecture(model_name, dataset_name)
         unstructured_pruning_model = load_weights(unstructured_base, unstructured_ckpt_path, device)
+        unstructured_pruning_model.to(device)
     else:
         print("[INFO] IMP checkpoint not found. Starting on-the-fly finetuning...")
         unstructured_clone = deepcopy(model_before)

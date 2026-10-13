@@ -177,6 +177,7 @@ def apply_unstructured_pruning(model: nn.Module, amount: float = 0.2) -> nn.Modu
 def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_interval: int = 1):
     """Evaluates top-1 accuracy while profiling power draw (W) and energy (J)."""
     print("[INFO] Starting accuracy and energy evaluation...")
+    model.to(device)
     model.eval()
     correct = 0
     total = 0
