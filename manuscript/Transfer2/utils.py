@@ -99,8 +99,8 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
         
         # --- MOBILENET FIX ---
         # Flatten unescalated nested keys from pyPrune (e.g., features.12.0.conv_g1x1 -> features.12.conv_g1x1)
-        new_key = re.sub(r'(features\.\d+)\.(?:depthwise|pointwise|0|1)\.(conv_1x1|conv_g1x1|bn|adaptive_pool|relu)', r'\1.\2', new_key)
-        
+        if model.__class__.__name__ == "MobileNet":
+            new_key = re.sub(r'(features\.\d+)\.(?:depthwise|pointwise|0|1)\.(conv_1x1|conv_g1x1|bn|adaptive_pool|relu)', r'\1.\2', new_key)
         state_dict[new_key] = value
 
     print(f"[INFO] Checkpoint extracted. Candidate state dict keys: {len(state_dict)}")
