@@ -1,9 +1,9 @@
 ======================================================================
 Starting Comparison Post-Processing Pipeline
 Model: VGG16 | Dataset: tinyimagenet | Device: cuda
-Epochs Config: pre=200, post=200
-Output File: cka_results_VGG16_tinyimagenet_pre200_post200.csv
-CUDA device: Tesla V100S-PCIE-32GB
+Epochs Config: pre=100, post=300
+Output File: cka_results_VGG16_tinyimagenet_pre100_post300.csv
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
@@ -12,7 +12,7 @@ CUDA device: Tesla V100S-PCIE-32GB
 
 ======================================================================
 Processing checkpoint 1/1
-Path: ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
+Path: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 ======================================================================
 [INFO] Parsing experiment directory...
 [INFO] Initializing baseline model...
@@ -28,13 +28,13 @@ Loading Tiny ImageNet data...
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
 [DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] VGG16 successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
+[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 5.24s
+[INFO] Weights loaded in 0.93s
 
 [INFO] Loading original post-finetuning model...
-[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200
-[INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
 Loading Tiny ImageNet data...
 [DEBUG] TinyImageNet root: /old_Users/jgafur/LTH/manuscript/structured_study/.temp/tiny-imagenet-200
@@ -47,9 +47,9 @@ Loading Tiny ImageNet data...
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
 [DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] VGG16 successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 1.79s
+[INFO] Weights loaded in 1.54s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
@@ -64,7 +64,7 @@ Loading Tiny ImageNet data...
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
 [DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] VGG16 successfully initialized WITH one_batch.
-[INFO] Loading discovered regions: ../Tranfer/VGG16_tinyimagenet_epochs200_pretrain200_JF_discovered_regions.json
+[INFO] Loading discovered regions: ../Tranfer/VGG16_tinyimagenet_epochs300_pretrain100_JF_discovered_regions.json
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -74,19 +74,19 @@ Loading Tiny ImageNet data...
 [INFO] Model parameter count before collapsing: 40,732,936
 [STEP] Beginning block-wise collapsing...
 
-[INFO] Processing collapse task 'Region_0': features.conv_9 → features.conv_13
-[STEP] Calling _collapse_block('features.conv_9', 'features.conv_13')
+[INFO] Processing collapse task 'Region_0': features.conv_11 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_11', 'features.conv_13')
 
 [INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : features.conv_9
+[INFO] Start Target : features.conv_11
 [INFO] End Target   : features.conv_13
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'features.conv_9' -> 'features.conv_13'
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_11' -> 'features.conv_13'
 [DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
 
 [STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'features.conv_9' -> 'features.conv_13'...
+[DEBUG] Capturing I/O hooks for 'features.conv_11' -> 'features.conv_13'...
 
 [STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
 
@@ -95,332 +95,41 @@ Loading Tiny ImageNet data...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=27, device=cuda, has_next_linear=True
+[DEBUG] start_idx=34, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features'...
-[DEBUG] Found inserted block candidate at index 27: 'conv_9'
-[STEP] Validating inserted module 'Sequential' at index 27...
+[DEBUG] Found inserted block candidate at index 34: 'conv_11'
+[STEP] Validating inserted module 'Sequential' at index 34...
 [DEBUG] Inserted module forward successful, output shape: (2, 512, 4, 4)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
-[INFO] ✅ Framework successfully merged 'features.conv_9' → 'features.conv_13'
-[INFO] ✅ Successfully collapsed block 'Region_0' (features.conv_9 → features.conv_13) in 0.74s
+[INFO] ✅ Framework successfully merged 'features.conv_11' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'Region_0' (features.conv_11 → features.conv_13) in 0.28s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
-[INFO] Replaced 11 in-place ReLU(s) with out-of-place variants.
+[INFO] Replaced 13 in-place ReLU(s) with out-of-place variants.
 
 [STEP] Wrapping pooling layers safely...
 
 [STEP] ===== Collapse summary =====
 [INFO] Parameters before: 40,732,936
-[INFO] Parameters after : 29,192,968
-[INFO] ΔParams = +11,539,968 (expected ≤ 0)
+[INFO] Parameters after : 33,914,632
+[INFO] ΔParams = +6,818,304 (expected ≤ 0)
 [INFO] Collapse counts: success=1, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.89s
+[INFO] Total collapse runtime: 0.40s
 [RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
-[INFO] Structural collapse completed in 0.89s
-[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200
-[INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Set_0.pt
-[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Set_0.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 83
-[INFO] Weights loaded in 0.93s
+[INFO] Structural collapse completed in 0.40s
+[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Set_0.pt
+[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Set_0.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 97
+[INFO] Weights loaded in 7.64s
 
 [INFO] Calculating dynamic sparsity to match collapse...
-[INFO] Target unstructured sparsity calculated at: 28.33%
+[INFO] Target unstructured sparsity calculated at: 16.74%
 [INFO] IMP checkpoint not found. Starting on-the-fly finetuning...
 
-[INFO] Starting Iterative Magnitude Pruning (IMP) for 200 epochs...
-[INFO] Compounding prune rate: 0.22% per step over 150 steps.
-[INFO] Epoch 1/200 - Train Loss: 2.0921
-[INFO] Epoch 2/200 - Train Loss: 2.7151
-[INFO] Epoch 3/200 - Train Loss: 3.1972
-[INFO] Epoch 4/200 - Train Loss: 2.5125
-[INFO] Epoch 5/200 - Train Loss: 2.2264
-[INFO] Epoch 6/200 - Train Loss: 2.4545
-[INFO] Epoch 7/200 - Train Loss: 2.3768
-[INFO] Epoch 8/200 - Train Loss: 2.1680
-[INFO] Epoch 9/200 - Train Loss: 2.8174
-[INFO] Epoch 10/200 - Train Loss: 4.0979
-[INFO] Epoch 11/200 - Train Loss: 2.8277
-[INFO] Epoch 12/200 - Train Loss: 2.5071
-[INFO] Epoch 13/200 - Train Loss: 2.3730
-[INFO] Epoch 14/200 - Train Loss: 2.2668
-[INFO] Epoch 15/200 - Train Loss: 2.2344
-[INFO] Epoch 16/200 - Train Loss: 2.1820
-[INFO] Epoch 17/200 - Train Loss: 2.1657
-[INFO] Epoch 18/200 - Train Loss: 2.1181
-[INFO] Epoch 19/200 - Train Loss: 2.1047
-[INFO] Epoch 20/200 - Train Loss: 2.1035
-[INFO] Epoch 21/200 - Train Loss: 2.1067
-[INFO] Epoch 22/200 - Train Loss: 2.1251
-[INFO] Epoch 23/200 - Train Loss: 2.1341
-[INFO] Epoch 24/200 - Train Loss: 2.1505
-[INFO] Epoch 25/200 - Train Loss: 2.1741
-[INFO] Epoch 26/200 - Train Loss: 2.1872
-[INFO] Epoch 27/200 - Train Loss: 2.2031
-[INFO] Epoch 28/200 - Train Loss: 2.2170
-[INFO] Epoch 29/200 - Train Loss: 2.2402
-[INFO] Epoch 30/200 - Train Loss: 2.2578
-[INFO] Epoch 31/200 - Train Loss: 2.2716
-[INFO] Epoch 32/200 - Train Loss: 2.3082
-[INFO] Epoch 33/200 - Train Loss: 2.3231
-[INFO] Epoch 34/200 - Train Loss: 2.3527
-[INFO] Epoch 35/200 - Train Loss: 2.3702
-[INFO] Epoch 36/200 - Train Loss: 2.3911
-[INFO] Epoch 37/200 - Train Loss: 2.4139
-[INFO] Epoch 38/200 - Train Loss: 2.4338
-[INFO] Epoch 39/200 - Train Loss: 2.4611
-[INFO] Epoch 40/200 - Train Loss: 2.4618
-[INFO] Epoch 41/200 - Train Loss: 2.4798
-[INFO] Epoch 42/200 - Train Loss: 2.4907
-[INFO] Epoch 43/200 - Train Loss: 2.4973
-[INFO] Epoch 44/200 - Train Loss: 2.5089
-[INFO] Epoch 45/200 - Train Loss: 2.5226
-[INFO] Epoch 46/200 - Train Loss: 2.5202
-[INFO] Epoch 47/200 - Train Loss: 2.5308
-[INFO] Epoch 48/200 - Train Loss: 2.5286
-[INFO] Epoch 49/200 - Train Loss: 2.5290
-[INFO] Epoch 50/200 - Train Loss: 2.5457
-[INFO] Epoch 51/200 - Train Loss: 2.5376
-[INFO] Epoch 52/200 - Train Loss: 2.5357
-[INFO] Epoch 53/200 - Train Loss: 2.5304
-[INFO] Epoch 54/200 - Train Loss: 2.5321
-[INFO] Epoch 55/200 - Train Loss: 2.5293
-[INFO] Epoch 56/200 - Train Loss: 2.5216
-[INFO] Epoch 57/200 - Train Loss: 2.5149
-[INFO] Epoch 58/200 - Train Loss: 2.5080
-[INFO] Epoch 59/200 - Train Loss: 2.4986
-[INFO] Epoch 60/200 - Train Loss: 2.5095
-[INFO] Epoch 61/200 - Train Loss: 2.4943
-[INFO] Epoch 62/200 - Train Loss: 2.4879
-[INFO] Epoch 63/200 - Train Loss: 2.4871
-[INFO] Epoch 64/200 - Train Loss: 2.4762
-[INFO] Epoch 65/200 - Train Loss: 2.4752
-[INFO] Epoch 66/200 - Train Loss: 2.4635
-[INFO] Epoch 67/200 - Train Loss: 2.4559
-[INFO] Epoch 68/200 - Train Loss: 2.4590
-[INFO] Epoch 69/200 - Train Loss: 2.4456
-[INFO] Epoch 70/200 - Train Loss: 2.4459
-[INFO] Epoch 71/200 - Train Loss: 2.4413
-[INFO] Epoch 72/200 - Train Loss: 2.4311
-[INFO] Epoch 73/200 - Train Loss: 2.4251
-[INFO] Epoch 74/200 - Train Loss: 2.4115
-[INFO] Epoch 75/200 - Train Loss: 2.4084
-[INFO] Epoch 76/200 - Train Loss: 2.4114
-[INFO] Epoch 77/200 - Train Loss: 2.4022
-[INFO] Epoch 78/200 - Train Loss: 2.3963
-[INFO] Epoch 79/200 - Train Loss: 2.3951
-[INFO] Epoch 80/200 - Train Loss: 2.3951
-[INFO] Epoch 81/200 - Train Loss: 2.3791
-[INFO] Epoch 82/200 - Train Loss: 2.3797
-[INFO] Epoch 83/200 - Train Loss: 2.3699
-[INFO] Epoch 84/200 - Train Loss: 2.3631
-[INFO] Epoch 85/200 - Train Loss: 2.3548
-[INFO] Epoch 86/200 - Train Loss: 2.3686
-[INFO] Epoch 87/200 - Train Loss: 2.3546
-[INFO] Epoch 88/200 - Train Loss: 2.3571
-[INFO] Epoch 89/200 - Train Loss: 2.3486
-[INFO] Epoch 90/200 - Train Loss: 2.3432
-[INFO] Epoch 91/200 - Train Loss: 2.3353
-[INFO] Epoch 92/200 - Train Loss: 2.3346
-[INFO] Epoch 93/200 - Train Loss: 2.3370
-[INFO] Epoch 94/200 - Train Loss: 2.3271
-[INFO] Epoch 95/200 - Train Loss: 2.3217
-[INFO] Epoch 96/200 - Train Loss: 2.3146
-[INFO] Epoch 97/200 - Train Loss: 2.3188
-[INFO] Epoch 98/200 - Train Loss: 2.3099
-[INFO] Epoch 99/200 - Train Loss: 2.3212
-[INFO] Epoch 100/200 - Train Loss: 2.3061
-[INFO] Epoch 101/200 - Train Loss: 2.3059
-[INFO] Epoch 102/200 - Train Loss: 2.3100
-[INFO] Epoch 103/200 - Train Loss: 2.3050
-[INFO] Epoch 104/200 - Train Loss: 2.2893
-[INFO] Epoch 105/200 - Train Loss: 2.2881
-[INFO] Epoch 106/200 - Train Loss: 2.2880
-[INFO] Epoch 107/200 - Train Loss: 2.2899
-[INFO] Epoch 108/200 - Train Loss: 2.2838
-[INFO] Epoch 109/200 - Train Loss: 2.2849
-[INFO] Epoch 110/200 - Train Loss: 2.2795
-[INFO] Epoch 111/200 - Train Loss: 2.2900
-[INFO] Epoch 112/200 - Train Loss: 2.2790
-[INFO] Epoch 113/200 - Train Loss: 2.2812
-[INFO] Epoch 114/200 - Train Loss: 2.2713
-[INFO] Epoch 115/200 - Train Loss: 2.2678
-[INFO] Epoch 116/200 - Train Loss: 2.2709
-[INFO] Epoch 117/200 - Train Loss: 2.2618
-[INFO] Epoch 118/200 - Train Loss: 2.2607
-[INFO] Epoch 119/200 - Train Loss: 2.2635
-[INFO] Epoch 120/200 - Train Loss: 2.2557
-[INFO] Epoch 121/200 - Train Loss: 2.2563
-[INFO] Epoch 122/200 - Train Loss: 2.2587
-[INFO] Epoch 123/200 - Train Loss: 2.2555
-[INFO] Epoch 124/200 - Train Loss: 2.2524
-[INFO] Epoch 125/200 - Train Loss: 2.2514
-[INFO] Epoch 126/200 - Train Loss: 2.2417
-[INFO] Epoch 127/200 - Train Loss: 2.2499
-[INFO] Epoch 128/200 - Train Loss: 2.2468
-[INFO] Epoch 129/200 - Train Loss: 2.2326
-[INFO] Epoch 130/200 - Train Loss: 2.2427
-[INFO] Epoch 131/200 - Train Loss: 2.2407
-[INFO] Epoch 132/200 - Train Loss: 2.2410
-[INFO] Epoch 133/200 - Train Loss: 2.2337
-[INFO] Epoch 134/200 - Train Loss: 2.2290
-[INFO] Epoch 135/200 - Train Loss: 2.2325
-[INFO] Epoch 136/200 - Train Loss: 2.2259
-[INFO] Epoch 137/200 - Train Loss: 2.2248
-[INFO] Epoch 138/200 - Train Loss: 2.2258
-[INFO] Epoch 139/200 - Train Loss: 2.2315
-[INFO] Epoch 140/200 - Train Loss: 2.2308
-[INFO] Epoch 141/200 - Train Loss: 2.2178
-[INFO] Epoch 142/200 - Train Loss: 2.2267
-[INFO] Epoch 143/200 - Train Loss: 2.2178
-[INFO] Epoch 144/200 - Train Loss: 2.2197
-[INFO] Epoch 145/200 - Train Loss: 2.2278
-[INFO] Epoch 146/200 - Train Loss: 2.2233
-[INFO] Epoch 147/200 - Train Loss: 2.2078
-[INFO] Epoch 148/200 - Train Loss: 2.2094
-[INFO] Epoch 149/200 - Train Loss: 2.2090
-[INFO] Epoch 150/200 - Train Loss: 2.2068
-[INFO] Epoch 151/200 - Train Loss: 2.2163
-[INFO] Epoch 152/200 - Train Loss: 2.2165
-[INFO] Epoch 153/200 - Train Loss: 2.2141
-[INFO] Epoch 154/200 - Train Loss: 2.2067
-[INFO] Epoch 155/200 - Train Loss: 2.2070
-[INFO] Epoch 156/200 - Train Loss: 2.1991
-[INFO] Epoch 157/200 - Train Loss: 2.2039
-[INFO] Epoch 158/200 - Train Loss: 2.2117
-[INFO] Epoch 159/200 - Train Loss: 2.1955
-[INFO] Epoch 160/200 - Train Loss: 2.2140
-[INFO] Epoch 161/200 - Train Loss: 2.1991
-[INFO] Epoch 162/200 - Train Loss: 2.1949
-[INFO] Epoch 163/200 - Train Loss: 2.2021
-[INFO] Epoch 164/200 - Train Loss: 2.1941
-[INFO] Epoch 165/200 - Train Loss: 2.1971
-[INFO] Epoch 166/200 - Train Loss: 2.1966
-[INFO] Epoch 167/200 - Train Loss: 2.1930
-[INFO] Epoch 168/200 - Train Loss: 2.1956
-[INFO] Epoch 169/200 - Train Loss: 2.1919
-[INFO] Epoch 170/200 - Train Loss: 2.1941
-[INFO] Epoch 171/200 - Train Loss: 2.1914
-[INFO] Epoch 172/200 - Train Loss: 2.1923
-[INFO] Epoch 173/200 - Train Loss: 2.1919
-[INFO] Epoch 174/200 - Train Loss: 2.1830
-[INFO] Epoch 175/200 - Train Loss: 2.1914
-[INFO] Epoch 176/200 - Train Loss: 2.1898
-[INFO] Epoch 177/200 - Train Loss: 2.1849
-[INFO] Epoch 178/200 - Train Loss: 2.1832
-[INFO] Epoch 179/200 - Train Loss: 2.1872
-[INFO] Epoch 180/200 - Train Loss: 2.1897
-[INFO] Epoch 181/200 - Train Loss: 2.1784
-[INFO] Epoch 182/200 - Train Loss: 2.1870
-[INFO] Epoch 183/200 - Train Loss: 2.1899
-[INFO] Epoch 184/200 - Train Loss: 2.1843
-[INFO] Epoch 185/200 - Train Loss: 2.1857
-[INFO] Epoch 186/200 - Train Loss: 2.1739
-[INFO] Epoch 187/200 - Train Loss: 2.1887
-[INFO] Epoch 188/200 - Train Loss: 2.1802
-[INFO] Epoch 189/200 - Train Loss: 2.1744
-[INFO] Epoch 190/200 - Train Loss: 2.1827
-[INFO] Epoch 191/200 - Train Loss: 2.1790
-[INFO] Epoch 192/200 - Train Loss: 2.1696
-[INFO] Epoch 193/200 - Train Loss: 2.1699
-[INFO] Epoch 194/200 - Train Loss: 2.1754
-[INFO] Epoch 195/200 - Train Loss: 2.1839
-[INFO] Epoch 196/200 - Train Loss: 2.1747
-[INFO] Epoch 197/200 - Train Loss: 2.1761
-[INFO] Epoch 198/200 - Train Loss: 2.1758
-[INFO] Epoch 199/200 - Train Loss: 2.1748
-[INFO] Epoch 200/200 - Train Loss: 2.1796
-[INFO] IMP training energy: 132.12W avg, 3510049.79J total (26566.43s)
-[INFO] IMP model checkpoint saved to ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Unstructured_IMP_post200.pt
-
-
-[INFO] Evaluating model accuracy, power draw, and energy consumption...
-[INFO] Starting accuracy and energy evaluation...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4891, power=40.18W, energy=3915.63J, time=97.45s
-[INFO] Starting accuracy and energy evaluation...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4806, power=58.87W, energy=483.85J, time=8.22s
-[INFO] Starting accuracy and energy evaluation...
-[INFO] Accuracy evaluation: batch=50, samples=3200
-[INFO] Accuracy evaluation: batch=100, samples=6400
-[INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5440, power=59.50W, energy=454.21J, time=7.63s
-[RESULT] Accuracy Original:     0.4891 | Power: 40.18W | Energy: 3915.63J
-[RESULT] Accuracy Unstructured: 0.4806 | Power: 58.87W | Energy: 483.85J
-[RESULT] Accuracy Collapsed:    0.5440 | Power: 59.50W | Energy: 454.21J
-
-[INFO] Extracting features and computing CKA...
-[INFO] Extracting features from 10 batches...
-[INFO] Feature extraction target layer: Dropout
-[INFO] Feature extraction batch 1/10
-[INFO] Feature extraction batch 2/10
-[INFO] Feature extraction batch 3/10
-[INFO] Feature extraction batch 4/10
-[INFO] Feature extraction batch 5/10
-[INFO] Feature extraction batch 6/10
-[INFO] Feature extraction batch 7/10
-[INFO] Feature extraction batch 8/10
-[INFO] Feature extraction batch 9/10
-[INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 4096), time=0.59s
-[INFO] Extracting features from 10 batches...
-[INFO] Feature extraction target layer: Dropout
-[INFO] Feature extraction batch 1/10
-[INFO] Feature extraction batch 2/10
-[INFO] Feature extraction batch 3/10
-[INFO] Feature extraction batch 4/10
-[INFO] Feature extraction batch 5/10
-[INFO] Feature extraction batch 6/10
-[INFO] Feature extraction batch 7/10
-[INFO] Feature extraction batch 8/10
-[INFO] Feature extraction batch 9/10
-[INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 4096), time=0.58s
-[INFO] Extracting features from 10 batches...
-[INFO] Feature extraction target layer: Dropout
-[INFO] Feature extraction batch 1/10
-[INFO] Feature extraction batch 2/10
-[INFO] Feature extraction batch 3/10
-[INFO] Feature extraction batch 4/10
-[INFO] Feature extraction batch 5/10
-[INFO] Feature extraction batch 6/10
-[INFO] Feature extraction batch 7/10
-[INFO] Feature extraction batch 8/10
-[INFO] Feature extraction batch 9/10
-[INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 4096), time=0.58s
-[INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
-[INFO] CKA complete: score=0.584065, time=2.12s
-[INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
-[INFO] CKA complete: score=0.010926, time=0.01s
-[RESULT] CKA Unstructured: 0.584065
-[RESULT] CKA Collapsed:    0.010926
-
-[INFO] Extracting first batch for adversarial evaluation...
-[INFO] Running FGSM attack (epsilon=0.03)...
-       -> original Accuracy: 0.0938
-       -> unstructured Accuracy: 0.0469
-       -> collapsed Accuracy: 0.1250
-[INFO] Running PGD attack (epsilon=0.03)...
-       -> original Accuracy: 0.0625
-       -> unstructured Accuracy: 0.0312
-       -> collapsed Accuracy: 0.0781
-[INFO] Checkpoint completed in 26764.93s
-
-======================================================================
-[INFO] Saving final results...
-[INFO] Results successfully saved to 'cka_results_VGG16_tinyimagenet_pre200_post200.csv'
-[INFO] Total successful experiments: 1
-[INFO] Total runtime: 26766.10s
-
-======================================================================
-FINAL RESULTS
-======================================================================
-   model       dataset  pre_epochs  post_epochs                                                                              model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  VGG16  tinyimagenet         200          200  ../Tranfer/VGG16_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt                   0              0.4891            0.4806          0.544                 40.18                 3915.63                     58.87                      483.85                   59.5                   454.21          0.584065       0.010926                0.09375                   0.046875                   0.125                0.0625                   0.03125               0.078125
+[INFO] Starting Iterative Magnitude Pruning (IMP) for 300 epochs...
+[INFO] Compounding prune rate: 0.08% per step over 225 steps.
+[INFO] Found existing checkpoint at ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300_ resume_ckpt.pt. Resuming training...
+[INFO] Resuming from Epoch 49/300 (Previous time: 0.00s)

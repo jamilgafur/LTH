@@ -207,13 +207,12 @@ def _build_and_replace_block(
         # --------------------------------------------------------------
         if debug:
             print(f"[DEBUG] ➔ Strategy: GROUPED 1×1 Conv (depth‑wise style, groups={in_channels})")
-        padding = target_kernel_size // 2 if target_kernel_size > 1 else 0
         conv = nn.Conv2d(
             in_channels,
             out_channels,
-            kernel_size=target_kernel_size,
+            kernel_size=1,
             stride=1,
-            padding=padding,
+            padding=0,
             groups=in_channels,   # one filter per input channel
             bias=False,
         )

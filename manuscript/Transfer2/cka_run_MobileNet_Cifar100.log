@@ -1,8 +1,10 @@
+Unsupported operator aten::hardtanh_ encountered 27 time(s)
+Unsupported operator aten::hardtanh_ encountered 25 time(s)
 ======================================================================
 Starting Comparison Post-Processing Pipeline
 Model: MobileNet | Dataset: Cifar100 | Device: cuda
-Epochs Config: pre=200, post=200
-Output File: cka_results_MobileNet_Cifar100_pre200_post200.csv
+Epochs Config: pre=100, post=300
+Output File: cka_results_MobileNet_Cifar100_pre100_post300.csv
 CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 [INFO] Searching for model checkpoints...
@@ -12,7 +14,7 @@ CUDA device: NVIDIA GeForce RTX 2080 Ti
 
 ======================================================================
 Processing checkpoint 1/1
-Path: ../Tranfer/MobileNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
+Path: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 ======================================================================
 [INFO] Parsing experiment directory...
 [INFO] Initializing baseline model...
@@ -22,22 +24,22 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
 [DEBUG] Attempting to initialize MobileNet with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] MobileNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/MobileNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
+[INFO] Loading weights: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 164
-[INFO] Weights loaded in 2.93s
+[INFO] Weights loaded in 0.47s
 
 [INFO] Loading original post-finetuning model...
-[INFO] Searching for checkpoint matching: ../Tranfer/MobileNet_Cifar100_None_epochs200_pretrain200
-[INFO] Found matching checkpoint: ../Tranfer/MobileNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Searching for checkpoint matching: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Initializing architecture: model=MobileNet, dataset=Cifar100
 Loading CIFAR-100 data for MobileNet...
 CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
 [DEBUG] Attempting to initialize MobileNet with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] MobileNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/MobileNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Loading weights: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 164
-[INFO] Weights loaded in 2.23s
+[INFO] Weights loaded in 0.06s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=MobileNet, dataset=Cifar100
@@ -46,7 +48,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
 [DEBUG] Attempting to initialize MobileNet with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] MobileNet successfully initialized WITH one_batch.
-[INFO] Loading discovered regions: ../Tranfer/MobileNet_Cifar100_epochs200_pretrain200_JF_discovered_regions.json
+[INFO] Loading discovered regions: ../Tranfer/MobileNet_Cifar100_epochs300_pretrain100_JF_discovered_regions.json
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -87,7 +89,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.12.depthwise.0' → 'features.12.pointwise.0'
-[INFO] ✅ Successfully collapsed block 'Region_0' (features.12.depthwise.0 → features.12.pointwise.0) in 14.27s
+[INFO] ✅ Successfully collapsed block 'Region_0' (features.12.depthwise.0 → features.12.pointwise.0) in 7.63s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -95,246 +97,53 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 
 [STEP] ===== Collapse summary =====
 [INFO] Parameters before: 3,309,476
-[INFO] Parameters after : 2,258,852
-[INFO] ΔParams = +1,050,624 (expected ≤ 0)
+[INFO] Parameters after : 2,250,660
+[INFO] ΔParams = +1,058,816 (expected ≤ 0)
 [INFO] Collapse counts: success=1, failed=0, skipped=0
-[INFO] Total collapse runtime: 14.30s
+[INFO] Total collapse runtime: 7.66s
 [RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
-[INFO] Structural collapse completed in 14.30s
-[INFO] Searching for checkpoint matching: ../Tranfer/MobileNet_Cifar100_None_epochs200_pretrain200
-[INFO] Found matching checkpoint: ../Tranfer/MobileNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Set_0.pt
-[INFO] Loading weights: ../Tranfer/MobileNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Set_0.pt
+[INFO] Structural collapse completed in 7.66s
+[INFO] Searching for checkpoint matching: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Set_0.pt
+[INFO] Loading weights: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Set_0.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 158
-[SHAPE MISMATCH FATAL] Layer: 'features.12.conv_g1x1.weight'
-   -> Checkpoint holds : torch.Size([1024, 1, 1, 1])
-   -> Model expects    : torch.Size([1024, 1, 3, 3])
-
-[CRITICAL WARNING] Dropping 1 keys due to shape mismatches to prevent hard crash!
-
-[CRITICAL WARNING] 1 Missing keys (Model expects these, but checkpoint lacks them)!
-Sample missing: ['features.12.conv_g1x1.weight']
-[INFO] Weights loaded in 1.16s
+[INFO] Weights loaded in 0.19s
 
 [INFO] Calculating dynamic sparsity to match collapse...
-[INFO] Target unstructured sparsity calculated at: 31.75%
-[INFO] IMP checkpoint not found. Starting on-the-fly finetuning...
-
-[INFO] Starting Iterative Magnitude Pruning (IMP) for 200 epochs...
-[INFO] Compounding prune rate: 0.25% per step over 150 steps.
-[INFO] Epoch 1/200 - Train Loss: 0.0059
-[INFO] Epoch 2/200 - Train Loss: 0.0085
-[INFO] Epoch 3/200 - Train Loss: 0.0140
-[INFO] Epoch 4/200 - Train Loss: 0.0076
-[INFO] Epoch 5/200 - Train Loss: 0.0065
-[INFO] Epoch 6/200 - Train Loss: 0.0054
-[INFO] Epoch 7/200 - Train Loss: 0.0061
-[INFO] Epoch 8/200 - Train Loss: 0.0056
-[INFO] Epoch 9/200 - Train Loss: 0.0061
-[INFO] Epoch 10/200 - Train Loss: 0.0060
-[INFO] Epoch 11/200 - Train Loss: 0.0055
-[INFO] Epoch 12/200 - Train Loss: 0.0067
-[INFO] Epoch 13/200 - Train Loss: 0.0056
-[INFO] Epoch 14/200 - Train Loss: 0.0061
-[INFO] Epoch 15/200 - Train Loss: 0.0057
-[INFO] Epoch 16/200 - Train Loss: 0.0056
-[INFO] Epoch 17/200 - Train Loss: 0.0058
-[INFO] Epoch 18/200 - Train Loss: 0.0060
-[INFO] Epoch 19/200 - Train Loss: 0.0054
-[INFO] Epoch 20/200 - Train Loss: 0.0058
-[INFO] Epoch 21/200 - Train Loss: 0.0057
-[INFO] Epoch 22/200 - Train Loss: 0.0060
-[INFO] Epoch 23/200 - Train Loss: 0.0065
-[INFO] Epoch 24/200 - Train Loss: 0.0063
-[INFO] Epoch 25/200 - Train Loss: 0.0065
-[INFO] Epoch 26/200 - Train Loss: 0.0074
-[INFO] Epoch 27/200 - Train Loss: 0.0065
-[INFO] Epoch 28/200 - Train Loss: 0.0065
-[INFO] Epoch 29/200 - Train Loss: 0.0072
-[INFO] Epoch 30/200 - Train Loss: 0.0072
-[INFO] Epoch 31/200 - Train Loss: 0.0078
-[INFO] Epoch 32/200 - Train Loss: 0.0078
-[INFO] Epoch 33/200 - Train Loss: 0.0081
-[INFO] Epoch 34/200 - Train Loss: 0.0082
-[INFO] Epoch 35/200 - Train Loss: 0.0083
-[INFO] Epoch 36/200 - Train Loss: 0.0084
-[INFO] Epoch 37/200 - Train Loss: 0.0085
-[INFO] Epoch 38/200 - Train Loss: 0.0085
-[INFO] Epoch 39/200 - Train Loss: 0.0094
-[INFO] Epoch 40/200 - Train Loss: 0.0095
-[INFO] Epoch 41/200 - Train Loss: 0.0096
-[INFO] Epoch 42/200 - Train Loss: 0.0101
-[INFO] Epoch 43/200 - Train Loss: 0.0099
-[INFO] Epoch 44/200 - Train Loss: 0.0104
-[INFO] Epoch 45/200 - Train Loss: 0.0102
-[INFO] Epoch 46/200 - Train Loss: 0.0111
-[INFO] Epoch 47/200 - Train Loss: 0.0109
-[INFO] Epoch 48/200 - Train Loss: 0.0114
-[INFO] Epoch 49/200 - Train Loss: 0.0121
-[INFO] Epoch 50/200 - Train Loss: 0.0122
-[INFO] Epoch 51/200 - Train Loss: 0.0122
-[INFO] Epoch 52/200 - Train Loss: 0.0133
-[INFO] Epoch 53/200 - Train Loss: 0.0134
-[INFO] Epoch 54/200 - Train Loss: 0.0134
-[INFO] Epoch 55/200 - Train Loss: 0.0141
-[INFO] Epoch 56/200 - Train Loss: 0.0141
-[INFO] Epoch 57/200 - Train Loss: 0.0149
-[INFO] Epoch 58/200 - Train Loss: 0.0156
-[INFO] Epoch 59/200 - Train Loss: 0.0155
-[INFO] Epoch 60/200 - Train Loss: 0.0161
-[INFO] Epoch 61/200 - Train Loss: 0.0167
-[INFO] Epoch 62/200 - Train Loss: 0.0163
-[INFO] Epoch 63/200 - Train Loss: 0.0174
-[INFO] Epoch 64/200 - Train Loss: 0.0178
-[INFO] Epoch 65/200 - Train Loss: 0.0180
-[INFO] Epoch 66/200 - Train Loss: 0.0188
-[INFO] Epoch 67/200 - Train Loss: 0.0192
-[INFO] Epoch 68/200 - Train Loss: 0.0199
-[INFO] Epoch 69/200 - Train Loss: 0.0197
-[INFO] Epoch 70/200 - Train Loss: 0.0203
-[INFO] Epoch 71/200 - Train Loss: 0.0210
-[INFO] Epoch 72/200 - Train Loss: 0.0206
-[INFO] Epoch 73/200 - Train Loss: 0.0219
-[INFO] Epoch 74/200 - Train Loss: 0.0227
-[INFO] Epoch 75/200 - Train Loss: 0.0235
-[INFO] Epoch 76/200 - Train Loss: 0.0232
-[INFO] Epoch 77/200 - Train Loss: 0.0243
-[INFO] Epoch 78/200 - Train Loss: 0.0245
-[INFO] Epoch 79/200 - Train Loss: 0.0250
-[INFO] Epoch 80/200 - Train Loss: 0.0260
-[INFO] Epoch 81/200 - Train Loss: 0.0262
-[INFO] Epoch 82/200 - Train Loss: 0.0270
-[INFO] Epoch 83/200 - Train Loss: 0.0269
-[INFO] Epoch 84/200 - Train Loss: 0.0276
-[INFO] Epoch 85/200 - Train Loss: 0.0279
-[INFO] Epoch 86/200 - Train Loss: 0.0284
-[INFO] Epoch 87/200 - Train Loss: 0.0283
-[INFO] Epoch 88/200 - Train Loss: 0.0294
-[INFO] Epoch 89/200 - Train Loss: 0.0292
-[INFO] Epoch 90/200 - Train Loss: 0.0300
-[INFO] Epoch 91/200 - Train Loss: 0.0303
-[INFO] Epoch 92/200 - Train Loss: 0.0308
-[INFO] Epoch 93/200 - Train Loss: 0.0312
-[INFO] Epoch 94/200 - Train Loss: 0.0318
-[INFO] Epoch 95/200 - Train Loss: 0.0318
-[INFO] Epoch 96/200 - Train Loss: 0.0322
-[INFO] Epoch 97/200 - Train Loss: 0.0328
-[INFO] Epoch 98/200 - Train Loss: 0.0339
-[INFO] Epoch 99/200 - Train Loss: 0.0333
-[INFO] Epoch 100/200 - Train Loss: 0.0349
-[INFO] Epoch 101/200 - Train Loss: 0.0333
-[INFO] Epoch 102/200 - Train Loss: 0.0356
-[INFO] Epoch 103/200 - Train Loss: 0.0353
-[INFO] Epoch 104/200 - Train Loss: 0.0350
-[INFO] Epoch 105/200 - Train Loss: 0.0365
-[INFO] Epoch 106/200 - Train Loss: 0.0375
-[INFO] Epoch 107/200 - Train Loss: 0.0368
-[INFO] Epoch 108/200 - Train Loss: 0.0373
-[INFO] Epoch 109/200 - Train Loss: 0.0372
-[INFO] Epoch 110/200 - Train Loss: 0.0368
-[INFO] Epoch 111/200 - Train Loss: 0.0374
-[INFO] Epoch 112/200 - Train Loss: 0.0385
-[INFO] Epoch 113/200 - Train Loss: 0.0384
-[INFO] Epoch 114/200 - Train Loss: 0.0384
-[INFO] Epoch 115/200 - Train Loss: 0.0391
-[INFO] Epoch 116/200 - Train Loss: 0.0389
-[INFO] Epoch 117/200 - Train Loss: 0.0396
-[INFO] Epoch 118/200 - Train Loss: 0.0411
-[INFO] Epoch 119/200 - Train Loss: 0.0407
-[INFO] Epoch 120/200 - Train Loss: 0.0416
-[INFO] Epoch 121/200 - Train Loss: 0.0416
-[INFO] Epoch 122/200 - Train Loss: 0.0412
-[INFO] Epoch 123/200 - Train Loss: 0.0411
-[INFO] Epoch 124/200 - Train Loss: 0.0417
-[INFO] Epoch 125/200 - Train Loss: 0.0414
-[INFO] Epoch 126/200 - Train Loss: 0.0405
-[INFO] Epoch 127/200 - Train Loss: 0.0426
-[INFO] Epoch 128/200 - Train Loss: 0.0430
-[INFO] Epoch 129/200 - Train Loss: 0.0436
-[INFO] Epoch 130/200 - Train Loss: 0.0425
-[INFO] Epoch 131/200 - Train Loss: 0.0435
-[INFO] Epoch 132/200 - Train Loss: 0.0431
-[INFO] Epoch 133/200 - Train Loss: 0.0439
-[INFO] Epoch 134/200 - Train Loss: 0.0433
-[INFO] Epoch 135/200 - Train Loss: 0.0438
-[INFO] Epoch 136/200 - Train Loss: 0.0430
-[INFO] Epoch 137/200 - Train Loss: 0.0435
-[INFO] Epoch 138/200 - Train Loss: 0.0434
-[INFO] Epoch 139/200 - Train Loss: 0.0435
-[INFO] Epoch 140/200 - Train Loss: 0.0440
-[INFO] Epoch 141/200 - Train Loss: 0.0437
-[INFO] Epoch 142/200 - Train Loss: 0.0439
-[INFO] Epoch 143/200 - Train Loss: 0.0447
-[INFO] Epoch 144/200 - Train Loss: 0.0442
-[INFO] Epoch 145/200 - Train Loss: 0.0456
-[INFO] Epoch 146/200 - Train Loss: 0.0430
-[INFO] Epoch 147/200 - Train Loss: 0.0431
-[INFO] Epoch 148/200 - Train Loss: 0.0448
-[INFO] Epoch 149/200 - Train Loss: 0.0438
-[INFO] Epoch 150/200 - Train Loss: 0.0441
-[INFO] Epoch 151/200 - Train Loss: 0.0448
-[INFO] Epoch 152/200 - Train Loss: 0.0444
-[INFO] Epoch 153/200 - Train Loss: 0.0432
-[INFO] Epoch 154/200 - Train Loss: 0.0450
-[INFO] Epoch 155/200 - Train Loss: 0.0442
-[INFO] Epoch 156/200 - Train Loss: 0.0422
-[INFO] Epoch 157/200 - Train Loss: 0.0438
-[INFO] Epoch 158/200 - Train Loss: 0.0437
-[INFO] Epoch 159/200 - Train Loss: 0.0434
-[INFO] Epoch 160/200 - Train Loss: 0.0434
-[INFO] Epoch 161/200 - Train Loss: 0.0434
-[INFO] Epoch 162/200 - Train Loss: 0.0438
-[INFO] Epoch 163/200 - Train Loss: 0.0428
-[INFO] Epoch 164/200 - Train Loss: 0.0428
-[INFO] Epoch 165/200 - Train Loss: 0.0432
-[INFO] Epoch 166/200 - Train Loss: 0.0434
-[INFO] Epoch 167/200 - Train Loss: 0.0435
-[INFO] Epoch 168/200 - Train Loss: 0.0428
-[INFO] Epoch 169/200 - Train Loss: 0.0428
-[INFO] Epoch 170/200 - Train Loss: 0.0431
-[INFO] Epoch 171/200 - Train Loss: 0.0426
-[INFO] Epoch 172/200 - Train Loss: 0.0423
-[INFO] Epoch 173/200 - Train Loss: 0.0432
-[INFO] Epoch 174/200 - Train Loss: 0.0422
-[INFO] Epoch 175/200 - Train Loss: 0.0428
-[INFO] Epoch 176/200 - Train Loss: 0.0434
-[INFO] Epoch 177/200 - Train Loss: 0.0442
-[INFO] Epoch 178/200 - Train Loss: 0.0425
-[INFO] Epoch 179/200 - Train Loss: 0.0425
-[INFO] Epoch 180/200 - Train Loss: 0.0414
-[INFO] Epoch 181/200 - Train Loss: 0.0411
-[INFO] Epoch 182/200 - Train Loss: 0.0423
-[INFO] Epoch 183/200 - Train Loss: 0.0435
-[INFO] Epoch 184/200 - Train Loss: 0.0416
-[INFO] Epoch 185/200 - Train Loss: 0.0419
-[INFO] Epoch 186/200 - Train Loss: 0.0436
-[INFO] Epoch 187/200 - Train Loss: 0.0434
-[INFO] Epoch 188/200 - Train Loss: 0.0421
-[INFO] Epoch 189/200 - Train Loss: 0.0422
-[INFO] Epoch 190/200 - Train Loss: 0.0433
-[INFO] Epoch 191/200 - Train Loss: 0.0418
-[INFO] Epoch 192/200 - Train Loss: 0.0450
-[INFO] Epoch 193/200 - Train Loss: 0.0421
-[INFO] Epoch 194/200 - Train Loss: 0.0424
-[INFO] Epoch 195/200 - Train Loss: 0.0409
-[INFO] Epoch 196/200 - Train Loss: 0.0416
-[INFO] Epoch 197/200 - Train Loss: 0.0423
-[INFO] Epoch 198/200 - Train Loss: 0.0423
-[INFO] Epoch 199/200 - Train Loss: 0.0426
-[INFO] Epoch 200/200 - Train Loss: 0.0411
-[INFO] IMP training energy: 226.26W avg, 999969.62J total (4419.53s)
-[INFO] IMP model checkpoint saved to ../Tranfer/MobileNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Unstructured_IMP_post200.pt
+[INFO] Target unstructured sparsity calculated at: 31.99%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Initializing architecture: model=MobileNet, dataset=Cifar100
+Loading CIFAR-100 data for MobileNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize MobileNet with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] MobileNet successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 164
+[INFO] Weights loaded in 0.07s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
+       -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.4368, power=217.04W, energy=735.69J, time=3.39s
+[INFO] Evaluation complete: acc=0.4394, power=144.75W, energy=563.87J, time=3.90s
+       -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.4461, power=237.71W, energy=548.26J, time=2.31s
+[INFO] Evaluation complete: acc=0.4293, power=133.95W, energy=314.80J, time=2.35s
+       -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.0078, power=222.66W, energy=510.85J, time=2.29s
-[RESULT] Accuracy Original:     0.4368 | Power: 217.04W | Energy: 735.69J
-[RESULT] Accuracy Unstructured: 0.4461 | Power: 237.71W | Energy: 548.26J
-[RESULT] Accuracy Collapsed:    0.0078 | Power: 222.66W | Energy: 510.85J
+[INFO] Evaluation complete: acc=0.4468, power=121.73W, energy=283.67J, time=2.33s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation...
+[INFO] Evaluation complete: acc=0.4227, power=120.13W, energy=281.59J, time=2.34s
+[RESULT] Accuracy Original:     0.4293 | Power: 133.95W | Energy: 314.80J
+[RESULT] Accuracy Unstructured: 0.4468 | Power: 121.73W | Energy: 283.67J
+[RESULT] Accuracy Collapsed:    0.4227 | Power: 120.13W | Energy: 281.59J
+
+[INFO] Benchmarking theoretical and measured FLOPs...
+[RESULT] FLOPs Original:     6.09e+09
+[RESULT] FLOPs Unstructured: 4.14e+09 (Theoretical/Effective)
+[RESULT] FLOPs Collapsed:    5.55e+09 (Measured)
 
 [INFO] Extracting features and computing CKA...
 [INFO] Extracting features from 10 batches...
@@ -349,7 +158,7 @@ Sample missing: ['features.12.conv_g1x1.weight']
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.24s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.27s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: AdaptiveAvgPool2d
 [INFO] Feature extraction batch 1/10
@@ -362,7 +171,7 @@ Sample missing: ['features.12.conv_g1x1.weight']
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.24s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.27s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: AdaptiveAvgPool2d
 [INFO] Feature extraction batch 1/10
@@ -375,33 +184,30 @@ Sample missing: ['features.12.conv_g1x1.weight']
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.23s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.27s
 [INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
-[INFO] CKA complete: score=0.616236, time=0.20s
+[INFO] CKA complete: score=0.564193, time=3.55s
 [INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
-[INFO] CKA complete: score=0.168548, time=0.00s
-[RESULT] CKA Unstructured: 0.616236
-[RESULT] CKA Collapsed:    0.168548
+[INFO] CKA complete: score=0.621061, time=0.00s
 
-[INFO] Extracting first batch for adversarial evaluation...
+[INFO] Evaluating Adversarial Robustness...
 [INFO] Running FGSM attack (epsilon=0.03)...
-       -> original Accuracy: 0.1523
-       -> unstructured Accuracy: 0.1660
-       -> collapsed Accuracy: 0.0020
+       -> original Accuracy: 0.1152
+       -> unstructured Accuracy: 0.1719
+       -> collapsed Accuracy: 0.1289
 [INFO] Running PGD attack (epsilon=0.03)...
-       -> original Accuracy: 0.0586
-       -> unstructured Accuracy: 0.0879
-       -> collapsed Accuracy: 0.0020
-[INFO] Checkpoint completed in 4461.19s
+       -> original Accuracy: 0.0410
+       -> unstructured Accuracy: 0.0801
+       -> collapsed Accuracy: 0.0430
 
 ======================================================================
 [INFO] Saving final results...
-[INFO] Results successfully saved to 'cka_results_MobileNet_Cifar100_pre200_post200.csv'
+[INFO] Results successfully saved to 'cka_results_MobileNet_Cifar100_pre100_post300.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 4462.11s
+[INFO] Total runtime: 41.49s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
-       model   dataset  pre_epochs  post_epochs                                                                              model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  MobileNet  Cifar100         200          200  ../Tranfer/MobileNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt                   0              0.4368            0.4461         0.0078                217.04                  735.69                    237.71                      548.26                 222.66                   510.85          0.616236       0.168548               0.152344                   0.166016                0.001953              0.058594                  0.087891               0.001953
+       model   dataset  pre_epochs  post_epochs                                                                              model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0  MobileNet  Cifar100         100          300  ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.4293            0.4468         0.4227                133.95                   314.8                    121.73                      283.67                 120.13                   281.59    6.090392e+09        4.141864e+09     5.548802e+09          0.564193       0.621061               0.115234                   0.171875                0.128906              0.041016                  0.080078               0.042969

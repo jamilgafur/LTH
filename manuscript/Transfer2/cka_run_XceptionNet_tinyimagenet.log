@@ -1,9 +1,10 @@
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA driver initialization failed, you might not have a CUDA gpu. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
+  return torch._C._cuda_getDeviceCount() > 0
 ======================================================================
 Starting Comparison Post-Processing Pipeline
-Model: XceptionNet | Dataset: tinyimagenet | Device: cuda
-Epochs Config: pre=200, post=200
-Output File: cka_results_XceptionNet_tinyimagenet_pre200_post200.csv
-CUDA device: NVIDIA GeForce RTX 2080 Ti
+Model: XceptionNet | Dataset: tinyimagenet | Device: cpu
+Epochs Config: pre=100, post=300
+Output File: cka_results_XceptionNet_tinyimagenet_pre100_post300.csv
 ======================================================================
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
@@ -12,7 +13,7 @@ CUDA device: NVIDIA GeForce RTX 2080 Ti
 
 ======================================================================
 Processing checkpoint 1/1
-Path: ../Tranfer/XceptionNet_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
+Path: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 ======================================================================
 [INFO] Parsing experiment directory...
 [INFO] Initializing baseline model...
@@ -28,13 +29,13 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
 [DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
+[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 7.19s
+[INFO] Weights loaded in 0.09s
 
 [INFO] Loading original post-finetuning model...
-[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_epochs200_pretrain200
-[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
 Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] TinyImageNet root: /old_Users/jgafur/LTH/manuscript/structured_study/.temp/tiny-imagenet-200
@@ -47,9 +48,9 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
 [DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 5.97s
+[INFO] Weights loaded in 0.09s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
@@ -64,10 +65,10 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
 [DEBUG] Attempting to initialize XceptionNet with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
-[INFO] Loading discovered regions: ../Tranfer/XceptionNet_tinyimagenet_epochs200_pretrain200_JF_discovered_regions.json
+[INFO] Loading discovered regions: ../Tranfer/XceptionNet_tinyimagenet_epochs300_pretrain100_JF_discovered_regions.json
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (XceptionNet)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -95,7 +96,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.0.rep' =====
-[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[DEBUG] start_idx=4, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.0.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -104,7 +105,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.64s
+[INFO] ✅ Successfully collapsed block 'Region_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.13s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -130,7 +131,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.1.rep' =====
-[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[DEBUG] start_idx=4, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.1.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -139,7 +140,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [RESULT] ✅ Downstream validation for 'middle_flow.1.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.1.rep.4.depthwise' → 'middle_flow.1.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise) in 0.12s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -164,7 +165,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.2.rep' =====
-[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[DEBUG] start_idx=4, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.2.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -173,57 +174,23 @@ Loading Tiny ImageNet data for XceptionNet...
 [RESULT] ✅ Downstream validation for 'middle_flow.2.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.2.rep.4.depthwise' → 'middle_flow.2.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_2' (middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.depthwise) in 0.02s
+[INFO] ✅ Successfully collapsed block 'Region_2' (middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.depthwise) in 0.12s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'Region_3': middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.depthwise
-[STEP] Calling _collapse_block('middle_flow.3.rep.4.depthwise', 'middle_flow.3.rep.7.depthwise')
+[INFO] Processing collapse task 'Region_3': middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.4.rep.4.depthwise', 'middle_flow.4.rep.7.depthwise')
 
 [INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : middle_flow.3.rep.4.depthwise
-[INFO] End Target   : middle_flow.3.rep.7.depthwise
-
-[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'middle_flow.3.rep.4.depthwise' -> 'middle_flow.3.rep.7.depthwise'
-[DEBUG] [LCA] Resolved Container: 'middle_flow.3.rep' | Type: Sequential
-
-[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'middle_flow.3.rep.4' -> 'middle_flow.3.rep.7'...
-
-[STEP 3] Probing graph for downstream classifier after 'middle_flow.3.rep.7.depthwise'...
-
-[STEP 4] Analyzing topological characteristics for replacement...
-
-[STEP 5] Synthesizing surrogate block and fusing into computational graph...
-
-[STEP] ===== Starting _validate_downstream for 'middle_flow.3.rep' =====
-[DEBUG] start_idx=4, device=cuda, has_next_linear=True
-[STEP] Searching for inserted collapsed module within 'middle_flow.3.rep'...
-[DEBUG] Found inserted block candidate at index 4: '4'
-[STEP] Validating inserted module 'Sequential' at index 4...
-[DEBUG] Inserted module forward successful, output shape: (2, 728, 4, 4)
-[STEP] Scanning immediate downstream modules for shape or runtime errors...
-[RESULT] ✅ Downstream validation for 'middle_flow.3.rep' completed successfully.
-
-[INFO] ✅ Framework successfully merged 'middle_flow.3.rep.4.depthwise' → 'middle_flow.3.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_3' (middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.depthwise) in 0.02s
-[STEP] Patching skip connections (if any)...
-[STEP] Disabling in-place ReLUs for autograd safety...
-
-[INFO] Processing collapse task 'Region_4': middle_flow.4.rep.1.depthwise → middle_flow.4.rep.7.depthwise
-[STEP] Calling _collapse_block('middle_flow.4.rep.1.depthwise', 'middle_flow.4.rep.7.depthwise')
-
-[INFO] ==================== Collapsing Block ====================
-[INFO] Start Target : middle_flow.4.rep.1.depthwise
+[INFO] Start Target : middle_flow.4.rep.4.depthwise
 [INFO] End Target   : middle_flow.4.rep.7.depthwise
 
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
-[DEBUG] [LCA] Locating block boundaries: 'middle_flow.4.rep.1.depthwise' -> 'middle_flow.4.rep.7.depthwise'
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.4.rep.4.depthwise' -> 'middle_flow.4.rep.7.depthwise'
 [DEBUG] [LCA] Resolved Container: 'middle_flow.4.rep' | Type: Sequential
 
 [STEP 2] Simulating Forward Pass & Capturing LCA Activations...
-[DEBUG] Capturing I/O hooks for 'middle_flow.4.rep.1' -> 'middle_flow.4.rep.7'...
+[DEBUG] Capturing I/O hooks for 'middle_flow.4.rep.4' -> 'middle_flow.4.rep.7'...
 
 [STEP 3] Probing graph for downstream classifier after 'middle_flow.4.rep.7.depthwise'...
 
@@ -232,20 +199,20 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.4.rep' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[DEBUG] start_idx=4, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.4.rep'...
-[DEBUG] Found inserted block candidate at index 1: '1'
-[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
 [DEBUG] Inserted module forward successful, output shape: (2, 728, 4, 4)
 [STEP] Scanning immediate downstream modules for shape or runtime errors...
 [RESULT] ✅ Downstream validation for 'middle_flow.4.rep' completed successfully.
 
-[INFO] ✅ Framework successfully merged 'middle_flow.4.rep.1.depthwise' → 'middle_flow.4.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_4' (middle_flow.4.rep.1.depthwise → middle_flow.4.rep.7.depthwise) in 0.02s
+[INFO] ✅ Framework successfully merged 'middle_flow.4.rep.4.depthwise' → 'middle_flow.4.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'Region_3' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.depthwise) in 0.12s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'Region_5': middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise
+[INFO] Processing collapse task 'Region_4': middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise
 [STEP] Calling _collapse_block('middle_flow.5.rep.4.depthwise', 'middle_flow.5.rep.7.depthwise')
 
 [INFO] ==================== Collapsing Block ====================
@@ -266,7 +233,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.5.rep' =====
-[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[DEBUG] start_idx=4, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.5.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -275,11 +242,11 @@ Loading Tiny ImageNet data for XceptionNet...
 [RESULT] ✅ Downstream validation for 'middle_flow.5.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.5.rep.4.depthwise' → 'middle_flow.5.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_5' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise) in 0.02s
+[INFO] ✅ Successfully collapsed block 'Region_4' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise) in 0.12s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'Region_6': middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise
+[INFO] Processing collapse task 'Region_5': middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise
 [STEP] Calling _collapse_block('middle_flow.6.rep.4.depthwise', 'middle_flow.6.rep.7.depthwise')
 
 [INFO] ==================== Collapsing Block ====================
@@ -300,7 +267,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.6.rep' =====
-[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[DEBUG] start_idx=4, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.6.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -309,11 +276,11 @@ Loading Tiny ImageNet data for XceptionNet...
 [RESULT] ✅ Downstream validation for 'middle_flow.6.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.6.rep.4.depthwise' → 'middle_flow.6.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_6' (middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise) in 0.02s
+[INFO] ✅ Successfully collapsed block 'Region_5' (middle_flow.6.rep.4.depthwise → middle_flow.6.rep.7.depthwise) in 0.12s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'Region_7': middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise
+[INFO] Processing collapse task 'Region_6': middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise
 [STEP] Calling _collapse_block('middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.pointwise')
 
 [INFO] ==================== Collapsing Block ====================
@@ -334,7 +301,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'middle_flow.7.rep' =====
-[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[DEBUG] start_idx=4, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'middle_flow.7.rep'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -343,11 +310,11 @@ Loading Tiny ImageNet data for XceptionNet...
 [RESULT] ✅ Downstream validation for 'middle_flow.7.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.7.rep.4.depthwise' → 'middle_flow.7.rep.7.pointwise'
-[INFO] ✅ Successfully collapsed block 'Region_7' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise) in 0.02s
+[INFO] ✅ Successfully collapsed block 'Region_6' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise) in 0.12s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
-[INFO] Processing collapse task 'Region_8': block4.rep.1.depthwise → block4.rep.4.depthwise
+[INFO] Processing collapse task 'Region_7': block4.rep.1.depthwise → block4.rep.4.depthwise
 [STEP] Calling _collapse_block('block4.rep.1.depthwise', 'block4.rep.4.depthwise')
 
 [INFO] ==================== Collapsing Block ====================
@@ -368,7 +335,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'block4.rep' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[DEBUG] start_idx=1, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'block4.rep'...
 [DEBUG] Found inserted block candidate at index 1: '1'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -377,7 +344,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [RESULT] ✅ Downstream validation for 'block4.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'block4.rep.4.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_8' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_7' (block4.rep.1.depthwise → block4.rep.4.depthwise) in 0.12s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -385,149 +352,23 @@ Loading Tiny ImageNet data for XceptionNet...
 
 [STEP] ===== Collapse summary =====
 [INFO] Parameters before: 21,216,752
-[INFO] Parameters after : 15,791,560
-[INFO] ΔParams = +5,425,192 (expected ≤ 0)
-[INFO] Collapse counts: success=9, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.92s
-[RESULT] ✅ collapse_only complete. Total targets: 9 | success=9 | failed=0 | skipped=0
-[INFO] Structural collapse completed in 0.92s
-[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_epochs200_pretrain200
-[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
-[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
-[INFO] Checkpoint extracted. Candidate state dict keys: 242
-[INFO] Weights loaded in 4.04s
+[INFO] Parameters after : 16,872,640
+[INFO] ΔParams = +4,344,112 (expected ≤ 0)
+[INFO] Collapse counts: success=8, failed=0, skipped=0
+[INFO] Total collapse runtime: 1.03s
+[RESULT] ✅ collapse_only complete. Total targets: 8 | success=8 | failed=0 | skipped=0
+[INFO] Structural collapse completed in 1.03s
+[INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 252
+[INFO] Weights loaded in 0.07s
 
 [INFO] Calculating dynamic sparsity to match collapse...
-[INFO] Target unstructured sparsity calculated at: 25.57%
+[INFO] Target unstructured sparsity calculated at: 20.47%
 [INFO] IMP checkpoint not found. Starting on-the-fly finetuning...
 
-[INFO] Starting Iterative Magnitude Pruning (IMP) for 200 epochs...
-[INFO] Compounding prune rate: 0.20% per step over 150 steps.
-[INFO] Epoch 1/200 - Train Loss: 0.5054
-[INFO] Epoch 2/200 - Train Loss: 0.5122
-[INFO] Epoch 3/200 - Train Loss: 0.5246
-[INFO] Epoch 4/200 - Train Loss: 0.5462
-[INFO] Epoch 5/200 - Train Loss: 0.5673
-[INFO] Epoch 6/200 - Train Loss: 0.5922
-[INFO] Epoch 7/200 - Train Loss: 0.6105
-[INFO] Epoch 8/200 - Train Loss: 0.6320
-[INFO] Epoch 9/200 - Train Loss: 0.6705
-[INFO] Epoch 10/200 - Train Loss: 0.7052
-[INFO] Epoch 11/200 - Train Loss: 0.7318
-[INFO] Epoch 12/200 - Train Loss: 0.7727
-[INFO] Epoch 13/200 - Train Loss: 0.8065
-[INFO] Epoch 14/200 - Train Loss: 0.8415
-[INFO] Epoch 15/200 - Train Loss: 0.8700
-[INFO] Epoch 16/200 - Train Loss: 0.9092
-[INFO] Epoch 17/200 - Train Loss: 0.9509
-[INFO] Epoch 18/200 - Train Loss: 0.9920
-[INFO] Epoch 19/200 - Train Loss: 1.0269
-[INFO] Epoch 20/200 - Train Loss: 1.0700
-[INFO] Epoch 21/200 - Train Loss: 1.1080
-[INFO] Epoch 22/200 - Train Loss: 1.1446
-[INFO] Epoch 23/200 - Train Loss: 1.1876
-[INFO] Epoch 24/200 - Train Loss: 1.2203
-[INFO] Epoch 25/200 - Train Loss: 1.2648
-[INFO] Epoch 26/200 - Train Loss: 1.3054
-[INFO] Epoch 27/200 - Train Loss: 1.3616
-[INFO] Epoch 28/200 - Train Loss: 1.3992
-[INFO] Epoch 29/200 - Train Loss: 1.4432
-[INFO] Epoch 30/200 - Train Loss: 1.4894
-[INFO] Epoch 31/200 - Train Loss: 1.5342
-[INFO] Epoch 32/200 - Train Loss: 1.5630
-[INFO] Epoch 33/200 - Train Loss: 1.6148
-[INFO] Epoch 34/200 - Train Loss: 1.6592
-[INFO] Epoch 35/200 - Train Loss: 1.7008
-[INFO] Epoch 36/200 - Train Loss: 1.7419
-[INFO] Epoch 37/200 - Train Loss: 1.7660
-[INFO] Epoch 38/200 - Train Loss: 1.7995
-[INFO] Epoch 39/200 - Train Loss: 1.8276
-[INFO] Epoch 40/200 - Train Loss: 1.8441
-[INFO] Epoch 41/200 - Train Loss: 1.8650
-[INFO] Epoch 42/200 - Train Loss: 1.8863
-[INFO] Epoch 43/200 - Train Loss: 1.8948
-[INFO] Epoch 44/200 - Train Loss: 1.9023
-[INFO] Epoch 45/200 - Train Loss: 1.9158
-[INFO] Epoch 46/200 - Train Loss: 1.9340
-[INFO] Epoch 47/200 - Train Loss: 1.9351
-[INFO] Epoch 48/200 - Train Loss: 1.9358
-[INFO] Epoch 49/200 - Train Loss: 1.9522
-[INFO] Epoch 50/200 - Train Loss: 1.9482
-[INFO] Epoch 51/200 - Train Loss: 1.9666
-[INFO] Epoch 52/200 - Train Loss: 1.9597
-[INFO] Epoch 53/200 - Train Loss: 1.9555
-[INFO] Epoch 54/200 - Train Loss: 1.9543
-[INFO] Epoch 55/200 - Train Loss: 1.9602
-[INFO] Epoch 56/200 - Train Loss: 1.9571
-[INFO] Epoch 57/200 - Train Loss: 1.9465
-[INFO] Epoch 58/200 - Train Loss: 1.9586
-[INFO] Epoch 59/200 - Train Loss: 1.9532
-[INFO] Epoch 60/200 - Train Loss: 1.9540
-[INFO] Epoch 61/200 - Train Loss: 1.9512
-[INFO] Epoch 62/200 - Train Loss: 1.9489
-[INFO] Epoch 63/200 - Train Loss: 1.9517
-[INFO] Epoch 64/200 - Train Loss: 1.9433
-[INFO] Epoch 65/200 - Train Loss: 1.9430
-[INFO] Epoch 66/200 - Train Loss: 1.9373
-[INFO] Epoch 67/200 - Train Loss: 1.9389
-[INFO] Epoch 68/200 - Train Loss: 1.9286
-[INFO] Epoch 69/200 - Train Loss: 1.9315
-[INFO] Epoch 70/200 - Train Loss: 1.9324
-[INFO] Epoch 71/200 - Train Loss: 1.9295
-[INFO] Epoch 72/200 - Train Loss: 1.9245
-[INFO] Epoch 73/200 - Train Loss: 1.9150
-[INFO] Epoch 74/200 - Train Loss: 1.9078
-[INFO] Epoch 75/200 - Train Loss: 1.9131
-[INFO] Epoch 76/200 - Train Loss: 1.9010
-[INFO] Epoch 77/200 - Train Loss: 1.9102
-[INFO] Epoch 78/200 - Train Loss: 1.9031
-[INFO] Epoch 79/200 - Train Loss: 1.8942
-[INFO] Epoch 80/200 - Train Loss: 1.9029
-[INFO] Epoch 81/200 - Train Loss: 1.8919
-[INFO] Epoch 82/200 - Train Loss: 1.8895
-[INFO] Epoch 83/200 - Train Loss: 1.8858
-[INFO] Epoch 84/200 - Train Loss: 1.8899
-[INFO] Epoch 85/200 - Train Loss: 1.8862
-[INFO] Epoch 86/200 - Train Loss: 1.8809
-[INFO] Epoch 87/200 - Train Loss: 1.8823
-[INFO] Epoch 88/200 - Train Loss: 1.8789
-[INFO] Epoch 89/200 - Train Loss: 1.8824
-[INFO] Epoch 90/200 - Train Loss: 1.8758
-[INFO] Epoch 91/200 - Train Loss: 1.8762
-[INFO] Epoch 92/200 - Train Loss: 1.8682
-[INFO] Epoch 93/200 - Train Loss: 1.8754
-[INFO] Epoch 94/200 - Train Loss: 1.8738
-[INFO] Epoch 95/200 - Train Loss: 1.8689
-[INFO] Epoch 96/200 - Train Loss: 1.8585
-[INFO] Epoch 97/200 - Train Loss: 1.8538
-[INFO] Epoch 98/200 - Train Loss: 1.8582
-[INFO] Epoch 99/200 - Train Loss: 1.8534
-[INFO] Epoch 100/200 - Train Loss: 1.8610
-[INFO] Epoch 101/200 - Train Loss: 1.8553
-[INFO] Epoch 102/200 - Train Loss: 1.8556
-[INFO] Epoch 103/200 - Train Loss: 1.8632
-[INFO] Epoch 104/200 - Train Loss: 1.8514
-[INFO] Epoch 105/200 - Train Loss: 1.8499
-[INFO] Epoch 106/200 - Train Loss: 1.8440
-[INFO] Epoch 107/200 - Train Loss: 1.8391
-[INFO] Epoch 108/200 - Train Loss: 1.8380
-[INFO] Epoch 109/200 - Train Loss: 1.8461
-[INFO] Epoch 110/200 - Train Loss: 1.8408
-[INFO] Epoch 111/200 - Train Loss: 1.8330
-[INFO] Epoch 112/200 - Train Loss: 1.8346
-[INFO] Epoch 113/200 - Train Loss: 1.8348
-[ERROR] Failed processing checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt
-[ERROR] OutOfMemoryError: CUDA out of memory. Tried to allocate 130.00 MiB. GPU 0 has a total capacity of 10.75 GiB of which 123.62 MiB is free. Including non-PyTorch memory, this process has 10.63 GiB memory in use. Of the allocated memory 9.80 GiB is allocated by PyTorch, and 646.31 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
-
-======================================================================
-[INFO] Saving final results...
-[INFO] Results successfully saved to 'cka_results_XceptionNet_tinyimagenet_pre200_post200.csv'
-[INFO] Total successful experiments: 0
-[INFO] Total runtime: 21037.72s
-
-======================================================================
-FINAL RESULTS
-======================================================================
-Empty DataFrame
-Columns: []
-Index: []
+[INFO] Starting Iterative Magnitude Pruning (IMP) for 300 epochs...
+[INFO] Compounding prune rate: 0.10% per step over 225 steps.
+[INFO] Found existing checkpoint at ../Tranfer/XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300_ resume_ckpt.pt. Resuming training...
+[INFO] Resuming from Epoch 6/300 (Previous time: 0.00s)
