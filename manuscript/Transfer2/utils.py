@@ -79,6 +79,9 @@ def find_matching_checkpoint(before_path: str, candidate_paths: list) -> str:
 
 import re
 
+
+
+
 def load_weights(model: nn.Module, filepath: str, device: torch.device):
     """Loads a PyTorch model checkpoint state_dict into the instantiated model with extreme logging."""
     print(f"[INFO] Loading weights: {filepath}")
@@ -105,7 +108,7 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
 
     print(f"[INFO] Checkpoint extracted. Candidate state dict keys: {len(state_dict)}")
 
-    # --- SHAPE MISMATCH DIAGNOSTICS & FILTERING ---
+    # --- SHAPE MISMATCH DIAGNOSTICS & DYNAMIC MODULE UPGRADE ---
     model_state = model.state_dict()
     mismatched_keys = []
     
@@ -118,22 +121,40 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
                 print(f"   -> Checkpoint holds : {checkpoint_shape}")
                 print(f"   -> Model expects    : {expected_shape}")
                 
-                # --- NEW: DYNAMIC SHAPE RECONCILIATION ---
-                if len(checkpoint_shape) == 4 and len(expected_shape) == 4 and checkpoint_shape[:2] == expected_shape[:2]:
-                    # Center-crop if checkpoint is larger (e.g., 7x7 -> 1x1)
-                    if checkpoint_shape[2] >= expected_shape[2] and checkpoint_shape[3] >= expected_shape[3]:
-                        print(f"[INFO] Auto-resolving mismatch: Center-cropping to {expected_shape}")
-                        diff_h = (checkpoint_shape[2] - expected_shape[2]) // 2
-                        diff_w = (checkpoint_shape[3] - expected_shape[3]) // 2
-                        state_dict[k] = v[:, :, diff_h:diff_h+expected_shape[2], diff_w:diff_w+expected_shape[3]]
-                        continue
-                    # Pad with zeros if checkpoint is smaller (e.g., 1x1 -> 7x7)
-                    elif checkpoint_shape[2] <= expected_shape[2] and checkpoint_shape[3] <= expected_shape[3]:
-                        print(f"[INFO] Auto-resolving mismatch: Zero-padding to {expected_shape}")
-                        pad_h = (expected_shape[2] - checkpoint_shape[2]) // 2
-                        pad_w = (expected_shape[3] - checkpoint_shape[3]) // 2
-                        state_dict[k] = torch.nn.functional.pad(v, (pad_w, pad_w, pad_h, pad_h))
-                        continue
+                # --- DYNAMIC MODULE HOT-SWAPPING ---
+                if len(checkpoint_shape) == 4 and len(expected_shape) == 4 and checkpoint_shape[:2] == expected_shape[:2] and k.endswith(".weight"):
+                    layer_path = k[:-7]  # strip '.weight'
+                    try:
+                        # Traverse model hierarchy to find the parent module and target Conv2d
+                        parts = layer_path.split('.')
+                        parent_mod = model
+                        for part in parts[:-1]:
+                            parent_mod = parent_mod[int(part)] if part.isdigit() else getattr(parent_mod, part)
+                        attr_name = parts[-1]
+                        old_conv = parent_mod[int(attr_name)] if attr_name.isdigit() else getattr(parent_mod, attr_name)
+                        
+                        if isinstance(old_conv, nn.Conv2d):
+                            new_k = (checkpoint_shape[2], checkpoint_shape[3])
+                            new_pad = (new_k[0] // 2, new_k[1] // 2)
+                            print(f"[INFO] Auto-resolving mismatch: Upgrading '{layer_path}' kernel from {old_conv.kernel_size} to {new_k} (padding={new_pad})")
+                            
+                            new_conv = nn.Conv2d(
+                                in_channels=old_conv.in_channels,
+                                out_channels=old_conv.out_channels,
+                                kernel_size=new_k,
+                                stride=old_conv.stride,
+                                padding=new_pad,
+                                groups=old_conv.groups,
+                                bias=(old_conv.bias is not None)
+                            ).to(device)
+                            
+                            if attr_name.isdigit():
+                                parent_mod[int(attr_name)] = new_conv
+                            else:
+                                setattr(parent_mod, attr_name, new_conv)
+                            continue
+                    except Exception as e:
+                        print(f"[WARN] Dynamic module upgrade failed for '{layer_path}': {e}")
                 
                 mismatched_keys.append(k)
 
@@ -163,6 +184,8 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
     model.eval()
     print(f"[INFO] Weights loaded in {time.time() - start_time:.2f}s\n")
     return model
+
+
 
 def apply_unstructured_pruning(model: nn.Module, amount: float = 0.2) -> nn.Module:
     """Applies L1 Unstructured Pruning globally to all convolutional and linear layers."""
