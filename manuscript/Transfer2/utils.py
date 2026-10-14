@@ -117,6 +117,24 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
                 print(f"[SHAPE MISMATCH FATAL] Layer: '{k}'")
                 print(f"   -> Checkpoint holds : {checkpoint_shape}")
                 print(f"   -> Model expects    : {expected_shape}")
+                
+                # --- NEW: DYNAMIC SHAPE RECONCILIATION ---
+                if len(checkpoint_shape) == 4 and len(expected_shape) == 4 and checkpoint_shape[:2] == expected_shape[:2]:
+                    # Center-crop if checkpoint is larger (e.g., 7x7 -> 1x1)
+                    if checkpoint_shape[2] >= expected_shape[2] and checkpoint_shape[3] >= expected_shape[3]:
+                        print(f"[INFO] Auto-resolving mismatch: Center-cropping to {expected_shape}")
+                        diff_h = (checkpoint_shape[2] - expected_shape[2]) // 2
+                        diff_w = (checkpoint_shape[3] - expected_shape[3]) // 2
+                        state_dict[k] = v[:, :, diff_h:diff_h+expected_shape[2], diff_w:diff_w+expected_shape[3]]
+                        continue
+                    # Pad with zeros if checkpoint is smaller (e.g., 1x1 -> 7x7)
+                    elif checkpoint_shape[2] <= expected_shape[2] and checkpoint_shape[3] <= expected_shape[3]:
+                        print(f"[INFO] Auto-resolving mismatch: Zero-padding to {expected_shape}")
+                        pad_h = (expected_shape[2] - checkpoint_shape[2]) // 2
+                        pad_w = (expected_shape[3] - checkpoint_shape[3]) // 2
+                        state_dict[k] = torch.nn.functional.pad(v, (pad_w, pad_w, pad_h, pad_h))
+                        continue
+                
                 mismatched_keys.append(k)
 
     if mismatched_keys:
