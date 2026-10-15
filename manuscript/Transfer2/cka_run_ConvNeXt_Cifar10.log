@@ -1,5 +1,3 @@
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
-  return torch._C._cuda_getDeviceCount() > 0
 Unsupported operator aten::mean encountered 8 time(s)
 Unsupported operator aten::sub encountered 8 time(s)
 Unsupported operator aten::pow encountered 4 time(s)
@@ -43,7 +41,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 1.88s
+[INFO] Weights loaded in 0.09s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100
@@ -56,7 +54,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 4.12s
+[INFO] Weights loaded in 0.08s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar10
@@ -226,7 +224,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_4' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.06s
+[INFO] ✅ Successfully collapsed block 'Region_4' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -248,7 +246,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
    -> Checkpoint holds : torch.Size([768, 1, 7, 7])
    -> Model expects    : torch.Size([768, 1, 1, 1])
 [INFO] Auto-resolving mismatch: Upgrading 'features.6.0.conv_g1x1' kernel from (1, 1) to (7, 7) (padding=(3, 3))
-[INFO] Weights loaded in 1.11s
+[INFO] Weights loaded in 0.01s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 90.82%
@@ -261,22 +259,22 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 1.26s
+[INFO] Weights loaded in 0.08s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.7557, power=0.00W, energy=0.00J, time=48.17s
+[INFO] Evaluation complete: acc=0.7557, power=0.00W, energy=0.00J, time=47.55s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.7518, power=0.00W, energy=0.00J, time=48.12s
+[INFO] Evaluation complete: acc=0.7518, power=0.00W, energy=0.00J, time=47.44s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.7444, power=0.00W, energy=0.00J, time=48.03s
+[INFO] Evaluation complete: acc=0.7444, power=0.00W, energy=0.00J, time=47.21s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.7890, power=0.00W, energy=0.00J, time=14.50s
+[INFO] Evaluation complete: acc=0.7890, power=0.00W, energy=0.00J, time=14.55s
 [RESULT] Accuracy Original:     0.7518 | Power: 0.00W | Energy: 0.00J
 [RESULT] Accuracy Unstructured: 0.7444 | Power: 0.00W | Energy: 0.00J
 [RESULT] Accuracy Collapsed:    0.7890 | Power: 0.00W | Energy: 0.00J
@@ -299,7 +297,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 768), time=24.61s
+[INFO] Feature extraction complete: shape=(5120, 768), time=23.93s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: LayerNorm
 [INFO] Feature extraction batch 1/10
@@ -312,7 +310,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 768), time=25.08s
+[INFO] Feature extraction complete: shape=(5120, 768), time=24.05s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: LayerNorm
 [INFO] Feature extraction batch 1/10
@@ -325,9 +323,9 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 768), time=7.97s
+[INFO] Feature extraction complete: shape=(5120, 768), time=7.30s
 [INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
-[INFO] CKA complete: score=0.790126, time=0.18s
+[INFO] CKA complete: score=0.790126, time=0.17s
 [INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
 [INFO] CKA complete: score=0.599854, time=0.17s
 
@@ -345,7 +343,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_ConvNeXt_Cifar10_pre100_post300.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 443.08s
+[INFO] Total runtime: 456.78s
 
 ======================================================================
 FINAL RESULTS

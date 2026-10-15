@@ -1,8 +1,9 @@
 ======================================================================
 Starting Comparison Post-Processing Pipeline
-Model: InceptionNet | Dataset: tinyimagenet | Device: cpu
+Model: InceptionNet | Dataset: tinyimagenet | Device: cuda
 Epochs Config: pre=100, post=300
 Output File: cka_results_InceptionNet_tinyimagenet_pre100_post300.csv
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
@@ -29,7 +30,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.05s
+[INFO] Weights loaded in 2.05s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_tinyimagenet_None_epochs300_pretrain100
@@ -48,7 +49,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.05s
+[INFO] Weights loaded in 0.55s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=InceptionNet, dataset=tinyimagenet
@@ -66,7 +67,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [INFO] Loading discovered regions: ../Tranfer/InceptionNet_tinyimagenet_epochs300_pretrain100_JF_discovered_regions.json
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (InceptionNet)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -94,7 +95,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=0, device=cpu, has_next_linear=True
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 0: 'inception_4a'
 [STEP] Validating inserted module 'Sequential' at index 0...
@@ -103,7 +104,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch4.1.conv' → 'stage4.inception_4b.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch4.1.conv → stage4.inception_4b.branch2.0.conv) in 0.09s
+[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch4.1.conv → stage4.inception_4b.branch2.0.conv) in 0.68s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
@@ -130,7 +131,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=2, device=cpu, has_next_linear=True
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 2: 'inception_4c'
 [STEP] Validating inserted module 'Sequential' at index 2...
@@ -139,7 +140,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4c.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'Region_1' (stage4.inception_4c.branch3.0.conv → stage4.inception_4c.branch4.1.conv) in 0.07s
+[INFO] ✅ Successfully collapsed block 'Region_1' (stage4.inception_4c.branch3.0.conv → stage4.inception_4c.branch4.1.conv) in 0.02s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -165,7 +166,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=4, device=cpu, has_next_linear=True
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 4: 'inception_4e'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -174,7 +175,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4e.branch2.0.conv' → 'stage4.inception_4e.branch3.1.conv'
-[INFO] ✅ Successfully collapsed block 'Region_2' (stage4.inception_4e.branch2.0.conv → stage4.inception_4e.branch3.1.conv) in 0.07s
+[INFO] ✅ Successfully collapsed block 'Region_2' (stage4.inception_4e.branch2.0.conv → stage4.inception_4e.branch3.1.conv) in 0.02s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -199,7 +200,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage5' =====
-[DEBUG] start_idx=0, device=cpu, has_next_linear=True
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage5'...
 [DEBUG] Found inserted block candidate at index 0: 'inception_5a'
 [STEP] Validating inserted module 'Sequential' at index 0...
@@ -208,7 +209,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [RESULT] ✅ Downstream validation for 'stage5' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage5.inception_5a.branch3.1.conv' → 'stage5.inception_5b.branch1.conv'
-[INFO] ✅ Successfully collapsed block 'Region_3' (stage5.inception_5a.branch3.1.conv → stage5.inception_5b.branch1.conv) in 0.06s
+[INFO] ✅ Successfully collapsed block 'Region_3' (stage5.inception_5a.branch3.1.conv → stage5.inception_5b.branch1.conv) in 0.02s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -255,14 +256,14 @@ Loading Tiny ImageNet data for InceptionNet...
 [INFO] Parameters after : 3,294,184
 [INFO] ΔParams = +2,891,648 (expected ≤ 0)
 [INFO] Collapse counts: success=4, failed=0, skipped=2
-[INFO] Total collapse runtime: 0.35s
+[INFO] Total collapse runtime: 0.81s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=4 | failed=0 | skipped=2
-[INFO] Structural collapse completed in 0.35s
+[INFO] Structural collapse completed in 0.81s
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_tinyimagenet_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/InceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 152
-[INFO] Weights loaded in 0.02s
+[INFO] Weights loaded in 0.71s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 46.75%
@@ -271,7 +272,245 @@ Loading Tiny ImageNet data for InceptionNet...
 [INFO] Starting Iterative Magnitude Pruning (IMP) for 300 epochs...
 [INFO] Compounding prune rate: 0.28% per step over 225 steps.
 [INFO] Found existing checkpoint at ../Tranfer/InceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300_ resume_ckpt.pt. Resuming training...
-[INFO] Resuming from Epoch 36/300 (Previous time: 0.00s)
-[INFO] Epoch 36/300 | Train Loss: 2.4717
-[INFO] Epoch 37/300 | Train Loss: 2.5002
-[INFO] Epoch 38/300 | Train Loss: 2.5152
+[INFO] Resuming from Epoch 40/300 (Previous time: 0.00s)
+[INFO] Epoch 40/300 | Train Loss: 2.5555
+[INFO] Epoch 41/300 | Train Loss: 2.5793
+[INFO] Epoch 42/300 | Train Loss: 2.5957
+[INFO] Epoch 43/300 | Train Loss: 2.6097
+[INFO] Epoch 44/300 | Train Loss: 2.6138
+[INFO] Epoch 45/300 | Train Loss: 2.6260
+[INFO] Epoch 46/300 | Train Loss: 2.6371
+[INFO] Epoch 47/300 | Train Loss: 2.6386
+[INFO] Epoch 48/300 | Train Loss: 2.6466
+[INFO] Epoch 49/300 | Train Loss: 2.6512
+[INFO] Epoch 50/300 | Train Loss: 2.6495
+[INFO] Epoch 51/300 | Train Loss: 2.6620
+[INFO] Epoch 52/300 | Train Loss: 2.6612
+[INFO] Epoch 53/300 | Train Loss: 2.6638
+[INFO] Epoch 54/300 | Train Loss: 2.6635
+[INFO] Epoch 55/300 | Train Loss: 2.6611
+[INFO] Epoch 56/300 | Train Loss: 2.6628
+[INFO] Epoch 57/300 | Train Loss: 2.6639
+[INFO] Epoch 58/300 | Train Loss: 2.6670
+[INFO] Epoch 59/300 | Train Loss: 2.6621
+[INFO] Epoch 60/300 | Train Loss: 2.6701
+[INFO] Epoch 61/300 | Train Loss: 2.6646
+[INFO] Epoch 62/300 | Train Loss: 2.6627
+[INFO] Epoch 63/300 | Train Loss: 2.6561
+[INFO] Epoch 64/300 | Train Loss: 2.6545
+[INFO] Epoch 65/300 | Train Loss: 2.6514
+[INFO] Epoch 66/300 | Train Loss: 2.6513
+[INFO] Epoch 67/300 | Train Loss: 2.6523
+[INFO] Epoch 68/300 | Train Loss: 2.6526
+[INFO] Epoch 69/300 | Train Loss: 2.6410
+[INFO] Epoch 70/300 | Train Loss: 2.6431
+[INFO] Epoch 71/300 | Train Loss: 2.6450
+[INFO] Epoch 72/300 | Train Loss: 2.6325
+[INFO] Epoch 73/300 | Train Loss: 2.6423
+[INFO] Epoch 74/300 | Train Loss: 2.6302
+[INFO] Epoch 75/300 | Train Loss: 2.6324
+[INFO] Epoch 76/300 | Train Loss: 2.6253
+[INFO] Epoch 77/300 | Train Loss: 2.6315
+[INFO] Epoch 78/300 | Train Loss: 2.6293
+[INFO] Epoch 79/300 | Train Loss: 2.6270
+[INFO] Epoch 80/300 | Train Loss: 2.6227
+[INFO] Epoch 81/300 | Train Loss: 2.6206
+[INFO] Epoch 82/300 | Train Loss: 2.6177
+[INFO] Epoch 83/300 | Train Loss: 2.6122
+[INFO] Epoch 84/300 | Train Loss: 2.6083
+[INFO] Epoch 85/300 | Train Loss: 2.6182
+[INFO] Epoch 86/300 | Train Loss: 2.6075
+[INFO] Epoch 87/300 | Train Loss: 2.6038
+[INFO] Epoch 88/300 | Train Loss: 2.6038
+[INFO] Epoch 89/300 | Train Loss: 2.6005
+[INFO] Epoch 90/300 | Train Loss: 2.5981
+[INFO] Epoch 91/300 | Train Loss: 2.6009
+[INFO] Epoch 92/300 | Train Loss: 2.5968
+[INFO] Epoch 93/300 | Train Loss: 2.5827
+[INFO] Epoch 94/300 | Train Loss: 2.6019
+[INFO] Epoch 95/300 | Train Loss: 2.5965
+[INFO] Epoch 96/300 | Train Loss: 2.5852
+[INFO] Epoch 97/300 | Train Loss: 2.5890
+[INFO] Epoch 98/300 | Train Loss: 2.5844
+[INFO] Epoch 99/300 | Train Loss: 2.5811
+[INFO] Epoch 100/300 | Train Loss: 2.5847
+[INFO] Epoch 101/300 | Train Loss: 2.5775
+[INFO] Epoch 102/300 | Train Loss: 2.5802
+[INFO] Epoch 103/300 | Train Loss: 2.5810
+[INFO] Epoch 104/300 | Train Loss: 2.5797
+[INFO] Epoch 105/300 | Train Loss: 2.5696
+[INFO] Epoch 106/300 | Train Loss: 2.5770
+[INFO] Epoch 107/300 | Train Loss: 2.5682
+[INFO] Epoch 108/300 | Train Loss: 2.5801
+[INFO] Epoch 109/300 | Train Loss: 2.5662
+[INFO] Epoch 110/300 | Train Loss: 2.5739
+[INFO] Epoch 111/300 | Train Loss: 2.5647
+[INFO] Epoch 112/300 | Train Loss: 2.5715
+[INFO] Epoch 113/300 | Train Loss: 2.5623
+[INFO] Epoch 114/300 | Train Loss: 2.5651
+[INFO] Epoch 115/300 | Train Loss: 2.5599
+[INFO] Epoch 116/300 | Train Loss: 2.5539
+[INFO] Epoch 117/300 | Train Loss: 2.5602
+[INFO] Epoch 118/300 | Train Loss: 2.5529
+[INFO] Epoch 119/300 | Train Loss: 2.5491
+[INFO] Epoch 120/300 | Train Loss: 2.5549
+[INFO] Epoch 121/300 | Train Loss: 2.5527
+[INFO] Epoch 122/300 | Train Loss: 2.5567
+[INFO] Epoch 123/300 | Train Loss: 2.5511
+[INFO] Epoch 124/300 | Train Loss: 2.5461
+[INFO] Epoch 125/300 | Train Loss: 2.5432
+[INFO] Epoch 126/300 | Train Loss: 2.5427
+[INFO] Epoch 127/300 | Train Loss: 2.5478
+[INFO] Epoch 128/300 | Train Loss: 2.5420
+[INFO] Epoch 129/300 | Train Loss: 2.5460
+[INFO] Epoch 130/300 | Train Loss: 2.5422
+[INFO] Epoch 131/300 | Train Loss: 2.5512
+[INFO] Epoch 132/300 | Train Loss: 2.5464
+[INFO] Epoch 133/300 | Train Loss: 2.5411
+[INFO] Epoch 134/300 | Train Loss: 2.5408
+[INFO] Epoch 135/300 | Train Loss: 2.5457
+[INFO] Epoch 136/300 | Train Loss: 2.5433
+[INFO] Epoch 137/300 | Train Loss: 2.5331
+[INFO] Epoch 138/300 | Train Loss: 2.5330
+[INFO] Epoch 139/300 | Train Loss: 2.5316
+[INFO] Epoch 140/300 | Train Loss: 2.5212
+[INFO] Epoch 141/300 | Train Loss: 2.5354
+[INFO] Epoch 142/300 | Train Loss: 2.5351
+[INFO] Epoch 143/300 | Train Loss: 2.5284
+[INFO] Epoch 144/300 | Train Loss: 2.5311
+[INFO] Epoch 145/300 | Train Loss: 2.5221
+[INFO] Epoch 146/300 | Train Loss: 2.5238
+[INFO] Epoch 147/300 | Train Loss: 2.5336
+[INFO] Epoch 148/300 | Train Loss: 2.5225
+[INFO] Epoch 149/300 | Train Loss: 2.5263
+[INFO] Epoch 150/300 | Train Loss: 2.5233
+[INFO] Epoch 151/300 | Train Loss: 2.5261
+[INFO] Epoch 152/300 | Train Loss: 2.5246
+[INFO] Epoch 153/300 | Train Loss: 2.5182
+[INFO] Epoch 154/300 | Train Loss: 2.5233
+[INFO] Epoch 155/300 | Train Loss: 2.5241
+[INFO] Epoch 156/300 | Train Loss: 2.5161
+[INFO] Epoch 157/300 | Train Loss: 2.5190
+[INFO] Epoch 158/300 | Train Loss: 2.5109
+[INFO] Epoch 159/300 | Train Loss: 2.5197
+[INFO] Epoch 160/300 | Train Loss: 2.5214
+[INFO] Epoch 161/300 | Train Loss: 2.5171
+[INFO] Epoch 162/300 | Train Loss: 2.5099
+[INFO] Epoch 163/300 | Train Loss: 2.5171
+[INFO] Epoch 164/300 | Train Loss: 2.5076
+[INFO] Epoch 165/300 | Train Loss: 2.5128
+[INFO] Epoch 166/300 | Train Loss: 2.5064
+[INFO] Epoch 167/300 | Train Loss: 2.5108
+[INFO] Epoch 168/300 | Train Loss: 2.5130
+[INFO] Epoch 169/300 | Train Loss: 2.5058
+[INFO] Epoch 170/300 | Train Loss: 2.4966
+[INFO] Epoch 171/300 | Train Loss: 2.4951
+[INFO] Epoch 172/300 | Train Loss: 2.5054
+[INFO] Epoch 173/300 | Train Loss: 2.5039
+[INFO] Epoch 174/300 | Train Loss: 2.5032
+[INFO] Epoch 175/300 | Train Loss: 2.5072
+[INFO] Epoch 176/300 | Train Loss: 2.5001
+[INFO] Epoch 177/300 | Train Loss: 2.4930
+[INFO] Epoch 178/300 | Train Loss: 2.4951
+[INFO] Epoch 179/300 | Train Loss: 2.4984
+[INFO] Epoch 180/300 | Train Loss: 2.4962
+[INFO] Epoch 181/300 | Train Loss: 2.4957
+[INFO] Epoch 182/300 | Train Loss: 2.4874
+[INFO] Epoch 183/300 | Train Loss: 2.4951
+[INFO] Epoch 184/300 | Train Loss: 2.4851
+[INFO] Epoch 185/300 | Train Loss: 2.4906
+[INFO] Epoch 186/300 | Train Loss: 2.4878
+[INFO] Epoch 187/300 | Train Loss: 2.4866
+[INFO] Epoch 188/300 | Train Loss: 2.4947
+[INFO] Epoch 189/300 | Train Loss: 2.4826
+[INFO] Epoch 190/300 | Train Loss: 2.4931
+[INFO] Epoch 191/300 | Train Loss: 2.4859
+[INFO] Epoch 192/300 | Train Loss: 2.4842
+[INFO] Epoch 193/300 | Train Loss: 2.4953
+[INFO] Epoch 194/300 | Train Loss: 2.4788
+[INFO] Epoch 195/300 | Train Loss: 2.4775
+[INFO] Epoch 196/300 | Train Loss: 2.4771
+[INFO] Epoch 197/300 | Train Loss: 2.4817
+[INFO] Epoch 198/300 | Train Loss: 2.4850
+[INFO] Epoch 199/300 | Train Loss: 2.4862
+[INFO] Epoch 200/300 | Train Loss: 2.4726
+[INFO] Epoch 201/300 | Train Loss: 2.4713
+[INFO] Epoch 202/300 | Train Loss: 2.4707
+[INFO] Epoch 203/300 | Train Loss: 2.4730
+[INFO] Epoch 204/300 | Train Loss: 2.4676
+[INFO] Epoch 205/300 | Train Loss: 2.4791
+[INFO] Epoch 206/300 | Train Loss: 2.4663
+[INFO] Epoch 207/300 | Train Loss: 2.4749
+[INFO] Epoch 208/300 | Train Loss: 2.4630
+[INFO] Epoch 209/300 | Train Loss: 2.4710
+[INFO] Epoch 210/300 | Train Loss: 2.4720
+[INFO] Epoch 211/300 | Train Loss: 2.4611
+[INFO] Epoch 212/300 | Train Loss: 2.4670
+[INFO] Epoch 213/300 | Train Loss: 2.4587
+[INFO] Epoch 214/300 | Train Loss: 2.4677
+[INFO] Epoch 215/300 | Train Loss: 2.4664
+[INFO] Epoch 216/300 | Train Loss: 2.4611
+[INFO] Epoch 217/300 | Train Loss: 2.4621
+[INFO] Epoch 218/300 | Train Loss: 2.4582
+[INFO] Epoch 219/300 | Train Loss: 2.4546
+[INFO] Epoch 220/300 | Train Loss: 2.4702
+[INFO] Epoch 221/300 | Train Loss: 2.4599
+[INFO] Epoch 222/300 | Train Loss: 2.4614
+[INFO] Epoch 223/300 | Train Loss: 2.4551
+[INFO] Epoch 224/300 | Train Loss: 2.4611
+[INFO] Epoch 225/300 | Train Loss: 2.4561
+[INFO] Epoch 226/300 | Train Loss: 2.4540
+[INFO] Epoch 227/300 | Train Loss: 2.4511
+[INFO] Epoch 228/300 | Train Loss: 2.4607
+[INFO] Epoch 229/300 | Train Loss: 2.4597
+[INFO] Epoch 230/300 | Train Loss: 2.4600
+[INFO] Epoch 231/300 | Train Loss: 2.4567
+[INFO] Epoch 232/300 | Train Loss: 2.4583
+[INFO] Epoch 233/300 | Train Loss: 2.4649
+[INFO] Epoch 234/300 | Train Loss: 2.4585
+[INFO] Epoch 235/300 | Train Loss: 2.4519
+[INFO] Epoch 236/300 | Train Loss: 2.4615
+[INFO] Epoch 237/300 | Train Loss: 2.4587
+[INFO] Epoch 238/300 | Train Loss: 2.4507
+[INFO] Epoch 239/300 | Train Loss: 2.4554
+[INFO] Epoch 240/300 | Train Loss: 2.4563
+[INFO] Epoch 241/300 | Train Loss: 2.4500
+[INFO] Epoch 242/300 | Train Loss: 2.4498
+[INFO] Epoch 243/300 | Train Loss: 2.4605
+[INFO] Epoch 244/300 | Train Loss: 2.4600
+[INFO] Epoch 245/300 | Train Loss: 2.4514
+[INFO] Epoch 246/300 | Train Loss: 2.4476
+[INFO] Epoch 247/300 | Train Loss: 2.4558
+[INFO] Epoch 248/300 | Train Loss: 2.4540
+[INFO] Epoch 249/300 | Train Loss: 2.4588
+[INFO] Epoch 250/300 | Train Loss: 2.4522
+[INFO] Epoch 251/300 | Train Loss: 2.4461
+[INFO] Epoch 252/300 | Train Loss: 2.4551
+[INFO] Epoch 253/300 | Train Loss: 2.4584
+[INFO] Epoch 254/300 | Train Loss: 2.4581
+[INFO] Epoch 255/300 | Train Loss: 2.4455
+[INFO] Epoch 256/300 | Train Loss: 2.4554
+[INFO] Epoch 257/300 | Train Loss: 2.4511
+[INFO] Epoch 258/300 | Train Loss: 2.4444
+[INFO] Epoch 259/300 | Train Loss: 2.4574
+[INFO] Epoch 260/300 | Train Loss: 2.4549
+[INFO] Epoch 261/300 | Train Loss: 2.4488
+[INFO] Epoch 262/300 | Train Loss: 2.4553
+[INFO] Epoch 263/300 | Train Loss: 2.4515
+[INFO] Epoch 264/300 | Train Loss: 2.4550
+[INFO] Epoch 265/300 | Train Loss: 2.4534
+[INFO] Epoch 266/300 | Train Loss: 2.4508
+[INFO] Epoch 267/300 | Train Loss: 2.4528
+[INFO] Epoch 268/300 | Train Loss: 2.4502
+[INFO] Epoch 269/300 | Train Loss: 2.4451
+[INFO] Epoch 270/300 | Train Loss: 2.4546
+[INFO] Epoch 271/300 | Train Loss: 2.4471
+[INFO] Epoch 272/300 | Train Loss: 2.4503
+[INFO] Epoch 273/300 | Train Loss: 2.4557
+[INFO] Epoch 274/300 | Train Loss: 2.4553
+[INFO] Epoch 275/300 | Train Loss: 2.4404
+[INFO] Epoch 276/300 | Train Loss: 2.4527
+[INFO] Epoch 277/300 | Train Loss: 2.4447
+[INFO] Epoch 278/300 | Train Loss: 2.4507
+[INFO] Epoch 279/300 | Train Loss: 2.4501
+[INFO] Epoch 280/300 | Train Loss: 2.4519

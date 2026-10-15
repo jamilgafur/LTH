@@ -28,7 +28,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.24s
+[INFO] Weights loaded in 1.40s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100
@@ -41,7 +41,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.12s
+[INFO] Weights loaded in 1.94s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=InceptionNet, dataset=Cifar10
@@ -90,7 +90,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 7.45s
+[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 24.75s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
@@ -222,14 +222,14 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Parameters after : 4,400,554
 [INFO] ΔParams = +1,590,528 (expected ≤ 0)
 [INFO] Collapse counts: success=4, failed=0, skipped=1
-[INFO] Total collapse runtime: 7.58s
+[INFO] Total collapse runtime: 24.87s
 [RESULT] ✅ collapse_only complete. Total targets: 5 | success=4 | failed=0 | skipped=1
-[INFO] Structural collapse completed in 7.58s
+[INFO] Structural collapse completed in 24.87s
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 188
-[INFO] Weights loaded in 0.20s
+[INFO] Weights loaded in 5.57s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 26.55%
@@ -242,25 +242,25 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.12s
+[INFO] Weights loaded in 1.43s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.8371, power=149.07W, energy=572.44J, time=3.84s
+[INFO] Evaluation complete: acc=0.8371, power=158.25W, energy=663.90J, time=4.20s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.8366, power=134.73W, energy=332.51J, time=2.47s
+[INFO] Evaluation complete: acc=0.8366, power=165.41W, energy=413.82J, time=2.50s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.8422, power=116.99W, energy=288.50J, time=2.47s
+[INFO] Evaluation complete: acc=0.8422, power=156.47W, energy=393.10J, time=2.51s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.8548, power=120.44W, energy=308.33J, time=2.56s
-[RESULT] Accuracy Original:     0.8366 | Power: 134.73W | Energy: 332.51J
-[RESULT] Accuracy Unstructured: 0.8422 | Power: 116.99W | Energy: 288.50J
-[RESULT] Accuracy Collapsed:    0.8548 | Power: 120.44W | Energy: 308.33J
+[INFO] Evaluation complete: acc=0.8548, power=164.40W, energy=423.33J, time=2.58s
+[RESULT] Accuracy Original:     0.8366 | Power: 165.41W | Energy: 413.82J
+[RESULT] Accuracy Unstructured: 0.8422 | Power: 156.47W | Energy: 393.10J
+[RESULT] Accuracy Collapsed:    0.8548 | Power: 164.40W | Energy: 423.33J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [RESULT] FLOPs Original:     1.66e+10
@@ -280,7 +280,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.30s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.33s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: Dropout
 [INFO] Feature extraction batch 1/10
@@ -293,7 +293,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.30s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.32s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: Dropout
 [INFO] Feature extraction batch 1/10
@@ -306,9 +306,9 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.28s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.29s
 [INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
-[INFO] CKA complete: score=0.751261, time=2.53s
+[INFO] CKA complete: score=0.751261, time=2.66s
 [INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
 [INFO] CKA complete: score=0.789379, time=0.00s
 
@@ -326,10 +326,10 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_InceptionNet_Cifar10_pre100_post300.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 42.35s
+[INFO] Total runtime: 75.11s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
           model  dataset  pre_epochs  post_epochs                                                                                model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  InceptionNet  Cifar10         100          300  ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.8366            0.8422         0.8548                134.73                  332.51                    116.99                       288.5                 120.44                   308.33    1.659979e+10        1.219284e+10     1.717833e+10          0.751261       0.789379               0.341797                   0.466797                0.376953              0.214844                  0.326172               0.242188
+0  InceptionNet  Cifar10         100          300  ../Tranfer/InceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.8366            0.8422         0.8548                165.41                  413.82                    156.47                       393.1                  164.4                   423.33    1.659979e+10        1.219284e+10     1.717833e+10          0.751261       0.789379               0.341797                   0.466797                0.376953              0.214844                  0.326172               0.242188

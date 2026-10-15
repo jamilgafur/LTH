@@ -1,4 +1,4 @@
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA driver initialization failed, you might not have a CUDA gpu. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
   return torch._C._cuda_getDeviceCount() > 0
 ======================================================================
 Starting Comparison Post-Processing Pipeline
@@ -31,7 +31,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 7.24s
+[INFO] Weights loaded in 0.10s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100
@@ -50,7 +50,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 10.29s
+[INFO] Weights loaded in 0.09s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=ConvNeXt, dataset=tinyimagenet
@@ -106,7 +106,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.pwconv1' → 'features.2.1.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_0' (features.2.1.pwconv1 → features.2.1.pwconv2) in 0.08s
+[INFO] ✅ Successfully collapsed block 'Region_0' (features.2.1.pwconv1 → features.2.1.pwconv2) in 0.07s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -140,7 +140,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.2.pwconv1' → 'features.3.1'
-[INFO] ✅ Successfully collapsed block 'Region_1' (features.2.2.pwconv1 → features.3.1) in 0.10s
+[INFO] ✅ Successfully collapsed block 'Region_1' (features.2.2.pwconv1 → features.3.1) in 0.09s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -448,14 +448,14 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Parameters after : 843,176
 [INFO] ΔParams = +27,130,752 (expected ≤ 0)
 [INFO] Collapse counts: success=10, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.87s
+[INFO] Total collapse runtime: 0.85s
 [RESULT] ✅ collapse_only complete. Total targets: 11 | success=10 | failed=0 | skipped=1
-[INFO] Structural collapse completed in 0.87s
+[INFO] Structural collapse completed in 0.85s
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 45
-[INFO] Weights loaded in 1.13s
+[INFO] Weights loaded in 0.01s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 96.99%
@@ -474,7 +474,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 5.40s
+[INFO] Weights loaded in 0.10s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
@@ -483,19 +483,19 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4221, power=0.00W, energy=0.00J, time=106.45s
+[INFO] Evaluation complete: acc=0.4221, power=0.00W, energy=0.00J, time=106.35s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4059, power=0.00W, energy=0.00J, time=104.88s
+[INFO] Evaluation complete: acc=0.4059, power=0.00W, energy=0.00J, time=106.37s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.3734, power=0.00W, energy=0.00J, time=104.54s
+[INFO] Evaluation complete: acc=0.3734, power=0.00W, energy=0.00J, time=105.27s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
 Unsupported operator aten::mean encountered 8 time(s)
@@ -519,7 +519,7 @@ features.3, features.5, features.6
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4433, power=0.00W, energy=0.00J, time=40.10s
+[INFO] Evaluation complete: acc=0.4433, power=0.00W, energy=0.00J, time=39.46s
 [RESULT] Accuracy Original:     0.4059 | Power: 0.00W | Energy: 0.00J
 [RESULT] Accuracy Unstructured: 0.3734 | Power: 0.00W | Energy: 0.00J
 [RESULT] Accuracy Collapsed:    0.4433 | Power: 0.00W | Energy: 0.00J
@@ -542,7 +542,7 @@ features.3, features.5, features.6
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 768), time=6.69s
+[INFO] Feature extraction complete: shape=(640, 768), time=6.95s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: LayerNorm
 [INFO] Feature extraction batch 1/10
@@ -555,7 +555,7 @@ features.3, features.5, features.6
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 768), time=6.63s
+[INFO] Feature extraction complete: shape=(640, 768), time=6.94s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: LayerNorm
 [INFO] Feature extraction batch 1/10
@@ -568,7 +568,7 @@ features.3, features.5, features.6
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 768), time=2.55s
+[INFO] Feature extraction complete: shape=(640, 768), time=3.01s
 [INFO] Computing CKA: features_x=(640, 768), features_y=(640, 768)
 [INFO] CKA complete: score=0.587998, time=0.02s
 [INFO] Computing CKA: features_x=(640, 768), features_y=(640, 768)
@@ -588,7 +588,7 @@ features.3, features.5, features.6
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_ConvNeXt_tinyimagenet_pre100_post300.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 522.43s
+[INFO] Total runtime: 477.50s
 
 ======================================================================
 FINAL RESULTS
