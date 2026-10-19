@@ -18,9 +18,10 @@ The following submodules of the model were never called during the trace of the 
 features.2.2, features.4, features.6.2
 ======================================================================
 Starting Comparison Post-Processing Pipeline
-Model: ConvNeXt | Dataset: Cifar10 | Device: cpu
+Model: ConvNeXt | Dataset: Cifar10 | Device: cuda
 Epochs Config: pre=100, post=300
 Output File: cka_results_ConvNeXt_Cifar10_pre100_post300.csv
+CUDA device: NVIDIA A40
 ======================================================================
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
@@ -41,7 +42,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 0.09s
+[INFO] Weights loaded in 9.51s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100
@@ -54,7 +55,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 0.08s
+[INFO] Weights loaded in 14.44s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar10
@@ -66,7 +67,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Loading discovered regions: ../Tranfer/ConvNeXt_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (ConvNeXt)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -94,7 +95,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=1, device=cpu, has_next_linear=True
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.2'...
 [DEBUG] Found inserted block candidate at index 1: '1'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -103,7 +104,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.2.pwconv1'
-[INFO] ✅ Successfully collapsed block 'Region_0' (features.2.1.dwconv → features.2.2.pwconv1) in 0.05s
+[INFO] ✅ Successfully collapsed block 'Region_0' (features.2.1.dwconv → features.2.2.pwconv1) in 19.07s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -128,7 +129,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features'...
 [DEBUG] Found inserted block candidate at index 3: '3'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -181,7 +182,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=0, device=cpu, has_next_linear=True
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.6'...
 [DEBUG] Found inserted block candidate at index 0: '0'
 [STEP] Validating inserted module 'Sequential' at index 0...
@@ -190,7 +191,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_3' (features.6.0.dwconv → features.6.0.pwconv2) in 0.05s
+[INFO] ✅ Successfully collapsed block 'Region_3' (features.6.0.dwconv → features.6.0.pwconv2) in 1.36s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -215,7 +216,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.6' =====
-[DEBUG] start_idx=1, device=cpu, has_next_linear=True
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.6'...
 [DEBUG] Found inserted block candidate at index 1: '1'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -224,7 +225,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.1.pwconv1' → 'features.6.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_4' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.05s
+[INFO] ✅ Successfully collapsed block 'Region_4' (features.6.1.pwconv1 → features.6.2.pwconv2) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -235,9 +236,9 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Parameters after : 2,518,762
 [INFO] ΔParams = +25,309,056 (expected ≤ 0)
 [INFO] Collapse counts: success=4, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.25s
+[INFO] Total collapse runtime: 20.57s
 [RESULT] ✅ collapse_only complete. Total targets: 5 | success=4 | failed=0 | skipped=1
-[INFO] Structural collapse completed in 0.25s
+[INFO] Structural collapse completed in 20.57s
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
@@ -246,7 +247,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
    -> Checkpoint holds : torch.Size([768, 1, 7, 7])
    -> Model expects    : torch.Size([768, 1, 1, 1])
 [INFO] Auto-resolving mismatch: Upgrading 'features.6.0.conv_g1x1' kernel from (1, 1) to (7, 7) (padding=(3, 3))
-[INFO] Weights loaded in 0.01s
+[INFO] Weights loaded in 2.11s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 90.82%
@@ -259,25 +260,25 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 0.08s
+[INFO] Weights loaded in 13.64s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.7557, power=0.00W, energy=0.00J, time=47.55s
+[INFO] Evaluation complete: acc=0.7556, power=377.92W, energy=1081.38J, time=2.86s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.7518, power=0.00W, energy=0.00J, time=47.44s
+[INFO] Evaluation complete: acc=0.7518, power=409.03W, energy=830.55J, time=2.03s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.7444, power=0.00W, energy=0.00J, time=47.21s
+[INFO] Evaluation complete: acc=0.7445, power=357.55W, energy=698.94J, time=1.95s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.7890, power=0.00W, energy=0.00J, time=14.55s
-[RESULT] Accuracy Original:     0.7518 | Power: 0.00W | Energy: 0.00J
-[RESULT] Accuracy Unstructured: 0.7444 | Power: 0.00W | Energy: 0.00J
-[RESULT] Accuracy Collapsed:    0.7890 | Power: 0.00W | Energy: 0.00J
+[INFO] Evaluation complete: acc=0.7891, power=379.69W, energy=748.43J, time=1.97s
+[RESULT] Accuracy Original:     0.7518 | Power: 409.03W | Energy: 830.55J
+[RESULT] Accuracy Unstructured: 0.7445 | Power: 357.55W | Energy: 698.94J
+[RESULT] Accuracy Collapsed:    0.7891 | Power: 379.69W | Energy: 748.43J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [RESULT] FLOPs Original:     4.67e+10
@@ -297,7 +298,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 768), time=23.93s
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.09s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: LayerNorm
 [INFO] Feature extraction batch 1/10
@@ -310,7 +311,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 768), time=24.05s
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.03s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: LayerNorm
 [INFO] Feature extraction batch 1/10
@@ -323,11 +324,11 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 768), time=7.30s
+[INFO] Feature extraction complete: shape=(5120, 768), time=0.99s
 [INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
-[INFO] CKA complete: score=0.790126, time=0.17s
+[INFO] CKA complete: score=0.790134, time=0.12s
 [INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
-[INFO] CKA complete: score=0.599854, time=0.17s
+[INFO] CKA complete: score=0.599856, time=0.00s
 
 [INFO] Evaluating Adversarial Robustness...
 [INFO] Running FGSM attack (epsilon=0.03)...
@@ -343,10 +344,10 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_ConvNeXt_Cifar10_pre100_post300.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 456.78s
+[INFO] Total runtime: 92.80s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
       model  dataset  pre_epochs  post_epochs                                                                            model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  ConvNeXt  Cifar10         100          300  ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.7518            0.7444          0.789                   0.0                     0.0                       0.0                         0.0                    0.0                      0.0    4.666609e+10        4.285678e+09     1.285620e+10          0.790126       0.599854               0.283203                   0.263672                0.251953              0.228516                  0.242188               0.197266
+0  ConvNeXt  Cifar10         100          300  ../Tranfer/ConvNeXt_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.7518            0.7445         0.7891                409.03                  830.55                    357.55                      698.94                 379.69                   748.43    4.666609e+10        4.285678e+09     1.285620e+10          0.790134       0.599856               0.283203                   0.263672                0.251953              0.228516                  0.242188               0.197266

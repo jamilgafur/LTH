@@ -1,10 +1,9 @@
-/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA driver initialization failed, you might not have a CUDA gpu. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
-  return torch._C._cuda_getDeviceCount() > 0
 ======================================================================
 Starting Comparison Post-Processing Pipeline
-Model: ConvNeXt | Dataset: tinyimagenet | Device: cpu
+Model: ConvNeXt | Dataset: tinyimagenet | Device: cuda
 Epochs Config: pre=100, post=300
 Output File: cka_results_ConvNeXt_tinyimagenet_pre100_post300.csv
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
@@ -31,7 +30,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 0.10s
+[INFO] Weights loaded in 5.93s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100
@@ -50,7 +49,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 0.09s
+[INFO] Weights loaded in 5.25s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=ConvNeXt, dataset=tinyimagenet
@@ -68,7 +67,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Loading discovered regions: ../Tranfer/ConvNeXt_tinyimagenet_epochs300_pretrain100_JF_discovered_regions.json
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (ConvNeXt)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -97,7 +96,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.2' =====
-[DEBUG] start_idx=1, device=cpu, has_next_linear=True
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.2'...
 [DEBUG] Found inserted block candidate at index 1: '1'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -106,7 +105,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.pwconv1' → 'features.2.1.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_0' (features.2.1.pwconv1 → features.2.1.pwconv2) in 0.07s
+[INFO] ✅ Successfully collapsed block 'Region_0' (features.2.1.pwconv1 → features.2.1.pwconv2) in 0.31s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -131,7 +130,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=2, device=cpu, has_next_linear=True
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features'...
 [DEBUG] Found inserted block candidate at index 2: '2'
 [STEP] Validating inserted module 'Sequential' at index 2...
@@ -140,7 +139,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.2.pwconv1' → 'features.3.1'
-[INFO] ✅ Successfully collapsed block 'Region_1' (features.2.2.pwconv1 → features.3.1) in 0.09s
+[INFO] ✅ Successfully collapsed block 'Region_1' (features.2.2.pwconv1 → features.3.1) in 0.02s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -166,7 +165,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.4' =====
-[DEBUG] start_idx=1, device=cpu, has_next_linear=True
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.4'...
 [DEBUG] Found inserted block candidate at index 1: '1'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -175,7 +174,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.1.pwconv1' → 'features.4.1.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_2' (features.4.1.pwconv1 → features.4.1.pwconv2) in 0.07s
+[INFO] ✅ Successfully collapsed block 'Region_2' (features.4.1.pwconv1 → features.4.1.pwconv2) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -201,7 +200,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.4' =====
-[DEBUG] start_idx=2, device=cpu, has_next_linear=True
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.4'...
 [DEBUG] Found inserted block candidate at index 2: '2'
 [STEP] Validating inserted module 'Sequential' at index 2...
@@ -210,7 +209,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.2.pwconv1' → 'features.4.2.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_3' (features.4.2.pwconv1 → features.4.2.pwconv2) in 0.07s
+[INFO] ✅ Successfully collapsed block 'Region_3' (features.4.2.pwconv1 → features.4.2.pwconv2) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -236,7 +235,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.4' =====
-[DEBUG] start_idx=3, device=cpu, has_next_linear=True
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.4'...
 [DEBUG] Found inserted block candidate at index 3: '3'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -245,7 +244,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.3.pwconv1' → 'features.4.3.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_4' (features.4.3.pwconv1 → features.4.3.pwconv2) in 0.08s
+[INFO] ✅ Successfully collapsed block 'Region_4' (features.4.3.pwconv1 → features.4.3.pwconv2) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -271,7 +270,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.4' =====
-[DEBUG] start_idx=4, device=cpu, has_next_linear=True
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.4'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -280,7 +279,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.4.pwconv1' → 'features.4.4.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_5' (features.4.4.pwconv1 → features.4.4.pwconv2) in 0.08s
+[INFO] ✅ Successfully collapsed block 'Region_5' (features.4.4.pwconv1 → features.4.4.pwconv2) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -306,7 +305,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.4' =====
-[DEBUG] start_idx=5, device=cpu, has_next_linear=True
+[DEBUG] start_idx=5, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.4'...
 [DEBUG] Found inserted block candidate at index 5: '5'
 [STEP] Validating inserted module 'Sequential' at index 5...
@@ -315,7 +314,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.5.pwconv1' → 'features.4.5.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_6' (features.4.5.pwconv1 → features.4.5.pwconv2) in 0.08s
+[INFO] ✅ Successfully collapsed block 'Region_6' (features.4.5.pwconv1 → features.4.5.pwconv2) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -341,7 +340,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.4' =====
-[DEBUG] start_idx=6, device=cpu, has_next_linear=True
+[DEBUG] start_idx=6, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.4'...
 [DEBUG] Found inserted block candidate at index 6: '6'
 [STEP] Validating inserted module 'Sequential' at index 6...
@@ -350,7 +349,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.6.pwconv1' → 'features.4.6.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_7' (features.4.6.pwconv1 → features.4.6.pwconv2) in 0.08s
+[INFO] ✅ Successfully collapsed block 'Region_7' (features.4.6.pwconv1 → features.4.6.pwconv2) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -376,7 +375,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features.4' =====
-[DEBUG] start_idx=7, device=cpu, has_next_linear=True
+[DEBUG] start_idx=7, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features.4'...
 [DEBUG] Found inserted block candidate at index 7: '7'
 [STEP] Validating inserted module 'Sequential' at index 7...
@@ -385,7 +384,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.7.pwconv1' → 'features.4.7.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_8' (features.4.7.pwconv1 → features.4.7.pwconv2) in 0.08s
+[INFO] ✅ Successfully collapsed block 'Region_8' (features.4.7.pwconv1 → features.4.7.pwconv2) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -410,7 +409,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'features' =====
-[DEBUG] start_idx=4, device=cpu, has_next_linear=True
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'features'...
 [DEBUG] Found inserted block candidate at index 4: '4'
 [STEP] Validating inserted module 'Sequential' at index 4...
@@ -419,7 +418,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.8.pwconv1' → 'features.6.0.pwconv1'
-[INFO] ✅ Successfully collapsed block 'Region_9' (features.4.8.pwconv1 → features.6.0.pwconv1) in 0.08s
+[INFO] ✅ Successfully collapsed block 'Region_9' (features.4.8.pwconv1 → features.6.0.pwconv1) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -448,14 +447,14 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Parameters after : 843,176
 [INFO] ΔParams = +27,130,752 (expected ≤ 0)
 [INFO] Collapse counts: success=10, failed=0, skipped=1
-[INFO] Total collapse runtime: 0.85s
+[INFO] Total collapse runtime: 0.52s
 [RESULT] ✅ collapse_only complete. Total targets: 11 | success=10 | failed=0 | skipped=1
-[INFO] Structural collapse completed in 0.85s
+[INFO] Structural collapse completed in 0.52s
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 45
-[INFO] Weights loaded in 0.01s
+[INFO] Weights loaded in 0.27s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 96.99%
@@ -474,7 +473,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 0.10s
+[INFO] Weights loaded in 5.31s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
@@ -483,19 +482,19 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4221, power=0.00W, energy=0.00J, time=106.35s
+[INFO] Evaluation complete: acc=0.4221, power=114.78W, energy=20631.33J, time=179.75s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4059, power=0.00W, energy=0.00J, time=106.37s
+[INFO] Evaluation complete: acc=0.4059, power=128.57W, energy=1087.90J, time=8.46s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.3734, power=0.00W, energy=0.00J, time=105.27s
+[INFO] Evaluation complete: acc=0.3734, power=127.42W, energy=1020.53J, time=8.01s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
 Unsupported operator aten::mean encountered 8 time(s)
@@ -519,10 +518,10 @@ features.3, features.5, features.6
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4433, power=0.00W, energy=0.00J, time=39.46s
-[RESULT] Accuracy Original:     0.4059 | Power: 0.00W | Energy: 0.00J
-[RESULT] Accuracy Unstructured: 0.3734 | Power: 0.00W | Energy: 0.00J
-[RESULT] Accuracy Collapsed:    0.4433 | Power: 0.00W | Energy: 0.00J
+[INFO] Evaluation complete: acc=0.4433, power=121.49W, energy=882.81J, time=7.27s
+[RESULT] Accuracy Original:     0.4059 | Power: 128.57W | Energy: 1087.90J
+[RESULT] Accuracy Unstructured: 0.3734 | Power: 127.42W | Energy: 1020.53J
+[RESULT] Accuracy Collapsed:    0.4433 | Power: 121.49W | Energy: 882.81J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [RESULT] FLOPs Original:     2.33e+10
@@ -542,7 +541,7 @@ features.3, features.5, features.6
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 768), time=6.95s
+[INFO] Feature extraction complete: shape=(640, 768), time=0.66s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: LayerNorm
 [INFO] Feature extraction batch 1/10
@@ -555,7 +554,7 @@ features.3, features.5, features.6
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 768), time=6.94s
+[INFO] Feature extraction complete: shape=(640, 768), time=0.80s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: LayerNorm
 [INFO] Feature extraction batch 1/10
@@ -568,11 +567,11 @@ features.3, features.5, features.6
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 768), time=3.01s
+[INFO] Feature extraction complete: shape=(640, 768), time=0.63s
 [INFO] Computing CKA: features_x=(640, 768), features_y=(640, 768)
-[INFO] CKA complete: score=0.587998, time=0.02s
+[INFO] CKA complete: score=0.587990, time=0.02s
 [INFO] Computing CKA: features_x=(640, 768), features_y=(640, 768)
-[INFO] CKA complete: score=0.522040, time=0.02s
+[INFO] CKA complete: score=0.522038, time=0.00s
 
 [INFO] Evaluating Adversarial Robustness...
 [INFO] Running FGSM attack (epsilon=0.03)...
@@ -588,10 +587,10 @@ features.3, features.5, features.6
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_ConvNeXt_tinyimagenet_pre100_post300.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 477.50s
+[INFO] Total runtime: 348.79s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
       model       dataset  pre_epochs  post_epochs                                                                                 model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  ConvNeXt  tinyimagenet         100          300  ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.4059            0.3734         0.4433                   0.0                     0.0                       0.0                         0.0                    0.0                      0.0    2.334017e+10        7.035076e+08     4.872782e+09          0.587998        0.52204               0.078125                   0.046875                0.046875              0.015625                  0.046875                0.03125
+0  ConvNeXt  tinyimagenet         100          300  ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.4059            0.3734         0.4433                128.57                  1087.9                    127.42                     1020.53                 121.49                   882.81    2.334017e+10        7.035076e+08     4.872782e+09           0.58799       0.522038               0.078125                   0.046875                0.046875              0.015625                  0.046875                0.03125

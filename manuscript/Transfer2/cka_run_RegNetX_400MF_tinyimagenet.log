@@ -1,9 +1,8 @@
 ======================================================================
 Starting Comparison Post-Processing Pipeline
-Model: RegNetX_400MF | Dataset: tinyimagenet | Device: cuda
+Model: RegNetX_400MF | Dataset: tinyimagenet | Device: cpu
 Epochs Config: pre=100, post=300
 Output File: cka_results_RegNetX_400MF_tinyimagenet_pre100_post300.csv
-CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
@@ -30,7 +29,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 428
-[INFO] Weights loaded in 2.20s
+[INFO] Weights loaded in 1.71s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100
@@ -49,7 +48,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 428
-[INFO] Weights loaded in 0.58s
+[INFO] Weights loaded in 1.15s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=RegNetX_400MF, dataset=tinyimagenet
@@ -67,7 +66,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [INFO] Loading discovered regions: ../Tranfer/RegNetX_400MF_tinyimagenet_epochs300_pretrain100_JF_discovered_regions.json
 
 [STEP] ===== Starting collapse_only process =====
-[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True
 [STEP] Using provided in-memory model instance (RegNetX_400MF)
 [STEP] Creating deepcopy of model for safe modification...
 [STEP] Parsing compression set...
@@ -95,7 +94,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block2.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block2.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -104,7 +103,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block2.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block2.block.conv2' → 'stage3.stage3_block2.block.conv3'
-[INFO] ✅ Successfully collapsed block 'Region_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.27s
+[INFO] ✅ Successfully collapsed block 'Region_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 66 in-place ReLU(s) with out-of-place variants.
@@ -130,7 +129,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block3.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block3.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -139,7 +138,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block3.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block3.block.conv2' → 'stage3.stage3_block3.block.conv3'
-[INFO] ✅ Successfully collapsed block 'Region_1' (stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_1' (stage3.stage3_block3.block.conv2 → stage3.stage3_block3.block.conv3) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -164,7 +163,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block4.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block4.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -173,7 +172,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block4.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block4.block.conv2' → 'stage3.stage3_block4.block.conv3'
-[INFO] ✅ Successfully collapsed block 'Region_2' (stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_2' (stage3.stage3_block4.block.conv2 → stage3.stage3_block4.block.conv3) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -198,7 +197,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block5.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block5.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -207,7 +206,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block5.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block5.block.conv2' → 'stage3.stage3_block5.block.conv3'
-[INFO] ✅ Successfully collapsed block 'Region_3' (stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_3' (stage3.stage3_block5.block.conv2 → stage3.stage3_block5.block.conv3) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -232,7 +231,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage3.stage3_block6.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage3.stage3_block6.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -241,7 +240,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block6.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block6.block.conv2' → 'stage3.stage3_block6.block.conv3'
-[INFO] ✅ Successfully collapsed block 'Region_4' (stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_4' (stage3.stage3_block6.block.conv2 → stage3.stage3_block6.block.conv3) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -266,7 +265,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block0.block' =====
-[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[DEBUG] start_idx=3, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block0.block'...
 [DEBUG] Found inserted block candidate at index 3: 'conv2'
 [STEP] Validating inserted module 'Sequential' at index 3...
@@ -275,7 +274,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block0.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block0.block.conv2' → 'stage4.stage4_block0.block.conv3'
-[INFO] ✅ Successfully collapsed block 'Region_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -300,7 +299,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4' =====
-[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[DEBUG] start_idx=1, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4'...
 [DEBUG] Found inserted block candidate at index 1: 'stage4_block1'
 [STEP] Validating inserted module 'Sequential' at index 1...
@@ -309,7 +308,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block1.block.conv2' → 'stage4.stage4_block3.block.conv2'
-[INFO] ✅ Successfully collapsed block 'Region_6' (stage4.stage4_block1.block.conv2 → stage4.stage4_block3.block.conv2) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_6' (stage4.stage4_block1.block.conv2 → stage4.stage4_block3.block.conv2) in 0.06s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -334,7 +333,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block4.block' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[DEBUG] start_idx=0, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block4.block'...
 [DEBUG] Found inserted block candidate at index 0: 'conv1'
 [STEP] Validating inserted module 'Sequential' at index 0...
@@ -343,7 +342,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block4.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block4.block.conv1' → 'stage4.stage4_block4.block.conv2'
-[INFO] ✅ Successfully collapsed block 'Region_7' (stage4.stage4_block4.block.conv1 → stage4.stage4_block4.block.conv2) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_7' (stage4.stage4_block4.block.conv1 → stage4.stage4_block4.block.conv2) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -368,7 +367,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block6.block' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[DEBUG] start_idx=0, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block6.block'...
 [DEBUG] Found inserted block candidate at index 0: 'conv1'
 [STEP] Validating inserted module 'Sequential' at index 0...
@@ -377,7 +376,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block6.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block6.block.conv1' → 'stage4.stage4_block6.block.conv2'
-[INFO] ✅ Successfully collapsed block 'Region_8' (stage4.stage4_block6.block.conv1 → stage4.stage4_block6.block.conv2) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_8' (stage4.stage4_block6.block.conv1 → stage4.stage4_block6.block.conv2) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -402,7 +401,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block9.block' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[DEBUG] start_idx=0, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block9.block'...
 [DEBUG] Found inserted block candidate at index 0: 'conv1'
 [STEP] Validating inserted module 'Sequential' at index 0...
@@ -411,7 +410,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block9.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block9.block.conv1' → 'stage4.stage4_block9.block.conv2'
-[INFO] ✅ Successfully collapsed block 'Region_9' (stage4.stage4_block9.block.conv1 → stage4.stage4_block9.block.conv2) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_9' (stage4.stage4_block9.block.conv1 → stage4.stage4_block9.block.conv2) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -436,7 +435,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block10.block' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[DEBUG] start_idx=0, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block10.block'...
 [DEBUG] Found inserted block candidate at index 0: 'conv1'
 [STEP] Validating inserted module 'Sequential' at index 0...
@@ -445,7 +444,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block10.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block10.block.conv1' → 'stage4.stage4_block10.block.conv2'
-[INFO] ✅ Successfully collapsed block 'Region_10' (stage4.stage4_block10.block.conv1 → stage4.stage4_block10.block.conv2) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_10' (stage4.stage4_block10.block.conv1 → stage4.stage4_block10.block.conv2) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -470,7 +469,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [STEP 5] Synthesizing surrogate block and fusing into computational graph...
 
 [STEP] ===== Starting _validate_downstream for 'stage4.stage4_block11.block' =====
-[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[DEBUG] start_idx=0, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within 'stage4.stage4_block11.block'...
 [DEBUG] Found inserted block candidate at index 0: 'conv1'
 [STEP] Validating inserted module 'Sequential' at index 0...
@@ -479,7 +478,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block11.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block11.block.conv1' → 'stage4.stage4_block11.block.conv2'
-[INFO] ✅ Successfully collapsed block 'Region_11' (stage4.stage4_block11.block.conv1 → stage4.stage4_block11.block.conv2) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_11' (stage4.stage4_block11.block.conv1 → stage4.stage4_block11.block.conv2) in 0.05s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -490,14 +489,14 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [INFO] Parameters after : 3,493,224
 [INFO] ΔParams = +1,356,288 (expected ≤ 0)
 [INFO] Collapse counts: success=12, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.80s
+[INFO] Total collapse runtime: 0.89s
 [RESULT] ✅ collapse_only complete. Total targets: 12 | success=12 | failed=0 | skipped=0
-[INFO] Structural collapse completed in 0.80s
+[INFO] Structural collapse completed in 0.89s
 [INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 369
-[INFO] Weights loaded in 1.00s
+[INFO] Weights loaded in 0.43s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 27.97%
@@ -516,7 +515,7 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 428
-[INFO] Weights loaded in 1.25s
+[INFO] Weights loaded in 0.65s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
@@ -525,19 +524,19 @@ Loading Tiny ImageNet data for RegNetX_400MF...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.3442, power=63.37W, energy=16246.88J, time=256.39s
+[INFO] Evaluation complete: acc=0.3442, power=0.00W, energy=0.00J, time=183.63s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.3585, power=66.59W, energy=599.18J, time=9.00s
+[INFO] Evaluation complete: acc=0.3585, power=0.00W, energy=0.00J, time=30.96s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.3961, power=66.98W, energy=507.48J, time=7.58s
+[INFO] Evaluation complete: acc=0.3961, power=0.00W, energy=0.00J, time=30.13s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
 Unsupported operator aten::add encountered 22 time(s)
@@ -549,10 +548,10 @@ stage1.stage1_block0.relu, stage2.stage2_block0.relu, stage2.stage2_block1.relu,
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.3867, power=67.58W, energy=520.21J, time=7.70s
-[RESULT] Accuracy Original:     0.3585 | Power: 66.59W | Energy: 599.18J
-[RESULT] Accuracy Unstructured: 0.3961 | Power: 66.98W | Energy: 507.48J
-[RESULT] Accuracy Collapsed:    0.3867 | Power: 67.58W | Energy: 520.21J
+[INFO] Evaluation complete: acc=0.3867, power=0.00W, energy=0.00J, time=42.44s
+[RESULT] Accuracy Original:     0.3585 | Power: 0.00W | Energy: 0.00J
+[RESULT] Accuracy Unstructured: 0.3961 | Power: 0.00W | Energy: 0.00J
+[RESULT] Accuracy Collapsed:    0.3867 | Power: 0.00W | Energy: 0.00J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [RESULT] FLOPs Original:     2.11e+09
@@ -572,7 +571,7 @@ stage1.stage1_block0.relu, stage2.stage2_block0.relu, stage2.stage2_block1.relu,
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 384), time=0.67s
+[INFO] Feature extraction complete: shape=(640, 384), time=2.18s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: AdaptiveAvgPool2d
 [INFO] Feature extraction batch 1/10
@@ -585,7 +584,7 @@ stage1.stage1_block0.relu, stage2.stage2_block0.relu, stage2.stage2_block1.relu,
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 384), time=0.65s
+[INFO] Feature extraction complete: shape=(640, 384), time=2.19s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: AdaptiveAvgPool2d
 [INFO] Feature extraction batch 1/10
@@ -598,11 +597,11 @@ stage1.stage1_block0.relu, stage2.stage2_block0.relu, stage2.stage2_block1.relu,
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 384), time=0.62s
+[INFO] Feature extraction complete: shape=(640, 384), time=2.87s
 [INFO] Computing CKA: features_x=(640, 384), features_y=(640, 384)
-[INFO] CKA complete: score=0.036021, time=0.06s
+[INFO] CKA complete: score=0.036022, time=0.01s
 [INFO] Computing CKA: features_x=(640, 384), features_y=(640, 384)
-[INFO] CKA complete: score=0.000488, time=0.00s
+[INFO] CKA complete: score=0.000488, time=0.01s
 
 [INFO] Evaluating Adversarial Robustness...
 [INFO] Running FGSM attack (epsilon=0.03)...
@@ -618,10 +617,10 @@ stage1.stage1_block0.relu, stage2.stage2_block0.relu, stage2.stage2_block1.relu,
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_RegNetX_400MF_tinyimagenet_pre100_post300.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 396.06s
+[INFO] Total runtime: 454.77s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
            model       dataset  pre_epochs  post_epochs                                                                                      model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  RegNetX_400MF  tinyimagenet         100          300  ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.3585            0.3961         0.3867                 66.59                  599.18                     66.98                      507.48                  67.58                   520.21    2.113503e+09        1.522409e+09     1.793458e+09          0.036021       0.000488               0.046875                    0.03125                0.015625                   0.0                  0.015625                    0.0
+0  RegNetX_400MF  tinyimagenet         100          300  ../Tranfer/RegNetX_400MF_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.3585            0.3961         0.3867                   0.0                     0.0                       0.0                         0.0                    0.0                      0.0    2.113503e+09        1.522409e+09     1.793458e+09          0.036022       0.000488               0.046875                    0.03125                0.015625                   0.0                  0.015625                    0.0

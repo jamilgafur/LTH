@@ -28,7 +28,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 1.12s
+[INFO] Weights loaded in 1.22s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar100_None_epochs300_pretrain100
@@ -41,7 +41,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 1.61s
+[INFO] Weights loaded in 2.14s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=InceptionNet, dataset=Cifar100
@@ -90,7 +90,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch1.conv'
-[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch1.conv) in 26.14s
+[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch1.conv) in 21.40s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
@@ -230,7 +230,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage5' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage5.inception_5b.branch3.1.conv' → 'stage5.inception_5b.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'Region_5' (stage5.inception_5b.branch3.1.conv → stage5.inception_5b.branch4.1.conv) in 0.02s
+[INFO] ✅ Successfully collapsed block 'Region_5' (stage5.inception_5b.branch3.1.conv → stage5.inception_5b.branch4.1.conv) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -241,14 +241,14 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Parameters after : 3,638,308
 [INFO] ΔParams = +2,445,024 (expected ≤ 0)
 [INFO] Collapse counts: success=4, failed=0, skipped=2
-[INFO] Total collapse runtime: 26.26s
+[INFO] Total collapse runtime: 21.56s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=4 | failed=0 | skipped=2
-[INFO] Structural collapse completed in 26.26s
+[INFO] Structural collapse completed in 21.56s
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_Cifar100_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/InceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 152
-[INFO] Weights loaded in 2.67s
+[INFO] Weights loaded in 5.48s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 40.19%
@@ -261,25 +261,25 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 2.20s
+[INFO] Weights loaded in 3.17s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.3419, power=155.24W, energy=959.26J, time=6.18s
+[INFO] Evaluation complete: acc=0.3419, power=193.60W, energy=543.37J, time=2.81s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.2288, power=165.41W, energy=409.88J, time=2.48s
+[INFO] Evaluation complete: acc=0.2288, power=195.78W, energy=488.39J, time=2.49s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.5292, power=161.04W, energy=399.12J, time=2.48s
+[INFO] Evaluation complete: acc=0.5292, power=200.16W, energy=491.67J, time=2.46s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.5715, power=163.49W, energy=400.20J, time=2.45s
-[RESULT] Accuracy Original:     0.2288 | Power: 165.41W | Energy: 409.88J
-[RESULT] Accuracy Unstructured: 0.5292 | Power: 161.04W | Energy: 399.12J
-[RESULT] Accuracy Collapsed:    0.5715 | Power: 163.49W | Energy: 400.20J
+[INFO] Evaluation complete: acc=0.5715, power=198.32W, energy=487.32J, time=2.46s
+[RESULT] Accuracy Original:     0.2288 | Power: 195.78W | Energy: 488.39J
+[RESULT] Accuracy Unstructured: 0.5292 | Power: 200.16W | Energy: 491.67J
+[RESULT] Accuracy Collapsed:    0.5715 | Power: 198.32W | Energy: 487.32J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [RESULT] FLOPs Original:     1.66e+10
@@ -299,7 +299,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.30s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.62s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: Dropout
 [INFO] Feature extraction batch 1/10
@@ -312,7 +312,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.29s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.33s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: Dropout
 [INFO] Feature extraction batch 1/10
@@ -325,9 +325,9 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.25s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.67s
 [INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
-[INFO] CKA complete: score=0.426552, time=3.06s
+[INFO] CKA complete: score=0.426552, time=0.36s
 [INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
 [INFO] CKA complete: score=0.410071, time=0.00s
 
@@ -345,10 +345,10 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_InceptionNet_Cifar100_pre100_post300.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 75.12s
+[INFO] Total runtime: 75.18s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
           model   dataset  pre_epochs  post_epochs                                                                                 model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  InceptionNet  Cifar100         100          300  ../Tranfer/InceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.2288            0.5292         0.5715                165.41                  409.88                    161.04                      399.12                 163.49                    400.2    1.664698e+10        9.956195e+09     1.547328e+10          0.426552       0.410071               0.060547                   0.220703                0.179688               0.03125                  0.130859               0.099609
+0  InceptionNet  Cifar100         100          300  ../Tranfer/InceptionNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.2288            0.5292         0.5715                195.78                  488.39                    200.16                      491.67                 198.32                   487.32    1.664698e+10        9.956195e+09     1.547328e+10          0.426552       0.410071               0.060547                   0.220703                0.179688               0.03125                  0.130859               0.099609

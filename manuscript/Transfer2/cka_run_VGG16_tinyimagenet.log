@@ -1,8 +1,9 @@
 ======================================================================
 Starting Comparison Post-Processing Pipeline
-Model: VGG16 | Dataset: tinyimagenet | Device: cpu
+Model: VGG16 | Dataset: tinyimagenet | Device: cuda
 Epochs Config: pre=100, post=300
 Output File: cka_results_VGG16_tinyimagenet_pre100_post300.csv
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
@@ -29,7 +30,7 @@ Loading Tiny ImageNet data...
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 6.52s
+[INFO] Weights loaded in 5.13s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100
@@ -48,7 +49,7 @@ Loading Tiny ImageNet data...
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 1.90s
+[INFO] Weights loaded in 4.46s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
@@ -60,3 +61,75 @@ Loading Tiny ImageNet data...
 [DEBUG] TinyImageNet val samples: 10000
 [DEBUG] TinyImageNet train sample tensor shape: (3, 64, 64)
 [DEBUG] TinyImageNet val sample tensor shape: (3, 64, 64)
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 64, 64])
+[DEBUG] Attempting to initialize VGG16 with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] VGG16 successfully initialized WITH one_batch.
+[INFO] Loading discovered regions: ../Tranfer/VGG16_tinyimagenet_epochs300_pretrain100_JF_discovered_regions.json
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
+[STEP] Using provided in-memory model instance (VGG16)
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[INFO] Model parameter count before collapsing: 40,732,936
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'Region_0': features.conv_11 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_11', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_11
+[INFO] End Target   : features.conv_13
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_11' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Capturing I/O hooks for 'features.conv_11' -> 'features.conv_13'...
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=34, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 34: 'conv_11'
+[STEP] Validating inserted module 'Sequential' at index 34...
+[DEBUG] Inserted module forward successful, output shape: (2, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+
+[INFO] ✅ Framework successfully merged 'features.conv_11' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'Region_0' (features.conv_11 → features.conv_13) in 2.83s
+[STEP] Patching skip connections (if any)...
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 13 in-place ReLU(s) with out-of-place variants.
+
+[STEP] Wrapping pooling layers safely...
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 40,732,936
+[INFO] Parameters after : 33,914,632
+[INFO] ΔParams = +6,818,304 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 3.01s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+[INFO] Structural collapse completed in 3.01s
+[INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100
+[INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Set_0.pt
+[INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Set_0.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 97
+[INFO] Weights loaded in 1.51s
+
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 16.74%
+[INFO] IMP checkpoint not found. Starting on-the-fly finetuning...
+
+[INFO] Starting Iterative Magnitude Pruning (IMP) for 300 epochs...
+[INFO] Compounding prune rate: 0.08% per step over 225 steps.
+[INFO] Found existing checkpoint at ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300_ resume_ckpt.pt. Resuming training...
+[INFO] Resuming from Epoch 102/300 (Previous time: 0.00s)
