@@ -373,88 +373,67 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 # =========================================================
 # Entry Point
 # =========================================================
-from plot_experiments import *
 
 def main():
-    df, all_models = load_and_compute_deltas()
-    if df is None:
-        return
+    parser = argparse.ArgumentParser(description="CKA, Energy, and Adversarial comparison post-processing")
+    parser.add_argument("--model", required=True, help="Model name, e.g. VGG16")
+    parser.add_argument("--pre", type=int, default=300, help="pre collapse epochs")
+    parser.add_argument("--post", type=int, default=100, help="post collapse epochs")
+    parser.add_argument("--dataset", required=True, help="Dataset name, e.g. Cifar10")
+    parser.add_argument("--output", default="auto", help="Output CSV filename (set to 'auto' to avoid collisions)")
+    parser.add_argument("--power-interval", type=int, default=1, help="Query interval in seconds for power monitoring (default: 1)")
+    args = parser.parse_args()
 
-    grouped = df.groupby(['dataset', 'pre_epochs', 'post_epochs'])
+    # Automatically format unique output path if 'auto' or default to prevent overwrite collisions
+    if args.output == "auto" or args.output == "cka_comparison_results.csv":
+        args.output = f"cka_results_{args.model}_{args.dataset}_pre{args.pre}_post{args.post}.csv"
 
-    for (dataset, pre, post), group_df in grouped:
-        print(f"\n--- Generating plots for {dataset} | Pre: {pre} | Post: {post} ---")
-        
-        file_suffix = f"{dataset}_pre{pre}_post{post}"
-        title_suffix = f"\n({dataset} | Pre: {pre}, Post: {post})"
-
-        # Plot 1: Change in Task Accuracy
-        plot_bar_chart(
-            df=group_df,
-            all_models=all_models,
-            columns=['delta_acc_imp', 'delta_acc_collapse'],
-            labels=['IMP (Unstructured)', 'Collapsed'],
-            title=f'Change in Task Accuracy (Compared to Original){title_suffix}',
-            ylabel='Accuracy Delta\n(Higher is Better)',
-            filename=f'plot_1_delta_accuracy_{file_suffix}.png',
-            zero_line=True,
-            df_annotations=['acc_unstructured', 'acc_collapsed'],
-            anno_fmt="{val:.1%}"
-        )
-
-        # Plot 2: Normalized Energy Savings (%) across heterogeneous GPUs
-        plot_bar_chart(
-            df=group_df,
-            all_models=all_models,
-            columns=['energy_saved_imp_pct', 'energy_saved_collapse_pct'],
-            labels=['IMP (Unstructured)', 'Collapsed'],
-            title=f'Relative Energy Savings (% Reduced from Baseline){title_suffix}',
-            ylabel='Energy Saved (%)\n(Higher is Better)',
-            filename=f'plot_2_energy_savings_{file_suffix}.png',
-            zero_line=True,
-            df_annotations=['energy_saved_imp_pct', 'energy_saved_collapse_pct'],
-            anno_fmt="{val:+.1f}%"
-        )
-
-        # Plot 3: CKA Scores
-        plot_bar_chart(
-            df=group_df,
-            all_models=all_models,
-            columns=['cka_unstructured', 'cka_collapsed'],
-            labels=['IMP (Unstructured)', 'Collapsed'],
-            title=f'Representational Similarity (CKA) to Original{title_suffix}',
-            ylabel='CKA Score\n(Higher = More Similar to Original)',
-            filename=f'plot_3_cka_scores_{file_suffix}.png',
-            zero_line=False,
-            df_annotations=['cka_unstructured', 'cka_collapsed'],
-            anno_fmt="{val:.3f}"
-        )
-
-        # Plot 4: Adversarial Robustness Subplots
-        plot_adversarial_subplots(
-            df=group_df,
-            all_models=all_models,
-            title=f'Change in Adversarial Robustness{title_suffix}',
-            ylabel='Accuracy Delta under Attack\n(Higher is Better)',
-            filename=f'plot_4_delta_adversarial_{file_suffix}.png'
-        )
-        
-        # Plot 5: Percentage Pruned (if present)
-        if 'percent_pruned' in group_df.columns:
-            plot_bar_chart(
-                df=group_df,
-                all_models=all_models,
-                columns=['percent_pruned'],
-                labels=['Target Sparsity (Same for IMP & Collapsed)'],
-                title=f'Percentage of Weights Pruned from Original{title_suffix}',
-                ylabel='Percentage Pruned\n(Higher = More Compressed)',
-                filename=f'plot_5_percent_pruned_{file_suffix}.png',
-                zero_line=False,
-                df_annotations=['percent_pruned'],
-                anno_fmt="{val:.1%}"
-            )
+    total_start_time = time.time()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    print("\nAll delta comparisons generated successfully!")
+    print("=" * 70)
+    print("Starting Comparison Post-Processing Pipeline")
+    print(f"Model: {args.model} | Dataset: {args.dataset} | Device: {device}")
+    print(f"Epochs Config: pre={args.pre}, post={args.post}")
+    print(f"Output File: {args.output}")
+    if torch.cuda.is_available():
+        print(f"CUDA device: {torch.cuda.get_device_name(0)}")
+    print("=" * 70)
+
+    # 1. Discover Checkpoints
+    print("[INFO] Searching for model checkpoints...")
+    checkpoints = find_experiment_checkpoints(args.model, args.dataset, args.pre, args.post)
+    print(f"[INFO] Found {len(checkpoints['before'])} 'before' checkpoints.")
+    print(f"[INFO] Found {len(checkpoints['collapsed'])} collapsed checkpoints.")
+    print(f"[INFO] Found {len(checkpoints['after'])} 'after' checkpoints.")
+
+    results = []
+
+    # 2. Process Checkpoints
+    for idx, model_before_path in enumerate(checkpoints['before'], start=1):
+        print("\n" + "=" * 70)
+        print(f"Processing checkpoint {idx}/{len(checkpoints['before'])}")
+        print(f"Path: {model_before_path}")
+        print("=" * 70)
+
+        try:
+            result_metrics = process_checkpoint(model_before_path, checkpoints, args, device)
+            results.append(result_metrics)
+        except Exception as e:
+            print(f"[ERROR] Failed processing checkpoint: {model_before_path}")
+            print(f"[ERROR] {type(e).__name__}: {e}")
+
+    # 3. Save Results
+    print("\n" + "=" * 70)
+    print("[INFO] Saving final results...")
+    df = pd.DataFrame(results)
+    df.to_csv(args.output, index=False)
+    print(f"[INFO] Results successfully saved to '{args.output}'")
+    print(f"[INFO] Total successful experiments: {len(results)}")
+    print(f"[INFO] Total runtime: {time.time() - total_start_time:.2f}s")
+    
+    print("\n" + "=" * 70 + "\nFINAL RESULTS\n" + "=" * 70)
+    print(df.to_string())
 
 if __name__ == "__main__":
     main()

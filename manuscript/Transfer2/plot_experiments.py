@@ -208,6 +208,7 @@ def plot_adversarial_subplots(df, all_models, title, ylabel, filename):
     print(f"Saved '{filename}'")
     plt.close()
 
+
 def main():
     df, all_models = load_and_compute_deltas()
     if df is None:
@@ -235,18 +236,18 @@ def main():
             anno_fmt="{val:.1%}"
         )
 
-        # Plot 2: Energy Savings
+        # Plot 2: Normalized Energy Savings (%) across heterogeneous GPUs
         plot_bar_chart(
             df=group_df,
             all_models=all_models,
-            columns=['energy_saved_imp', 'energy_saved_collapse'],
+            columns=['energy_saved_imp_pct', 'energy_saved_collapse_pct'],
             labels=['IMP (Unstructured)', 'Collapsed'],
-            title=f'Energy Savings (Joules Reduced from Baseline){title_suffix}',
-            ylabel='Joules Saved\n(Higher is Better)',
+            title=f'Relative Energy Savings (% Reduced from Baseline){title_suffix}',
+            ylabel='Energy Saved (%)\n(Higher is Better)',
             filename=f'plot_2_energy_savings_{file_suffix}.png',
             zero_line=True,
-            df_annotations=['energy_joules_unstructured', 'energy_joules_collapsed'],
-            anno_fmt="{val:.1f} J"
+            df_annotations=['energy_saved_imp_pct', 'energy_saved_collapse_pct'],
+            anno_fmt="{val:+.1f}%"
         )
 
         # Plot 3: CKA Scores
@@ -288,6 +289,6 @@ def main():
             )
     
     print("\nAll delta comparisons generated successfully!")
-
+    
 if __name__ == "__main__":
     main()
