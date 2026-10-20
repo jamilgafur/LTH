@@ -373,7 +373,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 # =========================================================
 # Entry Point
 # =========================================================
-
+from plot_experiments import *
 
 def main():
     df, all_models = load_and_compute_deltas()
@@ -455,6 +455,6 @@ def main():
             )
     
     print("\nAll delta comparisons generated successfully!")
-    
+
 if __name__ == "__main__":
     main()
