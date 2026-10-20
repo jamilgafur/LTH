@@ -8,6 +8,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import os
 import json
+from tqdm import tqdm
 from fvcore.nn import FlopCountAnalysis
 import time
 from torchinfo import summary
@@ -317,7 +318,7 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, c
                     )
                     
                 running_loss = 0.0
-                for inputs, targets in train_loader:
+                for inputs, targets in tqdm(train_loader, total=len(train_loader)):
                     inputs, targets = inputs.to(device), targets.to(device)
                     
                     optimizer.zero_grad(set_to_none=True)
