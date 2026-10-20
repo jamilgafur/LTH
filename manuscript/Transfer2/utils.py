@@ -1019,12 +1019,13 @@ def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5, qua
             total_bytes = size_acc.get("bytes", 0)
             total_feature_map_size_mb = total_bytes / (1024 ** 2)
             try:
-                flops = FlopCountAnalysis(tempmodel, xb).total()
-            except Exception:
-                try:
-                    flops = FlopCountAnalysis(tempmodel.cpu(), xb.cpu()).total()
-                except Exception:
-                    flops = 0
+                flop_analyzer = FlopCountAnalysis(tempmodel, xb)
+                flop_analyzer.unsupported_ops_warnings(False)  # Suppress aten::gelu/add noise
+                flop_analyzer.uncalled_modules_warnings(False) # Suppress bypassed SmartIdentity warnings
+                flops = flop_analyzer.total()
+            except Exception as e:
+                print(f"[DEBUG] FlopCountAnalysis failed on {device}: {e}")
+                flops = 0
 
         # Remove hooks
         if size_hooks:

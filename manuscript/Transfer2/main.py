@@ -249,7 +249,12 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         original_after_model, test_loader, device, power_interval=args.power_interval
     )
     if acc_before > (acc_original + 0.20):
-        print(f"\n[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting during training ({acc_original*100:.2f}%).")
+        print(f"\n[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting. Re-evaluating warm baseline...")
+        model_before = model_before.to(device)
+        acc_original, power_original, energy_original = evaluate_accuracy(
+            model_before, test_loader, device, power_interval=args.power_interval
+        )
+        model_before = model_before.to("cpu")
         print(f"[CRITICAL WARNING] Falling back to healthy 'model_before' ({acc_before*100:.2f}%) as the true baseline.")
         acc_original = acc_before
         power_original = power_before
