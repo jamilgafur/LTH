@@ -1,21 +1,3 @@
-Unsupported operator aten::mean encountered 8 time(s)
-Unsupported operator aten::sub encountered 8 time(s)
-Unsupported operator aten::pow encountered 4 time(s)
-Unsupported operator aten::add encountered 26 time(s)
-Unsupported operator aten::sqrt encountered 4 time(s)
-Unsupported operator aten::div encountered 4 time(s)
-Unsupported operator aten::mul encountered 22 time(s)
-Unsupported operator aten::gelu encountered 18 time(s)
-Unsupported operator aten::mean encountered 16 time(s)
-Unsupported operator aten::sub encountered 16 time(s)
-Unsupported operator aten::pow encountered 8 time(s)
-Unsupported operator aten::add encountered 20 time(s)
-Unsupported operator aten::sqrt encountered 8 time(s)
-Unsupported operator aten::div encountered 8 time(s)
-Unsupported operator aten::mul encountered 12 time(s)
-Unsupported operator aten::gelu encountered 9 time(s)
-The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
-features.4, features.6.2
 ======================================================================
 Starting Comparison Post-Processing Pipeline
 Model: ConvNeXt | Dataset: Cifar100 | Device: cuda
@@ -42,7 +24,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 7.72s
+[INFO] Weights loaded in 9.09s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100
@@ -55,7 +37,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 20.56s
+[INFO] Weights loaded in 11.86s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=ConvNeXt, dataset=Cifar100
@@ -105,7 +87,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.dwconv' → 'features.2.1.pwconv1'
-[INFO] ✅ Successfully collapsed block 'Region_0' (features.2.1.dwconv → features.2.1.pwconv1) in 1.70s
+[INFO] ✅ Successfully collapsed block 'Region_0' (features.2.1.dwconv → features.2.1.pwconv1) in 0.36s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -174,7 +156,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.3.1' → 'features.4.0.pwconv1'
-[INFO] ✅ Successfully collapsed block 'Region_2' (features.3.1 → features.4.0.pwconv1) in 0.02s
+[INFO] ✅ Successfully collapsed block 'Region_2' (features.3.1 → features.4.0.pwconv1) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -188,11 +170,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
 [DEBUG] [LCA] Locating block boundaries: 'features.4.8.dwconv' -> 'features.4.8.pwconv2'
 [DEBUG] [LCA] Resolved Container: 'features.4.8' | Type: SmartIdentity
-[WARN] ⚠ Could not map start/end layers into LCA container 'features.4.8'
-[DEBUG]   start_layer_name=features.4.8.dwconv, found start_idx=None
-[DEBUG]   end_layer_name=features.4.8.pwconv2, found end_idx=None
-[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
-[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Target 'features.4.8' is already a SmartIdentity (absorbed by an earlier collapse region). Skipping.
 [WARN] ⚠ Collapse candidate 'Region_3' appears to be cross-branch (parallel paths).
 [WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
 
@@ -227,7 +205,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features.6' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.6.0.dwconv' → 'features.6.0.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_4' (features.6.0.dwconv → features.6.0.pwconv2) in 0.05s
+[INFO] ✅ Successfully collapsed block 'Region_4' (features.6.0.dwconv → features.6.0.pwconv2) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -269,29 +247,17 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 
 [STEP] ===== Collapse summary =====
 [INFO] Parameters before: 27,897,028
-[INFO] Parameters after : 2,551,876
-[INFO] ΔParams = +25,345,152 (expected ≤ 0)
+[INFO] Parameters after : 2,607,172
+[INFO] ΔParams = +25,289,856 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=1
-[INFO] Total collapse runtime: 1.88s
+[INFO] Total collapse runtime: 0.49s
 [RESULT] ✅ collapse_only complete. Total targets: 6 | success=5 | failed=0 | skipped=1
-[INFO] Structural collapse completed in 1.88s
+[INFO] Structural collapse completed in 0.49s
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 67
-[SHAPE MISMATCH FATAL] Layer: 'features.2.1.conv_g1x1.weight'
-   -> Checkpoint holds : torch.Size([192, 1, 7, 7])
-   -> Model expects    : torch.Size([192, 1, 1, 1])
-[INFO] Auto-resolving mismatch: Upgrading 'features.2.1.conv_g1x1' kernel from (1, 1) to (7, 7) (padding=(3, 3))
-[SHAPE MISMATCH FATAL] Layer: 'features.2.2.conv_g1x1.weight'
-   -> Checkpoint holds : torch.Size([192, 1, 7, 7])
-   -> Model expects    : torch.Size([192, 1, 1, 1])
-[INFO] Auto-resolving mismatch: Upgrading 'features.2.2.conv_g1x1' kernel from (1, 1) to (7, 7) (padding=(3, 3))
-[SHAPE MISMATCH FATAL] Layer: 'features.6.0.conv_g1x1.weight'
-   -> Checkpoint holds : torch.Size([768, 1, 7, 7])
-   -> Model expects    : torch.Size([768, 1, 1, 1])
-[INFO] Auto-resolving mismatch: Upgrading 'features.6.0.conv_g1x1' kernel from (1, 1) to (7, 7) (padding=(3, 3))
-[INFO] Weights loaded in 0.82s
+[INFO] Weights loaded in 2.45s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 90.65%
@@ -304,25 +270,25 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 7.33s
+[INFO] Weights loaded in 8.50s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.4120, power=171.35W, energy=514.64J, time=3.00s
+[INFO] Evaluation complete: acc=0.4120, power=69.46W, energy=182.99J, time=2.63s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.4177, power=158.44W, energy=499.07J, time=3.15s
+[INFO] Evaluation complete: acc=0.4177, power=69.12W, energy=180.62J, time=2.61s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.3909, power=128.30W, energy=343.27J, time=2.68s
+[INFO] Evaluation complete: acc=0.3909, power=66.67W, energy=173.99J, time=2.61s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.4424, power=106.95W, energy=299.33J, time=2.80s
-[RESULT] Accuracy Original:     0.4177 | Power: 158.44W | Energy: 499.07J
-[RESULT] Accuracy Unstructured: 0.3909 | Power: 128.30W | Energy: 343.27J
-[RESULT] Accuracy Collapsed:    0.4424 | Power: 106.95W | Energy: 299.33J
+[INFO] Evaluation complete: acc=0.4424, power=66.13W, energy=162.96J, time=2.46s
+[RESULT] Accuracy Original:     0.4177 | Power: 69.12W | Energy: 180.62J
+[RESULT] Accuracy Unstructured: 0.3909 | Power: 66.67W | Energy: 173.99J
+[RESULT] Accuracy Collapsed:    0.4424 | Power: 66.13W | Energy: 162.96J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [RESULT] FLOPs Original:     4.67e+10
@@ -342,7 +308,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 768), time=1.37s
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.47s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: LayerNorm
 [INFO] Feature extraction batch 1/10
@@ -355,7 +321,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 768), time=1.33s
+[INFO] Feature extraction complete: shape=(5120, 768), time=1.40s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: LayerNorm
 [INFO] Feature extraction batch 1/10
@@ -370,7 +336,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 10/10
 [INFO] Feature extraction complete: shape=(5120, 768), time=1.35s
 [INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
-[INFO] CKA complete: score=0.577971, time=0.08s
+[INFO] CKA complete: score=0.577971, time=0.05s
 [INFO] Computing CKA: features_x=(5120, 768), features_y=(5120, 768)
 [INFO] CKA complete: score=0.425807, time=0.00s
 
@@ -388,10 +354,10 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_ConvNeXt_Cifar100_pre100_post300.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 79.85s
+[INFO] Total runtime: 62.14s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
-      model   dataset  pre_epochs  post_epochs                                                                             model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  ConvNeXt  Cifar100         100          300  ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.4177            0.3909         0.4424                158.44                  499.07                     128.3                      343.27                 106.95                   299.33    4.670148e+10        4.364579e+09     1.274531e+10          0.577971       0.425807               0.117188                   0.085938                0.115234              0.091797                  0.072266               0.091797
+      model   dataset                    gpu_name  pre_epochs  post_epochs                                                                             model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0  ConvNeXt  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/ConvNeXt_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.4177            0.3909         0.4424                 69.12                  180.62                     66.67                      173.99                  66.13                   162.96    4.670148e+10        4.364579e+09     1.274531e+10          0.577971       0.425807               0.117188                   0.085938                0.115234              0.091797                  0.072266               0.091797

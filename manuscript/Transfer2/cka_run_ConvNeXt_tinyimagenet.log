@@ -1,3 +1,5 @@
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
 ======================================================================
 Starting Comparison Post-Processing Pipeline
 Model: ConvNeXt | Dataset: tinyimagenet | Device: cuda
@@ -30,7 +32,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 6.29s
+[INFO] Weights loaded in 2.43s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100
@@ -49,7 +51,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 7.88s
+[INFO] Weights loaded in 3.04s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=ConvNeXt, dataset=tinyimagenet
@@ -105,7 +107,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.2' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.2.1.pwconv1' → 'features.2.1.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_0' (features.2.1.pwconv1 → features.2.1.pwconv2) in 0.81s
+[INFO] ✅ Successfully collapsed block 'Region_0' (features.2.1.pwconv1 → features.2.1.pwconv2) in 0.31s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -174,7 +176,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [RESULT] ✅ Downstream validation for 'features.4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.4.1.pwconv1' → 'features.4.1.pwconv2'
-[INFO] ✅ Successfully collapsed block 'Region_2' (features.4.1.pwconv1 → features.4.1.pwconv2) in 0.05s
+[INFO] ✅ Successfully collapsed block 'Region_2' (features.4.1.pwconv1 → features.4.1.pwconv2) in 0.01s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -432,11 +434,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
 [DEBUG] [LCA] Locating block boundaries: 'features.6.1.dwconv' -> 'features.6.1.pwconv1'
 [DEBUG] [LCA] Resolved Container: 'features.6.1' | Type: SmartIdentity
-[WARN] ⚠ Could not map start/end layers into LCA container 'features.6.1'
-[DEBUG]   start_layer_name=features.6.1.dwconv, found start_idx=None
-[DEBUG]   end_layer_name=features.6.1.pwconv1, found end_idx=None
-[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
-[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Target 'features.6.1' is already a SmartIdentity (absorbed by an earlier collapse region). Skipping.
 [WARN] ⚠ Collapse candidate 'Region_10' appears to be cross-branch (parallel paths).
 [WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
 
@@ -447,14 +445,14 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Parameters after : 843,176
 [INFO] ΔParams = +27,130,752 (expected ≤ 0)
 [INFO] Collapse counts: success=10, failed=0, skipped=1
-[INFO] Total collapse runtime: 1.06s
+[INFO] Total collapse runtime: 0.51s
 [RESULT] ✅ collapse_only complete. Total targets: 11 | success=10 | failed=0 | skipped=1
-[INFO] Structural collapse completed in 1.06s
+[INFO] Structural collapse completed in 0.51s
 [INFO] Searching for checkpoint matching: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 45
-[INFO] Weights loaded in 0.18s
+[INFO] Weights loaded in 0.01s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 96.99%
@@ -473,7 +471,7 @@ Loading Tiny ImageNet data for ConvNeXt...
 [DEBUG] ConvNeXt successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 182
-[INFO] Weights loaded in 1.99s
+[INFO] Weights loaded in 0.15s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
@@ -482,46 +480,28 @@ Loading Tiny ImageNet data for ConvNeXt...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4221, power=105.83W, energy=14960.91J, time=141.36s
+[INFO] Evaluation complete: acc=0.4221, power=56.96W, energy=773.78J, time=13.58s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4059, power=119.88W, energy=1334.90J, time=11.14s
+[INFO] Evaluation complete: acc=0.4059, power=59.15W, energy=695.26J, time=11.76s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.3734, power=111.84W, energy=2359.22J, time=21.09s
+[INFO] Evaluation complete: acc=0.3734, power=59.20W, energy=676.35J, time=11.42s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
-Unsupported operator aten::mean encountered 8 time(s)
-Unsupported operator aten::sub encountered 8 time(s)
-Unsupported operator aten::pow encountered 4 time(s)
-Unsupported operator aten::add encountered 26 time(s)
-Unsupported operator aten::sqrt encountered 4 time(s)
-Unsupported operator aten::div encountered 4 time(s)
-Unsupported operator aten::mul encountered 22 time(s)
-Unsupported operator aten::gelu encountered 18 time(s)
-Unsupported operator aten::mean encountered 8 time(s)
-Unsupported operator aten::sub encountered 8 time(s)
-Unsupported operator aten::pow encountered 4 time(s)
-Unsupported operator aten::add encountered 11 time(s)
-Unsupported operator aten::sqrt encountered 4 time(s)
-Unsupported operator aten::div encountered 4 time(s)
-Unsupported operator aten::mul encountered 7 time(s)
-Unsupported operator aten::gelu encountered 5 time(s)
-The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
-features.3, features.5, features.6
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4433, power=109.87W, energy=1272.21J, time=11.58s
-[RESULT] Accuracy Original:     0.4059 | Power: 119.88W | Energy: 1334.90J
-[RESULT] Accuracy Unstructured: 0.3734 | Power: 111.84W | Energy: 2359.22J
-[RESULT] Accuracy Collapsed:    0.4433 | Power: 109.87W | Energy: 1272.21J
+[INFO] Evaluation complete: acc=0.4433, power=52.74W, energy=577.36J, time=10.95s
+[RESULT] Accuracy Original:     0.4059 | Power: 59.15W | Energy: 695.26J
+[RESULT] Accuracy Unstructured: 0.3734 | Power: 59.20W | Energy: 676.35J
+[RESULT] Accuracy Collapsed:    0.4433 | Power: 52.74W | Energy: 577.36J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [RESULT] FLOPs Original:     2.33e+10
@@ -554,7 +534,7 @@ features.3, features.5, features.6
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 768), time=0.79s
+[INFO] Feature extraction complete: shape=(640, 768), time=0.89s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: LayerNorm
 [INFO] Feature extraction batch 1/10
@@ -567,9 +547,9 @@ features.3, features.5, features.6
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 768), time=0.66s
+[INFO] Feature extraction complete: shape=(640, 768), time=0.89s
 [INFO] Computing CKA: features_x=(640, 768), features_y=(640, 768)
-[INFO] CKA complete: score=0.587990, time=0.22s
+[INFO] CKA complete: score=0.587990, time=0.02s
 [INFO] Computing CKA: features_x=(640, 768), features_y=(640, 768)
 [INFO] CKA complete: score=0.522038, time=0.00s
 
@@ -587,10 +567,10 @@ features.3, features.5, features.6
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_ConvNeXt_tinyimagenet_pre100_post300.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 319.43s
+[INFO] Total runtime: 110.14s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
-      model       dataset  pre_epochs  post_epochs                                                                                 model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  ConvNeXt  tinyimagenet         100          300  ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.4059            0.3734         0.4433                119.88                  1334.9                    111.84                     2359.22                 109.87                  1272.21    2.334017e+10        7.035076e+08     4.872782e+09           0.58799       0.522038               0.078125                   0.046875                0.046875              0.015625                  0.046875                0.03125
+      model       dataset                    gpu_name  pre_epochs  post_epochs                                                                                 model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0  ConvNeXt  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.4059            0.3734         0.4433                 59.15                  695.26                      59.2                      676.35                  52.74                   577.36    2.334017e+10        7.035076e+08     4.872782e+09           0.58799       0.522038               0.078125                   0.046875                0.046875              0.015625                  0.046875                0.03125

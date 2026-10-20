@@ -30,7 +30,7 @@ Loading Tiny ImageNet data...
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 3.95s
+[INFO] Weights loaded in 4.89s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100
@@ -49,7 +49,7 @@ Loading Tiny ImageNet data...
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 2.94s
+[INFO] Weights loaded in 7.71s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=VGG16, dataset=tinyimagenet
@@ -104,7 +104,7 @@ Loading Tiny ImageNet data...
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.conv_11' → 'features.conv_13'
-[INFO] ✅ Successfully collapsed block 'Region_0' (features.conv_11 → features.conv_13) in 0.75s
+[INFO] ✅ Successfully collapsed block 'Region_0' (features.conv_11 → features.conv_13) in 0.53s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 13 in-place ReLU(s) with out-of-place variants.
@@ -116,14 +116,14 @@ Loading Tiny ImageNet data...
 [INFO] Parameters after : 33,914,632
 [INFO] ΔParams = +6,818,304 (expected ≤ 0)
 [INFO] Collapse counts: success=1, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.82s
+[INFO] Total collapse runtime: 0.63s
 [RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
-[INFO] Structural collapse completed in 0.83s
+[INFO] Structural collapse completed in 0.63s
 [INFO] Searching for checkpoint matching: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Set_0.pt
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Set_0.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 97
-[INFO] Weights loaded in 1.62s
+[INFO] Weights loaded in 4.87s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 16.74%
@@ -142,7 +142,7 @@ Loading Tiny ImageNet data...
 [DEBUG] VGG16 successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 107
-[INFO] Weights loaded in 2.66s
+[INFO] Weights loaded in 3.20s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
@@ -151,32 +151,28 @@ Loading Tiny ImageNet data...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4891, power=38.64W, energy=5664.65J, time=146.61s
+[INFO] Evaluation complete: acc=0.4891, power=41.57W, energy=5043.00J, time=121.31s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4200, power=59.98W, energy=540.05J, time=9.00s
+[INFO] Evaluation complete: acc=0.4200, power=58.21W, energy=477.74J, time=8.21s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4913, power=50.62W, energy=512.86J, time=10.13s
+[INFO] Evaluation complete: acc=0.4913, power=50.36W, energy=392.61J, time=7.80s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
-Unsupported operator aten::max_pool2d encountered 5 time(s)
-Unsupported operator aten::max_pool2d encountered 5 time(s)
-The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
-features.bn_11, features.bn_12, features.conv_12, features.conv_13, features.relu_11, features.relu_12
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4703, power=72.95W, energy=655.02J, time=8.98s
-[RESULT] Accuracy Original:     0.4200 | Power: 59.98W | Energy: 540.05J
-[RESULT] Accuracy Unstructured: 0.4913 | Power: 50.62W | Energy: 512.86J
-[RESULT] Accuracy Collapsed:    0.4703 | Power: 72.95W | Energy: 655.02J
+[INFO] Evaluation complete: acc=0.4703, power=68.93W, energy=533.77J, time=7.74s
+[RESULT] Accuracy Original:     0.4200 | Power: 58.21W | Energy: 477.74J
+[RESULT] Accuracy Unstructured: 0.4913 | Power: 50.36W | Energy: 392.61J
+[RESULT] Accuracy Collapsed:    0.4703 | Power: 68.93W | Energy: 533.77J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [RESULT] FLOPs Original:     8.20e+10
@@ -196,7 +192,7 @@ features.bn_11, features.bn_12, features.conv_12, features.conv_13, features.rel
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 4096), time=0.62s
+[INFO] Feature extraction complete: shape=(640, 4096), time=0.60s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: Dropout
 [INFO] Feature extraction batch 1/10
@@ -209,7 +205,7 @@ features.bn_11, features.bn_12, features.conv_12, features.conv_13, features.rel
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 4096), time=0.62s
+[INFO] Feature extraction complete: shape=(640, 4096), time=0.59s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: Dropout
 [INFO] Feature extraction batch 1/10
@@ -222,9 +218,9 @@ features.bn_11, features.bn_12, features.conv_12, features.conv_13, features.rel
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 4096), time=0.61s
+[INFO] Feature extraction complete: shape=(640, 4096), time=0.60s
 [INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
-[INFO] CKA complete: score=0.590227, time=0.22s
+[INFO] CKA complete: score=0.590227, time=0.15s
 [INFO] Computing CKA: features_x=(640, 4096), features_y=(640, 4096)
 [INFO] CKA complete: score=0.809590, time=0.01s
 
@@ -242,10 +238,10 @@ features.bn_11, features.bn_12, features.conv_12, features.conv_13, features.rel
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_VGG16_tinyimagenet_pre100_post300.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 295.75s
+[INFO] Total runtime: 215.51s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
-   model       dataset  pre_epochs  post_epochs                                                                              model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  VGG16  tinyimagenet         100          300  ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0                0.42            0.4913         0.4703                 59.98                  540.05                     50.62                      512.86                  72.95                   655.02    8.198396e+10        6.826063e+10     7.500412e+10          0.590227        0.80959                0.03125                   0.109375                   0.125               0.03125                    0.0625               0.078125
+   model       dataset               gpu_name  pre_epochs  post_epochs                                                                              model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0  VGG16  tinyimagenet  Tesla V100S-PCIE-32GB         100          300  ../Tranfer/VGG16_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0                0.42            0.4913         0.4703                 58.21                  477.74                     50.36                      392.61                  68.93                   533.77    8.198396e+10        6.826063e+10     7.500412e+10          0.590227        0.80959                0.03125                   0.109375                   0.125               0.03125                    0.0625               0.078125

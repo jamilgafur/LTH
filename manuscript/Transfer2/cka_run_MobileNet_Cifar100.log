@@ -1,5 +1,5 @@
-Unsupported operator aten::hardtanh_ encountered 27 time(s)
-Unsupported operator aten::hardtanh_ encountered 25 time(s)
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
 ======================================================================
 Starting Comparison Post-Processing Pipeline
 Model: MobileNet | Dataset: Cifar100 | Device: cuda
@@ -26,7 +26,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] MobileNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 164
-[INFO] Weights loaded in 2.31s
+[INFO] Weights loaded in 1.14s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100
@@ -39,7 +39,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] MobileNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 164
-[INFO] Weights loaded in 0.87s
+[INFO] Weights loaded in 1.60s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=MobileNet, dataset=Cifar100
@@ -89,7 +89,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'features' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'features.12.depthwise.0' → 'features.12.pointwise.0'
-[INFO] ✅ Successfully collapsed block 'Region_0' (features.12.depthwise.0 → features.12.pointwise.0) in 12.42s
+[INFO] ✅ Successfully collapsed block 'Region_0' (features.12.depthwise.0 → features.12.pointwise.0) in 0.27s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -97,17 +97,21 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 
 [STEP] ===== Collapse summary =====
 [INFO] Parameters before: 3,309,476
-[INFO] Parameters after : 2,250,660
-[INFO] ΔParams = +1,058,816 (expected ≤ 0)
+[INFO] Parameters after : 2,258,852
+[INFO] ΔParams = +1,050,624 (expected ≤ 0)
 [INFO] Collapse counts: success=1, failed=0, skipped=0
-[INFO] Total collapse runtime: 12.45s
+[INFO] Total collapse runtime: 0.29s
 [RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
-[INFO] Structural collapse completed in 12.45s
+[INFO] Structural collapse completed in 0.29s
 [INFO] Searching for checkpoint matching: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100
 [INFO] Found matching checkpoint: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Set_0.pt
 [INFO] Loading weights: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Set_0.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 158
-[INFO] Weights loaded in 0.71s
+[SHAPE MISMATCH FATAL] Layer: 'features.12.conv_g1x1.weight'
+   -> Checkpoint holds : torch.Size([1024, 1, 1, 1])
+   -> Model expects    : torch.Size([1024, 1, 3, 3])
+[INFO] Auto-resolving mismatch: Upgrading 'features.12.conv_g1x1' kernel from (3, 3) to (1, 1) (padding=(0, 0))
+[INFO] Weights loaded in 1.35s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 31.99%
@@ -120,25 +124,25 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] MobileNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 164
-[INFO] Weights loaded in 3.29s
+[INFO] Weights loaded in 0.66s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.4394, power=143.66W, energy=716.12J, time=4.98s
+[INFO] Evaluation complete: acc=0.4394, power=14.30W, energy=34.27J, time=2.40s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.4293, power=146.85W, energy=344.51J, time=2.35s
+[INFO] Evaluation complete: acc=0.4293, power=14.04W, energy=33.35J, time=2.38s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.4468, power=147.29W, energy=346.49J, time=2.35s
+[INFO] Evaluation complete: acc=0.4468, power=13.93W, energy=33.72J, time=2.42s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.4227, power=147.13W, energy=365.82J, time=2.49s
-[RESULT] Accuracy Original:     0.4293 | Power: 146.85W | Energy: 344.51J
-[RESULT] Accuracy Unstructured: 0.4468 | Power: 147.29W | Energy: 346.49J
-[RESULT] Accuracy Collapsed:    0.4227 | Power: 147.13W | Energy: 365.82J
+[INFO] Evaluation complete: acc=0.4227, power=14.00W, energy=33.29J, time=2.38s
+[RESULT] Accuracy Original:     0.4293 | Power: 14.04W | Energy: 33.35J
+[RESULT] Accuracy Unstructured: 0.4468 | Power: 13.93W | Energy: 33.72J
+[RESULT] Accuracy Collapsed:    0.4227 | Power: 14.00W | Energy: 33.29J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [RESULT] FLOPs Original:     6.09e+09
@@ -158,7 +162,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.28s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.38s
 [INFO] Extracting features from 10 batches...
 [INFO] Feature extraction target layer: AdaptiveAvgPool2d
 [INFO] Feature extraction batch 1/10
@@ -184,9 +188,9 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 1024), time=1.24s
+[INFO] Feature extraction complete: shape=(5120, 1024), time=1.26s
 [INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
-[INFO] CKA complete: score=0.564193, time=0.63s
+[INFO] CKA complete: score=0.564193, time=0.06s
 [INFO] Computing CKA: features_x=(5120, 1024), features_y=(5120, 1024)
 [INFO] CKA complete: score=0.621061, time=0.00s
 
@@ -204,10 +208,10 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_MobileNet_Cifar100_pre100_post300.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 56.29s
+[INFO] Total runtime: 30.86s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
-       model   dataset  pre_epochs  post_epochs                                                                              model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  MobileNet  Cifar100         100          300  ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.4293            0.4468         0.4227                146.85                  344.51                    147.29                      346.49                 147.13                   365.82    6.090392e+09        4.141864e+09     5.548802e+09          0.564193       0.621061               0.115234                   0.171875                0.128906              0.041016                  0.080078               0.042969
+       model   dataset                    gpu_name  pre_epochs  post_epochs                                                                              model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0  MobileNet  Cifar100  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/MobileNet_Cifar100_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.4293            0.4468         0.4227                 14.04                   33.35                     13.93                       33.72                   14.0                    33.29    6.090392e+09        4.141864e+09     5.548802e+09          0.564193       0.621061               0.115234                   0.171875                0.128906              0.041016                  0.080078               0.042969
