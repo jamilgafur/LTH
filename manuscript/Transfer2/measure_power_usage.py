@@ -378,50 +378,36 @@ class AmdSmiParser(ResourceParser):
         return scaled_watts, self.num_intervals
 
 ## NVIDIA GPU specific
+
+## NVIDIA GPU specific
 class NvidiaSmiParser(ResourceParser):
     def __init__(self, max_watts: float):
         super().__init__(max_watts)
-        # Regex and friends
         self.DATA_REGEXP = re.compile(r"(\d+\.?\d+)")
         self.header_read = False
-        # GPU 0: NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition (UUID: GPU-21f64fd8-3929-4e6a-6ae6-3e45273e9187)
-        GPUS_REGEXP = re.compile(r"GPU (\d+): \w+")
-        self.num_gpus = 0
-        process = subprocess.run('nvidia-smi --list-gpus'.split(), capture_output=True, text=True, shell=False)
-        for line in process.stdout.splitlines():
-            if GPUS_REGEXP.match(line):
-                self.num_gpus += 1
-
-        if self.num_gpus == 0:
-            print("Could not detect any NVIDIA gpus!", file=sys.stderr)
+        self.gpu_id = os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(",")[0]
+        self.num_gpus = 1
 
     def start_monitoring(self, interval_s: int):
-        cmd = f"nvidia-smi --query-gpu=power.draw --format=csv,noheader,nounits --loop={interval_s}".split()
+        cmd = f"nvidia-smi -i {self.gpu_id} --query-gpu=power.draw --format=csv,noheader,nounits --loop={interval_s}".split()
         return subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True, shell=False)
 
-    # One line per GPU at each printed timestamp
-    #521.31
-    #529.74
-    #526.60
-    #516.43
-    #522.41
-    #529.28
-    #559.31
-    #515.40
     def parse(self, line):
-        r = self.DATA_REGEXP.match(line)
+        r = self.DATA_REGEXP.match(line.strip())
         if not r:
             return
-        self.total_watts += float(r.group(1))
+        val = float(r.group(1))
+        if self.max_watts and val > self.max_watts:
+            return
+        self.total_watts += val
         self.num_intervals += 1
 
     def get_results(self):
-        if self.num_gpus == 0:
+        if self.num_gpus == 0 or self.num_intervals == 0:
             return 0.0, 0
-        self.num_intervals = self.num_intervals / self.num_gpus
-        scaled_watts = self.total_watts / self.num_intervals if self.num_intervals > 0 else 0.0
+        scaled_watts = self.total_watts / self.num_intervals
         return scaled_watts, self.num_intervals
-
+    
 def background_action(action: str):
     """ Starts or stop a monitoring process in background mode"""
     def pid_exists(pid):

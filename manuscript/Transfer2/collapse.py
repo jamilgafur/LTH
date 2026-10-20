@@ -32,7 +32,6 @@ def _log_exception(context: str, exc: Exception, debug: bool = False, extra: Opt
         print(traceback.format_exc().rstrip())
 
 
-
 def _locate_and_prepare_block(model, start_layer_name, end_layer_name, debug=False):
     print(f"[DEBUG] [LCA] Locating block boundaries: '{start_layer_name}' -> '{end_layer_name}'")
 
@@ -63,6 +62,37 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name, debug=Fal
         container = get_layer(model, lca_path)
 
     print(f"[DEBUG] [LCA] Resolved Container: '{lca_path}' | Type: {type(container).__name__}")
+
+    # 1. Detect if a previous collapse already absorbed this block into SmartIdentity
+    if isinstance(container, SmartIdentity):
+        print(f"[WARN] ⚠ Target '{lca_path}' is already a SmartIdentity (absorbed by an earlier collapse region). Skipping.")
+        return None
+
+    # 2. Holistic escalation BEFORE child index mapping for custom parallel/complex blocks
+    custom_parallel_blocks = ("InceptionBlock", "ConvNeXtBlock", "XceptionBlock", "DepthwiseSeparableConv")
+    if type(container).__name__ in custom_parallel_blocks and lca_path != "":
+        print(f"[DEBUG] Escalating complex block '{lca_path}' ({type(container).__name__}) to parent for holistic replacement.")
+        parent_path, subname = _get_container_and_subname(lca_path)
+        parent_container = get_layer(model, parent_path)
+        named_layers_parent = list(parent_container.named_children())
+        try:
+            esc_idx = next(i for i, (n, _) in enumerate(named_layers_parent) if n == subname)
+            return {
+                "container": parent_container,
+                "container_name": parent_path,
+                "named_layers": named_layers_parent,
+                "start_idx": esc_idx,
+                "end_idx": esc_idx,
+                "full_block": [(subname, container)],
+                "layer_type": nn.Conv2d,
+                "conv_layers": [m for m in container.modules() if isinstance(m, nn.Conv2d)],
+                "collapse_mode": "conv",
+                "first_layer_name": subname,
+                "last_layer_name": subname,
+            }
+        except StopIteration:
+            print(f"[WARN] Escalation failed: '{subname}' not found in parent '{parent_path}'. Proceeding standard slice.")
+
     named_layers = list(container.named_children())
 
     start_idx = end_idx = None
@@ -81,14 +111,12 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name, debug=Fal
         print(f"[DEBUG]   end_layer_name={end_layer_name}, found end_idx={end_idx}")
         print(f"[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).")
         print(f"[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.")
-        # Return None to signal filtering at caller level
         return None
     if start_idx > end_idx:
         start_idx, end_idx = end_idx, start_idx
 
     full_block = named_layers[start_idx:end_idx + 1]
     
-    # [CRITICAL FIX] Safe Holistic Escalation for Complex Blocks
     safe_sequential_classes = ("Sequential", "SeparableConv2d", "ModuleList", type(model).__name__)
     if type(container).__name__ not in safe_sequential_classes and lca_path != "":
         print(f"[DEBUG] Escalating complex block '{lca_path}' ({type(container).__name__}) to parent for holistic replacement.")
@@ -115,9 +143,6 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name, debug=Fal
         except StopIteration:
             print(f"[WARN] Escalation failed: '{subname}' not found in parent '{parent_path}'. Proceeding standard slice.")
 
-    # =========================================================
-    # THE FIX: Restore the missing return for standard slices!
-    # =========================================================
     return {
         "container": container,
         "container_name": lca_path,
@@ -131,6 +156,8 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name, debug=Fal
         "first_layer_name": named_layers[start_idx][0],
         "last_layer_name": named_layers[end_idx][0],
     }
+
+
 def _build_and_replace_block(
     model,
     start_layer_name,

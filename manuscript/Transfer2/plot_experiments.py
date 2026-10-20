@@ -9,7 +9,7 @@ import numpy as np
 CANONICAL_MODELS = ['ConvNeXt', 'InceptionNet', 'MobileNet', 'RegNetX_400MF', 'VGG16', 'XceptionNet']
 
 def load_and_compute_deltas():
-    """Reads CSVs, skips empty files, and computes deltas."""
+    """Reads CSVs, skips empty files, and computes hardware-normalized deltas."""
     csv_files = glob.glob("*.csv")
     if not csv_files:
         print("No CSV files found.")
@@ -35,8 +35,8 @@ def load_and_compute_deltas():
     df = pd.concat(df_list, ignore_index=True)
     df = df[df['model'] != 'model'].reset_index(drop=True)
 
-    # Convert numeric columns
-    num_cols = [col for col in df.columns if col not in ['model', 'dataset', 'model_before']]
+    # Convert numeric columns (excluding string metadata columns)
+    num_cols = [col for col in df.columns if col not in ['model', 'dataset', 'model_before', 'gpu_name']]
     for col in num_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
@@ -47,9 +47,13 @@ def load_and_compute_deltas():
     df['delta_acc_imp'] = df['acc_unstructured'] - df['acc_original_after']
     df['delta_acc_collapse'] = df['acc_collapsed'] - df['acc_original_after']
     
-    # 2. Energy Savings
+    # 2. Energy Savings (Raw Joules & Hardware-Normalized Relative %)
     df['energy_saved_imp'] = df['energy_joules_original'] - df['energy_joules_unstructured']
     df['energy_saved_collapse'] = df['energy_joules_original'] - df['energy_joules_collapsed']
+    
+    safe_orig_energy = df['energy_joules_original'].replace(0, np.nan)
+    df['energy_saved_imp_pct'] = ((df['energy_joules_original'] - df['energy_joules_unstructured']) / safe_orig_energy) * 100.0
+    df['energy_saved_collapse_pct'] = ((df['energy_joules_original'] - df['energy_joules_collapsed']) / safe_orig_energy) * 100.0
     
     # 3. Adversarial Deltas
     df['delta_fgsm_imp'] = df['adv_acc_FGSM_unstructured'] - df['adv_acc_FGSM_original']
@@ -58,12 +62,10 @@ def load_and_compute_deltas():
     df['delta_pgd_collapse'] = df['adv_acc_PGD_collapsed'] - df['adv_acc_PGD_original']
 
     if 'flops_original' in df.columns:
-        # Protect against division by zero
         safe_original_flops = df['flops_original'].replace(0, np.nan)
         df['flops_reduction_imp_pct'] = (df['flops_original'] - df['flops_unstructured']) / safe_original_flops
         df['flops_reduction_collapse_pct'] = (df['flops_original'] - df['flops_collapsed']) / safe_original_flops
 
-    # Ensure all canonical models plus any additional models found are in the master list
     all_models = sorted(list(set(df['model'].dropna().unique()).union(CANONICAL_MODELS)))
     return df, all_models
 
