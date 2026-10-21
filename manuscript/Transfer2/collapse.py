@@ -1031,13 +1031,11 @@ def _validate_downstream(
 ) -> None:
     """
     Validates downstream modules immediately after inserting a collapsed replacement block.
-    If a downstream module fails during a forward pass (e.g. pooling mismatch),
-    wraps it in _SafePool or replaces it with Identity to preserve model functionality.
+    Guarantees that feature map shapes remain valid to prevent CKA extraction from producing NaN or zero vectors.
     """
     print(f"\n[STEP] ===== Starting _validate_downstream for '{start_container_name}' =====")
     print(f"[DEBUG] start_idx={start_idx}, device={device}, has_next_linear={next_linear_name is not None}")
 
-    # Retrieve target container
     try:
         container = get_layer(model, start_container_name)
     except Exception as e:
@@ -1049,12 +1047,8 @@ def _validate_downstream(
         print(f"[DEBUG] Container '{start_container_name}' has no children; skipping downstream validation.")
         return
 
-    # Find collapsed/inserted child index
-    # ISSUE #6 FIX: Track actual insertion index, not the start_idx from a previous collapse
     collapsed_idx = None
     print(f"[STEP] Searching for inserted collapsed module within '{start_container_name}'...")
-    # Search from the end backwards to find the most recently inserted block
-    # (accounts for multiple sequential collapses within the same container)
     for i in range(len(children) - 1, -1, -1):
         nm, m = children[i]
         if nm.startswith("collapsed_") or (
@@ -1066,7 +1060,6 @@ def _validate_downstream(
             break
 
     if collapsed_idx is None:
-        # fallback search: direct 1x1 conv
         for i, (nm, m) in enumerate(children):
             if isinstance(m, nn.Conv2d) and getattr(m, "kernel_size", None) == (1, 1):
                 collapsed_idx = i
@@ -1080,7 +1073,6 @@ def _validate_downstream(
     inserted_mod = children[collapsed_idx][1]
     print(f"[STEP] Validating inserted module '{inserted_mod.__class__.__name__}' at index {collapsed_idx}...")
 
-    # Run through inserted module
     try:
         with torch.no_grad():
             dev = next((p.device for p in model.parameters()), torch.device('cpu'))
@@ -1088,10 +1080,9 @@ def _validate_downstream(
             t = inserted_mod(t)
         print(f"[DEBUG] Inserted module forward successful, output shape: {tuple(t.shape)}")
     except Exception as e:
-        print(f"[WARN] Forward pass through inserted module failed: {e}")
-        return
+        print(f"[ERROR] Forward pass through inserted module failed: {e}")
+        raise RuntimeError(f"Structural collapse replacement validation failed: {e}")
 
-    # Validate next modules downstream
     print(f"[STEP] Scanning immediate downstream modules for shape or runtime errors...")
     for nm, mod in children[collapsed_idx + 1:]:
         try:
@@ -1105,18 +1096,6 @@ def _validate_downstream(
                 print(f"[DEBUG] Downstream '{start_container_name}.{nm}' executed successfully, output shape: {tuple(t.shape)}")
         except Exception as e:
             print(f"[WARN] Downstream module '{start_container_name}.{nm}' raised exception: {e}")
-            if debug:
-                _log_exception(
-                    "Downstream module execution error",
-                    e,
-                    debug=True,
-                    extra={
-                        "module_name": f"{start_container_name}.{nm}",
-                        "module_type": mod.__class__.__name__,
-                        "input_shape": _shape_str(t),
-                    },
-                )
-            # ISSUE #2 FIX: Check if nn.Linear before attempting corrective wrapping
             if isinstance(mod, nn.Linear):
                 print(f"[INFO] Target module '{nm}' is nn.Linear. Allowing Corrective Pooling to handle it natively.")
                 return
@@ -1139,9 +1118,8 @@ def _validate_downstream(
                 setattr(container, nm, safe)
 
             print(f"[DEBUG] Replacement applied to '{start_container_name}.{nm}' ({safe.__class__.__name__}).")
-            return  # stop after first fix
+            return
 
-        # detect zero-spatial output
         if t.ndim >= 4 and (t.shape[-2] == 0 or t.shape[-1] == 0):
             print(f"[WARN] Module '{start_container_name}.{nm}' produced zero spatial dimensions. Wrapping with _SafePool.")
             safe = _SafePool(mod)
@@ -1152,11 +1130,10 @@ def _validate_downstream(
                 _update_container(model, start_container_name, nn.Sequential(new_od))
             else:
                 setattr(container, nm, safe)
-            print(f"[DEBUG] Zero-dimension fix applied to '{start_container_name}.{nm}' with _SafePool.")
             return
 
     print(f"[RESULT] ✅ Downstream validation for '{start_container_name}' completed successfully.")
-
+    
 # -----------------------------------------------------------------------------
 # Top-level multi-block collapse function (flexible API)
 # -----------------------------------------------------------------------------
@@ -1343,55 +1320,42 @@ def collapse_only(
 
 class _SafePool(nn.Module):
     """
-    Wrapper that attempts to apply the wrapped pooling module; if the input
-    spatial dimensions are too small or the pool raises, we fall back safely:
-      - For non-adaptive pools: if kernel > input dim, uses AdaptiveAvgPool2d to
-        produce a minimal valid output (>=1).
-      - If anything else fails, returns the input (identity).
-    This avoids 'Output size is too small' runtime errors.
+    Wrapper that attempts to apply the wrapped pooling module. If input
+    spatial dimensions are too small, it logs a clear diagnostic warning
+    and gracefully scales via AdaptiveAvgPool2d instead of returning zero tensors.
     """
     def __init__(self, pool_module: nn.Module):
         super().__init__()
         self.pool = pool_module
 
     def forward(self, x):
-        # guard shape sanity
         try:
             H, W = x.shape[-2], x.shape[-1]
         except Exception:
-            # not a 4D tensor (some unexpected case) -> try to apply pool and catch exceptions
             try:
                 return self.pool(x)
-            except Exception:
+            except Exception as e:
+                print(f"[WARN] _SafePool non-tensor shape fallback triggered: {e}")
                 return x
 
         try:
-            # For standard pools, check kernel size
             if isinstance(self.pool, (nn.MaxPool2d, nn.AvgPool2d)):
                 k = self.pool.kernel_size
-                if isinstance(k, tuple):
-                    kh, kw = k
-                else:
-                    kh = kw = k
-                # if kernel/stride would underflow, use adaptive avg pool to safe size
+                kh, kw = (k, k) if isinstance(k, int) else k
                 if kh > H or kw > W or H <= 0 or W <= 0:
-                    # choose a safe target HxW (at least 1)
                     target_H = max(1, min(H, kh) if H > 0 else 1)
                     target_W = max(1, min(W, kw) if W > 0 else 1)
+                    print(f"[WARN] Pool kernel ({kh}x{kw}) exceeds input spatial size ({H}x{W}). Adapting to ({target_H}x{target_W}).")
                     return F.adaptive_avg_pool2d(x, (target_H, target_W))
 
-            # Try to apply original pool
             out = self.pool(x)
-
-            # post-check: if shape became invalid, return identity
             if out.shape[-2] < 1 or out.shape[-1] < 1:
+                print(f"[WARN] Pool output spatial dimension collapsed to < 1. Returning input tensor.")
                 return x
             return out
-        except Exception:
-            # Any failure -> safe fallback
+        except Exception as e:
+            print(f"[WARN] _SafePool encountered runtime exception ({e}). Bypassing pool safely.")
             return x
-
-
 def _wrap_pools_safe(module: nn.Module):
     """
     Recursively replace pooling modules in `module` with _SafePool wrappers.
