@@ -501,24 +501,47 @@ def load_collapse_regions(model_name, dataset_name, pre_epochs, post_epochs):
             
     return formatted_regions
 
+
 def extract_features(
     model: nn.Module, dataloader, device: torch.device, max_batches: int = 10
 ):
-    """Extracts flattened activations from the penultimate layer for CKA."""
+    """Extracts flattened activations from the penultimate pooling/feature layer for CKA reliably."""
     print(f"[INFO] Extracting features from {max_batches} batches...")
     start_time = time.time()
 
     features = []
 
     def hook(module, input, output):
+        # Ensure we flatten correctly regardless of spatial dimensions
         features.append(output.flatten(start_dim=1).detach())
 
-    target_layer = list(model.modules())[-2]
+    # ROBUST FIX: Find the last AdaptiveAvgPool2d or the layer right before nn.Linear
+    target_layer = None
+    modules_list = list(model.modules())
+    
+    # Search backwards for AdaptiveAvgPool2d or Global Pooling
+    for m in reversed(modules_list):
+        if isinstance(m, (nn.AdaptiveAvgPool2d, nn.AdaptiveMaxPool2d, nn.AvgPool2d)):
+            target_layer = m
+            break
+            
+    # Fallback if no pool is found: search for the last Conv2d before linear
+    if target_layer is None:
+        for m in reversed(modules_list):
+            if isinstance(m, (nn.Conv2d, nn.Linear)):
+                target_layer = m
+                break
+                
+    if target_layer is None:
+        # Ultimate fallback to original behavior if nothing matches
+        target_layer = modules_list[-2]
+
     print(f"[INFO] Feature extraction target layer: {target_layer.__class__.__name__}")
 
     handle = target_layer.register_forward_hook(hook)
 
     with torch.no_grad():
+        model.eval()
         for i, (inputs, _) in enumerate(dataloader):
             if i >= max_batches:
                 break
@@ -530,6 +553,9 @@ def extract_features(
 
     handle.remove()
 
+    if not features:
+        raise RuntimeError("[ERROR] Feature extraction hook captured zero tensors! Check target layer binding.")
+
     features = torch.cat(features, dim=0)
 
     print(
@@ -539,7 +565,6 @@ def extract_features(
     )
 
     return features
-
 
 def compare_CKA(features_x: torch.Tensor, features_y: torch.Tensor) -> float:
     """Computes Linear Centered Kernel Alignment (CKA) between two feature matrices."""
