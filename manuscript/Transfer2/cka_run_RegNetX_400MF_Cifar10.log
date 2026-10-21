@@ -1,9 +1,9 @@
 ======================================================================
 Starting Comparison Post-Processing Pipeline
 Model: RegNetX_400MF | Dataset: Cifar10 | Device: cuda
-Epochs Config: pre=100, post=300
-Output File: cka_results_RegNetX_400MF_Cifar10_pre100_post300.csv
-CUDA device: NVIDIA GeForce RTX 2080 Ti
+Epochs Config: pre=300, post=100
+Output File: cka_results_RegNetX_400MF_Cifar10_pre300_post100.csv
+CUDA device: Tesla V100-PCIE-32GB
 ======================================================================
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
@@ -12,7 +12,7 @@ CUDA device: NVIDIA GeForce RTX 2080 Ti
 
 ======================================================================
 Processing checkpoint 1/1
-Path: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+Path: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 ======================================================================
 [INFO] Parsing experiment directory...
 [INFO] Initializing baseline model...
@@ -22,22 +22,22 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
 [DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs300_pretrain100/checkpoints/final_JF_Control.pt
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 428
-[INFO] Weights loaded in 0.79s
+[INFO] Weights loaded in 3.42s
 
 [INFO] Loading original post-finetuning model...
-[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs300_pretrain100
-[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Initializing architecture: model=RegNetX_400MF, dataset=Cifar10
 Loading CIFAR-10 data for RegNetX_400MF...
 CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
 [DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs300_pretrain100/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 428
-[INFO] Weights loaded in 0.13s
+[INFO] Weights loaded in 1.79s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=RegNetX_400MF, dataset=Cifar10
@@ -46,7 +46,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
 [DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
-[INFO] Loading discovered regions: ../Tranfer/RegNetX_400MF_Cifar10_epochs300_pretrain100_JF_discovered_regions.json
+[INFO] Loading discovered regions: ../Tranfer/RegNetX_400MF_Cifar10_epochs100_pretrain300_JF_discovered_regions.json
 
 [STEP] ===== Starting collapse_only process =====
 [DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True
@@ -86,7 +86,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage3.stage3_block2.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage3.stage3_block2.block.conv2' → 'stage3.stage3_block2.block.conv3'
-[INFO] ✅ Successfully collapsed block 'Region_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 1.71s
+[INFO] ✅ Successfully collapsed block 'Region_0' (stage3.stage3_block2.block.conv2 → stage3.stage3_block2.block.conv3) in 18.83s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 66 in-place ReLU(s) with out-of-place variants.
@@ -257,7 +257,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'stage4.stage4_block0.block' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.stage4_block0.block.conv2' → 'stage4.stage4_block0.block.conv3'
-[INFO] ✅ Successfully collapsed block 'Region_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.06s
+[INFO] ✅ Successfully collapsed block 'Region_5' (stage4.stage4_block0.block.conv2 → stage4.stage4_block0.block.conv3) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -642,45 +642,45 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Parameters after : 3,997,610
 [INFO] ΔParams = +778,752 (expected ≤ 0)
 [INFO] Collapse counts: success=17, failed=0, skipped=0
-[INFO] Total collapse runtime: 2.44s
+[INFO] Total collapse runtime: 19.48s
 [RESULT] ✅ collapse_only complete. Total targets: 17 | success=17 | failed=0 | skipped=0
-[INFO] Structural collapse completed in 2.44s
-[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs300_pretrain100
-[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
-[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs300_pretrain100/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Structural collapse completed in 19.48s
+[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 411
-[INFO] Weights loaded in 0.13s
+[INFO] Weights loaded in 2.64s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 16.30%
-[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Initializing architecture: model=RegNetX_400MF, dataset=Cifar10
 Loading CIFAR-10 data for RegNetX_400MF...
 CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
 [DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
 [DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
-[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 428
-[INFO] Weights loaded in 1.48s
+[INFO] Weights loaded in 3.05s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.7663, power=57.06W, energy=240.40J, time=4.21s
+[INFO] Evaluation complete: acc=0.7167, power=39.70W, energy=137.46J, time=3.46s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.7669, power=64.81W, energy=188.77J, time=2.91s
+[INFO] Evaluation complete: acc=0.7411, power=40.55W, energy=107.59J, time=2.65s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.7407, power=62.24W, energy=181.59J, time=2.92s
+[INFO] Evaluation complete: acc=0.7102, power=41.03W, energy=108.57J, time=2.65s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.7867, power=57.42W, energy=148.05J, time=2.58s
-[RESULT] Accuracy Original:     0.7669 | Power: 64.81W | Energy: 188.77J
-[RESULT] Accuracy Unstructured: 0.7407 | Power: 62.24W | Energy: 181.59J
-[RESULT] Accuracy Collapsed:    0.7867 | Power: 57.42W | Energy: 148.05J
+[INFO] Evaluation complete: acc=0.7868, power=37.30W, energy=97.45J, time=2.61s
+[RESULT] Accuracy Original:     0.7411 | Power: 40.55W | Energy: 107.59J
+[RESULT] Accuracy Unstructured: 0.7102 | Power: 41.03W | Energy: 108.57J
+[RESULT] Accuracy Collapsed:    0.7868 | Power: 37.30W | Energy: 97.45J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [RESULT] FLOPs Original:     4.22e+09
@@ -688,8 +688,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] FLOPs Collapsed:    3.88e+09 (Measured)
 
 [INFO] Extracting features and computing CKA...
-[INFO] Extracting features from 10 batches...
-[INFO] Feature extraction target layer: AdaptiveAvgPool2d
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [INFO] Feature extraction batch 1/10
 [INFO] Feature extraction batch 2/10
 [INFO] Feature extraction batch 3/10
@@ -700,9 +699,8 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 384), time=1.41s
-[INFO] Extracting features from 10 batches...
-[INFO] Feature extraction target layer: AdaptiveAvgPool2d
+[INFO] Feature extraction complete: shape=(5120, 384), time=1.53s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [INFO] Feature extraction batch 1/10
 [INFO] Feature extraction batch 2/10
 [INFO] Feature extraction batch 3/10
@@ -713,9 +711,8 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 384), time=1.39s
-[INFO] Extracting features from 10 batches...
-[INFO] Feature extraction target layer: AdaptiveAvgPool2d
+[INFO] Feature extraction complete: shape=(5120, 384), time=1.52s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [INFO] Feature extraction batch 1/10
 [INFO] Feature extraction batch 2/10
 [INFO] Feature extraction batch 3/10
@@ -726,30 +723,30 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 384), time=1.33s
+[INFO] Feature extraction complete: shape=(5120, 384), time=1.51s
 [INFO] Computing CKA: features_x=(5120, 384), features_y=(5120, 384)
-[INFO] CKA complete: score=0.407968, time=0.16s
+[INFO] CKA complete: score=0.000586, time=2.60s
 [INFO] Computing CKA: features_x=(5120, 384), features_y=(5120, 384)
-[INFO] CKA complete: score=0.211830, time=0.00s
+[INFO] CKA complete: score=0.000761, time=0.00s
 
 [INFO] Evaluating Adversarial Robustness...
 [INFO] Running FGSM attack (epsilon=0.03)...
        -> original Accuracy: 0.3535
-       -> unstructured Accuracy: 0.3789
-       -> collapsed Accuracy: 0.3164
+       -> unstructured Accuracy: 0.3242
+       -> collapsed Accuracy: 0.3477
 [INFO] Running PGD attack (epsilon=0.03)...
-       -> original Accuracy: 0.1875
-       -> unstructured Accuracy: 0.2754
-       -> collapsed Accuracy: 0.1367
+       -> original Accuracy: 0.1797
+       -> unstructured Accuracy: 0.2305
+       -> collapsed Accuracy: 0.1758
 
 ======================================================================
 [INFO] Saving final results...
-[INFO] Results successfully saved to 'cka_results_RegNetX_400MF_Cifar10_pre100_post300.csv'
+[INFO] Results successfully saved to 'cka_results_RegNetX_400MF_Cifar10_pre300_post100.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 40.10s
+[INFO] Total runtime: 69.03s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
-           model  dataset                    gpu_name  pre_epochs  post_epochs                                                                                                              model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  RegNetX_400MF  Cifar10  NVIDIA GeForce RTX 2080 Ti         100          300  ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs300_pretrain100/checkpoints/final_JF_Control.pt                   0              0.7669            0.7407         0.7867                 64.81                  188.77                     62.24                      181.59                  57.42                   148.05    4.219142e+09        3.531241e+09     3.875734e+09          0.407968        0.21183               0.353516                   0.378906                0.316406                0.1875                  0.275391               0.136719
+           model  dataset              gpu_name  pre_epochs  post_epochs                                                                                                              model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0  RegNetX_400MF  Cifar10  Tesla V100-PCIE-32GB         300          100  ../Tranfer/RegNetX_400MF_Cifar10_checkpoint_Finetuned_0.945024.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.7411            0.7102         0.7868                 40.55                  107.59                     41.03                      108.57                   37.3                    97.45    4.219142e+09        3.531241e+09     3.875734e+09          0.000586       0.000761               0.353516                   0.324219                0.347656              0.179688                  0.230469               0.175781

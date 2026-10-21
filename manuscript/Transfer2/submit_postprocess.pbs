@@ -5,93 +5,72 @@
 #$ -q all.q
 #$ -l ngpus=1
 #$ -pe smp 4
+#$ -l mem_free=32G
+#$ -l h_rt=12:00:00
 #$ -cwd
 #$ -o logs/cka_$JOB_ID.log
 #$ -e logs/cka_$JOB_ID.err
 #$ -v MODEL,DATASET,RETRY_COUNT
 
-# --- PBS Fallback Directives ---
-#PBS -N cka_postprocess
-#PBS -q all.q
-#PBS -l walltime=12:00:00
-#PBS -l select=1:ncpus=4:mem=32gb:ngpus=1
-#PBS -o logs/cka_%J.log
-#PBS -e logs/cka_%J.err
-#PBS -v MODEL,DATASET,RETRY_COUNT
-
 set -e
-
-# --- Move to script directory ---
-cd ~/LTH/manuscript/Transfer2/ || {
-    echo "Failed to change directory to ~/LTH/manuscript/Transfer2/"
-    exit 1
-}
-
-mkdir -p logs
-
-# --- Check for required variables ---
-if [ -z "$MODEL" ] || [ -z "$DATASET" ]; then
-    echo "Error: MODEL and DATASET environment variables are required." >&2
-    exit 1
-fi
-
-RETRY_COUNT=${RETRY_COUNT:-0}
-MAX_RETRIES=5
 
 # --- Environment Setup ---
 echo "Activating conda environment..."
 eval "$(conda shell.bash hook)"
 conda activate ~/env/lth_env/
 
-echo "Loading CUDA and GCC modules..."
+echo "Loaded CUDA and GCC modules..."
 module load cuda/11.1.1_gcc-9.3.0
 module load gcc/9.3.0
 
-# --- GPU & PyTorch CUDA Verification with Auto-Resubmission ---
-echo "Verifying NVIDIA GPU and PyTorch CUDA configuration on $(hostname)..."
+cd ~/LTH/manuscript/Transfer2/ || exit 1
+mkdir -p logs
 
+if [ -z "$MODEL" ] || [ -z "$DATASET" ]; then
+    echo "Error: MODEL and DATASET variables are required." >&2
+    exit 1
+fi
+
+RETRY_COUNT=${RETRY_COUNT:-0}
+MAX_RETRIES=5
+
+# --- GPU Health Check & Auto-Resubmission ---
 GPU_VALID=true
 if ! nvidia-smi > /dev/null 2>&1; then
-    echo "[WARN] nvidia-smi failed on node $(hostname)."
     GPU_VALID=false
 elif ! ~/env/lth_env/bin/python -c "import torch, sys; sys.exit(0 if torch.cuda.is_available() else 1)" 2>/dev/null; then
-    echo "[WARN] PyTorch torch.cuda.is_available() returned False on node $(hostname)."
     GPU_VALID=false
 fi
 
 if [ "$GPU_VALID" = false ]; then
     if [ "$RETRY_COUNT" -lt "$MAX_RETRIES" ]; then
         NEXT_RETRY=$((RETRY_COUNT + 1))
-        echo "[RESUBMIT] Invalid GPU config on $(hostname). Resubmitting job (Attempt $NEXT_RETRY/$MAX_RETRIES)..."
-        qsub -q all.q -l ngpus=1 -v MODEL="$MODEL",DATASET="$DATASET",RETRY_COUNT="$NEXT_RETRY" submit_postprocess.pbs
+        BAD_NODE=$(hostname)
+        echo "[RESUBMIT] Dead GPU driver detected on $BAD_NODE. Blacklisting node and resubmitting..."
+        
+        # Resubmit explicitly excluding the broken node using SGE syntax
+        qsub -v MODEL="$MODEL",DATASET="$DATASET",RETRY_COUNT="$NEXT_RETRY" -l h=\!$BAD_NODE submit_postprocess.pbs
         exit 0
     else
-        echo "[ERROR] Reached maximum resubmission attempts ($MAX_RETRIES). Exiting." >&2
+        echo "[ERROR] Max retries reached." >&2
         exit 1
     fi
 fi
 
 echo "========================================================================"
-echo "CKA Post-Processing on HPC"
+echo "CKA Post-Processing on HPC (SGE)"
 echo "========================================================================"
 echo "Model:       $MODEL"
 echo "Dataset:     $DATASET"
-echo "Job ID:      ${JOB_ID:-$PBS_JOBID}"
+echo "Job ID:      $JOB_ID"
 echo "Hostname:    $(hostname)"
-echo "Retry Count: $RETRY_COUNT"
-echo "Visible GPU: ${CUDA_VISIBLE_DEVICES:-0}"
-echo "GPU Device:  $(nvidia-smi --query-gpu=index,name --format=csv,noheader)"
+echo "GPU Device:  $(nvidia-smi --query-gpu=name --format=csv,noheader)"
 echo "========================================================================"
 
-# --- Run the Python script ---
 OUTPUT_FILE="cka_run_${MODEL}_${DATASET}.log"
-
-echo "Executing: ~/env/lth_env/bin/python main.py --model $MODEL --dataset $DATASET"
 
 time ~/env/lth_env/bin/python main.py \
     --model "$MODEL" \
-    --dataset "$DATASET" \
-    --pre 100 \
-    --post 300 > "$OUTPUT_FILE" 2>&1
+    --dataset "$DATASET" > "$OUTPUT_FILE" 2>&1
 
 echo "Job finished."

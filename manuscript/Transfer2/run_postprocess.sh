@@ -8,13 +8,13 @@ echo "=== Submitting CKA Post-Processing Jobs ==="
 
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do
-        
-        # Submit the post-processing job
-        command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\" submit_postprocess.pbs"
-        
+
+        # Submit the post-processing job using SGE GPU flags
+        command="qsub -v MODEL=\"$model\",DATASET=\"$dataset\" submit_postprocess.pbs"
+
         echo "Executing: $command"
         eval "$command"
-        
+
     done
 done
 
