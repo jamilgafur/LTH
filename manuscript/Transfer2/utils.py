@@ -505,58 +505,57 @@ def load_collapse_regions(model_name, dataset_name, pre_epochs, post_epochs):
 def extract_features(
     model: nn.Module, dataloader, device: torch.device, max_batches: int = 10
 ):
-    """Extracts flattened activations from the penultimate pooling/feature layer for CKA reliably."""
-    print(f"[INFO] Extracting features from {max_batches} batches...")
+    """Extracts features robustly by stripping the final classifier layer, avoiding broken hook bindings."""
+    print(f"[INFO] Extracting features from {max_batches} batches (Classifier-free extraction)...")
     start_time = time.time()
 
-    features = []
+    model.eval()
+    model.to(device)
 
-    def hook(module, input, output):
-        # Ensure we flatten correctly regardless of spatial dimensions
-        features.append(output.flatten(start_dim=1).detach())
-
-    # ROBUST FIX: Find the last AdaptiveAvgPool2d or the layer right before nn.Linear
-    target_layer = None
-    modules_list = list(model.modules())
+    # Clone and strip the final classifier/linear layer to get raw features directly
+    feature_extractor = deepcopy(model)
     
-    # Search backwards for AdaptiveAvgPool2d or Global Pooling
-    for m in reversed(modules_list):
-        if isinstance(m, (nn.AdaptiveAvgPool2d, nn.AdaptiveMaxPool2d, nn.AvgPool2d)):
-            target_layer = m
-            break
-            
-    # Fallback if no pool is found: search for the last Conv2d before linear
-    if target_layer is None:
-        for m in reversed(modules_list):
-            if isinstance(m, (nn.Conv2d, nn.Linear)):
-                target_layer = m
+    # Identify and remove the final classifier layer safely
+    if hasattr(feature_extractor, 'fc') and isinstance(feature_extractor.fc, nn.Linear):
+        feature_extractor.fc = nn.Identity()
+    elif hasattr(feature_extractor, 'classifier'):
+        if isinstance(feature_extractor.classifier, nn.Sequential):
+            feature_extractor.classifier[-1] = nn.Identity()
+        elif isinstance(feature_extractor.classifier, nn.Linear):
+            feature_extractor.classifier = nn.Identity()
+    else:
+        # Fallback: remove the absolute last module if it's a Linear layer
+        modules = list(feature_extractor.named_modules())
+        for name, mod in reversed(modules):
+            if isinstance(mod, nn.Linear):
+                parent_name, subname = name.rsplit('.', 1) if '.' in name else ('', name)
+                parent = feature_extractor if parent_name == '' else dict(feature_extractor.named_modules())[parent_name]
+                if isinstance(parent, nn.Sequential):
+                    parent[int(subname)] = nn.Identity()
+                else:
+                    setattr(parent, subname, nn.Identity())
                 break
-                
-    if target_layer is None:
-        # Ultimate fallback to original behavior if nothing matches
-        target_layer = modules_list[-2]
 
-    print(f"[INFO] Feature extraction target layer: {target_layer.__class__.__name__}")
-
-    handle = target_layer.register_forward_hook(hook)
-
+    features = []
     with torch.no_grad():
-        model.eval()
         for i, (inputs, _) in enumerate(dataloader):
             if i >= max_batches:
                 break
 
             inputs = inputs.to(device)
-            model(inputs)
-
+            out = feature_extractor(inputs)
+            
+            # Flatten spatial dimensions if output is 4D (e.g., [Batch, Channels, H, W])
+            if out.ndim > 2:
+                out = out.flatten(start_dim=1)
+                
+            features.append(out.detach().cpu())
             print(f"[INFO] Feature extraction batch {i + 1}/{max_batches}")
 
-    handle.remove()
-
     if not features:
-        raise RuntimeError("[ERROR] Feature extraction hook captured zero tensors! Check target layer binding.")
+        raise RuntimeError("[ERROR] Feature extraction captured zero batches!")
 
-    features = torch.cat(features, dim=0)
+    features = torch.cat(features, dim=0).to(device)
 
     print(
         f"[INFO] Feature extraction complete: "
@@ -565,7 +564,7 @@ def extract_features(
     )
 
     return features
-
+    
 def compare_CKA(features_x: torch.Tensor, features_y: torch.Tensor) -> float:
     """Computes Linear Centered Kernel Alignment (CKA) between two feature matrices."""
     print(
