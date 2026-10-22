@@ -160,7 +160,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     checkpoint_start_time = time.time()
     
     # 1. Parse Context & Load Baseline
-    print("[INFO] Parsing experiment directory...")
+    print(f"[INFO] Parsing experiment directory... {model_before_path}")
     model_name, dataset_name, epochs_str, pre_str, ckpt_epoch, base_dir = parse_directory_context(model_before_path, args.model, args.dataset)
     
     print("[INFO] Initializing baseline model...")
