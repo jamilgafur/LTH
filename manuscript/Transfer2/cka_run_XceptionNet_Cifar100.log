@@ -3,7 +3,7 @@ Starting Comparison Post-Processing Pipeline
 Model: XceptionNet | Dataset: Cifar100 | Device: cuda
 Epochs Config: pre=300, post=100
 Output File: cka_results_XceptionNet_Cifar100_pre300_post100.csv
-CUDA device: Tesla V100-PCIE-32GB
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
@@ -24,7 +24,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 10.67s
+[INFO] Weights loaded in 0.27s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300
@@ -37,7 +37,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 24.88s
+[INFO] Weights loaded in 0.14s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=XceptionNet, dataset=Cifar100
@@ -86,7 +86,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 1.01s
+[INFO] ✅ Successfully collapsed block 'Region_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.29s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -121,7 +121,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.1.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.1.rep.4.depthwise' → 'middle_flow.1.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise) in 0.02s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -395,7 +395,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
 [INFO] ✅ Framework successfully merged 'conv3.depthwise' → 'conv4.pointwise'
-[INFO] ✅ Successfully collapsed block 'Region_9' (conv3.depthwise → conv4.pointwise) in 0.06s
+[INFO] ✅ Successfully collapsed block 'Region_9' (conv3.depthwise → conv4.pointwise) in 0.04s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -406,14 +406,14 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Parameters after : 13,481,196
 [INFO] ΔParams = +7,530,656 (expected ≤ 0)
 [INFO] Collapse counts: success=10, failed=0, skipped=0
-[INFO] Total collapse runtime: 1.35s
+[INFO] Total collapse runtime: 0.59s
 [RESULT] ✅ collapse_only complete. Total targets: 10 | success=10 | failed=0 | skipped=0
-[INFO] Structural collapse completed in 1.35s
+[INFO] Structural collapse completed in 0.59s
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 246
-[INFO] Weights loaded in 12.08s
+[INFO] Weights loaded in 0.08s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 35.84%
@@ -426,19 +426,19 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 8.46s
+[INFO] Weights loaded in 0.12s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.0365, power=63.47W, energy=198.42J, time=3.13s
+[INFO] Evaluation complete: acc=0.0365, power=61.61W, energy=172.98J, time=2.81s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.0116, power=43.41W, energy=130.30J, time=3.00s
+[INFO] Evaluation complete: acc=0.0116, power=65.98W, energy=183.15J, time=2.78s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.5935, power=43.47W, energy=130.37J, time=3.00s
+[INFO] Evaluation complete: acc=0.5935, power=58.59W, energy=161.93J, time=2.76s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
@@ -461,10 +461,10 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
-[INFO] Evaluation complete: acc=0.5973, power=47.87W, energy=155.17J, time=3.24s
-[RESULT] Accuracy Original:     0.0116 | Power: 43.41W | Energy: 130.30J
-[RESULT] Accuracy Unstructured: 0.5935 | Power: 43.47W | Energy: 130.37J
-[RESULT] Accuracy Collapsed:    0.5973 | Power: 47.87W | Energy: 155.17J
+[INFO] Evaluation complete: acc=0.5973, power=73.37W, energy=220.53J, time=3.01s
+[RESULT] Accuracy Original:     0.0116 | Power: 65.98W | Energy: 183.15J
+[RESULT] Accuracy Unstructured: 0.5935 | Power: 58.59W | Energy: 161.93J
+[RESULT] Accuracy Collapsed:    0.5973 | Power: 73.37W | Energy: 220.53J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
@@ -490,7 +490,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 2048), time=1.68s
+[INFO] Feature extraction complete: shape=(5120, 2048), time=1.58s
 [INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [INFO] Feature extraction batch 1/10
 [INFO] Feature extraction batch 2/10
@@ -502,7 +502,7 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 2048), time=1.68s
+[INFO] Feature extraction complete: shape=(5120, 2048), time=1.57s
 [INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
 [INFO] Feature extraction batch 1/10
@@ -524,9 +524,9 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 9/10
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 2048), time=1.80s
+[INFO] Feature extraction complete: shape=(5120, 2048), time=1.70s
 [INFO] Computing CKA: features_x=(5120, 2048), features_y=(5120, 2048)
-[INFO] CKA complete: score=0.664729, time=0.13s
+[INFO] CKA complete: score=0.664729, time=0.06s
 [INFO] Computing CKA: features_x=(5120, 2048), features_y=(5120, 2048)
 [INFO] CKA complete: score=0.599634, time=0.01s
 
@@ -557,10 +557,10 @@ CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_XceptionNet_Cifar100_pre300_post100.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 96.64s
+[INFO] Total runtime: 33.28s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
-         model   dataset              gpu_name  pre_epochs  post_epochs                                                                                model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  XceptionNet  Cifar100  Tesla V100-PCIE-32GB         300          100  ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.0116            0.5935         0.5973                 43.41                   130.3                     43.47                      130.37                  47.87                   155.17    4.834561e+10        3.101853e+10     4.023153e+10          0.664729       0.599634               0.007812                   0.173828                0.203125              0.007812                  0.083984               0.107422
+         model   dataset                    gpu_name  pre_epochs  post_epochs                                                                                model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0  XceptionNet  Cifar100  NVIDIA GeForce RTX 2080 Ti         300          100  ../Tranfer/XceptionNet_Cifar100_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.0116            0.5935         0.5973                 65.98                  183.15                     58.59                      161.93                  73.37                   220.53    4.834561e+10        3.101853e+10     4.023153e+10          0.664729       0.599634               0.007812                   0.173828                0.203125              0.007812                  0.083984               0.107422

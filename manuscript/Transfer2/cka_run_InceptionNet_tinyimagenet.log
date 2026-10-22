@@ -30,7 +30,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.23s
+[INFO] Weights loaded in 0.25s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300
@@ -49,7 +49,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 0.12s
+[INFO] Weights loaded in 0.13s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=InceptionNet, dataset=tinyimagenet
@@ -105,7 +105,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4a.branch4.1.conv'
-[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv) in 3.43s
+[INFO] ✅ Successfully collapsed block 'Region_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4a.branch4.1.conv) in 0.32s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 51 in-place ReLU(s) with out-of-place variants.
@@ -140,7 +140,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [RESULT] ✅ Downstream validation for 'stage4' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
-[INFO] ✅ Successfully collapsed block 'Region_1' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.02s
+[INFO] ✅ Successfully collapsed block 'Region_1' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -307,9 +307,9 @@ Loading Tiny ImageNet data for InceptionNet...
 [INFO] Parameters after : 4,431,352
 [INFO] ΔParams = +1,754,480 (expected ≤ 0)
 [INFO] Collapse counts: success=4, failed=0, skipped=5
-[INFO] Total collapse runtime: 3.57s
+[INFO] Total collapse runtime: 0.45s
 [RESULT] ✅ collapse_only complete. Total targets: 9 | success=4 | failed=0 | skipped=5
-[INFO] Structural collapse completed in 3.57s
+[INFO] Structural collapse completed in 0.45s
 [INFO] Searching for checkpoint matching: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
@@ -333,7 +333,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [DEBUG] InceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 344
-[INFO] Weights loaded in 1.48s
+[INFO] Weights loaded in 0.12s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
@@ -342,19 +342,19 @@ Loading Tiny ImageNet data for InceptionNet...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4469, power=57.02W, energy=12626.08J, time=221.42s
+[INFO] Evaluation complete: acc=0.4469, power=58.77W, energy=2562.15J, time=43.59s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4587, power=62.14W, energy=589.18J, time=9.48s
+[INFO] Evaluation complete: acc=0.4587, power=63.00W, energy=479.37J, time=7.61s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4212, power=63.66W, energy=442.83J, time=6.96s
+[INFO] Evaluation complete: acc=0.4212, power=64.13W, energy=470.23J, time=7.33s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
@@ -517,10 +517,10 @@ Loading Tiny ImageNet data for InceptionNet...
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
-[INFO] Evaluation complete: acc=0.5197, power=64.29W, energy=441.88J, time=6.87s
-[RESULT] Accuracy Original:     0.4587 | Power: 62.14W | Energy: 589.18J
-[RESULT] Accuracy Unstructured: 0.4212 | Power: 63.66W | Energy: 442.83J
-[RESULT] Accuracy Collapsed:    0.5197 | Power: 64.29W | Energy: 441.88J
+[INFO] Evaluation complete: acc=0.5197, power=64.03W, energy=452.64J, time=7.07s
+[RESULT] Accuracy Original:     0.4587 | Power: 63.00W | Energy: 479.37J
+[RESULT] Accuracy Unstructured: 0.4212 | Power: 64.13W | Energy: 470.23J
+[RESULT] Accuracy Collapsed:    0.5197 | Power: 64.03W | Energy: 452.64J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
@@ -546,20 +546,20 @@ Loading Tiny ImageNet data for InceptionNet...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(640, 1024), time=0.75s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
 [INFO] Feature extraction complete: shape=(640, 1024), time=0.67s
 [INFO] Extracting features from 10 batches (Classifier-free extraction)...
-[INFO] Feature extraction batch 1/10
-[INFO] Feature extraction batch 2/10
-[INFO] Feature extraction batch 3/10
-[INFO] Feature extraction batch 4/10
-[INFO] Feature extraction batch 5/10
-[INFO] Feature extraction batch 6/10
-[INFO] Feature extraction batch 7/10
-[INFO] Feature extraction batch 8/10
-[INFO] Feature extraction batch 9/10
-[INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 1024), time=0.62s
-[INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
 [INFO] Feature extraction batch 1/10
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
@@ -580,7 +580,7 @@ Loading Tiny ImageNet data for InceptionNet...
 [INFO] Feature extraction batch 9/10
 [WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2).
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 1024), time=1.52s
+[INFO] Feature extraction complete: shape=(640, 1024), time=0.64s
 [INFO] Computing CKA: features_x=(640, 1024), features_y=(640, 1024)
 [INFO] CKA complete: score=0.031312, time=0.07s
 [INFO] Computing CKA: features_x=(640, 1024), features_y=(640, 1024)
@@ -613,10 +613,10 @@ Loading Tiny ImageNet data for InceptionNet...
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_InceptionNet_tinyimagenet_pre300_post100.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 294.48s
+[INFO] Total runtime: 86.95s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
           model       dataset                    gpu_name  pre_epochs  post_epochs                                                                                     model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  InceptionNet  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         300          100  ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.4587            0.4212         0.5197                 62.14                  589.18                     63.66                      442.83                  64.29                   441.88    8.310383e+09        5.953319e+09     6.785393e+09          0.031312       0.031735               0.046875                   0.109375                 0.09375              0.015625                  0.078125               0.015625
+0  InceptionNet  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         300          100  ../Tranfer/InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.4587            0.4212         0.5197                  63.0                  479.37                     64.13                      470.23                  64.03                   452.64    8.310383e+09        5.953319e+09     6.785393e+09          0.031312       0.031735               0.046875                   0.109375                 0.09375              0.015625                  0.078125               0.015625

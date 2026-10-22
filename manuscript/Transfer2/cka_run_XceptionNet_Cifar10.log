@@ -1,3 +1,5 @@
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:734: UserWarning: Can't initialize NVML
+  warnings.warn("Can't initialize NVML")
 ======================================================================
 Starting Comparison Post-Processing Pipeline
 Model: XceptionNet | Dataset: Cifar10 | Device: cuda
@@ -24,7 +26,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 11.24s
+[INFO] Weights loaded in 0.66s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300
@@ -37,7 +39,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 23.14s
+[INFO] Weights loaded in 0.28s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=XceptionNet, dataset=Cifar10
@@ -86,7 +88,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.26s
+[INFO] ✅ Successfully collapsed block 'Region_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.27s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -121,7 +123,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] ✅ Downstream validation for 'middle_flow.1.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.1.rep.4.depthwise' → 'middle_flow.1.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise) in 0.02s
+[INFO] ✅ Successfully collapsed block 'Region_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -361,7 +363,7 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
 [INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'conv4.pointwise'
-[INFO] ✅ Successfully collapsed block 'Region_8' (block4.rep.1.depthwise → conv4.pointwise) in 0.59s
+[INFO] ✅ Successfully collapsed block 'Region_8' (block4.rep.1.depthwise → conv4.pointwise) in 0.03s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -372,14 +374,14 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Parameters after : 11,193,490
 [INFO] ΔParams = +9,633,952 (expected ≤ 0)
 [INFO] Collapse counts: success=9, failed=0, skipped=0
-[INFO] Total collapse runtime: 1.08s
+[INFO] Total collapse runtime: 0.57s
 [RESULT] ✅ collapse_only complete. Total targets: 9 | success=9 | failed=0 | skipped=0
-[INFO] Structural collapse completed in 1.08s
+[INFO] Structural collapse completed in 0.57s
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 229
-[INFO] Weights loaded in 8.99s
+[INFO] Weights loaded in 0.16s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 46.26%
@@ -392,25 +394,25 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 8.88s
+[INFO] Weights loaded in 0.30s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
        -> Evaluating Baseline
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.2483, power=70.10W, energy=197.79J, time=2.82s
+[INFO] Evaluation complete: acc=0.2483, power=70.28W, energy=201.11J, time=2.86s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.2704, power=66.43W, energy=181.55J, time=2.73s
+[INFO] Evaluation complete: acc=0.2704, power=69.11W, energy=193.22J, time=2.80s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.8656, power=70.84W, energy=192.97J, time=2.72s
+[INFO] Evaluation complete: acc=0.8656, power=71.10W, energy=199.66J, time=2.81s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
-[INFO] Evaluation complete: acc=0.8857, power=69.71W, energy=202.34J, time=2.90s
-[RESULT] Accuracy Original:     0.2704 | Power: 66.43W | Energy: 181.55J
-[RESULT] Accuracy Unstructured: 0.8656 | Power: 70.84W | Energy: 192.97J
-[RESULT] Accuracy Collapsed:    0.8857 | Power: 69.71W | Energy: 202.34J
+[INFO] Evaluation complete: acc=0.8857, power=74.88W, energy=216.84J, time=2.90s
+[RESULT] Accuracy Original:     0.2704 | Power: 69.11W | Energy: 193.22J
+[RESULT] Accuracy Unstructured: 0.8656 | Power: 71.10W | Energy: 199.66J
+[RESULT] Accuracy Collapsed:    0.8857 | Power: 74.88W | Energy: 216.84J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [RESULT] FLOPs Original:     4.83e+10
@@ -418,6 +420,18 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [RESULT] FLOPs Collapsed:    3.70e+10 (Measured)
 
 [INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 2048), time=1.63s
 [INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [INFO] Feature extraction batch 1/10
 [INFO] Feature extraction batch 2/10
@@ -441,21 +455,9 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 2048), time=1.60s
-[INFO] Extracting features from 10 batches (Classifier-free extraction)...
-[INFO] Feature extraction batch 1/10
-[INFO] Feature extraction batch 2/10
-[INFO] Feature extraction batch 3/10
-[INFO] Feature extraction batch 4/10
-[INFO] Feature extraction batch 5/10
-[INFO] Feature extraction batch 6/10
-[INFO] Feature extraction batch 7/10
-[INFO] Feature extraction batch 8/10
-[INFO] Feature extraction batch 9/10
-[INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(5120, 2048), time=1.66s
+[INFO] Feature extraction complete: shape=(5120, 2048), time=1.68s
 [INFO] Computing CKA: features_x=(5120, 2048), features_y=(5120, 2048)
-[INFO] CKA complete: score=0.724641, time=0.12s
+[INFO] CKA complete: score=0.724641, time=0.08s
 [INFO] Computing CKA: features_x=(5120, 2048), features_y=(5120, 2048)
 [INFO] CKA complete: score=0.453164, time=0.01s
 
@@ -473,10 +475,10 @@ CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
 [INFO] Saving final results...
 [INFO] Results successfully saved to 'cka_results_XceptionNet_Cifar10_pre300_post100.csv'
 [INFO] Total successful experiments: 1
-[INFO] Total runtime: 89.43s
+[INFO] Total runtime: 35.07s
 
 ======================================================================
 FINAL RESULTS
 ======================================================================
          model  dataset                    gpu_name  pre_epochs  post_epochs                                                                               model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  XceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         300          100  ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.2704            0.8656         0.8857                 66.43                  181.55                     70.84                      192.97                  69.71                   202.34    4.825124e+10        2.593212e+10     3.697308e+10          0.724641       0.453164                0.09375                   0.376953                0.378906              0.064453                  0.236328               0.197266
+0  XceptionNet  Cifar10  NVIDIA GeForce RTX 2080 Ti         300          100  ../Tranfer/XceptionNet_Cifar10_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.2704            0.8656         0.8857                 69.11                  193.22                      71.1                      199.66                  74.88                   216.84    4.825124e+10        2.593212e+10     3.697308e+10          0.724641       0.453164                0.09375                   0.376953                0.378906              0.064453                  0.236328               0.197266

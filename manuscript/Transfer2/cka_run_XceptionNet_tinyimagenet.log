@@ -3,7 +3,7 @@ Starting Comparison Post-Processing Pipeline
 Model: XceptionNet | Dataset: tinyimagenet | Device: cuda
 Epochs Config: pre=300, post=100
 Output File: cka_results_XceptionNet_tinyimagenet_pre300_post100.csv
-CUDA device: Tesla V100-PCIE-32GB
+CUDA device: NVIDIA GeForce RTX 2080 Ti
 ======================================================================
 [INFO] Searching for model checkpoints...
 [INFO] Found 1 'before' checkpoints.
@@ -30,7 +30,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 25.91s
+[INFO] Weights loaded in 0.26s
 
 [INFO] Loading original post-finetuning model...
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300
@@ -49,7 +49,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 15.00s
+[INFO] Weights loaded in 0.13s
 
 [INFO] Preparing and executing structural collapse...
 [INFO] Initializing architecture: model=XceptionNet, dataset=tinyimagenet
@@ -104,7 +104,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.30s
+[INFO] ✅ Successfully collapsed block 'Region_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.28s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 [INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
@@ -139,7 +139,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [RESULT] ✅ Downstream validation for 'middle_flow.5.rep' completed successfully.
 
 [INFO] ✅ Framework successfully merged 'middle_flow.5.rep.4.depthwise' → 'middle_flow.5.rep.7.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_1' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_1' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.depthwise) in 0.02s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -212,9 +212,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
 [INFO] Processing collapse task 'Region_4': block4.rep.1.depthwise → conv3.depthwise
-[STEP] Calling _collapse_block('block4.rep.1.depthwise', 'conv3.depthwise')
-
-[INFO] ==================== Collapsing Block ====================
+[STEP] Calling _collapse_block('block4.rep.1.depthwise==== Collapsing Block ====================
 [INFO] Start Target : block4.rep.1.depthwise
 [INFO] End Target   : conv3.depthwise
 
@@ -233,7 +231,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] Updating root container in-place (Preserving attribute names).
 
 [STEP] ===== Starting _validate_downstream for '' =====
-[DEBUG] start_idx=5, device=cuda, has_next_linear=True
+[DEBUG] start_idx=5, device=cpu, has_next_linear=True
 [STEP] Searching for inserted collapsed module within ''...
 [DEBUG] Found inserted block candidate at index 5: 'block4'
 [STEP] Validating inserted module 'Sequential' at index 5...
@@ -243,7 +241,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
 
 [INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'conv3.depthwise'
-[INFO] ✅ Successfully collapsed block 'Region_4' (block4.rep.1.depthwise → conv3.depthwise) in 0.03s
+[INFO] ✅ Successfully collapsed block 'Region_4' (block4.rep.1.depthwise → conv3.depthwise) in 0.12s
 [STEP] Patching skip connections (if any)...
 [STEP] Disabling in-place ReLUs for autograd safety...
 
@@ -254,14 +252,14 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Parameters after : 16,544,016
 [INFO] ΔParams = +4,672,736 (expected ≤ 0)
 [INFO] Collapse counts: success=5, failed=0, skipped=0
-[INFO] Total collapse runtime: 0.51s
+[INFO] Total collapse runtime: 0.71s
 [RESULT] ✅ collapse_only complete. Total targets: 5 | success=5 | failed=0 | skipped=0
-[INFO] Structural collapse completed in 0.51s
+[INFO] Structural collapse completed in 0.71s
 [INFO] Searching for checkpoint matching: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300
 [INFO] Found matching checkpoint: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 248
-[INFO] Weights loaded in 6.02s
+[INFO] Weights loaded in 0.13s
 
 [INFO] Calculating dynamic sparsity to match collapse...
 [INFO] Target unstructured sparsity calculated at: 22.02%
@@ -280,7 +278,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [DEBUG] XceptionNet successfully initialized WITH one_batch.
 [INFO] Loading weights: ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
 [INFO] Checkpoint extracted. Candidate state dict keys: 276
-[INFO] Weights loaded in 5.01s
+[INFO] Weights loaded in 0.23s
 
 
 [INFO] Evaluating model accuracy, power draw, and energy consumption...
@@ -289,28 +287,28 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4818, power=38.54W, energy=7274.08J, time=188.72s
+[INFO] Evaluation complete: acc=0.4818, power=0.00W, energy=0.00J, time=191.58s
        -> Evaluating Original After Finetuning
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4789, power=58.89W, energy=551.26J, time=9.36s
+[INFO] Evaluation complete: acc=0.4789, power=0.00W, energy=0.00J, time=189.98s
        -> Evaluating Unstructured Pruned Model
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.4822, power=57.56W, energy=431.86J, time=7.50s
+[INFO] Evaluation complete: acc=0.4822, power=0.00W, energy=0.00J, time=182.06s
        -> Evaluating Collapsed Model
 [INFO] Starting accuracy and energy evaluation...
 [INFO] Accuracy evaluation: batch=50, samples=3200
 [INFO] Accuracy evaluation: batch=100, samples=6400
 [INFO] Accuracy evaluation: batch=150, samples=9600
-[INFO] Evaluation complete: acc=0.5127, power=59.04W, energy=423.65J, time=7.18s
-[RESULT] Accuracy Original:     0.4789 | Power: 58.89W | Energy: 551.26J
-[RESULT] Accuracy Unstructured: 0.4822 | Power: 57.56W | Energy: 431.86J
-[RESULT] Accuracy Collapsed:    0.5127 | Power: 59.04W | Energy: 423.65J
+[INFO] Evaluation complete: acc=0.5127, power=0.00W, energy=0.00J, time=211.57s
+[RESULT] Accuracy Original:     0.4789 | Power: 0.00W | Energy: 0.00J
+[RESULT] Accuracy Unstructured: 0.4822 | Power: 0.00W | Energy: 0.00J
+[RESULT] Accuracy Collapsed:    0.5127 | Power: 0.00W | Energy: 0.00J
 
 [INFO] Benchmarking theoretical and measured FLOPs...
 [RESULT] FLOPs Original:     2.41e+10
@@ -329,7 +327,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=1.56s
+[INFO] Feature extraction complete: shape=(640, 2048), time=10.55s
 [INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [INFO] Feature extraction batch 1/10
 [INFO] Feature extraction batch 2/10
@@ -341,7 +339,7 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=0.67s
+[INFO] Feature extraction complete: shape=(640, 2048), time=10.60s
 [INFO] Extracting features from 10 batches (Classifier-free extraction)...
 [INFO] Feature extraction batch 1/10
 [INFO] Feature extraction batch 2/10
@@ -353,30 +351,15 @@ Loading Tiny ImageNet data for XceptionNet...
 [INFO] Feature extraction batch 8/10
 [INFO] Feature extraction batch 9/10
 [INFO] Feature extraction batch 10/10
-[INFO] Feature extraction complete: shape=(640, 2048), time=0.68s
+[INFO] Feature extraction complete: shape=(640, 2048), time=11.40s
 [INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
-[INFO] CKA complete: score=0.635449, time=0.07s
+[INFO] CKA complete: score=0.635457, time=0.15s
 [INFO] Computing CKA: features_x=(640, 2048), features_y=(640, 2048)
-[INFO] CKA complete: score=0.812937, time=0.00s
+[INFO] CKA complete: score=0.812962, time=0.15s
 
 [INFO] Evaluating Adversarial Robustness...
-[INFO] Running FGSM attack (epsilon=0.03)...
-       -> original Accuracy: 0.0312
-       -> unstructured Accuracy: 0.0625
-       -> collapsed Accuracy: 0.0781
-[INFO] Running PGD attack (epsilon=0.03)...
-       -> original Accuracy: 0.0156
-       -> unstructured Accuracy: 0.0312
-       -> collapsed Accuracy: 0.0312
-
-======================================================================
-[INFO] Saving final results...
-[INFO] Results successfully saved to 'cka_results_XceptionNet_tinyimagenet_pre300_post100.csv'
-[INFO] Total successful experiments: 1
-[INFO] Total runtime: 296.08s
-
-======================================================================
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  =====================================================
 FINAL RESULTS
 ======================================================================
-         model       dataset              gpu_name  pre_epochs  post_epochs                                                                                    model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
-0  XceptionNet  tinyimagenet  Tesla V100-PCIE-32GB         300          100  ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.4789            0.4822         0.5127                 58.89                  551.26                     57.56                      431.86                  59.04                   423.65    2.414659e+10        1.882859e+10     2.115540e+10          0.635449       0.812937                0.03125                     0.0625                0.078125              0.015625                   0.03125                0.03125
+         model       dataset                    gpu_name  pre_epochs  post_epochs                                                                                    model_before  intermediate_epoch  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  cka_unstructured  cka_collapsed  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0  XceptionNet  tinyimagenet  NVIDIA GeForce RTX 2080 Ti         300          100  ../Tranfer/XceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0              0.4789            0.4822         0.5127                 60.65                  491.72                     61.35                      485.88                  59.26                   513.62    2.414659e+10        1.882859e+10     2.115540e+10          0.635449       0.812937                0.03125                     0.0625                 0.09375              0.015625                   0.03125                0.03125
