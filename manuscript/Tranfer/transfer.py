@@ -935,26 +935,59 @@ def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwarg
     else: raise ValueError("Specify either --JF or --Kevin.")
 
 
-def run_experiments_for_dataset(experiments, dataset, model_path_097, model_path_000, train_loader, test_loader, device, epochs, pretrain, model_class, model_kwargs, experiment_func, quant=False, args=None, is_discovery=False):
-    
-    active_epochs = epochs if is_discovery else pretrain
-    
-    # The save path correctly stays locked to the initial epochs budget
+
+def run_experiments_for_dataset(
+    experiments,
+    dataset,
+    model_path_097,
+    model_path_000,
+    train_loader,
+    test_loader,
+    device,
+    epochs,
+    pretrain,
+    model_class,
+    model_kwargs,
+    experiment_func,
+    quant=False,
+    args=None,
+    is_discovery=False,
+):
+    # FIX: Stage 1 (is_discovery=True) uses pretrain (e.g., 300);
+    # Stage 2 (is_discovery=False) uses epochs (e.g., 100).
+    active_epochs = pretrain if is_discovery else epochs
+
+    # Save path maintains consistent directory structure
     save_path = f"{model_class}_{dataset}_{CHECKPOINT_FILES[args.model][dataset][0]}_epochs{epochs}_pretrain{pretrain}"
 
     if train_loader is None or test_loader is None:
         train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, args.model)
     else:
-        input_size = model_kwargs['one_batch'].shape
+        input_size = model_kwargs["one_batch"].shape
 
     for name, layers in experiments.items():
         print(f"\n--- Running experiment: {name} ---")
         print(f"    Budget allocated: {active_epochs} epochs")
-        
+
         run_epochs = active_epochs
-        
-        run_jf_or_kevin_experiment(name, layers, model_class, model_kwargs, input_size, run_epochs, experiment_func, save_path, quant, model_path_097, model_path_000, train_loader, test_loader, device, args)
-# ==============================================================================
+
+        run_jf_or_kevin_experiment(
+            name,
+            layers,
+            model_class,
+            model_kwargs,
+            input_size,
+            run_epochs,
+            experiment_func,
+            save_path,
+            quant,
+            model_path_097,
+            model_path_000,
+            train_loader,
+            test_loader,
+            device,
+            args,
+        )# ==============================================================================
 # Main Entry Point
 # ==============================================================================
 
@@ -1042,16 +1075,38 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=No
 
 def parse_cli_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, default="RegNetX_400MF", choices=["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet", "ConvNeXt"], help="Model architecture to use")
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="RegNetX_400MF",
+        choices=["VGG16", "RegNetX_400MF", "InceptionNet", "XceptionNet", "MobileNet", "ConvNeXt"],
+        help="Model architecture to use",
+    )
     parser.add_argument("--dataset", type=str, default="Cifar10", help="Dataset to use")
-    parser.add_argument("--epochs", type=int, default=1, help="Number of discovery stage epochs")
-    parser.add_argument("--pretrain", type=int, default=10, help="Number of HPC parallel execution epochs")
-    parser.add_argument("--experiment", type=str, default="discover", help="Experiment to run, or 'discover' to generate regions")
+    # Corrected: --pretrain sets Stage 1 pretraining / baseline epochs
+    parser.add_argument(
+        "--pretrain",
+        type=int,
+        default=300,
+        help="Number of pretraining / baseline control epochs (Stage 1)",
+    )
+    # Corrected: --epochs sets Stage 2 downstream / post-collapse fine-tuning epochs
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=100,
+        help="Number of post-collapse finetuning epochs for HPC experiments (Stage 2)",
+    )
+    parser.add_argument(
+        "--experiment",
+        type=str,
+        default="discover",
+        help="Experiment to run, or 'discover' to generate regions",
+    )
     parser.add_argument("--JF", action="store_true", help="Run JF experiments")
     parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
     parser.add_argument("--quant", action="store_true", help="Apply Quantization Aware Training")
     return parser.parse_args()
-
 
 def run_discovery_stage(args, device, train_loader, test_loader, model_class, model_kwargs, input_size, model_path_097, model_path_000, json_file):
     print(f"\n{'='*60}")
