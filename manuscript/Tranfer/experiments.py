@@ -28,7 +28,7 @@ from plots import *
 from diagnostic import *
 from utils import *
 from filemanager import *
-from collapse import collapse_only, _wrap_pools_safe
+from pyPrune.collapse import collapse_only, wrap_pools_safe
 from trainer import train_one_epoch
 
 def ensure_dir(directory):
@@ -379,7 +379,7 @@ def run_jf_experiment(
     existing_ckpts = glob.glob(ckpt_pattern)
 
     base_model = model_class(**model_kwargs)
-    _wrap_pools_safe(base_model)
+    wrap_pools_safe(base_model)
     
     init_opt_state = None
     init_sched_state = None
@@ -449,7 +449,7 @@ def run_kevin_experiment(
     existing_ckpts = glob.glob(ckpt_pattern)
 
     base_model = model_class(**model_kwargs)
-    _wrap_pools_safe(base_model)
+    wrap_pools_safe(base_model)
 
     init_opt_state = None
     init_sched_state = None

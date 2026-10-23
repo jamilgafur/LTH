@@ -22,7 +22,7 @@ from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
 from utils import *
 
-from collapse import collapse_only
+from pyPrune.collapse import collapse_only
 from attacks import fgsm_attack, pgd_attack
 import measure_power_usage
 

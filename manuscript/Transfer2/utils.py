@@ -41,7 +41,7 @@ from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
 
-from collapse import collapse_only
+from pyPrune.collapse import collapse_only
 import argparse
 import glob
 import re

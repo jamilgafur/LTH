@@ -10,7 +10,7 @@ import torch.nn.utils.prune as prune
 import pandas as pd
 import torch.nn as nn
 
-from collapse import collapse_only
+from pyPrune.collapse import collapse_only
 import argparse
 def fgsm_attack(model, images, labels, device, epsilon=0.03):
     """Fast Gradient Sign Method (FGSM)"""
