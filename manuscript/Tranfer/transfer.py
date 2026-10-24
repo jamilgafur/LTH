@@ -662,6 +662,29 @@ def discovered_json_filename(args):
     return f"{args.model}_{args.dataset}_epochs{args.epochs}_pretrain{args.pretrain}{suffix}_JF_discovered_regions.json"
 
 
+def resolve_discovered_json_path(args):
+    """Reader-side lookup for the discovered-regions JSON.
+
+    Writers always use discovered_json_filename(args). Readers use this so a
+    stage-1 'all' ablation run (which writes only scorer-suffixed maps,
+    legacy names untouched) can still serve a local_dev stage 2 when the
+    legacy unsuffixed file is absent. Legacy name wins when both exist.
+    """
+    legacy = discovered_json_filename(args)
+    if os.path.exists(legacy):
+        return legacy
+    s = getattr(args, "scorer", "local_dev")
+    if s in (None, "local_dev"):
+        suffixed = (
+            f"{args.model}_{args.dataset}_epochs{args.epochs}"
+            f"_pretrain{args.pretrain}_scorerlocal_dev_JF_discovered_regions.json"
+        )
+        if os.path.exists(suffixed):
+            print(f"[INFO] Legacy regions JSON absent; using ablation map: {suffixed}")
+            return suffixed
+    return legacy  # Nothing found: keep the canonical name for the error message.
+
+
 def inherit_scorer_independent_artifacts(args, flag_str="JF"):
     """Copy scorer-INDEPENDENT trained artifacts from the default-universe dir.
 
@@ -942,7 +965,7 @@ def main():
     else:
         run_hpc_stage(
             args, device, train_loader, test_loader, model_class, model_kwargs, 
-            model_path_097, model_path_000, json_file
+            model_path_097, model_path_000, resolve_discovered_json_path(args)
         )
 
 if __name__ == "__main__":

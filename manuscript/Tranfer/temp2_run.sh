@@ -39,9 +39,18 @@ for model in "${models[@]}"; do
         for flag in "JF"; do
             
             # Locate the JSON file created by Stage 1 (scorer-infixed for
-            # non-default universes; legacy name for the default scorer)
+            # non-default universes; legacy name for the default scorer).
+            # local_dev additionally falls back to the suffixed ablation map
+            # written by a stage-1 'all' run when the legacy file is absent.
             if [ "$SCORER" = "local_dev" ]; then
                 json_file="${model}_${dataset}_epochs${EPOCHS}_pretrain${PRETRAIN}_${flag}_discovered_regions.json"
+                if [ ! -f "$json_file" ]; then
+                    suffixed="${model}_${dataset}_epochs${EPOCHS}_pretrain${PRETRAIN}_scorer${SCORER}_${flag}_discovered_regions.json"
+                    if [ -f "$suffixed" ]; then
+                        json_file="$suffixed"
+                        echo "[INFO] Using ablation-derived map: $json_file"
+                    fi
+                fi
             else
                 json_file="${model}_${dataset}_epochs${EPOCHS}_pretrain${PRETRAIN}_scorer${SCORER}_${flag}_discovered_regions.json"
             fi

@@ -69,6 +69,8 @@ region experiments) + `epochs` fine-tuning + metrics/figures + whole-model persi
 - Universe dir: `{model}_{dataset}_{tag}_epochs{E}_pretrain{P}` — non-default scorers get a
   `_scorer{S}` infix after the tag. The default scorer keeps every legacy name byte-identical.
 - Regions JSON: `{model}_{dataset}_epochs{E}_pretrain{P}[_scorer{S}]_JF_discovered_regions.json`.
+  Reads for the default `local_dev` scorer fall back from the legacy unsuffixed name to the
+  `_scorerlocal_dev_` ablation map (written by a stage-1 `all` run) when the legacy file is absent.
 - Checkpoints inside a universe: `final_{workflow}_{exp}.pt`,
   `structure_{workflow}_{exp}.pt` (collapsed architecture, pre-training),
   `final_{workflow}_{exp}_whole.pt` (trained collapsed model, whole-model pickle consumed
