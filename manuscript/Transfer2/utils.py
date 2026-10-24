@@ -449,35 +449,74 @@ def initialize_architecture(model_name: str, dataset_name: str):
 
     return model, train_loader, test_loader, dummy_input
 
-def find_experiment_checkpoints(model_name, dataset_name, pre_epochs, post_epochs):
+def parse_epoch_tokens(path):
+    """Extract (post_epochs, pre_epochs) from an experiment path's
+    'epochs{N}_pretrain{M}' tokens. Returns (None, None) when absent.
+
+    post_epochs  = the 'epochs' token   (post-collapse / finetune training length)
+    pre_epochs   = the 'pretrain' token (pre-collapse / baseline training length)
+    """
+    base = path.split("/checkpoints/")[0]
+    m_post = re.search(r"epochs(\d+)", base)
+    m_pre = re.search(r"pretrain(\d+)", base)
+    return (
+        int(m_post.group(1)) if m_post else None,
+        int(m_pre.group(1)) if m_pre else None,
+    )
+
+
+def find_experiment_checkpoints(model_name, dataset_name, pre_epochs=None, post_epochs=None):
     """
     Finds model checkpoints across varied directory conventions (handles optional _None_ tags
-    and case-insensitive dataset matching). Automatically falls back to Set_0 if
-    Dynamic_Region_All_Combined is not present.
+    and case-insensitive dataset matching). Automatically falls back to Set_0 per base directory
+    if Dynamic_Region_All_Combined is not present.
+
+    Epoch configuration (epochsN / pretrainM tokens) is derived from the directory names
+    themselves, so multiple training configurations can coexist: each before-checkpoint is
+    matched to artifacts in its own base directory by find_matching_checkpoint(). Pass
+    pre_epochs / post_epochs only as an explicit filter when a specific configuration
+    should be selected.
 
     The collapsed bucket only matches whole-model artifacts (`*_whole.pt`) written by
     the Tranfer experiments: these contain the collapsed architecture plus trained
     weights and are loaded directly (no re-collapse step in analysis).
     """
     dataset_patterns = [dataset_name, dataset_name.lower(), dataset_name.capitalize()]
+
+    def allowed(path):
+        if pre_epochs is None and post_epochs is None:
+            return True
+        post, pre = parse_epoch_tokens(path)
+        if post_epochs is not None and post != post_epochs:
+            return False
+        if pre_epochs is not None and pre != pre_epochs:
+            return False
+        return True
+
     before_ckpts = []
-    collapsed_ckpts = []
     after_ckpts = []
+    collapsed_by_dir = {}
 
     for d_name in set(dataset_patterns):
-        base_pattern = f"../Tranfer/{model_name}_{d_name}_*epochs{post_epochs}*pre*{pre_epochs}"
+        base_pattern = f"../Tranfer/{model_name}_{d_name}_*"
 
         # Original and Control check
-        before_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Control.pt"))
-        after_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Control_Continuted.pt"))
+        before_ckpts.extend(p for p in glob.glob(f"{base_pattern}/checkpoints/final_JF_Control.pt") if allowed(p))
+        after_ckpts.extend(p for p in glob.glob(f"{base_pattern}/checkpoints/final_JF_Control_Continuted.pt") if allowed(p))
 
-        # Collapsed check with fallback logic (whole-model artifacts only)
-        combined_ckpts = glob.glob(f"{base_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt")
-        if combined_ckpts:
-            collapsed_ckpts.extend(combined_ckpts)
-        else:
-            # Fallback to Set_0 if only one region was discovered
-            collapsed_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Set_0_whole.pt"))
+        # Collapsed whole-model artifacts; Combined preferred over Set_0 per base dir.
+        for p in glob.glob(f"{base_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt"):
+            if allowed(p):
+                collapsed_by_dir.setdefault(p.split("/checkpoints/")[0], {})["combined"] = p
+        for p in glob.glob(f"{base_pattern}/checkpoints/final_JF_Set_0_whole.pt"):
+            if allowed(p):
+                collapsed_by_dir.setdefault(p.split("/checkpoints/")[0], {})["set0"] = p
+
+    collapsed_ckpts = [
+        entry.get("combined") or entry["set0"]
+        for _, entry in sorted(collapsed_by_dir.items())
+        if entry.get("combined") or entry.get("set0")
+    ]
 
     return {
         "before": sorted(list(set(before_ckpts))),
@@ -485,47 +524,6 @@ def find_experiment_checkpoints(model_name, dataset_name, pre_epochs, post_epoch
         "after": sorted(list(set(after_ckpts)))
     }
 
-def load_collapse_regions(model_name, dataset_name, pre_epochs, post_epochs):
-    """Searches for discovered regions JSON across matching naming permutations."""
-    dataset_patterns = [dataset_name, dataset_name.lower(), dataset_name.capitalize()]
-    json_filename = None
-
-    for d_name in set(dataset_patterns):
-        candidate = f"../Tranfer/{model_name}_{d_name}_epochs{post_epochs}_pretrain{pre_epochs}_JF_discovered_regions.json"
-        if os.path.isfile(candidate):
-            json_filename = candidate
-            break
-
-    if json_filename is None:
-        raise FileNotFoundError(
-            f"Discovered regions file not found for {model_name}_{dataset_name} (pre={pre_epochs}, post={post_epochs})"
-        )
-
-    print(f"[INFO] Loading discovered regions: {json_filename}")
-    with open(json_filename, "r") as f:
-        discovered_regions = json.load(f)
-
-    json_to_collapse = discovered_regions.get("Dynamic_Region_All_Combined")
-    
-    # Fallback for simpler JSON structures (like MobileNet or VGG16)
-    if not json_to_collapse:
-        json_to_collapse = discovered_regions.get("Set_0")
-        
-    if not json_to_collapse:
-        raise ValueError(f"No valid collapse regions (Dynamic_Region_All_Combined or Set_0) found in {json_filename}.")
-        
-    # CRITICAL FIX: Ensure the JSON structure is properly paired for unpacking
-    formatted_regions = {}
-    if isinstance(json_to_collapse, list) and len(json_to_collapse) > 0:
-        if isinstance(json_to_collapse[0], list):
-            # Already paired lists (e.g., [["start1", "end1"], ["start2", "end2"]])
-            formatted_regions = {f"Region_{i}": pair for i, pair in enumerate(json_to_collapse)}
-        else:
-            # A flat list (e.g., ["start1", "end1", "start2", "end2"]) - pair them up sequentially
-            paired_list = [[json_to_collapse[i], json_to_collapse[i+1]] for i in range(0, len(json_to_collapse)-1, 2)]
-            formatted_regions = {f"Region_{i}": pair for i, pair in enumerate(paired_list)}
-            
-    return formatted_regions
 
 
 def extract_features(

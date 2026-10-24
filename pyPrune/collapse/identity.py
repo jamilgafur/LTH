@@ -53,6 +53,14 @@ class _SafePool(nn.Module):
     def __init__(self, pool_module: nn.Module):
         super().__init__()
         self.pool = pool_module
+        self._warned = set()
+
+    def _warn_once(self, key, msg):
+        """Log a diagnostic once per wrapped pool instance. Hot training loops
+        hit these paths every batch; repeats are suppressed to keep logs sane."""
+        if key not in self._warned:
+            self._warned.add(key)
+            print(f"{msg} [{type(self.pool).__name__}; further occurrences suppressed]")
 
     def forward(self, x):
         try:
@@ -61,7 +69,7 @@ class _SafePool(nn.Module):
             try:
                 return self.pool(x)
             except Exception as e:
-                print(f"[WARN] _SafePool non-tensor shape fallback triggered: {e}")
+                self._warn_once("nontensor", f"[WARN] _SafePool non-tensor shape fallback triggered: {e}")
                 return x
 
         try:
@@ -71,16 +79,16 @@ class _SafePool(nn.Module):
                 if kh > H or kw > W or H <= 0 or W <= 0:
                     target_H = max(1, min(H, kh) if H > 0 else 1)
                     target_W = max(1, min(W, kw) if W > 0 else 1)
-                    print(f"[WARN] Pool kernel ({kh}x{kw}) exceeds input spatial size ({H}x{W}). Adapting to ({target_H}x{target_W}).")
+                    self._warn_once("kernel", f"[WARN] Pool kernel ({kh}x{kw}) exceeds input spatial size ({H}x{W}). Adapting to ({target_H}x{target_W}).")
                     return F.adaptive_avg_pool2d(x, (target_H, target_W))
 
             out = self.pool(x)
             if out.shape[-2] < 1 or out.shape[-1] < 1:
-                print(f"[WARN] Pool output spatial dimension collapsed to < 1. Returning input tensor.")
+                self._warn_once("collapse", "[WARN] Pool output spatial dimension collapsed to < 1. Returning input tensor.")
                 return x
             return out
         except Exception as e:
-            print(f"[WARN] _SafePool encountered runtime exception ({e}). Bypassing pool safely.")
+            self._warn_once("runtime", f"[WARN] _SafePool encountered runtime exception ({e}). Bypassing pool safely.")
             return x
 
 

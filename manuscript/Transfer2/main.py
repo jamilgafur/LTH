@@ -204,8 +204,18 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     
     print(f"[INFO] Target unstructured sparsity calculated at: {target_sparsity * 100:.2f}%")
 
+    # IMP epochs derive from the checkpoint's own directory naming (epochs token);
+    # --post acts only as an explicit override.
+    parsed_post, _ = parse_epoch_tokens(model_before_path)
+    imp_epochs = args.post if args.post is not None else parsed_post
+    if imp_epochs is None:
+        raise ValueError(
+            f"Could not derive post-collapse epochs from '{model_before_path}'. "
+            f"Pass --post explicitly."
+        )
+
     checkpoint_dir = os.path.dirname(model_before_path)
-    unstructured_ckpt_path = os.path.join(checkpoint_dir, f"final_JF_Unstructured_IMP_post{args.post}.pt")
+    unstructured_ckpt_path = os.path.join(checkpoint_dir, f"final_JF_Unstructured_IMP_post{imp_epochs}.pt")
     
     if os.path.exists(unstructured_ckpt_path):
         print(f"[INFO] Loading existing IMP unstructured checkpoint: {unstructured_ckpt_path}")
@@ -219,7 +229,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
             model=unstructured_clone, 
             train_loader=train_loader, 
             device=device, 
-            epochs=args.post, 
+            epochs=imp_epochs,
             target_sparsity=float(target_sparsity), 
             save_path=unstructured_ckpt_path,
             power_interval=args.power_interval
@@ -344,8 +354,8 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         "model": model_name,
         "dataset": dataset_name,
         "gpu_name": gpu_name,
-        "pre_epochs": args.pre,
-        "post_epochs": args.post,
+        "pre_epochs": parse_epoch_tokens(model_before_path)[1],
+        "post_epochs": imp_epochs,
         "model_before": model_before_path,
         "intermediate_epoch": ckpt_epoch,
         "acc_original_after": acc_original,
@@ -373,35 +383,45 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 def main():
     parser = argparse.ArgumentParser(description="CKA, Energy, and Adversarial comparison post-processing")
     parser.add_argument("--model", required=True, help="Model name, e.g. VGG16")
-    parser.add_argument("--pre", type=int, default=300, help="pre collapse epochs")
-    parser.add_argument("--post", type=int, default=100, help="post collapse epochs")
+    parser.add_argument("--pre", type=int, default=None, help="pre-collapse (pretrain) epochs; derived from the checkpoint path when omitted")
+    parser.add_argument("--post", type=int, default=None, help="post-collapse (finetune) epochs; derived from the checkpoint path when omitted")
     parser.add_argument("--dataset", required=True, help="Dataset name, e.g. Cifar10")
     parser.add_argument("--output", default="auto", help="Output CSV filename (set to 'auto' to avoid collisions)")
     parser.add_argument("--power-interval", type=int, default=1, help="Query interval in seconds for power monitoring (default: 1)")
     args = parser.parse_args()
 
-    # Automatically format unique output path if 'auto' or default to prevent overwrite collisions
-    if args.output == "auto" or args.output == "cka_comparison_results.csv":
-        args.output = f"cka_results_{args.model}_{args.dataset}_pre{args.pre}_post{args.post}.csv"
-
     total_start_time = time.time()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
-    print("=" * 70)
-    print("Starting Comparison Post-Processing Pipeline")
-    print(f"Model: {args.model} | Dataset: {args.dataset} | Device: {device}")
-    print(f"Epochs Config: pre={args.pre}, post={args.post}")
-    print(f"Output File: {args.output}")
-    if torch.cuda.is_available():
-        print(f"CUDA device: {torch.cuda.get_device_name(0)}")
-    print("=" * 70)
 
-    # 1. Discover Checkpoints
+    # 1. Discover Checkpoints (epoch config is derived from directory names;
+    #    --pre/--post act only as explicit filters)
     print("[INFO] Searching for model checkpoints...")
     checkpoints = find_experiment_checkpoints(args.model, args.dataset, args.pre, args.post)
     print(f"[INFO] Found {len(checkpoints['before'])} 'before' checkpoints.")
     print(f"[INFO] Found {len(checkpoints['collapsed'])} collapsed checkpoints.")
     print(f"[INFO] Found {len(checkpoints['after'])} 'after' checkpoints.")
+
+    # Automatically format unique output path if 'auto' or default to prevent overwrite collisions
+    if args.output == "auto" or args.output == "cka_comparison_results.csv":
+        if args.pre is not None or args.post is not None:
+            args.output = f"cka_results_{args.model}_{args.dataset}_pre{args.pre}_post{args.post}.csv"
+        elif checkpoints["before"]:
+            post, pre = parse_epoch_tokens(checkpoints["before"][0])
+            args.output = f"cka_results_{args.model}_{args.dataset}_pre{pre}_post{post}.csv"
+        else:
+            args.output = f"cka_results_{args.model}_{args.dataset}.csv"
+
+    print("=" * 70)
+    print("Starting Comparison Post-Processing Pipeline")
+    print(f"Model: {args.model} | Dataset: {args.dataset} | Device: {device}")
+    if args.pre is not None or args.post is not None:
+        print(f"Epochs Config (override): pre={args.pre}, post={args.post}")
+    else:
+        print("Epochs Config: derived per checkpoint directory")
+    print(f"Output File: {args.output}")
+    if torch.cuda.is_available():
+        print(f"CUDA device: {torch.cuda.get_device_name(0)}")
+    print("=" * 70)
 
     results = []
 

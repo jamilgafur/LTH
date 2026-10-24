@@ -400,3 +400,21 @@ def test_signature_patch_is_class_name_agnostic():
     x = torch.randn(1, 3, 8, 8)
     out = model(x)
     assert out.shape == (1, 10)
+
+
+def test_safe_pool_warns_once_but_keeps_adapting(capsys):
+    model = nn.Sequential(nn.MaxPool2d(3, stride=2))
+    wrap_pools_safe(model)
+    x = torch.randn(1, 1, 2, 2)  # kernel 3 > 2x2 input -> adaptive fallback path
+
+    for _ in range(5):
+        out = model(x)
+        # adaptive_avg_pool2d(x, (2, 2)) on a 2x2 input is shape-preserving.
+        assert out.shape == (1, 1, 2, 2)
+
+    warns = [l for l in capsys.readouterr().out.splitlines() if "exceeds input spatial" in l]
+    assert len(warns) == 1
+    assert "further occurrences suppressed" in warns[0]
+    assert "MaxPool2d" in warns[0]
+    # Behavior unchanged after suppression: still adapts, never crashes.
+    assert model(x).shape == (1, 1, 2, 2)
