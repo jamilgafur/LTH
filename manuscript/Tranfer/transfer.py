@@ -746,7 +746,7 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
 
     scorer = getattr(args, "scorer", "local_dev")
 
-    if scorer in ("change", "cka", "all"):
+    if scorer in ("cv", "change", "cka", "all"):
         # ---------------------------------------------------------
         # Combined real-data probe: variance + L2 change + CKA
         # (one pass; stats are scorer-independent and shared)
@@ -765,6 +765,8 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
 
         cnn_layers = [n for n, s in change_stats.items() if s.get("kind") == "layer"]
         variance_list = [change_stats[ln]["var_mean"] for ln in cnn_layers]
+        # cv consumes calibrated (mean, std) tuples derived from the same probe
+        cv_payload = {ln: (change_stats[ln]["var_mean"], change_stats[ln]["var_std"]) for ln in cnn_layers}
 
         if scorer == "all":
             # Discovery-only ablation: THREE fully-namespaced universe maps from
@@ -800,10 +802,11 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
 
             dynamic_experiments = ablation["scorers"]["local_dev"]  # representative for heuristics
         else:
+            payload = cv_payload if scorer == "cv" else change_stats
             dynamic_experiments = discover_regions(
                 model=eval_model,
                 cnn_layers=cnn_layers,
-                variances=change_stats,
+                variances=payload,
                 input_shape=input_tensor.shape,
                 scorer=scorer,
             )
@@ -839,7 +842,8 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
             model=eval_model,
             cnn_layers=list(layer_variances.keys()),
             variances=list(layer_variances.values()),
-            input_shape=input_tensor.shape
+            input_shape=input_tensor.shape,
+            scorer=scorer,  # local_dev / percentile consume the flat variance list
         )
 
         analyze_collapse_heuristics(
@@ -855,8 +859,8 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
             json.dump(dynamic_experiments, f, indent=4)
         print(f"[✓] Stage 1 Complete. Exported {len(dynamic_experiments)} targets to '{json_file}'.")
 
-    # Depth-profile figure for change-based probes (best-effort, never fatal)
-    if scorer in ("change", "cka", "all"):
+    # Depth-profile figure for combined-probe runs (best-effort, never fatal)
+    if scorer in ("cv", "change", "cka", "all"):
         try:
             plot_change_profile(change_stats, dynamic_experiments, plots_root,
                                 args.model, args.dataset, scorer_label=scorer)

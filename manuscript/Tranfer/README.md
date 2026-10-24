@@ -1,152 +1,120 @@
-# PyPrune Structural Collapse / Transfer Pipeline
+# manuscript/Tranfer — Training Pipeline (Stage 1 + Stage 2)
 
-Two-stage framework for discovering structurally collapsible layer regions in
-pretrained CNNs, then collapsing and fine-tuning them to measure
-accuracy-vs-efficiency tradeoffs. Produces journal-quality figures and LaTeX
-tables from the results.
+[← Top-level README](../../README.md) · [pyPrune](../../pyPrune/README.md) ·
+[Analysis: Transfer2](../Transfer2/README.md)
+
+End-to-end pipeline that trains baselines, discovers redundant regions, collapses them, and
+fine-tunes the compressed models — driven by [`pyPrune.collapse`](../../pyPrune/collapse/README.md)
+and built for PBS/HPC execution.
+
+## Table of Contents
+
+- [Pipeline overview](#pipeline-overview)
+- [CLI reference (transfer.py)](#cli-reference-transferpy)
+- [Scorers](#scorers)
+- [Universe & artifact conventions](#universe--artifact-conventions)
+- [HPC scripts](#hpc-scripts)
+- [Artifact inheritance](#artifact-inheritance)
+- [Regions JSON schema](#regions-json-schema)
+- [Where to go next](#where-to-go-next)
 
 ## Pipeline Overview
 
-```
-temp1_run.sh  ──►  transfer.py --experiment discover        [Stage 1]
-                        │  trains Control baseline (skipped if checkpoint exists)
-                        │  probes layer variances, discovers collapsible regions
-                        │  writes heuristic plots → outputs/discovery/
-                        ▼  emits <model>_<dataset>_..._discovered_regions.json
+**Stage 1 — Discovery (`--experiment discover`)**, `run_discovery_stage`:
 
-temp2_run.sh  ──►  transfer.py --experiment <name>          [Stage 2]
-                        │  parallel collapse + fine-tune jobs (--quant optional)
-                        │  checkpoints + metrics per experiment
-                        ▼
-                 Journal_plot.py (auto-run by submit_job.pbs)
-                        └── paper figures + LaTeX tables
-```
+1. **Baseline**: inherit or train `final_JF_Control(_quant).pt` for `pretrain` epochs in the
+   universe directory.
+2. **Probe**:
+   - default scorers (`local_dev`/`percentile`/`cv`) → single-input variance probe
+     (`get_layer_variances`, cached as `runs/plots/.../layer_variances.json`);
+   - `change`/`cka`/`all` → one combined real-data pass
+     ([`collect_change_stats`](../../pyPrune/collapse/README.md#stage-a--probing-the-network),
+     K=16 batches, cached as `runs/plots/.../change_stats.json` — scorer-independent, shared).
+3. **Discover regions** per scorer and write the regions JSON (schema below). `--scorer all`
+   runs `local_dev` + `change` + `cka` **from the same capture pass** and additionally writes a
+   combined `*_scorer_ablation.json` (all three region maps + stats payload).
+4. Emit diagnostics: heuristic analysis, and for change-based probes a depth-profile figure
+   (`change_profile_<scorer>.{svg,png,csv}`).
 
-Stage 2 jobs train independently and in parallel. `submit_job.pbs` appends a
-`Journal_plot.py` run after every `transfer.py` invocation, so figures refresh
-incrementally as jobs complete.
+**Stage 2 — HPC (`--experiment <name>`)**, `run_hpc_stage`: reads the universe's regions JSON,
+re-inherits late-arriving donor artifacts, and runs `run_jf_experiment` for the requested
+experiment key (`Control_Continuted`, `Set_i`, `Dynamic_Region_All_Combined`, …): collapse (for
+region experiments) + `epochs` fine-tuning + metrics/figures + whole-model persistence.
 
-## Files
+## CLI Reference (`transfer.py`)
 
-| File | Purpose |
-|---|---|
-| `transfer.py` | Main entry point — Stage 1 discovery + Stage 2 experiment driver |
-| `experiments.py` | Training engine: checkpoint/resume logic, per-job metric JSON shards, merging |
-| `trainer.py` | Single-epoch training loop |
-| `diagnostic.py` | Per-experiment diagnostics (params/FLOPs, activations, memory decomposition, collapse prediction, loss curves) |
-| `plots.py` | Collapse-score bar charts and fig/table helper functions |
-| `utils.py` | Dataset loading, heuristic target summary plot |
-| `Journal_plot.py` | Paper figures (fig1–fig9) + master summary JSON |
-| `plot_tradeoff.py` | Composite tradeoff figure + `table_*.tex` LaTeX tables (requires Python ≥ 3.12) |
-| `paths.py` | **Single source of truth for all output locations** — do not hardcode paths elsewhere |
-| `filemanager.py` | Checkpoint naming, model loading from checkpoint |
-| `run_all.sh` | Legacy batch submission (hardcoded experiment lists) |
-| `temp1_run.sh` | Stage 1 submission — one discovery job per model × dataset |
-| `temp2_run.sh` | Stage 2 submission — one job per discovered experiment × quant flag |
-| `submit_job.pbs` | Job template: activates env, runs `transfer.py` then `Journal_plot.py` |
+| Flag | Default | Meaning |
+|---|---|---|
+| `--model` | `RegNetX_400MF` | `VGG16`, `RegNetX_400MF`, `InceptionNet`, `XceptionNet`, `MobileNet`, `ConvNeXt` |
+| `--dataset` | `Cifar10` | Dataset name (e.g. `Cifar10`, `Cifar100`, `tinyimagenet`) |
+| `--pretrain` | `300` | **Stage 1** baseline/Control epochs |
+| `--epochs` | `100` | **Stage 2** post-collapse fine-tuning epochs |
+| `--experiment` | `discover` | `discover` (Stage 1) or an experiment key from the regions JSON (Stage 2) |
+| `--quant` | off | Quantization-aware training variants (`*_quant` checkpoint names) |
+| `--scorer` | `local_dev` | `local_dev`, `percentile`, `cv`, `change`, `cka`, or `all` (discovery-only ablation mode) |
 
-## Usage
+## Scorers
 
-### Batch (SGE cluster)
+| Scorer | Criterion (flag rule) | Probe |
+|---|---|---|
+| `local_dev` (default) | output variance below rolling neighborhood mean | single-input variance |
+| `percentile` | bottom 25% absolute variance | single-input variance |
+| `cv` | bottom 25% variance drift (K-batch calibrated `(mean, std)`) | combined probe (variance channel) |
+| `change` | bottom 25% representational change `‖out−in‖/‖in‖` | combined probe |
+| `cka` | top 25% CKA(in, out) | combined probe |
+| `all` | runs `local_dev`+`change`+`cka` on one probe; **discovery-only**, writes three namespaced region maps + `*_scorer_ablation.json` | combined probe |
 
-```bash
-# Stage 1: discovery — trains Control baseline only if no checkpoint exists
-bash temp1_run.sh <discovery_epochs> <pretrain_epochs> [scorer]
+## Universe & Artifact Conventions
 
-# Stage 2: parallel experiments (wait for Stage 1 jobs to finish first)
-bash temp2_run.sh <discovery_epochs> <pretrain_epochs> [all|subset]
-```
+- Universe dir: `{model}_{dataset}_{tag}_epochs{E}_pretrain{P}` — non-default scorers get a
+  `_scorer{S}` infix after the tag. The default scorer keeps every legacy name byte-identical.
+- Regions JSON: `{model}_{dataset}_epochs{E}_pretrain{P}[_scorer{S}]_JF_discovered_regions.json`.
+- Checkpoints inside a universe: `final_{workflow}_{exp}.pt`,
+  `structure_{workflow}_{exp}.pt` (collapsed architecture, pre-training),
+  `final_{workflow}_{exp}_whole.pt` (trained collapsed model, whole-model pickle consumed
+  directly by Transfer2).
+- Probe caches in `runs/plots/{model}/{dataset}/epochs{E}_pretrain{P}/`:
+  `layer_variances.json` (legacy) and `change_stats.json` (combined, shared across
+  change/cka/all runs).
 
-- `scorer`: `local_dev` (default) | `percentile` | `cv` | `change` | `cka` | `all`
-- `subset` mode runs **only** `Control_Continuted` and
-  `Dynamic_Region_All_Combined` instead of every discovered region.
+## HPC Scripts
 
-Edit the `models=(...)` / `datasets=(...)` / `quant=(...)` arrays at the top of
-each script to select the sweep. Model choices: `VGG16`, `RegNetX_400MF`,
-`InceptionNet`, `XceptionNet`, `MobileNet`, `ConvNeXt`. Datasets: `Cifar10`,
-`Cifar100`, `tinyimagenet`, `imagenet`. Pretrained starting checkpoints are
-resolved from `../structured_study/pruning_checkpoints/`.
+| Script | Purpose | Usage |
+|---|---|---|
+| `temp1_run.sh` | Submit Stage-1 discovery jobs over model×dataset×quant loops | `./temp1_run.sh <epochs> <pretrain> [scorer]` — e.g. `./temp1_run.sh 300 100 all` |
+| `temp2_run.sh` | Submit Stage-2 jobs per experiment read from the regions JSON | `./temp2_run.sh <epochs> <pretrain> [mode] [scorer]` — `mode`: `all` or `subset` (only `Control_Continuted` + `Dynamic_Region_All_Combined`); scorer `all` is rejected by design (discovery-only) |
+| `submit_job.pbs` | PBS payload: env setup → `transfer.py … --scorer "$SCORER"` → `Journal_plot.py --epoch … --pretrain … --scorer …`. `SCORER` defaults to `local_dev`; log file names get a scorer tag for non-default scorers | submitted via `qsub -v …` by the wrappers |
 
-### Single run (manual)
+## Artifact Inheritance
 
-```bash
-# Discovery
-python transfer.py --model MobileNet --dataset Cifar10 \
-    --experiment discover --epochs 100 --pretrain 300
+Scorer-independent artifacts are **copied, not retrained**, into scorer universes:
 
-# One experiment from the discovered map
-python transfer.py --model MobileNet --dataset Cifar10 \
-    --experiment Dynamic_Region_All_Combined --epochs 100 --pretrain 300 [--quant]
+- `transfer.py::inherit_scorer_independent_artifacts` copies `final_JF_Control(_quant).pt` and
+  `final_JF_Control_Continuted(_quant).pt` from the default universe (same epochs/pretrain),
+  consulted at the start of **both** stages (Stage 2 re-checks to catch late-arriving donors).
+- Transfer2 independently inherits its IMP/structural baselines (see
+  [Transfer2 docs](../Transfer2/README.md#scorer-independent-baselines)).
 
-# Regenerate paper figures/tables
-python Journal_plot.py --epoch 100 --pretrain 300
-```
+## Regions JSON Schema
 
-Defaults: `--model RegNetX_400MF --dataset Cifar10 --pretrain 300 --epochs 100`.
-
-## Key Concepts
-
-- **Control baseline** — fully trained uncompressed reference model, produced
-  during discovery. All collapse experiments report deltas against it.
-- **Discovered regions** — layer ranges flagged as collapsible by the Stage 1
-  variance probe; stored in
-  `<model>_<dataset>_epochs{E}_pretrain{P}_JF_discovered_regions.json`.
-  `temp2_run.sh` requires this file to exist.
-- **Scorers** — region-selection heuristics (`local_dev` output variance,
-  `percentile`/`cv` calibrated variance, `change` input→output deviation,
-  `cka` representational similarity, `all` = per-scorer ablation).
-- **Checkpoint semantics** — an experiment with a `final_*.pt` in its
-  `checkpoints/` directory is considered complete: training is skipped
-  entirely and only metrics are reloaded. Intermediate `*_epoch{N}.pt`
-  checkpoints enable exact resume (model/optimizer/scheduler/RNG state).
-- **`--quant`** — quantization-aware fine-tuning; runs are suffixed `_quant`
-  everywhere (checkpoints, metrics, figures).
-
-## Output Layout
-
-All generated **plots, figures, and tables** live under `outputs/`
-(defined in `paths.py`):
-
-```
-outputs/
-├── discovery/{model}/{dataset}/epochs{E}_pretrain{P}/
-│       Stage-1 heuristic plots (Variance/Redundancy/KL/CollapseScore),
-│       Layer_Statistics CSVs, layer_variances.json
-├── diagnostics/{model}_{dataset}_..._epochs{E}_pretrain{P}/
-│       Per-experiment diagnostic SVGs/CSVs and accuracy/loss curves
-├── figures/ep{E}_pre{P}/
-│       fig1 individual_plots · fig2 methodology · fig3 heuristic_validation
-│       fig4 search_space · fig5 hardware_efficiency · fig6 learning_curves
-│       fig7 convergence · fig8 accuracy_vs_params · fig9 flops_vs_memory
-│       + journal_tradeoff_analysis.png
-├── tables/
-│       table_hardware_efficiency.tex · table_quantization.tex ·
-│       table_control_metrics.tex        (from standalone plot_tradeoff.py)
-└── tables/ep{E}_pre{P}/
-        master_results_summary.json      (from Journal_plot.py)
+```json
+{
+  "Set_0": ["layer.start", "layer.end"],
+  "Set_1": ["..."],
+  "Dynamic_Region_All_Combined": [["s0", "e0"], ["s1", "e1"]],
+  "Status_Map": {"layer.name": "Active|Passive|Gap|Rejected|Veto"},
+  "Control_Continuted": null
+}
 ```
 
-**Training state lives outside `outputs/`** — this is deliberate:
+`Set_*` values are single `[start, end]` collapsible spans;
+`Dynamic_Region_All_Combined` is the greedy union of non-overlapping spans (the headline target);
+`Status_Map`/`Control_Continuted` are diagnostics/convention keys that stage 2 skips as
+non-experiments where applicable. See
+[collapse/README.md § output schema](../../pyPrune/collapse/README.md#output-schema) for how
+regions are produced.
 
-| Location | Contents |
-|---|---|
-| `{model}_{dataset}_{ckpt}_epochs{E}_pretrain{P}/` | Per-experiment `checkpoints/` and `metrics/merged_metrics.json` |
-| `runs/metrics/` | Per-job metric JSON shards (timestamped, SLURM-safe) |
-| CWD root | `*_discovered_regions.json` region maps |
+## Where to go next
 
-**Cleanup guidance:** to wipe results while keeping trained weights, delete
-`outputs/`, `runs/`, and any stale root-level `.tex`/`.png` — but **keep the
-per-experiment folders** (they hold the weights). Everything else regenerates
-on rerun: discovery plots from Stage 1, figures/tables from `Journal_plot.py`.
-Note that diagnostics for already-completed experiments do *not* regenerate
-(final-checkpoint skip short-circuits the diagnostics step).
-
-## Requirements
-
-- Python ≥ 3.12 (earlier versions work, but `plot_tradeoff.py` uses 3.12+
-  f-string syntax and will be silently skipped by `Journal_plot.py`)
-- `torch`, `torchvision`, `fvcore`, `torchinfo`, `pandas`, `seaborn`,
-  `matplotlib`, `numpy`
-- CUDA-capable GPU (falls back to CPU, impractical for training)
-- SGE `qsub` for the batch scripts (queues `all.q` / `UI-GPU`); environment
-  expected at `~/env/lth_env/` (see `submit_job.pbs`)
+- Analysis of the produced artifacts → [manuscript/Transfer2/README.md](../Transfer2/README.md)
+- Engine internals (probes, scorers, surrogates) → [pyPrune/collapse/README.md](../../pyPrune/collapse/README.md)

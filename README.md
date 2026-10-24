@@ -1,210 +1,154 @@
-# Iterative Magnitude Pruning for Neural Networks
+# Structural Layer Collapse for Deep Neural Networks
 
-This repository implements an iterative magnitude pruning algorithm for pruning neural networks in PyTorch. The pruning method involves gradually removing less significant weights from the model to achieve a specified sparsity, followed by fine-tuning the pruned model to recover performance.
+`pyPrune` is a research framework for identifying and removing **representational redundancy**
+in trained convolutional neural networks. Given a trained model, it measures how much each
+layer (or block) *changes its input*; layers that barely transform their input are redundant
+and can be replaced by a single learned surrogate layer, after which the compressed model is
+fine-tuned back to accuracy. The result is a smaller, cheaper network with measurably less
+redundancy — evaluated end-to-end on accuracy, energy, FLOPs, latency, memory, adversarial
+robustness, calibration, and representational similarity.
+
+**The hypothesis.** If a layer barely changes its input (in ≈ out), it is not transforming the
+representation — the computation it performs is redundant. Such layers can be collapsed into a
+single layer and the network retrained, yielding a smaller, more efficient model. This
+repository tests that hypothesis across 6 architectures (VGG16, RegNetX-400MF, InceptionNet,
+XceptionNet, MobileNet, ConvNeXt) and 3 datasets (CIFAR-10, CIFAR-100, TinyImageNet), against
+unstructured iterative magnitude pruning (IMP) and structural L1 filter pruning baselines.
+
+```mermaid
+flowchart LR
+    A[Trained model] --> B[Probe: measure per-layer/block<br/>variance · change · CKA over K batches]
+    B --> C[Discover: scorer flags redundant<br/>regions -> LCA expansion -> eval]
+    C --> D[Collapse: replace region with<br/>1×1 surrogate + adaptive pool]
+    D --> E[Fine-tune back to accuracy]
+    E --> F[Analyze: accuracy · energy · FLOPs ·<br/>latency · memory · robustness · CKA]
+```
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Repository Structure](#repository-structure)
-- [Dependencies](#dependencies)
-- [Setup](#setup)
-- [Usage](#usage)
-  - [Training and Pruning](#training-and-pruning)
-  - [Pruning Process](#pruning-process)
-  - [Running with Docker (GPU Support)](#running-with-docker-gpu-support)
-- [Metrics](#metrics)
-- [Logging](#logging)
+- [Repository map](#repository-map)
+- [Quick start](#quick-start)
+- [Naming conventions](#naming-conventions)
+- [Artifact index](#artifact-index)
 - [Testing](#testing)
-- [Contributing](#contributing)
+- [Requirements](#requirements)
 - [License](#license)
 
-## Overview
+## Repository Map
 
-This repository provides an implementation of iterative magnitude pruning. The goal of this method is to achieve model sparsity by progressively removing small magnitude weights while maintaining the model’s accuracy as much as possible through fine-tuning.
+| Path | What it is | Docs |
+|---|---|---|
+| `pyPrune/` | The library: collapse engine, models, data loaders, heritage pruning framework | [pyPrune/README.md](pyPrune/README.md) |
+| `pyPrune/collapse/` | **Core contribution**: region discovery + structural collapse, model-agnostic | [pyPrune/collapse/README.md](pyPrune/collapse/README.md) |
+| `pyPrune/models/` | 9 architecture families (10 classes) with dataset presets | [pyPrune/models/README.md](pyPrune/models/README.md) |
+| `pyPrune/pruneMethods/` | Heritage pruning framework (Pruner/Trainer classes) | [pyPrune/pruneMethods/README.md](pyPrune/pruneMethods/README.md) |
+| `pyPrune/strategies/` | Heritage pruning strategies (Magnitude, Optimal Brain Damage) | [pyPrune/strategies/README.md](pyPrune/strategies/README.md) |
+| `manuscript/Tranfer/` | Training pipeline: Stage 1 (discovery) + Stage 2 (collapse + fine-tune), HPC job scripts | [manuscript/Tranfer/README.md](manuscript/Tranfer/README.md) |
+| `manuscript/Transfer2/` | Analysis pipeline: energy, efficiency, robustness, CKA, baselines | [manuscript/Transfer2/README.md](manuscript/Transfer2/README.md) |
+| `manuscript/sparse_matrix/`, `manuscript/structured_study/` | Earlier study pipelines (legacy, superseded) | — |
+| `tests/` | Unit & wiring tests (53 tests) | — |
 
-The pruning process is done in several steps:
+## Quick Start
 
-1. **Pretraining**: Train the model without pruning for a given number of epochs.
-2. **Pruning**: Gradually prune the model by iteratively zeroing out weights with the smallest magnitudes.
-3. **Fine-tuning**: After each pruning step, fine-tune the model to recover any lost performance.
-4. **Checkpointing**: Save model states at each pruning step for recovery or further analysis.
-
-The algorithm uses the MNIST dataset, but it can be extended to other datasets or models.
-
-## Repository Structure
-
-Here’s a breakdown of the repository structure:
-
-```
-├── data
-│   └── MNIST
-│       └── raw
-├── example.py               # Example script for using the pruning algorithm
-├── pruning_checkpoints       # Directory for saving pruned model checkpoints
-│   ├── pruned_model_step_0.pth
-│   └── pruning_metrics.json  # JSON file with pruning metrics
-├── pyPrune                   # Core implementation of pruning
-│   ├── models
-│   │   └── LeNet.py          # Example model (LeNet)
-│   ├── pruning.py            # Main pruning logic
-│   ├── model_utils.py        # Helper functions for model handling
-│   ├── utils.py              # Utility functions
-├── requirements.txt          # Required dependencies
-├── setup.py                  # Package setup
-├── tests                     # Unit tests
-│   ├── test_pruning.py       # Test cases for pruning algorithm
-├── README.md                 # Project documentation
-```
-
-### Files of Interest:
-- `example.py`: This file contains an example of how to set up and run the pruning process using the `IterativeMagnitudePruning` class.
-- `pyPrune/`: The main implementation folder, where pruning logic and related utilities are defined.
-- `pruning_checkpoints/`: Contains saved model checkpoints after each pruning step.
-- `requirements.txt`: Lists the required Python packages and dependencies.
-- `tests/`: Contains unit tests for validating the pruning process.
-
-## Dependencies
-
-To run this project, you will need the following dependencies:
-
-- Python 3.6+
-- PyTorch 1.10+
-- NumPy
-- tqdm
-- (Optional) CUDA for GPU acceleration
-
-Install the dependencies by running:
+### Install
 
 ```bash
-pip install -r requirements.txt
+git clone <this repo> && cd LTH
+python -m venv .venv && source .venv/bin/activate
+pip install -e .                       # pyPrune (see Requirements)
+# Optional extras:
+pip install fvcore torchinfo           # FLOPs counting (discovery evaluation, benchmarks)
+pip install torch-pruning              # structural L1 baseline in Transfer2 (optional at runtime)
 ```
 
-## Setup
+### 1. Discover redundancy (Stage 1)
 
-1. Clone the repository:
+One probe pass over real training batches measures variance, representational change, and CKA
+per layer/block; the chosen scorer turns those statistics into collapse regions:
 
 ```bash
-git clone https://github.com/your-username/iterative-magnitude-pruning.git
-cd iterative-magnitude-pruning
+cd manuscript/Tranfer
+python transfer.py --model InceptionNet --dataset Cifar100 \
+    --experiment discover --pretrain 100 --epochs 300 --scorer all
 ```
 
-2. Install the necessary dependencies:
+`--scorer all` runs **three scorers from one capture pass** (variance `local_dev`, `change`,
+`cka`) and writes per-scorer region maps plus a combined `*_scorer_ablation.json` — the direct
+hypothesis test. On a PBS cluster use the wrappers: `./temp1_run.sh 300 100 all`.
+
+### 2. Collapse + fine-tune (Stage 2)
 
 ```bash
-pip install -r requirements.txt
+./temp2_run.sh 300 100 subset change   # trains Control_Continuted + Dynamic_Region_All_Combined
 ```
 
-3. Make sure to download the MNIST dataset. The `example.py` script will automatically download the dataset if it's not already present in the `data/` directory.
+Scorer-independent artifacts (Control, Control_Continued, IMP, structural) are **inherited
+from the default universe** rather than retrained; only the collapsed model's fine-tune is new
+compute per scorer universe.
 
-## Usage
-
-### Training and Pruning
-
-You can use the `example.py` script to train and prune a model using the iterative pruning algorithm.
+### 3. Analyze (Transfer2)
 
 ```bash
-python example.py
+cd manuscript/Transfer2
+python main.py --model InceptionNet --dataset Cifar100 --analysis full \
+    --corruptions-dir ./corruption_data
 ```
 
-### Running the Pruning Process
+Epoch configuration is derived from checkpoint paths (`epochsN_pretrainM` tokens) — see
+[Transfer2 docs](manuscript/Transfer2/README.md) for the full metric catalog.
 
-In the `example.py` file, the following code initializes the `IterativeMagnitudePruning` class and runs the pruning process:
+## Naming Conventions
 
-```python
-import torch
-from torch.utils.data import DataLoader
-from torch.optim import Adam
-from pyPrune.models.LeNet import LeNet
-from pyPrune.pruning import IterativeMagnitudePruning
+These three conventions keep every artifact findable and every universe collision-free:
 
-# Define data loaders (MNIST)
-train_loader = DataLoader(...)
-test_loader = DataLoader(...)
+1. **Universe directories** — `{model}_{dataset}_{tag}_epochs{E}_pretrain{P}` hold one
+   experiment's checkpoints/metrics/plots. `epochs` = post-collapse fine-tune length (Stage 2);
+   `pretrain` = baseline/Control length (Stage 1).
+2. **Scorer identity** — non-default scorers get a `_scorer{S}` infix everywhere:
+   `..._scorerchange_epochs300_pretrain100/`,
+   `..._epochs300_pretrain100_scorerchange_JF_discovered_regions.json`. The default
+   (`local_dev`) keeps the legacy names **byte-identical**, so old results reproduce.
+3. **Epoch tokens in paths** — Transfer2 parses `epochs{N}` / `pretrain{M}` from directory
+   names (`post ↔ epochs`, `pre ↔ pretrain`); multiple configs (`epochs100_pretrain300`,
+   `epochs300_pretrain100`, …) coexist in one tree and resolve automatically.
 
-# Initialize model, optimizer, and loss function
-model = LeNet()
-optimizer = Adam(model.parameters(), lr=0.001)
-criterion = torch.nn.CrossEntropyLoss()
+## Artifact Index
 
-# Define pruning parameters
-final_sparsity = 0.9
-steps = 10
-finetune_epochs = 2
-pretrain_epochs = 5
-
-# Create pruning instance
-pruning = IterativeMagnitudePruning(
-    model=model,
-    train_loader=train_loader,
-    test_loader=test_loader,
-    final_sparsity=final_sparsity,
-    steps=steps,
-    optimizer=optimizer,
-    criterion=criterion,
-    finetune_epochs=finetune_epochs,
-    pretrain_epochs=pretrain_epochs
-)
-
-# Run the pruning process
-pruning.run()
-```
-
-### Running with Docker (GPU Support)
-
-You can run the project inside a Docker container with GPU support. This is especially useful if you have an NVIDIA GPU and want to leverage CUDA for faster training and pruning.
-
-To run the project with Docker, execute the following command:
-
-```bash
-docker run --rm --gpus all -it --runtime=nvidia -v $(pwd):/workspace pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel
-```
-
-### Explanation of the Command:
-
-- `--rm`: Automatically remove the container when it exits.
-- `--gpus all`: Allow the container to use all available GPUs on the host machine.
-- `-it`: Run the container interactively.
-- `--runtime=nvidia`: Use the NVIDIA runtime for Docker (needed for GPU support).
-- `-v $(pwd):/workspace`: Mount the current directory (`$(pwd)`) to `/workspace` in the container. This allows the Docker container to access the project files.
-- `pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel`: The Docker image to use, which contains PyTorch with CUDA 12.4 and cuDNN 9 support.
-
-Once inside the container, you can run the pruning and training script as described above. You will have access to all the necessary dependencies in the container, including PyTorch and CUDA.
-
-## Metrics
-
-During the pruning process, several metrics are tracked:
-
-- **Sparsity**: The percentage of zeroed-out weights in the model.
-- **Loss**: The loss value during training and evaluation.
-- **Accuracy**: The accuracy of the model on the test set.
-- **Gradients**: The gradients of the model parameters.
-- **Optimizer State**: Information about the optimizer state.
-
-These metrics are saved in `pruning_metrics.json` at the end of the pruning process.
-
-## Logging
-
-The training and pruning process is logged with detailed information about each step. Logs are saved to the `logs/` directory by default. You can change the logging configuration by modifying the `setup_logging()` function in the code.
-
-Log entries include:
-
-- Training and evaluation loss/accuracy.
-- Sparsity after each pruning step.
-- Checkpoint saving and loading information.
+| Artifact | Written by | Meaning |
+|---|---|---|
+| `{universe}/checkpoints/final_JF_Control.pt` | Tranfer S1 | Trained baseline |
+| `{universe}/checkpoints/final_JF_Control_Continuted.pt` | Tranfer S2 | Baseline after continued fine-tuning *(sic — historical spelling)* |
+| `{universe}/checkpoints/structure_{workflow}_{exp}.pt` | Tranfer S2 | Collapsed architecture, pre-training |
+| `{universe}/checkpoints/final_{workflow}_{exp}_whole.pt` | Tranfer S2 | Trained collapsed model (whole-model pickle) |
+| `{universe}/checkpoints/final_JF_Unstructured_IMP_post{N}.pt` | Transfer2 | IMP baseline at matched sparsity |
+| `{universe}/checkpoints/final_JF_Structural_L1_post{N}.pt` | Transfer2 | Structural L1 baseline (optional dep) |
+| `*_JF_discovered_regions.json` | Tranfer S1 | Region map for one scorer universe |
+| `runs/plots/.../change_stats.json` | Tranfer S1 | Combined probe statistics (variance/change/CKA per layer+block) |
+| `*_scorer_ablation.json` | Tranfer S1 (`--scorer all`) | Regions for all three scorers + stats |
+| `cka_results_*.csv`, `robustness_curves_*.csv`, `calibration_*.csv`, `corruption_*.csv` | Transfer2 | Analysis metrics (wide + tidy long formats) |
 
 ## Testing
 
-We have included a basic set of unit tests located in the `tests/` directory. To run the tests, you can use pytest:
-
 ```bash
-pytest tests/
+python -m pytest tests/ --ignore=tests/test_pruning.py -q
 ```
 
-## Contributing
+53 tests cover: collapse mechanics & idempotent patching (`test_collapse.py`),
+representational-change probing & scorers (`test_change_stats.py`), scorer wiring & artifact
+inheritance (`test_scorer_wiring.py`), Transfer2 path resolution (`test_transfer2_paths.py`),
+analysis math — AUROC/ECE/corruptions/benchmarks (`test_transfer2_analysis.py`), and trainer
+smoke tests.
 
-We welcome contributions! If you find any bugs or have suggestions for improvements, feel free to open an issue or submit a pull request.
+> **Known issue:** `tests/test_pruning.py` refers to the removed `pyPrune.pruning` module
+> (the heritage IMP tutorial was superseded) and fails at collection; it is excluded above.
+
+## Requirements
+
+Python ≥ 3.10. Core: `torch`, `torchvision`, `numpy`, `pandas`, `seaborn`, `matplotlib`,
+`tqdm`, `scipy`, `scikit-learn`, `codecarbon`. Optional: `fvcore` + `torchinfo` (FLOPs),
+`torch-pruning` (Transfer2 structural baseline). CUDA-capable GPU strongly recommended for
+training; analysis and tests run on CPU.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
+Research code by Jamil Gafur (jamil-gafur@uiowa.edu). See individual modules for details.
