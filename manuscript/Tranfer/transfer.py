@@ -4,6 +4,7 @@ import glob
 import json
 import random
 import argparse
+import shutil
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -23,9 +24,10 @@ from pyPrune.models.MobileNet import MobileNet
 from experiments import *
 from utils import *
 from plots import *
+from paths import discovery_run_dir
 from pyPrune.utils import *
 from trainer import train_one_epoch
-from pyPrune.collapse import discover_regions, get_layer_variances
+from pyPrune.collapse import discover_regions, get_layer_variances, collect_change_stats
 from datetime import datetime
 from fvcore.nn import FlopCountAnalysis
 
@@ -482,8 +484,9 @@ def run_experiments_for_dataset(
     # Stage 2 (is_discovery=False) uses epochs (e.g., 100).
     active_epochs = pretrain if is_discovery else epochs
 
-    # Save path maintains consistent directory structure
-    save_path = f"{model_class}_{dataset}_{CHECKPOINT_FILES[args.model][dataset][0]}_epochs{epochs}_pretrain{pretrain}"
+    # Save path maintains consistent directory structure (scorer-suffixed for
+    # non-default scorers so region universes never collide)
+    save_path = f"{model_class}_{dataset}_{CHECKPOINT_FILES[args.model][dataset][0]}{scorer_suffix(args)}_epochs{epochs}_pretrain{pretrain}"
 
     if train_loader is None or test_loader is None:
         train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, args.model)
@@ -627,7 +630,68 @@ def parse_cli_args():
         help="Experiment to run, or 'discover' to generate regions",
     )
     parser.add_argument("--quant", action="store_true", help="Apply Quantization Aware Training")
+    parser.add_argument(
+        "--scorer",
+        type=str,
+        default="local_dev",
+        choices=["local_dev", "percentile", "cv", "change", "cka", "all"],
+        help=(
+            "Region-selection scorer: 'local_dev' (legacy output-variance, default), "
+            "'percentile'/'cv' (calibrated variance), 'change' (low input->output "
+            "L2 deviation = redundant), 'cka' (high input/output representational "
+            "similarity = redundant), or 'all' (discovery-only: run one combined "
+            "probe and emit a per-scorer ablation for local_dev/change/cka)."
+        ),
+    )
     return parser.parse_args()
+
+
+def scorer_suffix(args):
+    """Experiment-identity suffix for non-default scorers.
+
+    Keep every legacy filename byte-identical for the default 'local_dev'
+    scorer; non-default scorers get '_scorer{S}' infixes so JSON artifacts,
+    experiment directories, and caches never collide.
+    """
+    s = getattr(args, "scorer", "local_dev")
+    return "" if s in (None, "local_dev") else f"_scorer{s}"
+
+
+def discovered_json_filename(args):
+    suffix = scorer_suffix(args)
+    return f"{args.model}_{args.dataset}_epochs{args.epochs}_pretrain{args.pretrain}{suffix}_JF_discovered_regions.json"
+
+
+def inherit_scorer_independent_artifacts(args, flag_str="JF"):
+    """Copy scorer-INDEPENDENT trained artifacts from the default-universe dir.
+
+    Control (pretrain epochs) and Control_Continuted (epochs) depend only on
+    the shared base weights and the epoch config — never on which scorer picked
+    the collapse regions — so non-default scorer universes inherit them from
+    the default universe instead of retraining hundreds of epochs per scorer.
+
+    No-op for the default scorer or when the donor artifacts are absent
+    (e.g. donor's stage 2 has not run yet); anything still missing is then
+    trained locally by the normal flow.
+    """
+    suffix = scorer_suffix(args)
+    if not suffix:
+        return
+    universe_tag = CHECKPOINT_FILES[args.model][args.dataset][0]
+    target_dir = f"{args.model}_{args.dataset}_{universe_tag}{suffix}_epochs{args.epochs}_pretrain{args.pretrain}"
+    donor_dir = f"{args.model}_{args.dataset}_{universe_tag}_epochs{args.epochs}_pretrain{args.pretrain}"
+    quant_tag = "_quant" if args.quant else ""
+    fnames = [
+        f"final_{flag_str}_Control{quant_tag}.pt",
+        f"final_{flag_str}_Control_Continuted{quant_tag}.pt",
+    ]
+    for fname in fnames:
+        dst = os.path.join(target_dir, "checkpoints", fname)
+        src = os.path.join(donor_dir, "checkpoints", fname)
+        if os.path.exists(src) and not os.path.exists(dst):
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.copy2(src, dst)
+            print(f"[INFO] Inherited scorer-independent artifact from {src}")
 
 def run_discovery_stage(args, device, train_loader, test_loader, model_class, model_kwargs, input_size, model_path_097, model_path_000, json_file):
     print(f"\n{'='*60}")
@@ -635,20 +699,22 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
     print(f"       Model: {args.model} | Dataset: {args.dataset}")
     print(f"{'='*60}\n")
     
-    experiment_id = f"epochs{args.epochs}_pretrain{args.pretrain}"
-    plots_root = Path(os.path.abspath(f"./runs/plots/{args.model}/{args.dataset}/{experiment_id}"))
-    os.makedirs(plots_root, exist_ok=True)
+    plots_root = discovery_run_dir(args.model, args.dataset, args.epochs, args.pretrain)
     variance_file = plots_root / "layer_variances.json"
+
+    # Non-default scorers share the scorer-INDEPENDENT Control/Control_Continuted
+    # baselines: inherit them from the default-universe directory if available.
+    inherit_scorer_independent_artifacts(args)
 
     print(f"[INFO] Phase 1: Validating/Training 'Control' Baseline...")
     run_experiments_for_dataset(
-        {"Control": None}, args.dataset, model_path_097, model_path_000, 
-        train_loader, test_loader, device, args.epochs, args.pretrain, model_class, 
+        {"Control": None}, args.dataset, model_path_097, model_path_000,
+        train_loader, test_loader, device, args.epochs, args.pretrain, model_class,
         model_kwargs, None, args.quant, args, is_discovery=True
     )
 
     print(f"\n[INFO] Phase 2: Loading Finalized Baseline Weights...")
-    save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}_epochs{args.epochs}_pretrain{args.pretrain}"
+    save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}{scorer_suffix(args)}_epochs{args.epochs}_pretrain{args.pretrain}"
     
     ckpt_dir = os.path.join(save_path, "checkpoints")
     flag_str = "JF"
@@ -678,45 +744,136 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
         print(f"[ERROR] Baseline model not found at {trained_baseline_path}. Aborting.")
         return
 
-    if variance_file.exists():
-        print(f"[INFO] Found existing layer variances at {variance_file}. Skipping probe.")
-        with open(variance_file, 'r') as f:
-            layer_variances = json.load(f)
+    scorer = getattr(args, "scorer", "local_dev")
+
+    if scorer in ("change", "cka", "all"):
+        # ---------------------------------------------------------
+        # Combined real-data probe: variance + L2 change + CKA
+        # (one pass; stats are scorer-independent and shared)
+        # ---------------------------------------------------------
+        stats_file = plots_root / "change_stats.json"
+        if stats_file.exists():
+            print(f"[INFO] Found existing change stats at {stats_file}. Skipping probe.")
+            with open(stats_file, 'r') as f:
+                change_stats = json.load(f)
+        else:
+            print(f"[INFO] Executing combined representational-change probe (k=16 batches)...")
+            change_stats = collect_change_stats(eval_model, train_loader, k=16, device=device)
+            with open(stats_file, 'w') as f:
+                json.dump(change_stats, f, indent=4)
+            print(f"[✓] Change stats saved to {stats_file}")
+
+        cnn_layers = [n for n, s in change_stats.items() if s.get("kind") == "layer"]
+        variance_list = [change_stats[ln]["var_mean"] for ln in cnn_layers]
+
+        if scorer == "all":
+            # Discovery-only ablation: THREE fully-namespaced universe maps from
+            # ONE capture pass, so the scorer is the only varied factor.
+            # Writes per-scorer JSONs (always suffixed, legacy names untouched)
+            # plus one combined ablation file for plotting.
+            ablation = {
+                "model": args.model, "dataset": args.dataset,
+                "epochs": args.epochs, "pretrain": args.pretrain,
+                "stats_file": str(stats_file), "scorers": {},
+            }
+            print(f"\n[INFO] === Scorer ablation ('all'): local_dev vs change vs cka ===")
+            for s in ("local_dev", "change", "cka"):
+                payload = variance_list if s == "local_dev" else change_stats
+                regions_s = discover_regions(
+                    model=eval_model,
+                    cnn_layers=cnn_layers,
+                    variances=payload,
+                    input_shape=input_tensor.shape,
+                    scorer=s,
+                )
+                ablation["scorers"][s] = regions_s
+                s_file = f"{args.model}_{args.dataset}_epochs{args.epochs}_pretrain{args.pretrain}_scorer{s}_JF_discovered_regions.json"
+                with open(s_file, 'w') as f:
+                    json.dump(regions_s, f, indent=4)
+                print(f"[✓] scorer={s}: {len(regions_s)} targets -> {s_file}")
+
+            ablation_file = f"{args.model}_{args.dataset}_epochs{args.epochs}_pretrain{args.pretrain}_scorer_ablation.json"
+            ablation["stats"] = change_stats
+            with open(ablation_file, 'w') as f:
+                json.dump(ablation, f, indent=4)
+            print(f"[✓] Combined ablation (regions + stats) -> {ablation_file}")
+
+            dynamic_experiments = ablation["scorers"]["local_dev"]  # representative for heuristics
+        else:
+            dynamic_experiments = discover_regions(
+                model=eval_model,
+                cnn_layers=cnn_layers,
+                variances=change_stats,
+                input_shape=input_tensor.shape,
+                scorer=scorer,
+            )
+
+            analyze_collapse_heuristics(
+                model=eval_model,
+                input_tensor=input_tensor,
+                save_root_dir=plots_root,
+                model_name=args.model,
+                dataset_name=args.dataset,
+                exp_config=dynamic_experiments
+            )
+
+            with open(json_file, 'w') as f:
+                json.dump(dynamic_experiments, f, indent=4)
+            print(f"[✓] Stage 1 Complete (scorer={scorer}). Exported {len(dynamic_experiments)} targets to '{json_file}'.")
     else:
-        print(f"[INFO] No variance file found. Executing Network Probe...")
-        layer_variances = get_layer_variances(eval_model, input_tensor)
-        # create variance file
+        # Legacy path (single-image probe) — unchanged for default scorers.
+        if variance_file.exists():
+            print(f"[INFO] Found existing layer variances at {variance_file}. Skipping probe.")
+            with open(variance_file, 'r') as f:
+                layer_variances = json.load(f)
+        else:
+            print(f"[INFO] No variance file found. Executing Network Probe...")
+            layer_variances = get_layer_variances(eval_model, input_tensor)
+            # create variance file
 
-        with open(variance_file, 'w') as f:
-            json.dump(layer_variances, f, indent=4)
-        print(f"[✓] Layer variances saved to {variance_file}")
-    
-    dynamic_experiments = discover_regions(
-        model=eval_model,
-        cnn_layers=list(layer_variances.keys()),
-        variances=list(layer_variances.values()),
-        input_shape=input_tensor.shape
-    )
+            with open(variance_file, 'w') as f:
+                json.dump(layer_variances, f, indent=4)
+            print(f"[✓] Layer variances saved to {variance_file}")
 
-    analyze_collapse_heuristics(
-        model=eval_model, 
-        input_tensor=input_tensor, 
-        save_root_dir=plots_root, 
-        model_name=args.model, 
-        dataset_name=args.dataset,
-        exp_config=dynamic_experiments
-    )
-    
-    with open(json_file, 'w') as f:
-        json.dump(dynamic_experiments, f, indent=4)
-    print(f"[✓] Stage 1 Complete. Exported {len(dynamic_experiments)} targets to '{json_file}'.")
+        dynamic_experiments = discover_regions(
+            model=eval_model,
+            cnn_layers=list(layer_variances.keys()),
+            variances=list(layer_variances.values()),
+            input_shape=input_tensor.shape
+        )
+
+        analyze_collapse_heuristics(
+            model=eval_model,
+            input_tensor=input_tensor,
+            save_root_dir=plots_root,
+            model_name=args.model,
+            dataset_name=args.dataset,
+            exp_config=dynamic_experiments
+        )
+
+        with open(json_file, 'w') as f:
+            json.dump(dynamic_experiments, f, indent=4)
+        print(f"[✓] Stage 1 Complete. Exported {len(dynamic_experiments)} targets to '{json_file}'.")
+
+    # Depth-profile figure for change-based probes (best-effort, never fatal)
+    if scorer in ("change", "cka", "all"):
+        try:
+            plot_change_profile(change_stats, dynamic_experiments, plots_root,
+                                args.model, args.dataset, scorer_label=scorer)
+        except Exception as e:
+            print(f"[WARN] plot_change_profile failed: {e}")
 
 def run_hpc_stage(args, device, train_loader, test_loader, model_class, model_kwargs, model_path_097, model_path_000, json_file):
     print(f"\n{'='*60}")
     print(f"[MODE] STAGE 2: HPC EXPERIMENT EXECUTION")
     print(f"       Targeting: '{args.experiment}'")
     print(f"{'='*60}\n")
-    
+
+    # Late donors: the default universe's stage 2 may have completed after this
+    # universe's stage 1 ran. Re-check before every stage-2 dispatch (no-op
+    # when the artifact is already in place).
+    inherit_scorer_independent_artifacts(args)
+
     print(f"[INFO] Validating JSON configuration map at: {json_file}")
     if not os.path.exists(json_file):
         print(f"[ERROR] Map not found. You must run Stage 1 (discover) prior to HPC array execution.")
@@ -732,7 +889,7 @@ def run_hpc_stage(args, device, train_loader, test_loader, model_class, model_kw
         raise ValueError(f"Experiment '{args.experiment}' not found in {json_file}.")
 
     # --- FIX: Reconstruct path to the trained Control weights from Discovery Stage ---
-    save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}_epochs{args.epochs}_pretrain{args.pretrain}"
+    save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}{scorer_suffix(args)}_epochs{args.epochs}_pretrain{args.pretrain}"
     ckpt_dir = os.path.join(save_path, "checkpoints")
     flag_str = "JF"
     quant_str = "_quant" if args.quant else ""
@@ -771,7 +928,7 @@ def main():
     model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
     model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][1])
 
-    json_file = f"{args.model}_{args.dataset}_epochs{args.epochs}_pretrain{args.pretrain}_JF_discovered_regions.json"
+    json_file = discovered_json_filename(args)
 
     if args.experiment == "discover":
         run_discovery_stage(

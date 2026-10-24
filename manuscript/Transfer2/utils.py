@@ -7,6 +7,7 @@ from torchvision import datasets, transforms
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import os
+import shutil
 import sys
 import json
 from tqdm import tqdm
@@ -463,6 +464,44 @@ def parse_epoch_tokens(path):
         int(m_post.group(1)) if m_post else None,
         int(m_pre.group(1)) if m_pre else None,
     )
+
+
+def _default_universe_donor_path(ckpt_path):
+    """Map a scorer-universe checkpoint path to its default-universe donor.
+
+    Scorer universes are named '{model}_{dataset}_{tag}_scorer{S}_epochs{E}_pretrain{P}';
+    the default universe drops the '_scorer{S}' token. Returns the donor path if
+    the input is inside a scorer universe, else None.
+    """
+    universe_dir = os.path.dirname(ckpt_path)
+    ckpt_name = os.path.basename(ckpt_path)
+    if os.path.basename(universe_dir) != "checkpoints":
+        return None
+    scorer_dir = os.path.dirname(universe_dir)
+    donor_dir_name = re.sub(
+        r"_scorer[^_]+(?=_epochs\d+_pretrain\d+)", "", os.path.basename(scorer_dir)
+    )
+    if donor_dir_name == os.path.basename(scorer_dir):
+        return None  # not a scorer universe
+    return os.path.join(os.path.dirname(scorer_dir), donor_dir_name, "checkpoints", ckpt_name)
+
+
+def inherit_from_default_universe(ckpt_path):
+    """If ckpt_path is missing but the default-universe sibling has it, copy it.
+
+    IMP / Structural baselines train from the universe's 'before' model — which
+    scorer universes inherit from the default universe — so these artifacts are
+    scorer-independent. Copying keeps baselines byte-identical across universes
+    and avoids retraining IMP/Structural per scorer.
+    """
+    if os.path.exists(ckpt_path):
+        return ckpt_path
+    donor = _default_universe_donor_path(ckpt_path)
+    if donor and os.path.exists(donor):
+        os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
+        shutil.copy2(donor, ckpt_path)
+        print(f"[INFO] Inherited scorer-independent artifact from {donor}")
+    return ckpt_path
 
 
 def find_experiment_checkpoints(model_name, dataset_name, pre_epochs=None, post_epochs=None):
@@ -940,7 +979,18 @@ from torch.utils.data import DataLoader
 
 def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5, quant=False):
     """
-    Returns: (avg_time_seconds, flops_total, total_feature_map_size_mb)
+    Returns a dict of efficiency metrics measured over `num_batches` forwards:
+
+        {
+            "avg_time_s":      mean forward time per batch (seconds),
+            "latency_ms":      avg_time_s * 1000,
+            "throughput_imgs": batch_size / avg_time_s,
+            "batch_size":      loader batch size used,
+            "flops":           total FLOPs for one batch (fvcore, first batch),
+            "feature_map_mb":  total activation bytes for one batch (MiB),
+            "peak_mem_mb":     peak CUDA memory allocated during measurement (MiB),
+                               None when CUDA is unavailable,
+        }
 
     Notes:
     - Uses a local DataLoader with num_workers=0 to ensure forward runs in the main process
@@ -1081,8 +1131,25 @@ def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5, qua
             for h in size_hooks:
                 h.remove()
 
+    # Read back peak CUDA memory accumulated over the measurement loop
+    peak_mem_mb = None
+    if device.type == "cuda" and torch.cuda.is_available():
+        try:
+            peak_mem_mb = torch.cuda.max_memory_allocated(device) / (1024 ** 2)
+        except Exception:
+            pass
+
+    del tempmodel
     avg_time = sum(times) / len(times) if times else 0.0
-    return avg_time, flops, total_feature_map_size_mb
+    return {
+        "avg_time_s": avg_time,
+        "latency_ms": avg_time * 1000.0,
+        "throughput_imgs": (batch_size / avg_time) if avg_time > 0 else 0.0,
+        "batch_size": batch_size,
+        "flops": flops,
+        "feature_map_mb": total_feature_map_size_mb,
+        "peak_mem_mb": peak_mem_mb,
+    }
 
 def describe_model(model, loader, device='cpu'):
     print("=" * 60)
@@ -1202,3 +1269,309 @@ def clone_model(model, model_class):
     new_model.load_state_dict(model.state_dict())
     return new_model
 
+
+
+# =========================================================
+# Structural Pruning Baseline (torch-pruning, optional dep)
+# =========================================================
+
+def train_structural(model, train_loader, device, epochs, target_sparsity, save_path,
+                     max_prune_fraction: float = 0.25):
+    """
+    Structurally prune with L1 filter importance (torch-pruning DependencyGraph,
+    correct across residual/inception topologies) to `target_sparsity` parameter
+    reduction, interleaved with SGD finetuning.
+
+    Saves/loads a WHOLE-model checkpoint at `save_path` (the architecture changes,
+    so a plain state_dict is not enough). Resumable: if `save_path` exists the
+    finished artifact is loaded and training is skipped.
+
+    Raises ImportError if torch-pruning is not installed; the caller decides policy.
+    """
+    if os.path.exists(save_path):
+        # Resume path first: does not require torch-pruning.
+        print(f"[INFO] Structural checkpoint exists: {save_path}. Loading and skipping training.")
+        ckpt = torch.load(save_path, map_location="cpu", weights_only=False)
+        loaded = ckpt["model"] if isinstance(ckpt, dict) and "model" in ckpt else ckpt
+        loaded.eval()
+        return loaded
+
+    try:
+        import torch_pruning as tp
+    except ImportError as e:
+        raise ImportError(
+            "torch-pruning is required for the structural baseline "
+            "(pip install torch-pruning)."
+        ) from e
+
+    print(f"\n[INFO] Starting structural L1 filter pruning for {epochs} epochs "
+          f"(target param reduction {target_sparsity * 100:.2f}%)...")
+
+    model.to(device)
+    model.eval()  # eval mode for DependencyGraph/example forward (BN batch-stat safety)
+    example_inputs = next(iter(train_loader))[0][:1].to(device)
+
+    # Keep the final classifier (last Linear) intact
+    last_linear = None
+    for _, m in model.named_modules():
+        if isinstance(m, nn.Linear):
+            last_linear = m
+    ignored_layers = [last_linear] if last_linear is not None else []
+
+    max_prune_rounds = max(1, int(epochs * max_prune_fraction))
+    pruner = tp.pruner.MagnitudePruner(
+        model,
+        example_inputs,
+        importance=tp.importance.MagnitudeImportance(p=1),
+        iterative_steps=max_prune_rounds,
+        ch_sparsity=0.10,
+        ignored_layers=ignored_layers,
+        global_pruning=True,
+    )
+
+    original_params = sum(p.numel() for p in model.parameters())
+    target_params = original_params * (1.0 - float(target_sparsity))
+
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=5e-4)
+    criterion = nn.CrossEntropyLoss()
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
+
+    interactive = sys.stderr.isatty()
+    epoch_pbar = tqdm(range(epochs), desc="StructuralL1", disable=not interactive)
+    prune_rounds = 0
+    for epoch in epoch_pbar:
+        current_params = sum(p.numel() for p in model.parameters())
+        if current_params > target_params and prune_rounds < max_prune_rounds:
+            try:
+                pruner.step()
+                prune_rounds += 1
+                current_params = sum(p.numel() for p in model.parameters())
+                print(f"[INFO] Prune round {prune_rounds}: params {current_params:,} "
+                      f"(target <= {int(target_params):,})")
+            except Exception as e:
+                print(f"[WARN] Pruner step failed: {e}. Continuing finetuning with current structure.")
+                prune_rounds = max_prune_rounds  # stop trying to prune
+
+        model.train()
+        loss_sum = torch.zeros((), device=device)
+        batch_pbar = tqdm(
+            train_loader,
+            total=len(train_loader),
+            desc=f"Epoch {epoch + 1}/{epochs}",
+            leave=False,
+            disable=not interactive,
+        )
+        for step, (inputs, targets) in enumerate(batch_pbar):
+            inputs = inputs.to(device, non_blocking=True)
+            targets = targets.to(device, non_blocking=True)
+            optimizer.zero_grad(set_to_none=True)
+            outputs = model(inputs)
+            loss = criterion(outputs, targets)
+            loss.backward()
+            optimizer.step()
+            loss_sum += loss.detach()
+            if not batch_pbar.disable and (step + 1) % 20 == 0:
+                batch_pbar.set_postfix({"loss": f"{loss_sum.item() / (step + 1):.4f}"})
+            del inputs, targets, outputs, loss
+        scheduler.step()
+
+        torch.save({"model": model.to("cpu")}, save_path)
+        model.to(device)
+
+    model.eval()
+    model.to("cpu")
+    final_params = sum(p.numel() for p in model.parameters())
+    achieved = 1.0 - (final_params / original_params)
+    print(f"[RESULT] Structural sparsity achieved: {achieved * 100:.2f}% "
+          f"(target {target_sparsity * 100:.2f}%; {final_params:,} / {original_params:,} params)")
+    torch.cuda.empty_cache()
+    return model
+
+
+# =========================================================
+# Full-Analysis Evaluation Suite (gated by --analysis full)
+# =========================================================
+
+# Normalization constants used by the training pipeline (pyPrune.utils loaders)
+DATASET_NORMS = {
+    "cifar10": ((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)),
+    "cifar100": ((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
+}
+OOD_DATASETS = {"cifar10": "SVHN", "cifar100": "SVHN"}
+
+CIFAR_C_CORRUPTIONS = (
+    "gaussian_noise", "shot_noise", "impulse_noise",
+    "defocus_blur", "glass_blur", "motion_blur", "zoom_blur",
+    "snow", "frost", "fog", "brightness",
+    "contrast", "elastic_transform", "pixelate", "jpeg_compression",
+)
+
+
+@torch.no_grad()
+def collect_confidences(model, dataloader, device, max_batches=None):
+    """Run `model` over `dataloader`; return (max_softmax_conf, correct) CPU tensors."""
+    model.to(device)
+    model.eval()
+    confs, corrects = [], []
+    for i, (inputs, targets) in enumerate(dataloader):
+        if max_batches is not None and i >= max_batches:
+            break
+        inputs = inputs.to(device)
+        targets = targets.to(device)
+        probs = F.softmax(model(inputs), dim=1)
+        conf, pred = probs.max(dim=1)
+        confs.append(conf.detach().cpu())
+        corrects.append(pred.eq(targets).detach().cpu())
+    model.to("cpu")
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+    return torch.cat(confs), torch.cat(corrects).float()
+
+
+def evaluate_calibration(model, dataloader, device, n_bins: int = 15):
+    """Expected/Maximum Calibration Error over max-softmax confidences.
+
+    Returns (ece, mce, bin_rows) where bin_rows carry per-bin
+    {bin_lo, bin_hi, n, acc, conf} for reliability diagrams.
+    """
+    confs, corrects = collect_confidences(model, dataloader, device)
+    edges = torch.linspace(0.0, 1.0, n_bins + 1)
+    ece, mce, rows = 0.0, 0.0, []
+    n_total = confs.numel()
+    for i in range(n_bins):
+        lo, hi = edges[i].item(), edges[i + 1].item()
+        mask = (confs >= lo) & (confs <= hi) if i == 0 else (confs > lo) & (confs <= hi)
+        n = int(mask.sum().item())
+        if n == 0:
+            rows.append({"bin_lo": lo, "bin_hi": hi, "n": 0,
+                         "acc": float("nan"), "conf": float("nan")})
+            continue
+        acc = corrects[mask].mean().item()
+        conf = confs[mask].mean().item()
+        gap = abs(acc - conf)
+        ece += (n / n_total) * gap
+        mce = max(mce, gap)
+        rows.append({"bin_lo": lo, "bin_hi": hi, "n": n, "acc": acc, "conf": conf})
+    return ece, mce, rows
+
+
+def auroc(pos_scores, neg_scores):
+    """Rank-based AUROC (Mann-Whitney U): P(pos > neg) + 0.5 * P(pos == neg).
+
+    Rank-based implementation with average ranks for ties; no sklearn dependency.
+    """
+    pos = np.asarray(list(pos_scores), dtype=np.float64)
+    neg = np.asarray(list(neg_scores), dtype=np.float64)
+    n_pos, n_neg = pos.size, neg.size
+    if n_pos == 0 or n_neg == 0:
+        return float("nan")
+    scores = np.concatenate([pos, neg])
+    order = np.argsort(scores, kind="mergesort")
+    ranks = np.empty(scores.size, dtype=np.float64)
+    ranks[order] = np.arange(1, scores.size + 1, dtype=np.float64)
+    sorted_scores = scores[order]
+    _, first_idx, counts = np.unique(sorted_scores, return_index=True, return_counts=True)
+    for start, c in zip(first_idx, counts):
+        if c > 1:
+            # average ranks of the tie group occupying sorted positions [start, start+c)
+            ranks[order[start:start + c]] = (2.0 * (start + 1) + c - 1) / 2.0
+    sum_pos = ranks[:n_pos].sum()
+    return float((sum_pos - n_pos * (n_pos + 1) / 2.0) / (n_pos * n_neg))
+
+
+def load_ood_test_loader(dataset_name, batch_size: int = 512, data_root: str = "data",
+                         num_workers: int = 2):
+    """OOD test loader for MSP-based OOD detection. CIFAR-10/100 -> SVHN (32x32).
+    Returns None (with a warning) when unsupported or the data is not staged."""
+    key = dataset_name.lower()
+    if OOD_DATASETS.get(key) != "SVHN":
+        print(f"[WARN] No OOD dataset configured for '{dataset_name}'. Skipping OOD evaluation.")
+        return None
+    mean, std = DATASET_NORMS[key]
+    tf = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean, std)])
+    try:
+        ds = datasets.SVHN(data_root, split="test", download=True, transform=tf)
+    except Exception as e:
+        print(f"[WARN] SVHN unavailable ({e}). Skipping OOD evaluation.")
+        return None
+    return DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,
+                      pin_memory=True, persistent_workers=(num_workers > 0))
+
+
+def evaluate_ood(model, in_loader, ood_loader, device):
+    """Max-softmax-probability AUROC: in-distribution vs OOD."""
+    confs_in, _ = collect_confidences(model, in_loader, device)
+    confs_ood, _ = collect_confidences(model, ood_loader, device)
+    return auroc(confs_in.numpy(), confs_ood.numpy())
+
+
+def load_cifar_c(corruptions_dir, dataset_name, corruption, severity,
+                 batch_size: int = 512, num_workers: int = 2):
+    """One (corruption, severity) slice of CIFAR-10-C / CIFAR-100-C as a DataLoader.
+
+    Expects <corruptions_dir>/CIFAR-{10,100}-C/<corruption>.npy and labels.npy,
+    each holding 5 severities x 10k samples. severity is 1-based (1..5).
+    """
+    key = dataset_name.lower()
+    if key not in DATASET_NORMS:
+        raise ValueError(f"Corruptions not supported for dataset '{dataset_name}' "
+                         f"(supported: {sorted(DATASET_NORMS)})")
+    if not (1 <= int(severity) <= 5):
+        raise ValueError(f"severity must be in 1..5, got {severity}")
+    subdir = "CIFAR-10-C" if key == "cifar10" else "CIFAR-100-C"
+    base = os.path.join(corruptions_dir, subdir)
+    data = np.load(os.path.join(base, f"{corruption}.npy"))
+    labels = np.load(os.path.join(base, "labels.npy"))
+    s = int(severity) - 1
+    data = data[s * 10000:(s + 1) * 10000]
+    labels = labels[s * 10000:(s + 1) * 10000]
+    mean, std = DATASET_NORMS[key]
+    x = torch.from_numpy(data).permute(0, 3, 1, 2).float() / 255.0
+    x = transforms.functional.normalize(
+        x, torch.tensor(mean).view(3, 1, 1), torch.tensor(std).view(3, 1, 1))
+    ds = torch.utils.data.TensorDataset(x, torch.from_numpy(labels).long())
+    return DataLoader(ds, batch_size=batch_size, shuffle=False, num_workers=num_workers,
+                      pin_memory=True, persistent_workers=(num_workers > 0))
+
+
+@torch.no_grad()
+def _accuracy_only(model, dataloader, device):
+    """Top-1 accuracy without power/energy tracking."""
+    model.to(device)
+    model.eval()
+    correct, total = 0, 0
+    for inputs, targets in dataloader:
+        inputs = inputs.to(device)
+        targets = targets.to(device)
+        correct += model(inputs).argmax(dim=1).eq(targets).sum().item()
+        total += targets.size(0)
+    model.to("cpu")
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+    return correct / total if total > 0 else float("nan")
+
+
+def evaluate_corruptions(models_dict, corruptions_dir, dataset_name, device,
+                         severities=(1, 2, 3, 4, 5)):
+    """Evaluate every model over all corruptions x severities.
+
+    Returns (mean_corruption_acc_by_model, rows) where rows are long-format
+    {model, corruption, severity, acc} dicts for tidy CSV output.
+    """
+    rows = []
+    n_total = len(CIFAR_C_CORRUPTIONS) * len(severities)
+    done = 0
+    for corruption in CIFAR_C_CORRUPTIONS:
+        for sev in severities:
+            loader = load_cifar_c(corruptions_dir, dataset_name, corruption, sev)
+            for model_name, model in models_dict.items():
+                acc = _accuracy_only(model, loader, device)
+                rows.append({"model": model_name, "corruption": corruption,
+                             "severity": sev, "acc": acc})
+            done += 1
+            print(f"[INFO] Corruptions: {done}/{n_total} ({corruption} s{sev})")
+    mean_by_model = {}
+    for model_name in models_dict:
+        accs = [r["acc"] for r in rows if r["model"] == model_name]
+        mean_by_model[model_name] = sum(accs) / len(accs) if accs else float("nan")
+    return mean_by_model, rows

@@ -30,6 +30,7 @@ from plots import *
 from diagnostic import *
 from utils import *
 from filemanager import *
+from paths import run_diagnostics_dir
 from pyPrune.collapse import collapse_only, wrap_pools_safe
 from trainer import train_one_epoch
 
@@ -194,7 +195,7 @@ def run_experiment(
     # 1. Directory Setup
     ckpt_dir = os.path.join(save_path, "checkpoints")
     metrics_dir = os.path.join(save_path, "metrics")
-    plots_dir = os.path.join(save_path, "plots")
+    plots_dir = str(run_diagnostics_dir(save_path))
     ensure_dir(ckpt_dir); ensure_dir(metrics_dir); ensure_dir(plots_dir)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

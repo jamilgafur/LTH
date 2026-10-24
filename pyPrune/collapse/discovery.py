@@ -6,6 +6,7 @@ import warnings
 
 import numpy as np
 import torch
+import torch.nn as nn
 
 from .core import collapse_only
 from .graph_utils import count_trainable_params
@@ -130,11 +131,322 @@ def calibrate_layer_variances(model, batches, k: int = 16, device=None):
     }
 
 
+# ==============================================================================
+# Representational-Change Probing (variance + L2 change + CKA in one pass)
+# ==============================================================================
+#
+# Hypothesis: if a layer/block barely changes its input (in ~= out), it is not
+# transforming the representation and is a collapse candidate. We measure, per
+# unit, over K real batches:
+#   * var_mean / var_std -- output activation variance (as calibrate_layer_variances)
+#   * change  -- relative L2 deviation  E[ ||y - x||_2 / (||x||_2 + eps) ]
+#                same-shape units: direct measurement.
+#                shape-mismatched units (stride/channel changes): aligned
+#                deviation via a best-fit linear projection from ridge
+#                sufficient statistics ("fraction of behaviour the cheapest
+#                linear map cannot explain").
+#   * cka     -- linear CKA(in, out) on per-sample features (spatial-mean for
+#                conv tensors); shape-agnostic.
+#
+# All statistics are accumulated ONLINE (sufficient statistics: counts, sums,
+# XtX/XtY/YtY in float64), so memory is flat in the number of batches/samples.
+
+class _UnitStats:
+    """Online accumulator for one measured unit (layer or block)."""
+
+    __slots__ = (
+        "kind", "n_var", "var_mean", "var_m2",
+        "mode",  # None until first update, then 'l2' or 'aligned'
+        "rel_sum", "rel_n",  # same-shape path
+        "xtx", "xty", "sum_yy", "n_pts",  # aligned path
+        "cka_n", "sum_x", "sum_y", "cka_xtx", "cka_xty", "cka_yty",
+        "update_failed",
+    )
+
+    def __init__(self, kind):
+        self.kind = kind
+        self.n_var = 0
+        self.var_mean = 0.0
+        self.var_m2 = 0.0
+        self.mode = None
+        self.rel_sum = 0.0
+        self.rel_n = 0
+        self.xtx = None
+        self.xty = None
+        self.sum_yy = 0.0
+        self.n_pts = 0
+        self.cka_n = 0
+        self.sum_x = None
+        self.sum_y = None
+        self.cka_xtx = None
+        self.cka_xty = None
+        self.cka_yty = None
+        self.update_failed = False
+
+
+def _layer_variance(out: torch.Tensor) -> float:
+    if out.ndim == 4:
+        if out.shape[2] > 1 and out.shape[3] > 1:
+            return out.var(dim=[2, 3], unbiased=False).mean().item()
+        return out.var(dim=1, unbiased=False).mean().item() if out.shape[1] > 1 else 0.0
+    return out.var(unbiased=False).item()
+
+
+def _features(t: torch.Tensor) -> torch.Tensor:
+    """Per-sample feature vector: spatial mean for 4D, identity for 2D."""
+    if t.ndim == 4:
+        return t.mean(dim=(2, 3))
+    if t.ndim == 2:
+        return t
+    raise ValueError(f"unsupported ndim {t.ndim}")
+
+
+def _unit_update(u: _UnitStats, x: torch.Tensor, y: torch.Tensor,
+                 max_points: int, feat_cap: int, eps: float = 1e-12):
+    """Accumulate one batch of (in, out) activations into unit stats."""
+    yv = _layer_variance(y.detach())
+    u.n_var += 1
+    delta = yv - u.var_mean
+    u.var_mean += delta / u.n_var
+    u.var_m2 += delta * (yv - u.var_mean)
+
+    x, y = x.detach(), y.detach()
+    if x.ndim != y.ndim or x.shape[0] != y.shape[0]:
+        u.update_failed = True
+        return
+
+    # ---- L2 change ------------------------------------------------------
+    if u.mode is None:
+        u.mode = 'l2' if x.shape == y.shape else 'aligned'
+
+    if u.mode == 'l2':
+        if x.shape == y.shape:
+            xf = x.reshape(x.shape[0], -1)
+            yf = y.reshape(y.shape[0], -1)
+            rel = ((yf - xf).norm(dim=1) / (xf.norm(dim=1) + eps)).sum().item()
+            u.rel_sum += rel
+            u.rel_n += x.shape[0]
+        else:
+            # shape drifted after first batch: restart as aligned
+            u.mode = 'aligned'
+            u.xtx = u.xty = None
+            u.sum_yy = 0.0
+            u.n_pts = 0
+
+    if u.mode == 'aligned':
+        if x.ndim == 4 and y.ndim == 4:
+            h = min(x.shape[2], y.shape[2])
+            w = min(x.shape[3], y.shape[3])
+            xp = torch.nn.functional.adaptive_avg_pool2d(x, (h, w))
+            yp = torch.nn.functional.adaptive_avg_pool2d(y, (h, w))
+            xp = xp.permute(0, 2, 3, 1).reshape(-1, x.shape[1])  # (N*H*W, Cin)
+            yp = yp.permute(0, 2, 3, 1).reshape(-1, y.shape[1])
+        elif x.ndim == 2 and y.ndim == 2:
+            xp, yp = x, y
+        else:
+            u.update_failed = True
+            return
+        if xp.shape[0] > max_points:
+            step = xp.shape[0] // max_points + 1
+            xp, yp = xp[::step], yp[::step]
+        if u.xtx is None:
+            cin, cout = xp.shape[1], yp.shape[1]
+            u.xtx = torch.zeros(cin, cin, dtype=torch.float64, device=xp.device)
+            u.xty = torch.zeros(cin, cout, dtype=torch.float64, device=xp.device)
+        u.xtx += (xp.T @ xp).to(torch.float64)
+        u.xty += (xp.T @ yp).to(torch.float64)
+        u.sum_yy += yp.norm().item() ** 2
+        u.n_pts += xp.shape[0]
+
+    # ---- CKA ------------------------------------------------------------
+    try:
+        fx = _features(x).to(torch.float64)
+        fy = _features(y).to(torch.float64)
+        if fx.shape[1] <= feat_cap and fy.shape[1] <= feat_cap and fx.shape[0] == fy.shape[0]:
+            if u.sum_x is None:
+                u.sum_x = torch.zeros(fx.shape[1], dtype=torch.float64, device=fx.device)
+                u.sum_y = torch.zeros(fy.shape[1], dtype=torch.float64, device=fy.device)
+                u.cka_xtx = torch.zeros(fx.shape[1], fx.shape[1], dtype=torch.float64, device=fx.device)
+                u.cka_xty = torch.zeros(fx.shape[1], fy.shape[1], dtype=torch.float64, device=fx.device)
+                u.cka_yty = torch.zeros(fy.shape[1], fy.shape[1], dtype=torch.float64, device=fx.device)
+            u.cka_n += fx.shape[0]
+            u.sum_x += fx.sum(dim=0)
+            u.sum_y += fy.sum(dim=0)
+            u.cka_xtx += fx.T @ fx
+            u.cka_xty += fx.T @ fy
+            u.cka_yty += fy.T @ fy
+    except ValueError:
+        pass
+
+
+def _cka_from_stats(u: _UnitStats, eps: float = 1e-12):
+    """Linear CKA with feature centering, from online sufficient statistics."""
+    if u.cka_n < 2 or u.sum_x is None:
+        return None
+    n = float(u.cka_n)
+    sxx = u.cka_xtx - torch.outer(u.sum_x, u.sum_x) / n
+    syy = u.cka_yty - torch.outer(u.sum_y, u.sum_y) / n
+    sxy = u.cka_xty - torch.outer(u.sum_x, u.sum_y) / n
+    num = (sxy ** 2).sum().item()
+    den = sxx.norm().item() * syy.norm().item()
+    return num / (den + eps)
+
+
+def _change_from_stats(u: _UnitStats, ridge: float = 1e-4, eps: float = 1e-12):
+    if u.mode == 'l2':
+        if u.rel_n == 0:
+            return None
+        return u.rel_sum / u.rel_n
+    # aligned: solve ridge regression W: Cin -> Cout, report sqrt(SSE / ||Y||^2)
+    if u.xtx is None or u.n_pts == 0:
+        return None
+    cin = u.xtx.shape[0]
+    lam = ridge * (torch.diagonal(u.xtx).mean().item() + eps)
+    try:
+        w = torch.linalg.solve(u.xtx + lam * torch.eye(cin, dtype=torch.float64, device=u.xtx.device), u.xty)
+    except Exception:
+        return None
+    sse = max(u.sum_yy - 2.0 * torch.trace(w.T @ u.xty).item() + torch.trace(w.T @ u.xtx @ w).item(), 0.0)
+    return (sse / (u.sum_yy + eps)) ** 0.5
+
+
+def collect_change_stats(model, batches, k: int = 16, device=None,
+                         max_points: int = 4096, feat_cap: int = 2048):
+    """One probe pass over up to ``k`` real batches, measuring variance,
+    representational change (relative L2 deviation) and CKA per layer
+    (Conv2d/Linear) and per block (container with >= 2 parametric descendants).
+
+    Args:
+        model:      The trained network to probe.
+        batches:    Iterable of tensors or ``(inputs, targets)`` tuples.
+        k:          Maximum number of batches to consume.
+        device:     Probe device (defaults to model's parameter device).
+        max_points: Cap on flattened spatial-position samples per batch for
+                    the aligned change path.
+        feat_cap:   Skip CKA matrices for feature dims above this (memory).
+
+    Returns:
+        ``{name: {"kind": "layer"|"block", "var_mean", "var_std", "change",
+        "cka", "mismatch", "n_samples"}}``.
+        ``change``/``cka`` are ``None`` when not measurable for that unit.
+    """
+    if device is None:
+        device = next(model.parameters()).device
+
+    module_dict = dict(model.named_modules())
+    parametric = (nn.Conv2d, nn.Linear)
+
+    layer_names = [n for n, m in model.named_modules() if isinstance(m, parametric)]
+    layer_set = set(layer_names)
+
+    block_names = []
+    for name, m in module_dict.items():
+        if name == "":
+            continue
+        if isinstance(m, parametric):
+            continue
+        if not list(m.children()):
+            continue
+        n_parametric = sum(1 for sub in m.modules() if isinstance(sub, parametric))
+        if n_parametric >= 2:
+            block_names.append(name)
+
+    stats = {n: _UnitStats("layer") for n in layer_names}
+    for n in block_names:
+        stats[n] = _UnitStats("block")
+
+    def make_hook(u):
+        def hook(module, inp, out):
+            if u.update_failed:
+                return
+            try:
+                x = inp[0]
+                if not isinstance(x, torch.Tensor):
+                    u.update_failed = True
+                    return
+                y = out if isinstance(out, torch.Tensor) else out[0]
+                if not isinstance(y, torch.Tensor):
+                    u.update_failed = True
+                    return
+                _unit_update(u, x, y, max_points, feat_cap)
+            except Exception:
+                u.update_failed = True
+        return hook
+
+    hooks = [module_dict[n].register_forward_hook(make_hook(u)) for n, u in stats.items()]
+
+    model.eval()
+    consumed = 0
+    try:
+        with torch.no_grad():
+            for batch in batches:
+                if consumed >= k:
+                    break
+                xb = batch[0] if isinstance(batch, (tuple, list)) else batch
+                model(xb.to(device))
+                consumed += 1
+    finally:
+        for h in hooks:
+            h.remove()
+
+    result = {}
+    for name, u in stats.items():
+        change = _change_from_stats(u) if not u.update_failed else None
+        cka = _cka_from_stats(u) if not u.update_failed else None
+        result[name] = {
+            "kind": u.kind,
+            "var_mean": float(u.var_mean),
+            "var_std": float((u.var_m2 / u.n_var) ** 0.5) if u.n_var > 0 else 0.0,
+            "change": (None if change is None else float(change)),
+            "cka": (None if cka is None else float(cka)),
+            "mismatch": bool(u.mode == 'aligned'),
+            "n_samples": int(u.rel_n) if u.mode == 'l2' else int(u.n_pts),
+        }
+    return result
+
+
+def build_metric_series(cnn_layers, stats, metric):
+    """Per-layer metric series aligned with ``cnn_layers``.
+
+    A layer's value is its INNERMOST measured block's ``metric`` when the
+    layer lies inside a measured block, else the layer's own ``metric``.
+    Missing/unmeasurable units default to "never flagged" (inf for change,
+    0.0 for cka).
+    """
+    if metric not in ("change", "cka"):
+        raise ValueError(f"metric must be 'change' or 'cka', got '{metric}'.")
+    default = float('inf') if metric == "change" else 0.0
+    block_names = [n for n, s in stats.items() if s.get("kind") == "block"]
+
+    series = []
+    for ln in cnn_layers:
+        owner = None
+        for bn in block_names:
+            if ln.startswith(bn + ".") and (owner is None or len(bn) > len(owner)):
+                owner = bn
+        entry = stats.get(owner) if owner else stats.get(ln)
+        val = entry.get(metric) if entry else None
+        series.append(default if val is None else float(val))
+    return series
+
+
+
 def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=3, veto_fraction=0.25, scorer='local_dev', active_fraction=0.25):
     from fvcore.nn import FlopCountAnalysis  # optional dependency, only used by discovery
 
-    if scorer not in ('local_dev', 'cv', 'percentile'):
-        raise ValueError(f"Unknown scorer '{scorer}'. Expected 'local_dev', 'cv', or 'percentile'.")
+    if scorer not in ('local_dev', 'cv', 'percentile', 'change', 'cka'):
+        raise ValueError(f"Unknown scorer '{scorer}'. Expected 'local_dev', 'cv', 'percentile', 'change', or 'cka'.")
+
+    if scorer in ('change', 'cka'):
+        # Change-based scorers consume the collect_change_stats() payload
+        # ({name: {...stats...}}) directly: build the per-layer metric series
+        # (block-primary), then flow through the generic machinery below.
+        if not isinstance(variances, dict):
+            raise ValueError(
+                f"scorer='{scorer}' requires the stats dict from collect_change_stats()."
+            )
+        variances = build_metric_series(cnn_layers, variances, metric=scorer)
+        var_stds = None
 
     # Normalize the variance payload: accepts either a flat list of per-layer
     # variance floats (legacy) or the {name: (mean, std)} mapping produced by
@@ -266,6 +578,21 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
                 scores = [f"cv={c:.6g}" for c in cvs]
                 inactive_reason = lambda i: f"variance drift above active threshold (cv={cvs[i]:.6g} > {thresh:.6g})"
                 print(f"[DEBUG] Scorer 'cv': active threshold cv <= {thresh:.6g} (bottom {active_fraction*100:.0f}%)")
+
+            if scorer == 'change':
+                # LOW change => near-identity (redundant): flag the bottom fraction.
+                thresh = float(np.percentile(variances, active_fraction * 100.0))
+                active_flags = [v <= thresh for v in variances]
+                scores = [f"change={v:.6g}" for v in variances]
+                inactive_reason = lambda i: f"change above active threshold (change={variances[i]:.6g} > {thresh:.6g})"
+                print(f"[DEBUG] Scorer 'change': active threshold change <= {thresh:.6g} (bottom {active_fraction*100:.0f}%)")
+            elif scorer == 'cka':
+                # HIGH in/out similarity => near-identity (redundant): flag the top fraction.
+                thresh = float(np.percentile(variances, (1.0 - active_fraction) * 100.0))
+                active_flags = [v >= thresh for v in variances]
+                scores = [f"cka={v:.6g}" for v in variances]
+                inactive_reason = lambda i: f"cka below active threshold (cka={variances[i]:.6g} < {thresh:.6g})"
+                print(f"[DEBUG] Scorer 'cka': active threshold cka >= {thresh:.6g} (top {active_fraction*100:.0f}%)")
 
             num_layers = len(cnn_layers)
             veto_idx = int(num_layers * veto_fraction)

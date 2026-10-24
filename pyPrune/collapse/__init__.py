@@ -6,6 +6,8 @@ Public API:
     get_dynamic_experiment_config  -- deprecated alias of discover_regions
     get_layer_variances            -- per-layer activation variance probe
     calibrate_layer_variances      -- multi-batch variance calibration (mean + drift)
+    collect_change_stats           -- one-pass variance + L2-change + CKA probe (layers & blocks)
+    build_metric_series            -- per-layer metric series (block-primary) for change/cka scorers
     wrap_pools_safe                -- wrap pooling layers with underflow-safe wrappers
     patch_skip_connections         -- patch residual forwards to tolerate shape drift
     disable_inplace_relu           -- replace inplace ReLUs with out-of-place ones
@@ -17,7 +19,9 @@ Public API:
 
 from .core import collapse_only
 from .discovery import (
+    build_metric_series,
     calibrate_layer_variances,
+    collect_change_stats,
     discover_regions,
     get_dynamic_experiment_config,
     get_layer_variances,
@@ -42,6 +46,8 @@ __all__ = [
     "get_dynamic_experiment_config",
     "get_layer_variances",
     "calibrate_layer_variances",
+    "collect_change_stats",
+    "build_metric_series",
     "wrap_pools_safe",
     "_wrap_pools_safe",
     "patch_skip_connections",

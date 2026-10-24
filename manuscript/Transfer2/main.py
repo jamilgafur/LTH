@@ -1,5 +1,7 @@
 import os
 import glob
+import csv
+import io
 import re
 import json
 import time
@@ -124,36 +126,57 @@ class PowerTracker:
 # Adversarial Attack Robustness
 # =========================================================
 
-def evaluate_adversarial_robustness(models_dict, data_batch, device, epsilon=0.03):
-    """Modular evaluation function for adversarial attacks."""
+def evaluate_adversarial_robustness(models_dict, data_batch, device, epsilons=(0.03,), curve_rows=None):
+    """Modular evaluation function for adversarial attacks.
+
+    Sweeps `epsilons`. epsilon=0.03 keeps the historical flat column names
+    (adv_acc_FGSM_original etc.); other epsilons get `_eps<value>` suffixes.
+    When `curve_rows` (a list) is provided, every (attack, epsilon, model)
+    point is also appended for long-format curve output.
+    """
     inputs, labels = data_batch
     inputs, labels = inputs.to(device), labels.to(device)
 
-    attacks = {
-        "FGSM": lambda m, x, y: fgsm_attack(m, x, y, device, epsilon=epsilon),
-        "PGD":  lambda m, x, y: pgd_attack(m, x, y, device, epsilon=epsilon, alpha=0.01, iters=10)
-    }
-
     results = {}
-    for attack_name, attack_fn in attacks.items():
-        print(f"[INFO] Running {attack_name} attack (epsilon={epsilon})...")
-        for model_name, model in models_dict.items():
-            model.eval()
-            perturbed_inputs = attack_fn(model, inputs, labels)
-            
-            with torch.no_grad():
-                outputs = model(perturbed_inputs)
-                _, predicted = outputs.max(1)
-                acc = predicted.eq(labels).sum().item() / labels.size(0)
-                
-            print(f"       -> {model_name} Accuracy: {acc:.4f}")
-            results[f"adv_acc_{attack_name}_{model_name}"] = acc
-            
+    for epsilon in epsilons:
+        suffix = "" if abs(epsilon - 0.03) < 1e-12 else f"_eps{epsilon:g}"
+        attacks = {
+            "FGSM": lambda m, x, y: fgsm_attack(m, x, y, device, epsilon=epsilon),
+            "PGD":  lambda m, x, y: pgd_attack(m, x, y, device, epsilon=epsilon, alpha=0.01, iters=20)
+        }
+        for attack_name, attack_fn in attacks.items():
+            print(f"[INFO] Running {attack_name} attack (epsilon={epsilon})...")
+            for model_name, model in models_dict.items():
+                model.eval()
+                perturbed_inputs = attack_fn(model, inputs, labels)
+
+                with torch.no_grad():
+                    outputs = model(perturbed_inputs)
+                    _, predicted = outputs.max(1)
+                    acc = predicted.eq(labels).sum().item() / labels.size(0)
+
+                print(f"       -> {model_name} Accuracy: {acc:.4f}")
+                results[f"adv_acc_{attack_name}{suffix}_{model_name}"] = acc
+                if curve_rows is not None:
+                    curve_rows.append({"attack": attack_name, "epsilon": epsilon,
+                                       "model": model_name, "adv_acc": acc})
+
     return results
 
 # =========================================================
 # Main Processing Pipeline
 # =========================================================
+
+def _append_long_csv(path, rows, fieldnames):
+    """Append long-format (tidy) rows to a CSV, writing the header on first creation."""
+    write_header = not os.path.exists(path)
+    with open(path, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        if write_header:
+            writer.writeheader()
+        writer.writerows(rows)
+    print(f"[INFO] Appended {len(rows)} rows to {path}")
+
 
 def process_checkpoint(model_before_path, checkpoints, args, device):
     checkpoint_start_time = time.time()
@@ -216,7 +239,11 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
     checkpoint_dir = os.path.dirname(model_before_path)
     unstructured_ckpt_path = os.path.join(checkpoint_dir, f"final_JF_Unstructured_IMP_post{imp_epochs}.pt")
-    
+
+    # IMP retrains from the (inherited) 'before' model -> scorer-independent:
+    # copy a finished artifact from the default universe instead of retraining.
+    inherit_from_default_universe(unstructured_ckpt_path)
+
     if os.path.exists(unstructured_ckpt_path):
         print(f"[INFO] Loading existing IMP unstructured checkpoint: {unstructured_ckpt_path}")
         unstructured_base, _, _, _ = initialize_architecture(model_name, dataset_name)
@@ -226,16 +253,52 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         print("[INFO] IMP checkpoint not found. Starting on-the-fly finetuning...")
         unstructured_clone = deepcopy(model_before)
         unstructured_pruning_model = train_imp(
-            model=unstructured_clone, 
-            train_loader=train_loader, 
-            device=device, 
+            model=unstructured_clone,
+            train_loader=train_loader,
+            device=device,
             epochs=imp_epochs,
-            target_sparsity=float(target_sparsity), 
+            target_sparsity=float(target_sparsity),
             save_path=unstructured_ckpt_path,
             power_interval=args.power_interval
         )
         unstructured_pruning_model.to("cpu")
         torch.cuda.empty_cache()
+
+    # 5b. Structural pruning baseline (L1 filter importance, matched param count).
+    #     Unlike IMP, this actually shrinks the compute graph, so its measured
+    #     FLOPs/energy are the fair comparator for the collapse claim.
+    structural_model = None
+    structural_ckpt_path = os.path.join(checkpoint_dir, f"final_JF_Structural_L1_post{imp_epochs}.pt")
+    # Same scorer-independence argument as IMP: inherit from the default universe.
+    inherit_from_default_universe(structural_ckpt_path)
+    if os.path.exists(structural_ckpt_path):
+        try:
+            print(f"[INFO] Loading existing structural checkpoint: {structural_ckpt_path}")
+            ckpt = torch.load(structural_ckpt_path, map_location="cpu", weights_only=False)
+            structural_model = ckpt["model"] if isinstance(ckpt, dict) and "model" in ckpt else ckpt
+            structural_model.eval()
+        except Exception as e:
+            print(f"[WARN] Failed to load structural checkpoint ({e}). Will attempt re-training.")
+            structural_model = None
+    if structural_model is None:
+        try:
+            structural_clone = deepcopy(model_before)
+            structural_model = train_structural(
+                model=structural_clone,
+                train_loader=train_loader,
+                device=device,
+                epochs=imp_epochs,
+                target_sparsity=float(target_sparsity),
+                save_path=structural_ckpt_path,
+            )
+        except ImportError as e:
+            print(f"[WARN] {e} Skipping structural baseline.")
+            structural_model = None
+        except Exception as e:
+            print(f"[WARN] Structural baseline failed for {model_name}: {e}. Continuing without it.")
+            structural_model = None
+    structural_param_count = (sum(p.numel() for p in structural_model.parameters())
+                              if structural_model is not None else None)
 
     # 6. Evaluate Accuracy, Power Draw, and Energy Consumption (SEQUENTIAL GPU ALLOCATION)
     print("\n[INFO] Evaluating model accuracy, power draw, and energy consumption...")
@@ -280,29 +343,74 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
     torch.cuda.empty_cache()
 
+    acc_structural = power_structural = energy_structural = float("nan")
+    if structural_model is not None:
+        print("       -> Evaluating Structural L1 Pruned Model")
+        structural_model = structural_model.to(device)
+        acc_structural, power_structural, energy_structural = evaluate_accuracy(
+            structural_model, test_loader, device, power_interval=args.power_interval
+        )
+        structural_model = structural_model.to("cpu")
+        torch.cuda.empty_cache()
+
     print(f"[RESULT] Accuracy Original:     {acc_original:.4f} | Power: {power_original:.2f}W | Energy: {energy_original:.2f}J")
     print(f"[RESULT] Accuracy Unstructured: {acc_unstructured:.4f} | Power: {power_unstructured:.2f}W | Energy: {energy_unstructured:.2f}J")
     print(f"[RESULT] Accuracy Collapsed:    {acc_collapsed:.4f} | Power: {power_collapsed:.2f}W | Energy: {energy_collapsed:.2f}J")
+    if structural_model is not None:
+        print(f"[RESULT] Accuracy Structural:   {acc_structural:.4f} | Power: {power_structural:.2f}W | Energy: {energy_structural:.2f}J")
 
-    # 7. Benchmark Theoretical and Measured FLOPs (SEQUENTIAL GPU ALLOCATION)
-    print("\n[INFO] Benchmarking theoretical and measured FLOPs...")
-    
-    original_after_model = original_after_model.to(device)
-    _, flops_original, _ = benchmark_model(original_after_model, test_loader, device, num_batches=1)
-    original_after_model = original_after_model.to("cpu")
-    torch.cuda.empty_cache()
-    
-    full_collapsed_model_ready = full_collapsed_model_ready.to(device)
-    _, flops_collapsed, _ = benchmark_model(full_collapsed_model_ready, test_loader, device, num_batches=1)
-    full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
-    torch.cuda.empty_cache()
-    
-    # Calculate Effective FLOPs for IMP
+    # 7. Benchmark Efficiency: FLOPs, Latency, Throughput, Memory (SEQUENTIAL GPU ALLOCATION)
+    print("\n[INFO] Benchmarking efficiency (FLOPs, latency, throughput, peak memory)...")
+
+    bench_variants = [
+        ("original", original_after_model),
+        ("unstructured", unstructured_pruning_model),
+        ("collapsed", full_collapsed_model_ready),
+    ]
+    if structural_model is not None:
+        bench_variants.append(("structural", structural_model))
+
+    benchmarks = {}
+    for bench_name, bench_model in bench_variants:
+        bench_model = bench_model.to(device)
+        benchmarks[bench_name] = benchmark_model(bench_model, test_loader, device, num_batches=20)
+        bench_model = bench_model.to("cpu")
+        torch.cuda.empty_cache()
+
+    bench_original = benchmarks["original"]
+    bench_unstructured = benchmarks["unstructured"]
+    bench_collapsed = benchmarks["collapsed"]
+
+    flops_original = bench_original["flops"]
+    flops_collapsed = bench_collapsed["flops"]
+    # IMP zeroes weights but keeps the dense graph: measured FLOPs should ~match the
+    # original. flops_unstructured keeps the old theoretical column for back-compat.
     flops_unstructured = flops_original * (1.0 - float(target_sparsity))
-    
-    print(f"[RESULT] FLOPs Original:     {flops_original:.2e}")
-    print(f"[RESULT] FLOPs Unstructured: {flops_unstructured:.2e} (Theoretical/Effective)")
-    print(f"[RESULT] FLOPs Collapsed:    {flops_collapsed:.2e} (Measured)")
+
+    for bench_name, bench in benchmarks.items():
+        mem_str = f"{bench['peak_mem_mb']:.1f} MiB" if bench["peak_mem_mb"] is not None else "n/a (CPU)"
+        print(
+            f"[RESULT] {bench_name.capitalize():<12} "
+            f"FLOPs={bench['flops']:.3e} | latency={bench['latency_ms']:.2f} ms/batch | "
+            f"throughput={bench['throughput_imgs']:.1f} img/s | peak_mem={mem_str} | "
+            f"feature_maps={bench['feature_map_mb']:.1f} MiB"
+        )
+    print(f"[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): {flops_unstructured:.2e}")
+
+    def _state_dict_mb(m):
+        buf = io.BytesIO()
+        torch.save(m.state_dict(), buf)
+        return buf.getbuffer().nbytes / (1024 ** 2)
+
+    storage_mb = {
+        "original": _state_dict_mb(original_after_model),
+        "unstructured": _state_dict_mb(unstructured_pruning_model),
+        "collapsed": _state_dict_mb(full_collapsed_model_ready),
+    }
+    if structural_model is not None:
+        storage_mb["structural"] = _state_dict_mb(structural_model)
+    storage_str = ", ".join(f"{k}={v:.1f}" for k, v in storage_mb.items())
+    print(f"[RESULT] Storage (state_dict MiB): {storage_str}")
 
     # 8. Extract Features & Compute CKA (SEQUENTIAL GPU ALLOCATION)
     print("\n[INFO] Extracting features and computing CKA...")
@@ -321,35 +429,104 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     features_collapsed = extract_features(full_collapsed_model_ready, test_loader, device)
     full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
     torch.cuda.empty_cache()
-    
+
     cka_unstructured = compare_CKA(features_original, features_unstructured)
     cka_collapsed = compare_CKA(features_original, features_collapsed)
 
-    # 9. Evaluate Adversarial Robustness
+    cka_structural = None
+    if structural_model is not None:
+        structural_model = structural_model.to(device)
+        features_structural = extract_features(structural_model, test_loader, device)
+        structural_model = structural_model.to("cpu")
+        torch.cuda.empty_cache()
+        cka_structural = compare_CKA(features_original, features_structural)
+
+    # 9. Evaluate Adversarial Robustness (+ full-analysis extras when enabled)
     print("\n[INFO] Evaluating Adversarial Robustness...")
     data_batch = next(iter(test_loader))
-    
+
     original_after_model = original_after_model.to(device)
     unstructured_pruning_model = unstructured_pruning_model.to(device)
     full_collapsed_model_ready = full_collapsed_model_ready.to(device)
-    
+
     models_dict = {
         "original": original_after_model,
         "unstructured": unstructured_pruning_model,
         "collapsed": full_collapsed_model_ready
     }
-    
-    adv_metrics = evaluate_adversarial_robustness(models_dict, data_batch, device)
+    if structural_model is not None:
+        structural_model = structural_model.to(device)
+        models_dict["structural"] = structural_model
+
+    full_analysis = getattr(args, "analysis", "standard") == "full"
+    adv_epsilons = (0.005, 0.01, 0.02, 0.03, 0.05) if full_analysis else (0.03,)
+    curve_rows = [] if full_analysis else None
+    adv_metrics = evaluate_adversarial_robustness(
+        models_dict, data_batch, device, epsilons=adv_epsilons, curve_rows=curve_rows
+    )
+
+    analysis_metrics = {}
+    calibration_rows = []
+    corruption_rows = []
+    if full_analysis:
+        print("\n[INFO] Full analysis: calibration (ECE/MCE), OOD AUROC, corruptions...")
+        for mname, m in models_dict.items():
+            ece, mce, bin_rows = evaluate_calibration(m, test_loader, device)
+            analysis_metrics[f"ece_{mname}"] = ece
+            analysis_metrics[f"mce_{mname}"] = mce
+            for b in bin_rows:
+                b["model"] = mname
+                calibration_rows.append(b)
+
+        ood_loader = load_ood_test_loader(dataset_name)
+        if ood_loader is not None:
+            for mname, m in models_dict.items():
+                analysis_metrics[f"ood_auroc_{mname}"] = evaluate_ood(m, test_loader, ood_loader, device)
+                print(f"       -> OOD AUROC {mname}: {analysis_metrics[f'ood_auroc_{mname}']:.4f}")
+
+        corruptions_dir = getattr(args, "corruptions_dir", None)
+        if corruptions_dir:
+            if not os.path.isdir(corruptions_dir):
+                raise FileNotFoundError(
+                    f"Corruptions directory not found: {corruptions_dir}\n"
+                    f"[HINT] Stage CIFAR-10-C / CIFAR-100-C on the login node with "
+                    f"download_corruptions.sh (compute nodes have no internet)."
+                )
+            mean_corrupt_acc, corruption_rows = evaluate_corruptions(
+                models_dict, corruptions_dir, dataset_name, device
+            )
+            for mname, mca in mean_corrupt_acc.items():
+                analysis_metrics[f"corrupt_mca_{mname}"] = mca
+                print(f"       -> Mean corruption accuracy {mname}: {mca:.4f}")
+
+        # Long-format tidy CSVs for plotting (accumulate across checkpoints)
+        stem = os.path.splitext(os.path.basename(args.output))[0]
+        if curve_rows:
+            _append_long_csv(f"robustness_curves_{stem}.csv", curve_rows,
+                             ["attack", "epsilon", "model", "adv_acc"])
+        if calibration_rows:
+            _append_long_csv(f"calibration_{stem}.csv", calibration_rows,
+                             ["model", "bin_lo", "bin_hi", "n", "acc", "conf"])
+        if corruption_rows:
+            _append_long_csv(f"corruption_{stem}.csv", corruption_rows,
+                             ["model", "corruption", "severity", "acc"])
 
     # Final cleanup to prevent cross-experiment bleed
     original_after_model = original_after_model.to("cpu")
     unstructured_pruning_model = unstructured_pruning_model.to("cpu")
     full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
+    if structural_model is not None:
+        structural_model = structural_model.to("cpu")
     del data_batch, models_dict
     torch.cuda.empty_cache()
 
     # 10. Compile Results
     gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"
+
+    def _bench_field(name, field):
+        b = benchmarks.get(name)
+        return b[field] if b is not None else None
+
     result_dict = {
         "model": model_name,
         "dataset": dataset_name,
@@ -370,10 +547,41 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         "flops_original": float(flops_original),
         "flops_unstructured": float(flops_unstructured),
         "flops_collapsed": float(flops_collapsed),
+        "flops_unstructured_measured": float(bench_unstructured["flops"]),
+        "latency_ms_original": bench_original["latency_ms"],
+        "latency_ms_unstructured": bench_unstructured["latency_ms"],
+        "latency_ms_collapsed": bench_collapsed["latency_ms"],
+        "throughput_imgs_original": bench_original["throughput_imgs"],
+        "throughput_imgs_unstructured": bench_unstructured["throughput_imgs"],
+        "throughput_imgs_collapsed": bench_collapsed["throughput_imgs"],
+        "peak_mem_mb_original": bench_original["peak_mem_mb"],
+        "peak_mem_mb_unstructured": bench_unstructured["peak_mem_mb"],
+        "peak_mem_mb_collapsed": bench_collapsed["peak_mem_mb"],
+        "feature_maps_mb_original": bench_original["feature_map_mb"],
+        "feature_maps_mb_unstructured": bench_unstructured["feature_map_mb"],
+        "feature_maps_mb_collapsed": bench_collapsed["feature_map_mb"],
+        "storage_mb_original": storage_mb["original"],
+        "storage_mb_unstructured": storage_mb["unstructured"],
+        "storage_mb_collapsed": storage_mb["collapsed"],
         "cka_unstructured": cka_unstructured,
         "cka_collapsed": cka_collapsed,
+        # Structural L1 baseline (None/NaN when torch-pruning is unavailable)
+        "acc_structural": acc_structural,
+        "power_watts_structural": (None if power_structural != power_structural else round(power_structural, 2)),
+        "energy_joules_structural": (None if energy_structural != energy_structural else round(energy_structural, 2)),
+        "flops_structural": _bench_field("structural", "flops"),
+        "latency_ms_structural": _bench_field("structural", "latency_ms"),
+        "throughput_imgs_structural": _bench_field("structural", "throughput_imgs"),
+        "peak_mem_mb_structural": _bench_field("structural", "peak_mem_mb"),
+        "feature_maps_mb_structural": _bench_field("structural", "feature_map_mb"),
+        "storage_mb_structural": storage_mb.get("structural"),
+        "cka_structural": cka_structural,
+        "params_structural": structural_param_count,
+        "sparsity_structural": (1.0 - structural_param_count / original_param_count)
+                               if structural_param_count is not None else None,
     }
     result_dict.update(adv_metrics)
+    result_dict.update(analysis_metrics)
     return result_dict
 
 # =========================================================
@@ -388,6 +596,13 @@ def main():
     parser.add_argument("--dataset", required=True, help="Dataset name, e.g. Cifar10")
     parser.add_argument("--output", default="auto", help="Output CSV filename (set to 'auto' to avoid collisions)")
     parser.add_argument("--power-interval", type=int, default=1, help="Query interval in seconds for power monitoring (default: 1)")
+    parser.add_argument("--analysis", choices=["standard", "full"], default="standard",
+                        help="'full' adds adversarial epsilon sweeps, calibration (ECE/MCE), OOD AUROC, "
+                             "and corruption robustness (with --corruptions-dir). Default 'standard' keeps "
+                             "the historical runtime and CSV columns.")
+    parser.add_argument("--corruptions-dir", default=None,
+                        help="Directory containing CIFAR-10-C / CIFAR-100-C (see download_corruptions.sh). "
+                             "Enables corruption evaluation under --analysis full.")
     args = parser.parse_args()
 
     total_start_time = time.time()

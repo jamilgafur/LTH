@@ -7,6 +7,7 @@ import re
 import os
 import json
 import glob
+from paths import figures_dir, tables_dir
 
 # ==============================================================================
 # DATA PARSING (TEXT & JSON)
@@ -172,9 +173,11 @@ def augment_df_with_json(df, base_path="."):
 # VISUALIZATION LOGIC
 # ==============================================================================
 
-def generate_journal_figures(df):
+def generate_journal_figures(df, out_dir=None):
     """Generates a highly polished, publication-ready composite figure with shared Y-axes."""
     if df.empty: return
+    if out_dir is None:
+        out_dir = figures_dir()
     
     df['Delta_Acc'] = pd.to_numeric(df['Delta_Acc'], errors='coerce')
     df['Params_Reduction_%'] = pd.to_numeric(df['Params_Reduction_%'], errors='coerce')
@@ -251,8 +254,9 @@ def generate_journal_figures(df):
     fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.66, -0.05), 
                ncol=3, frameon=False, title="Architecture", title_fontproperties={'weight':'bold'})
 
-    plt.savefig("journal_tradeoff_analysis.png", bbox_inches='tight')
-    print("✅ Saved: journal_tradeoff_analysis.png")
+    save_path = os.path.join(str(out_dir), "journal_tradeoff_analysis.png")
+    plt.savefig(save_path, bbox_inches='tight')
+    print(f"✅ Saved: {save_path}")
 
 # ==============================================================================
 # LATEX GENERATION LOGIC
@@ -316,7 +320,8 @@ def generate_tables(df):
         latex_hw.append("\\midrule")
     latex_hw[-1] = "\\bottomrule"
     latex_hw.extend(["\\end{tabular}", "}", "\\end{table*}"])
-    with open("table_hardware_efficiency.tex", "w") as f: f.write("\n".join(latex_hw))
+    hw_path = tables_dir() / "table_hardware_efficiency.tex"
+    with open(hw_path, "w") as f: f.write("\n".join(latex_hw))
     
     # 2. Transposed Quantization Table (ISOLATING INT8 PENALTY)
     latex_quant = [
@@ -355,9 +360,10 @@ def generate_tables(df):
         latex_quant.append("\\midrule")
     latex_quant[-1] = "\\bottomrule"
     latex_quant.extend(["\\end{tabular}", "\\end{table*}"])
-    with open("table_quantization.tex", "w") as f: f.write("\n".join(latex_quant))
-    
-    print("✅ LaTeX Tables Generated (table_hardware_efficiency.tex, table_quantization.tex)")
+    quant_path = tables_dir() / "table_quantization.tex"
+    with open(quant_path, "w") as f: f.write("\n".join(latex_quant))
+
+    print(f"✅ LaTeX Tables Generated ({hw_path}, {quant_path})")
 
 def generate_control_table(base_path="."):
     """Parses JSON logs to extract fully trained Control models and format them into a strict LaTeX table."""
@@ -424,8 +430,9 @@ def generate_control_table(base_path="."):
         "\\end{table*}"
     ])
     
-    with open("table_control_metrics.tex", "w") as f: f.write("\n".join(latex_lines))
-    print("✅ LaTeX Table Generated (table_control_metrics.tex)")
+    ctrl_path = tables_dir() / "table_control_metrics.tex"
+    with open(ctrl_path, "w") as f: f.write("\n".join(latex_lines))
+    print(f"✅ LaTeX Table Generated ({ctrl_path})")
 
 # ==============================================================================
 # MAIN

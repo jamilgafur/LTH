@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib
 import logging
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import os
@@ -298,3 +299,154 @@ def plot_accuracy_vs_collapsed_depth(
     plt.savefig(os.path.join(save_dir, "fig1_accuracy_vs_depth.svg"))
     plt.close()
 
+
+
+# =====================================================================
+# Representational-change figures (scorer hypothesis evidence)
+# =====================================================================
+
+def _region_spans(exp_config, layer_names):
+    """Yield (i0, i1) index spans for every region tuple in an experiment
+    config. Values may be a single (start, end) tuple, a list of tuples,
+    a status dict, or None."""
+    if not exp_config:
+        return
+    name_idx = {n: i for i, n in enumerate(layer_names)}
+    for key, val in exp_config.items():
+        if key in ("Status_Map", "Control_Continuted") or val is None or isinstance(val, dict):
+            continue
+        tuples = [val] if isinstance(val, (list, tuple)) and val and isinstance(val[0], str) else val
+        if not isinstance(tuples, (list, tuple)):
+            continue
+        for t in tuples:
+            try:
+                s, e = t[0], t[1]
+            except Exception:
+                continue
+            if s in name_idx and e in name_idx:
+                yield (name_idx[s], name_idx[e])
+
+
+def plot_change_profile(stats, exp_config, save_root_dir, model_name, dataset_name,
+                        scorer_label="change"):
+    """Depth profile: representational change (L2 deviation) and CKA per unit
+    across network depth, with collapsed regions shaded.
+
+    stats:      collect_change_stats() payload ({name: {kind, change, cka, ...}}).
+    exp_config: region config used to annotate the figure.
+    Saves 'change_profile_<scorer_label>.svg' and '.csv' into save_root_dir.
+    """
+    os.makedirs(str(save_root_dir), exist_ok=True)
+
+    layers = [(n, s) for n, s in stats.items() if s.get("kind") == "layer"]
+    names = [n for n, _ in layers]
+    x = np.arange(len(names))
+    change = np.array([np.nan if s.get("change") is None else s["change"] for _, s in layers])
+    cka = np.array([np.nan if s.get("cka") is None else s["cka"] for _, s in layers])
+
+    fig, axes = plt.subplots(2, 1, figsize=(max(10, len(names) * 0.45), 8), sharex=True)
+
+    axes[0].plot(x, change, marker="o", ms=3, lw=1.2, color="tab:red")
+    axes[0].set_ylabel("change  ||out - in|| / ||in||")
+    axes[0].set_title(f"{model_name} / {dataset_name} — representational change profile (scorer={scorer_label})")
+    axes[0].grid(alpha=0.3)
+
+    axes[1].plot(x, cka, marker="s", ms=3, lw=1.2, color="tab:blue")
+    axes[1].set_ylabel("CKA(in, out)")
+    axes[1].set_ylim(0, 1.02)
+    axes[1].grid(alpha=0.3)
+
+    for ax in axes:
+        for (i0, i1) in _region_spans(exp_config, names):
+            ax.axvspan(i0 - 0.5, i1 + 0.5, color="green", alpha=0.12)
+
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels(names, rotation=90, fontsize=6)
+    axes[1].set_xlabel("layer (execution order)")
+    if any(True for _ in _region_spans(exp_config, names)):
+        from matplotlib.patches import Patch
+        axes[0].legend(handles=[Patch(color="green", alpha=0.3,
+                                      label="collapsed region(s)")], loc="best")
+
+    fig.tight_layout()
+    for ext in ("svg", "png"):
+        fig.savefig(os.path.join(str(save_root_dir), f"change_profile_{scorer_label}.{ext}"))
+    plt.close(fig)
+
+    pd.DataFrame({"layer": names, "change": change, "cka": cka}).to_csv(
+        os.path.join(str(save_root_dir), f"change_profile_{scorer_label}.csv"), index=False)
+    print(f"[✓] Change profile figure saved under {save_root_dir}")
+
+
+def plot_scorer_ablation(ablation, save_dir=None):
+    """Three-way scorer ablation figure (local_dev vs change vs cka):
+    (a) discovered region counts per scorer, (b) pairwise Jaccard overlap of
+    the discovered region sets. Accuracy comparison is added post-hoc once
+    per-scorer training universes exist; this figure covers the discovery stage.
+
+    ablation: parsed ablation JSON dict (or a path to it).
+    save_dir: output directory (defaults to alongside the JSON path / cwd).
+    """
+    if isinstance(ablation, str):
+        import json as _json
+        with open(ablation, "r") as f:
+            if save_dir is None:
+                save_dir = os.path.dirname(ablation) or "."
+            ablation = _json.load(f)
+    if save_dir is None:
+        save_dir = "."
+    os.makedirs(str(save_dir), exist_ok=True)
+
+    scorers_cfg = ablation.get("scorers", {})
+
+    def region_set(cfg):
+        tuples = set()
+        for key, val in (cfg or {}).items():
+            if key in ("Status_Map", "Control_Continuted") or val is None or isinstance(val, dict):
+                continue
+            items = [val] if isinstance(val, (list, tuple)) and val and isinstance(val[0], str) else val
+            if not isinstance(items, (list, tuple)):
+                continue
+            for t in items:
+                if isinstance(t, (list, tuple)) and len(t) == 2:
+                    tuples.add((str(t[0]), str(t[1])))
+        return tuples
+
+    sets = {s: region_set(cfg) for s, cfg in scorers_cfg.items()}
+    names = list(sets.keys())
+
+    counts = [len(sets[s]) for s in names]
+    jac = np.full((len(names), len(names)), np.nan)
+    for i, a in enumerate(names):
+        for j, b in enumerate(names):
+            if i == j:
+                jac[i, j] = 1.0
+            elif sets[a] or sets[b]:
+                jac[i, j] = len(sets[a] & sets[b]) / len(sets[a] | sets[b])
+
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+    axes[0].bar(names, counts, color=["tab:gray", "tab:red", "tab:blue"][:len(names)])
+    axes[0].set_ylabel("# discovered regions")
+    axes[0].set_title("Region counts per scorer")
+
+    im = axes[1].imshow(jac, vmin=0, vmax=1, cmap="viridis")
+    axes[1].set_xticks(range(len(names))); axes[1].set_xticklabels(names)
+    axes[1].set_yticks(range(len(names))); axes[1].set_yticklabels(names)
+    axes[1].set_title("Pairwise Jaccard overlap (region tuples)")
+    for i in range(len(names)):
+        for j in range(len(names)):
+            if not np.isnan(jac[i, j]):
+                axes[1].text(j, i, f"{jac[i, j]:.2f}", ha="center", va="center",
+                             color="white" if jac[i, j] < 0.5 else "black", fontsize=9)
+    fig.colorbar(im, ax=axes[1], fraction=0.046)
+
+    fig.suptitle(f"Scorer ablation — {ablation.get('model', '?')} / {ablation.get('dataset', '?')} "
+                 f"(epochs{ablation.get('epochs', '?')}_pretrain{ablation.get('pretrain', '?')})")
+    fig.tight_layout()
+    for ext in ("svg", "png"):
+        fig.savefig(os.path.join(str(save_dir), f"scorer_ablation.{ext}"))
+    plt.close(fig)
+
+    overlap_df = pd.DataFrame(jac, index=names, columns=names)
+    overlap_df.to_csv(os.path.join(str(save_dir), "scorer_ablation_jaccard.csv"))
+    print(f"[✓] Scorer ablation figure saved under {save_dir}")

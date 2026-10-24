@@ -88,6 +88,8 @@ except Exception:  # pragma: no cover – handles script execution without packa
     except Exception:
         tradeoff_generate_journal_figures = None
 
+from paths import DISCOVERY_ROOT, figures_dir, tables_dir
+
 # =========================
 # Configuration & Logging
 # =========================
@@ -110,30 +112,35 @@ pd.set_option("display.width", None)
 import argparse
 
 def get_stats_dir(epochs, pretrain):
-    # This ensures Journal_plot.py looks exactly where transfer.py saved the data
-    return Path(f"./runs/plots/Layer_Statistics_ep{epochs}_pre{pretrain}")
+    # Layer statistics live under the discovery tree at
+    # {model}/{dataset}/epochs{E}_pretrain{P}/Layer_Statistics (written by transfer.py)
+    return DISCOVERY_ROOT / "*" / "*" / f"epochs{epochs}_pretrain{pretrain}" / "Layer_Statistics"
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate Journal Plots")
 
-    parser.add_argument('--pretrain', type=int, default=None, 
+    parser.add_argument('--pretrain', type=int, default=None,
                         help="Specific epoch integer to filter the Pretrain phase.")
-    parser.add_argument('--epoch', type=int, default=None, 
+    parser.add_argument('--epoch', type=int, default=None,
                         help="Specific epoch integer to filter the regular/finetuning phases.")
-    
+    parser.add_argument('--scorer', type=str, default='local_dev',
+                        help="Scorer universe this job belongs to (forwarded by submit_job.pbs). "
+                             "Non-default scorers write figures/tables to suffixed directories.")
+
     return parser.parse_args()
 args = parse_args()
 epochs = args.epoch
 pretrain = args.pretrain
+scorer = getattr(args, 'scorer', 'local_dev') or 'local_dev'
 RESULTS_DIR = Path(f"./*epochs{epochs}*pretrain{pretrain}*")
 
-# --- UPDATE: Make output directories dynamic based on parameters ---
-FIG_DIR = Path(f"./figures_ep{epochs}_pre{pretrain}")
-TABLE_DIR = Path(f"./tables_ep{epochs}_pre{pretrain}")
-DIAGNOSTICS_DIR = Path(f"./diagnostics_ep{epochs}_pre{pretrain}")
-
-for d in [FIG_DIR, TABLE_DIR, DIAGNOSTICS_DIR]:
-    d.mkdir(parents=True, exist_ok=True)
+# --- UPDATE: Centralized output directories scoped by parameters ---
+FIG_DIR = figures_dir(epochs, pretrain)
+TABLE_DIR = tables_dir(epochs, pretrain)
+# Keep scorer universes' journal outputs apart (default scorer keeps legacy paths)
+if scorer not in ("local_dev", "all"):
+    FIG_DIR = FIG_DIR.parent / f"{FIG_DIR.name}_scorer{scorer}"
+    TABLE_DIR = TABLE_DIR.parent / f"{TABLE_DIR.name}_scorer{scorer}"
     
 DATASET_ORDER = ["cifar100_", "cifar10_", "tinyimagenet", "imagenet", "ConvNeXt"]
 
@@ -364,7 +371,7 @@ def normalize(df: pd.DataFrame) -> pd.DataFrame:
 # Figure Generations
 # =========================
 
-def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", "memory"], out_dir: Path = Path("./figures/individual_plots")):
+def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", "memory"], out_dir: Path = figures_dir() / "individual_plots"):
     out_dir.mkdir(parents=True, exist_ok=True)
     palette = {"Baseline": "#333333", "Retrained": "#ff7f0e", "Collapsed": "#2ca02c"}
     group_cols = ["dataset", "architecture", "base_name", "display_name", "posthoc_or_posttrain", "is_quantized"]
@@ -389,10 +396,10 @@ def fig1(df: pd.DataFrame, metrics: list[str] = ["accuracy", "params", "flops", 
 
 # ========================= FIG 2 ========================= #
 
-def fig2_methodology_bav_regions(epochs, pretrain, out_dir=Path("./figures/methodology")):
+def fig2_methodology_bav_regions(epochs, pretrain, out_dir=figures_dir() / "methodology"):
     logger.info(f"Starting FIG2 generation. Target epochs: {epochs}, pretrain: {pretrain}")
     
-    root_plots_dir = Path("./runs/plots")
+    root_plots_dir = DISCOVERY_ROOT
     search_pattern = f"**/epochs{epochs}_pretrain{pretrain}/**/Layer_Statistics"
     search_paths = list(root_plots_dir.glob(search_pattern))
     
@@ -639,7 +646,7 @@ def fig3_v2t_heuristic_validation(
     df: pd.DataFrame,
     epochs: int,
     pretrain: int,
-    out_dir: Path = Path("./figures/heuristic_validation")
+    out_dir: Path = figures_dir() / "heuristic_validation"
 ):
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -658,9 +665,9 @@ def fig3_v2t_heuristic_validation(
 
         # --- Dynamic Path Resolution ---
         clean_ds = dataset.strip("_")
-        arch_dir = Path(f"./runs/plots/{arch}")
+        arch_dir = DISCOVERY_ROOT / arch
         if not arch_dir.exists(): continue
-        
+
         # Case-insensitive dataset folder match
         ds_dirs = [d for d in arch_dir.iterdir() if d.is_dir() and d.name.lower() == clean_ds.lower()]
         if not ds_dirs: continue
@@ -748,7 +755,7 @@ def fig4_comprehensive_search_space_map(
     df: pd.DataFrame,
     epochs: int,
     pretrain: int,
-    out_dir: Path = Path("./figures/search_space")
+    out_dir: Path = figures_dir() / "search_space"
 ):
     import matplotlib.gridspec as gridspec
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -777,7 +784,7 @@ def fig4_comprehensive_search_space_map(
         clean_ds = dataset.strip("_").lower()
         
         # --- Bulletproof Path Discovery for Layer Stats ---
-        arch_dir = Path(f"./runs/plots/{arch}")
+        arch_dir = DISCOVERY_ROOT / arch
         if not arch_dir.exists(): continue
         
         ds_dirs = [d for d in arch_dir.iterdir() if d.is_dir() and d.name.lower() == clean_ds]
@@ -941,7 +948,7 @@ def fig4_comprehensive_search_space_map(
 # ========================= FIG 5 ========================= #
 def fig5_hardware_efficiency_profiles(
     df: pd.DataFrame,
-    out_dir: Path = Path("./figures/hardware_efficiency")
+    out_dir: Path = figures_dir() / "hardware_efficiency"
 ):
     out_dir.mkdir(parents=True, exist_ok=True)
     
@@ -1098,7 +1105,7 @@ def fig6_training_curves(
     epochs: int,         # Added required param
     pretrain: int,       # Added required param
     results_dir: Path = Path("./"),
-    out_dir: Path = Path("./figures/learning_curves")
+    out_dir: Path = figures_dir() / "learning_curves"
 ):
     out_dir.mkdir(parents=True, exist_ok=True)
     
@@ -1215,7 +1222,7 @@ def fig6_training_curves(
         plt.close()
         logger.info(f"[FIG6] Saved sequential training curves for {arch}/{dataset} at {save_path}")
         
-def export_master_summary_json(df: pd.DataFrame, out_path: Path = Path("./master_results_summary.json")):
+def export_master_summary_json(df: pd.DataFrame, out_path: Path = tables_dir() / "master_results_summary.json"):
     """
     Consolidates the normalized DataFrame into a single, highly readable 
     JSON file structured by Architecture -> Dataset -> Experiment for quick lookup.
@@ -1265,7 +1272,7 @@ def export_master_summary_json(df: pd.DataFrame, out_path: Path = Path("./master
 
 def fig7_convergence_metrics(
     df: pd.DataFrame,
-    out_dir: Path = Path("./figures/convergence")
+    out_dir: Path = figures_dir() / "convergence"
 ):
     """
     Generates a dual-panel bar chart proving that candidate models
@@ -1354,7 +1361,7 @@ def fig7_convergence_metrics(
 
 def fig8_accuracy_vs_params(
     df: pd.DataFrame,
-    out_dir: Path = Path("./figures/accuracy_vs_params"),
+    out_dir: Path = figures_dir() / "accuracy_vs_params",
 ):
     """Scatter plot of final accuracy versus parameter count.
 
@@ -1401,7 +1408,7 @@ def fig8_accuracy_vs_params(
 
 def fig9_flops_vs_memory(
     df: pd.DataFrame,
-    out_dir: Path = Path("./figures/flops_vs_memory"),
+    out_dir: Path = figures_dir() / "flops_vs_memory",
 ):
     """Heat‑map style density plot of FLOPs versus memory consumption.
 
@@ -1466,12 +1473,23 @@ if __name__ == "__main__":
         # Generate the composite trade‑off figure from ``plot_tradeoff.py`` if the helper is available.
         if tradeoff_generate_journal_figures is not None:
             try:
-                tradeoff_generate_journal_figures(df)
+                tradeoff_generate_journal_figures(df, out_dir=FIG_DIR)
                 logger.info("[TRADEOFF] Saved composite trade‑off figure via plot_tradeoff module.")
             except Exception as e:
                 logger.error(f"[TRADEOFF] Failed to generate trade‑off figure: {e}")
         
-        export_master_summary_json(df, out_path=Path(f"./master_results_summary_ep{epochs}_pre{pretrain}.json"))
+        export_master_summary_json(df, out_path=TABLE_DIR / "master_results_summary.json")
+
+        # Scorer ablation figure(s): emitted whenever a discovery 'all' run left
+        # a combined ablation JSON for this epochs/pretrain pair.
+        try:
+            from plots import plot_scorer_ablation
+            import glob as _glob
+            for _abl in _glob.glob(f"*_epochs{epochs}_pretrain{pretrain}_scorer_ablation.json"):
+                plot_scorer_ablation(_abl, save_dir=str(FIG_DIR / "scorer_ablation"))
+        except Exception as _abl_err:
+            logger.warning(f"[ABLATION] Scorer ablation figure skipped: {_abl_err}")
+
         logger.info("Script completed.")
     except Exception as e:
         logger.critical(f"Error: {e}", exc_info=True)

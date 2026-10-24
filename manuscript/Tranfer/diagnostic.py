@@ -747,7 +747,11 @@ def plot_memory_per_layer_across_experiments(metrics_sources, save_dir, exp_name
     plt.close()
     return outpath
 
-def plot_accuracy_loss_curve(acc_list, loss_list, workflow, experiment, save_dir="plots"):
+def plot_accuracy_loss_curve(acc_list, loss_list, workflow, experiment, save_dir=None):
+    if save_dir is None:
+        from paths import DIAGNOSTICS_ROOT
+        save_dir = str(DIAGNOSTICS_ROOT)
+        os.makedirs(save_dir, exist_ok=True)
     sns.set(style="whitegrid", palette="muted", font_scale=1.2)
 
     os.makedirs(save_dir, exist_ok=True)

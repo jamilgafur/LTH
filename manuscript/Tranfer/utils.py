@@ -20,6 +20,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from paths import discovery_model_dir
 
 def plot_experiment_heuristics(model_name, dataset_name, stats_csv_path):
     import pandas as pd
@@ -82,8 +83,10 @@ def plot_experiment_heuristics(model_name, dataset_name, stats_csv_path):
     plt.xticks(rotation=45, ha='right')
     sns.despine()
     plt.tight_layout()
-    plt.savefig(f"runs/plots/{model_name}_heuristic_target_summary.png", dpi=300)
-    print(f"Saved runs/plots/{model_name}_heuristic_target_summary.png")
+    save_file = discovery_model_dir(model_name) / f"{dataset_name}_heuristic_target_summary.png"
+    save_file.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(save_file, dpi=300)
+    print(f"Saved {save_file}")
 
 
 

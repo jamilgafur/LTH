@@ -81,6 +81,39 @@ def test_parse_epoch_tokens():
     assert u2.parse_epoch_tokens("../Tranfer/ToyNet_Cifar10_None_no_tokens/checkpoints/final_JF_Control.pt") == (None, None)
 
 
+def test_default_universe_donor_path_mapping():
+    scorer_ckpt = "../Tranfer/ToyNet_Cifar10_None_scorerchange_epochs300_pretrain100/checkpoints/final_JF_Unstructured_IMP_post300.pt"
+    donor = u2._default_universe_donor_path(scorer_ckpt)
+    assert donor is not None
+    assert str(Path(donor).name) == "final_JF_Unstructured_IMP_post300.pt"
+    assert "_scorerchange" not in str(Path(donor).parent.parent)
+    assert str(Path(donor).parent.parent).endswith("ToyNet_Cifar10_None_epochs300_pretrain100")
+    # Default-universe path maps to itself -> None; non-checkpoints path -> None
+    assert u2._default_universe_donor_path(donor) is None
+    assert u2._default_universe_donor_path("../Tranfer/ToyNet_Cifar10_None_scorerchange_epochs300_pretrain100/metrics/x.json") is None
+
+
+def test_inherit_from_default_universe_copies(tmp_path):
+    root = tmp_path / "Tranfer"
+    donor_dir = root / "ToyNet_Cifar10_None_epochs300_pretrain100" / "checkpoints"
+    scorer_dir = root / "ToyNet_Cifar10_None_scorercka_epochs300_pretrain100" / "checkpoints"
+    donor_dir.mkdir(parents=True)
+    scorer_dir.mkdir(parents=True)
+    (donor_dir / "final_JF_Unstructured_IMP_post300.pt").write_text("imp-donor")
+    target = scorer_dir / "final_JF_Unstructured_IMP_post300.pt"
+
+    out = u2.inherit_from_default_universe(str(target))
+    assert Path(out).exists() and Path(out).read_text() == "imp-donor"
+
+    # Idempotent: existing target untouched; missing donor -> no-op.
+    target.write_text("local")
+    u2.inherit_from_default_universe(str(target))
+    assert target.read_text() == "local"
+    missing = scorer_dir / "final_JF_Structural_L1_post300.pt"
+    u2.inherit_from_default_universe(str(missing))
+    assert not missing.exists()
+
+
 def test_discovery_derives_epochs_from_paths(exp_tree):
     ck = u2.find_experiment_checkpoints("ToyNet", "Cifar10")
 
