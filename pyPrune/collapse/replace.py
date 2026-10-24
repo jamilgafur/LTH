@@ -6,6 +6,7 @@ from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from .graph_utils import (
     _get_container_and_subname,
@@ -17,6 +18,91 @@ from .graph_utils import (
     get_layer,
 )
 from .identity import SmartIdentity, _SafePool
+
+
+class _SurrogateLayerNorm2d(nn.Module):
+    """Channels-first LayerNorm surrogate (as used by ConvNeXt-style blocks)."""
+    def __init__(self, dim, eps=1e-6):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(dim))
+        self.bias = nn.Parameter(torch.zeros(dim))
+        self.eps = eps
+    def forward(self, x):
+        u = x.mean(1, keepdim=True)
+        s = (x - u).pow(2).mean(1, keepdim=True)
+        x = (x - u) / torch.sqrt(s + self.eps)
+        return self.weight[:, None, None] * x + self.bias[:, None, None]
+
+
+_NORM_CLASSES = (nn.BatchNorm2d, nn.LayerNorm, nn.GroupNorm, nn.InstanceNorm2d)
+_ACT_CLASSES = (nn.ReLU, nn.GELU, nn.SiLU, nn.ReLU6, nn.LeakyReLU, nn.ELU, nn.Hardswish)
+
+
+def _detect_norm_act(full_block):
+    """Return the last (norm_module, act_module) used inside the excised block,
+    or (None, None) when the block contains neither. Content-based replacement
+    of any hardcoded per-architecture norm/activation choices."""
+    norm_mod = act_mod = None
+    for _, top in full_block:
+        for m in top.modules():
+            if isinstance(m, _NORM_CLASSES):
+                norm_mod = m
+            if isinstance(m, _ACT_CLASSES):
+                act_mod = m
+    return norm_mod, act_mod
+
+
+def _init_surrogate_lsq(conv, x, y_out, max_points=65536, ridge=1e-4, debug=False):
+    """Ridge least-squares fit of the surrogate conv weights so that
+    ``conv(x_in) ~= y_out`` under the captured probe statistics.
+
+    Works for both plain 1x1 convolutions and grouped (depthwise-style)
+    convolutions; the regression is solved independently per group.
+    """
+    with torch.no_grad():
+        dev = conv.weight.device
+        xs = x.to(dev).detach().float()
+        ys = y_out.to(dev).detach().float()
+
+        kh, kw = conv.kernel_size
+        sh, sw = conv.stride
+        ph, pw = conv.padding
+        xs = F.pad(xs, (pw, pw, ph, ph))
+
+        patches = F.unfold(xs, kernel_size=(kh, kw), stride=(sh, sw))  # (N, C_in*k*k, L)
+        ycols = ys.reshape(ys.shape[0], ys.shape[1], -1)               # (N, C_out, L)
+
+        if ycols.shape[0] != patches.shape[0] or ycols.shape[-1] != patches.shape[-1]:
+            raise RuntimeError(
+                f"LSQ alignment mismatch: {patches.shape[-1]} patches vs "
+                f"{ycols.shape[-1]} output positions."
+            )
+
+        groups = conv.groups
+        in_per = conv.in_channels // groups
+        out_per = conv.out_channels // groups
+        kk = kh * kw
+
+        new_weight = torch.zeros_like(conv.weight, dtype=torch.float32)
+        for n in range(patches.shape[0]):
+            X = patches[n]  # (C_in*k*k, L)
+            Y = ycols[n]    # (C_out, L)
+            L = X.shape[-1]
+            if L > max_points:
+                idx = torch.randperm(L, device=dev)[:max_points]
+                X, Y = X[:, idx], Y[:, idx]
+            for g in range(groups):
+                Xg = X[g * in_per * kk:(g + 1) * in_per * kk, :]  # (in_per*kk, L)
+                Yg = Y[g * out_per:(g + 1) * out_per, :]          # (out_per, L)
+                A = Xg @ Xg.T
+                A.diagonal().add_(ridge * A.diagonal().mean().clamp(min=1e-8))
+                Wg = (Yg @ Xg.T) @ torch.linalg.inv(A)            # (out_per, in_per*kk)
+                new_weight[g * out_per:(g + 1) * out_per] = Wg.reshape(out_per, in_per, kh, kw)
+
+        conv.weight.copy_(new_weight.to(conv.weight.dtype))
+        if debug:
+            print(f"[DEBUG] LSQ surrogate init done (mean |W|={new_weight.abs().mean():.4e})")
+
 
 def _locate_and_prepare_block(model, start_layer_name, end_layer_name, debug=False):
     print(f"[DEBUG] [LCA] Locating block boundaries: '{start_layer_name}' -> '{end_layer_name}'")
@@ -155,6 +241,8 @@ def _build_and_replace_block(
     block_analysis,
     device,
     debug,
+    y_out=None,
+    init='random',
 ):
     if debug:
         print(f"\n{'='*60}")
@@ -207,16 +295,24 @@ def _build_and_replace_block(
             target_kernel_size = 1 
             is_depthwise = False
             
+    # Inherit the original conv's geometry so the surrogate does not silently
+    # change spatial semantics (stride/padding errors previously leaked into
+    # downstream layers).
+    first_stride = (1, 1)
+    first_padding = 0
+    if original_convs:
+        first_stride = original_convs[0].stride
+        first_padding = original_convs[0].padding
+
     if is_depthwise:
-        pad = target_kernel_size // 2
         if debug:
             print(f"[DEBUG] ➔ Strategy: GROUPED {target_kernel_size}×{target_kernel_size} Conv (depth‑wise style, groups={in_channels})")
         conv = nn.Conv2d(
             in_channels,
             out_channels,
             kernel_size=target_kernel_size,
-            stride=1,
-            padding=pad,
+            stride=first_stride,
+            padding=first_padding,
             groups=in_channels,
             bias=False,
         )
@@ -224,50 +320,62 @@ def _build_and_replace_block(
     else:
         if debug:
             print(f"[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)")
-        conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False)
+        conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=first_stride, padding=0, bias=False)
         conv_name = "conv_1x1"
     # -----------------------------------------------
 
 
     model_type = type(model).__name__.lower()
-    
-    # ConvNeXt uses LayerNorm2d (channels-first) and GELU. 
-    if "convnext" in model_type:
-        # Define a quick inline LayerNorm2d helper for ConvNeXt
-        class SurrogateLayerNorm2d(nn.Module):
-            def __init__(self, dim, eps=1e-6):
-                super().__init__()
-                self.weight = nn.Parameter(torch.ones(dim))
-                self.bias = nn.Parameter(torch.zeros(dim))
-                self.eps = eps
-            def forward(self, x):
-                u = x.mean(1, keepdim=True)
-                s = (x - u).pow(2).mean(1, keepdim=True)
-                x = (x - u) / torch.sqrt(s + self.eps)
-                return self.weight[:, None, None] * x + self.bias[:, None, None]
-                
-        norm_layer = SurrogateLayerNorm2d(out_channels)
-        act_layer = nn.GELU()
-        norm_name = "layernorm"
-        act_name = "gelu"
-        
-    else:
-        # VGG, ResNet, MobileNet, Xception, RegNetX default to BN/ReLU
-        norm_layer = nn.BatchNorm2d(out_channels)  
-        act_layer = nn.ReLU(inplace=False) 
+
+    # Content-based norm/activation selection: adopt what the excised block
+    # actually uses; fall back to BN/ReLU (legacy default) when it uses neither.
+    norm_mod, act_mod = _detect_norm_act(info["full_block"])
+
+    if norm_mod is None or isinstance(norm_mod, nn.BatchNorm2d):
+        norm_layer = nn.BatchNorm2d(out_channels)
         norm_name = "bn"
+    elif isinstance(norm_mod, nn.LayerNorm):
+        norm_layer = _SurrogateLayerNorm2d(out_channels)
+        norm_name = "layernorm"
+    elif isinstance(norm_mod, nn.GroupNorm):
+        groups = math.gcd(norm_mod.num_groups, out_channels) or 1
+        norm_layer = nn.GroupNorm(groups, out_channels)
+        norm_name = "groupnorm"
+    else:  # InstanceNorm2d
+        norm_layer = nn.InstanceNorm2d(out_channels)
+        norm_name = "instancenorm"
+
+    if act_mod is None or isinstance(act_mod, nn.ReLU):
+        act_layer = nn.ReLU(inplace=False)
         act_name = "relu"
-        
-    pool = nn.AdaptiveAvgPool2d((target_H, target_W)) 
+    else:
+        try:
+            act_layer = type(act_mod)()
+        except Exception:
+            act_layer = nn.Identity()
+        act_name = type(act_mod).__name__.lower()
+
+    pool = nn.AdaptiveAvgPool2d((target_H, target_W))
 
     replacement = nn.Sequential(OrderedDict([
         (conv_name, conv),
-        (norm_name, norm_layer), 
-        (act_name, act_layer), 
-        ("adaptive_pool", pool), 
+        (norm_name, norm_layer),
+        (act_name, act_layer),
+        ("adaptive_pool", pool),
     ]))
-    
-    if debug: 
+
+    # Optional function-preserving initialization: fit the surrogate conv to
+    # the captured block I/O. Normalization layers are deliberately left at
+    # their near-identity defaults so the fitted mapping is preserved.
+    if init == 'lsq':
+        try:
+            _init_surrogate_lsq(conv, x, y_out, debug=debug)
+        except Exception as e:
+            print(f"[WARN] LSQ surrogate init failed ({e}); keeping random initialization.")
+    elif init != 'random':
+        raise ValueError(f"Unknown init mode '{init}'. Expected 'random' or 'lsq'.")
+
+    if debug:
         print(f"\n[DEBUG] Built replacement module for {model_type}:")
         for name, layer in replacement.named_children():
             print(f"        - {name}: {layer}")
@@ -490,9 +598,33 @@ def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
 
     return model
 
-def _find_next_linear(model, end_layer_name, debug):
+def _find_next_linear(model, end_layer_name, debug, order=None):
     if debug:
         print(f"\n[STEP] Searching for next nn.Linear after '{end_layer_name}'...")
+
+    # Preferred path: true execution order captured from a probe forward pass.
+    # Robust on branchy/custom architectures where named_modules() DFS order
+    # does not match forward order (and could select a Linear on a wrong branch).
+    if order is not None and end_layer_name in order:
+        end_idx_exec = order[end_layer_name]
+        best = None
+        for name, module in model.named_modules():
+            if (
+                isinstance(module, nn.Linear)
+                and name in order
+                and order[name] > end_idx_exec
+                and (best is None or order[name] < best[0])
+            ):
+                best = (order[name], name, module)
+        if best is not None:
+            if debug:
+                print(f"[DEBUG] Execution-order match: next Linear is '{best[1]}' "
+                      f"(exec idx {end_idx_exec} -> {best[0]})")
+            return best[1], best[2]
+        if debug:
+            print(f"[DEBUG] '{end_layer_name}' executed (idx {end_idx_exec}) but no "
+                  f"Linear fired after it. Checking legacy name scan...")
+
     modules_list = list(model.named_modules())
     idx_end_global = None
 
@@ -579,34 +711,6 @@ def _analyze_block_output(
     if debug:
         print(f"[DEBUG] Heuristic next linear in_features = {linear_in_features_heuristic}")
 
-    adaptive_pool_to_use = None
-    if (
-        layer_type == nn.Conv2d
-        and linear_in_features_heuristic is not None
-        and out_channels is not None
-        and len(out_shape) >= 4
-    ):
-        expected_hw = max(1, linear_in_features_heuristic // out_channels)
-        cur_H, cur_W = out_shape[-2], out_shape[-1]
-        cur_hw = cur_H * cur_W
-
-        if debug:
-            print(
-                f"[DEBUG] Comparing spatial dims: "
-                f"expected_hw={expected_hw}, current_hw={cur_hw} (HxW={cur_H}x{cur_W})"
-            )
-
-        if cur_hw != expected_hw:
-            target_H = int(round(math.sqrt(expected_hw))) if expected_hw > 1 else 1
-            target_W = max(1, expected_hw // target_H)
-            adaptive_pool_to_use = nn.AdaptiveAvgPool2d((target_H, target_W))
-
-            if debug:
-                print(
-                    f"[DEBUG] Suggest AdaptiveAvgPool2d({target_H},{target_W}) "
-                    f"to reconcile linear in_features mismatch."
-                )
-
     # --- Shortcut detection (unchanged) ---
     shortcut_out_channels = None
     for nm, mod in model.named_modules():
@@ -626,14 +730,12 @@ def _analyze_block_output(
         print(f"         out_shape={out_shape}")
         print(f"         out_channels={out_channels}")
         print(f"         has_pool={pool_layer is not None}")
-        print(f"         adaptive_pool_to_use={adaptive_pool_to_use}")
         print(f"         shortcut_out_channels={shortcut_out_channels}")
 
     return {
         "out_shape": out_shape,
         "out_channels": out_channels,
         "pool_layer": pool_layer,
-        "adaptive_pool_to_use": adaptive_pool_to_use,
         "shortcut_out_channels": shortcut_out_channels,
         "linear_in_features_heuristic": linear_in_features_heuristic,
     }

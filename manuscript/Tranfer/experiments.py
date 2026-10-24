@@ -325,6 +325,12 @@ def run_experiment(
     # 7. Finalization & Diagnostics
     torch.save({"model_state_dict": model.state_dict(), "data": all_data}, final_ckpt_path)
 
+    # Whole-model artifact (architecture + weights). Lets analysis/tooling load
+    # the trained model directly without re-running architecture surgery.
+    # NOTE: coupled to the repository's class definitions (torch pickle).
+    whole_path = os.path.join(ckpt_dir, f"final_{base_ckpt_name}_whole.pt")
+    torch.save(model, whole_path)
+
     param_count = count_trainable_params(model)
     infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device, quant=quant)
 
@@ -350,7 +356,7 @@ def run_experiment(
     return all_data
 
 # =====================================================
-# === Experiment Entry Points (JF & Kevin) ===
+# === Experiment Entry Point (JF) ===
 # =====================================================
 
 def run_jf_experiment(
@@ -408,6 +414,12 @@ def run_jf_experiment(
             handle_skips=True
         )
 
+        # Persist the collapsed architecture (+ base weights) once, so the
+        # structure can be reloaded directly without re-running the collapse.
+        structure_path = os.path.join(ckpt_dir, f"structure_{base_ckpt_name}.pt")
+        if not os.path.exists(structure_path):
+            torch.save(base_model, structure_path)
+
     data = run_experiment(
         model=base_model,
         model_kwargs=model_kwargs,
@@ -425,72 +437,3 @@ def run_jf_experiment(
     )
     return base_model
 
-def run_kevin_experiment(
-    experiments,
-    model_path_000,
-    train_loader,
-    test_loader,
-    device,
-    epochs,
-    model_class=VGG16,
-    model_kwargs=None,
-    data_shape=None,
-    save_path="./runs",
-    quant=False):
-    model_kwargs = model_kwargs or {}
-    print("\n=== Running Kevin experiment ===")
-    exp_name, collapse_range = list(experiments.items())[0]
-
-    ckpt_dir = os.path.join(save_path, "checkpoints")
-    base_ckpt_name = f"Kevin_{exp_name}"
-    if quant: base_ckpt_name += "_quant"
-    
-    ckpt_pattern = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch*.pt")
-    existing_ckpts = glob.glob(ckpt_pattern)
-
-    base_model = model_class(**model_kwargs)
-    wrap_pools_safe(base_model)
-
-    init_opt_state = None
-    init_sched_state = None
-
-    if not existing_ckpts:
-        if model_path_000 and "None" not in model_path_000:
-            print(f"[•] Loading initial weights and training state from {model_path_000}")
-            ckpt = torch.load(model_path_000, map_location='cpu', weights_only=False) 
-            base_model.load_state_dict(ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt['model'], strict=False)
-            
-            init_opt_state = ckpt.get('optimizer_state_dict')
-            init_sched_state = ckpt.get('scheduler_state_dict')
-    else:
-        print(f"[•] Resumption detected. Architecture will be prepared for checkpoint loading.")
-
-    compression_set = _make_compression_set(collapse_range)
-    if compression_set:
-        print(f"[•] Collapsing ranges {compression_set} for {exp_name}")
-        base_model = collapse_only(
-            model=base_model,
-            compression_set=compression_set,
-            input_shape=model_kwargs['one_batch'].shape,
-            device=device,
-            dry_run=False,
-            debug=True,
-            handle_skips=True
-        )
-
-    data = run_experiment(
-        model=base_model,
-        model_kwargs=model_kwargs,
-        train_loader=train_loader,
-        test_loader=test_loader,
-        device=device,
-        epochs=epochs,
-        workflow="Kevin",
-        exp_name=exp_name,
-        data_shape=data_shape,
-        save_path=save_path,
-        quant=quant,
-        init_opt_state=init_opt_state,     # Forward states
-        init_sched_state=init_sched_state  # Forward states
-    )
-    return base_model

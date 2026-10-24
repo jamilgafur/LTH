@@ -5,6 +5,7 @@ Public API:
     discover_regions               -- find collapsible regions from activation variances
     get_dynamic_experiment_config  -- deprecated alias of discover_regions
     get_layer_variances            -- per-layer activation variance probe
+    calibrate_layer_variances      -- multi-batch variance calibration (mean + drift)
     wrap_pools_safe                -- wrap pooling layers with underflow-safe wrappers
     patch_skip_connections         -- patch residual forwards to tolerate shape drift
     disable_inplace_relu           -- replace inplace ReLUs with out-of-place ones
@@ -16,6 +17,7 @@ Public API:
 
 from .core import collapse_only
 from .discovery import (
+    calibrate_layer_variances,
     discover_regions,
     get_dynamic_experiment_config,
     get_layer_variances,
@@ -39,6 +41,7 @@ __all__ = [
     "discover_regions",
     "get_dynamic_experiment_config",
     "get_layer_variances",
+    "calibrate_layer_variances",
     "wrap_pools_safe",
     "_wrap_pools_safe",
     "patch_skip_connections",

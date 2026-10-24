@@ -41,7 +41,6 @@ from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
 
-from pyPrune.collapse import collapse_only
 import argparse
 import glob
 import re
@@ -430,8 +429,12 @@ def initialize_architecture(model_name: str, dataset_name: str):
 def find_experiment_checkpoints(model_name, dataset_name, pre_epochs, post_epochs):
     """
     Finds model checkpoints across varied directory conventions (handles optional _None_ tags
-    and case-insensitive dataset matching). Automatically falls back to Set_0 if 
+    and case-insensitive dataset matching). Automatically falls back to Set_0 if
     Dynamic_Region_All_Combined is not present.
+
+    The collapsed bucket only matches whole-model artifacts (`*_whole.pt`) written by
+    the Tranfer experiments: these contain the collapsed architecture plus trained
+    weights and are loaded directly (no re-collapse step in analysis).
     """
     dataset_patterns = [dataset_name, dataset_name.lower(), dataset_name.capitalize()]
     before_ckpts = []
@@ -440,18 +443,18 @@ def find_experiment_checkpoints(model_name, dataset_name, pre_epochs, post_epoch
 
     for d_name in set(dataset_patterns):
         base_pattern = f"../Tranfer/{model_name}_{d_name}_*epochs{post_epochs}*pre*{pre_epochs}"
-        
+
         # Original and Control check
         before_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Control.pt"))
         after_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Control_Continuted.pt"))
-        
-        # Collapsed check with fallback logic
-        combined_ckpts = glob.glob(f"{base_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined.pt")
+
+        # Collapsed check with fallback logic (whole-model artifacts only)
+        combined_ckpts = glob.glob(f"{base_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt")
         if combined_ckpts:
             collapsed_ckpts.extend(combined_ckpts)
         else:
             # Fallback to Set_0 if only one region was discovered
-            collapsed_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Set_0.pt"))
+            collapsed_ckpts.extend(glob.glob(f"{base_pattern}/checkpoints/final_JF_Set_0_whole.pt"))
 
     return {
         "before": sorted(list(set(before_ckpts))),

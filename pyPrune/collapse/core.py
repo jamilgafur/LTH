@@ -12,6 +12,7 @@ from .graph_utils import (
     _log_exception,
     count_trainable_params,
     disable_inplace_relu,
+    execution_order,
     layer_stats,
 )
 from .identity import _wrap_pools_safe
@@ -29,7 +30,8 @@ def _collapse_block(
     end_layer_name: str,
     input_shape: tuple,
     device='cpu',
-    debug: bool = False
+    debug: bool = False,
+    init: str = 'random',
 ) -> nn.Module:
     """
     Collapse layers between start_layer_name and end_layer_name (inclusive)
@@ -81,10 +83,19 @@ def _collapse_block(
         print(f"[DEBUG] Hooking End Node   : '{lca_end_name}'")
         print(f"[DEBUG] Dummy Input Shape  : {input_shape}")
         
-    x, y_out, pre_params = _capture_preblock_activation( 
+    x, y_out, pre_params = _capture_preblock_activation(
         model, lca_start_name, lca_end_name, input_shape, info["conv_layers"], info["layer_type"], device, debug
-    ) 
+    )
     # =========================================================# =========================================================
+
+    # Topology guard: the surrogate replacement is defined for 4D (NCHW)
+    # feature maps. Anything else (sequence models, 1D/3D tensors, flattened
+    # activations) is skipped instead of silently corrupted.
+    if x.ndim != 4 or y_out.ndim != 4:
+        raise ValueError(
+            f"unsupported topology for collapse: captured x.ndim={x.ndim}, "
+            f"y_out.ndim={y_out.ndim} (expected 4D NCHW feature maps)."
+        )
 
     if debug:
         print(f"[DEBUG] --- Activation Capture Success ---")
@@ -92,9 +103,15 @@ def _collapse_block(
         print(f"[DEBUG] Output (y) shape exiting LCA   : {tuple(y_out.shape)}")
         print(f"[DEBUG] Pre-collapse Parameter Count   : {pre_params:,}")
 
-    # Step 3: Find next linear
+    # Step 3: Find next linear (prefer true execution order over DFS name order)
     print(f"\n[STEP 3] Probing graph for downstream classifier after '{end_layer_name}'...")
-    next_linear_name, next_linear_mod = _find_next_linear(model, end_layer_name, debug)
+    try:
+        exec_order = execution_order(model, input_shape, device=device)
+    except Exception as e:
+        if debug:
+            print(f"[DEBUG] Execution-order probe failed ({e}); falling back to name-order scan.")
+        exec_order = None
+    next_linear_name, next_linear_mod = _find_next_linear(model, end_layer_name, debug, order=exec_order)
     
     if debug:
         print(f"[DEBUG] --- Downstream Probe Results ---")
@@ -134,7 +151,9 @@ def _collapse_block(
         next_linear_mod,
         block_analysis,
         device,
-        debug
+        debug,
+        y_out=y_out,
+        init=init,
     )
     
     print(f"\n[INFO] ✅ Framework successfully merged '{start_layer_name}' → '{end_layer_name}'")
@@ -152,14 +171,18 @@ def collapse_only(
     safe_param_reduction: bool = True,
     handle_skips: bool = True,
     debug: bool = True,
-    dry_run: bool = False
+    dry_run: bool = False,
+    init: str = 'random'
 ) -> nn.Module:
     """
     Top-level API to collapse multiple blocks with the simple replacement policy.
     """
     print(f"\n[STEP] ===== Starting collapse_only process =====")
-    print(f"[DEBUG] Device={device}, dry_run={dry_run}, handle_skips={handle_skips}, safe_param_reduction={safe_param_reduction}")
+    print(f"[DEBUG] Device={device}, dry_run={dry_run}, handle_skips={handle_skips}, safe_param_reduction={safe_param_reduction}, init={init}")
     overall_start_ts = time.perf_counter()
+
+    if init not in ('random', 'lsq'):
+        raise ValueError(f"Unknown init mode '{init}'. Expected 'random' or 'lsq'.")
 
     if model is None:
         print(f"[STEP] Loading model from disk...")
@@ -244,7 +267,7 @@ def collapse_only(
 
         try:
             print(f"[STEP] Calling _collapse_block('{start}', '{end}')")
-            model = _collapse_block(model, start, end, input_shape, device=device, debug=debug)
+            model = _collapse_block(model, start, end, input_shape, device=device, debug=debug, init=init)
             elapsed = time.perf_counter() - block_start_ts
             print(f"[INFO] ✅ Successfully collapsed block '{name}' ({start} → {end}) in {elapsed:.2f}s")
             success_count += 1
@@ -253,6 +276,11 @@ def collapse_only(
             if "Could not map start/end layers" in str(e):
                 print(f"[WARN] ⚠ Collapse candidate '{name}' appears to be cross-branch (parallel paths).")
                 print(f"[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.")
+                skipped_count += 1
+                continue
+            elif "unsupported topology" in str(e):
+                # Topology guard: non-4D blocks cannot be surrogated; skip cleanly.
+                print(f"[WARN] ⚠ Collapse candidate '{name}' skipped: {e}")
                 skipped_count += 1
                 continue
             else:

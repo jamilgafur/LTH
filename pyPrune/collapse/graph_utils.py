@@ -60,6 +60,44 @@ def disable_inplace_relu(model: nn.Module):
     if replaced:
         print(f"[INFO] Replaced {replaced} in-place ReLU(s) with out-of-place variants.")
 
+def execution_order(model: nn.Module, input_shape: Tuple[int, ...], device='cpu') -> Dict[str, int]:
+    """Probe the model with a dummy input and record the order in which modules
+    actually fire during the forward pass.
+
+    Returns a dict mapping module name -> execution index (first-fire order for
+    modules executed more than once). This reflects true graph/topological order
+    rather than depth-first `named_modules()` order, so it is safe to use for
+    downstream layer discovery on branchy/custom architectures.
+    """
+    model.eval()
+    model.to(device)
+    dummy_input = torch.randn(input_shape).to(device)
+
+    order: Dict[str, int] = {}
+    counter = [0]
+
+    def make_hook(name):
+        def hook(module, inp, out):
+            if name not in order:
+                order[name] = counter[0]
+                counter[0] += 1
+        return hook
+
+    hooks = []
+    for name, module in model.named_modules():
+        if name == "":
+            continue
+        hooks.append(module.register_forward_hook(make_hook(name)))
+
+    try:
+        with torch.no_grad():
+            model(dummy_input)
+    finally:
+        for h in hooks:
+            h.remove()
+
+    return order
+
 def _simulate_input_output_hooks(model: nn.Module, start_layer_path: str, end_layer_path: str, input_shape: Tuple[int, ...], device='cpu'):
     model.eval()
     model.to(device)

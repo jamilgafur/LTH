@@ -2,6 +2,7 @@ import os
 import json
 import torch
 from pyPrune.models.Vgg16 import VGG16
+from pyPrune.collapse import collapse_only
 # -------------------------
 # Checkpoint and Naming
 # -------------------------
@@ -62,7 +63,15 @@ def load_model_from_checkpoint(ckpt_path, collapse_range, device, model_class=VG
     model = model_class(**model_kwargs)
     if collapse_range is not None:
         print(f"Collapsing layers in range: {collapse_range}")
-        model = collapse_block(model, *collapse_range)
+        one_batch = model_kwargs.get("one_batch")
+        input_shape = tuple(one_batch.shape) if one_batch is not None else (1, 3, 32, 32)
+        model = collapse_only(
+            model=model,
+            compression_set={"collapse_0": tuple(collapse_range)},
+            input_shape=input_shape,
+            device=device,
+            debug=False,
+        )
 
     sd = torch.load(ckpt_path)['model']
     model.load_state_dict(sd)

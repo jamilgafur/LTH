@@ -17,19 +17,18 @@ cd ~/LTH/manuscript/Tranfer/ || {
 echo "MODEL=$MODEL"
 echo "DATASET=$DATASET"
 echo "EXPERIMENT=$EXPERIMENT"
-echo "FLAG=$FLAG"
 echo "QUANT=$QUANT"
 echo "PRETRAIN=$PRETRAIN"
 echo "EPOCHS=$EPOCHS"
 
 # --- Check for required variables ---
-if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$EXPERIMENT" ] || [ -z "$FLAG" ] || [ -z "$QUANT" ] || [ -z "$PRETRAIN" ] || [ -z "$EPOCHS" ]; then
-    echo "Error: One or more required environment variables (MODEL, DATASET, EXPERIMENT, FLAG, QUANT, PRETRAIN, EPOCHS) are not set." >&2
+if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$EXPERIMENT" ] || [ -z "$QUANT" ] || [ -z "$PRETRAIN" ] || [ -z "$EPOCHS" ]; then
+    echo "Error: One or more required environment variables (MODEL, DATASET, EXPERIMENT, QUANT, PRETRAIN, EPOCHS) are not set." >&2
     exit 1
 fi
 
 # --- Prepare output file ---
-OUTPUT_FILE="${MODEL}_${DATASET}_${EXPERIMENT}_${FLAG}_${QUANT}_pre${PRETRAIN}_ep${EPOCHS}_run.txt"
+OUTPUT_FILE="${MODEL}_${DATASET}_${EXPERIMENT}_JF_${QUANT}_pre${PRETRAIN}_ep${EPOCHS}_run.txt"
 
 # Remove existing output file if it exists
 if [ -f "$OUTPUT_FILE" ]; then
@@ -44,13 +43,12 @@ if [ "$QUANT" == "True" ]; then
 fi
 
 # --- Run the Python script ---
-echo "Executing: ~/env/lth_env/bin/python transfer.py --model $MODEL --dataset $DATASET --experiment \"$EXPERIMENT\" --$FLAG --pretrain $PRETRAIN --epochs $EPOCHS $QUANT_FLAG"
+echo "Executing: ~/env/lth_env/bin/python transfer.py --model $MODEL --dataset $DATASET --experiment \"$EXPERIMENT\" --pretrain $PRETRAIN --epochs $EPOCHS $QUANT_FLAG"
 
 time ~/env/lth_env/bin/python transfer.py \
     --model "$MODEL" \
     --dataset "$DATASET" \
     --experiment "$EXPERIMENT" \
-    --"$FLAG" \
     --pretrain "$PRETRAIN" \
     --epochs "$EPOCHS" \
     $QUANT_FLAG > "$OUTPUT_FILE" 2>&1

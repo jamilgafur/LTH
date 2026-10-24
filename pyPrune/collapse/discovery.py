@@ -55,14 +55,110 @@ def get_layer_variances(model, dummy_input):
     # Cleanup
     for h in hooks:
         h.remove()
-        
+
     return variances
 
-def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=3, veto_fraction=0.25):
+
+def calibrate_layer_variances(model, batches, k: int = 16, device=None):
+    """Calibrated, multi-batch activation-variance statistics per layer.
+
+    Runs up to ``k`` real batches through the model and accumulates each
+    layer's activation variance with Welford's online algorithm, returning
+    both the mean variance and its batch-to-batch standard deviation.
+
+    Args:
+        model:   The network to probe.
+        batches: Iterable of tensors or ``(inputs, targets)`` tuples
+                 (typically a DataLoader).
+        k:       Maximum number of batches to consume.
+        device:  Probe device (defaults to the model's parameter device).
+
+    Returns:
+        ``{layer_name: (mean_variance, std_variance)}`` for every
+        Conv2d/Linear layer. ``std`` close to 0 marks layers whose variance
+        is consistently low ("minimal *changing* variance" -> redundancy).
+    """
+    if device is None:
+        device = next(model.parameters()).device
+
+    layer_names = [
+        name for name, module in model.named_modules()
+        if isinstance(module, (torch.nn.Conv2d, torch.nn.Linear))
+    ]
+    stats = {name: [0, 0.0, 0.0] for name in layer_names}  # n, mean, M2
+
+    def layer_variance(out):
+        if out.ndim == 4:
+            if out.shape[2] > 1 and out.shape[3] > 1:
+                return out.var(dim=[2, 3], unbiased=False).mean().item()
+            return out.var(dim=1, unbiased=False).mean().item() if out.shape[1] > 1 else 0.0
+        return out.var(unbiased=False).item()
+
+    def make_hook(name):
+        def hook(module, inp, out):
+            if isinstance(out, torch.Tensor):
+                v = layer_variance(out.detach())
+                entry = stats[name]
+                entry[0] += 1
+                delta = v - entry[1]
+                entry[1] += delta / entry[0]
+                entry[2] += delta * (v - entry[1])
+        return hook
+
+    hooks = []
+    module_dict = dict(model.named_modules())
+    for name in layer_names:
+        hooks.append(module_dict[name].register_forward_hook(make_hook(name)))
+
+    model.eval()
+    consumed = 0
+    try:
+        with torch.no_grad():
+            for batch in batches:
+                if consumed >= k:
+                    break
+                xb = batch[0] if isinstance(batch, (tuple, list)) else batch
+                model(xb.to(device))
+                consumed += 1
+    finally:
+        for h in hooks:
+            h.remove()
+
+    return {
+        name: (entry[1], (entry[2] / entry[0]) ** 0.5 if entry[0] > 0 else 0.0)
+        for name, entry in stats.items()
+    }
+
+
+def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224), window_size=3, veto_fraction=0.25, scorer='local_dev', active_fraction=0.25):
     from fvcore.nn import FlopCountAnalysis  # optional dependency, only used by discovery
 
+    if scorer not in ('local_dev', 'cv', 'percentile'):
+        raise ValueError(f"Unknown scorer '{scorer}'. Expected 'local_dev', 'cv', or 'percentile'.")
+
+    # Normalize the variance payload: accepts either a flat list of per-layer
+    # variance floats (legacy) or the {name: (mean, std)} mapping produced by
+    # calibrate_layer_variances().
+    var_stds = None
+    if isinstance(variances, dict):
+        means, var_stds = [], []
+        for ln in cnn_layers:
+            entry = variances[ln]
+            if isinstance(entry, dict):
+                means.append(float(entry.get('mean', 0.0)))
+                var_stds.append(float(entry.get('std', 0.0)))
+            elif isinstance(entry, (tuple, list)) and len(entry) == 2:
+                means.append(float(entry[0]))
+                var_stds.append(float(entry[1]))
+            else:
+                means.append(float(entry))
+                var_stds.append(None)
+        if any(s is None for s in var_stds):
+            var_stds = None
+        variances = means
+
     print(f"\n[DEBUG] {'='*40}")
-    print(f"[DEBUG] === Starting Dynamic Config Generator ===")
+    print(f"[DEBUG] === Starting Dynamic Config Generator (scorer={scorer}) ===")
     print(f"[DEBUG] {'='*40}")
 
     device = next(model.parameters()).device
@@ -137,17 +233,39 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
     # =====================================================================
 
     def extract_and_expand_candidates():
-            # Phase 1: Rolling Variance
+            # Phase 1: scorer-based "active" (redundant) layer flags.
+            # 'local_dev' reproduces the legacy rolling-mean h-value behavior
+            # exactly; 'percentile' and 'cv' use calibrated thresholds.
             rolling_means = []
             for i in range(len(variances)):
                 start = max(0, i - window_size)
                 end = min(len(variances), i + window_size + 1)
                 rolling_means.append(np.mean(variances[start:end]))
-                
+
             h_values = []
             for var, mean_var in zip(variances, rolling_means):
                 if var - mean_var < 0: h_values.append(max((var - mean_var) / mean_var, -1.0))
                 else: h_values.append(min((var - mean_var) / mean_var, 1.0))
+
+            if scorer == 'local_dev':
+                active_flags = [(h < 0) and not np.isnan(h) for h in h_values]
+                scores = [f"h={h:.6f}" for h in h_values]
+                inactive_reason = lambda i: f"non-negative or NaN h={h_values[i]:.6f}"
+            elif scorer == 'percentile':
+                thresh = float(np.percentile(variances, active_fraction * 100.0))
+                active_flags = [v <= thresh for v in variances]
+                scores = [f"var={v:.6g}" for v in variances]
+                inactive_reason = lambda i: f"variance above active threshold (var={variances[i]:.6g} > {thresh:.6g})"
+                print(f"[DEBUG] Scorer 'percentile': active threshold var <= {thresh:.6g} (bottom {active_fraction*100:.0f}%)")
+            else:  # scorer == 'cv'
+                if var_stds is None:
+                    raise ValueError("scorer='cv' requires (mean, std) calibration tuples from calibrate_layer_variances().")
+                cvs = [abs(s / m) if m > 0 else float('inf') for m, s in zip(variances, var_stds)]
+                thresh = float(np.percentile(cvs, active_fraction * 100.0))
+                active_flags = [c <= thresh for c in cvs]
+                scores = [f"cv={c:.6g}" for c in cvs]
+                inactive_reason = lambda i: f"variance drift above active threshold (cv={cvs[i]:.6g} > {thresh:.6g})"
+                print(f"[DEBUG] Scorer 'cv': active threshold cv <= {thresh:.6g} (bottom {active_fraction*100:.0f}%)")
 
             num_layers = len(cnn_layers)
             veto_idx = int(num_layers * veto_fraction)
@@ -160,21 +278,21 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
             for i, h in enumerate(h_values):
                 layer_name = cnn_layers[i]
                 mod = module_dict.get(layer_name)
-                
+
                 is_classifier = any(term in layer_name.lower() for term in ['classifier', 'fc', 'aux'])
                 is_parametric = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear))
                 is_valid_target = isinstance(mod, (torch.nn.Conv2d, torch.nn.Linear, torch.nn.ReLU, torch.nn.BatchNorm2d)) and not is_classifier
-                
-                if i < veto_idx: 
+
+                if i < veto_idx:
                     status = "Veto"
-                elif not is_valid_target: 
+                elif not is_valid_target:
                     status = "Rejected"
-                elif h >= 0 or np.isnan(h): 
+                elif not active_flags[i]:
                     # [CRITICAL FIX] Non-parametric layers act as "Passive" bridges so they don't fracture blocks
                     status = "Passive" if not is_parametric else "Rejected"
-                else: 
+                else:
                     status = "Active"
-                    
+
                 status_map[layer_name] = status
 
                 if status in {"Rejected", "Veto"}:
@@ -183,15 +301,15 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
                         reason = f"veto window (idx={i}, cutoff={veto_idx})"
                     elif not is_valid_target:
                         reason = f"invalid target type={type(mod).__name__ if mod is not None else 'None'}"
-                    elif h >= 0 or np.isnan(h):
-                        reason = f"non-negative or NaN h={h:.6f}"
+                    elif not active_flags[i]:
+                        reason = inactive_reason(i)
                     print(
-                        f"[DEBUG] [SCAN] Layer {i:02d} | {layer_name:<45} | h={h:.6f} | "
+                        f"[DEBUG] [SCAN] Layer {i:02d} | {layer_name:<45} | {scores[i]} | "
                         f"status={status:<8} | reason={reason}"
                     )
                 elif status == "Passive":
                     print(
-                        f"[DEBUG] [SCAN] Layer {i:02d} | {layer_name:<45} | h={h:.6f} | "
+                        f"[DEBUG] [SCAN] Layer {i:02d} | {layer_name:<45} | {scores[i]} | "
                         f"status=Passive  | reason=bridge layer"
                     )
                 

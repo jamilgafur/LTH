@@ -431,13 +431,11 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     saved_tensors, layer_variances, layer_activations, global_median_var, baseline_probs = run_baseline_pass(model, input_tensor)
 
     if exp_config is None:
-        device = next(model.parameters()).device
         exp_config = discover_regions(
-            list(layer_variances.keys()), 
+            list(layer_variances.keys()),
             list(layer_variances.values()),
             model=model,
-            input_shape=input_tensor.shape,
-            device=device
+            input_shape=input_tensor.shape
         )
         
     if not exp_config: print("[WARN] No experiment config dynamically generated.")
@@ -462,16 +460,6 @@ def analyze_collapse_heuristics(model, input_tensor, save_root_dir, model_name, 
     save_and_plot_metric(plot_data_cscore, "Collapse Score", dirs["cscore"], "Composite Activational Collapse Score", "C_Score (Higher = Safer to Collapse)", global_cscore_val, "Control Architecture Score", 'crimson', 'purple', model_name, dataset_name, invert_safe_zone=True)
 
     return pd.DataFrame(plot_data_cscore)
-
-def run_jf_or_kevin_experiment(experiment_name, layers, model_class, model_kwargs, input_size, epochs, experiment_func, save_path, quant, model_path_097, model_path_000, train_loader, test_loader, device, args):
-    model_class = eval(model_class) if isinstance(model_class, str) else model_class
-    if args.JF:
-        return run_jf_experiment({experiment_name: layers}, model_path_097, train_loader, test_loader, device, epochs, pretrain=None, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, quant=quant)
-    elif args.Kevin:
-        return run_kevin_experiment({experiment_name: layers}, model_path_000, train_loader, test_loader, device, epochs, model_class=model_class, model_kwargs=model_kwargs, data_shape=input_size, save_path=save_path, quant=quant)
-    else: raise ValueError("Specify either --JF or --Kevin.")
-
-
 
 def run_experiments_for_dataset(
     experiments,
@@ -508,22 +496,20 @@ def run_experiments_for_dataset(
 
         run_epochs = active_epochs
 
-        run_jf_or_kevin_experiment(
-            name,
-            layers,
-            model_class,
-            model_kwargs,
-            input_size,
-            run_epochs,
-            experiment_func,
-            save_path,
-            quant,
+        model_class_obj = eval(model_class) if isinstance(model_class, str) else model_class
+        run_jf_experiment(
+            {name: layers},
             model_path_097,
-            model_path_000,
             train_loader,
             test_loader,
             device,
-            args,
+            run_epochs,
+            pretrain=None,
+            model_class=model_class_obj,
+            model_kwargs=model_kwargs,
+            data_shape=input_size,
+            save_path=save_path,
+            quant=quant,
         )# ==============================================================================
 # Main Entry Point
 # ==============================================================================
@@ -640,8 +626,6 @@ def parse_cli_args():
         default="discover",
         help="Experiment to run, or 'discover' to generate regions",
     )
-    parser.add_argument("--JF", action="store_true", help="Run JF experiments")
-    parser.add_argument("--Kevin", action="store_true", help="Run Kevin experiments")
     parser.add_argument("--quant", action="store_true", help="Apply Quantization Aware Training")
     return parser.parse_args()
 
@@ -667,7 +651,7 @@ def run_discovery_stage(args, device, train_loader, test_loader, model_class, mo
     save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}_epochs{args.epochs}_pretrain{args.pretrain}"
     
     ckpt_dir = os.path.join(save_path, "checkpoints")
-    flag_str = "JF" if args.JF else "Kevin"
+    flag_str = "JF"
     quant_str = "_quant" if args.quant else ""
     trained_baseline_path = os.path.join(ckpt_dir, f"final_{flag_str}_Control{quant_str}.pt")
     
@@ -750,7 +734,7 @@ def run_hpc_stage(args, device, train_loader, test_loader, model_class, model_kw
     # --- FIX: Reconstruct path to the trained Control weights from Discovery Stage ---
     save_path = f"{args.model}_{args.dataset}_{CHECKPOINT_FILES[args.model][args.dataset][0]}_epochs{args.epochs}_pretrain{args.pretrain}"
     ckpt_dir = os.path.join(save_path, "checkpoints")
-    flag_str = "JF" if args.JF else "Kevin"
+    flag_str = "JF"
     quant_str = "_quant" if args.quant else ""
     trained_baseline_path = os.path.join(ckpt_dir, f"final_{flag_str}_Control{quant_str}.pt")
 
@@ -787,7 +771,7 @@ def main():
     model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
     model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][1])
 
-    json_file = f"{args.model}_{args.dataset}_epochs{args.epochs}_pretrain{args.pretrain}_{'JF' if args.JF else 'Kevin'}_discovered_regions.json"
+    json_file = f"{args.model}_{args.dataset}_epochs{args.epochs}_pretrain{args.pretrain}_JF_discovered_regions.json"
 
     if args.experiment == "discover":
         run_discovery_stage(

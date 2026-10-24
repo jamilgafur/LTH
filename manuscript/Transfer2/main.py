@@ -22,7 +22,6 @@ from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
 from utils import *
 
-from pyPrune.collapse import collapse_only
 from attacks import fgsm_attack, pgd_attack
 import measure_power_usage
 
@@ -164,7 +163,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     model_name, dataset_name, epochs_str, pre_str, ckpt_epoch, base_dir = parse_directory_context(model_before_path, args.model, args.dataset)
     
     print("[INFO] Initializing baseline model...")
-    base_model, train_loader, test_loader, dummy_input = initialize_architecture(model_name, dataset_name)
+    base_model, train_loader, test_loader, _ = initialize_architecture(model_name, dataset_name)
     model_before = load_weights(base_model, model_before_path, device)
 
     # 2. Load Original Post-Finetuning Model
@@ -173,26 +172,23 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     original_after_base, _, _, _ = initialize_architecture(model_name, dataset_name)
     original_after_model = load_weights(original_after_base, model_after_path, device)
 
-    # 3. Execute Structural Collapse
-    print("[INFO] Preparing and executing structural collapse...")
-    full_collapsed_base, _, _, _ = initialize_architecture(model_name, dataset_name)
-    compression_dict = load_collapse_regions(model_name, dataset_name, args.pre, args.post)
-    
-    collapse_start_time = time.time()
-    full_collapsed_structure = collapse_only(
-        model=full_collapsed_base,
-        compression_set=compression_dict,
-        input_shape=dummy_input.shape,
-        device=device,
-        dry_run=False,
-        debug=False,
-        handle_skips=True,
-    )
-    print(f"[INFO] Structural collapse completed in {time.time() - collapse_start_time:.2f}s")
+    # 3. Load the collapsed model as a whole artifact (architecture + weights).
+    #    The Tranfer experiments persist `*_whole.pt` files, so analysis no
+    #    longer re-runs initialize -> collapse -> load per checkpoint.
+    print("[INFO] Loading whole collapsed model artifact...")
+    try:
+        collapsed_model_path = find_matching_checkpoint(model_before_path, checkpoints["collapsed"])
+    except FileNotFoundError as e:
+        raise FileNotFoundError(
+            f"{e}\n[HINT] No `*_whole.pt` collapsed artifact found for this experiment. "
+            f"Re-run the Tranfer experiments to generate `final_*_whole.pt` artifacts."
+        ) from e
 
-    # 4. Load weights into collapsed structure
-    collapsed_model_path = find_matching_checkpoint(model_before_path, checkpoints["collapsed"])
-    full_collapsed_model_ready = load_weights(full_collapsed_structure, collapsed_model_path, device)
+    load_start_time = time.time()
+    full_collapsed_model_ready = torch.load(collapsed_model_path, map_location=device, weights_only=False)
+    full_collapsed_model_ready.to(device)
+    full_collapsed_model_ready.eval()
+    print(f"[INFO] Whole-model load completed in {time.time() - load_start_time:.2f}s")
 
     # 5. Calculate Dynamic Sparsity & Handle IMP Unstructured Pruning
     print("[INFO] Calculating dynamic sparsity to match collapse...")
