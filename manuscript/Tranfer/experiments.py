@@ -13,6 +13,8 @@ import numpy as np
 
 # Third-party libraries
 import torch
+import sys
+import tqdm
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -197,6 +199,8 @@ def run_experiment(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
+    # Fixed input shapes per experiment -> let cuDNN autotune conv algorithms.
+    torch.backends.cudnn.benchmark = True
 
     base_ckpt_name = f"{workflow}_{exp_name}"
 
@@ -281,14 +285,21 @@ def run_experiment(
                 print(f"[WARN] Scheduler structural mismatch. Starting fresh scheduler.")
 
     # 6. Training Loop
-    for epoch in range(start_epoch, epochs):
-        print(f"[•] Epoch {epoch}")
+    epoch_pbar = tqdm.tqdm(
+        range(start_epoch, epochs),
+        desc=f"{workflow}/{exp_name}",
+        disable=not sys.stderr.isatty(),
+    )
+    for epoch in epoch_pbar:
+        if epoch_pbar.disable:
+            print(f"[•] Epoch {epoch}")
 
         avg_loss, acc = train_one_epoch(
-            model, train_loader, optimizer, device, 
-            scaler=scaler, use_autocast=quant
+            model, train_loader, optimizer, device,
+            scaler=scaler, use_autocast=quant,
+            epoch=epoch, total_epochs=epochs,
         )
-        
+
         scheduler.step() # Always step the scheduler
 
         all_data["accuracies"].append(acc)
@@ -299,6 +310,13 @@ def run_experiment(
             all_data["patience_counter"] = 0
         else:
             all_data["patience_counter"] += 1
+
+        if not epoch_pbar.disable:
+            epoch_pbar.set_postfix({
+                "loss": f"{avg_loss:.4f}",
+                "acc": f"{acc:.2f}%",
+                "best": f"{all_data['best_acc']:.2f}%",
+            })
 
         # Save State-Aware Checkpoint
         ckpt_path = os.path.join(ckpt_dir, f"{base_ckpt_name}_epoch{epoch}.pt")

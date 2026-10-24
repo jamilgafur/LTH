@@ -7,6 +7,7 @@ from torchvision import datasets, transforms
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import os
+import sys
 import json
 from tqdm import tqdm
 from fvcore.nn import FlopCountAnalysis
@@ -306,31 +307,53 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, c
 
     # 7. Main Training Loop
     model.train()
+    interactive = sys.stderr.isatty()
     if start_epoch < epochs:
         with PowerTracker(device=device, interval_s=power_interval) as tracker:
-            for epoch in range(start_epoch, epochs):
+            epoch_pbar = tqdm(
+                range(start_epoch, epochs),
+                desc="IMP",
+                disable=not interactive,
+            )
+            for epoch in epoch_pbar:
                 if epoch < pruning_steps:
                     prune.global_unstructured(
                         parameters_to_prune,
                         pruning_method=prune.L1Unstructured,
                         amount=incremental_amount
                     )
-                    
-                running_loss = 0.0
-                for inputs, targets in tqdm(train_loader, total=len(train_loader)):
-                    inputs, targets = inputs.to(device), targets.to(device)
-                    
+
+                loss_sum = torch.zeros((), device=device)
+                batch_pbar = tqdm(
+                    train_loader,
+                    total=len(train_loader),
+                    desc=f"Epoch {epoch + 1}/{epochs}",
+                    leave=False,
+                    disable=not interactive,
+                )
+                for step, (inputs, targets) in enumerate(batch_pbar):
+                    inputs = inputs.to(device, non_blocking=True)
+                    targets = targets.to(device, non_blocking=True)
+
                     optimizer.zero_grad(set_to_none=True)
                     outputs = model(inputs)
                     loss = criterion(outputs, targets)
                     loss.backward()
                     optimizer.step()
-                    running_loss += loss.item()
-                    
+                    loss_sum += loss.detach()
+
+                    # Throttled postfix refresh (bounded host syncs)
+                    if not batch_pbar.disable and (step + 1) % 20 == 0:
+                        batch_pbar.set_postfix({"loss": f"{loss_sum.item() / (step + 1):.4f}"})
+
                     # Aggressively delete tensors to free memory
                     del inputs, targets, outputs, loss
-                    
-                print(f"[INFO] Epoch {epoch + 1}/{epochs} | Train Loss: {running_loss / len(train_loader):.4f}")
+
+                epoch_loss = loss_sum.item() / len(train_loader)
+                if not epoch_pbar.disable:
+                    epoch_pbar.set_postfix({"loss": f"{epoch_loss:.4f}"})
+                else:
+                    print(f"[INFO] Epoch {epoch + 1}/{epochs} | Train Loss: {epoch_loss:.4f}")
                 
                 # Query current energy statistics so far in this session
                 _, session_joules, session_time = tracker.get_results()

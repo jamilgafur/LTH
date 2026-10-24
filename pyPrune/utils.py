@@ -123,12 +123,12 @@ def load_cifar100(batch_size: int = 512, num_workers: int = 4) -> tuple[DataLoad
 
     train_loader = DataLoader(
         datasets.CIFAR100('data', train=True, download=True, transform=train_transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers
+        batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
     )
 
     test_loader = DataLoader(
         datasets.CIFAR100('data', train=False, transform=test_transform),
-        batch_size=batch_size, shuffle=False, num_workers=num_workers
+        batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
     )
 
     print("CIFAR-100 data shape: ", next(iter(train_loader))[0].shape)
@@ -148,12 +148,12 @@ def load_cifar10(batch_size: int = 512, num_workers: int = 4) -> tuple[DataLoade
     ])
     train_loader = DataLoader(
         datasets.CIFAR10('data', train=True, download=True, transform=train_transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers
+        batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
     )
 
     test_loader = DataLoader(
         datasets.CIFAR10('data', train=False, transform=test_transform),
-        batch_size=batch_size, shuffle=False, num_workers=num_workers
+        batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
     )
     
     print("CIFAR-10 data shape: ", next(iter(train_loader))[0].shape)
@@ -168,12 +168,12 @@ def load_mnist(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, 
 
     train_loader = DataLoader(
         datasets.MNIST('data', train=True, download=True, transform=transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers
+        batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
     )
 
     test_loader = DataLoader(
         datasets.MNIST('data', train=False, transform=transform),
-        batch_size=1000, shuffle=False, num_workers=num_workers
+        batch_size=1000, shuffle=False, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
     )
 
     return train_loader, test_loader
@@ -188,12 +188,12 @@ def load_fashionmnist(batch_size: int = 64, num_workers: int = 1) -> tuple[DataL
 
     train_loader = DataLoader(
         datasets.FashionMNIST('data', train=True, download=True, transform=transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers
+        batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
     )
 
     test_loader = DataLoader(
         datasets.FashionMNIST('data', train=False, transform=transform),
-        batch_size=batch_size, shuffle=False, num_workers=num_workers
+        batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
     )
 
     print("FashionMNIST data shape: ", next(iter(train_loader))[0].shape)
@@ -208,12 +208,12 @@ def load_stl10(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, 
 
     train_loader = DataLoader(
         datasets.STL10('data', split='train', download=True, transform=transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers
+        batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
     )
 
     test_loader = DataLoader(
         datasets.STL10('data', split='test', download=True, transform=transform),
-        batch_size=batch_size, shuffle=False, num_workers=num_workers
+        batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
     )
 
     print("STL10 data shape: ", next(iter(train_loader))[0].shape)
@@ -235,8 +235,8 @@ def load_caltech101(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoa
     test_size = len(dataset) - train_size
     train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0))
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0))
 
     print("Caltech101 data shape: ", next(iter(train_loader))[0].shape)
     return train_loader, test_loader
@@ -267,8 +267,8 @@ def load_tiny_imagenet(batch_size: int = 64, num_workers: int = 1) -> tuple[Data
     val_dataset = datasets.ImageFolder(val_dir, transform=transform_val)
 
     # Dataloaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0))
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0))
 
     return train_loader, val_loader
 
@@ -320,14 +320,14 @@ def load_imagenet(batch_size: int = 64, num_workers: int = 1):
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
-        num_workers=num_workers
+        num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
     )
 
     val_loader = DataLoader(
         val_dataset,
         batch_size=batch_size,
         shuffle=False,
-        num_workers=num_workers
+        num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
     )
 
     return train_loader, val_loader
