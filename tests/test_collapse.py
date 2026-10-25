@@ -225,6 +225,38 @@ def test_discover_regions_scorers():
         )
 
 
+def test_discover_regions_change_cka_scorers():
+    """Regression: 'change'/'cka' must not fall into the cv (else) branch.
+
+    Previously the scorer dispatch chain was `if local_dev / elif percentile /
+    else cv`, with the change/cka handling below it as dead code. change/cka
+    therefore hit the cv branch and raised the misleading
+    "scorer='cv' requires (mean, std) calibration tuples" ValueError.
+    """
+    model = _toy_model()
+    keys = ["0", "2", "4", "8"]
+
+    # change: LOW drift => redundant -> layers '2' and '4' flagged (bottom 50%)
+    stats = {
+        "0": {"kind": "layer", "change": 1.0, "cka": 0.1},
+        "2": {"kind": "layer", "change": 0.1, "cka": 0.9},
+        "4": {"kind": "layer", "change": 0.05, "cka": 0.95},
+        "8": {"kind": "layer", "change": 0.9, "cka": 0.2},
+    }
+    regions = discover_regions(
+        model, keys, stats,
+        input_shape=(1, 3, 8, 8), scorer="change", active_fraction=0.5,
+    )
+    assert regions["Set_0"] == ("2", "4")
+
+    # cka: HIGH in/out similarity => redundant -> layers '2' and '4' (top 50%)
+    regions = discover_regions(
+        model, keys, stats,
+        input_shape=(1, 3, 8, 8), scorer="cka", active_fraction=0.5,
+    )
+    assert regions["Set_0"] == ("2", "4")
+
+
 def test_lsq_init_closer_to_original_than_random():
     probe = torch.randn(1, 3, 8, 8)
     torch.manual_seed(7)

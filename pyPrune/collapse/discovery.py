@@ -569,17 +569,7 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
                 scores = [f"var={v:.6g}" for v in variances]
                 inactive_reason = lambda i: f"variance above active threshold (var={variances[i]:.6g} > {thresh:.6g})"
                 print(f"[DEBUG] Scorer 'percentile': active threshold var <= {thresh:.6g} (bottom {active_fraction*100:.0f}%)")
-            else:  # scorer == 'cv'
-                if var_stds is None:
-                    raise ValueError("scorer='cv' requires (mean, std) calibration tuples from calibrate_layer_variances().")
-                cvs = [abs(s / m) if m > 0 else float('inf') for m, s in zip(variances, var_stds)]
-                thresh = float(np.percentile(cvs, active_fraction * 100.0))
-                active_flags = [c <= thresh for c in cvs]
-                scores = [f"cv={c:.6g}" for c in cvs]
-                inactive_reason = lambda i: f"variance drift above active threshold (cv={cvs[i]:.6g} > {thresh:.6g})"
-                print(f"[DEBUG] Scorer 'cv': active threshold cv <= {thresh:.6g} (bottom {active_fraction*100:.0f}%)")
-
-            if scorer == 'change':
+            elif scorer == 'change':
                 # LOW change => near-identity (redundant): flag the bottom fraction.
                 thresh = float(np.percentile(variances, active_fraction * 100.0))
                 active_flags = [v <= thresh for v in variances]
@@ -593,6 +583,15 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
                 scores = [f"cka={v:.6g}" for v in variances]
                 inactive_reason = lambda i: f"cka below active threshold (cka={variances[i]:.6g} < {thresh:.6g})"
                 print(f"[DEBUG] Scorer 'cka': active threshold cka >= {thresh:.6g} (top {active_fraction*100:.0f}%)")
+            else:  # scorer == 'cv' (guaranteed exclusive by scorer validation in discover_regions())
+                if var_stds is None:
+                    raise ValueError("scorer='cv' requires (mean, std) calibration tuples from calibrate_layer_variances().")
+                cvs = [abs(s / m) if m > 0 else float('inf') for m, s in zip(variances, var_stds)]
+                thresh = float(np.percentile(cvs, active_fraction * 100.0))
+                active_flags = [c <= thresh for c in cvs]
+                scores = [f"cv={c:.6g}" for c in cvs]
+                inactive_reason = lambda i: f"variance drift above active threshold (cv={cvs[i]:.6g} > {thresh:.6g})"
+                print(f"[DEBUG] Scorer 'cv': active threshold cv <= {thresh:.6g} (bottom {active_fraction*100:.0f}%)")
 
             num_layers = len(cnn_layers)
             veto_idx = int(num_layers * veto_fraction)
