@@ -1,0 +1,741 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='InceptionNet', dataset='tinyimagenet', pretrain=100, epochs=300, experiment='Dynamic_Region_All_Combined', quant=True, scorer='local_dev')
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading Tiny ImageNet data for InceptionNet...
+Loading Tiny ImageNet data for InceptionNet...
+[DEBUG] Base checkpoint path resolved: ../structured_study/pruning_checkpoints/InceptionNet_datasettinyimagenet_pretrain10_finetune30_steps21_batch128_devicecuda_strategy_magnitude/
+[INFO] Legacy regions JSON absent; using ablation map: InceptionNet_tinyimagenet_epochs300_pretrain100_scorerlocal_dev_JF_discovered_regions.json
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Dynamic_Region_All_Combined'
+============================================================
+
+[INFO] Validating JSON configuration map at: InceptionNet_tinyimagenet_epochs300_pretrain100_scorerlocal_dev_JF_discovered_regions.json
+[DEBUG] Loaded 12 configurations from map.
+[WARN] Trained baseline NOT found at InceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_quant.pt. Falling back to initial un-finetuned checkpoint.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Dynamic_Region_All_Combined ---
+    Budget allocated: 300 epochs
+
+=== Running JF experiment ===
+[•] Collapsing ranges [('stage4.inception_4a.branch3.1.conv', 'stage4.inception_4b.branch2.0.conv'), ('stage4.inception_4b.branch3.0.conv', 'stage4.inception_4c.branch2.0.conv'), ('stage4.inception_4c.branch3.0.conv', 'stage4.inception_4d.branch2.0.conv'), ('stage4.inception_4d.branch3.0.conv', 'stage4.inception_4d.branch4.1.conv'), ('stage5.inception_5a.branch3.0.conv', 'stage5.inception_5a.branch4.1.conv'), ('stage4.inception_4e.branch2.1.conv', 'stage4.inception_4e.branch4.1.conv'), ('stage4.inception_4e.branch3.0.conv', 'stage4.inception_4e.branch4.1.conv'), ('stage5.inception_5a.branch1.conv', 'stage5.inception_5a.branch2.0.conv'), ('stage4.inception_4e.branch3.1.conv', 'stage4.inception_4e.branch4.1.conv')] for Dynamic_Region_All_Combined
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (InceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 9 pairs.
+[DEBUG] Total collapse targets: 9
+[INFO] Model parameter count before collapsing: 6,185,832
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4a.branch3.1.conv', 'stage4.inception_4b.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4a.branch3.1.conv
+[INFO] End Target   : stage4.inception_4b.branch2.0.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4a.branch3.1.conv' -> 'stage4.inception_4b.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 0 to 1
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] inception_4a -> InceptionBlock
+    [LAYER MAP] inception_4b -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4a'
+[DEBUG] Hooking End Node   : 'stage4.inception_4b'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4a' -> 'stage4.inception_4b'...
+[WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2). [MaxPool2d; further occurrences suppressed]
+[WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2). [MaxPool2d; further occurrences suppressed]
+[DEBUG] Captured input shape: (64, 480, 4, 4), output shape: (64, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 480, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 6,185,832
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4b.branch2.0.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4b.branch2.0.conv'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 115 -> 295)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (64, 480, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[RESULT] Block analysis complete:
+         out_shape=(64, 512, 4, 4)
+         out_channels=512
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 512, 4, 4)
+    - out_channels             : 512
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4a.branch3.1.conv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 0 -> 1
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 480 (in) -> 512 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for inceptionnet:
+        - conv_1x1: Conv2d(480, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 6,185,832
+[INFO] Post-collapse : 5,606,008
+[INFO] Net Change    : -579,824
+[DEBUG] Local validation candidate selected from replacement slot: 'inception_4a'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 512, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 0: 'inception_4a'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (64, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'stage4.inception_4b' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4b' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'stage4.inception_4c' (InceptionBlock) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4c' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'stage4.inception_4d' (InceptionBlock) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4d' executed successfully, output shape: (64, 528, 4, 4)
+[DEBUG] Running downstream module 'stage4.inception_4e' (InceptionBlock) with input shape (64, 528, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (64, 832, 4, 4)
+[DEBUG] Running downstream module 'stage4.maxpool4' (_SafePool) with input shape (64, 832, 4, 4)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (64, 832, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4a.branch3.1.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch3.1.conv' → 'stage4.inception_4b.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch3.1.conv → stage4.inception_4b.branch2.0.conv) in 0.36s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_1': stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4b.branch3.0.conv', 'stage4.inception_4c.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4b.branch3.0.conv
+[INFO] End Target   : stage4.inception_4c.branch2.0.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4b.branch3.0.conv' -> 'stage4.inception_4c.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 1 to 2
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] inception_4b -> SmartIdentity
+    [LAYER MAP] inception_4c -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4b'
+[DEBUG] Hooking End Node   : 'stage4.inception_4c'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4b' -> 'stage4.inception_4c'...
+[DEBUG] Captured input shape: (64, 512, 4, 4), output shape: (64, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 512, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 5,606,008
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4c.branch2.0.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4c.branch2.0.conv'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 91 -> 241)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (64, 512, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[RESULT] Block analysis complete:
+         out_shape=(64, 512, 4, 4)
+         out_channels=512
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 512, 4, 4)
+    - out_channels             : 512
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4b.branch3.0.conv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 1 -> 2
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 512 (in) -> 512 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for inceptionnet:
+        - conv_1x1: Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 5,606,008
+[INFO] Post-collapse : 5,358,408
+[INFO] Net Change    : -247,600
+[DEBUG] Local validation candidate selected from replacement slot: 'inception_4b'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 512, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 1: 'inception_4b'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (64, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'stage4.inception_4c' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4c' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'stage4.inception_4d' (InceptionBlock) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4d' executed successfully, output shape: (64, 528, 4, 4)
+[DEBUG] Running downstream module 'stage4.inception_4e' (InceptionBlock) with input shape (64, 528, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (64, 832, 4, 4)
+[DEBUG] Running downstream module 'stage4.maxpool4' (_SafePool) with input shape (64, 832, 4, 4)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (64, 832, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4b.branch3.0.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4b.branch3.0.conv' → 'stage4.inception_4c.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4b.branch3.0.conv → stage4.inception_4c.branch2.0.conv) in 0.05s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_2': stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4c.branch3.0.conv', 'stage4.inception_4d.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4c.branch3.0.conv
+[INFO] End Target   : stage4.inception_4d.branch2.0.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.0.conv' -> 'stage4.inception_4d.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 2 to 3
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] inception_4c -> SmartIdentity
+    [LAYER MAP] inception_4d -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4c'
+[DEBUG] Hooking End Node   : 'stage4.inception_4d'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4c' -> 'stage4.inception_4d'...
+[DEBUG] Captured input shape: (64, 512, 4, 4), output shape: (64, 528, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 512, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 528, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 5,358,408
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4d.branch2.0.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4d.branch2.0.conv'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 96 -> 216)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (64, 512, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 528, 4, 4)
+[DEBUG] Determined out_channels=528
+[DEBUG] Final block output shape: (64, 528, 4, 4)
+[DEBUG] Determined out_channels=528
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[RESULT] Block analysis complete:
+         out_shape=(64, 528, 4, 4)
+         out_channels=528
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 528, 4, 4)
+    - out_channels             : 528
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4c.branch3.0.conv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 2 -> 3
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 512 (in) -> 528 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for inceptionnet:
+        - conv_1x1: Conv2d(512, 528, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(528, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 5,358,408
+[INFO] Post-collapse : 5,023,720
+[INFO] Net Change    : -334,688
+[DEBUG] Local validation candidate selected from replacement slot: 'inception_4c'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 528, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (64, 528, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'stage4.inception_4d' (SmartIdentity) with input shape (64, 528, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4d' executed successfully, output shape: (64, 528, 4, 4)
+[DEBUG] Running downstream module 'stage4.inception_4e' (InceptionBlock) with input shape (64, 528, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (64, 832, 4, 4)
+[DEBUG] Running downstream module 'stage4.maxpool4' (_SafePool) with input shape (64, 832, 4, 4)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (64, 832, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4c.branch3.0.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4d.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4c.branch3.0.conv → stage4.inception_4d.branch2.0.conv) in 0.05s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_3': stage4.inception_4d.branch3.0.conv → stage4.inception_4d.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4d.branch3.0.conv', 'stage4.inception_4d.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4d.branch3.0.conv
+[INFO] End Target   : stage4.inception_4d.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4d.branch3.0.conv' -> 'stage4.inception_4d.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4d' | Type: SmartIdentity
+[WARN] ⚠ Target 'stage4.inception_4d' is already a SmartIdentity (absorbed by an earlier collapse region). Skipping.
+[WARN] ⚠ Collapse candidate 'collapse_3' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'collapse_4': stage5.inception_5a.branch3.0.conv → stage5.inception_5a.branch4.1.conv
+[STEP] Calling _collapse_block('stage5.inception_5a.branch3.0.conv', 'stage5.inception_5a.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage5.inception_5a.branch3.0.conv
+[INFO] End Target   : stage5.inception_5a.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage5.inception_5a.branch3.0.conv' -> 'stage5.inception_5a.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage5.inception_5a' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage5.inception_5a' (InceptionBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage5'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 0 to 0
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] inception_5a -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage5.inception_5a'
+[DEBUG] Hooking End Node   : 'stage5.inception_5a'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'stage5.inception_5a' -> 'stage5.inception_5a'...
+[DEBUG] Captured input shape: (64, 832, 2, 2), output shape: (64, 832, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 832, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (64, 832, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 5,023,720
+
+[STEP 3] Probing graph for downstream classifier after 'stage5.inception_5a.branch4.1.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage5.inception_5a.branch4.1.conv'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 152 -> 191)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 832, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 832, 2, 2)
+[DEBUG] Determined out_channels=832
+[DEBUG] Final block output shape: (64, 832, 2, 2)
+[DEBUG] Determined out_channels=832
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[RESULT] Block analysis complete:
+         out_shape=(64, 832, 2, 2)
+         out_channels=832
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 832, 2, 2)
+    - out_channels             : 832
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage5.inception_5a.branch3.0.conv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage5'
+[DEBUG] Layer Indices    : 0 -> 0
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 832 (in) -> 832 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=832, out=256)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for inceptionnet:
+        - conv_1x1: Conv2d(832, 832, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(832, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'stage5'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 5,023,720
+[INFO] Post-collapse : 4,673,128
+[INFO] Net Change    : -350,592
+[DEBUG] Local validation candidate selected from replacement slot: 'inception_5a'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 832, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage5' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage5'...
+[DEBUG] Found inserted block candidate at index 0: 'inception_5a'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (64, 832, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'stage5.inception_5b' (InceptionBlock) with input shape (64, 832, 2, 2)
+[DEBUG] Downstream 'stage5.inception_5b' executed successfully, output shape: (64, 1024, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage5' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage5.inception_5a.branch3.0.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage5.inception_5a.branch3.0.conv' → 'stage5.inception_5a.branch4.1.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_4' (stage5.inception_5a.branch3.0.conv → stage5.inception_5a.branch4.1.conv) in 0.05s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_5': stage4.inception_4e.branch2.1.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch2.1.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch2.1.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch2.1.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage4.inception_4e' (InceptionBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 4
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] inception_4e -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4e'
+[DEBUG] Hooking End Node   : 'stage4.inception_4e'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4e' -> 'stage4.inception_4e'...
+[DEBUG] Captured input shape: (64, 528, 4, 4), output shape: (64, 832, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 528, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 832, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 4,673,128
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4e.branch4.1.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4e.branch4.1.conv'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 121 -> 167)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 528, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 832, 4, 4)
+[DEBUG] Determined out_channels=832
+[DEBUG] Final block output shape: (64, 832, 4, 4)
+[DEBUG] Determined out_channels=832
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[RESULT] Block analysis complete:
+         out_shape=(64, 832, 4, 4)
+         out_channels=832
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 832, 4, 4)
+    - out_channels             : 832
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4e.branch2.1.conv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 4 -> 4
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 528 (in) -> 832 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=528, out=256)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for inceptionnet:
+        - conv_1x1: Conv2d(528, 832, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(832, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,673,128
+[INFO] Post-collapse : 4,244,712
+[INFO] Net Change    : -428,416
+[DEBUG] Local validation candidate selected from replacement slot: 'inception_4e'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 832, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 4: 'inception_4e'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 832, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'stage4.maxpool4' (_SafePool) with input shape (64, 832, 4, 4)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (64, 832, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4e.branch2.1.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4e.branch2.1.conv' → 'stage4.inception_4e.branch4.1.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_5' (stage4.inception_4e.branch2.1.conv → stage4.inception_4e.branch4.1.conv) in 0.04s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_6': stage4.inception_4e.branch3.0.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch3.0.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch3.0.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch3.0.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: Sequential
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4e'
+[DEBUG]   start_layer_name=stage4.inception_4e.branch3.0.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4e.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'collapse_6' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'collapse_7': stage5.inception_5a.branch1.conv → stage5.inception_5a.branch2.0.conv
+[STEP] Calling _collapse_block('stage5.inception_5a.branch1.conv', 'stage5.inception_5a.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage5.inception_5a.branch1.conv
+[INFO] End Target   : stage5.inception_5a.branch2.0.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage5.inception_5a.branch1.conv' -> 'stage5.inception_5a.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage5.inception_5a' | Type: Sequential
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage5.inception_5a'
+[DEBUG]   start_layer_name=stage5.inception_5a.branch1.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage5.inception_5a.branch2.0.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'collapse_7' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'collapse_8': stage4.inception_4e.branch3.1.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch3.1.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch3.1.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch3.1.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: Sequential
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4e'
+[DEBUG]   start_layer_name=stage4.inception_4e.branch3.1.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4e.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'collapse_8' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 6,185,832
+[INFO] Parameters after : 4,244,712
+[INFO] ΔParams = +1,941,120 (expected ≤ 0)
+[INFO] Collapse counts: success=5, failed=0, skipped=4
+[INFO] Total collapse runtime: 0.65s
+[RESULT] ✅ collapse_only complete. Total targets: 9 | success=5 | failed=0 | skipped=4
+[•] Starting experiment 'Dynamic_Region_All_Combined_quant' in workflow 'JF' | Epoch Target: 300
+[•] No intermediate checkpoint found — starting fresh or inheriting from base.
+JF/Dynamic_Region_All_Combined_quant:   0%|          | 0/300 [00:00<?, ?it/s]JF/Dynamic_Region_All_Combined_quant:   0%|          | 0/300 [02:07<?, ?it/s, loss=4.7147, acc=5.07%, best=5.07%]JF/Dynamic_Region_All_Combined_quant:   0%|          | 1/300 [02:07<10:36:44, 127.77s/it, loss=4.7147, acc=5.07%, best=5.07%]JF/Dynamic_Region_All_Combined_quant:   0%|          | 1/300 [04:46<10:36:44, 127.77s/it, loss=4.2587, acc=10.00%, best=10.00%]JF/Dynamic_Region_All_Combined_quant:   1%|          | 2/300 [04:49<12:12:58, 147.58s/it, loss=4.2587, acc=10.00%, best=10.00%]JF/Dynamic_Region_All_Combined_quant:   1%|          | 2/300 [08:01<12:12:58, 147.58s/it, loss=4.0207, acc=13.23%, best=13.23%]JF/Dynamic_Region_All_Combined_quant:   1%|          | 3/300 [08:12<14:16:42, 173.07s/it, loss=4.0207, acc=13.23%, best=13.23%]JF/Dynamic_Region_All_Combined_quant:   1%|          | 3/300 [10:55<14:16:42, 173.07s/it, loss=3.8417, acc=15.71%, best=15.71%]JF/Dynamic_Region_All_Combined_quant:   1%|▏         | 4/300 [11:13<14:28:27, 176.04s/it, loss=3.8417, acc=15.71%, best=15.71%]JF/Dynamic_Region_All_Combined_quant:   1%|▏         | 4/300 [13:21<14:28:27, 176.04s/it, loss=3.7107, acc=18.10%, best=18.10%]JF/Dynamic_Region_All_Combined_quant:   2%|▏         | 5/300 [13:22<13:02:03, 159.06s/it, loss=3.7107, acc=18.10%, best=18.10%]JF/Dynamic_Region_All_Combined_quant:   2%|▏         | 5/300 [15:27<13:02:03, 159.06s/it, loss=3.6066, acc=19.77%, best=19.77%]JF/Dynamic_Region_All_Combined_quant:   2%|▏         | 6/300 [15:27<12:03:26, 147.64s/it, loss=3.6066, acc=19.77%, best=19.77%]JF/Dynamic_Region_All_Combined_quant:   2%|▏         | 6/300 [19:16<12:03:26, 147.64s/it, loss=3.5167, acc=21.06%, best=21.06%]JF/Dynamic_Region_All_Combined_quant:   2%|▏         | 7/300 [19:19<14:15:44, 175.24s/it, loss=3.5167, acc=21.06%, best=21.06%]JF/Dynamic_Region_All_Combined_quant:   2%|▏         | 7/300 [21:45<14:15:44, 175.24s/it, loss=3.4381, acc=22.60%, best=22.60%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 8/300 [23:02<15:26:27, 190.37s/it, loss=3.4381, acc=22.60%, best=22.60%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 8/300 [26:19<15:26:27, 190.37s/it, loss=3.3659, acc=23.97%, best=23.97%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 9/300 [26:57<16:30:19, 204.19s/it, loss=3.3659, acc=23.97%, best=23.97%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 9/300 [30:03<16:30:19, 204.19s/it, loss=3.3107, acc=24.97%, best=24.97%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 10/300 [30:24<16:31:55, 205.23s/it, loss=3.3107, acc=24.97%, best=24.97%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 10/300 [33:04<16:31:55, 205.23s/it, loss=3.2509, acc=25.99%, best=25.99%]JF/Dynamic_Region_All_Combined_quant:   4%|▎         | 11/300 [33:23<15:49:37, 197.15s/it, loss=3.2509, acc=25.99%, best=25.99%]JF/Dynamic_Region_All_Combined_quant:   4%|▎         | 11/300 [36:29<15:49:37, 197.15s/it, loss=3.1946, acc=26.82%, best=26.82%]JF/Dynamic_Region_All_Combined_quant:   4%|▍         | 12/300 [37:17<16:39:48, 208.30s/it, loss=3.1946, acc=26.82%, best=26.82%]JF/Dynamic_Region_All_Combined_quant:   4%|▍         | 12/300 [39:29<16:39:48, 208.30s/it, loss=3.1462, acc=27.89%, best=27.89%]JF/Dynamic_Region_All_Combined_quant:   4%|▍         | 13/300 [39:56<15:24:50, 193.35s/it, loss=3.1462, acc=27.89%, best=27.89%]JF/Dynamic_Region_All_Combined_quant:   4%|▍         | 13/300 [42:02<15:24:50, 193.35s/it, loss=3.1023, acc=28.66%, best=28.66%]JF/Dynamic_Region_All_Combined_quant:   5%|▍         | 14/300 [42:31<14:26:35, 181.80s/it, loss=3.1023, acc=28.66%, best=28.66%]JF/Dynamic_Region_All_Combined_quant:   5%|▍         | 14/300 [44:36<14:26:35, 181.80s/it, loss=3.0623, acc=29.53%, best=29.53%]JF/Dynamic_Region_All_Combined_quant:   5%|▌         | 15/300 [44:52<13:25:34, 169.60s/it, loss=3.0623, acc=29.53%, best=29.53%]JF/Dynamic_Region_All_Combined_quant:   5%|▌         | 15/300 [46:56<13:25:34, 169.60s/it, loss=3.0233, acc=30.18%, best=30.18%]JF/Dynamic_Region_All_Combined_quant:   5%|▌         | 16/300 [47:18<12:49:14, 162.52s/it, loss=3.0233, acc=30.18%, best=30.18%]JF/Dynamic_Region_All_Combined_quant:   5%|▌         | 16/300 [49:20<12:49:14, 162.52s/it, loss=2.9854, acc=31.08%, best=31.08%]JF/Dynamic_Region_All_Combined_quant:   6%|▌         | 17/300 [49:49<12:30:13, 159.06s/it, loss=2.9854, acc=31.08%, best=31.08%]JF/Dynamic_Region_All_Combined_quant:   6%|▌         | 17/300 [52:12<12:30:13, 159.06s/it, loss=2.9519, acc=31.54%, best=31.54%]JF/Dynamic_Region_All_Combined_quant:   6%|▌         | 18/300 [52:20<12:15:15, 156.44s/it, loss=2.9519, acc=31.54%, best=31.54%]JF/Dynamic_Region_All_Combined_quant:   6%|▌         | 18/300 [54:22<12:15:15, 156.44s/it, loss=2.9164, acc=32.24%, best=32.24%]JF/Dynamic_Region_All_Combined_quant:   6%|▋         | 19/300 [54:58<12:15:23, 157.02s/it, loss=2.9164, acc=32.24%, best=32.24%]JF/Dynamic_Region_All_Combined_quant:   6%|▋         | 19/300 [57:03<12:15:23, 157.02s/it, loss=2.8968, acc=32.61%, best=32.61%]JF/Dynamic_Region_All_Combined_quant:   7%|▋         | 20/300 [57:31<12:06:54, 155.76s/it, loss=2.8968, acc=32.61%, best=32.61%]JF/Dynamic_Region_All_Combined_quant:   7%|▋         | 20/300 [59:38<12:06:54, 155.76s/it, loss=2.8749, acc=33.00%, best=33.00%]JF/Dynamic_Region_All_Combined_quant:   7%|▋         | 21/300 [59:55<11:47:42, 152.20s/it, loss=2.8749, acc=33.00%, best=33.00%]JF/Dynamic_Region_All_Combined_quant:   7%|▋         | 21/300 [1:02:07<11:47:42, 152.20s/it, loss=2.8390, acc=33.78%, best=33.78%]JF/Dynamic_Region_All_Combined_quant:   7%|▋         | 22/300 [1:02:48<12:14:36, 158.55s/it, loss=2.8390, acc=33.78%, best=33.78%]JF/Dynamic_Region_All_Combined_quant:   7%|▋         | 22/300 [1:05:10<12:14:36, 158.55s/it, loss=2.8055, acc=34.28%, best=34.28%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 23/300 [1:05:38<12:27:27, 161.91s/it, loss=2.8055, acc=34.28%, best=34.28%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 23/300 [1:08:10<12:27:27, 161.91s/it, loss=2.7807, acc=34.80%, best=34.80%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 24/300 [1:08:23<12:29:01, 162.83s/it, loss=2.7807, acc=34.80%, best=34.80%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 24/300 [1:10:52<12:29:01, 162.83s/it, loss=2.7590, acc=35.32%, best=35.32%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 25/300 [1:10:53<12:09:07, 159.08s/it, loss=2.7590, acc=35.32%, best=35.32%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 25/300 [1:13:42<12:09:07, 159.08s/it, loss=2.7399, acc=35.81%, best=35.81%]JF/Dynamic_Region_All_Combined_quant:   9%|▊         | 26/300 [1:14:24<13:17:28, 174.63s/it, loss=2.7399, acc=35.81%, best=35.81%]JF/Dynamic_Region_All_Combined_quant:   9%|▊         | 26/300 [1:16:54<13:17:28, 174.63s/it, loss=2.7154, acc=36.23%, best=36.23%]JF/Dynamic_Region_All_Combined_quant:   9%|▉         | 27/300 [1:17:53<14:02:00, 185.06s/it, loss=2.7154, acc=36.23%, best=36.23%]JF/Dynamic_Region_All_Combined_quant:   9%|▉         | 27/300 [1:21:08<14:02:00, 185.06s/it, loss=2.6895, acc=36.71%, best=36.71%]JF/Dynamic_Region_All_Combined_quant:   9%|▉         | 28/300 [1:21:09<14:12:58, 188.16s/it, loss=2.6895, acc=36.71%, best=36.71%]JF/Dynamic_Region_All_Combined_quant:   9%|▉         | 28/300 [1:23:20<14:12:58, 188.16s/it, loss=2.6775, acc=36.86%, best=36.86%]JF/Dynamic_Region_All_Combined_quant:  10%|▉         | 29/300 [1:23:44<13:24:52, 178.20s/it, loss=2.6775, acc=36.86%, best=36.86%]JF/Dynamic_Region_All_Combined_quant:  10%|▉         | 29/300 [1:26:04<13:24:52, 178.20s/it, loss=2.6548, acc=37.20%, best=37.20%]JF/Dynamic_Region_All_Combined_quant:  10%|█         | 30/300 [1:26:08<12:36:35, 168.13s/it, loss=2.6548, acc=37.20%, best=37.20%]JF/Dynamic_Region_All_Combined_quant:  10%|█         | 30/300 [1:28:18<12:36:35, 168.13s/it, loss=2.6269, acc=37.65%, best=37.65%]JF/Dynamic_Region_All_Combined_quant:  10%|█         | 31/300 [1:28:33<12:02:34, 161.17s/it, loss=2.6269, acc=37.65%, best=37.65%]JF/Dynamic_Region_All_Combined_quant:  10%|█         | 31/300 [1:30:53<12:02:34, 161.17s/it, loss=2.6145, acc=38.12%, best=38.12%]JF/Dynamic_Region_All_Combined_quant:  11%|█         | 32/300 [1:31:01<11:42:22, 157.25s/it, loss=2.6145, acc=38.12%, best=38.12%]JF/Dynamic_Region_All_Combined_quant:  11%|█         | 32/300 [1:33:11<11:42:22, 157.25s/it, loss=2.5877, acc=38.78%, best=38.78%]JF/Dynamic_Region_All_Combined_quant:  11%|█         | 33/300 [1:33:46<11:49:45, 159.50s/it, loss=2.5877, acc=38.78%, best=38.78%]JF/Dynamic_Region_All_Combined_quant:  11%|█         | 33/300 [1:37:19<11:49:45, 159.50s/it, loss=2.5768, acc=38.90%, best=38.90%]JF/Dynamic_Region_All_Combined_quant:  11%|█▏        | 34/300 [1:37:26<13:07:22, 177.60s/it, loss=2.5768, acc=38.90%, best=38.90%]JF/Dynamic_Region_All_Combined_quant:  11%|█▏        | 34/300 [1:39:39<13:07:22, 177.60s/it, loss=2.5652, acc=39.17%, best=39.17%]JF/Dynamic_Region_All_Combined_quant:  12%|█▏        | 35/300 [1:39:46<12:14:32, 166.31s/it, loss=2.5652, acc=39.17%, best=39.17%]JF/Dynamic_Region_All_Combined_quant:  12%|█▏        | 35/300 [1:41:48<12:14:32, 166.31s/it, loss=2.5372, acc=39.73%, best=39.73%]JF/Dynamic_Region_All_Combined_quant:  12%|█▏        | 36/300 [1:42:11<11:43:19, 159.85s/it, loss=2.5372, acc=39.73%, best=39.73%]JF/Dynamic_Region_All_Combined_quant:  12%|█▏        | 36/300 [1:44:13<11:43:19, 159.85s/it, loss=2.5204, acc=40.26%, best=40.26%]JF/Dynamic_Region_All_Combined_quant:  12%|█▏        | 37/300 [1:44:16<10:55:16, 149.49s/it, loss=2.5204, acc=40.26%, best=40.26%]JF/Dynamic_Region_All_Combined_quant:  12%|█▏        | 37/300 [1:46:22<10:55:16, 149.49s/it, loss=2.5111, acc=40.33%, best=40.33%]JF/Dynamic_Region_All_Combined_quant:  13%|█▎        | 38/300 [1:46:54<11:03:24, 151.93s/it, loss=2.5111, acc=40.33%, best=40.33%]JF/Dynamic_Region_All_Combined_quant:  13%|█▎        | 38/300 [1:51:23<11:03:24, 151.93s/it, loss=2.4936, acc=40.75%, best=40.75%]JF/Dynamic_Region_All_Combined_quant:  13%|█▎        | 39/300 [1:51:35<13:50:07, 190.83s/it, loss=2.4936, acc=40.75%, best=40.75%]JF/Dynamic_Region_All_Combined_quant:  13%|█▎        | 39/300 [1:53:42<13:50:07, 190.83s/it, loss=2.4753, acc=40.84%, best=40.84%]JF/Dynamic_Region_All_Combined_quant:  13%|█▎        | 40/300 [1:54:15<13:06:07, 181.41s/it, loss=2.4753, acc=40.84%, best=40.84%]JF/Dynamic_Region_All_Combined_quant:  13%|█▎        | 40/300 [1:56:25<13:06:07, 181.41s/it, loss=2.4618, acc=41.20%, best=41.20%]JF/Dynamic_Region_All_Combined_quant:  14%|█▎        | 41/300 [1:56:41<12:17:17, 170.80s/it, loss=2.4618, acc=41.20%, best=41.20%]

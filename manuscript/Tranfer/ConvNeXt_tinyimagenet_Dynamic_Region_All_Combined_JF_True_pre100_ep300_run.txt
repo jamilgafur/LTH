@@ -1,0 +1,917 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='ConvNeXt', dataset='tinyimagenet', pretrain=100, epochs=300, experiment='Dynamic_Region_All_Combined', quant=True, scorer='local_dev')
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading Tiny ImageNet data for ConvNeXt...
+Loading Tiny ImageNet data for ConvNeXt...
+[DEBUG] Base checkpoint path resolved: None
+[INFO] Legacy regions JSON absent; using ablation map: ConvNeXt_tinyimagenet_epochs300_pretrain100_scorerlocal_dev_JF_discovered_regions.json
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Dynamic_Region_All_Combined'
+============================================================
+
+[INFO] Validating JSON configuration map at: ConvNeXt_tinyimagenet_epochs300_pretrain100_scorerlocal_dev_JF_discovered_regions.json
+[DEBUG] Loaded 11 configurations from map.
+[WARN] Trained baseline NOT found at ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control_quant.pt. Falling back to initial un-finetuned checkpoint.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Dynamic_Region_All_Combined ---
+    Budget allocated: 300 epochs
+
+=== Running JF experiment ===
+[•] Resumption detected. Architecture will be prepared for checkpoint loading.
+[•] Collapsing ranges [('features.4.1.dwconv', 'features.4.1.pwconv1'), ('features.4.2.pwconv1', 'features.4.3.pwconv1'), ('features.4.4.dwconv', 'features.4.4.pwconv1'), ('features.4.5.dwconv', 'features.4.5.pwconv1'), ('features.4.6.pwconv1', 'features.4.6.pwconv2'), ('features.4.7.pwconv1', 'features.4.7.pwconv2'), ('features.5.1', 'features.6.0.pwconv1'), ('features.6.1.dwconv', 'features.6.2.pwconv1')] for Dynamic_Region_All_Combined
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (ConvNeXt)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 8 pairs.
+[DEBUG] Total collapse targets: 8
+[INFO] Model parameter count before collapsing: 27,973,928
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': features.4.1.dwconv → features.4.1.pwconv1
+[STEP] Calling _collapse_block('features.4.1.dwconv', 'features.4.1.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.1.dwconv
+[INFO] End Target   : features.4.1.pwconv1
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.1.dwconv' -> 'features.4.1.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.4.1' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.1' (ConvNeXtBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 1 to 1
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] 1 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.1'
+[DEBUG] Hooking End Node   : 'features.4.1'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.1' -> 'features.4.1'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 27,973,928
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.1.pwconv1'...
+
+[STEP] Searching for next nn.Linear after 'features.4.1.pwconv1'...
+[DEBUG] Execution-order match: next Linear is 'features.4.1.pwconv2' (exec idx 55 -> 57)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.1.pwconv2'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1536
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1536
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.1.dwconv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 1 -> 1
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=384, in=384, out=384)
+[DEBUG] ➔ Strategy: GROUPED 7×7 Conv (depth‑wise style, groups=384)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_g1x1: Conv2d(384, 384, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), groups=384, bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 27,973,928
+[INFO] Post-collapse : 26,791,592
+[INFO] Net Change    : -1,182,336
+[DEBUG] Local validation candidate selected from replacement slot: '1'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 1: '1'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.2' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.2' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.3' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.3' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.4' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.4' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.5' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.5' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.6' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.6' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.7' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.7' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.1.dwconv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.1.dwconv' → 'features.4.1.pwconv1'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.4.1.dwconv → features.4.1.pwconv1) in 0.32s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_1': features.4.2.pwconv1 → features.4.3.pwconv1
+[STEP] Calling _collapse_block('features.4.2.pwconv1', 'features.4.3.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.2.pwconv1
+[INFO] End Target   : features.4.3.pwconv1
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.2.pwconv1' -> 'features.4.3.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.4' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 2 to 3
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] 2 -> ConvNeXtBlock
+    [LAYER MAP] 3 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.2'
+[DEBUG] Hooking End Node   : 'features.4.3'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.2' -> 'features.4.3'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 26,791,592
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.3.pwconv1'...
+
+[STEP] Searching for next nn.Linear after 'features.4.3.pwconv1'...
+[DEBUG] Execution-order match: next Linear is 'features.4.3.pwconv2' (exec idx 66 -> 68)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.3.pwconv2'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1536
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1536
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.2.pwconv1'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 2 -> 3
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 26,791,592
+[INFO] Post-collapse : 24,535,976
+[INFO] Net Change    : -2,255,616
+[DEBUG] Local validation candidate selected from replacement slot: '2'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 2: '2'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.3' (SmartIdentity) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.3' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.4' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.4' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.5' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.5' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.6' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.6' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.7' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.7' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.2.pwconv1'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.2.pwconv1' → 'features.4.3.pwconv1'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.4.2.pwconv1 → features.4.3.pwconv1) in 0.04s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_2': features.4.4.dwconv → features.4.4.pwconv1
+[STEP] Calling _collapse_block('features.4.4.dwconv', 'features.4.4.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.4.dwconv
+[INFO] End Target   : features.4.4.pwconv1
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.4.dwconv' -> 'features.4.4.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.4.4' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.4' (ConvNeXtBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 4
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] 4 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.4'
+[DEBUG] Hooking End Node   : 'features.4.4'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.4' -> 'features.4.4'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 24,535,976
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.4.pwconv1'...
+
+[STEP] Searching for next nn.Linear after 'features.4.4.pwconv1'...
+[DEBUG] Execution-order match: next Linear is 'features.4.4.pwconv2' (exec idx 66 -> 68)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.4.pwconv2'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1536
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1536
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.4.dwconv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 4 -> 4
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=384, in=384, out=384)
+[DEBUG] ➔ Strategy: GROUPED 7×7 Conv (depth‑wise style, groups=384)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_g1x1: Conv2d(384, 384, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), groups=384, bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 24,535,976
+[INFO] Post-collapse : 23,353,640
+[INFO] Net Change    : -1,182,336
+[DEBUG] Local validation candidate selected from replacement slot: '4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.5' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.5' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.6' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.6' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.7' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.7' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.4.dwconv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.4.dwconv' → 'features.4.4.pwconv1'
+[INFO] ✅ Successfully collapsed block 'collapse_2' (features.4.4.dwconv → features.4.4.pwconv1) in 0.03s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_3': features.4.5.dwconv → features.4.5.pwconv1
+[STEP] Calling _collapse_block('features.4.5.dwconv', 'features.4.5.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.5.dwconv
+[INFO] End Target   : features.4.5.pwconv1
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.5.dwconv' -> 'features.4.5.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.4.5' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.5' (ConvNeXtBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 5 to 5
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] 5 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.5'
+[DEBUG] Hooking End Node   : 'features.4.5'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.5' -> 'features.4.5'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 23,353,640
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.5.pwconv1'...
+
+[STEP] Searching for next nn.Linear after 'features.4.5.pwconv1'...
+[DEBUG] Execution-order match: next Linear is 'features.4.5.pwconv2' (exec idx 71 -> 73)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.5.pwconv2'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1536
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1536
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.5.dwconv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 5 -> 5
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=384, in=384, out=384)
+[DEBUG] ➔ Strategy: GROUPED 7×7 Conv (depth‑wise style, groups=384)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_g1x1: Conv2d(384, 384, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), groups=384, bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 23,353,640
+[INFO] Post-collapse : 22,171,304
+[INFO] Net Change    : -1,182,336
+[DEBUG] Local validation candidate selected from replacement slot: '5'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=5, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 5: '5'
+[STEP] Validating inserted module 'Sequential' at index 5...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.6' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.6' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.7' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.7' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.5.dwconv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.5.dwconv' → 'features.4.5.pwconv1'
+[INFO] ✅ Successfully collapsed block 'collapse_3' (features.4.5.dwconv → features.4.5.pwconv1) in 0.03s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_4': features.4.6.pwconv1 → features.4.6.pwconv2
+[STEP] Calling _collapse_block('features.4.6.pwconv1', 'features.4.6.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.6.pwconv1
+[INFO] End Target   : features.4.6.pwconv2
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.6.pwconv1' -> 'features.4.6.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.6' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.6' (ConvNeXtBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 6 to 6
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] 6 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.6'
+[DEBUG] Hooking End Node   : 'features.4.6'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.6' -> 'features.4.6'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 22,171,304
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.6.pwconv2'...
+
+[STEP] Searching for next nn.Linear after 'features.4.6.pwconv2'...
+[DEBUG] Execution-order match: next Linear is 'features.4.7.pwconv1' (exec idx 78 -> 82)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.7.pwconv1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.6.pwconv1'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 6 -> 6
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=384, in=384, out=384)
+[DEBUG] ➔ Strategy: GROUPED 7×7 Conv (depth‑wise style, groups=384)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_g1x1: Conv2d(384, 384, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), groups=384, bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 22,171,304
+[INFO] Post-collapse : 20,988,968
+[INFO] Net Change    : -1,182,336
+[DEBUG] Local validation candidate selected from replacement slot: '6'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=6, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 6: '6'
+[STEP] Validating inserted module 'Sequential' at index 6...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.7' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.7' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.6.pwconv1'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.6.pwconv1' → 'features.4.6.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_4' (features.4.6.pwconv1 → features.4.6.pwconv2) in 0.03s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_5': features.4.7.pwconv1 → features.4.7.pwconv2
+[STEP] Calling _collapse_block('features.4.7.pwconv1', 'features.4.7.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.7.pwconv1
+[INFO] End Target   : features.4.7.pwconv2
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.7.pwconv1' -> 'features.4.7.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.7' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.7' (ConvNeXtBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 7 to 7
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] 7 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.7'
+[DEBUG] Hooking End Node   : 'features.4.7'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.7' -> 'features.4.7'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 20,988,968
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.7.pwconv2'...
+
+[STEP] Searching for next nn.Linear after 'features.4.7.pwconv2'...
+[DEBUG] Execution-order match: next Linear is 'features.4.8.pwconv1' (exec idx 83 -> 87)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.8.pwconv1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.7.pwconv1'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 7 -> 7
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=384, in=384, out=384)
+[DEBUG] ➔ Strategy: GROUPED 7×7 Conv (depth‑wise style, groups=384)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_g1x1: Conv2d(384, 384, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), groups=384, bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 20,988,968
+[INFO] Post-collapse : 19,806,632
+[INFO] Net Change    : -1,182,336
+[DEBUG] Local validation candidate selected from replacement slot: '7'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=7, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 7: '7'
+[STEP] Validating inserted module 'Sequential' at index 7...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.7.pwconv1'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.7.pwconv1' → 'features.4.7.pwconv2'
+[INFO] ✅ Successfully collapsed block 'collapse_5' (features.4.7.pwconv1 → features.4.7.pwconv2) in 0.03s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_6': features.5.1 → features.6.0.pwconv1
+[STEP] Calling _collapse_block('features.5.1', 'features.6.0.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.5.1
+[INFO] End Target   : features.6.0.pwconv1
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.5.1' -> 'features.6.0.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 5 to 6
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] 5 -> Sequential
+    [LAYER MAP] 6 -> Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.5'
+[DEBUG] Hooking End Node   : 'features.6'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.5' -> 'features.6'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 768, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 768, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 19,806,632
+
+[STEP 3] Probing graph for downstream classifier after 'features.6.0.pwconv1'...
+
+[STEP] Searching for next nn.Linear after 'features.6.0.pwconv1'...
+[DEBUG] Execution-order match: next Linear is 'features.6.0.pwconv2' (exec idx 96 -> 98)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.6.0.pwconv2'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 768, 2, 2)
+[DEBUG] Determined out_channels=768
+[DEBUG] Final block output shape: (64, 768, 2, 2)
+[DEBUG] Determined out_channels=768
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 3072
+[RESULT] Block analysis complete:
+         out_shape=(64, 768, 2, 2)
+         out_channels=768
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 768, 2, 2)
+    - out_channels             : 768
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 3072
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.5.1'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 5 -> 6
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 384 (in) -> 768 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_1x1: Conv2d(384, 768, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 19,806,632
+[INFO] Post-collapse : 4,632,488
+[INFO] Net Change    : -15,174,144
+[DEBUG] Local validation candidate selected from replacement slot: '5'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 768, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=5, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 5: '5'
+[STEP] Validating inserted module 'Sequential' at index 5...
+[DEBUG] Inserted module forward successful, output shape: (64, 768, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.6' (SmartIdentity) with input shape (64, 768, 2, 2)
+[DEBUG] Downstream 'features.6' executed successfully, output shape: (64, 768, 2, 2)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.5.1'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.5.1' → 'features.6.0.pwconv1'
+[INFO] ✅ Successfully collapsed block 'collapse_6' (features.5.1 → features.6.0.pwconv1) in 0.03s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_7': features.6.1.dwconv → features.6.2.pwconv1
+[STEP] Calling _collapse_block('features.6.1.dwconv', 'features.6.2.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.6.1.dwconv
+[INFO] End Target   : features.6.2.pwconv1
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.6.1.dwconv' -> 'features.6.2.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.6' | Type: SmartIdentity
+[WARN] ⚠ Target 'features.6' is already a SmartIdentity (absorbed by an earlier collapse region). Skipping.
+[WARN] ⚠ Collapse candidate 'collapse_7' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,973,928
+[INFO] Parameters after : 4,632,488
+[INFO] ΔParams = +23,341,440 (expected ≤ 0)
+[INFO] Collapse counts: success=7, failed=0, skipped=1
+[INFO] Total collapse runtime: 0.68s
+[RESULT] ✅ collapse_only complete. Total targets: 8 | success=7 | failed=0 | skipped=1
+[•] Starting experiment 'Dynamic_Region_All_Combined_quant' in workflow 'JF' | Epoch Target: 300
+[•] Loading intermediate checkpoint: ConvNeXt_tinyimagenet_None_epochs300_pretrain100/checkpoints/JF_Dynamic_Region_All_Combined_quant_epoch61.pt
+[✓] Resumed at epoch 62
+JF/Dynamic_Region_All_Combined_quant:   0%|          | 0/238 [00:00<?, ?it/s]JF/Dynamic_Region_All_Combined_quant:   0%|          | 0/238 [51:15<?, ?it/s, loss=1.2815, acc=67.43%, best=67.43%]JF/Dynamic_Region_All_Combined_quant:   0%|          | 1/238 [51:51<204:51:14, 3111.71s/it, loss=1.2815, acc=67.43%, best=67.43%]JF/Dynamic_Region_All_Combined_quant:   0%|          | 1/238 [54:22<204:51:14, 3111.71s/it, loss=1.2600, acc=68.01%, best=68.01%]JF/Dynamic_Region_All_Combined_quant:   1%|          | 2/238 [54:31<90:10:09, 1375.46s/it, loss=1.2600, acc=68.01%, best=68.01%] JF/Dynamic_Region_All_Combined_quant:   1%|          | 2/238 [56:54<90:10:09, 1375.46s/it, loss=1.2501, acc=68.12%, best=68.12%]JF/Dynamic_Region_All_Combined_quant:   1%|▏         | 3/238 [56:58<53:10:20, 814.56s/it, loss=1.2501, acc=68.12%, best=68.12%] JF/Dynamic_Region_All_Combined_quant:   1%|▏         | 3/238 [59:19<53:10:20, 814.56s/it, loss=1.2264, acc=68.56%, best=68.56%]JF/Dynamic_Region_All_Combined_quant:   2%|▏         | 4/238 [59:35<36:04:18, 554.95s/it, loss=1.2264, acc=68.56%, best=68.56%]JF/Dynamic_Region_All_Combined_quant:   2%|▏         | 4/238 [1:02:27<36:04:18, 554.95s/it, loss=1.2162, acc=68.98%, best=68.98%]JF/Dynamic_Region_All_Combined_quant:   2%|▏         | 5/238 [1:03:07<27:54:48, 431.28s/it, loss=1.2162, acc=68.98%, best=68.98%]JF/Dynamic_Region_All_Combined_quant:   2%|▏         | 5/238 [1:05:43<27:54:48, 431.28s/it, loss=1.2053, acc=69.38%, best=69.38%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 6/238 [1:06:30<22:46:45, 353.47s/it, loss=1.2053, acc=69.38%, best=69.38%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 6/238 [1:08:55<22:46:45, 353.47s/it, loss=1.1922, acc=69.70%, best=69.70%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 7/238 [1:09:01<18:25:57, 287.26s/it, loss=1.1922, acc=69.70%, best=69.70%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 7/238 [1:11:31<18:25:57, 287.26s/it, loss=1.1775, acc=70.14%, best=70.14%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 8/238 [1:12:08<16:19:26, 255.51s/it, loss=1.1775, acc=70.14%, best=70.14%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 8/238 [1:14:48<16:19:26, 255.51s/it, loss=1.1610, acc=70.38%, best=70.38%]JF/Dynamic_Region_All_Combined_quant:   4%|▍         | 9/238 [1:15:31<15:12:14, 239.02s/it, loss=1.1610, acc=70.38%, best=70.38%]JF/Dynamic_Region_All_Combined_quant:   4%|▍         | 9/238 [1:18:23<15:12:14, 239.02s/it, loss=1.1472, acc=70.69%, best=70.69%]JF/Dynamic_Region_All_Combined_quant:   4%|▍         | 10/238 [1:18:59<14:31:37, 229.37s/it, loss=1.1472, acc=70.69%, best=70.69%]JF/Dynamic_Region_All_Combined_quant:   4%|▍         | 10/238 [1:22:13<14:31:37, 229.37s/it, loss=1.1445, acc=70.92%, best=70.92%]JF/Dynamic_Region_All_Combined_quant:   5%|▍         | 11/238 [1:23:44<15:32:46, 246.55s/it, loss=1.1445, acc=70.92%, best=70.92%]JF/Dynamic_Region_All_Combined_quant:   5%|▍         | 11/238 [1:26:38<15:32:46, 246.55s/it, loss=1.1260, acc=71.38%, best=71.38%]JF/Dynamic_Region_All_Combined_quant:   5%|▌         | 12/238 [1:27:14<14:46:05, 235.24s/it, loss=1.1260, acc=71.38%, best=71.38%]JF/Dynamic_Region_All_Combined_quant:   5%|▌         | 12/238 [1:30:51<14:46:05, 235.24s/it, loss=1.1216, acc=71.42%, best=71.38%]JF/Dynamic_Region_All_Combined_quant:   5%|▌         | 13/238 [1:30:57<14:28:44, 231.66s/it, loss=1.1216, acc=71.42%, best=71.38%]JF/Dynamic_Region_All_Combined_quant:   5%|▌         | 13/238 [1:33:27<14:28:44, 231.66s/it, loss=1.1134, acc=71.73%, best=71.73%]JF/Dynamic_Region_All_Combined_quant:   6%|▌         | 14/238 [1:34:15<13:46:43, 221.45s/it, loss=1.1134, acc=71.73%, best=71.73%]JF/Dynamic_Region_All_Combined_quant:   6%|▌         | 14/238 [1:36:52<13:46:43, 221.45s/it, loss=1.1082, acc=71.90%, best=71.90%]JF/Dynamic_Region_All_Combined_quant:   6%|▋         | 15/238 [1:36:56<12:35:20, 203.23s/it, loss=1.1082, acc=71.90%, best=71.90%]JF/Dynamic_Region_All_Combined_quant:   6%|▋         | 15/238 [1:39:19<12:35:20, 203.23s/it, loss=1.0883, acc=72.34%, best=72.34%]JF/Dynamic_Region_All_Combined_quant:   7%|▋         | 16/238 [1:39:38<11:45:44, 190.74s/it, loss=1.0883, acc=72.34%, best=72.34%]JF/Dynamic_Region_All_Combined_quant:   7%|▋         | 16/238 [1:42:28<11:45:44, 190.74s/it, loss=1.0761, acc=72.52%, best=72.52%]JF/Dynamic_Region_All_Combined_quant:   7%|▋         | 17/238 [1:43:00<11:55:00, 194.12s/it, loss=1.0761, acc=72.52%, best=72.52%]JF/Dynamic_Region_All_Combined_quant:   7%|▋         | 17/238 [1:46:47<11:55:00, 194.12s/it, loss=1.0639, acc=73.03%, best=73.03%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 18/238 [1:47:24<13:09:41, 215.37s/it, loss=1.0639, acc=73.03%, best=73.03%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 18/238 [1:49:44<13:09:41, 215.37s/it, loss=1.0537, acc=73.39%, best=73.39%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 19/238 [1:49:48<11:47:47, 193.91s/it, loss=1.0537, acc=73.39%, best=73.39%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 19/238 [1:52:10<11:47:47, 193.91s/it, loss=1.0582, acc=73.01%, best=73.39%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 20/238 [1:52:11<10:48:02, 178.36s/it, loss=1.0582, acc=73.01%, best=73.39%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 20/238 [1:54:30<10:48:02, 178.36s/it, loss=1.0397, acc=73.51%, best=73.51%]JF/Dynamic_Region_All_Combined_quant:   9%|▉         | 21/238 [1:54:31<10:03:51, 166.97s/it, loss=1.0397, acc=73.51%, best=73.51%]JF/Dynamic_Region_All_Combined_quant:   9%|▉         | 21/238 [1:57:15<10:03:51, 166.97s/it, loss=1.0346, acc=73.62%, best=73.62%]JF/Dynamic_Region_All_Combined_quant:   9%|▉         | 22/238 [1:57:39<10:24:06, 173.36s/it, loss=1.0346, acc=73.62%, best=73.62%]JF/Dynamic_Region_All_Combined_quant:   9%|▉         | 22/238 [2:02:06<10:24:06, 173.36s/it, loss=1.0281, acc=74.10%, best=74.10%]JF/Dynamic_Region_All_Combined_quant:  10%|▉         | 23/238 [2:02:42<12:40:43, 212.30s/it, loss=1.0281, acc=74.10%, best=74.10%]JF/Dynamic_Region_All_Combined_quant:  10%|▉         | 23/238 [2:05:08<12:40:43, 212.30s/it, loss=1.0149, acc=74.14%, best=74.10%]JF/Dynamic_Region_All_Combined_quant:  10%|█         | 24/238 [2:05:22<11:41:13, 196.60s/it, loss=1.0149, acc=74.14%, best=74.10%]

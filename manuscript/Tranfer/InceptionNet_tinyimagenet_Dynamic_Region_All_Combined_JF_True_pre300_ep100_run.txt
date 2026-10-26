@@ -1,0 +1,1059 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='InceptionNet', dataset='tinyimagenet', pretrain=300, epochs=100, experiment='Dynamic_Region_All_Combined', quant=True, scorer='local_dev')
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading Tiny ImageNet data for InceptionNet...
+Loading Tiny ImageNet data for InceptionNet...
+[DEBUG] Base checkpoint path resolved: ../structured_study/pruning_checkpoints/InceptionNet_datasettinyimagenet_pretrain10_finetune30_steps21_batch128_devicecuda_strategy_magnitude/
+[INFO] Legacy regions JSON absent; using ablation map: InceptionNet_tinyimagenet_epochs100_pretrain300_scorerlocal_dev_JF_discovered_regions.json
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Dynamic_Region_All_Combined'
+============================================================
+
+[INFO] Validating JSON configuration map at: InceptionNet_tinyimagenet_epochs100_pretrain300_scorerlocal_dev_JF_discovered_regions.json
+[DEBUG] Loaded 14 configurations from map.
+[WARN] Trained baseline NOT found at InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_quant.pt. Falling back to initial un-finetuned checkpoint.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Dynamic_Region_All_Combined ---
+    Budget allocated: 100 epochs
+
+=== Running JF experiment ===
+[•] Resumption detected. Architecture will be prepared for checkpoint loading.
+[•] Collapsing ranges [('stage4.inception_4a.branch4.1.conv', 'stage4.inception_4b.branch2.0.conv'), ('stage4.inception_4c.branch3.0.conv', 'stage4.inception_4c.branch4.1.conv'), ('stage4.inception_4d.branch3.0.conv', 'stage4.inception_4d.branch4.1.conv'), ('stage5.inception_5a.branch3.0.conv', 'stage5.inception_5a.branch4.1.conv'), ('stage5.inception_5b.branch3.0.conv', 'stage5.inception_5b.branch4.1.conv'), ('stage4.inception_4a.branch1.conv', 'stage4.inception_4a.branch2.0.conv'), ('stage4.inception_4e.branch2.0.conv', 'stage4.inception_4e.branch4.1.conv'), ('stage4.inception_4e.branch2.1.conv', 'stage4.inception_4e.branch4.1.conv'), ('stage4.inception_4e.branch3.0.conv', 'stage4.inception_4e.branch4.1.conv'), ('stage5.inception_5a.branch1.conv', 'stage5.inception_5a.branch2.0.conv'), ('stage4.inception_4e.branch3.1.conv', 'stage4.inception_4e.branch4.1.conv')] for Dynamic_Region_All_Combined
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (InceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 11 pairs.
+[DEBUG] Total collapse targets: 11
+[INFO] Model parameter count before collapsing: 6,185,832
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': stage4.inception_4a.branch4.1.conv → stage4.inception_4b.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4a.branch4.1.conv', 'stage4.inception_4b.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4a.branch4.1.conv
+[INFO] End Target   : stage4.inception_4b.branch2.0.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4a.branch4.1.conv' -> 'stage4.inception_4b.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 0 to 1
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] inception_4a -> InceptionBlock
+    [LAYER MAP] inception_4b -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4a'
+[DEBUG] Hooking End Node   : 'stage4.inception_4b'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4a' -> 'stage4.inception_4b'...
+[WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2). [MaxPool2d; further occurrences suppressed]
+[WARN] Pool kernel (3x3) exceeds input spatial size (2x2). Adapting to (2x2). [MaxPool2d; further occurrences suppressed]
+[DEBUG] Captured input shape: (64, 480, 4, 4), output shape: (64, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 480, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 6,185,832
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4b.branch2.0.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4b.branch2.0.conv'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 115 -> 295)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (64, 480, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[RESULT] Block analysis complete:
+         out_shape=(64, 512, 4, 4)
+         out_channels=512
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 512, 4, 4)
+    - out_channels             : 512
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4a.branch4.1.conv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 0 -> 1
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 480 (in) -> 512 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for inceptionnet:
+        - conv_1x1: Conv2d(480, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 6,185,832
+[INFO] Post-collapse : 5,606,008
+[INFO] Net Change    : -579,824
+[DEBUG] Local validation candidate selected from replacement slot: 'inception_4a'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 512, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 0: 'inception_4a'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (64, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'stage4.inception_4b' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4b' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'stage4.inception_4c' (InceptionBlock) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4c' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'stage4.inception_4d' (InceptionBlock) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4d' executed successfully, output shape: (64, 528, 4, 4)
+[DEBUG] Running downstream module 'stage4.inception_4e' (InceptionBlock) with input shape (64, 528, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (64, 832, 4, 4)
+[DEBUG] Running downstream module 'stage4.maxpool4' (_SafePool) with input shape (64, 832, 4, 4)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (64, 832, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4a.branch4.1.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4a.branch4.1.conv' → 'stage4.inception_4b.branch2.0.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (stage4.inception_4a.branch4.1.conv → stage4.inception_4b.branch2.0.conv) in 0.36s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 45 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_1': stage4.inception_4c.branch3.0.conv → stage4.inception_4c.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4c.branch3.0.conv', 'stage4.inception_4c.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4c.branch3.0.conv
+[INFO] End Target   : stage4.inception_4c.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4c.branch3.0.conv' -> 'stage4.inception_4c.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4c' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage4.inception_4c' (InceptionBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 2 to 2
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] inception_4c -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4c'
+[DEBUG] Hooking End Node   : 'stage4.inception_4c'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4c' -> 'stage4.inception_4c'...
+[DEBUG] Captured input shape: (64, 512, 4, 4), output shape: (64, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 512, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 5,606,008
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4c.branch4.1.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4c.branch4.1.conv'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 111 -> 241)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 512, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[RESULT] Block analysis complete:
+         out_shape=(64, 512, 4, 4)
+         out_channels=512
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 512, 4, 4)
+    - out_channels             : 512
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4c.branch3.0.conv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 2 -> 2
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 512 (in) -> 512 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=512, out=128)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for inceptionnet:
+        - conv_1x1: Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 5,606,008
+[INFO] Post-collapse : 5,358,408
+[INFO] Net Change    : -247,600
+[DEBUG] Local validation candidate selected from replacement slot: 'inception_4c'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 512, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=2, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 2: 'inception_4c'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (64, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'stage4.inception_4d' (InceptionBlock) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4d' executed successfully, output shape: (64, 528, 4, 4)
+[DEBUG] Running downstream module 'stage4.inception_4e' (InceptionBlock) with input shape (64, 528, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (64, 832, 4, 4)
+[DEBUG] Running downstream module 'stage4.maxpool4' (_SafePool) with input shape (64, 832, 4, 4)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (64, 832, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4c.branch3.0.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4c.branch3.0.conv' → 'stage4.inception_4c.branch4.1.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (stage4.inception_4c.branch3.0.conv → stage4.inception_4c.branch4.1.conv) in 0.05s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_2': stage4.inception_4d.branch3.0.conv → stage4.inception_4d.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4d.branch3.0.conv', 'stage4.inception_4d.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4d.branch3.0.conv
+[INFO] End Target   : stage4.inception_4d.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4d.branch3.0.conv' -> 'stage4.inception_4d.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4d' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage4.inception_4d' (InceptionBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 3 to 3
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] inception_4d -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4d'
+[DEBUG] Hooking End Node   : 'stage4.inception_4d'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4d' -> 'stage4.inception_4d'...
+[DEBUG] Captured input shape: (64, 512, 4, 4), output shape: (64, 528, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 512, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 528, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 5,358,408
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4d.branch4.1.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4d.branch4.1.conv'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 116 -> 216)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 512, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 528, 4, 4)
+[DEBUG] Determined out_channels=528
+[DEBUG] Final block output shape: (64, 528, 4, 4)
+[DEBUG] Determined out_channels=528
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[RESULT] Block analysis complete:
+         out_shape=(64, 528, 4, 4)
+         out_channels=528
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 528, 4, 4)
+    - out_channels             : 528
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4d.branch3.0.conv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 3 -> 3
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 512 (in) -> 528 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=512, out=112)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for inceptionnet:
+        - conv_1x1: Conv2d(512, 528, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(528, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 5,358,408
+[INFO] Post-collapse : 5,023,720
+[INFO] Net Change    : -334,688
+[DEBUG] Local validation candidate selected from replacement slot: 'inception_4d'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 528, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=3, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 3: 'inception_4d'
+[STEP] Validating inserted module 'Sequential' at index 3...
+[DEBUG] Inserted module forward successful, output shape: (64, 528, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'stage4.inception_4e' (InceptionBlock) with input shape (64, 528, 4, 4)
+[DEBUG] Downstream 'stage4.inception_4e' executed successfully, output shape: (64, 832, 4, 4)
+[DEBUG] Running downstream module 'stage4.maxpool4' (_SafePool) with input shape (64, 832, 4, 4)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (64, 832, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4d.branch3.0.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4d.branch3.0.conv' → 'stage4.inception_4d.branch4.1.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_2' (stage4.inception_4d.branch3.0.conv → stage4.inception_4d.branch4.1.conv) in 0.05s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_3': stage5.inception_5a.branch3.0.conv → stage5.inception_5a.branch4.1.conv
+[STEP] Calling _collapse_block('stage5.inception_5a.branch3.0.conv', 'stage5.inception_5a.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage5.inception_5a.branch3.0.conv
+[INFO] End Target   : stage5.inception_5a.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage5.inception_5a.branch3.0.conv' -> 'stage5.inception_5a.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage5.inception_5a' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage5.inception_5a' (InceptionBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage5'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 0 to 0
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] inception_5a -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage5.inception_5a'
+[DEBUG] Hooking End Node   : 'stage5.inception_5a'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'stage5.inception_5a' -> 'stage5.inception_5a'...
+[DEBUG] Captured input shape: (64, 832, 2, 2), output shape: (64, 832, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 832, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (64, 832, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 5,023,720
+
+[STEP 3] Probing graph for downstream classifier after 'stage5.inception_5a.branch4.1.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage5.inception_5a.branch4.1.conv'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 152 -> 191)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 832, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 832, 2, 2)
+[DEBUG] Determined out_channels=832
+[DEBUG] Final block output shape: (64, 832, 2, 2)
+[DEBUG] Determined out_channels=832
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[RESULT] Block analysis complete:
+         out_shape=(64, 832, 2, 2)
+         out_channels=832
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 832, 2, 2)
+    - out_channels             : 832
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage5.inception_5a.branch3.0.conv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage5'
+[DEBUG] Layer Indices    : 0 -> 0
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 832 (in) -> 832 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=832, out=256)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for inceptionnet:
+        - conv_1x1: Conv2d(832, 832, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(832, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'stage5'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 5,023,720
+[INFO] Post-collapse : 4,673,128
+[INFO] Net Change    : -350,592
+[DEBUG] Local validation candidate selected from replacement slot: 'inception_5a'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 832, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage5' =====
+[DEBUG] start_idx=0, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage5'...
+[DEBUG] Found inserted block candidate at index 0: 'inception_5a'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (64, 832, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'stage5.inception_5b' (InceptionBlock) with input shape (64, 832, 2, 2)
+[DEBUG] Downstream 'stage5.inception_5b' executed successfully, output shape: (64, 1024, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage5' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage5.inception_5a.branch3.0.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage5.inception_5a.branch3.0.conv' → 'stage5.inception_5a.branch4.1.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_3' (stage5.inception_5a.branch3.0.conv → stage5.inception_5a.branch4.1.conv) in 0.05s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_4': stage5.inception_5b.branch3.0.conv → stage5.inception_5b.branch4.1.conv
+[STEP] Calling _collapse_block('stage5.inception_5b.branch3.0.conv', 'stage5.inception_5b.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage5.inception_5b.branch3.0.conv
+[INFO] End Target   : stage5.inception_5b.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage5.inception_5b.branch3.0.conv' -> 'stage5.inception_5b.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage5.inception_5b' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage5.inception_5b' (InceptionBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage5'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 1 to 1
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] inception_5b -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage5.inception_5b'
+[DEBUG] Hooking End Node   : 'stage5.inception_5b'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'stage5.inception_5b' -> 'stage5.inception_5b'...
+[DEBUG] Captured input shape: (64, 832, 2, 2), output shape: (64, 1024, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 832, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (64, 1024, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 4,673,128
+
+[STEP 3] Probing graph for downstream classifier after 'stage5.inception_5b.branch4.1.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage5.inception_5b.branch4.1.conv'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 157 -> 167)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 832, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 1024, 2, 2)
+[DEBUG] Determined out_channels=1024
+[DEBUG] Final block output shape: (64, 1024, 2, 2)
+[DEBUG] Determined out_channels=1024
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[RESULT] Block analysis complete:
+         out_shape=(64, 1024, 2, 2)
+         out_channels=1024
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 1024, 2, 2)
+    - out_channels             : 1024
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage5.inception_5b.branch3.0.conv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage5'
+[DEBUG] Layer Indices    : 1 -> 1
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 832 (in) -> 1024 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=832, out=384)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for inceptionnet:
+        - conv_1x1: Conv2d(832, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'stage5'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,673,128
+[INFO] Post-collapse : 4,081,800
+[INFO] Net Change    : -591,328
+[DEBUG] Local validation candidate selected from replacement slot: 'inception_5b'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 1024, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage5' =====
+[DEBUG] start_idx=1, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage5'...
+[DEBUG] Found inserted block candidate at index 1: 'inception_5b'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (64, 1024, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'stage5' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage5.inception_5b.branch3.0.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage5.inception_5b.branch3.0.conv' → 'stage5.inception_5b.branch4.1.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_4' (stage5.inception_5b.branch3.0.conv → stage5.inception_5b.branch4.1.conv) in 0.04s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_5': stage4.inception_4a.branch1.conv → stage4.inception_4a.branch2.0.conv
+[STEP] Calling _collapse_block('stage4.inception_4a.branch1.conv', 'stage4.inception_4a.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4a.branch1.conv
+[INFO] End Target   : stage4.inception_4a.branch2.0.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4a.branch1.conv' -> 'stage4.inception_4a.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4a' | Type: Sequential
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4a'
+[DEBUG]   start_layer_name=stage4.inception_4a.branch1.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4a.branch2.0.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'collapse_5' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'collapse_6': stage4.inception_4e.branch2.0.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch2.0.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch2.0.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch2.0.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: InceptionBlock
+[DEBUG] Escalating complex block 'stage4.inception_4e' (InceptionBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'stage4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 4
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] inception_4e -> InceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'stage4.inception_4e'
+[DEBUG] Hooking End Node   : 'stage4.inception_4e'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'stage4.inception_4e' -> 'stage4.inception_4e'...
+[DEBUG] Captured input shape: (64, 528, 4, 4), output shape: (64, 832, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 528, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 832, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 4,081,800
+
+[STEP 3] Probing graph for downstream classifier after 'stage4.inception_4e.branch4.1.conv'...
+
+[STEP] Searching for next nn.Linear after 'stage4.inception_4e.branch4.1.conv'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 121 -> 143)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 528, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 832, 4, 4)
+[DEBUG] Determined out_channels=832
+[DEBUG] Final block output shape: (64, 832, 4, 4)
+[DEBUG] Determined out_channels=832
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[RESULT] Block analysis complete:
+         out_shape=(64, 832, 4, 4)
+         out_channels=832
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 832, 4, 4)
+    - out_channels             : 832
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'stage4.inception_4e.branch2.0.conv'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'stage4'
+[DEBUG] Layer Indices    : 4 -> 4
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 528 (in) -> 832 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=528, out=256)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for inceptionnet:
+        - conv_1x1: Conv2d(528, 832, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(832, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'stage4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 4,081,800
+[INFO] Post-collapse : 3,653,384
+[INFO] Net Change    : -428,416
+[DEBUG] Local validation candidate selected from replacement slot: 'inception_4e'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 832, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'stage4' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'stage4'...
+[DEBUG] Found inserted block candidate at index 4: 'inception_4e'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 832, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'stage4.maxpool4' (_SafePool) with input shape (64, 832, 4, 4)
+[DEBUG] Downstream 'stage4.maxpool4' executed successfully, output shape: (64, 832, 2, 2)
+[RESULT] ✅ Downstream validation for 'stage4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'stage4.inception_4e.branch2.0.conv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'stage4.inception_4e.branch2.0.conv' → 'stage4.inception_4e.branch4.1.conv'
+[INFO] ✅ Successfully collapsed block 'collapse_6' (stage4.inception_4e.branch2.0.conv → stage4.inception_4e.branch4.1.conv) in 0.04s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_7': stage4.inception_4e.branch2.1.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch2.1.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch2.1.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch2.1.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: Sequential
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4e'
+[DEBUG]   start_layer_name=stage4.inception_4e.branch2.1.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4e.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'collapse_7' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'collapse_8': stage4.inception_4e.branch3.0.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch3.0.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch3.0.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch3.0.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: Sequential
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4e'
+[DEBUG]   start_layer_name=stage4.inception_4e.branch3.0.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4e.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'collapse_8' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'collapse_9': stage5.inception_5a.branch1.conv → stage5.inception_5a.branch2.0.conv
+[STEP] Calling _collapse_block('stage5.inception_5a.branch1.conv', 'stage5.inception_5a.branch2.0.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage5.inception_5a.branch1.conv
+[INFO] End Target   : stage5.inception_5a.branch2.0.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage5.inception_5a.branch1.conv' -> 'stage5.inception_5a.branch2.0.conv'
+[DEBUG] [LCA] Resolved Container: 'stage5.inception_5a' | Type: Sequential
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage5.inception_5a'
+[DEBUG]   start_layer_name=stage5.inception_5a.branch1.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage5.inception_5a.branch2.0.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'collapse_9' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[INFO] Processing collapse task 'collapse_10': stage4.inception_4e.branch3.1.conv → stage4.inception_4e.branch4.1.conv
+[STEP] Calling _collapse_block('stage4.inception_4e.branch3.1.conv', 'stage4.inception_4e.branch4.1.conv')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : stage4.inception_4e.branch3.1.conv
+[INFO] End Target   : stage4.inception_4e.branch4.1.conv
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'stage4.inception_4e.branch3.1.conv' -> 'stage4.inception_4e.branch4.1.conv'
+[DEBUG] [LCA] Resolved Container: 'stage4.inception_4e' | Type: Sequential
+[WARN] ⚠ Could not map start/end layers into LCA container 'stage4.inception_4e'
+[DEBUG]   start_layer_name=stage4.inception_4e.branch3.1.conv, found start_idx=None
+[DEBUG]   end_layer_name=stage4.inception_4e.branch4.1.conv, found end_idx=None
+[DEBUG]   ISSUE #3 FIX: This may be a cross-branch collapse (parallel paths in Inception/ConvNeXt).
+[DEBUG]   Skipping this collapse candidate as it cannot be sequentially mapped.
+[WARN] ⚠ Collapse candidate 'collapse_10' appears to be cross-branch (parallel paths).
+[WARN]   Filtering out and skipping. Re-run region discovery to exclude these.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 6,185,832
+[INFO] Parameters after : 3,653,384
+[INFO] ΔParams = +2,532,448 (expected ≤ 0)
+[INFO] Collapse counts: success=6, failed=0, skipped=5
+[INFO] Total collapse runtime: 0.69s
+[RESULT] ✅ collapse_only complete. Total targets: 11 | success=6 | failed=0 | skipped=5
+[•] Starting experiment 'Dynamic_Region_All_Combined_quant' in workflow 'JF' | Epoch Target: 100
+[•] Loading intermediate checkpoint: InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/JF_Dynamic_Region_All_Combined_quant_epoch87.pt
+[✓] Resumed at epoch 88
+JF/Dynamic_Region_All_Combined_quant:   0%|          | 0/12 [00:00<?, ?it/s]JF/Dynamic_Region_All_Combined_quant:   0%|          | 0/12 [02:29<?, ?it/s, loss=1.8940, acc=53.22%, best=53.24%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 1/12 [02:32<27:52, 152.07s/it, loss=1.8940, acc=53.22%, best=53.24%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 1/12 [04:47<27:52, 152.07s/it, loss=1.8796, acc=53.27%, best=53.24%]JF/Dynamic_Region_All_Combined_quant:  17%|█▋        | 2/12 [05:02<25:09, 150.98s/it, loss=1.8796, acc=53.27%, best=53.24%]JF/Dynamic_Region_All_Combined_quant:  17%|█▋        | 2/12 [08:14<25:09, 150.98s/it, loss=1.8749, acc=53.56%, best=53.56%]JF/Dynamic_Region_All_Combined_quant:  25%|██▌       | 3/12 [08:19<25:49, 172.21s/it, loss=1.8749, acc=53.56%, best=53.56%]JF/Dynamic_Region_All_Combined_quant:  25%|██▌       | 3/12 [11:34<25:49, 172.21s/it, loss=1.8720, acc=53.56%, best=53.56%]JF/Dynamic_Region_All_Combined_quant:  33%|███▎      | 4/12 [11:43<24:38, 184.84s/it, loss=1.8720, acc=53.56%, best=53.56%]JF/Dynamic_Region_All_Combined_quant:  33%|███▎      | 4/12 [14:31<24:38, 184.84s/it, loss=1.8831, acc=53.45%, best=53.56%]JF/Dynamic_Region_All_Combined_quant:  42%|████▏     | 5/12 [14:32<20:53, 179.08s/it, loss=1.8831, acc=53.45%, best=53.56%]JF/Dynamic_Region_All_Combined_quant:  42%|████▏     | 5/12 [16:46<20:53, 179.08s/it, loss=1.8699, acc=53.60%, best=53.56%]JF/Dynamic_Region_All_Combined_quant:  50%|█████     | 6/12 [16:48<16:26, 164.48s/it, loss=1.8699, acc=53.60%, best=53.56%]JF/Dynamic_Region_All_Combined_quant:  50%|█████     | 6/12 [20:43<16:26, 164.48s/it, loss=1.8704, acc=53.71%, best=53.71%]JF/Dynamic_Region_All_Combined_quant:  58%|█████▊    | 7/12 [20:49<15:45, 189.19s/it, loss=1.8704, acc=53.71%, best=53.71%]JF/Dynamic_Region_All_Combined_quant:  58%|█████▊    | 7/12 [23:06<15:45, 189.19s/it, loss=1.8708, acc=53.60%, best=53.71%]JF/Dynamic_Region_All_Combined_quant:  67%|██████▋   | 8/12 [23:46<12:22, 185.59s/it, loss=1.8708, acc=53.60%, best=53.71%]JF/Dynamic_Region_All_Combined_quant:  67%|██████▋   | 8/12 [27:48<12:22, 185.59s/it, loss=1.8757, acc=53.38%, best=53.71%]JF/Dynamic_Region_All_Combined_quant:  75%|███████▌  | 9/12 [28:01<10:21, 207.23s/it, loss=1.8757, acc=53.38%, best=53.71%]JF/Dynamic_Region_All_Combined_quant:  75%|███████▌  | 9/12 [30:49<10:21, 207.23s/it, loss=1.8743, acc=53.53%, best=53.71%]JF/Dynamic_Region_All_Combined_quant:  83%|████████▎ | 10/12 [31:02<06:37, 198.94s/it, loss=1.8743, acc=53.53%, best=53.71%]JF/Dynamic_Region_All_Combined_quant:  83%|████████▎ | 10/12 [34:05<06:37, 198.94s/it, loss=1.8725, acc=53.40%, best=53.71%]JF/Dynamic_Region_All_Combined_quant:  92%|█████████▏| 11/12 [34:22<03:19, 199.37s/it, loss=1.8725, acc=53.40%, best=53.71%]JF/Dynamic_Region_All_Combined_quant:  92%|█████████▏| 11/12 [38:06<03:19, 199.37s/it, loss=1.8677, acc=53.75%, best=53.71%]JF/Dynamic_Region_All_Combined_quant: 100%|██████████| 12/12 [39:22<00:00, 230.13s/it, loss=1.8677, acc=53.75%, best=53.71%]JF/Dynamic_Region_All_Combined_quant: 100%|██████████| 12/12 [39:22<00:00, 196.91s/it, loss=1.8677, acc=53.75%, best=53.71%]
+/old_Users/jgafur/LTH/manuscript/Tranfer/utils.py:417: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Tranfer/utils.py:452: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+2026-10-26 15:18:12,645 - WARNING - Unsupported operator aten::max_pool2d encountered 6 time(s)
+2026-10-26 15:18:12,645 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4b
+/old_Users/jgafur/LTH/manuscript/Tranfer/utils.py:452: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+2026-10-26 15:18:45,192 - WARNING - Unsupported operator aten::max_pool2d encountered 6 time(s)
+2026-10-26 15:18:45,192 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+stage4.inception_4b
+[•] Running diagnostics for Dynamic_Region_All_Combined_quant...
+[•] Quantization enabled: torch.bfloat16
+Saved memory CSV to outputs/diagnostics/InceptionNet_tinyimagenet_None_epochs100_pretrain300/Dynamic_Region_All_Combined_quant_memory.csv
+Saved memory plot to outputs/diagnostics/InceptionNet_tinyimagenet_None_epochs100_pretrain300/Dynamic_Region_All_Combined_quant_memory.svg
+[•] Extracting explainability data for Dynamic_Region_All_Combined_quant...
+[✓] Weight distribution figure saved to outputs/diagnostics/InceptionNet_tinyimagenet_None_epochs100_pretrain300/Dynamic_Region_All_Combined_quant_explainability_weight_distributions.svg
+[✓] Saved explainability arrays to outputs/diagnostics/InceptionNet_tinyimagenet_None_epochs100_pretrain300/Dynamic_Region_All_Combined_quant_explainability.npz
+[✓] Explainability figure saved to outputs/diagnostics/InceptionNet_tinyimagenet_None_epochs100_pretrain300/Dynamic_Region_All_Combined_quant_explainability.svg
+[✓] Diagnostics complete for Dynamic_Region_All_Combined_quant
+[✓] Saved plot: outputs/diagnostics/InceptionNet_tinyimagenet_None_epochs100_pretrain300/JF_Dynamic_Region_All_Combined_quant_metrics.svg
+[✓] Saved metrics for 'Dynamic_Region_All_Combined_quant_JF' → InceptionNet_tinyimagenet_None_epochs100_pretrain300/metrics/InceptionNet_ImageFolder_metrics_20261026_151903_784608_29037.json
+[✓] Merged 1 metrics files → InceptionNet_tinyimagenet_None_epochs100_pretrain300/metrics/merged_metrics.json
+[✓] Experiment 'Dynamic_Region_All_Combined_quant' completed.
+15:19:22 [INFO] Scanning for metrics files matching epochs=100, pretrain=300
+15:19:23 [INFO] Successfully parsed 63 experiment rows.
+15:19:31 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar100__accuracy.svg
+15:19:41 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar100__params.svg
+15:19:53 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar100__flops.svg
+15:19:56 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar100__memory.svg
+15:20:05 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar10__accuracy.svg
+15:20:08 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar10__params.svg
+15:20:28 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar10__flops.svg
+15:20:41 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar10__memory.svg
+15:20:41 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_tinyimagenet_accuracy.svg
+15:20:41 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_tinyimagenet_params.svg
+15:20:42 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_tinyimagenet_flops.svg
+15:20:42 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_tinyimagenet_memory.svg
+15:20:42 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar100__accuracy.svg
+15:20:43 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar100__params.svg
+15:20:43 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar100__flops.svg
+15:20:43 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar100__memory.svg
+15:20:44 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar10__accuracy.svg
+15:20:44 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar10__params.svg
+15:20:44 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar10__flops.svg
+15:20:45 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar10__memory.svg
+15:20:45 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/InceptionNet_tinyimagenet_accuracy.svg
+15:20:45 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/InceptionNet_tinyimagenet_params.svg
+15:20:46 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/InceptionNet_tinyimagenet_flops.svg
+15:20:46 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/InceptionNet_tinyimagenet_memory.svg
+15:20:46 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar100__accuracy.svg
+15:20:47 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar100__params.svg
+15:20:47 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar100__flops.svg
+15:20:47 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar100__memory.svg
+15:20:48 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar10__accuracy.svg
+15:20:48 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar10__params.svg
+15:20:48 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar10__flops.svg
+15:20:49 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar10__memory.svg
+15:20:49 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar100__accuracy.svg
+15:20:49 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar100__params.svg
+15:20:50 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar100__flops.svg
+15:20:50 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar100__memory.svg
+15:20:50 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar10__accuracy.svg
+15:20:50 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar10__params.svg
+15:20:51 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar10__flops.svg
+15:20:51 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar10__memory.svg
+15:21:14 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar100_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar100__accuracy.svg
+15:21:23 [INFO] [FIG1] Saved params plot for VGG16/cifar100_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar100__params.svg
+15:21:42 [INFO] [FIG1] Saved flops plot for VGG16/cifar100_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar100__flops.svg
+15:21:44 [INFO] [FIG1] Saved memory plot for VGG16/cifar100_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar100__memory.svg
+15:21:45 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar10__accuracy.svg
+15:21:48 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar10__params.svg
+15:21:54 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar10__flops.svg
+15:22:01 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar10__memory.svg
+15:22:13 [INFO] [FIG1] Saved accuracy plot for VGG16/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/VGG16_tinyimagenet_accuracy.svg
+15:22:13 [INFO] [FIG1] Saved params plot for VGG16/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/VGG16_tinyimagenet_params.svg
+15:22:13 [INFO] [FIG1] Saved flops plot for VGG16/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/VGG16_tinyimagenet_flops.svg
+15:22:14 [INFO] [FIG1] Saved memory plot for VGG16/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/VGG16_tinyimagenet_memory.svg
+15:22:14 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar100__accuracy.svg
+15:22:14 [INFO] [FIG1] Saved params plot for XceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar100__params.svg
+15:22:15 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar100__flops.svg
+15:22:15 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar100__memory.svg
+15:22:15 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar10__accuracy.svg
+15:22:15 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar10__params.svg
+15:22:16 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar10__flops.svg
+15:22:16 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar10__memory.svg
+15:22:16 [INFO] [FIG1] Saved accuracy plot for XceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/XceptionNet_tinyimagenet_accuracy.svg
+15:22:17 [INFO] [FIG1] Saved params plot for XceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/XceptionNet_tinyimagenet_params.svg
+15:22:17 [INFO] [FIG1] Saved flops plot for XceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/XceptionNet_tinyimagenet_flops.svg
+15:22:17 [INFO] [FIG1] Saved memory plot for XceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/XceptionNet_tinyimagenet_memory.svg
+15:22:17 [INFO] Starting FIG2 generation. Target epochs: 100, pretrain: 300
+15:22:17 [ERROR] No Layer_Statistics directories found matching **/epochs100_pretrain300/**/Layer_Statistics
+15:22:17 [DEBUG] [FIG3] No valid variance CSV found for ConvNeXt/cifar100_
+15:22:17 [DEBUG] [FIG3] No valid variance CSV found for MobileNet/cifar100_
+15:22:17 [DEBUG] [FIG3] No valid variance CSV found for RegNetX_400MF/cifar100_
+15:22:17 [DEBUG] [FIG3] No valid variance CSV found for ConvNeXt/cifar10_
+15:22:17 [DEBUG] [FIG3] No valid variance CSV found for InceptionNet/tinyimagenet
+15:22:17 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+15:22:17 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar100_
+15:22:18 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/hardware_efficiency/ConvNeXt_cifar100__hardware_profile.svg
+15:22:18 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar100_
+15:22:18 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar100_
+15:22:19 [INFO] [FIG5] Saved hardware profile plot for MobileNet/cifar100_ at outputs/figures/ep100_pre300/hardware_efficiency/MobileNet_cifar100__hardware_profile.svg
+15:22:19 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar100_
+15:22:19 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/hardware_efficiency/RegNetX_400MF_cifar100__hardware_profile.svg
+15:22:19 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar100_
+15:22:19 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar100_
+15:22:19 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
+15:22:20 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/hardware_efficiency/ConvNeXt_cifar10__hardware_profile.svg
+15:22:20 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
+15:22:20 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
+15:22:20 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
+15:22:20 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
+15:22:20 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar10_
+15:22:20 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/tinyimagenet
+15:22:20 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
+15:22:20 [INFO] [FIG5] Processing Hardware Profiles for VGG16/tinyimagenet
+15:22:20 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/tinyimagenet
+15:22:21 [INFO] [FIG5] Saved unified best_candidates plot at outputs/figures/ep100_pre300/hardware_efficiency/unified_best_candidates.svg
+15:22:21 [INFO] [FIG5] Saved unified worst_candidates plot at outputs/figures/ep100_pre300/hardware_efficiency/unified_worst_candidates.svg
+15:22:21 [INFO] [FIG5] Saved global trade-off scatter plot at outputs/figures/ep100_pre300/hardware_efficiency/global_tradeoff_scatter.svg
+15:22:21 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+15:22:21 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
+15:22:22 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at outputs/figures/ep100_pre300/learning_curves/InceptionNet_cifar100_training_curves.svg
+15:22:23 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at outputs/figures/ep100_pre300/learning_curves/InceptionNet_tinyimagenet_training_curves.svg
+15:22:45 [INFO] [FIG6] Saved sequential training curves for XceptionNet/tinyimagenet at outputs/figures/ep100_pre300/learning_curves/XceptionNet_tinyimagenet_training_curves.svg
+15:23:13 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at outputs/figures/ep100_pre300/learning_curves/InceptionNet_cifar10_training_curves.svg
+15:23:32 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at outputs/figures/ep100_pre300/learning_curves/ConvNeXt_tinyimagenet_training_curves.svg
+15:23:49 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at outputs/figures/ep100_pre300/learning_curves/XceptionNet_cifar10_training_curves.svg
+15:23:52 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/learning_curves/ConvNeXt_cifar100_training_curves.svg
+15:23:52 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at outputs/figures/ep100_pre300/learning_curves/InceptionNet_tinyimagenet_training_curves.svg
+15:23:53 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/learning_curves/ConvNeXt_cifar10_training_curves.svg
+15:23:53 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at outputs/figures/ep100_pre300/learning_curves/VGG16_cifar10_training_curves.svg
+15:23:54 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/learning_curves/RegNetX_400MF_cifar100_training_curves.svg
+15:23:54 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/learning_curves/RegNetX_400MF_cifar100_training_curves.svg
+15:24:04 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at outputs/figures/ep100_pre300/learning_curves/RegNetX_400MF_cifar10_training_curves.svg
+15:24:27 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at outputs/figures/ep100_pre300/learning_curves/XceptionNet_cifar100_training_curves.svg
+15:24:33 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at outputs/figures/ep100_pre300/learning_curves/MobileNet_cifar100_training_curves.svg
+15:24:39 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at outputs/figures/ep100_pre300/learning_curves/InceptionNet_cifar10_training_curves.svg
+15:24:40 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at outputs/figures/ep100_pre300/learning_curves/ConvNeXt_tinyimagenet_training_curves.svg
+15:24:40 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at outputs/figures/ep100_pre300/learning_curves/MobileNet_cifar10_training_curves.svg
+15:24:41 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at outputs/figures/ep100_pre300/learning_curves/VGG16_cifar100_training_curves.svg
+15:24:41 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at outputs/figures/ep100_pre300/learning_curves/XceptionNet_cifar100_training_curves.svg
+15:24:42 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at outputs/figures/ep100_pre300/learning_curves/VGG16_cifar100_training_curves.svg
+15:24:42 [INFO] [FIG6] Saved sequential training curves for VGG16/tinyimagenet at outputs/figures/ep100_pre300/learning_curves/VGG16_tinyimagenet_training_curves.svg
+15:24:42 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at outputs/figures/ep100_pre300/learning_curves/RegNetX_400MF_cifar10_training_curves.svg
+15:24:43 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at outputs/figures/ep100_pre300/learning_curves/MobileNet_cifar100_training_curves.svg
+15:24:44 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/learning_curves/ConvNeXt_cifar100_training_curves.svg
+15:24:48 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/learning_curves/ConvNeXt_cifar10_training_curves.svg
+15:24:49 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at outputs/figures/ep100_pre300/learning_curves/VGG16_cifar10_training_curves.svg
+15:24:49 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at outputs/figures/ep100_pre300/learning_curves/MobileNet_cifar10_training_curves.svg
+15:24:50 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at outputs/figures/ep100_pre300/learning_curves/InceptionNet_cifar100_training_curves.svg
+15:25:10 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/convergence/ConvNeXt_cifar100_convergence_metrics.svg
+15:25:13 [INFO] [FIG7] Saved convergence metrics plot for MobileNet/cifar100_ at outputs/figures/ep100_pre300/convergence/MobileNet_cifar100_convergence_metrics.svg
+15:25:30 [INFO] [FIG7] Saved convergence metrics plot for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/convergence/RegNetX_400MF_cifar100_convergence_metrics.svg
+15:25:35 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/convergence/ConvNeXt_cifar10_convergence_metrics.svg
+15:25:43 [INFO] [FIG8] Saved accuracy vs params plot at outputs/figures/ep100_pre300/accuracy_vs_params/accuracy_vs_params.svg
+15:25:54 [INFO] [FIG9] Saved FLOPs vs memory heat‑map at outputs/figures/ep100_pre300/flops_vs_memory/flops_vs_memory.svg
+15:25:54 [INFO] [SUMMARY] Generating master lookup JSON...
+15:26:09 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/outputs/tables/ep100_pre300/master_results_summary.json
+15:35:40 [INFO] Script completed.
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation

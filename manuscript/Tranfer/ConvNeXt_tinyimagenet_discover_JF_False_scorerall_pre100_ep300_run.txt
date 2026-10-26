@@ -1,0 +1,1931 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='ConvNeXt', dataset='tinyimagenet', pretrain=100, epochs=300, experiment='discover', quant=False, scorer='all')
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading Tiny ImageNet data for ConvNeXt...
+Loading Tiny ImageNet data for ConvNeXt...
+2026-10-26 14:37:29,177 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.4.3
+2026-10-26 14:37:30,477 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.6
+2026-10-26 14:37:30,748 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.6.2
+2026-10-26 14:37:31,126 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.4.1, features.4.2, features.4.3
+2026-10-26 14:37:31,556 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.4.1, features.4.2, features.4.3
+[DEBUG] Base checkpoint path resolved: None
+
+============================================================
+[MODE] STAGE 1: DISCOVERY & PRE-FLIGHT PROBE
+       Model: ConvNeXt | Dataset: tinyimagenet
+============================================================
+
+[INFO] Phase 1: Validating/Training 'Control' Baseline...
+
+--- Running experiment: Control ---
+    Budget allocated: 100 epochs
+
+=== Running JF experiment ===
+[•] Resumption detected. Architecture will be prepared for checkpoint loading.
+[•] Starting experiment 'Control' in workflow 'JF' | Epoch Target: 100
+[✓] Experiment 'Control' already completed. Found: final_JF_Control.pt
+    Skipping training and reloading metrics...
+
+[INFO] Phase 2: Loading Finalized Baseline Weights...
+[INFO] Found existing change stats at outputs/discovery/ConvNeXt/tinyimagenet/epochs300_pretrain100/change_stats.json. Skipping probe.
+
+[INFO] === Scorer ablation ('all'): local_dev vs change vs cka ===
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator (scorer=local_dev) ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 27,973,928 | Base FLOPs: 364,690,176
+
+[DEBUG] --- Phase 2A: Scanning 59 layers for Raw Candidates ---
+[DEBUG] [SCAN] Layer 00 | stem.0                                        | h=-0.935228 | status=Veto     | reason=veto window (idx=0, cutoff=14)
+[DEBUG] [SCAN] Layer 01 | features.0.0.dwconv                           | h=-0.922821 | status=Veto     | reason=veto window (idx=1, cutoff=14)
+[DEBUG] [SCAN] Layer 02 | features.0.0.pwconv1                          | h=-0.636742 | status=Veto     | reason=veto window (idx=2, cutoff=14)
+[DEBUG] [SCAN] Layer 03 | features.0.0.pwconv2                          | h=1.000000 | status=Veto     | reason=veto window (idx=3, cutoff=14)
+[DEBUG] [SCAN] Layer 04 | features.0.1.dwconv                           | h=-0.196287 | status=Veto     | reason=veto window (idx=4, cutoff=14)
+[DEBUG] [SCAN] Layer 05 | features.0.1.pwconv1                          | h=-0.548004 | status=Veto     | reason=veto window (idx=5, cutoff=14)
+[DEBUG] [SCAN] Layer 06 | features.0.1.pwconv2                          | h=-0.308967 | status=Veto     | reason=veto window (idx=6, cutoff=14)
+[DEBUG] [SCAN] Layer 07 | features.0.2.dwconv                           | h=-0.565759 | status=Veto     | reason=veto window (idx=7, cutoff=14)
+[DEBUG] [SCAN] Layer 08 | features.0.2.pwconv1                          | h=-0.959494 | status=Veto     | reason=veto window (idx=8, cutoff=14)
+[DEBUG] [SCAN] Layer 09 | features.0.2.pwconv2                          | h=-0.881462 | status=Veto     | reason=veto window (idx=9, cutoff=14)
+[DEBUG] [SCAN] Layer 10 | features.1.1                                  | h=-0.377670 | status=Veto     | reason=veto window (idx=10, cutoff=14)
+[DEBUG] [SCAN] Layer 11 | features.2.0.dwconv                           | h=1.000000 | status=Veto     | reason=veto window (idx=11, cutoff=14)
+[DEBUG] [SCAN] Layer 12 | features.2.0.pwconv1                          | h=-0.832328 | status=Veto     | reason=veto window (idx=12, cutoff=14)
+[DEBUG] [SCAN] Layer 13 | features.2.0.pwconv2                          | h=-0.155598 | status=Veto     | reason=veto window (idx=13, cutoff=14)
+[DEBUG] [SCAN] Layer 14 | features.2.1.dwconv                           | h=0.356330 | status=Rejected | reason=non-negative or NaN h=0.356330
+[DEBUG] [SCAN] Layer 16 | features.2.1.pwconv2                          | h=0.397015 | status=Rejected | reason=non-negative or NaN h=0.397015
+[DEBUG] [RAW] Discarding short fragment features.2.1.pwconv1 -> features.2.1.pwconv1 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 17 | features.2.2.dwconv                           | h=0.927846 | status=Rejected | reason=non-negative or NaN h=0.927846
+[DEBUG] [SCAN] Layer 19 | features.2.2.pwconv2                          | h=0.412039 | status=Rejected | reason=non-negative or NaN h=0.412039
+[DEBUG] [RAW] Discarding short fragment features.2.2.pwconv1 -> features.2.2.pwconv1 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 21 | features.4.0.dwconv                           | h=0.280390 | status=Rejected | reason=non-negative or NaN h=0.280390
+[DEBUG] [RAW] Discarding short fragment features.3.1 -> features.3.1 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 23 | features.4.0.pwconv2                          | h=0.489426 | status=Rejected | reason=non-negative or NaN h=0.489426
+[DEBUG] [RAW] Discarding short fragment features.4.0.pwconv1 -> features.4.0.pwconv1 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 26 | features.4.1.pwconv2                          | h=0.757352 | status=Rejected | reason=non-negative or NaN h=0.757352
+[DEBUG] [RAW] Accepted raw candidate features.4.1.dwconv -> features.4.1.pwconv1 | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 27 | features.4.2.dwconv                           | h=0.269403 | status=Rejected | reason=non-negative or NaN h=0.269403
+[DEBUG] [SCAN] Layer 32 | features.4.3.pwconv2                          | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Accepted raw candidate features.4.2.pwconv1 -> features.4.3.pwconv1 | layers=4 | parametric=4
+[DEBUG] [SCAN] Layer 35 | features.4.4.pwconv2                          | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Accepted raw candidate features.4.4.dwconv -> features.4.4.pwconv1 | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 38 | features.4.5.pwconv2                          | h=0.217232 | status=Rejected | reason=non-negative or NaN h=0.217232
+[DEBUG] [RAW] Accepted raw candidate features.4.5.dwconv -> features.4.5.pwconv1 | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 39 | features.4.6.dwconv                           | h=0.439156 | status=Rejected | reason=non-negative or NaN h=0.439156
+[DEBUG] [SCAN] Layer 42 | features.4.7.dwconv                           | h=0.603615 | status=Rejected | reason=non-negative or NaN h=0.603615
+[DEBUG] [RAW] Accepted raw candidate features.4.6.pwconv1 -> features.4.6.pwconv2 | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 45 | features.4.8.dwconv                           | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Accepted raw candidate features.4.7.pwconv1 -> features.4.7.pwconv2 | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 47 | features.4.8.pwconv2                          | h=0.163562 | status=Rejected | reason=non-negative or NaN h=0.163562
+[DEBUG] [RAW] Discarding short fragment features.4.8.pwconv1 -> features.4.8.pwconv1 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 51 | features.6.0.pwconv2                          | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Accepted raw candidate features.5.1 -> features.6.0.pwconv1 | layers=3 | parametric=3
+[DEBUG] [SCAN] Layer 57 | features.6.2.pwconv2                          | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Accepted raw candidate features.6.1.dwconv -> features.6.2.pwconv1 | layers=5 | parametric=5
+[DEBUG] [SCAN] Layer 58 | classifier                                    | h=-0.924108 | status=Rejected | reason=invalid target type=Linear
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [EXPAND] Starting from raw region features.4.1.dwconv -> features.4.1.pwconv1 | layers=2 | parametric=2
+[DEBUG] [EXPAND] Final candidate features.4.1.dwconv -> features.4.1.pwconv1 | layers=2 | parametric=2
+[DEBUG] [EXPAND] Starting from raw region features.4.2.pwconv1 -> features.4.3.pwconv1 | layers=4 | parametric=4
+[DEBUG] [EXPAND] Final candidate features.4.2.pwconv1 -> features.4.3.pwconv1 | layers=4 | parametric=4
+[DEBUG] [EXPAND] Starting from raw region features.4.4.dwconv -> features.4.4.pwconv1 | layers=2 | parametric=2
+[DEBUG] [EXPAND] Final candidate features.4.4.dwconv -> features.4.4.pwconv1 | layers=2 | parametric=2
+[DEBUG] [EXPAND] Starting from raw region features.4.5.dwconv -> features.4.5.pwconv1 | layers=2 | parametric=2
+[DEBUG] [EXPAND] Final candidate features.4.5.dwconv -> features.4.5.pwconv1 | layers=2 | parametric=2
+[DEBUG] [EXPAND] Starting from raw region features.4.6.pwconv1 -> features.4.6.pwconv2 | layers=2 | parametric=2
+[DEBUG] [EXPAND] Final candidate features.4.6.pwconv1 -> features.4.6.pwconv2 | layers=2 | parametric=2
+[DEBUG] [EXPAND] Starting from raw region features.4.7.pwconv1 -> features.4.7.pwconv2 | layers=2 | parametric=2
+[DEBUG] [EXPAND] Final candidate features.4.7.pwconv1 -> features.4.7.pwconv2 | layers=2 | parametric=2
+[DEBUG] [EXPAND] Starting from raw region features.5.1 -> features.6.0.pwconv1 | layers=3 | parametric=3
+[DEBUG] [EXPAND] Final candidate features.5.1 -> features.6.0.pwconv1 | layers=3 | parametric=3
+[DEBUG] [EXPAND] Starting from raw region features.6.1.dwconv -> features.6.2.pwconv1 | layers=5 | parametric=5
+[DEBUG] [EXPAND] Final candidate features.6.1.dwconv -> features.6.2.pwconv1 | layers=5 | parametric=5
+
+[INFO] Phase 3: Evaluating 8 Candidate Regions (with Smart Boundary Shaving)...
+    [STEP] Testing sequence: features.4.1.dwconv -> features.4.1.pwconv1 (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (ConvNeXt)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 27,973,928
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.4.1.dwconv → features.4.1.pwconv1
+[STEP] Calling _collapse_block('features.4.1.dwconv', 'features.4.1.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.1.dwconv
+[INFO] End Target   : features.4.1.pwconv1
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.1.dwconv' -> 'features.4.1.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.4.1' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.1' (ConvNeXtBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 1 to 1
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] 1 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.1'
+[DEBUG] Hooking End Node   : 'features.4.1'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.1' -> 'features.4.1'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 27,973,928
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.1.pwconv1'...
+
+[STEP] Searching for next nn.Linear after 'features.4.1.pwconv1'...
+[DEBUG] Execution-order match: next Linear is 'features.4.1.pwconv2' (exec idx 55 -> 57)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.1.pwconv2'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1536
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1536
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.1.dwconv'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 1 -> 1
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=384, in=384, out=384)
+[DEBUG] ➔ Strategy: GROUPED 7×7 Conv (depth‑wise style, groups=384)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_g1x1: Conv2d(384, 384, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), groups=384, bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 27,973,928
+[INFO] Post-collapse : 26,791,592
+[INFO] Net Change    : -1,182,336
+[DEBUG] Local validation candidate selected from replacement slot: '1'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=1, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 1: '1'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.2' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.2' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.3' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.3' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.4' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.4' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.5' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.5' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.6' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.6' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.7' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.7' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.1.dwconv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.1.dwconv' → 'features.4.1.pwconv1'
+[INFO] ✅ Successfully collapsed block 'test' (features.4.1.dwconv → features.4.1.pwconv1) in 0.36s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,973,928
+[INFO] Parameters after : 26,791,592
+[INFO] ΔParams = +1,182,336 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.40s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.4.1.dwconv -> features.4.1.pwconv1 | Params (27,973,928 -> 26,791,592, saved 1,182,336, 4.2266%) | FLOPs (364,690,176 -> 345,791,232, saved 18,898,944, 5.1822%)
+    [STEP] Testing sequence: features.4.2.pwconv1 -> features.4.3.pwconv1 (Length: 4)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (ConvNeXt)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 27,973,928
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.4.2.pwconv1 → features.4.3.pwconv1
+[STEP] Calling _collapse_block('features.4.2.pwconv1', 'features.4.3.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.2.pwconv1
+[INFO] End Target   : features.4.3.pwconv1
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.2.pwconv1' -> 'features.4.3.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.4' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 2 to 3
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] 2 -> ConvNeXtBlock
+    [LAYER MAP] 3 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.2'
+[DEBUG] Hooking End Node   : 'features.4.3'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.2' -> 'features.4.3'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 27,973,928
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.3.pwconv1'...
+
+[STEP] Searching for next nn.Linear after 'features.4.3.pwconv1'...
+[DEBUG] Execution-order match: next Linear is 'features.4.3.pwconv2' (exec idx 67 -> 69)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.3.pwconv2'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1536
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1536
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.2.pwconv1'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 2 -> 3
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 27,973,928
+[INFO] Post-collapse : 25,718,312
+[INFO] Net Change    : -2,255,616
+[DEBUG] Local validation candidate selected from replacement slot: '2'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=2, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 2: '2'
+[STEP] Validating inserted module 'Sequential' at index 2...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.3' (SmartIdentity) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.3' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.4' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.4' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.5' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.5' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.6' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.6' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.7' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.7' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.2.pwconv1'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.2.pwconv1' → 'features.4.3.pwconv1'
+[INFO] ✅ Successfully collapsed block 'test' (features.4.2.pwconv1 → features.4.3.pwconv1) in 0.03s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,973,928
+[INFO] Parameters after : 25,718,312
+[INFO] ΔParams = +2,255,616 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.05s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.4.2.pwconv1 -> features.4.3.pwconv1 | Params (27,973,928 -> 25,718,312, saved 2,255,616, 8.0633%) | FLOPs (364,690,176 -> 328,643,328, saved 36,046,848, 9.8842%)
+    [STEP] Testing sequence: features.4.4.dwconv -> features.4.4.pwconv1 (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (ConvNeXt)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 27,973,928
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.4.4.dwconv → features.4.4.pwconv1
+[STEP] Calling _collapse_block('features.4.4.dwconv', 'features.4.4.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.4.dwconv
+[INFO] End Target   : features.4.4.pwconv1
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.4.dwconv' -> 'features.4.4.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.4.4' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.4' (ConvNeXtBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 4
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] 4 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.4'
+[DEBUG] Hooking End Node   : 'features.4.4'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.4' -> 'features.4.4'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 27,973,928
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.4.pwconv1'...
+
+[STEP] Searching for next nn.Linear after 'features.4.4.pwconv1'...
+[DEBUG] Execution-order match: next Linear is 'features.4.4.pwconv2' (exec idx 73 -> 75)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.4.pwconv2'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1536
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1536
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.4.dwconv'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 4 -> 4
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=384, in=384, out=384)
+[DEBUG] ➔ Strategy: GROUPED 7×7 Conv (depth‑wise style, groups=384)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_g1x1: Conv2d(384, 384, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), groups=384, bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 27,973,928
+[INFO] Post-collapse : 26,791,592
+[INFO] Net Change    : -1,182,336
+[DEBUG] Local validation candidate selected from replacement slot: '4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=4, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.5' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.5' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.6' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.6' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.7' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.7' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.4.dwconv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.4.dwconv' → 'features.4.4.pwconv1'
+[INFO] ✅ Successfully collapsed block 'test' (features.4.4.dwconv → features.4.4.pwconv1) in 0.02s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,973,928
+[INFO] Parameters after : 26,791,592
+[INFO] ΔParams = +1,182,336 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.04s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.4.4.dwconv -> features.4.4.pwconv1 | Params (27,973,928 -> 26,791,592, saved 1,182,336, 4.2266%) | FLOPs (364,690,176 -> 345,791,232, saved 18,898,944, 5.1822%)
+    [STEP] Testing sequence: features.4.5.dwconv -> features.4.5.pwconv1 (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (ConvNeXt)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 27,973,928
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.4.5.dwconv → features.4.5.pwconv1
+[STEP] Calling _collapse_block('features.4.5.dwconv', 'features.4.5.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.5.dwconv
+[INFO] End Target   : features.4.5.pwconv1
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.5.dwconv' -> 'features.4.5.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.4.5' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.5' (ConvNeXtBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 5 to 5
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] 5 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.5'
+[DEBUG] Hooking End Node   : 'features.4.5'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.5' -> 'features.4.5'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 27,973,928
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.5.pwconv1'...
+
+[STEP] Searching for next nn.Linear after 'features.4.5.pwconv1'...
+[DEBUG] Execution-order match: next Linear is 'features.4.5.pwconv2' (exec idx 79 -> 81)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.5.pwconv2'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1536
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1536
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.5.dwconv'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 5 -> 5
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=384, in=384, out=384)
+[DEBUG] ➔ Strategy: GROUPED 7×7 Conv (depth‑wise style, groups=384)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_g1x1: Conv2d(384, 384, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), groups=384, bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 27,973,928
+[INFO] Post-collapse : 26,791,592
+[INFO] Net Change    : -1,182,336
+[DEBUG] Local validation candidate selected from replacement slot: '5'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=5, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 5: '5'
+[STEP] Validating inserted module 'Sequential' at index 5...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.6' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.6' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.7' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.7' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.5.dwconv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.5.dwconv' → 'features.4.5.pwconv1'
+[INFO] ✅ Successfully collapsed block 'test' (features.4.5.dwconv → features.4.5.pwconv1) in 0.02s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,973,928
+[INFO] Parameters after : 26,791,592
+[INFO] ΔParams = +1,182,336 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.04s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.4.5.dwconv -> features.4.5.pwconv1 | Params (27,973,928 -> 26,791,592, saved 1,182,336, 4.2266%) | FLOPs (364,690,176 -> 345,791,232, saved 18,898,944, 5.1822%)
+    [STEP] Testing sequence: features.4.6.pwconv1 -> features.4.6.pwconv2 (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (ConvNeXt)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 27,973,928
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.4.6.pwconv1 → features.4.6.pwconv2
+[STEP] Calling _collapse_block('features.4.6.pwconv1', 'features.4.6.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.6.pwconv1
+[INFO] End Target   : features.4.6.pwconv2
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.6.pwconv1' -> 'features.4.6.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.6' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.6' (ConvNeXtBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 6 to 6
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] 6 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.6'
+[DEBUG] Hooking End Node   : 'features.4.6'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.6' -> 'features.4.6'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 27,973,928
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.6.pwconv2'...
+
+[STEP] Searching for next nn.Linear after 'features.4.6.pwconv2'...
+[DEBUG] Execution-order match: next Linear is 'features.4.7.pwconv1' (exec idx 87 -> 91)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.7.pwconv1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.6.pwconv1'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 6 -> 6
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=384, in=384, out=384)
+[DEBUG] ➔ Strategy: GROUPED 7×7 Conv (depth‑wise style, groups=384)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_g1x1: Conv2d(384, 384, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), groups=384, bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 27,973,928
+[INFO] Post-collapse : 26,791,592
+[INFO] Net Change    : -1,182,336
+[DEBUG] Local validation candidate selected from replacement slot: '6'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=6, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 6: '6'
+[STEP] Validating inserted module 'Sequential' at index 6...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.7' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.7' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.6.pwconv1'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.6.pwconv1' → 'features.4.6.pwconv2'
+[INFO] ✅ Successfully collapsed block 'test' (features.4.6.pwconv1 → features.4.6.pwconv2) in 0.02s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,973,928
+[INFO] Parameters after : 26,791,592
+[INFO] ΔParams = +1,182,336 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.04s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.4.6.pwconv1 -> features.4.6.pwconv2 | Params (27,973,928 -> 26,791,592, saved 1,182,336, 4.2266%) | FLOPs (364,690,176 -> 345,791,232, saved 18,898,944, 5.1822%)
+    [STEP] Testing sequence: features.4.7.pwconv1 -> features.4.7.pwconv2 (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (ConvNeXt)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 27,973,928
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.4.7.pwconv1 → features.4.7.pwconv2
+[STEP] Calling _collapse_block('features.4.7.pwconv1', 'features.4.7.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.7.pwconv1
+[INFO] End Target   : features.4.7.pwconv2
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.7.pwconv1' -> 'features.4.7.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4.7' | Type: ConvNeXtBlock
+[DEBUG] Escalating complex block 'features.4.7' (ConvNeXtBlock) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 7 to 7
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] 7 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.7'
+[DEBUG] Hooking End Node   : 'features.4.7'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.7' -> 'features.4.7'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 27,973,928
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.7.pwconv2'...
+
+[STEP] Searching for next nn.Linear after 'features.4.7.pwconv2'...
+[DEBUG] Execution-order match: next Linear is 'features.4.8.pwconv1' (exec idx 93 -> 97)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.8.pwconv1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.7.pwconv1'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 7 -> 7
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=384, in=384, out=384)
+[DEBUG] ➔ Strategy: GROUPED 7×7 Conv (depth‑wise style, groups=384)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_g1x1: Conv2d(384, 384, kernel_size=(7, 7), stride=(1, 1), padding=(3, 3), groups=384, bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 27,973,928
+[INFO] Post-collapse : 26,791,592
+[INFO] Net Change    : -1,182,336
+[DEBUG] Local validation candidate selected from replacement slot: '7'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=7, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 7: '7'
+[STEP] Validating inserted module 'Sequential' at index 7...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.7.pwconv1'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.7.pwconv1' → 'features.4.7.pwconv2'
+[INFO] ✅ Successfully collapsed block 'test' (features.4.7.pwconv1 → features.4.7.pwconv2) in 0.02s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,973,928
+[INFO] Parameters after : 26,791,592
+[INFO] ΔParams = +1,182,336 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.04s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.4.7.pwconv1 -> features.4.7.pwconv2 | Params (27,973,928 -> 26,791,592, saved 1,182,336, 4.2266%) | FLOPs (364,690,176 -> 345,791,232, saved 18,898,944, 5.1822%)
+    [STEP] Testing sequence: features.5.1 -> features.6.0.pwconv1 (Length: 3)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (ConvNeXt)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 27,973,928
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.5.1 → features.6.0.pwconv1
+[STEP] Calling _collapse_block('features.5.1', 'features.6.0.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.5.1
+[INFO] End Target   : features.6.0.pwconv1
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.5.1' -> 'features.6.0.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 5 to 6
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] 5 -> Sequential
+    [LAYER MAP] 6 -> Sequential
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.5'
+[DEBUG] Hooking End Node   : 'features.6'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.5' -> 'features.6'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 768, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 768, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 27,973,928
+
+[STEP 3] Probing graph for downstream classifier after 'features.6.0.pwconv1'...
+
+[STEP] Searching for next nn.Linear after 'features.6.0.pwconv1'...
+[DEBUG] Execution-order match: next Linear is 'features.6.0.pwconv2' (exec idx 107 -> 109)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.6.0.pwconv2'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 768, 2, 2)
+[DEBUG] Determined out_channels=768
+[DEBUG] Final block output shape: (64, 768, 2, 2)
+[DEBUG] Determined out_channels=768
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 3072
+[RESULT] Block analysis complete:
+         out_shape=(64, 768, 2, 2)
+         out_channels=768
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 768, 2, 2)
+    - out_channels             : 768
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 3072
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.5.1'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 5 -> 6
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 384 (in) -> 768 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_1x1: Conv2d(384, 768, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 27,973,928
+[INFO] Post-collapse : 12,799,784
+[INFO] Net Change    : -15,174,144
+[DEBUG] Local validation candidate selected from replacement slot: '5'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 768, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=5, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 5: '5'
+[STEP] Validating inserted module 'Sequential' at index 5...
+[DEBUG] Inserted module forward successful, output shape: (64, 768, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.6' (SmartIdentity) with input shape (64, 768, 2, 2)
+[DEBUG] Downstream 'features.6' executed successfully, output shape: (64, 768, 2, 2)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.5.1'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.5.1' → 'features.6.0.pwconv1'
+[INFO] ✅ Successfully collapsed block 'test' (features.5.1 → features.6.0.pwconv1) in 0.03s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,973,928
+[INFO] Parameters after : 12,799,784
+[INFO] ΔParams = +15,174,144 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.05s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.5.1 -> features.6.0.pwconv1 | Params (27,973,928 -> 12,799,784, saved 15,174,144, 54.2439%) | FLOPs (364,690,176 -> 307,581,696, saved 57,108,480, 15.6595%)
+    [STEP] Testing sequence: features.6.1.dwconv -> features.6.2.pwconv1 (Length: 5)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (ConvNeXt)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 27,973,928
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.6.1.dwconv → features.6.2.pwconv1
+[STEP] Calling _collapse_block('features.6.1.dwconv', 'features.6.2.pwconv1')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.6.1.dwconv
+[INFO] End Target   : features.6.2.pwconv1
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.6.1.dwconv' -> 'features.6.2.pwconv1'
+[DEBUG] [LCA] Resolved Container: 'features.6' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.6'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 1 to 2
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] 1 -> ConvNeXtBlock
+    [LAYER MAP] 2 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.6.1'
+[DEBUG] Hooking End Node   : 'features.6.2'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.6.1' -> 'features.6.2'...
+[DEBUG] Captured input shape: (64, 768, 2, 2), output shape: (64, 768, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 768, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (64, 768, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 27,973,928
+
+[STEP 3] Probing graph for downstream classifier after 'features.6.2.pwconv1'...
+
+[STEP] Searching for next nn.Linear after 'features.6.2.pwconv1'...
+[DEBUG] Execution-order match: next Linear is 'features.6.2.pwconv2' (exec idx 119 -> 121)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.6.2.pwconv2'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (64, 768, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 768, 2, 2)
+[DEBUG] Determined out_channels=768
+[DEBUG] Final block output shape: (64, 768, 2, 2)
+[DEBUG] Determined out_channels=768
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 3072
+[RESULT] Block analysis complete:
+         out_shape=(64, 768, 2, 2)
+         out_channels=768
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 768, 2, 2)
+    - out_channels             : 768
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 3072
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.6.1.dwconv'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.6'
+[DEBUG] Layer Indices    : 1 -> 2
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 768 (in) -> 768 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_1x1: Conv2d(768, 768, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'features.6'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 27,973,928
+[INFO] Post-collapse : 19,039,016
+[INFO] Net Change    : -8,934,912
+[DEBUG] Local validation candidate selected from replacement slot: '1'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 768, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.6' =====
+[DEBUG] start_idx=1, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.6'...
+[DEBUG] Found inserted block candidate at index 1: '1'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (64, 768, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.6.2' (SmartIdentity) with input shape (64, 768, 2, 2)
+[DEBUG] Downstream 'features.6.2' executed successfully, output shape: (64, 768, 2, 2)
+[RESULT] ✅ Downstream validation for 'features.6' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.6.1.dwconv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.6.1.dwconv' → 'features.6.2.pwconv1'
+[INFO] ✅ Successfully collapsed block 'test' (features.6.1.dwconv → features.6.2.pwconv1) in 0.03s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,973,928
+[INFO] Parameters after : 19,039,016
+[INFO] ΔParams = +8,934,912 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.05s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.6.1.dwconv -> features.6.2.pwconv1 | Params (27,973,928 -> 19,039,016, saved 8,934,912, 31.9401%) | FLOPs (364,690,176 -> 328,972,032, saved 35,718,144, 9.7941%)
+[INFO] Forced 8 sets into 'Dynamic_Region_All_Combined'.
+
+[DEBUG] --- Final Accepted Regions Summary ---
+[DEBUG] [FINAL] Set_0: features.4.1.dwconv -> features.4.1.pwconv1 | layers=2 | parametric=2
+[DEBUG] [FINAL] Set_1: features.4.2.pwconv1 -> features.4.3.pwconv1 | layers=4 | parametric=4
+[DEBUG] [FINAL] Set_2: features.4.4.dwconv -> features.4.4.pwconv1 | layers=2 | parametric=2
+[DEBUG] [FINAL] Set_3: features.4.5.dwconv -> features.4.5.pwconv1 | layers=2 | parametric=2
+[DEBUG] [FINAL] Set_4: features.4.6.pwconv1 -> features.4.6.pwconv2 | layers=2 | parametric=2
+[DEBUG] [FINAL] Set_5: features.4.7.pwconv1 -> features.4.7.pwconv2 | layers=2 | parametric=2
+[DEBUG] [FINAL] Set_6: features.5.1 -> features.6.0.pwconv1 | layers=3 | parametric=3
+[DEBUG] [FINAL] Set_7: features.6.1.dwconv -> features.6.2.pwconv1 | layers=5 | parametric=5
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[✓] scorer=local_dev: 11 targets -> ConvNeXt_tinyimagenet_epochs300_pretrain100_scorerlocal_dev_JF_discovered_regions.json
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator (scorer=change) ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 27,973,928 | Base FLOPs: 364,690,176
+[DEBUG] Scorer 'change': active threshold change <= 0.367219 (bottom 25%)
+
+[DEBUG] --- Phase 2A: Scanning 59 layers for Raw Candidates ---
+[DEBUG] [SCAN] Layer 00 | stem.0                                        | change=0.768392 | status=Veto     | reason=veto window (idx=0, cutoff=14)
+[DEBUG] [SCAN] Layer 01 | features.0.0.dwconv                           | change=1.33728 | status=Veto     | reason=veto window (idx=1, cutoff=14)
+[DEBUG] [SCAN] Layer 02 | features.0.0.pwconv1                          | change=1.33728 | status=Veto     | reason=veto window (idx=2, cutoff=14)
+[DEBUG] [SCAN] Layer 03 | features.0.0.pwconv2                          | change=1.33728 | status=Veto     | reason=veto window (idx=3, cutoff=14)
+[DEBUG] [SCAN] Layer 04 | features.0.1.dwconv                           | change=0.387394 | status=Veto     | reason=veto window (idx=4, cutoff=14)
+[DEBUG] [SCAN] Layer 05 | features.0.1.pwconv1                          | change=0.387394 | status=Veto     | reason=veto window (idx=5, cutoff=14)
+[DEBUG] [SCAN] Layer 06 | features.0.1.pwconv2                          | change=0.387394 | status=Veto     | reason=veto window (idx=6, cutoff=14)
+[DEBUG] [SCAN] Layer 07 | features.0.2.dwconv                           | change=0.760776 | status=Veto     | reason=veto window (idx=7, cutoff=14)
+[DEBUG] [SCAN] Layer 08 | features.0.2.pwconv1                          | change=0.760776 | status=Veto     | reason=veto window (idx=8, cutoff=14)
+[DEBUG] [SCAN] Layer 09 | features.0.2.pwconv2                          | change=0.760776 | status=Veto     | reason=veto window (idx=9, cutoff=14)
+[DEBUG] [SCAN] Layer 10 | features.1.1                                  | change=0.691393 | status=Veto     | reason=veto window (idx=10, cutoff=14)
+[DEBUG] [SCAN] Layer 11 | features.2.0.dwconv                           | change=0.248293 | status=Veto     | reason=veto window (idx=11, cutoff=14)
+[DEBUG] [SCAN] Layer 12 | features.2.0.pwconv1                          | change=0.248293 | status=Veto     | reason=veto window (idx=12, cutoff=14)
+[DEBUG] [SCAN] Layer 13 | features.2.0.pwconv2                          | change=0.248293 | status=Veto     | reason=veto window (idx=13, cutoff=14)
+[DEBUG] [SCAN] Layer 14 | features.2.1.dwconv                           | change=0.654168 | status=Rejected | reason=change above active threshold (change=0.654168 > 0.367219)
+[DEBUG] [SCAN] Layer 15 | features.2.1.pwconv1                          | change=0.654168 | status=Rejected | reason=change above active threshold (change=0.654168 > 0.367219)
+[DEBUG] [SCAN] Layer 16 | features.2.1.pwconv2                          | change=0.654168 | status=Rejected | reason=change above active threshold (change=0.654168 > 0.367219)
+[DEBUG] [SCAN] Layer 17 | features.2.2.dwconv                           | change=0.467283 | status=Rejected | reason=change above active threshold (change=0.467283 > 0.367219)
+[DEBUG] [SCAN] Layer 18 | features.2.2.pwconv1                          | change=0.467283 | status=Rejected | reason=change above active threshold (change=0.467283 > 0.367219)
+[DEBUG] [SCAN] Layer 19 | features.2.2.pwconv2                          | change=0.467283 | status=Rejected | reason=change above active threshold (change=0.467283 > 0.367219)
+[DEBUG] [SCAN] Layer 20 | features.3.1                                  | change=0.691393 | status=Rejected | reason=change above active threshold (change=0.691393 > 0.367219)
+[DEBUG] [SCAN] Layer 33 | features.4.4.dwconv                           | change=0.454054 | status=Rejected | reason=change above active threshold (change=0.454054 > 0.367219)
+[DEBUG] [RAW] Accepted raw candidate features.4.0.dwconv -> features.4.3.pwconv2 | layers=12 | parametric=12
+[DEBUG] [SCAN] Layer 34 | features.4.4.pwconv1                          | change=0.454054 | status=Rejected | reason=change above active threshold (change=0.454054 > 0.367219)
+[DEBUG] [SCAN] Layer 35 | features.4.4.pwconv2                          | change=0.454054 | status=Rejected | reason=change above active threshold (change=0.454054 > 0.367219)
+[DEBUG] [SCAN] Layer 36 | features.4.5.dwconv                           | change=0.438843 | status=Rejected | reason=change above active threshold (change=0.438843 > 0.367219)
+[DEBUG] [SCAN] Layer 37 | features.4.5.pwconv1                          | change=0.438843 | status=Rejected | reason=change above active threshold (change=0.438843 > 0.367219)
+[DEBUG] [SCAN] Layer 38 | features.4.5.pwconv2                          | change=0.438843 | status=Rejected | reason=change above active threshold (change=0.438843 > 0.367219)
+[DEBUG] [SCAN] Layer 39 | features.4.6.dwconv                           | change=0.420007 | status=Rejected | reason=change above active threshold (change=0.420007 > 0.367219)
+[DEBUG] [SCAN] Layer 40 | features.4.6.pwconv1                          | change=0.420007 | status=Rejected | reason=change above active threshold (change=0.420007 > 0.367219)
+[DEBUG] [SCAN] Layer 41 | features.4.6.pwconv2                          | change=0.420007 | status=Rejected | reason=change above active threshold (change=0.420007 > 0.367219)
+[DEBUG] [SCAN] Layer 42 | features.4.7.dwconv                           | change=0.43716 | status=Rejected | reason=change above active threshold (change=0.43716 > 0.367219)
+[DEBUG] [SCAN] Layer 43 | features.4.7.pwconv1                          | change=0.43716 | status=Rejected | reason=change above active threshold (change=0.43716 > 0.367219)
+[DEBUG] [SCAN] Layer 44 | features.4.7.pwconv2                          | change=0.43716 | status=Rejected | reason=change above active threshold (change=0.43716 > 0.367219)
+[DEBUG] [SCAN] Layer 45 | features.4.8.dwconv                           | change=0.439252 | status=Rejected | reason=change above active threshold (change=0.439252 > 0.367219)
+[DEBUG] [SCAN] Layer 46 | features.4.8.pwconv1                          | change=0.439252 | status=Rejected | reason=change above active threshold (change=0.439252 > 0.367219)
+[DEBUG] [SCAN] Layer 47 | features.4.8.pwconv2                          | change=0.439252 | status=Rejected | reason=change above active threshold (change=0.439252 > 0.367219)
+[DEBUG] [SCAN] Layer 48 | features.5.1                                  | change=0.691393 | status=Rejected | reason=change above active threshold (change=0.691393 > 0.367219)
+[DEBUG] [SCAN] Layer 49 | features.6.0.dwconv                           | change=1.57115 | status=Rejected | reason=change above active threshold (change=1.57115 > 0.367219)
+[DEBUG] [SCAN] Layer 50 | features.6.0.pwconv1                          | change=1.57115 | status=Rejected | reason=change above active threshold (change=1.57115 > 0.367219)
+[DEBUG] [SCAN] Layer 51 | features.6.0.pwconv2                          | change=1.57115 | status=Rejected | reason=change above active threshold (change=1.57115 > 0.367219)
+[DEBUG] [SCAN] Layer 52 | features.6.1.dwconv                           | change=0.445727 | status=Rejected | reason=change above active threshold (change=0.445727 > 0.367219)
+[DEBUG] [SCAN] Layer 53 | features.6.1.pwconv1                          | change=0.445727 | status=Rejected | reason=change above active threshold (change=0.445727 > 0.367219)
+[DEBUG] [SCAN] Layer 54 | features.6.1.pwconv2                          | change=0.445727 | status=Rejected | reason=change above active threshold (change=0.445727 > 0.367219)
+[DEBUG] [SCAN] Layer 55 | features.6.2.dwconv                           | change=0.529281 | status=Rejected | reason=change above active threshold (change=0.529281 > 0.367219)
+[DEBUG] [SCAN] Layer 56 | features.6.2.pwconv1                          | change=0.529281 | status=Rejected | reason=change above active threshold (change=0.529281 > 0.367219)
+[DEBUG] [SCAN] Layer 57 | features.6.2.pwconv2                          | change=0.529281 | status=Rejected | reason=change above active threshold (change=0.529281 > 0.367219)
+[DEBUG] [SCAN] Layer 58 | classifier                                    | change=0.00152275 | status=Rejected | reason=invalid target type=Linear
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [EXPAND] Starting from raw region features.4.0.dwconv -> features.4.3.pwconv2 | layers=12 | parametric=12
+[DEBUG] [EXPAND] Final candidate features.4.0.dwconv -> features.4.3.pwconv2 | layers=12 | parametric=12
+
+[INFO] Phase 3: Evaluating 1 Candidate Regions (with Smart Boundary Shaving)...
+    [STEP] Testing sequence: features.4.0.dwconv -> features.4.3.pwconv2 (Length: 12)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (ConvNeXt)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 27,973,928
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.4.0.dwconv → features.4.3.pwconv2
+[STEP] Calling _collapse_block('features.4.0.dwconv', 'features.4.3.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.0.dwconv
+[INFO] End Target   : features.4.3.pwconv2
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.0.dwconv' -> 'features.4.3.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 0 to 3
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 0 -> ConvNeXtBlock
+    [LAYER MAP] 1 -> ConvNeXtBlock
+    [LAYER MAP] 2 -> ConvNeXtBlock
+    [LAYER MAP] 3 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.0'
+[DEBUG] Hooking End Node   : 'features.4.3'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.0' -> 'features.4.3'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 27,973,928
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.3.pwconv2'...
+
+[STEP] Searching for next nn.Linear after 'features.4.3.pwconv2'...
+[DEBUG] Execution-order match: next Linear is 'features.4.4.pwconv1' (exec idx 69 -> 73)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.4.pwconv1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.0.dwconv'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 0 -> 3
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 27,973,928
+[INFO] Post-collapse : 23,314,472
+[INFO] Net Change    : -4,659,456
+[DEBUG] Local validation candidate selected from replacement slot: '0'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=0, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 0: '0'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.1' (SmartIdentity) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.1' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.2' (SmartIdentity) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.2' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.3' (SmartIdentity) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.3' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.4' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.4' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.5' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.5' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.6' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.6' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.7' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.7' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.0.dwconv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.0.dwconv' → 'features.4.3.pwconv2'
+[INFO] ✅ Successfully collapsed block 'test' (features.4.0.dwconv → features.4.3.pwconv2) in 0.02s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,973,928
+[INFO] Parameters after : 23,314,472
+[INFO] ΔParams = +4,659,456 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.04s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.4.0.dwconv -> features.4.3.pwconv2 | Params (27,973,928 -> 23,314,472, saved 4,659,456, 16.6564%) | FLOPs (364,690,176 -> 290,231,040, saved 74,459,136, 20.4171%)
+
+[DEBUG] --- Final Accepted Regions Summary ---
+[DEBUG] [FINAL] Set_0: features.4.0.dwconv -> features.4.3.pwconv2 | layers=12 | parametric=12
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[✓] scorer=change: 3 targets -> ConvNeXt_tinyimagenet_epochs300_pretrain100_scorerchange_JF_discovered_regions.json
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator (scorer=cka) ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 27,973,928 | Base FLOPs: 364,690,176
+[DEBUG] Scorer 'cka': active threshold cka >= 0.977437 (top 25%)
+
+[DEBUG] --- Phase 2A: Scanning 59 layers for Raw Candidates ---
+[DEBUG] [SCAN] Layer 00 | stem.0                                        | cka=0.646396 | status=Veto     | reason=veto window (idx=0, cutoff=14)
+[DEBUG] [SCAN] Layer 01 | features.0.0.dwconv                           | cka=0.821772 | status=Veto     | reason=veto window (idx=1, cutoff=14)
+[DEBUG] [SCAN] Layer 02 | features.0.0.pwconv1                          | cka=0.821772 | status=Veto     | reason=veto window (idx=2, cutoff=14)
+[DEBUG] [SCAN] Layer 03 | features.0.0.pwconv2                          | cka=0.821772 | status=Veto     | reason=veto window (idx=3, cutoff=14)
+[DEBUG] [SCAN] Layer 04 | features.0.1.dwconv                           | cka=0.94754 | status=Veto     | reason=veto window (idx=4, cutoff=14)
+[DEBUG] [SCAN] Layer 05 | features.0.1.pwconv1                          | cka=0.94754 | status=Veto     | reason=veto window (idx=5, cutoff=14)
+[DEBUG] [SCAN] Layer 06 | features.0.1.pwconv2                          | cka=0.94754 | status=Veto     | reason=veto window (idx=6, cutoff=14)
+[DEBUG] [SCAN] Layer 07 | features.0.2.dwconv                           | cka=0.960938 | status=Veto     | reason=veto window (idx=7, cutoff=14)
+[DEBUG] [SCAN] Layer 08 | features.0.2.pwconv1                          | cka=0.960938 | status=Veto     | reason=veto window (idx=8, cutoff=14)
+[DEBUG] [SCAN] Layer 09 | features.0.2.pwconv2                          | cka=0.960938 | status=Veto     | reason=veto window (idx=9, cutoff=14)
+[DEBUG] [SCAN] Layer 10 | features.1.1                                  | cka=0.0148533 | status=Veto     | reason=veto window (idx=10, cutoff=14)
+[DEBUG] [SCAN] Layer 11 | features.2.0.dwconv                           | cka=0.986585 | status=Veto     | reason=veto window (idx=11, cutoff=14)
+[DEBUG] [SCAN] Layer 12 | features.2.0.pwconv1                          | cka=0.986585 | status=Veto     | reason=veto window (idx=12, cutoff=14)
+[DEBUG] [SCAN] Layer 13 | features.2.0.pwconv2                          | cka=0.986585 | status=Veto     | reason=veto window (idx=13, cutoff=14)
+[DEBUG] [SCAN] Layer 14 | features.2.1.dwconv                           | cka=0.902546 | status=Rejected | reason=cka below active threshold (cka=0.902546 < 0.977437)
+[DEBUG] [SCAN] Layer 15 | features.2.1.pwconv1                          | cka=0.902546 | status=Rejected | reason=cka below active threshold (cka=0.902546 < 0.977437)
+[DEBUG] [SCAN] Layer 16 | features.2.1.pwconv2                          | cka=0.902546 | status=Rejected | reason=cka below active threshold (cka=0.902546 < 0.977437)
+[DEBUG] [SCAN] Layer 17 | features.2.2.dwconv                           | cka=0.871966 | status=Rejected | reason=cka below active threshold (cka=0.871966 < 0.977437)
+[DEBUG] [SCAN] Layer 18 | features.2.2.pwconv1                          | cka=0.871966 | status=Rejected | reason=cka below active threshold (cka=0.871966 < 0.977437)
+[DEBUG] [SCAN] Layer 19 | features.2.2.pwconv2                          | cka=0.871966 | status=Rejected | reason=cka below active threshold (cka=0.871966 < 0.977437)
+[DEBUG] [SCAN] Layer 20 | features.3.1                                  | cka=0.0148533 | status=Rejected | reason=cka below active threshold (cka=0.0148533 < 0.977437)
+[DEBUG] [SCAN] Layer 33 | features.4.4.dwconv                           | cka=0.972765 | status=Rejected | reason=cka below active threshold (cka=0.972765 < 0.977437)
+[DEBUG] [RAW] Accepted raw candidate features.4.0.dwconv -> features.4.3.pwconv2 | layers=12 | parametric=12
+[DEBUG] [SCAN] Layer 34 | features.4.4.pwconv1                          | cka=0.972765 | status=Rejected | reason=cka below active threshold (cka=0.972765 < 0.977437)
+[DEBUG] [SCAN] Layer 35 | features.4.4.pwconv2                          | cka=0.972765 | status=Rejected | reason=cka below active threshold (cka=0.972765 < 0.977437)
+[DEBUG] [SCAN] Layer 36 | features.4.5.dwconv                           | cka=0.967281 | status=Rejected | reason=cka below active threshold (cka=0.967281 < 0.977437)
+[DEBUG] [SCAN] Layer 37 | features.4.5.pwconv1                          | cka=0.967281 | status=Rejected | reason=cka below active threshold (cka=0.967281 < 0.977437)
+[DEBUG] [SCAN] Layer 38 | features.4.5.pwconv2                          | cka=0.967281 | status=Rejected | reason=cka below active threshold (cka=0.967281 < 0.977437)
+[DEBUG] [SCAN] Layer 39 | features.4.6.dwconv                           | cka=0.940695 | status=Rejected | reason=cka below active threshold (cka=0.940695 < 0.977437)
+[DEBUG] [SCAN] Layer 40 | features.4.6.pwconv1                          | cka=0.940695 | status=Rejected | reason=cka below active threshold (cka=0.940695 < 0.977437)
+[DEBUG] [SCAN] Layer 41 | features.4.6.pwconv2                          | cka=0.940695 | status=Rejected | reason=cka below active threshold (cka=0.940695 < 0.977437)
+[DEBUG] [SCAN] Layer 42 | features.4.7.dwconv                           | cka=0.93448 | status=Rejected | reason=cka below active threshold (cka=0.93448 < 0.977437)
+[DEBUG] [SCAN] Layer 43 | features.4.7.pwconv1                          | cka=0.93448 | status=Rejected | reason=cka below active threshold (cka=0.93448 < 0.977437)
+[DEBUG] [SCAN] Layer 44 | features.4.7.pwconv2                          | cka=0.93448 | status=Rejected | reason=cka below active threshold (cka=0.93448 < 0.977437)
+[DEBUG] [SCAN] Layer 45 | features.4.8.dwconv                           | cka=0.914078 | status=Rejected | reason=cka below active threshold (cka=0.914078 < 0.977437)
+[DEBUG] [SCAN] Layer 46 | features.4.8.pwconv1                          | cka=0.914078 | status=Rejected | reason=cka below active threshold (cka=0.914078 < 0.977437)
+[DEBUG] [SCAN] Layer 47 | features.4.8.pwconv2                          | cka=0.914078 | status=Rejected | reason=cka below active threshold (cka=0.914078 < 0.977437)
+[DEBUG] [SCAN] Layer 48 | features.5.1                                  | cka=0.0148533 | status=Rejected | reason=cka below active threshold (cka=0.0148533 < 0.977437)
+[DEBUG] [SCAN] Layer 49 | features.6.0.dwconv                           | cka=0.690623 | status=Rejected | reason=cka below active threshold (cka=0.690623 < 0.977437)
+[DEBUG] [SCAN] Layer 50 | features.6.0.pwconv1                          | cka=0.690623 | status=Rejected | reason=cka below active threshold (cka=0.690623 < 0.977437)
+[DEBUG] [SCAN] Layer 51 | features.6.0.pwconv2                          | cka=0.690623 | status=Rejected | reason=cka below active threshold (cka=0.690623 < 0.977437)
+[DEBUG] [SCAN] Layer 52 | features.6.1.dwconv                           | cka=0.866081 | status=Rejected | reason=cka below active threshold (cka=0.866081 < 0.977437)
+[DEBUG] [SCAN] Layer 53 | features.6.1.pwconv1                          | cka=0.866081 | status=Rejected | reason=cka below active threshold (cka=0.866081 < 0.977437)
+[DEBUG] [SCAN] Layer 54 | features.6.1.pwconv2                          | cka=0.866081 | status=Rejected | reason=cka below active threshold (cka=0.866081 < 0.977437)
+[DEBUG] [SCAN] Layer 55 | features.6.2.dwconv                           | cka=0.454692 | status=Rejected | reason=cka below active threshold (cka=0.454692 < 0.977437)
+[DEBUG] [SCAN] Layer 56 | features.6.2.pwconv1                          | cka=0.454692 | status=Rejected | reason=cka below active threshold (cka=0.454692 < 0.977437)
+[DEBUG] [SCAN] Layer 57 | features.6.2.pwconv2                          | cka=0.454692 | status=Rejected | reason=cka below active threshold (cka=0.454692 < 0.977437)
+[DEBUG] [SCAN] Layer 58 | classifier                                    | cka=0.705353 | status=Rejected | reason=invalid target type=Linear
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [EXPAND] Starting from raw region features.4.0.dwconv -> features.4.3.pwconv2 | layers=12 | parametric=12
+[DEBUG] [EXPAND] Final candidate features.4.0.dwconv -> features.4.3.pwconv2 | layers=12 | parametric=12
+
+[INFO] Phase 3: Evaluating 1 Candidate Regions (with Smart Boundary Shaving)...
+    [STEP] Testing sequence: features.4.0.dwconv -> features.4.3.pwconv2 (Length: 12)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (ConvNeXt)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 27,973,928
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.4.0.dwconv → features.4.3.pwconv2
+[STEP] Calling _collapse_block('features.4.0.dwconv', 'features.4.3.pwconv2')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.4.0.dwconv
+[INFO] End Target   : features.4.3.pwconv2
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.4.0.dwconv' -> 'features.4.3.pwconv2'
+[DEBUG] [LCA] Resolved Container: 'features.4' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features.4'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 0 to 3
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 0 -> ConvNeXtBlock
+    [LAYER MAP] 1 -> ConvNeXtBlock
+    [LAYER MAP] 2 -> ConvNeXtBlock
+    [LAYER MAP] 3 -> ConvNeXtBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.4.0'
+[DEBUG] Hooking End Node   : 'features.4.3'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.4.0' -> 'features.4.3'...
+[DEBUG] Captured input shape: (64, 384, 4, 4), output shape: (64, 384, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 384, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 384, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 27,973,928
+
+[STEP 3] Probing graph for downstream classifier after 'features.4.3.pwconv2'...
+
+[STEP] Searching for next nn.Linear after 'features.4.3.pwconv2'...
+[DEBUG] Execution-order match: next Linear is 'features.4.4.pwconv1' (exec idx 69 -> 73)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'features.4.4.pwconv1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 384, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] Final block output shape: (64, 384, 4, 4)
+[DEBUG] Determined out_channels=384
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 384
+[RESULT] Block analysis complete:
+         out_shape=(64, 384, 4, 4)
+         out_channels=384
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 384, 4, 4)
+    - out_channels             : 384
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 384
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.4.0.dwconv'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features.4'
+[DEBUG] Layer Indices    : 0 -> 3
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 384 (in) -> 384 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for convnext:
+        - conv_1x1: Conv2d(384, 384, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - layernorm: _SurrogateLayerNorm2d()
+        - gelu: GELU(approximate='none')
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features.4'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 27,973,928
+[INFO] Post-collapse : 23,314,472
+[INFO] Net Change    : -4,659,456
+[DEBUG] Local validation candidate selected from replacement slot: '0'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 384, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features.4' =====
+[DEBUG] start_idx=0, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features.4'...
+[DEBUG] Found inserted block candidate at index 0: '0'
+[STEP] Validating inserted module 'Sequential' at index 0...
+[DEBUG] Inserted module forward successful, output shape: (64, 384, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.4.1' (SmartIdentity) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.1' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.2' (SmartIdentity) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.2' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.3' (SmartIdentity) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.3' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.4' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.4' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.5' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.5' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.6' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.6' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.7' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.7' executed successfully, output shape: (64, 384, 4, 4)
+[DEBUG] Running downstream module 'features.4.8' (ConvNeXtBlock) with input shape (64, 384, 4, 4)
+[DEBUG] Downstream 'features.4.8' executed successfully, output shape: (64, 384, 4, 4)
+[RESULT] ✅ Downstream validation for 'features.4' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.4.0.dwconv'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.4.0.dwconv' → 'features.4.3.pwconv2'
+[INFO] ✅ Successfully collapsed block 'test' (features.4.0.dwconv → features.4.3.pwconv2) in 0.02s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 27,973,928
+[INFO] Parameters after : 23,314,472
+[INFO] ΔParams = +4,659,456 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.04s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.4.0.dwconv -> features.4.3.pwconv2 | Params (27,973,928 -> 23,314,472, saved 4,659,456, 16.6564%) | FLOPs (364,690,176 -> 290,231,040, saved 74,459,136, 20.4171%)
+
+[DEBUG] --- Final Accepted Regions Summary ---
+[DEBUG] [FINAL] Set_0: features.4.0.dwconv -> features.4.3.pwconv2 | layers=12 | parametric=12
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[✓] scorer=cka: 3 targets -> ConvNeXt_tinyimagenet_epochs300_pretrain100_scorercka_JF_discovered_regions.json
+[✓] Combined ablation (regions + stats) -> ConvNeXt_tinyimagenet_epochs300_pretrain100_scorer_ablation.json
+[✓] Change profile figure saved under outputs/discovery/ConvNeXt/tinyimagenet/epochs300_pretrain100
+14:37:35 [INFO] Scanning for metrics files matching epochs=300, pretrain=100
+14:37:36 [INFO] Successfully parsed 59 experiment rows.
+14:37:36 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar100__accuracy.svg
+14:37:36 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar100__params.svg
+14:37:36 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar100__flops.svg
+14:37:37 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar100__memory.svg
+14:37:37 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar10__accuracy.svg
+14:37:41 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar10__params.svg
+14:37:42 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar10__flops.svg
+14:37:42 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar10__memory.svg
+14:37:42 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_tinyimagenet_accuracy.svg
+14:37:42 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_tinyimagenet_params.svg
+14:37:44 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_tinyimagenet_flops.svg
+14:37:48 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_tinyimagenet_memory.svg
+14:37:48 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar100__accuracy.svg
+14:37:49 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar100__params.svg
+14:37:52 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar100__flops.svg
+14:37:55 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar100__memory.svg
+14:37:55 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar10__accuracy.svg
+14:37:55 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar10__params.svg
+14:37:56 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar10__flops.svg
+14:37:56 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar10__memory.svg
+14:37:56 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/InceptionNet_tinyimagenet_accuracy.svg
+14:37:56 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/InceptionNet_tinyimagenet_params.svg
+14:37:57 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/InceptionNet_tinyimagenet_flops.svg
+14:37:57 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/InceptionNet_tinyimagenet_memory.svg
+14:37:57 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar100__accuracy.svg
+14:37:58 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar100__params.svg
+14:37:59 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar100__flops.svg
+14:38:00 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar100__memory.svg
+14:38:00 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar10__accuracy.svg
+14:38:01 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar10__params.svg
+14:38:01 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar10__flops.svg
+14:38:01 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar10__memory.svg
+14:38:01 [INFO] [FIG1] Saved accuracy plot for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/MobileNet_tinyimagenet_accuracy.svg
+14:38:01 [INFO] [FIG1] Saved params plot for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/MobileNet_tinyimagenet_params.svg
+14:38:02 [INFO] [FIG1] Saved flops plot for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/MobileNet_tinyimagenet_flops.svg
+14:38:02 [INFO] [FIG1] Saved memory plot for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/MobileNet_tinyimagenet_memory.svg
+14:38:02 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar100__accuracy.svg
+14:38:03 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar100__params.svg
+14:38:03 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar100__flops.svg
+14:38:03 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar100__memory.svg
+14:38:03 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar10__accuracy.svg
+14:38:03 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar10__params.svg
+14:38:04 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar10__flops.svg
+14:38:04 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar10__memory.svg
+14:38:04 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_tinyimagenet_accuracy.svg
+14:38:04 [INFO] [FIG1] Saved params plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_tinyimagenet_params.svg
+14:38:05 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_tinyimagenet_flops.svg
+14:38:05 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_tinyimagenet_memory.svg
+14:38:08 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar100_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar100__accuracy.svg
+14:38:09 [INFO] [FIG1] Saved params plot for VGG16/cifar100_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar100__params.svg
+14:38:09 [INFO] [FIG1] Saved flops plot for VGG16/cifar100_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar100__flops.svg
+14:38:14 [INFO] [FIG1] Saved memory plot for VGG16/cifar100_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar100__memory.svg
+14:38:14 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar10__accuracy.svg
+14:38:15 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar10__params.svg
+14:38:15 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar10__flops.svg
+14:38:15 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar10__memory.svg
+14:38:15 [INFO] [FIG1] Saved accuracy plot for VGG16/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/VGG16_tinyimagenet_accuracy.svg
+14:38:16 [INFO] [FIG1] Saved params plot for VGG16/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/VGG16_tinyimagenet_params.svg
+14:38:16 [INFO] [FIG1] Saved flops plot for VGG16/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/VGG16_tinyimagenet_flops.svg
+14:38:16 [INFO] [FIG1] Saved memory plot for VGG16/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/VGG16_tinyimagenet_memory.svg
+14:38:16 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar100__accuracy.svg
+14:38:16 [INFO] [FIG1] Saved params plot for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar100__params.svg
+14:38:17 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar100__flops.svg
+14:38:19 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar100__memory.svg
+14:38:19 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar10__accuracy.svg
+14:38:20 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar10__params.svg
+14:38:20 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar10__flops.svg
+14:38:20 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar10__memory.svg
+14:38:20 [INFO] [FIG1] Saved accuracy plot for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/XceptionNet_tinyimagenet_accuracy.svg
+14:38:21 [INFO] [FIG1] Saved params plot for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/XceptionNet_tinyimagenet_params.svg
+14:38:21 [INFO] [FIG1] Saved flops plot for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/XceptionNet_tinyimagenet_flops.svg
+14:38:21 [INFO] [FIG1] Saved memory plot for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/XceptionNet_tinyimagenet_memory.svg
+14:38:21 [INFO] Starting FIG2 generation. Target epochs: 300, pretrain: 100
+14:38:24 [ERROR] No Layer_Statistics directories found matching **/epochs300_pretrain100/**/Layer_Statistics
+14:38:24 [DEBUG] [FIG3] No valid variance CSV found for ConvNeXt/cifar100_
+14:38:24 [DEBUG] [FIG3] No valid variance CSV found for MobileNet/cifar100_
+14:38:24 [DEBUG] [FIG3] No valid variance CSV found for RegNetX_400MF/cifar100_
+14:38:24 [DEBUG] [FIG3] No valid variance CSV found for ConvNeXt/cifar10_
+14:38:24 [DEBUG] [FIG3] No valid variance CSV found for VGG16/cifar10_
+14:38:24 [DEBUG] [FIG3] No valid variance CSV found for InceptionNet/tinyimagenet
+14:38:24 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+14:38:24 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar100_
+14:38:25 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/hardware_efficiency/ConvNeXt_cifar100__hardware_profile.svg
+14:38:25 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar100_
+14:38:25 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar100_
+14:38:26 [INFO] [FIG5] Saved hardware profile plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/hardware_efficiency/MobileNet_cifar100__hardware_profile.svg
+14:38:26 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar100_
+14:38:26 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar100_
+14:38:26 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar100_
+14:38:26 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
+14:38:26 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/hardware_efficiency/ConvNeXt_cifar10__hardware_profile.svg
+14:38:26 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
+14:38:26 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
+14:38:26 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
+14:38:26 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
+14:38:26 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar10_
+14:38:26 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/tinyimagenet
+14:38:26 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
+14:38:27 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/hardware_efficiency/InceptionNet_tinyimagenet_hardware_profile.svg
+14:38:27 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/tinyimagenet
+14:38:27 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/tinyimagenet
+14:38:27 [INFO] [FIG5] Processing Hardware Profiles for VGG16/tinyimagenet
+14:38:27 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/tinyimagenet
+14:38:27 [INFO] [FIG5] Saved unified best_candidates plot at outputs/figures/ep300_pre100/hardware_efficiency/unified_best_candidates.svg
+14:38:27 [INFO] [FIG5] Saved unified worst_candidates plot at outputs/figures/ep300_pre100/hardware_efficiency/unified_worst_candidates.svg
+14:38:28 [INFO] [FIG5] Saved global trade-off scatter plot at outputs/figures/ep300_pre100/hardware_efficiency/global_tradeoff_scatter.svg
+14:38:28 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+14:38:28 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
+14:38:28 [INFO] [FIG6] Saved sequential training curves for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/XceptionNet_tinyimagenet_training_curves.svg
+14:38:29 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_tinyimagenet_training_curves.svg
+14:38:29 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/InceptionNet_tinyimagenet_training_curves.svg
+14:38:29 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/learning_curves/InceptionNet_cifar100_training_curves.svg
+14:38:30 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/XceptionNet_cifar10_training_curves.svg
+14:38:30 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/InceptionNet_cifar10_training_curves.svg
+14:38:30 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_cifar100_training_curves.svg
+14:38:31 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_cifar10_training_curves.svg
+14:38:31 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/InceptionNet_tinyimagenet_training_curves.svg
+14:38:32 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_cifar10_training_curves.svg
+14:38:32 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_cifar100_training_curves.svg
+14:38:35 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_cifar100_training_curves.svg
+14:38:43 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at outputs/figures/ep300_pre100/learning_curves/VGG16_cifar10_training_curves.svg
+14:38:44 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/MobileNet_tinyimagenet_training_curves.svg
+14:38:44 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/MobileNet_cifar10_training_curves.svg
+14:38:44 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/InceptionNet_cifar10_training_curves.svg
+14:38:45 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_tinyimagenet_training_curves.svg
+14:38:45 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at outputs/figures/ep300_pre100/learning_curves/MobileNet_cifar100_training_curves.svg
+14:38:45 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at outputs/figures/ep300_pre100/learning_curves/VGG16_cifar100_training_curves.svg
+14:38:48 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/learning_curves/XceptionNet_cifar100_training_curves.svg
+14:38:48 [INFO] [FIG6] Saved sequential training curves for VGG16/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/VGG16_tinyimagenet_training_curves.svg
+14:38:48 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_cifar10_training_curves.svg
+14:38:49 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at outputs/figures/ep300_pre100/learning_curves/MobileNet_cifar100_training_curves.svg
+14:38:49 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_cifar100_training_curves.svg
+14:38:50 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/MobileNet_tinyimagenet_training_curves.svg
+14:38:50 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at outputs/figures/ep300_pre100/learning_curves/VGG16_cifar10_training_curves.svg
+14:38:50 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_cifar10_training_curves.svg
+14:38:51 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/MobileNet_cifar10_training_curves.svg
+14:38:51 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/convergence/ConvNeXt_cifar100_convergence_metrics.svg
+14:38:51 [INFO] [FIG7] Saved convergence metrics plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/convergence/MobileNet_cifar100_convergence_metrics.svg
+14:38:52 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/convergence/ConvNeXt_cifar10_convergence_metrics.svg
+14:38:52 [INFO] [FIG7] Saved convergence metrics plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/convergence/InceptionNet_tinyimagenet_convergence_metrics.svg
+14:38:52 [INFO] [FIG8] Saved accuracy vs params plot at outputs/figures/ep300_pre100/accuracy_vs_params/accuracy_vs_params.svg
+14:38:54 [INFO] [FIG9] Saved FLOPs vs memory heat‑map at outputs/figures/ep300_pre100/flops_vs_memory/flops_vs_memory.svg
+14:38:54 [INFO] [SUMMARY] Generating master lookup JSON...
+14:38:54 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/outputs/tables/ep300_pre100/master_results_summary.json
+14:39:26 [INFO] Script completed.
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation

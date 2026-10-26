@@ -1,0 +1,1143 @@
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA driver initialization failed, you might not have a CUDA gpu. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
+  return torch._C._cuda_getDeviceCount() > 0
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='VGG16', dataset='tinyimagenet', pretrain=100, epochs=300, experiment='discover', quant=False, scorer='all')
+============================================================
+
+[INFO] Hardware detected: CPU (CUDA Available: False)
+Loading Tiny ImageNet data...
+Loading Tiny ImageNet data...
+2026-10-26 14:31:23,894 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.bn_5, features.conv_6, features.relu_5
+2026-10-26 14:31:31,552 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.bn_10, features.bn_11, features.bn_12, features.conv_11, features.conv_12, features.conv_13, features.pool_4, features.relu_10, features.relu_11, features.relu_12
+2026-10-26 14:31:38,964 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.bn_10, features.bn_11, features.bn_12, features.bn_5, features.bn_6, features.bn_7, features.bn_8, features.bn_9, features.conv_10, features.conv_11, features.conv_12, features.conv_13, features.conv_6, features.conv_7, features.conv_8, features.conv_9, features.pool_3, features.pool_4, features.relu_10, features.relu_11, features.relu_12, features.relu_5, features.relu_6, features.relu_7, features.relu_8, features.relu_9
+2026-10-26 14:31:52,360 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.bn_10, features.bn_11, features.bn_12, features.bn_5, features.bn_6, features.bn_7, features.bn_8, features.bn_9, features.conv_10, features.conv_11, features.conv_12, features.conv_13, features.conv_6, features.conv_7, features.conv_8, features.conv_9, features.pool_3, features.pool_4, features.relu_10, features.relu_11, features.relu_12, features.relu_5, features.relu_6, features.relu_7, features.relu_8, features.relu_9
+[DEBUG] Base checkpoint path resolved: ../structured_study/pruning_checkpoints/Vgg16_datasettinyimagenet_pretrain10_finetune30_steps21_batch128_devicecuda_strategy_magnitude/
+
+============================================================
+[MODE] STAGE 1: DISCOVERY & PRE-FLIGHT PROBE
+       Model: VGG16 | Dataset: tinyimagenet
+============================================================
+
+[INFO] Phase 1: Validating/Training 'Control' Baseline...
+
+--- Running experiment: Control ---
+    Budget allocated: 100 epochs
+
+=== Running JF experiment ===
+[•] Resumption detected. Architecture will be prepared for checkpoint loading.
+[•] Starting experiment 'Control' in workflow 'JF' | Epoch Target: 100
+[✓] Experiment 'Control' already completed. Found: final_JF_Control.pt
+    Skipping training and reloading metrics...
+
+[INFO] Phase 2: Loading Finalized Baseline Weights...
+[INFO] Found existing change stats at outputs/discovery/VGG16/tinyimagenet/epochs300_pretrain100/change_stats.json. Skipping probe.
+
+[INFO] === Scorer ablation ('all'): local_dev vs change vs cka ===
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator (scorer=local_dev) ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 40,732,936 | Base FLOPs: 1,280,999,424
+
+[DEBUG] --- Phase 2A: Scanning 16 layers for Raw Candidates ---
+[DEBUG] [SCAN] Layer 00 | features.conv_1                               | h=-0.974337 | status=Veto     | reason=veto window (idx=0, cutoff=4)
+[DEBUG] [SCAN] Layer 01 | features.conv_2                               | h=0.707930 | status=Veto     | reason=veto window (idx=1, cutoff=4)
+[DEBUG] [SCAN] Layer 02 | features.conv_3                               | h=-0.573140 | status=Veto     | reason=veto window (idx=2, cutoff=4)
+[DEBUG] [SCAN] Layer 03 | features.conv_4                               | h=-0.636041 | status=Veto     | reason=veto window (idx=3, cutoff=4)
+[DEBUG] [SCAN] Layer 06 | features.conv_7                               | h=0.585772 | status=Rejected | reason=non-negative or NaN h=0.585772
+[DEBUG] [RAW] Accepted raw candidate features.conv_5 -> features.conv_6 | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 07 | features.conv_8                               | h=0.809313 | status=Rejected | reason=non-negative or NaN h=0.809313
+[DEBUG] [SCAN] Layer 08 | features.conv_9                               | h=0.404792 | status=Rejected | reason=non-negative or NaN h=0.404792
+[DEBUG] [SCAN] Layer 13 | classifier.fc_1                               | h=-0.677588 | status=Rejected | reason=invalid target type=Linear
+[DEBUG] [RAW] Accepted raw candidate features.conv_10 -> features.conv_13 | layers=4 | parametric=4
+[DEBUG] [SCAN] Layer 14 | classifier.fc_2                               | h=1.000000 | status=Rejected | reason=invalid target type=Linear
+[DEBUG] [SCAN] Layer 15 | classifier.fc_3                               | h=-0.998561 | status=Rejected | reason=invalid target type=Linear
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [EXPAND] Starting from raw region features.conv_5 -> features.conv_6 | layers=2 | parametric=2
+[DEBUG] [EXPAND] Final candidate features.conv_5 -> features.conv_6 | layers=2 | parametric=2
+[DEBUG] [EXPAND] Starting from raw region features.conv_10 -> features.conv_13 | layers=4 | parametric=4
+[DEBUG] [EXPAND] Final candidate features.conv_10 -> features.conv_13 | layers=4 | parametric=4
+
+[INFO] Phase 3: Evaluating 2 Candidate Regions (with Smart Boundary Shaving)...
+    [STEP] Testing sequence: features.conv_5 -> features.conv_6 (Length: 2)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 40,732,936
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_5 → features.conv_6
+[STEP] Calling _collapse_block('features.conv_5', 'features.conv_6')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_5
+[INFO] End Target   : features.conv_6
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_6'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 14 to 17
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv_5 -> Conv2d
+    [LAYER MAP] bn_5 -> BatchNorm2d
+    [LAYER MAP] relu_5 -> ReLU
+    [LAYER MAP] conv_6 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_5'
+[DEBUG] Hooking End Node   : 'features.conv_6'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_6'...
+[DEBUG] Captured input shape: (64, 128, 16, 16), output shape: (64, 256, 16, 16)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 128, 16, 16)
+[DEBUG] Output (y) shape exiting LCA   : (64, 256, 16, 16)
+[DEBUG] Pre-collapse Parameter Count   : 40,732,936
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_6'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_6'...
+[DEBUG] Execution-order match: next Linear is 'classifier.fc_1' (exec idx 17 -> 45)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'classifier.fc_1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 128, 16, 16)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 256, 16, 16)
+[DEBUG] Determined out_channels=256
+[DEBUG] Final block output shape: (64, 256, 16, 16)
+[DEBUG] Determined out_channels=256
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 256, 16, 16)
+         out_channels=256
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 256, 16, 16)
+    - out_channels             : 256
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.conv_5'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 14 -> 17
+[DEBUG] Spatial Target   : H=16 x W=16
+[DEBUG] Channel Mapping  : 128 (in) -> 256 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=128, out=256)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for vgg16:
+        - conv_1x1: Conv2d(128, 256, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(256, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(16, 16))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 40,732,936
+[INFO] Post-collapse : 39,880,456
+[INFO] Net Change    : -852,480
+[DEBUG] Local validation candidate selected from replacement slot: 'conv_5'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 256, 16, 16)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'classifier.fc_1'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=14, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 14: 'conv_5'
+[STEP] Validating inserted module 'Sequential' at index 14...
+[DEBUG] Inserted module forward successful, output shape: (64, 256, 16, 16)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.bn_5' (SmartIdentity) with input shape (64, 256, 16, 16)
+[DEBUG] Downstream 'features.bn_5' executed successfully, output shape: (64, 256, 16, 16)
+[DEBUG] Running downstream module 'features.relu_5' (SmartIdentity) with input shape (64, 256, 16, 16)
+[DEBUG] Downstream 'features.relu_5' executed successfully, output shape: (64, 256, 16, 16)
+[DEBUG] Running downstream module 'features.conv_6' (SmartIdentity) with input shape (64, 256, 16, 16)
+[DEBUG] Downstream 'features.conv_6' executed successfully, output shape: (64, 256, 16, 16)
+[DEBUG] Running downstream module 'features.bn_6' (BatchNorm2d) with input shape (64, 256, 16, 16)
+[DEBUG] Downstream 'features.bn_6' executed successfully, output shape: (64, 256, 16, 16)
+[DEBUG] Running downstream module 'features.relu_6' (ReLU) with input shape (64, 256, 16, 16)
+[DEBUG] Downstream 'features.relu_6' executed successfully, output shape: (64, 256, 16, 16)
+[DEBUG] Running downstream module 'features.conv_7' (Conv2d) with input shape (64, 256, 16, 16)
+[DEBUG] Downstream 'features.conv_7' executed successfully, output shape: (64, 256, 16, 16)
+[DEBUG] Running downstream module 'features.bn_7' (BatchNorm2d) with input shape (64, 256, 16, 16)
+[DEBUG] Downstream 'features.bn_7' executed successfully, output shape: (64, 256, 16, 16)
+[DEBUG] Running downstream module 'features.relu_7' (ReLU) with input shape (64, 256, 16, 16)
+[DEBUG] Downstream 'features.relu_7' executed successfully, output shape: (64, 256, 16, 16)
+[DEBUG] Running downstream module 'features.pool_3' (MaxPool2d) with input shape (64, 256, 16, 16)
+[DEBUG] Downstream 'features.pool_3' executed successfully, output shape: (64, 256, 8, 8)
+[DEBUG] Running downstream module 'features.conv_8' (Conv2d) with input shape (64, 256, 8, 8)
+[DEBUG] Downstream 'features.conv_8' executed successfully, output shape: (64, 512, 8, 8)
+[DEBUG] Running downstream module 'features.bn_8' (BatchNorm2d) with input shape (64, 512, 8, 8)
+[DEBUG] Downstream 'features.bn_8' executed successfully, output shape: (64, 512, 8, 8)
+[DEBUG] Running downstream module 'features.relu_8' (ReLU) with input shape (64, 512, 8, 8)
+[DEBUG] Downstream 'features.relu_8' executed successfully, output shape: (64, 512, 8, 8)
+[DEBUG] Running downstream module 'features.conv_9' (Conv2d) with input shape (64, 512, 8, 8)
+[DEBUG] Downstream 'features.conv_9' executed successfully, output shape: (64, 512, 8, 8)
+[DEBUG] Running downstream module 'features.bn_9' (BatchNorm2d) with input shape (64, 512, 8, 8)
+[DEBUG] Downstream 'features.bn_9' executed successfully, output shape: (64, 512, 8, 8)
+[DEBUG] Running downstream module 'features.relu_9' (ReLU) with input shape (64, 512, 8, 8)
+[DEBUG] Downstream 'features.relu_9' executed successfully, output shape: (64, 512, 8, 8)
+[DEBUG] Running downstream module 'features.conv_10' (Conv2d) with input shape (64, 512, 8, 8)
+[DEBUG] Downstream 'features.conv_10' executed successfully, output shape: (64, 512, 8, 8)
+[DEBUG] Running downstream module 'features.bn_10' (BatchNorm2d) with input shape (64, 512, 8, 8)
+[DEBUG] Downstream 'features.bn_10' executed successfully, output shape: (64, 512, 8, 8)
+[DEBUG] Running downstream module 'features.relu_10' (ReLU) with input shape (64, 512, 8, 8)
+[DEBUG] Downstream 'features.relu_10' executed successfully, output shape: (64, 512, 8, 8)
+[DEBUG] Running downstream module 'features.pool_4' (MaxPool2d) with input shape (64, 512, 8, 8)
+[DEBUG] Downstream 'features.pool_4' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_11' (Conv2d) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_11' (BatchNorm2d) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_11' (ReLU) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_12' (Conv2d) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_12' (BatchNorm2d) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_12' (ReLU) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_13' (Conv2d) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_13' (BatchNorm2d) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_13' (ReLU) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.pool_5' (MaxPool2d) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (64, 512, 2, 2)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.conv_5'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.conv_5' → 'features.conv_6'
+[INFO] ✅ Successfully collapsed block 'test' (features.conv_5 → features.conv_6) in 8.16s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 14 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 40,732,936
+[INFO] Parameters after : 39,880,456
+[INFO] ΔParams = +852,480 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 8.47s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.conv_5 -> features.conv_6 | Params (40,732,936 -> 39,880,456, saved 852,480, 2.0929%) | FLOPs (1,280,999,424 -> 1,062,961,152, saved 218,038,272, 17.0210%)
+    [STEP] Testing sequence: features.conv_10 -> features.conv_13 (Length: 4)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 40,732,936
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_10 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_10', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_10
+[INFO] End Target   : features.conv_13
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_10' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 30 to 40
+[DEBUG] Captured Layers : 11 total
+    [LAYER MAP] conv_10 -> Conv2d
+    [LAYER MAP] bn_10 -> BatchNorm2d
+    [LAYER MAP] relu_10 -> ReLU
+    [LAYER MAP] pool_4 -> MaxPool2d
+    [LAYER MAP] conv_11 -> Conv2d
+    [LAYER MAP] bn_11 -> BatchNorm2d
+    [LAYER MAP] relu_11 -> ReLU
+    [LAYER MAP] conv_12 -> Conv2d
+    [LAYER MAP] bn_12 -> BatchNorm2d
+    [LAYER MAP] relu_12 -> ReLU
+    [LAYER MAP] conv_13 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_10'
+[DEBUG] Hooking End Node   : 'features.conv_13'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.conv_10' -> 'features.conv_13'...
+[DEBUG] Captured input shape: (64, 512, 8, 8), output shape: (64, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 512, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (64, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 40,732,936
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_13'...
+[DEBUG] Execution-order match: next Linear is 'classifier.fc_1' (exec idx 40 -> 45)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'classifier.fc_1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (11 layers)...
+[DEBUG] Input tensor shape before block: (64, 512, 8, 8)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Detected pool in original block: MaxPool2d
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 512, 4, 4)
+         out_channels=512
+         has_pool=True
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 512, 4, 4)
+    - out_channels             : 512
+    - pool_layer               : MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.conv_10'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 30 -> 40
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 512 (in) -> 512 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=512, out=512)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for vgg16:
+        - conv_1x1: Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 40,732,936
+[INFO] Post-collapse : 31,553,800
+[INFO] Net Change    : -9,179,136
+[DEBUG] Local validation candidate selected from replacement slot: 'conv_10'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 512, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'classifier.fc_1'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=30, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 30: 'conv_10'
+[STEP] Validating inserted module 'Sequential' at index 30...
+[DEBUG] Inserted module forward successful, output shape: (64, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.bn_10' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_10' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_10' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_10' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.pool_4' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_4' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_11' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_11' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_11' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_12' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_12' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_12' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_13' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_13' (BatchNorm2d) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_13' (ReLU) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.pool_5' (MaxPool2d) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (64, 512, 2, 2)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.conv_10'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.conv_10' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'test' (features.conv_10 → features.conv_13) in 6.81s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 12 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 40,732,936
+[INFO] Parameters after : 31,553,800
+[INFO] ΔParams = +9,179,136 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 7.10s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.conv_10 -> features.conv_13 | Params (40,732,936 -> 31,553,800, saved 9,179,136, 22.5349%) | FLOPs (1,280,999,424 -> 1,033,535,488, saved 247,463,936, 19.3180%)
+[INFO] Forced 2 sets into 'Dynamic_Region_All_Combined'.
+
+[DEBUG] --- Final Accepted Regions Summary ---
+[DEBUG] [FINAL] Set_0: features.conv_5 -> features.conv_6 | layers=2 | parametric=2
+[DEBUG] [FINAL] Set_1: features.conv_10 -> features.conv_13 | layers=4 | parametric=4
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[✓] scorer=local_dev: 5 targets -> VGG16_tinyimagenet_epochs300_pretrain100_scorerlocal_dev_JF_discovered_regions.json
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator (scorer=change) ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 40,732,936 | Base FLOPs: 1,280,999,424
+[DEBUG] Scorer 'change': active threshold change <= 0.988764 (bottom 25%)
+
+[DEBUG] --- Phase 2A: Scanning 16 layers for Raw Candidates ---
+[DEBUG] [SCAN] Layer 00 | features.conv_1                               | change=0.988764 | status=Veto     | reason=veto window (idx=0, cutoff=4)
+[DEBUG] [SCAN] Layer 01 | features.conv_2                               | change=0.988764 | status=Veto     | reason=veto window (idx=1, cutoff=4)
+[DEBUG] [SCAN] Layer 02 | features.conv_3                               | change=0.988764 | status=Veto     | reason=veto window (idx=2, cutoff=4)
+[DEBUG] [SCAN] Layer 03 | features.conv_4                               | change=0.988764 | status=Veto     | reason=veto window (idx=3, cutoff=4)
+[DEBUG] [SCAN] Layer 13 | classifier.fc_1                               | change=0.0219022 | status=Rejected | reason=invalid target type=Linear
+[DEBUG] [RAW] Accepted raw candidate features.conv_5 -> features.conv_13 | layers=9 | parametric=9
+[DEBUG] [SCAN] Layer 14 | classifier.fc_2                               | change=0.0219022 | status=Rejected | reason=invalid target type=Linear
+[DEBUG] [SCAN] Layer 15 | classifier.fc_3                               | change=0.0219022 | status=Rejected | reason=invalid target type=Linear
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [EXPAND] Starting from raw region features.conv_5 -> features.conv_13 | layers=9 | parametric=9
+[DEBUG] [EXPAND] Final candidate features.conv_5 -> features.conv_13 | layers=9 | parametric=9
+
+[INFO] Phase 3: Evaluating 1 Candidate Regions (with Smart Boundary Shaving)...
+    [STEP] Testing sequence: features.conv_5 -> features.conv_13 (Length: 9)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 40,732,936
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_5 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_5', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_5
+[INFO] End Target   : features.conv_13
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 14 to 40
+[DEBUG] Captured Layers : 27 total
+    [LAYER MAP] conv_5 -> Conv2d
+    [LAYER MAP] bn_5 -> BatchNorm2d
+    [LAYER MAP] relu_5 -> ReLU
+    [LAYER MAP] conv_6 -> Conv2d
+    [LAYER MAP] bn_6 -> BatchNorm2d
+    [LAYER MAP] relu_6 -> ReLU
+    [LAYER MAP] conv_7 -> Conv2d
+    [LAYER MAP] bn_7 -> BatchNorm2d
+    [LAYER MAP] relu_7 -> ReLU
+    [LAYER MAP] pool_3 -> MaxPool2d
+    [LAYER MAP] conv_8 -> Conv2d
+    [LAYER MAP] bn_8 -> BatchNorm2d
+    [LAYER MAP] relu_8 -> ReLU
+    [LAYER MAP] conv_9 -> Conv2d
+    [LAYER MAP] bn_9 -> BatchNorm2d
+    [LAYER MAP] relu_9 -> ReLU
+    [LAYER MAP] conv_10 -> Conv2d
+    [LAYER MAP] bn_10 -> BatchNorm2d
+    [LAYER MAP] relu_10 -> ReLU
+    [LAYER MAP] pool_4 -> MaxPool2d
+    [LAYER MAP] conv_11 -> Conv2d
+    [LAYER MAP] bn_11 -> BatchNorm2d
+    [LAYER MAP] relu_11 -> ReLU
+    [LAYER MAP] conv_12 -> Conv2d
+    [LAYER MAP] bn_12 -> BatchNorm2d
+    [LAYER MAP] relu_12 -> ReLU
+    [LAYER MAP] conv_13 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_5'
+[DEBUG] Hooking End Node   : 'features.conv_13'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_13'...
+[DEBUG] Captured input shape: (64, 128, 16, 16), output shape: (64, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 128, 16, 16)
+[DEBUG] Output (y) shape exiting LCA   : (64, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 40,732,936
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_13'...
+[DEBUG] Execution-order match: next Linear is 'classifier.fc_1' (exec idx 40 -> 45)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'classifier.fc_1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (27 layers)...
+[DEBUG] Input tensor shape before block: (64, 128, 16, 16)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Detected pool in original block: MaxPool2d
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 512, 4, 4)
+         out_channels=512
+         has_pool=True
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 512, 4, 4)
+    - out_channels             : 512
+    - pool_layer               : MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.conv_5'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 14 -> 40
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 128 (in) -> 512 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=128, out=256)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for vgg16:
+        - conv_1x1: Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 40,732,936
+[INFO] Post-collapse : 26,338,312
+[INFO] Net Change    : -14,394,624
+[DEBUG] Local validation candidate selected from replacement slot: 'conv_5'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 512, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'classifier.fc_1'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=14, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 14: 'conv_5'
+[STEP] Validating inserted module 'Sequential' at index 14...
+[DEBUG] Inserted module forward successful, output shape: (64, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.bn_5' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_5' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_5' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_5' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_6' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_6' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_6' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_6' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_6' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_6' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_7' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_7' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_7' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_7' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_7' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_7' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.pool_3' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_3' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_8' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_8' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_8' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_8' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_8' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_8' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_9' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_9' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_9' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_9' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_9' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_9' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_10' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_10' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_10' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_10' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_10' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_10' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.pool_4' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_4' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_11' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_11' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_11' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_12' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_12' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_12' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_13' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_13' (BatchNorm2d) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_13' (ReLU) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.pool_5' (MaxPool2d) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (64, 512, 2, 2)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.conv_5'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.conv_5' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'test' (features.conv_5 → features.conv_13) in 5.71s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 7 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 40,732,936
+[INFO] Parameters after : 26,338,312
+[INFO] ΔParams = +14,394,624 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 5.99s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.conv_5 -> features.conv_13 | Params (40,732,936 -> 26,338,312, saved 14,394,624, 35.3390%) | FLOPs (1,280,999,424 -> 429,326,336, saved 851,673,088, 66.4850%)
+
+[DEBUG] --- Final Accepted Regions Summary ---
+[DEBUG] [FINAL] Set_0: features.conv_5 -> features.conv_13 | layers=9 | parametric=9
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[✓] scorer=change: 3 targets -> VGG16_tinyimagenet_epochs300_pretrain100_scorerchange_JF_discovered_regions.json
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator (scorer=cka) ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 40,732,936 | Base FLOPs: 1,280,999,424
+[DEBUG] Scorer 'cka': active threshold cka >= 0.0259921 (top 25%)
+
+[DEBUG] --- Phase 2A: Scanning 16 layers for Raw Candidates ---
+[DEBUG] [SCAN] Layer 00 | features.conv_1                               | cka=0.0259921 | status=Veto     | reason=veto window (idx=0, cutoff=4)
+[DEBUG] [SCAN] Layer 01 | features.conv_2                               | cka=0.0259921 | status=Veto     | reason=veto window (idx=1, cutoff=4)
+[DEBUG] [SCAN] Layer 02 | features.conv_3                               | cka=0.0259921 | status=Veto     | reason=veto window (idx=2, cutoff=4)
+[DEBUG] [SCAN] Layer 03 | features.conv_4                               | cka=0.0259921 | status=Veto     | reason=veto window (idx=3, cutoff=4)
+[DEBUG] [SCAN] Layer 13 | classifier.fc_1                               | cka=0.866109 | status=Rejected | reason=invalid target type=Linear
+[DEBUG] [RAW] Accepted raw candidate features.conv_5 -> features.conv_13 | layers=9 | parametric=9
+[DEBUG] [SCAN] Layer 14 | classifier.fc_2                               | cka=0.866109 | status=Rejected | reason=invalid target type=Linear
+[DEBUG] [SCAN] Layer 15 | classifier.fc_3                               | cka=0.866109 | status=Rejected | reason=invalid target type=Linear
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [EXPAND] Starting from raw region features.conv_5 -> features.conv_13 | layers=9 | parametric=9
+[DEBUG] [EXPAND] Final candidate features.conv_5 -> features.conv_13 | layers=9 | parametric=9
+
+[INFO] Phase 3: Evaluating 1 Candidate Regions (with Smart Boundary Shaving)...
+    [STEP] Testing sequence: features.conv_5 -> features.conv_13 (Length: 9)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 40,732,936
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': features.conv_5 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_5', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_5
+[INFO] End Target   : features.conv_13
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 14 to 40
+[DEBUG] Captured Layers : 27 total
+    [LAYER MAP] conv_5 -> Conv2d
+    [LAYER MAP] bn_5 -> BatchNorm2d
+    [LAYER MAP] relu_5 -> ReLU
+    [LAYER MAP] conv_6 -> Conv2d
+    [LAYER MAP] bn_6 -> BatchNorm2d
+    [LAYER MAP] relu_6 -> ReLU
+    [LAYER MAP] conv_7 -> Conv2d
+    [LAYER MAP] bn_7 -> BatchNorm2d
+    [LAYER MAP] relu_7 -> ReLU
+    [LAYER MAP] pool_3 -> MaxPool2d
+    [LAYER MAP] conv_8 -> Conv2d
+    [LAYER MAP] bn_8 -> BatchNorm2d
+    [LAYER MAP] relu_8 -> ReLU
+    [LAYER MAP] conv_9 -> Conv2d
+    [LAYER MAP] bn_9 -> BatchNorm2d
+    [LAYER MAP] relu_9 -> ReLU
+    [LAYER MAP] conv_10 -> Conv2d
+    [LAYER MAP] bn_10 -> BatchNorm2d
+    [LAYER MAP] relu_10 -> ReLU
+    [LAYER MAP] pool_4 -> MaxPool2d
+    [LAYER MAP] conv_11 -> Conv2d
+    [LAYER MAP] bn_11 -> BatchNorm2d
+    [LAYER MAP] relu_11 -> ReLU
+    [LAYER MAP] conv_12 -> Conv2d
+    [LAYER MAP] bn_12 -> BatchNorm2d
+    [LAYER MAP] relu_12 -> ReLU
+    [LAYER MAP] conv_13 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_5'
+[DEBUG] Hooking End Node   : 'features.conv_13'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_13'...
+[DEBUG] Captured input shape: (64, 128, 16, 16), output shape: (64, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 128, 16, 16)
+[DEBUG] Output (y) shape exiting LCA   : (64, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 40,732,936
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_13'...
+[DEBUG] Execution-order match: next Linear is 'classifier.fc_1' (exec idx 40 -> 45)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'classifier.fc_1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (27 layers)...
+[DEBUG] Input tensor shape before block: (64, 128, 16, 16)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (64, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Detected pool in original block: MaxPool2d
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 512, 4, 4)
+         out_channels=512
+         has_pool=True
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 512, 4, 4)
+    - out_channels             : 512
+    - pool_layer               : MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.conv_5'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 14 -> 40
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 128 (in) -> 512 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=128, out=256)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for vgg16:
+        - conv_1x1: Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 40,732,936
+[INFO] Post-collapse : 26,338,312
+[INFO] Net Change    : -14,394,624
+[DEBUG] Local validation candidate selected from replacement slot: 'conv_5'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 512, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'classifier.fc_1'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=14, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 14: 'conv_5'
+[STEP] Validating inserted module 'Sequential' at index 14...
+[DEBUG] Inserted module forward successful, output shape: (64, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.bn_5' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_5' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_5' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_5' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_6' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_6' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_6' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_6' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_6' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_6' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_7' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_7' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_7' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_7' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_7' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_7' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.pool_3' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_3' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_8' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_8' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_8' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_8' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_8' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_8' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_9' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_9' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_9' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_9' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_9' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_9' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_10' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_10' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_10' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_10' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_10' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_10' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.pool_4' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_4' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_11' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_11' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_11' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_11' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_12' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_12' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_12' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_13' (SmartIdentity) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_13' (BatchNorm2d) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_13' (ReLU) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (64, 512, 4, 4)
+[DEBUG] Running downstream module 'features.pool_5' (MaxPool2d) with input shape (64, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (64, 512, 2, 2)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.conv_5'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.conv_5' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'test' (features.conv_5 → features.conv_13) in 5.92s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 7 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 40,732,936
+[INFO] Parameters after : 26,338,312
+[INFO] ΔParams = +14,394,624 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 6.19s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=features.conv_5 -> features.conv_13 | Params (40,732,936 -> 26,338,312, saved 14,394,624, 35.3390%) | FLOPs (1,280,999,424 -> 429,326,336, saved 851,673,088, 66.4850%)
+
+[DEBUG] --- Final Accepted Regions Summary ---
+[DEBUG] [FINAL] Set_0: features.conv_5 -> features.conv_13 | layers=9 | parametric=9
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[✓] scorer=cka: 3 targets -> VGG16_tinyimagenet_epochs300_pretrain100_scorercka_JF_discovered_regions.json
+[✓] Combined ablation (regions + stats) -> VGG16_tinyimagenet_epochs300_pretrain100_scorer_ablation.json
+[✓] Change profile figure saved under outputs/discovery/VGG16/tinyimagenet/epochs300_pretrain100
+14:32:02 [INFO] Scanning for metrics files matching epochs=300, pretrain=100
+14:32:03 [INFO] Successfully parsed 59 experiment rows.
+14:32:03 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar100__accuracy.svg
+14:32:04 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar100__params.svg
+14:32:04 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar100__flops.svg
+14:32:05 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar100__memory.svg
+14:32:05 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar10__accuracy.svg
+14:32:05 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar10__params.svg
+14:32:06 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar10__flops.svg
+14:32:06 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar10__memory.svg
+14:32:07 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_tinyimagenet_accuracy.svg
+14:32:07 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_tinyimagenet_params.svg
+14:32:07 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_tinyimagenet_flops.svg
+14:32:08 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_tinyimagenet_memory.svg
+14:32:08 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar100__accuracy.svg
+14:32:08 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar100__params.svg
+14:32:09 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar100__flops.svg
+14:32:09 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar100__memory.svg
+14:32:09 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar10__accuracy.svg
+14:32:10 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar10__params.svg
+14:32:10 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar10__flops.svg
+14:32:10 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar10__memory.svg
+14:32:11 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/InceptionNet_tinyimagenet_accuracy.svg
+14:32:11 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/InceptionNet_tinyimagenet_params.svg
+14:32:12 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/InceptionNet_tinyimagenet_flops.svg
+14:32:12 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/InceptionNet_tinyimagenet_memory.svg
+14:32:12 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar100__accuracy.svg
+14:32:13 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar100__params.svg
+14:32:13 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar100__flops.svg
+14:32:14 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar100__memory.svg
+14:32:14 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar10__accuracy.svg
+14:32:14 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar10__params.svg
+14:32:15 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar10__flops.svg
+14:32:15 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar10__memory.svg
+14:32:16 [INFO] [FIG1] Saved accuracy plot for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/MobileNet_tinyimagenet_accuracy.svg
+14:32:16 [INFO] [FIG1] Saved params plot for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/MobileNet_tinyimagenet_params.svg
+14:32:16 [INFO] [FIG1] Saved flops plot for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/MobileNet_tinyimagenet_flops.svg
+14:32:17 [INFO] [FIG1] Saved memory plot for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/MobileNet_tinyimagenet_memory.svg
+14:32:17 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar100__accuracy.svg
+14:32:18 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar100__params.svg
+14:32:18 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar100__flops.svg
+14:32:18 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar100__memory.svg
+14:32:19 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar10__accuracy.svg
+14:32:19 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar10__params.svg
+14:32:19 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar10__flops.svg
+14:32:54 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar10__memory.svg
+14:32:55 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_tinyimagenet_accuracy.svg
+14:32:55 [INFO] [FIG1] Saved params plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_tinyimagenet_params.svg
+14:32:56 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_tinyimagenet_flops.svg
+14:32:56 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_tinyimagenet_memory.svg
+14:32:57 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar100_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar100__accuracy.svg
+14:32:57 [INFO] [FIG1] Saved params plot for VGG16/cifar100_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar100__params.svg
+14:32:58 [INFO] [FIG1] Saved flops plot for VGG16/cifar100_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar100__flops.svg
+14:32:58 [INFO] [FIG1] Saved memory plot for VGG16/cifar100_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar100__memory.svg
+14:32:58 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar10__accuracy.svg
+14:32:59 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar10__params.svg
+14:32:59 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar10__flops.svg
+14:33:00 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar10__memory.svg
+14:33:00 [INFO] [FIG1] Saved accuracy plot for VGG16/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/VGG16_tinyimagenet_accuracy.svg
+14:33:01 [INFO] [FIG1] Saved params plot for VGG16/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/VGG16_tinyimagenet_params.svg
+14:33:01 [INFO] [FIG1] Saved flops plot for VGG16/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/VGG16_tinyimagenet_flops.svg
+14:33:01 [INFO] [FIG1] Saved memory plot for VGG16/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/VGG16_tinyimagenet_memory.svg
+14:33:02 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar100__accuracy.svg
+14:33:02 [INFO] [FIG1] Saved params plot for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar100__params.svg
+14:33:03 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar100__flops.svg
+14:33:03 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar100__memory.svg
+14:33:03 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar10__accuracy.svg
+14:33:04 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar10__params.svg
+14:33:04 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar10__flops.svg
+14:33:05 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar10__memory.svg
+14:33:05 [INFO] [FIG1] Saved accuracy plot for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/XceptionNet_tinyimagenet_accuracy.svg
+14:33:05 [INFO] [FIG1] Saved params plot for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/XceptionNet_tinyimagenet_params.svg
+14:33:06 [INFO] [FIG1] Saved flops plot for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/XceptionNet_tinyimagenet_flops.svg
+14:33:07 [INFO] [FIG1] Saved memory plot for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/XceptionNet_tinyimagenet_memory.svg
+14:33:07 [INFO] Starting FIG2 generation. Target epochs: 300, pretrain: 100
+14:33:07 [ERROR] No Layer_Statistics directories found matching **/epochs300_pretrain100/**/Layer_Statistics
+14:33:07 [DEBUG] [FIG3] No valid variance CSV found for ConvNeXt/cifar100_
+14:33:07 [DEBUG] [FIG3] No valid variance CSV found for MobileNet/cifar100_
+14:33:07 [DEBUG] [FIG3] No valid variance CSV found for RegNetX_400MF/cifar100_
+14:33:07 [DEBUG] [FIG3] No valid variance CSV found for ConvNeXt/cifar10_
+14:33:07 [DEBUG] [FIG3] No valid variance CSV found for VGG16/cifar10_
+14:33:07 [DEBUG] [FIG3] No valid variance CSV found for InceptionNet/tinyimagenet
+14:33:07 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+14:33:07 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar100_
+14:33:08 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/hardware_efficiency/ConvNeXt_cifar100__hardware_profile.svg
+14:33:08 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar100_
+14:33:08 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar100_
+14:33:08 [INFO] [FIG5] Saved hardware profile plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/hardware_efficiency/MobileNet_cifar100__hardware_profile.svg
+14:33:08 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar100_
+14:33:08 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar100_
+14:33:08 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar100_
+14:33:08 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
+14:33:09 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/hardware_efficiency/ConvNeXt_cifar10__hardware_profile.svg
+14:33:09 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
+14:33:09 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
+14:33:09 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
+14:33:09 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
+14:33:09 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar10_
+14:33:09 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/tinyimagenet
+14:33:09 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
+14:33:10 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/hardware_efficiency/InceptionNet_tinyimagenet_hardware_profile.svg
+14:33:10 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/tinyimagenet
+14:33:10 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/tinyimagenet
+14:33:10 [INFO] [FIG5] Processing Hardware Profiles for VGG16/tinyimagenet
+14:33:10 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/tinyimagenet
+14:33:10 [INFO] [FIG5] Saved unified best_candidates plot at outputs/figures/ep300_pre100/hardware_efficiency/unified_best_candidates.svg
+14:33:11 [INFO] [FIG5] Saved unified worst_candidates plot at outputs/figures/ep300_pre100/hardware_efficiency/unified_worst_candidates.svg
+14:33:11 [INFO] [FIG5] Saved global trade-off scatter plot at outputs/figures/ep300_pre100/hardware_efficiency/global_tradeoff_scatter.svg
+14:33:11 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+14:33:11 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
+14:33:12 [INFO] [FIG6] Saved sequential training curves for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/XceptionNet_tinyimagenet_training_curves.svg
+14:33:21 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_tinyimagenet_training_curves.svg
+14:33:50 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/InceptionNet_tinyimagenet_training_curves.svg
+14:33:51 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/learning_curves/InceptionNet_cifar100_training_curves.svg
+14:33:51 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/XceptionNet_cifar10_training_curves.svg
+14:33:52 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/InceptionNet_cifar10_training_curves.svg
+14:33:53 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_cifar100_training_curves.svg
+14:33:54 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_cifar10_training_curves.svg
+14:33:54 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/InceptionNet_tinyimagenet_training_curves.svg
+14:33:55 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_cifar10_training_curves.svg
+14:33:55 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_cifar100_training_curves.svg
+14:33:56 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_cifar100_training_curves.svg
+14:33:57 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at outputs/figures/ep300_pre100/learning_curves/VGG16_cifar10_training_curves.svg
+14:33:58 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/MobileNet_tinyimagenet_training_curves.svg
+14:34:12 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/MobileNet_cifar10_training_curves.svg
+14:34:31 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/InceptionNet_cifar10_training_curves.svg
+14:34:50 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_tinyimagenet_training_curves.svg
+14:34:59 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at outputs/figures/ep300_pre100/learning_curves/MobileNet_cifar100_training_curves.svg
+14:34:59 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at outputs/figures/ep300_pre100/learning_curves/VGG16_cifar100_training_curves.svg
+14:35:00 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/learning_curves/XceptionNet_cifar100_training_curves.svg
+14:35:01 [INFO] [FIG6] Saved sequential training curves for VGG16/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/VGG16_tinyimagenet_training_curves.svg
+14:35:02 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_cifar10_training_curves.svg
+14:35:03 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at outputs/figures/ep300_pre100/learning_curves/MobileNet_cifar100_training_curves.svg
+14:35:04 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_cifar100_training_curves.svg
+14:35:05 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/MobileNet_tinyimagenet_training_curves.svg
+14:35:05 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at outputs/figures/ep300_pre100/learning_curves/VGG16_cifar10_training_curves.svg
+14:35:06 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_cifar10_training_curves.svg
+14:35:07 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/MobileNet_cifar10_training_curves.svg
+14:35:07 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/convergence/ConvNeXt_cifar100_convergence_metrics.svg
+14:35:08 [INFO] [FIG7] Saved convergence metrics plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/convergence/MobileNet_cifar100_convergence_metrics.svg
+14:35:09 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/convergence/ConvNeXt_cifar10_convergence_metrics.svg
+14:35:09 [INFO] [FIG7] Saved convergence metrics plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/convergence/InceptionNet_tinyimagenet_convergence_metrics.svg
+14:35:10 [INFO] [FIG8] Saved accuracy vs params plot at outputs/figures/ep300_pre100/accuracy_vs_params/accuracy_vs_params.svg
+14:35:13 [INFO] [FIG9] Saved FLOPs vs memory heat‑map at outputs/figures/ep300_pre100/flops_vs_memory/flops_vs_memory.svg
+14:35:13 [INFO] [SUMMARY] Generating master lookup JSON...
+14:35:13 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/outputs/tables/ep300_pre100/master_results_summary.json
+14:36:49 [INFO] Script completed.
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation

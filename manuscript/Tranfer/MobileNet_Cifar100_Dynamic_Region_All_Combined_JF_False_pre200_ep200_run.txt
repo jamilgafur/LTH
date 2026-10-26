@@ -1,0 +1,333 @@
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
+  return torch._C._cuda_getDeviceCount() > 0
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='MobileNet', dataset='Cifar100', pretrain=200, epochs=200, experiment='Dynamic_Region_All_Combined', quant=False, scorer='local_dev')
+============================================================
+
+[INFO] Hardware detected: CPU (CUDA Available: False)
+Loading CIFAR-100 data for MobileNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+Loading CIFAR-100 data for MobileNet...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] Base checkpoint path resolved: None
+[INFO] Legacy regions JSON absent; using ablation map: MobileNet_Cifar100_epochs200_pretrain200_scorerlocal_dev_JF_discovered_regions.json
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Dynamic_Region_All_Combined'
+============================================================
+
+[INFO] Validating JSON configuration map at: MobileNet_Cifar100_epochs200_pretrain200_scorerlocal_dev_JF_discovered_regions.json
+[DEBUG] Loaded 5 configurations from map.
+[WARN] Trained baseline NOT found at MobileNet_Cifar100_None_epochs200_pretrain200/checkpoints/final_JF_Control.pt. Falling back to initial un-finetuned checkpoint.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Dynamic_Region_All_Combined ---
+    Budget allocated: 200 epochs
+
+=== Running JF experiment ===
+[•] Resumption detected. Architecture will be prepared for checkpoint loading.
+[•] Collapsing ranges [('features.12.depthwise.0', 'features.12.pointwise.0'), ('features.11.depthwise.0', 'features.11.pointwise.0')] for Dynamic_Region_All_Combined
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cpu, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (MobileNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 2 pairs.
+[DEBUG] Total collapse targets: 2
+[INFO] Model parameter count before collapsing: 3,309,476
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': features.12.depthwise.0 → features.12.pointwise.0
+[STEP] Calling _collapse_block('features.12.depthwise.0', 'features.12.pointwise.0')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.12.depthwise.0
+[INFO] End Target   : features.12.pointwise.0
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.12.depthwise.0' -> 'features.12.pointwise.0'
+[DEBUG] [LCA] Resolved Container: 'features.12' | Type: DepthwiseSeparableConv
+[DEBUG] Escalating complex block 'features.12' (DepthwiseSeparableConv) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 12 to 12
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] 12 -> DepthwiseSeparableConv
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.12'
+[DEBUG] Hooking End Node   : 'features.12'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.12' -> 'features.12'...
+[DEBUG] Captured input shape: (512, 1024, 1, 1), output shape: (512, 1024, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 1024, 1, 1)
+[DEBUG] Output (y) shape exiting LCA   : (512, 1024, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 3,309,476
+
+[STEP 3] Probing graph for downstream classifier after 'features.12.pointwise.0'...
+
+[STEP] Searching for next nn.Linear after 'features.12.pointwise.0'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 116 -> 124)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (512, 1024, 1, 1)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 1024, 1, 1)
+[DEBUG] Determined out_channels=1024
+[DEBUG] Final block output shape: (512, 1024, 1, 1)
+[DEBUG] Determined out_channels=1024
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[RESULT] Block analysis complete:
+         out_shape=(512, 1024, 1, 1)
+         out_channels=1024
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 1024, 1, 1)
+    - out_channels             : 1024
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.12.depthwise.0'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 12 -> 12
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 1024 (in) -> 1024 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1024, in=1024, out=1024)
+[DEBUG] ➔ Strategy: GROUPED 3×3 Conv (depth‑wise style, groups=1024)
+
+[DEBUG] Built replacement module for mobilenet:
+        - conv_g1x1: Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=1024, bias=False)
+        - bn: BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu6: ReLU6()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 3,309,476
+[INFO] Post-collapse : 2,258,852
+[INFO] Net Change    : -1,050,624
+[DEBUG] Local validation candidate selected from replacement slot: '12'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 1024, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=12, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 12: '12'
+[STEP] Validating inserted module 'Sequential' at index 12...
+[DEBUG] Inserted module forward successful, output shape: (512, 1024, 1, 1)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.12.depthwise.0'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.12.depthwise.0' → 'features.12.pointwise.0'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.12.depthwise.0 → features.12.pointwise.0) in 1.42s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_1': features.11.depthwise.0 → features.11.pointwise.0
+[STEP] Calling _collapse_block('features.11.depthwise.0', 'features.11.pointwise.0')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.11.depthwise.0
+[INFO] End Target   : features.11.pointwise.0
+[DEBUG] Target Device Allocation: cpu
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.11.depthwise.0' -> 'features.11.pointwise.0'
+[DEBUG] [LCA] Resolved Container: 'features.11' | Type: DepthwiseSeparableConv
+[DEBUG] Escalating complex block 'features.11' (DepthwiseSeparableConv) to parent for holistic replacement.
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 11 to 11
+[DEBUG] Captured Layers : 1 total
+    [LAYER MAP] 11 -> DepthwiseSeparableConv
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.11'
+[DEBUG] Hooking End Node   : 'features.11'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.11' -> 'features.11'...
+[DEBUG] Captured input shape: (512, 512, 2, 2), output shape: (512, 1024, 1, 1)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 512, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 1024, 1, 1)
+[DEBUG] Pre-collapse Parameter Count   : 2,258,852
+
+[STEP 3] Probing graph for downstream classifier after 'features.11.pointwise.0'...
+
+[STEP] Searching for next nn.Linear after 'features.11.pointwise.0'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 107 -> 120)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (1 layers)...
+[DEBUG] Input tensor shape before block: (512, 512, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 1024, 1, 1)
+[DEBUG] Determined out_channels=1024
+[DEBUG] Final block output shape: (512, 1024, 1, 1)
+[DEBUG] Determined out_channels=1024
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 1024
+[RESULT] Block analysis complete:
+         out_shape=(512, 1024, 1, 1)
+         out_channels=1024
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 1024, 1, 1)
+    - out_channels             : 1024
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 1024
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.11.depthwise.0'
+============================================================
+[DEBUG] Target device    : cpu
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 11 -> 11
+[DEBUG] Spatial Target   : H=1 x W=1
+[DEBUG] Channel Mapping  : 512 (in) -> 1024 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=512, in=512, out=512)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for mobilenet:
+        - conv_1x1: Conv2d(512, 1024, kernel_size=(1, 1), stride=(2, 2), bias=False)
+        - bn: BatchNorm2d(1024, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu6: ReLU6()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(1, 1))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 2,258,852
+[INFO] Post-collapse : 2,253,220
+[INFO] Net Change    : -5,632
+[DEBUG] Local validation candidate selected from replacement slot: '11'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 1024, 1, 1)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (512, 1024) | Flat size: 1024
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=11, device=cpu, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 12: '12'
+[STEP] Validating inserted module 'Sequential' at index 12...
+[ERROR] Forward pass through inserted module failed: Given groups=1024, weight of size [1024, 1, 3, 3], expected input[512, 512, 2, 2] to have 1024 channels, but got 512 channels instead
+[ERROR] Downstream validation failed: RuntimeError: Structural collapse replacement validation failed: Given groups=1024, weight of size [1024, 1, 3, 3], expected input[512, 512, 2, 2] to have 1024 channels, but got 512 channels instead
+[ERROR]   container: features
+[ERROR]   start_idx: 11
+[ERROR]   input_shape: torch.Size([512, 3, 32, 32])
+[DEBUG] Traceback:
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/pyPrune/collapse/replace.py", line 802, in _validate_downstream
+    t = inserted_mod(t)
+        ^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/container.py", line 250, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 554, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/nn/modules/conv.py", line 549, in _conv_forward
+    return F.conv2d(
+           ^^^^^^^^^
+RuntimeError: Given groups=1024, weight of size [1024, 1, 3, 3], expected input[512, 512, 2, 2] to have 1024 channels, but got 512 channels instead
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/old_Users/jgafur/LTH/pyPrune/collapse/replace.py", line 486, in _build_and_replace_block
+    _validate_downstream(model, start_container_name, start_idx, x, input_shape, next_linear_name, next_linear_mod, device, debug)
+  File "/old_Users/jgafur/LTH/pyPrune/collapse/replace.py", line 806, in _validate_downstream
+    raise RuntimeError(f"Structural collapse replacement validation failed: {e}")
+RuntimeError: Structural collapse replacement validation failed: Given groups=1024, weight of size [1024, 1, 3, 3], expected input[512, 512, 2, 2] to have 1024 channels, but got 512 channels instead
+============================================================
+[RESULT] Block replacement complete for 'features.11.depthwise.0'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.11.depthwise.0' → 'features.11.pointwise.0'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.11.depthwise.0 → features.11.pointwise.0) in 1.22s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 3,309,476
+[INFO] Parameters after : 2,253,220
+[INFO] ΔParams = +1,056,256 (expected ≤ 0)
+[INFO] Collapse counts: success=2, failed=0, skipped=0
+[INFO] Total collapse runtime: 2.67s
+[RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
+[•] Starting experiment 'Dynamic_Region_All_Combined' in workflow 'JF' | Epoch Target: 200
+[•] Loading intermediate checkpoint: MobileNet_Cifar100_None_epochs200_pretrain200/checkpoints/JF_Dynamic_Region_All_Combined_epoch39.pt
+[✓] Resumed at epoch 40
+JF/Dynamic_Region_All_Combined:   0%|          | 0/160 [00:00<?, ?it/s]JF/Dynamic_Region_All_Combined:   0%|          | 0/160 [04:30<?, ?it/s, loss=1.2638, acc=62.46%, best=62.46%]JF/Dynamic_Region_All_Combined:   1%|          | 1/160 [04:30<11:57:46, 270.86s/it, loss=1.2638, acc=62.46%, best=62.46%]JF/Dynamic_Region_All_Combined:   1%|          | 1/160 [09:09<11:57:46, 270.86s/it, loss=1.2325, acc=63.31%, best=63.31%]JF/Dynamic_Region_All_Combined:   1%|▏         | 2/160 [09:15<12:14:58, 279.10s/it, loss=1.2325, acc=63.31%, best=63.31%]JF/Dynamic_Region_All_Combined:   1%|▏         | 2/160 [14:03<12:14:58, 279.10s/it, loss=1.1845, acc=64.77%, best=64.77%]JF/Dynamic_Region_All_Combined:   2%|▏         | 3/160 [14:12<12:31:10, 287.07s/it, loss=1.1845, acc=64.77%, best=64.77%]JF/Dynamic_Region_All_Combined:   2%|▏         | 3/160 [18:44<12:31:10, 287.07s/it, loss=1.1393, acc=65.68%, best=65.68%]JF/Dynamic_Region_All_Combined:   2%|▎         | 4/160 [18:52<12:19:17, 284.34s/it, loss=1.1393, acc=65.68%, best=65.68%]JF/Dynamic_Region_All_Combined:   2%|▎         | 4/160 [23:46<12:19:17, 284.34s/it, loss=1.0970, acc=66.79%, best=66.79%]JF/Dynamic_Region_All_Combined:   3%|▎         | 5/160 [24:01<12:37:18, 293.15s/it, loss=1.0970, acc=66.79%, best=66.79%]JF/Dynamic_Region_All_Combined:   3%|▎         | 5/160 [28:53<12:37:18, 293.15s/it, loss=1.0569, acc=67.92%, best=67.92%]JF/Dynamic_Region_All_Combined:   4%|▍         | 6/160 [29:01<12:38:49, 295.65s/it, loss=1.0569, acc=67.92%, best=67.92%]JF/Dynamic_Region_All_Combined:   4%|▍         | 6/160 [33:39<12:38:49, 295.65s/it, loss=1.0151, acc=69.04%, best=69.04%]JF/Dynamic_Region_All_Combined:   4%|▍         | 7/160 [34:15<12:48:40, 301.44s/it, loss=1.0151, acc=69.04%, best=69.04%]JF/Dynamic_Region_All_Combined:   4%|▍         | 7/160 [38:47<12:48:40, 301.44s/it, loss=0.9861, acc=69.79%, best=69.79%]JF/Dynamic_Region_All_Combined:   5%|▌         | 8/160 [39:00<12:30:27, 296.23s/it, loss=0.9861, acc=69.79%, best=69.79%]JF/Dynamic_Region_All_Combined:   5%|▌         | 8/160 [43:45<12:30:27, 296.23s/it, loss=0.9356, acc=71.43%, best=71.43%]JF/Dynamic_Region_All_Combined:   6%|▌         | 9/160 [43:50<12:20:53, 294.39s/it, loss=0.9356, acc=71.43%, best=71.43%]JF/Dynamic_Region_All_Combined:   6%|▌         | 9/160 [48:25<12:20:53, 294.39s/it, loss=0.9008, acc=72.18%, best=72.18%]JF/Dynamic_Region_All_Combined:   6%|▋         | 10/160 [48:30<12:04:29, 289.80s/it, loss=0.9008, acc=72.18%, best=72.18%]JF/Dynamic_Region_All_Combined:   6%|▋         | 10/160 [53:02<12:04:29, 289.80s/it, loss=0.8547, acc=73.63%, best=73.63%]JF/Dynamic_Region_All_Combined:   7%|▋         | 11/160 [53:41<12:16:11, 296.45s/it, loss=0.8547, acc=73.63%, best=73.63%]JF/Dynamic_Region_All_Combined:   7%|▋         | 11/160 [59:11<12:16:11, 296.45s/it, loss=0.8215, acc=74.53%, best=74.53%]JF/Dynamic_Region_All_Combined:   8%|▊         | 12/160 [59:29<12:50:11, 312.24s/it, loss=0.8215, acc=74.53%, best=74.53%]JF/Dynamic_Region_All_Combined:   8%|▊         | 12/160 [1:04:09<12:50:11, 312.24s/it, loss=0.7876, acc=75.35%, best=75.35%]JF/Dynamic_Region_All_Combined:   8%|▊         | 13/160 [1:04:22<12:30:11, 306.20s/it, loss=0.7876, acc=75.35%, best=75.35%]JF/Dynamic_Region_All_Combined:   8%|▊         | 13/160 [1:09:11<12:30:11, 306.20s/it, loss=0.7451, acc=76.78%, best=76.78%]JF/Dynamic_Region_All_Combined:   9%|▉         | 14/160 [1:10:20<13:03:03, 321.80s/it, loss=0.7451, acc=76.78%, best=76.78%]JF/Dynamic_Region_All_Combined:   9%|▉         | 14/160 [1:14:53<13:03:03, 321.80s/it, loss=0.6986, acc=78.12%, best=78.12%]JF/Dynamic_Region_All_Combined:   9%|▉         | 15/160 [1:16:44<13:43:17, 340.67s/it, loss=0.6986, acc=78.12%, best=78.12%]JF/Dynamic_Region_All_Combined:   9%|▉         | 15/160 [1:21:14<13:43:17, 340.67s/it, loss=0.6744, acc=79.03%, best=79.03%]JF/Dynamic_Region_All_Combined:  10%|█         | 16/160 [1:23:32<14:26:12, 360.92s/it, loss=0.6744, acc=79.03%, best=79.03%]JF/Dynamic_Region_All_Combined:  10%|█         | 16/160 [1:28:04<14:26:12, 360.92s/it, loss=0.6397, acc=79.94%, best=79.94%]JF/Dynamic_Region_All_Combined:  11%|█         | 17/160 [1:28:43<13:44:27, 345.93s/it, loss=0.6397, acc=79.94%, best=79.94%]JF/Dynamic_Region_All_Combined:  11%|█         | 17/160 [1:33:15<13:44:27, 345.93s/it, loss=0.6124, acc=80.82%, best=80.82%]JF/Dynamic_Region_All_Combined:  11%|█▏        | 18/160 [1:33:21<12:50:40, 325.64s/it, loss=0.6124, acc=80.82%, best=80.82%]JF/Dynamic_Region_All_Combined:  11%|█▏        | 18/160 [1:38:12<12:50:40, 325.64s/it, loss=0.5731, acc=82.00%, best=82.00%]JF/Dynamic_Region_All_Combined:  12%|█▏        | 19/160 [1:38:19<12:25:40, 317.31s/it, loss=0.5731, acc=82.00%, best=82.00%]JF/Dynamic_Region_All_Combined:  12%|█▏        | 19/160 [1:43:10<12:25:40, 317.31s/it, loss=0.5502, acc=82.78%, best=82.78%]JF/Dynamic_Region_All_Combined:  12%|█▎        | 20/160 [1:43:14<12:04:36, 310.55s/it, loss=0.5502, acc=82.78%, best=82.78%]JF/Dynamic_Region_All_Combined:  12%|█▎        | 20/160 [1:48:06<12:04:36, 310.55s/it, loss=0.5224, acc=83.45%, best=83.45%]JF/Dynamic_Region_All_Combined:  13%|█▎        | 21/160 [1:48:12<11:50:49, 306.83s/it, loss=0.5224, acc=83.45%, best=83.45%]JF/Dynamic_Region_All_Combined:  13%|█▎        | 21/160 [1:52:44<11:50:49, 306.83s/it, loss=0.5029, acc=84.14%, best=84.14%]JF/Dynamic_Region_All_Combined:  14%|█▍        | 22/160 [1:53:39<11:59:08, 312.67s/it, loss=0.5029, acc=84.14%, best=84.14%]JF/Dynamic_Region_All_Combined:  14%|█▍        | 22/160 [1:58:32<11:59:08, 312.67s/it, loss=0.4723, acc=85.03%, best=85.03%]JF/Dynamic_Region_All_Combined:  14%|█▍        | 23/160 [1:58:44<11:49:11, 310.59s/it, loss=0.4723, acc=85.03%, best=85.03%]

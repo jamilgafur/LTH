@@ -1,0 +1,341 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='MobileNet', dataset='tinyimagenet', pretrain=100, epochs=300, experiment='discover', quant=False, scorer='all')
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading Tiny ImageNet data for MobileNet...
+Loading Tiny ImageNet data for MobileNet...
+[DEBUG] Base checkpoint path resolved: None
+
+============================================================
+[MODE] STAGE 1: DISCOVERY & PRE-FLIGHT PROBE
+       Model: MobileNet | Dataset: tinyimagenet
+============================================================
+
+[INFO] Phase 1: Validating/Training 'Control' Baseline...
+
+--- Running experiment: Control ---
+    Budget allocated: 100 epochs
+
+=== Running JF experiment ===
+[•] Resumption detected. Architecture will be prepared for checkpoint loading.
+[•] Starting experiment 'Control' in workflow 'JF' | Epoch Target: 100
+[✓] Experiment 'Control' already completed. Found: final_JF_Control.pt
+    Skipping training and reloading metrics...
+
+[INFO] Phase 2: Loading Finalized Baseline Weights...
+[INFO] Found existing change stats at outputs/discovery/MobileNet/tinyimagenet/epochs300_pretrain100/change_stats.json. Skipping probe.
+
+[INFO] === Scorer ablation ('all'): local_dev vs change vs cka ===
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator (scorer=local_dev) ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 3,411,976 | Base FLOPs: 47,376,384
+
+[DEBUG] --- Phase 2A: Scanning 28 layers for Raw Candidates ---
+[DEBUG] [SCAN] Layer 00 | stem.conv1                                    | h=1.000000 | status=Veto     | reason=veto window (idx=0, cutoff=7)
+[DEBUG] [SCAN] Layer 01 | features.0.depthwise.0                        | h=-0.902804 | status=Veto     | reason=veto window (idx=1, cutoff=7)
+[DEBUG] [SCAN] Layer 02 | features.0.pointwise.0                        | h=-0.041303 | status=Veto     | reason=veto window (idx=2, cutoff=7)
+[DEBUG] [SCAN] Layer 03 | features.1.depthwise.0                        | h=-0.707563 | status=Veto     | reason=veto window (idx=3, cutoff=7)
+[DEBUG] [SCAN] Layer 04 | features.1.pointwise.0                        | h=0.753804 | status=Veto     | reason=veto window (idx=4, cutoff=7)
+[DEBUG] [SCAN] Layer 05 | features.2.depthwise.0                        | h=-0.862565 | status=Veto     | reason=veto window (idx=5, cutoff=7)
+[DEBUG] [SCAN] Layer 06 | features.2.pointwise.0                        | h=1.000000 | status=Veto     | reason=veto window (idx=6, cutoff=7)
+[DEBUG] [SCAN] Layer 08 | features.3.pointwise.0                        | h=0.836447 | status=Rejected | reason=non-negative or NaN h=0.836447
+[DEBUG] [RAW] Discarding short fragment features.3.depthwise.0 -> features.3.depthwise.0 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 10 | features.4.pointwise.0                        | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment features.4.depthwise.0 -> features.4.depthwise.0 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 12 | features.5.pointwise.0                        | h=0.808854 | status=Rejected | reason=non-negative or NaN h=0.808854
+[DEBUG] [RAW] Discarding short fragment features.5.depthwise.0 -> features.5.depthwise.0 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 14 | features.6.pointwise.0                        | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment features.6.depthwise.0 -> features.6.depthwise.0 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 16 | features.7.pointwise.0                        | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment features.7.depthwise.0 -> features.7.depthwise.0 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 18 | features.8.pointwise.0                        | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment features.8.depthwise.0 -> features.8.depthwise.0 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 20 | features.9.pointwise.0                        | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment features.9.depthwise.0 -> features.9.depthwise.0 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 22 | features.10.pointwise.0                       | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment features.10.depthwise.0 -> features.10.depthwise.0 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 24 | features.11.pointwise.0                       | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment features.11.depthwise.0 -> features.11.depthwise.0 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 27 | fc                                            | h=1.000000 | status=Rejected | reason=invalid target type=Linear
+[DEBUG] [RAW] Accepted raw candidate features.12.depthwise.0 -> features.12.pointwise.0 | layers=2 | parametric=2
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [EXPAND] Starting from raw region features.12.depthwise.0 -> features.12.pointwise.0 | layers=2 | parametric=2
+[DEBUG] [-] Trapped region: features.12.depthwise.0. Marking as Gap.
+
+[INFO] Phase 3: Evaluating 0 Candidate Regions (with Smart Boundary Shaving)...
+
+[DEBUG] --- Final Accepted Regions Summary ---
+[DEBUG] [FINAL] No regions accepted.
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[✓] scorer=local_dev: 2 targets -> MobileNet_tinyimagenet_epochs300_pretrain100_scorerlocal_dev_JF_discovered_regions.json
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator (scorer=change) ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 3,411,976 | Base FLOPs: 47,376,384
+[DEBUG] Scorer 'change': active threshold change <= 0.365107 (bottom 25%)
+
+[DEBUG] --- Phase 2A: Scanning 28 layers for Raw Candidates ---
+[DEBUG] [SCAN] Layer 00 | stem.conv1                                    | change=0.25276 | status=Veto     | reason=veto window (idx=0, cutoff=7)
+[DEBUG] [SCAN] Layer 01 | features.0.depthwise.0                        | change=0.531128 | status=Veto     | reason=veto window (idx=1, cutoff=7)
+[DEBUG] [SCAN] Layer 02 | features.0.pointwise.0                        | change=0.531128 | status=Veto     | reason=veto window (idx=2, cutoff=7)
+[DEBUG] [SCAN] Layer 03 | features.1.depthwise.0                        | change=0.376168 | status=Veto     | reason=veto window (idx=3, cutoff=7)
+[DEBUG] [SCAN] Layer 04 | features.1.pointwise.0                        | change=0.376168 | status=Veto     | reason=veto window (idx=4, cutoff=7)
+[DEBUG] [SCAN] Layer 05 | features.2.depthwise.0                        | change=1.06181 | status=Veto     | reason=veto window (idx=5, cutoff=7)
+[DEBUG] [SCAN] Layer 06 | features.2.pointwise.0                        | change=1.06181 | status=Veto     | reason=veto window (idx=6, cutoff=7)
+[DEBUG] [SCAN] Layer 09 | features.4.depthwise.0                        | change=1.06501 | status=Rejected | reason=change above active threshold (change=1.06501 > 0.365107)
+[DEBUG] [RAW] Accepted raw candidate features.3.depthwise.0 -> features.3.pointwise.0 | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 10 | features.4.pointwise.0                        | change=1.06501 | status=Rejected | reason=change above active threshold (change=1.06501 > 0.365107)
+[DEBUG] [SCAN] Layer 13 | features.6.depthwise.0                        | change=1.14447 | status=Rejected | reason=change above active threshold (change=1.14447 > 0.365107)
+[DEBUG] [RAW] Accepted raw candidate features.5.depthwise.0 -> features.5.pointwise.0 | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 14 | features.6.pointwise.0                        | change=1.14447 | status=Rejected | reason=change above active threshold (change=1.14447 > 0.365107)
+[DEBUG] [SCAN] Layer 15 | features.7.depthwise.0                        | change=1.16628 | status=Rejected | reason=change above active threshold (change=1.16628 > 0.365107)
+[DEBUG] [SCAN] Layer 16 | features.7.pointwise.0                        | change=1.16628 | status=Rejected | reason=change above active threshold (change=1.16628 > 0.365107)
+[DEBUG] [SCAN] Layer 17 | features.8.depthwise.0                        | change=1.16423 | status=Rejected | reason=change above active threshold (change=1.16423 > 0.365107)
+[DEBUG] [SCAN] Layer 18 | features.8.pointwise.0                        | change=1.16423 | status=Rejected | reason=change above active threshold (change=1.16423 > 0.365107)
+[DEBUG] [SCAN] Layer 19 | features.9.depthwise.0                        | change=1.13337 | status=Rejected | reason=change above active threshold (change=1.13337 > 0.365107)
+[DEBUG] [SCAN] Layer 20 | features.9.pointwise.0                        | change=1.13337 | status=Rejected | reason=change above active threshold (change=1.13337 > 0.365107)
+[DEBUG] [SCAN] Layer 21 | features.10.depthwise.0                       | change=1.17005 | status=Rejected | reason=change above active threshold (change=1.17005 > 0.365107)
+[DEBUG] [SCAN] Layer 22 | features.10.pointwise.0                       | change=1.17005 | status=Rejected | reason=change above active threshold (change=1.17005 > 0.365107)
+[DEBUG] [SCAN] Layer 25 | features.12.depthwise.0                       | change=1.01311 | status=Rejected | reason=change above active threshold (change=1.01311 > 0.365107)
+[DEBUG] [RAW] Accepted raw candidate features.11.depthwise.0 -> features.11.pointwise.0 | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 26 | features.12.pointwise.0                       | change=1.01311 | status=Rejected | reason=change above active threshold (change=1.01311 > 0.365107)
+[DEBUG] [SCAN] Layer 27 | fc                                            | change=0 | status=Rejected | reason=invalid target type=Linear
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [EXPAND] Starting from raw region features.3.depthwise.0 -> features.3.pointwise.0 | layers=2 | parametric=2
+[DEBUG] [-] Trapped region: features.3.depthwise.0. Marking as Gap.
+[DEBUG] [EXPAND] Starting from raw region features.5.depthwise.0 -> features.5.pointwise.0 | layers=2 | parametric=2
+[DEBUG] [-] Trapped region: features.5.depthwise.0. Marking as Gap.
+[DEBUG] [EXPAND] Starting from raw region features.11.depthwise.0 -> features.11.pointwise.0 | layers=2 | parametric=2
+[DEBUG] [-] Trapped region: features.11.depthwise.0. Marking as Gap.
+
+[INFO] Phase 3: Evaluating 0 Candidate Regions (with Smart Boundary Shaving)...
+
+[DEBUG] --- Final Accepted Regions Summary ---
+[DEBUG] [FINAL] No regions accepted.
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[✓] scorer=change: 2 targets -> MobileNet_tinyimagenet_epochs300_pretrain100_scorerchange_JF_discovered_regions.json
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator (scorer=cka) ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 3,411,976 | Base FLOPs: 47,376,384
+[DEBUG] Scorer 'cka': active threshold cka >= 0.9355 (top 25%)
+
+[DEBUG] --- Phase 2A: Scanning 28 layers for Raw Candidates ---
+[DEBUG] [SCAN] Layer 00 | stem.conv1                                    | cka=0.978423 | status=Veto     | reason=veto window (idx=0, cutoff=7)
+[DEBUG] [SCAN] Layer 01 | features.0.depthwise.0                        | cka=0.611852 | status=Veto     | reason=veto window (idx=1, cutoff=7)
+[DEBUG] [SCAN] Layer 02 | features.0.pointwise.0                        | cka=0.611852 | status=Veto     | reason=veto window (idx=2, cutoff=7)
+[DEBUG] [SCAN] Layer 03 | features.1.depthwise.0                        | cka=0.949047 | status=Veto     | reason=veto window (idx=3, cutoff=7)
+[DEBUG] [SCAN] Layer 04 | features.1.pointwise.0                        | cka=0.949047 | status=Veto     | reason=veto window (idx=4, cutoff=7)
+[DEBUG] [SCAN] Layer 05 | features.2.depthwise.0                        | cka=0.884243 | status=Veto     | reason=veto window (idx=5, cutoff=7)
+[DEBUG] [SCAN] Layer 06 | features.2.pointwise.0                        | cka=0.884243 | status=Veto     | reason=veto window (idx=6, cutoff=7)
+[DEBUG] [SCAN] Layer 07 | features.3.depthwise.0                        | cka=0.934396 | status=Rejected | reason=cka below active threshold (cka=0.934396 < 0.9355)
+[DEBUG] [SCAN] Layer 08 | features.3.pointwise.0                        | cka=0.934396 | status=Rejected | reason=cka below active threshold (cka=0.934396 < 0.9355)
+[DEBUG] [SCAN] Layer 09 | features.4.depthwise.0                        | cka=0.921305 | status=Rejected | reason=cka below active threshold (cka=0.921305 < 0.9355)
+[DEBUG] [SCAN] Layer 10 | features.4.pointwise.0                        | cka=0.921305 | status=Rejected | reason=cka below active threshold (cka=0.921305 < 0.9355)
+[DEBUG] [SCAN] Layer 13 | features.6.depthwise.0                        | cka=0.935141 | status=Rejected | reason=cka below active threshold (cka=0.935141 < 0.9355)
+[DEBUG] [RAW] Accepted raw candidate features.5.depthwise.0 -> features.5.pointwise.0 | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 14 | features.6.pointwise.0                        | cka=0.935141 | status=Rejected | reason=cka below active threshold (cka=0.935141 < 0.9355)
+[DEBUG] [SCAN] Layer 15 | features.7.depthwise.0                        | cka=0.903347 | status=Rejected | reason=cka below active threshold (cka=0.903347 < 0.9355)
+[DEBUG] [SCAN] Layer 16 | features.7.pointwise.0                        | cka=0.903347 | status=Rejected | reason=cka below active threshold (cka=0.903347 < 0.9355)
+[DEBUG] [SCAN] Layer 17 | features.8.depthwise.0                        | cka=0.922287 | status=Rejected | reason=cka below active threshold (cka=0.922287 < 0.9355)
+[DEBUG] [SCAN] Layer 18 | features.8.pointwise.0                        | cka=0.922287 | status=Rejected | reason=cka below active threshold (cka=0.922287 < 0.9355)
+[DEBUG] [SCAN] Layer 19 | features.9.depthwise.0                        | cka=0.927538 | status=Rejected | reason=cka below active threshold (cka=0.927538 < 0.9355)
+[DEBUG] [SCAN] Layer 20 | features.9.pointwise.0                        | cka=0.927538 | status=Rejected | reason=cka below active threshold (cka=0.927538 < 0.9355)
+[DEBUG] [SCAN] Layer 23 | features.11.depthwise.0                       | cka=0.850773 | status=Rejected | reason=cka below active threshold (cka=0.850773 < 0.9355)
+[DEBUG] [RAW] Accepted raw candidate features.10.depthwise.0 -> features.10.pointwise.0 | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 24 | features.11.pointwise.0                       | cka=0.850773 | status=Rejected | reason=cka below active threshold (cka=0.850773 < 0.9355)
+[DEBUG] [SCAN] Layer 25 | features.12.depthwise.0                       | cka=0.744147 | status=Rejected | reason=cka below active threshold (cka=0.744147 < 0.9355)
+[DEBUG] [SCAN] Layer 26 | features.12.pointwise.0                       | cka=0.744147 | status=Rejected | reason=cka below active threshold (cka=0.744147 < 0.9355)
+[DEBUG] [SCAN] Layer 27 | fc                                            | cka=0.391828 | status=Rejected | reason=invalid target type=Linear
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [EXPAND] Starting from raw region features.5.depthwise.0 -> features.5.pointwise.0 | layers=2 | parametric=2
+[DEBUG] [-] Trapped region: features.5.depthwise.0. Marking as Gap.
+[DEBUG] [EXPAND] Starting from raw region features.10.depthwise.0 -> features.10.pointwise.0 | layers=2 | parametric=2
+[DEBUG] [-] Trapped region: features.10.depthwise.0. Marking as Gap.
+
+[INFO] Phase 3: Evaluating 0 Candidate Regions (with Smart Boundary Shaving)...
+
+[DEBUG] --- Final Accepted Regions Summary ---
+[DEBUG] [FINAL] No regions accepted.
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[✓] scorer=cka: 2 targets -> MobileNet_tinyimagenet_epochs300_pretrain100_scorercka_JF_discovered_regions.json
+[✓] Combined ablation (regions + stats) -> MobileNet_tinyimagenet_epochs300_pretrain100_scorer_ablation.json
+[✓] Change profile figure saved under outputs/discovery/MobileNet/tinyimagenet/epochs300_pretrain100
+14:42:39 [INFO] Scanning for metrics files matching epochs=300, pretrain=100
+14:42:39 [INFO] Successfully parsed 59 experiment rows.
+14:42:41 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar100__accuracy.svg
+14:42:42 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar100__params.svg
+14:42:42 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar100__flops.svg
+14:42:50 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar100__memory.svg
+14:42:51 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar10__accuracy.svg
+14:42:51 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar10__params.svg
+14:42:59 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar10__flops.svg
+14:43:00 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_cifar10__memory.svg
+14:43:00 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_tinyimagenet_accuracy.svg
+14:43:06 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_tinyimagenet_params.svg
+14:43:06 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_tinyimagenet_flops.svg
+14:43:06 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/ConvNeXt_tinyimagenet_memory.svg
+14:43:07 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar100__accuracy.svg
+14:43:10 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar100__params.svg
+14:43:11 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar100__flops.svg
+14:43:21 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar100__memory.svg
+14:43:21 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar10__accuracy.svg
+14:43:21 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar10__params.svg
+14:43:36 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar10__flops.svg
+14:43:48 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/InceptionNet_cifar10__memory.svg
+14:43:48 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/InceptionNet_tinyimagenet_accuracy.svg
+14:43:49 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/InceptionNet_tinyimagenet_params.svg
+14:43:49 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/InceptionNet_tinyimagenet_flops.svg
+14:43:49 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/InceptionNet_tinyimagenet_memory.svg
+14:43:50 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar100__accuracy.svg
+14:43:50 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar100__params.svg
+14:43:51 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar100__flops.svg
+14:43:51 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar100__memory.svg
+14:43:52 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar10__accuracy.svg
+14:43:52 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar10__params.svg
+14:43:56 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar10__flops.svg
+14:43:56 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/MobileNet_cifar10__memory.svg
+14:43:57 [INFO] [FIG1] Saved accuracy plot for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/MobileNet_tinyimagenet_accuracy.svg
+14:44:03 [INFO] [FIG1] Saved params plot for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/MobileNet_tinyimagenet_params.svg
+14:44:06 [INFO] [FIG1] Saved flops plot for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/MobileNet_tinyimagenet_flops.svg
+14:44:09 [INFO] [FIG1] Saved memory plot for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/MobileNet_tinyimagenet_memory.svg
+14:44:09 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar100__accuracy.svg
+14:44:09 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar100__params.svg
+14:44:10 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar100__flops.svg
+14:44:10 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar100__memory.svg
+14:44:12 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar10__accuracy.svg
+14:44:13 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar10__params.svg
+14:44:14 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar10__flops.svg
+14:44:14 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_cifar10__memory.svg
+14:44:14 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_tinyimagenet_accuracy.svg
+14:44:14 [INFO] [FIG1] Saved params plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_tinyimagenet_params.svg
+14:44:15 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_tinyimagenet_flops.svg
+14:44:15 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/RegNetX_400MF_tinyimagenet_memory.svg
+14:44:15 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar100_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar100__accuracy.svg
+14:44:16 [INFO] [FIG1] Saved params plot for VGG16/cifar100_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar100__params.svg
+14:44:16 [INFO] [FIG1] Saved flops plot for VGG16/cifar100_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar100__flops.svg
+14:44:16 [INFO] [FIG1] Saved memory plot for VGG16/cifar100_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar100__memory.svg
+14:44:17 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar10__accuracy.svg
+14:44:17 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar10__params.svg
+14:44:17 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar10__flops.svg
+14:44:18 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at outputs/figures/ep300_pre100/individual_plots/VGG16_cifar10__memory.svg
+14:44:20 [INFO] [FIG1] Saved accuracy plot for VGG16/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/VGG16_tinyimagenet_accuracy.svg
+14:44:20 [INFO] [FIG1] Saved params plot for VGG16/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/VGG16_tinyimagenet_params.svg
+14:44:20 [INFO] [FIG1] Saved flops plot for VGG16/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/VGG16_tinyimagenet_flops.svg
+14:44:20 [INFO] [FIG1] Saved memory plot for VGG16/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/VGG16_tinyimagenet_memory.svg
+14:44:21 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar100__accuracy.svg
+14:44:21 [INFO] [FIG1] Saved params plot for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar100__params.svg
+14:44:21 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar100__flops.svg
+14:44:22 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar100__memory.svg
+14:44:22 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar10__accuracy.svg
+14:44:25 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar10__params.svg
+14:44:26 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar10__flops.svg
+14:44:57 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/individual_plots/XceptionNet_cifar10__memory.svg
+14:45:07 [INFO] [FIG1] Saved accuracy plot for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/XceptionNet_tinyimagenet_accuracy.svg
+14:45:08 [INFO] [FIG1] Saved params plot for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/XceptionNet_tinyimagenet_params.svg
+14:45:08 [INFO] [FIG1] Saved flops plot for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/XceptionNet_tinyimagenet_flops.svg
+14:45:08 [INFO] [FIG1] Saved memory plot for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/individual_plots/XceptionNet_tinyimagenet_memory.svg
+14:45:08 [INFO] Starting FIG2 generation. Target epochs: 300, pretrain: 100
+14:45:09 [ERROR] No Layer_Statistics directories found matching **/epochs300_pretrain100/**/Layer_Statistics
+14:45:09 [DEBUG] [FIG3] No valid variance CSV found for ConvNeXt/cifar100_
+14:45:09 [DEBUG] [FIG3] No valid variance CSV found for MobileNet/cifar100_
+14:45:09 [DEBUG] [FIG3] No valid variance CSV found for RegNetX_400MF/cifar100_
+14:45:09 [DEBUG] [FIG3] No valid variance CSV found for ConvNeXt/cifar10_
+14:45:09 [DEBUG] [FIG3] No valid variance CSV found for VGG16/cifar10_
+14:45:09 [DEBUG] [FIG3] No valid variance CSV found for InceptionNet/tinyimagenet
+14:45:09 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+14:45:09 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar100_
+14:45:10 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/hardware_efficiency/ConvNeXt_cifar100__hardware_profile.svg
+14:45:10 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar100_
+14:45:10 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar100_
+14:45:11 [INFO] [FIG5] Saved hardware profile plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/hardware_efficiency/MobileNet_cifar100__hardware_profile.svg
+14:45:11 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar100_
+14:45:11 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar100_
+14:45:11 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar100_
+14:45:11 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
+14:45:11 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/hardware_efficiency/ConvNeXt_cifar10__hardware_profile.svg
+14:45:11 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
+14:45:11 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
+14:45:11 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
+14:45:11 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
+14:45:11 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar10_
+14:45:11 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/tinyimagenet
+14:45:11 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
+14:45:12 [INFO] [FIG5] Saved hardware profile plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/hardware_efficiency/InceptionNet_tinyimagenet_hardware_profile.svg
+14:45:12 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/tinyimagenet
+14:45:12 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/tinyimagenet
+14:45:12 [INFO] [FIG5] Processing Hardware Profiles for VGG16/tinyimagenet
+14:45:12 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/tinyimagenet
+14:45:12 [INFO] [FIG5] Saved unified best_candidates plot at outputs/figures/ep300_pre100/hardware_efficiency/unified_best_candidates.svg
+14:45:13 [INFO] [FIG5] Saved unified worst_candidates plot at outputs/figures/ep300_pre100/hardware_efficiency/unified_worst_candidates.svg
+14:45:13 [INFO] [FIG5] Saved global trade-off scatter plot at outputs/figures/ep300_pre100/hardware_efficiency/global_tradeoff_scatter.svg
+14:45:13 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+14:45:13 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
+14:45:14 [INFO] [FIG6] Saved sequential training curves for XceptionNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/XceptionNet_tinyimagenet_training_curves.svg
+14:45:15 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_tinyimagenet_training_curves.svg
+14:45:15 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/InceptionNet_tinyimagenet_training_curves.svg
+14:45:18 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at outputs/figures/ep300_pre100/learning_curves/InceptionNet_cifar100_training_curves.svg
+14:45:26 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/XceptionNet_cifar10_training_curves.svg
+14:45:28 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/InceptionNet_cifar10_training_curves.svg
+14:45:29 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_cifar100_training_curves.svg
+14:45:29 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_cifar10_training_curves.svg
+14:45:29 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/InceptionNet_tinyimagenet_training_curves.svg
+14:45:30 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_cifar10_training_curves.svg
+14:45:34 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_cifar100_training_curves.svg
+14:45:34 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_cifar100_training_curves.svg
+14:45:35 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at outputs/figures/ep300_pre100/learning_curves/VGG16_cifar10_training_curves.svg
+14:45:35 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/MobileNet_tinyimagenet_training_curves.svg
+14:45:35 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/MobileNet_cifar10_training_curves.svg
+14:45:36 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/InceptionNet_cifar10_training_curves.svg
+14:45:36 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_tinyimagenet_training_curves.svg
+14:45:36 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at outputs/figures/ep300_pre100/learning_curves/MobileNet_cifar100_training_curves.svg
+14:45:37 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at outputs/figures/ep300_pre100/learning_curves/VGG16_cifar100_training_curves.svg
+14:45:43 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at outputs/figures/ep300_pre100/learning_curves/XceptionNet_cifar100_training_curves.svg
+14:45:43 [INFO] [FIG6] Saved sequential training curves for VGG16/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/VGG16_tinyimagenet_training_curves.svg
+14:45:44 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at outputs/figures/ep300_pre100/learning_curves/RegNetX_400MF_cifar10_training_curves.svg
+14:45:44 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at outputs/figures/ep300_pre100/learning_curves/MobileNet_cifar100_training_curves.svg
+14:45:45 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_cifar100_training_curves.svg
+14:45:45 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at outputs/figures/ep300_pre100/learning_curves/MobileNet_tinyimagenet_training_curves.svg
+14:45:46 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at outputs/figures/ep300_pre100/learning_curves/VGG16_cifar10_training_curves.svg
+14:45:46 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/learning_curves/ConvNeXt_cifar10_training_curves.svg
+14:45:46 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at outputs/figures/ep300_pre100/learning_curves/MobileNet_cifar10_training_curves.svg
+14:45:47 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar100_ at outputs/figures/ep300_pre100/convergence/ConvNeXt_cifar100_convergence_metrics.svg
+14:45:47 [INFO] [FIG7] Saved convergence metrics plot for MobileNet/cifar100_ at outputs/figures/ep300_pre100/convergence/MobileNet_cifar100_convergence_metrics.svg
+14:45:48 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar10_ at outputs/figures/ep300_pre100/convergence/ConvNeXt_cifar10_convergence_metrics.svg
+14:45:48 [INFO] [FIG7] Saved convergence metrics plot for InceptionNet/tinyimagenet at outputs/figures/ep300_pre100/convergence/InceptionNet_tinyimagenet_convergence_metrics.svg
+14:45:48 [INFO] [FIG8] Saved accuracy vs params plot at outputs/figures/ep300_pre100/accuracy_vs_params/accuracy_vs_params.svg
+14:45:52 [INFO] [FIG9] Saved FLOPs vs memory heat‑map at outputs/figures/ep300_pre100/flops_vs_memory/flops_vs_memory.svg
+14:45:52 [INFO] [SUMMARY] Generating master lookup JSON...
+14:46:03 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/outputs/tables/ep300_pre100/master_results_summary.json
+14:47:43 [INFO] Script completed.
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep300_pre100/scorer_ablation

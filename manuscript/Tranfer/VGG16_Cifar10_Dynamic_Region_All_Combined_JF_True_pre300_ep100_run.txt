@@ -1,0 +1,562 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='VGG16', dataset='Cifar10', pretrain=300, epochs=100, experiment='Dynamic_Region_All_Combined', quant=True, scorer='local_dev')
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading CIFAR-10 data...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+Loading CIFAR-10 data...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] Base checkpoint path resolved: None
+[INFO] Legacy regions JSON absent; using ablation map: VGG16_Cifar10_epochs100_pretrain300_scorerlocal_dev_JF_discovered_regions.json
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Dynamic_Region_All_Combined'
+============================================================
+
+[INFO] Validating JSON configuration map at: VGG16_Cifar10_epochs100_pretrain300_scorerlocal_dev_JF_discovered_regions.json
+[DEBUG] Loaded 5 configurations from map.
+[WARN] Trained baseline NOT found at VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/checkpoints/final_JF_Control_quant.pt. Falling back to initial un-finetuned checkpoint.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Dynamic_Region_All_Combined ---
+    Budget allocated: 100 epochs
+
+=== Running JF experiment ===
+[•] Collapsing ranges [('features.conv_5', 'features.conv_10'), ('features.conv_12', 'features.conv_13')] for Dynamic_Region_All_Combined
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (VGG16)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 2 pairs.
+[DEBUG] Total collapse targets: 2
+[INFO] Model parameter count before collapsing: 33,663,050
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': features.conv_5 → features.conv_10
+[STEP] Calling _collapse_block('features.conv_5', 'features.conv_10')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_5
+[INFO] End Target   : features.conv_10
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_5' -> 'features.conv_10'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 14 to 30
+[DEBUG] Captured Layers : 17 total
+    [LAYER MAP] conv_5 -> Conv2d
+    [LAYER MAP] bn_5 -> BatchNorm2d
+    [LAYER MAP] relu_5 -> ReLU
+    [LAYER MAP] conv_6 -> Conv2d
+    [LAYER MAP] bn_6 -> BatchNorm2d
+    [LAYER MAP] relu_6 -> ReLU
+    [LAYER MAP] conv_7 -> Conv2d
+    [LAYER MAP] bn_7 -> BatchNorm2d
+    [LAYER MAP] relu_7 -> ReLU
+    [LAYER MAP] pool_3 -> _SafePool
+    [LAYER MAP] conv_8 -> Conv2d
+    [LAYER MAP] bn_8 -> BatchNorm2d
+    [LAYER MAP] relu_8 -> ReLU
+    [LAYER MAP] conv_9 -> Conv2d
+    [LAYER MAP] bn_9 -> BatchNorm2d
+    [LAYER MAP] relu_9 -> ReLU
+    [LAYER MAP] conv_10 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_5'
+[DEBUG] Hooking End Node   : 'features.conv_10'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_5' -> 'features.conv_10'...
+[DEBUG] Captured input shape: (512, 128, 8, 8), output shape: (512, 512, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 128, 8, 8)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 33,663,050
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_10'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_10'...
+[DEBUG] Execution-order match: next Linear is 'classifier.fc_1' (exec idx 33 -> 50)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'classifier.fc_1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (17 layers)...
+[DEBUG] Input tensor shape before block: (512, 128, 8, 8)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (512, 512, 4, 4)
+[DEBUG] Determined out_channels=512
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 512
+[RESULT] Block analysis complete:
+         out_shape=(512, 512, 4, 4)
+         out_channels=512
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 512, 4, 4)
+    - out_channels             : 512
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 512
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.conv_5'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 14 -> 30
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 128 (in) -> 512 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=128, out=256)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for vgg16:
+        - conv_1x1: Conv2d(128, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 33,663,050
+[INFO] Post-collapse : 26,350,922
+[INFO] Net Change    : -7,312,128
+[DEBUG] Local validation candidate selected from replacement slot: 'conv_5'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 512, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'classifier.fc_1'
+[DEBUG] [POOL] Entering shape: (512, 512) | Flat size: 512
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=14, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 14: 'conv_5'
+[STEP] Validating inserted module 'Sequential' at index 14...
+[DEBUG] Inserted module forward successful, output shape: (512, 512, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.bn_5' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_5' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_5' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_5' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_6' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_6' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_6' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_6' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_7' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_7' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_7' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_7' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.pool_3' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_3' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_8' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_8' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_8' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_8' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_9' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_9' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_9' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_9' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.conv_10' (SmartIdentity) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.conv_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.bn_10' (BatchNorm2d) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.bn_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.relu_10' (ReLU) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.relu_10' executed successfully, output shape: (512, 512, 4, 4)
+[DEBUG] Running downstream module 'features.pool_4' (_SafePool) with input shape (512, 512, 4, 4)
+[DEBUG] Downstream 'features.pool_4' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.conv_11' (Conv2d) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.bn_11' (BatchNorm2d) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.relu_11' (ReLU) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_11' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.conv_12' (Conv2d) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.bn_12' (BatchNorm2d) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.relu_12' (ReLU) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.conv_13' (Conv2d) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.bn_13' (BatchNorm2d) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.relu_13' (ReLU) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.pool_5' (_SafePool) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (512, 512, 1, 1)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.conv_5'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.conv_5' → 'features.conv_10'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (features.conv_5 → features.conv_10) in 0.64s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 10 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_1': features.conv_12 → features.conv_13
+[STEP] Calling _collapse_block('features.conv_12', 'features.conv_13')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : features.conv_12
+[INFO] End Target   : features.conv_13
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'features.conv_12' -> 'features.conv_13'
+[DEBUG] [LCA] Resolved Container: 'features' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'features'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 37 to 40
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] conv_12 -> Conv2d
+    [LAYER MAP] bn_12 -> BatchNorm2d
+    [LAYER MAP] relu_12 -> ReLU
+    [LAYER MAP] conv_13 -> Conv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'features.conv_12'
+[DEBUG] Hooking End Node   : 'features.conv_13'
+[DEBUG] Dummy Input Shape  : torch.Size([512, 3, 32, 32])
+[DEBUG] Capturing I/O hooks for 'features.conv_12' -> 'features.conv_13'...
+[DEBUG] Captured input shape: (512, 512, 2, 2), output shape: (512, 512, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (512, 512, 2, 2)
+[DEBUG] Output (y) shape exiting LCA   : (512, 512, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 26,350,922
+
+[STEP 3] Probing graph for downstream classifier after 'features.conv_13'...
+
+[STEP] Searching for next nn.Linear after 'features.conv_13'...
+[DEBUG] Execution-order match: next Linear is 'classifier.fc_1' (exec idx 47 -> 53)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'classifier.fc_1'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (512, 512, 2, 2)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (512, 512, 2, 2)
+[DEBUG] Determined out_channels=512
+[DEBUG] Final block output shape: (512, 512, 2, 2)
+[DEBUG] Determined out_channels=512
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 512
+[RESULT] Block analysis complete:
+         out_shape=(512, 512, 2, 2)
+         out_channels=512
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (512, 512, 2, 2)
+    - out_channels             : 512
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 512
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'features.conv_12'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'features'
+[DEBUG] Layer Indices    : 37 -> 40
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 512 (in) -> 512 (out)
+[DEBUG] Analyzing original conv: Conv2d (groups=1, in=512, out=512)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for vgg16:
+        - conv_1x1: Conv2d(512, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container 'features'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 26,350,922
+[INFO] Post-collapse : 21,893,450
+[INFO] Net Change    : -4,457,472
+[DEBUG] Local validation candidate selected from replacement slot: 'conv_12'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (512, 512, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'classifier.fc_1'
+[DEBUG] [POOL] Entering shape: (512, 512) | Flat size: 512
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'features' =====
+[DEBUG] start_idx=37, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'features'...
+[DEBUG] Found inserted block candidate at index 37: 'conv_12'
+[STEP] Validating inserted module 'Sequential' at index 37...
+[DEBUG] Inserted module forward successful, output shape: (512, 512, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'features.bn_12' (SmartIdentity) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.relu_12' (SmartIdentity) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_12' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.conv_13' (SmartIdentity) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.conv_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.bn_13' (BatchNorm2d) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.bn_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.relu_13' (ReLU) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.relu_13' executed successfully, output shape: (512, 512, 2, 2)
+[DEBUG] Running downstream module 'features.pool_5' (_SafePool) with input shape (512, 512, 2, 2)
+[DEBUG] Downstream 'features.pool_5' executed successfully, output shape: (512, 512, 1, 1)
+[RESULT] ✅ Downstream validation for 'features' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'features.conv_12'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'features.conv_12' → 'features.conv_13'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (features.conv_12 → features.conv_13) in 0.10s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 33,663,050
+[INFO] Parameters after : 21,893,450
+[INFO] ΔParams = +11,769,600 (expected ≤ 0)
+[INFO] Collapse counts: success=2, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.94s
+[RESULT] ✅ collapse_only complete. Total targets: 2 | success=2 | failed=0 | skipped=0
+[•] Starting experiment 'Dynamic_Region_All_Combined_quant' in workflow 'JF' | Epoch Target: 100
+[•] No intermediate checkpoint found — starting fresh or inheriting from base.
+JF/Dynamic_Region_All_Combined_quant:   0%|          | 0/100 [00:00<?, ?it/s]JF/Dynamic_Region_All_Combined_quant:   0%|          | 0/100 [00:10<?, ?it/s, loss=1.6152, acc=42.93%, best=42.93%]JF/Dynamic_Region_All_Combined_quant:   1%|          | 1/100 [00:25<41:42, 25.27s/it, loss=1.6152, acc=42.93%, best=42.93%]JF/Dynamic_Region_All_Combined_quant:   1%|          | 1/100 [00:47<41:42, 25.27s/it, loss=1.0528, acc=62.95%, best=62.95%]JF/Dynamic_Region_All_Combined_quant:   2%|▏         | 2/100 [01:01<52:03, 31.87s/it, loss=1.0528, acc=62.95%, best=62.95%]JF/Dynamic_Region_All_Combined_quant:   2%|▏         | 2/100 [01:23<52:03, 31.87s/it, loss=0.8370, acc=70.78%, best=70.78%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 3/100 [01:39<56:05, 34.70s/it, loss=0.8370, acc=70.78%, best=70.78%]JF/Dynamic_Region_All_Combined_quant:   3%|▎         | 3/100 [02:01<56:05, 34.70s/it, loss=0.7228, acc=74.89%, best=74.89%]JF/Dynamic_Region_All_Combined_quant:   4%|▍         | 4/100 [02:23<1:01:08, 38.22s/it, loss=0.7228, acc=74.89%, best=74.89%]JF/Dynamic_Region_All_Combined_quant:   4%|▍         | 4/100 [02:45<1:01:08, 38.22s/it, loss=0.6492, acc=77.56%, best=77.56%]JF/Dynamic_Region_All_Combined_quant:   5%|▌         | 5/100 [02:59<59:23, 37.51s/it, loss=0.6492, acc=77.56%, best=77.56%]  JF/Dynamic_Region_All_Combined_quant:   5%|▌         | 5/100 [03:21<59:23, 37.51s/it, loss=0.5989, acc=79.35%, best=79.35%]JF/Dynamic_Region_All_Combined_quant:   6%|▌         | 6/100 [03:29<54:55, 35.06s/it, loss=0.5989, acc=79.35%, best=79.35%]JF/Dynamic_Region_All_Combined_quant:   6%|▌         | 6/100 [03:52<54:55, 35.06s/it, loss=0.5546, acc=80.79%, best=80.79%]JF/Dynamic_Region_All_Combined_quant:   7%|▋         | 7/100 [03:59<51:36, 33.29s/it, loss=0.5546, acc=80.79%, best=80.79%]JF/Dynamic_Region_All_Combined_quant:   7%|▋         | 7/100 [04:23<51:36, 33.29s/it, loss=0.5158, acc=82.08%, best=82.08%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 8/100 [04:33<51:11, 33.39s/it, loss=0.5158, acc=82.08%, best=82.08%]JF/Dynamic_Region_All_Combined_quant:   8%|▊         | 8/100 [04:55<51:11, 33.39s/it, loss=0.4823, acc=83.30%, best=83.30%]JF/Dynamic_Region_All_Combined_quant:   9%|▉         | 9/100 [05:02<48:32, 32.00s/it, loss=0.4823, acc=83.30%, best=83.30%]JF/Dynamic_Region_All_Combined_quant:   9%|▉         | 9/100 [05:24<48:32, 32.00s/it, loss=0.4513, acc=84.40%, best=84.40%]JF/Dynamic_Region_All_Combined_quant:  10%|█         | 10/100 [05:31<46:36, 31.07s/it, loss=0.4513, acc=84.40%, best=84.40%]JF/Dynamic_Region_All_Combined_quant:  10%|█         | 10/100 [05:54<46:36, 31.07s/it, loss=0.4242, acc=85.46%, best=85.46%]JF/Dynamic_Region_All_Combined_quant:  11%|█         | 11/100 [06:00<45:25, 30.62s/it, loss=0.4242, acc=85.46%, best=85.46%]JF/Dynamic_Region_All_Combined_quant:  11%|█         | 11/100 [06:23<45:25, 30.62s/it, loss=0.4054, acc=86.02%, best=86.02%]JF/Dynamic_Region_All_Combined_quant:  12%|█▏        | 12/100 [06:39<48:41, 33.20s/it, loss=0.4054, acc=86.02%, best=86.02%]JF/Dynamic_Region_All_Combined_quant:  12%|█▏        | 12/100 [07:03<48:41, 33.20s/it, loss=0.3849, acc=86.58%, best=86.58%]JF/Dynamic_Region_All_Combined_quant:  13%|█▎        | 13/100 [07:04<44:35, 30.75s/it, loss=0.3849, acc=86.58%, best=86.58%]JF/Dynamic_Region_All_Combined_quant:  13%|█▎        | 13/100 [07:28<44:35, 30.75s/it, loss=0.3689, acc=87.23%, best=87.23%]JF/Dynamic_Region_All_Combined_quant:  14%|█▍        | 14/100 [07:42<47:04, 32.84s/it, loss=0.3689, acc=87.23%, best=87.23%]JF/Dynamic_Region_All_Combined_quant:  14%|█▍        | 14/100 [08:05<47:04, 32.84s/it, loss=0.3458, acc=87.93%, best=87.93%]JF/Dynamic_Region_All_Combined_quant:  15%|█▌        | 15/100 [08:26<51:15, 36.18s/it, loss=0.3458, acc=87.93%, best=87.93%]JF/Dynamic_Region_All_Combined_quant:  15%|█▌        | 15/100 [08:51<51:15, 36.18s/it, loss=0.3292, acc=88.54%, best=88.54%]JF/Dynamic_Region_All_Combined_quant:  16%|█▌        | 16/100 [09:01<50:04, 35.77s/it, loss=0.3292, acc=88.54%, best=88.54%]JF/Dynamic_Region_All_Combined_quant:  16%|█▌        | 16/100 [09:32<50:04, 35.77s/it, loss=0.3141, acc=89.00%, best=89.00%]JF/Dynamic_Region_All_Combined_quant:  17%|█▋        | 17/100 [09:38<50:12, 36.29s/it, loss=0.3141, acc=89.00%, best=89.00%]JF/Dynamic_Region_All_Combined_quant:  17%|█▋        | 17/100 [10:09<50:12, 36.29s/it, loss=0.3021, acc=89.51%, best=89.51%]JF/Dynamic_Region_All_Combined_quant:  18%|█▊        | 18/100 [10:13<48:42, 35.63s/it, loss=0.3021, acc=89.51%, best=89.51%]JF/Dynamic_Region_All_Combined_quant:  18%|█▊        | 18/100 [10:43<48:42, 35.63s/it, loss=0.2879, acc=89.96%, best=89.96%]JF/Dynamic_Region_All_Combined_quant:  19%|█▉        | 19/100 [11:16<59:29, 44.06s/it, loss=0.2879, acc=89.96%, best=89.96%]JF/Dynamic_Region_All_Combined_quant:  19%|█▉        | 19/100 [11:43<59:29, 44.06s/it, loss=0.2705, acc=90.66%, best=90.66%]JF/Dynamic_Region_All_Combined_quant:  20%|██        | 20/100 [12:12<1:03:37, 47.72s/it, loss=0.2705, acc=90.66%, best=90.66%]JF/Dynamic_Region_All_Combined_quant:  20%|██        | 20/100 [12:35<1:03:37, 47.72s/it, loss=0.2608, acc=90.94%, best=90.94%]JF/Dynamic_Region_All_Combined_quant:  21%|██        | 21/100 [12:51<59:11, 44.95s/it, loss=0.2608, acc=90.94%, best=90.94%]  JF/Dynamic_Region_All_Combined_quant:  21%|██        | 21/100 [13:14<59:11, 44.95s/it, loss=0.2524, acc=91.20%, best=91.20%]JF/Dynamic_Region_All_Combined_quant:  22%|██▏       | 22/100 [14:12<1:12:35, 55.84s/it, loss=0.2524, acc=91.20%, best=91.20%]JF/Dynamic_Region_All_Combined_quant:  22%|██▏       | 22/100 [14:35<1:12:35, 55.84s/it, loss=0.2391, acc=91.67%, best=91.67%]JF/Dynamic_Region_All_Combined_quant:  23%|██▎       | 23/100 [14:54<1:06:13, 51.60s/it, loss=0.2391, acc=91.67%, best=91.67%]JF/Dynamic_Region_All_Combined_quant:  23%|██▎       | 23/100 [15:16<1:06:13, 51.60s/it, loss=0.2283, acc=92.12%, best=92.12%]JF/Dynamic_Region_All_Combined_quant:  24%|██▍       | 24/100 [15:57<1:09:54, 55.18s/it, loss=0.2283, acc=92.12%, best=92.12%]JF/Dynamic_Region_All_Combined_quant:  24%|██▍       | 24/100 [16:20<1:09:54, 55.18s/it, loss=0.2213, acc=92.30%, best=92.30%]JF/Dynamic_Region_All_Combined_quant:  25%|██▌       | 25/100 [16:39<1:03:59, 51.19s/it, loss=0.2213, acc=92.30%, best=92.30%]JF/Dynamic_Region_All_Combined_quant:  25%|██▌       | 25/100 [17:02<1:03:59, 51.19s/it, loss=0.2105, acc=92.75%, best=92.75%]JF/Dynamic_Region_All_Combined_quant:  26%|██▌       | 26/100 [17:04<53:11, 43.13s/it, loss=0.2105, acc=92.75%, best=92.75%]  JF/Dynamic_Region_All_Combined_quant:  26%|██▌       | 26/100 [17:26<53:11, 43.13s/it, loss=0.2075, acc=92.78%, best=92.75%]JF/Dynamic_Region_All_Combined_quant:  27%|██▋       | 27/100 [17:51<54:10, 44.53s/it, loss=0.2075, acc=92.78%, best=92.75%]JF/Dynamic_Region_All_Combined_quant:  27%|██▋       | 27/100 [18:14<54:10, 44.53s/it, loss=0.1931, acc=93.11%, best=93.11%]JF/Dynamic_Region_All_Combined_quant:  28%|██▊       | 28/100 [18:29<50:50, 42.37s/it, loss=0.1931, acc=93.11%, best=93.11%]JF/Dynamic_Region_All_Combined_quant:  28%|██▊       | 28/100 [18:52<50:50, 42.37s/it, loss=0.1849, acc=93.50%, best=93.50%]JF/Dynamic_Region_All_Combined_quant:  29%|██▉       | 29/100 [19:11<50:09, 42.39s/it, loss=0.1849, acc=93.50%, best=93.50%]JF/Dynamic_Region_All_Combined_quant:  29%|██▉       | 29/100 [19:34<50:09, 42.39s/it, loss=0.1784, acc=93.88%, best=93.88%]JF/Dynamic_Region_All_Combined_quant:  30%|███       | 30/100 [19:42<45:16, 38.80s/it, loss=0.1784, acc=93.88%, best=93.88%]JF/Dynamic_Region_All_Combined_quant:  30%|███       | 30/100 [20:04<45:16, 38.80s/it, loss=0.1685, acc=94.25%, best=94.25%]JF/Dynamic_Region_All_Combined_quant:  31%|███       | 31/100 [20:06<39:41, 34.51s/it, loss=0.1685, acc=94.25%, best=94.25%]JF/Dynamic_Region_All_Combined_quant:  31%|███       | 31/100 [20:28<39:41, 34.51s/it, loss=0.1630, acc=94.31%, best=94.31%]JF/Dynamic_Region_All_Combined_quant:  32%|███▏      | 32/100 [20:58<44:50, 39.57s/it, loss=0.1630, acc=94.31%, best=94.31%]JF/Dynamic_Region_All_Combined_quant:  32%|███▏      | 32/100 [21:20<44:50, 39.57s/it, loss=0.1521, acc=94.56%, best=94.56%]JF/Dynamic_Region_All_Combined_quant:  33%|███▎      | 33/100 [21:34<43:15, 38.74s/it, loss=0.1521, acc=94.56%, best=94.56%]JF/Dynamic_Region_All_Combined_quant:  33%|███▎      | 33/100 [21:58<43:15, 38.74s/it, loss=0.1492, acc=94.80%, best=94.80%]JF/Dynamic_Region_All_Combined_quant:  34%|███▍      | 34/100 [22:15<43:09, 39.23s/it, loss=0.1492, acc=94.80%, best=94.80%]JF/Dynamic_Region_All_Combined_quant:  34%|███▍      | 34/100 [22:37<43:09, 39.23s/it, loss=0.1472, acc=94.87%, best=94.87%]JF/Dynamic_Region_All_Combined_quant:  35%|███▌      | 35/100 [23:05<46:02, 42.49s/it, loss=0.1472, acc=94.87%, best=94.87%]JF/Dynamic_Region_All_Combined_quant:  35%|███▌      | 35/100 [23:27<46:02, 42.49s/it, loss=0.1346, acc=95.19%, best=95.19%]JF/Dynamic_Region_All_Combined_quant:  36%|███▌      | 36/100 [24:07<51:30, 48.30s/it, loss=0.1346, acc=95.19%, best=95.19%]JF/Dynamic_Region_All_Combined_quant:  36%|███▌      | 36/100 [24:29<51:30, 48.30s/it, loss=0.1306, acc=95.43%, best=95.43%]JF/Dynamic_Region_All_Combined_quant:  37%|███▋      | 37/100 [25:15<57:03, 54.34s/it, loss=0.1306, acc=95.43%, best=95.43%]JF/Dynamic_Region_All_Combined_quant:  37%|███▋      | 37/100 [25:38<57:03, 54.34s/it, loss=0.1251, acc=95.59%, best=95.59%]JF/Dynamic_Region_All_Combined_quant:  38%|███▊      | 38/100 [26:09<56:01, 54.22s/it, loss=0.1251, acc=95.59%, best=95.59%]JF/Dynamic_Region_All_Combined_quant:  38%|███▊      | 38/100 [26:31<56:01, 54.22s/it, loss=0.1210, acc=95.71%, best=95.71%]JF/Dynamic_Region_All_Combined_quant:  39%|███▉      | 39/100 [26:50<51:04, 50.24s/it, loss=0.1210, acc=95.71%, best=95.71%]JF/Dynamic_Region_All_Combined_quant:  39%|███▉      | 39/100 [27:12<51:04, 50.24s/it, loss=0.1160, acc=95.92%, best=95.92%]JF/Dynamic_Region_All_Combined_quant:  40%|████      | 40/100 [28:38<1:07:31, 67.52s/it, loss=0.1160, acc=95.92%, best=95.92%]JF/Dynamic_Region_All_Combined_quant:  40%|████      | 40/100 [29:01<1:07:31, 67.52s/it, loss=0.1070, acc=96.34%, best=96.34%]JF/Dynamic_Region_All_Combined_quant:  41%|████      | 41/100 [29:29<1:01:39, 62.71s/it, loss=0.1070, acc=96.34%, best=96.34%]JF/Dynamic_Region_All_Combined_quant:  41%|████      | 41/100 [29:53<1:01:39, 62.71s/it, loss=0.1054, acc=96.25%, best=96.34%]JF/Dynamic_Region_All_Combined_quant:  42%|████▏     | 42/100 [30:09<53:58, 55.84s/it, loss=0.1054, acc=96.25%, best=96.34%]  JF/Dynamic_Region_All_Combined_quant:  42%|████▏     | 42/100 [30:33<53:58, 55.84s/it, loss=0.1016, acc=96.45%, best=96.45%]JF/Dynamic_Region_All_Combined_quant:  43%|████▎     | 43/100 [30:56<50:23, 53.05s/it, loss=0.1016, acc=96.45%, best=96.45%]JF/Dynamic_Region_All_Combined_quant:  43%|████▎     | 43/100 [31:19<50:23, 53.05s/it, loss=0.0949, acc=96.67%, best=96.67%]JF/Dynamic_Region_All_Combined_quant:  44%|████▍     | 44/100 [31:51<50:03, 53.63s/it, loss=0.0949, acc=96.67%, best=96.67%]JF/Dynamic_Region_All_Combined_quant:  44%|████▍     | 44/100 [32:14<50:03, 53.63s/it, loss=0.0899, acc=96.86%, best=96.86%]JF/Dynamic_Region_All_Combined_quant:  45%|████▌     | 45/100 [32:40<48:03, 52.43s/it, loss=0.0899, acc=96.86%, best=96.86%]JF/Dynamic_Region_All_Combined_quant:  45%|████▌     | 45/100 [33:04<48:03, 52.43s/it, loss=0.0874, acc=96.94%, best=96.94%]JF/Dynamic_Region_All_Combined_quant:  46%|████▌     | 46/100 [33:41<49:27, 54.96s/it, loss=0.0874, acc=96.94%, best=96.94%]JF/Dynamic_Region_All_Combined_quant:  46%|████▌     | 46/100 [34:04<49:27, 54.96s/it, loss=0.0833, acc=97.09%, best=97.09%]JF/Dynamic_Region_All_Combined_quant:  47%|████▋     | 47/100 [34:08<41:00, 46.42s/it, loss=0.0833, acc=97.09%, best=97.09%]JF/Dynamic_Region_All_Combined_quant:  47%|████▋     | 47/100 [34:30<41:00, 46.42s/it, loss=0.0791, acc=97.22%, best=97.22%]JF/Dynamic_Region_All_Combined_quant:  48%|████▊     | 48/100 [35:01<41:58, 48.43s/it, loss=0.0791, acc=97.22%, best=97.22%]JF/Dynamic_Region_All_Combined_quant:  48%|████▊     | 48/100 [35:24<41:58, 48.43s/it, loss=0.0765, acc=97.34%, best=97.34%]JF/Dynamic_Region_All_Combined_quant:  49%|████▉     | 49/100 [36:02<44:32, 52.40s/it, loss=0.0765, acc=97.34%, best=97.34%]JF/Dynamic_Region_All_Combined_quant:  49%|████▉     | 49/100 [36:25<44:32, 52.40s/it, loss=0.0720, acc=97.45%, best=97.45%]JF/Dynamic_Region_All_Combined_quant:  50%|█████     | 50/100 [37:13<48:19, 57.98s/it, loss=0.0720, acc=97.45%, best=97.45%]JF/Dynamic_Region_All_Combined_quant:  50%|█████     | 50/100 [37:35<48:19, 57.98s/it, loss=0.0686, acc=97.52%, best=97.52%]JF/Dynamic_Region_All_Combined_quant:  51%|█████     | 51/100 [38:16<48:28, 59.36s/it, loss=0.0686, acc=97.52%, best=97.52%]JF/Dynamic_Region_All_Combined_quant:  51%|█████     | 51/100 [38:40<48:28, 59.36s/it, loss=0.0637, acc=97.78%, best=97.78%]JF/Dynamic_Region_All_Combined_quant:  52%|█████▏    | 52/100 [39:09<46:01, 57.53s/it, loss=0.0637, acc=97.78%, best=97.78%]JF/Dynamic_Region_All_Combined_quant:  52%|█████▏    | 52/100 [39:32<46:01, 57.53s/it, loss=0.0590, acc=97.95%, best=97.95%]JF/Dynamic_Region_All_Combined_quant:  53%|█████▎    | 53/100 [40:04<44:23, 56.66s/it, loss=0.0590, acc=97.95%, best=97.95%]JF/Dynamic_Region_All_Combined_quant:  53%|█████▎    | 53/100 [40:26<44:23, 56.66s/it, loss=0.0565, acc=98.05%, best=98.05%]JF/Dynamic_Region_All_Combined_quant:  54%|█████▍    | 54/100 [40:59<43:11, 56.35s/it, loss=0.0565, acc=98.05%, best=98.05%]JF/Dynamic_Region_All_Combined_quant:  54%|█████▍    | 54/100 [41:22<43:11, 56.35s/it, loss=0.0568, acc=97.98%, best=98.05%]JF/Dynamic_Region_All_Combined_quant:  55%|█████▌    | 55/100 [42:31<50:14, 66.98s/it, loss=0.0568, acc=97.98%, best=98.05%]JF/Dynamic_Region_All_Combined_quant:  55%|█████▌    | 55/100 [42:54<50:14, 66.98s/it, loss=0.0505, acc=98.19%, best=98.19%]JF/Dynamic_Region_All_Combined_quant:  56%|█████▌    | 56/100 [43:16<44:11, 60.27s/it, loss=0.0505, acc=98.19%, best=98.19%]JF/Dynamic_Region_All_Combined_quant:  56%|█████▌    | 56/100 [43:45<44:11, 60.27s/it, loss=0.0518, acc=98.22%, best=98.19%]JF/Dynamic_Region_All_Combined_quant:  57%|█████▋    | 57/100 [44:57<51:58, 72.53s/it, loss=0.0518, acc=98.22%, best=98.19%]JF/Dynamic_Region_All_Combined_quant:  57%|█████▋    | 57/100 [45:26<51:58, 72.53s/it, loss=0.0467, acc=98.39%, best=98.39%]JF/Dynamic_Region_All_Combined_quant:  58%|█████▊    | 58/100 [46:08<50:29, 72.12s/it, loss=0.0467, acc=98.39%, best=98.39%]JF/Dynamic_Region_All_Combined_quant:  58%|█████▊    | 58/100 [46:35<50:29, 72.12s/it, loss=0.0457, acc=98.37%, best=98.39%]JF/Dynamic_Region_All_Combined_quant:  59%|█████▉    | 59/100 [46:42<41:26, 60.66s/it, loss=0.0457, acc=98.37%, best=98.39%]JF/Dynamic_Region_All_Combined_quant:  59%|█████▉    | 59/100 [47:06<41:26, 60.66s/it, loss=0.0444, acc=98.47%, best=98.47%]JF/Dynamic_Region_All_Combined_quant:  60%|██████    | 60/100 [47:09<33:44, 50.62s/it, loss=0.0444, acc=98.47%, best=98.47%]JF/Dynamic_Region_All_Combined_quant:  60%|██████    | 60/100 [47:33<33:44, 50.62s/it, loss=0.0432, acc=98.49%, best=98.47%]JF/Dynamic_Region_All_Combined_quant:  61%|██████    | 61/100 [48:41<40:54, 62.94s/it, loss=0.0432, acc=98.49%, best=98.47%]JF/Dynamic_Region_All_Combined_quant:  61%|██████    | 61/100 [49:05<40:54, 62.94s/it, loss=0.0408, acc=98.56%, best=98.56%]JF/Dynamic_Region_All_Combined_quant:  62%|██████▏   | 62/100 [49:33<37:47, 59.66s/it, loss=0.0408, acc=98.56%, best=98.56%]JF/Dynamic_Region_All_Combined_quant:  62%|██████▏   | 62/100 [49:55<37:47, 59.66s/it, loss=0.0349, acc=98.79%, best=98.79%]JF/Dynamic_Region_All_Combined_quant:  63%|██████▎   | 63/100 [50:00<30:49, 50.00s/it, loss=0.0349, acc=98.79%, best=98.79%]JF/Dynamic_Region_All_Combined_quant:  63%|██████▎   | 63/100 [50:23<30:49, 50.00s/it, loss=0.0336, acc=98.85%, best=98.85%]JF/Dynamic_Region_All_Combined_quant:  64%|██████▍   | 64/100 [50:28<26:00, 43.34s/it, loss=0.0336, acc=98.85%, best=98.85%]JF/Dynamic_Region_All_Combined_quant:  64%|██████▍   | 64/100 [50:51<26:00, 43.34s/it, loss=0.0317, acc=98.87%, best=98.85%]JF/Dynamic_Region_All_Combined_quant:  65%|██████▌   | 65/100 [51:05<24:05, 41.31s/it, loss=0.0317, acc=98.87%, best=98.85%]JF/Dynamic_Region_All_Combined_quant:  65%|██████▌   | 65/100 [51:27<24:05, 41.31s/it, loss=0.0288, acc=99.00%, best=99.00%]JF/Dynamic_Region_All_Combined_quant:  66%|██████▌   | 66/100 [51:38<22:00, 38.83s/it, loss=0.0288, acc=99.00%, best=99.00%]JF/Dynamic_Region_All_Combined_quant:  66%|██████▌   | 66/100 [52:00<22:00, 38.83s/it, loss=0.0288, acc=98.97%, best=99.00%]JF/Dynamic_Region_All_Combined_quant:  67%|██████▋   | 67/100 [52:25<22:42, 41.29s/it, loss=0.0288, acc=98.97%, best=99.00%]JF/Dynamic_Region_All_Combined_quant:  67%|██████▋   | 67/100 [52:47<22:42, 41.29s/it, loss=0.0278, acc=99.04%, best=99.00%]JF/Dynamic_Region_All_Combined_quant:  68%|██████▊   | 68/100 [53:12<22:56, 43.02s/it, loss=0.0278, acc=99.04%, best=99.00%]JF/Dynamic_Region_All_Combined_quant:  68%|██████▊   | 68/100 [53:35<22:56, 43.02s/it, loss=0.0237, acc=99.21%, best=99.21%]JF/Dynamic_Region_All_Combined_quant:  69%|██████▉   | 69/100 [54:24<26:47, 51.85s/it, loss=0.0237, acc=99.21%, best=99.21%]JF/Dynamic_Region_All_Combined_quant:  69%|██████▉   | 69/100 [54:48<26:47, 51.85s/it, loss=0.0249, acc=99.16%, best=99.21%]JF/Dynamic_Region_All_Combined_quant:  70%|███████   | 70/100 [55:49<30:45, 61.53s/it, loss=0.0249, acc=99.16%, best=99.21%]JF/Dynamic_Region_All_Combined_quant:  70%|███████   | 70/100 [56:11<30:45, 61.53s/it, loss=0.0228, acc=99.20%, best=99.21%]JF/Dynamic_Region_All_Combined_quant:  71%|███████   | 71/100 [56:48<29:26, 60.91s/it, loss=0.0228, acc=99.20%, best=99.21%]JF/Dynamic_Region_All_Combined_quant:  71%|███████   | 71/100 [57:11<29:26, 60.91s/it, loss=0.0220, acc=99.26%, best=99.21%]JF/Dynamic_Region_All_Combined_quant:  72%|███████▏  | 72/100 [57:21<24:30, 52.52s/it, loss=0.0220, acc=99.26%, best=99.21%]JF/Dynamic_Region_All_Combined_quant:  72%|███████▏  | 72/100 [57:43<24:30, 52.52s/it, loss=0.0214, acc=99.27%, best=99.27%]JF/Dynamic_Region_All_Combined_quant:  73%|███████▎  | 73/100 [58:21<24:39, 54.80s/it, loss=0.0214, acc=99.27%, best=99.27%]JF/Dynamic_Region_All_Combined_quant:  73%|███████▎  | 73/100 [58:45<24:39, 54.80s/it, loss=0.0214, acc=99.27%, best=99.27%]JF/Dynamic_Region_All_Combined_quant:  74%|███████▍  | 74/100 [59:33<25:58, 59.94s/it, loss=0.0214, acc=99.27%, best=99.27%]JF/Dynamic_Region_All_Combined_quant:  74%|███████▍  | 74/100 [59:55<25:58, 59.94s/it, loss=0.0167, acc=99.41%, best=99.41%]JF/Dynamic_Region_All_Combined_quant:  75%|███████▌  | 75/100 [1:00:49<26:56, 64.68s/it, loss=0.0167, acc=99.41%, best=99.41%]JF/Dynamic_Region_All_Combined_quant:  75%|███████▌  | 75/100 [1:01:13<26:56, 64.68s/it, loss=0.0155, acc=99.47%, best=99.47%]JF/Dynamic_Region_All_Combined_quant:  76%|███████▌  | 76/100 [1:01:25<22:29, 56.24s/it, loss=0.0155, acc=99.47%, best=99.47%]JF/Dynamic_Region_All_Combined_quant:  76%|███████▌  | 76/100 [1:01:49<22:29, 56.24s/it, loss=0.0150, acc=99.48%, best=99.47%]JF/Dynamic_Region_All_Combined_quant:  77%|███████▋  | 77/100 [1:02:04<19:31, 50.92s/it, loss=0.0150, acc=99.48%, best=99.47%]JF/Dynamic_Region_All_Combined_quant:  77%|███████▋  | 77/100 [1:02:26<19:31, 50.92s/it, loss=0.0132, acc=99.56%, best=99.56%]JF/Dynamic_Region_All_Combined_quant:  78%|███████▊  | 78/100 [1:05:17<34:18, 93.55s/it, loss=0.0132, acc=99.56%, best=99.56%]JF/Dynamic_Region_All_Combined_quant:  78%|███████▊  | 78/100 [1:05:40<34:18, 93.55s/it, loss=0.0123, acc=99.57%, best=99.56%]JF/Dynamic_Region_All_Combined_quant:  79%|███████▉  | 79/100 [1:06:13<28:49, 82.35s/it, loss=0.0123, acc=99.57%, best=99.56%]JF/Dynamic_Region_All_Combined_quant:  79%|███████▉  | 79/100 [1:06:37<28:49, 82.35s/it, loss=0.0130, acc=99.55%, best=99.56%]JF/Dynamic_Region_All_Combined_quant:  80%|████████  | 80/100 [1:06:46<22:32, 67.62s/it, loss=0.0130, acc=99.55%, best=99.56%]JF/Dynamic_Region_All_Combined_quant:  80%|████████  | 80/100 [1:07:09<22:32, 67.62s/it, loss=0.0121, acc=99.60%, best=99.56%]JF/Dynamic_Region_All_Combined_quant:  81%|████████  | 81/100 [1:07:11<17:19, 54.69s/it, loss=0.0121, acc=99.60%, best=99.56%]JF/Dynamic_Region_All_Combined_quant:  81%|████████  | 81/100 [1:07:34<17:19, 54.69s/it, loss=0.0114, acc=99.62%, best=99.62%]JF/Dynamic_Region_All_Combined_quant:  82%|████████▏ | 82/100 [1:08:15<17:14, 57.47s/it, loss=0.0114, acc=99.62%, best=99.62%]JF/Dynamic_Region_All_Combined_quant:  82%|████████▏ | 82/100 [1:08:38<17:14, 57.47s/it, loss=0.0112, acc=99.60%, best=99.62%]JF/Dynamic_Region_All_Combined_quant:  83%|████████▎ | 83/100 [1:09:04<15:33, 54.89s/it, loss=0.0112, acc=99.60%, best=99.62%]JF/Dynamic_Region_All_Combined_quant:  83%|████████▎ | 83/100 [1:09:28<15:33, 54.89s/it, loss=0.0108, acc=99.64%, best=99.62%]JF/Dynamic_Region_All_Combined_quant:  84%|████████▍ | 84/100 [1:09:37<12:56, 48.55s/it, loss=0.0108, acc=99.64%, best=99.62%]JF/Dynamic_Region_All_Combined_quant:  84%|████████▍ | 84/100 [1:10:00<12:56, 48.55s/it, loss=0.0099, acc=99.67%, best=99.62%]JF/Dynamic_Region_All_Combined_quant:  85%|████████▌ | 85/100 [1:12:22<20:51, 83.42s/it, loss=0.0099, acc=99.67%, best=99.62%]JF/Dynamic_Region_All_Combined_quant:  85%|████████▌ | 85/100 [1:12:44<20:51, 83.42s/it, loss=0.0104, acc=99.68%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  86%|████████▌ | 86/100 [1:12:46<15:17, 65.57s/it, loss=0.0104, acc=99.68%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  86%|████████▌ | 86/100 [1:13:09<15:17, 65.57s/it, loss=0.0093, acc=99.68%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  87%|████████▋ | 87/100 [1:13:34<13:05, 60.41s/it, loss=0.0093, acc=99.68%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  87%|████████▋ | 87/100 [1:13:57<13:05, 60.41s/it, loss=0.0098, acc=99.68%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  88%|████████▊ | 88/100 [1:14:13<10:45, 53.79s/it, loss=0.0098, acc=99.68%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  88%|████████▊ | 88/100 [1:14:35<10:45, 53.79s/it, loss=0.0083, acc=99.71%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  89%|████████▉ | 89/100 [1:14:54<09:10, 50.00s/it, loss=0.0083, acc=99.71%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  89%|████████▉ | 89/100 [1:15:17<09:10, 50.00s/it, loss=0.0094, acc=99.68%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  90%|█████████ | 90/100 [1:16:05<09:22, 56.27s/it, loss=0.0094, acc=99.68%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  90%|█████████ | 90/100 [1:16:28<09:22, 56.27s/it, loss=0.0082, acc=99.72%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  91%|█████████ | 91/100 [1:16:45<07:43, 51.50s/it, loss=0.0082, acc=99.72%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  91%|█████████ | 91/100 [1:17:08<07:43, 51.50s/it, loss=0.0082, acc=99.73%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  92%|█████████▏| 92/100 [1:17:19<06:08, 46.06s/it, loss=0.0082, acc=99.73%, best=99.68%]JF/Dynamic_Region_All_Combined_quant:  92%|█████████▏| 92/100 [1:17:42<06:08, 46.06s/it, loss=0.0068, acc=99.78%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  93%|█████████▎| 93/100 [1:17:53<04:58, 42.71s/it, loss=0.0068, acc=99.78%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  93%|█████████▎| 93/100 [1:18:19<04:58, 42.71s/it, loss=0.0066, acc=99.79%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  94%|█████████▍| 94/100 [1:18:22<03:50, 38.50s/it, loss=0.0066, acc=99.79%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  94%|█████████▍| 94/100 [1:18:44<03:50, 38.50s/it, loss=0.0070, acc=99.77%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  95%|█████████▌| 95/100 [1:19:13<03:31, 42.36s/it, loss=0.0070, acc=99.77%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  95%|█████████▌| 95/100 [1:19:36<03:31, 42.36s/it, loss=0.0074, acc=99.79%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  96%|█████████▌| 96/100 [1:19:39<02:29, 37.36s/it, loss=0.0074, acc=99.79%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  96%|█████████▌| 96/100 [1:20:02<02:29, 37.36s/it, loss=0.0072, acc=99.75%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  97%|█████████▋| 97/100 [1:20:15<01:50, 36.78s/it, loss=0.0072, acc=99.75%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  97%|█████████▋| 97/100 [1:20:39<01:50, 36.78s/it, loss=0.0073, acc=99.75%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  98%|█████████▊| 98/100 [1:20:44<01:08, 34.50s/it, loss=0.0073, acc=99.75%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  98%|█████████▊| 98/100 [1:21:07<01:08, 34.50s/it, loss=0.0070, acc=99.76%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  99%|█████████▉| 99/100 [1:21:12<00:32, 32.60s/it, loss=0.0070, acc=99.76%, best=99.78%]JF/Dynamic_Region_All_Combined_quant:  99%|█████████▉| 99/100 [1:21:34<00:32, 32.60s/it, loss=0.0072, acc=99.76%, best=99.78%]JF/Dynamic_Region_All_Combined_quant: 100%|██████████| 100/100 [1:21:39<00:00, 31.07s/it, loss=0.0072, acc=99.76%, best=99.78%]JF/Dynamic_Region_All_Combined_quant: 100%|██████████| 100/100 [1:21:39<00:00, 49.00s/it, loss=0.0072, acc=99.76%, best=99.78%]
+/old_Users/jgafur/LTH/manuscript/Tranfer/utils.py:417: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+/old_Users/jgafur/LTH/manuscript/Tranfer/utils.py:452: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+2026-10-26 16:11:12,290 - WARNING - Unsupported operator aten::max_pool2d encountered 4 time(s)
+2026-10-26 16:11:12,291 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.bn_12, features.bn_5, features.bn_6, features.bn_7, features.bn_8, features.bn_9, features.conv_10, features.conv_13, features.conv_6, features.conv_7, features.conv_8, features.conv_9, features.pool_3, features.relu_12, features.relu_5, features.relu_6, features.relu_7, features.relu_8, features.relu_9
+/old_Users/jgafur/LTH/manuscript/Tranfer/utils.py:452: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast():
+2026-10-26 16:11:15,264 - WARNING - Unsupported operator aten::max_pool2d encountered 4 time(s)
+2026-10-26 16:11:15,264 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+features.bn_12, features.bn_5, features.bn_6, features.bn_7, features.bn_8, features.bn_9, features.conv_10, features.conv_13, features.conv_6, features.conv_7, features.conv_8, features.conv_9, features.pool_3, features.relu_12, features.relu_5, features.relu_6, features.relu_7, features.relu_8, features.relu_9
+[•] Running diagnostics for Dynamic_Region_All_Combined_quant...
+[•] Quantization enabled: torch.bfloat16
+Saved memory CSV to outputs/diagnostics/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/Dynamic_Region_All_Combined_quant_memory.csv
+Saved memory plot to outputs/diagnostics/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/Dynamic_Region_All_Combined_quant_memory.svg
+[•] Extracting explainability data for Dynamic_Region_All_Combined_quant...
+[✓] Weight distribution figure saved to outputs/diagnostics/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/Dynamic_Region_All_Combined_quant_explainability_weight_distributions.svg
+[✓] Saved explainability arrays to outputs/diagnostics/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/Dynamic_Region_All_Combined_quant_explainability.npz
+[✓] Explainability figure saved to outputs/diagnostics/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/Dynamic_Region_All_Combined_quant_explainability.svg
+[✓] Diagnostics complete for Dynamic_Region_All_Combined_quant
+[✓] Saved plot: outputs/diagnostics/VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/JF_Dynamic_Region_All_Combined_quant_metrics.svg
+[✓] Saved metrics for 'Dynamic_Region_All_Combined_quant_JF' → VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/metrics/VGG16_CIFAR10_metrics_20261026_161155_936811_242660.json
+[✓] Merged 3 metrics files → VGG16_Cifar10_checkpoint_Finetuned_0.914101.pth_epochs100_pretrain300/metrics/merged_metrics.json
+[✓] Experiment 'Dynamic_Region_All_Combined_quant' completed.
+16:12:21 [INFO] Scanning for metrics files matching epochs=100, pretrain=300
+16:12:30 [INFO] Successfully parsed 66 experiment rows.
+16:12:51 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar100__accuracy.svg
+16:12:59 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar100__params.svg
+16:13:04 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar100__flops.svg
+16:13:04 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar100__memory.svg
+16:13:05 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar10__accuracy.svg
+16:13:10 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar10__params.svg
+16:13:18 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar10__flops.svg
+16:13:25 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_cifar10__memory.svg
+16:14:08 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_tinyimagenet_accuracy.svg
+16:14:18 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_tinyimagenet_params.svg
+16:14:55 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_tinyimagenet_flops.svg
+16:15:06 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/ConvNeXt_tinyimagenet_memory.svg
+16:15:14 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar100__accuracy.svg
+16:15:17 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar100__params.svg
+16:15:18 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar100__flops.svg
+16:15:20 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar100__memory.svg
+16:15:21 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar10__accuracy.svg
+16:15:21 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar10__params.svg
+16:15:22 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar10__flops.svg
+16:15:22 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/InceptionNet_cifar10__memory.svg
+16:15:26 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/InceptionNet_tinyimagenet_accuracy.svg
+16:15:27 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/InceptionNet_tinyimagenet_params.svg
+16:15:29 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/InceptionNet_tinyimagenet_flops.svg
+16:15:35 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/InceptionNet_tinyimagenet_memory.svg
+16:15:48 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar100__accuracy.svg
+16:15:48 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar100__params.svg
+16:15:53 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar100__flops.svg
+16:15:54 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar100__memory.svg
+16:16:02 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar10__accuracy.svg
+16:16:08 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar10__params.svg
+16:16:08 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar10__flops.svg
+16:16:17 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/MobileNet_cifar10__memory.svg
+16:16:17 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar100__accuracy.svg
+16:16:18 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar100__params.svg
+16:16:29 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar100__flops.svg
+16:16:35 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar100__memory.svg
+16:16:38 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar10__accuracy.svg
+16:16:49 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar10__params.svg
+16:16:49 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar10__flops.svg
+16:17:05 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at outputs/figures/ep100_pre300/individual_plots/RegNetX_400MF_cifar10__memory.svg
+16:17:12 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar100_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar100__accuracy.svg
+16:17:17 [INFO] [FIG1] Saved params plot for VGG16/cifar100_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar100__params.svg
+16:17:24 [INFO] [FIG1] Saved flops plot for VGG16/cifar100_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar100__flops.svg
+16:17:25 [INFO] [FIG1] Saved memory plot for VGG16/cifar100_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar100__memory.svg
+16:17:25 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar10__accuracy.svg
+16:17:26 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar10__params.svg
+16:17:26 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar10__flops.svg
+16:17:26 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at outputs/figures/ep100_pre300/individual_plots/VGG16_cifar10__memory.svg
+16:17:27 [INFO] [FIG1] Saved accuracy plot for VGG16/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/VGG16_tinyimagenet_accuracy.svg
+16:17:27 [INFO] [FIG1] Saved params plot for VGG16/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/VGG16_tinyimagenet_params.svg
+16:17:28 [INFO] [FIG1] Saved flops plot for VGG16/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/VGG16_tinyimagenet_flops.svg
+16:17:28 [INFO] [FIG1] Saved memory plot for VGG16/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/VGG16_tinyimagenet_memory.svg
+16:17:28 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar100__accuracy.svg
+16:17:29 [INFO] [FIG1] Saved params plot for XceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar100__params.svg
+16:17:29 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar100__flops.svg
+16:17:29 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar100_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar100__memory.svg
+16:17:29 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar10__accuracy.svg
+16:17:30 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar10__params.svg
+16:17:39 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar10__flops.svg
+16:17:51 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at outputs/figures/ep100_pre300/individual_plots/XceptionNet_cifar10__memory.svg
+16:17:52 [INFO] [FIG1] Saved accuracy plot for XceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/XceptionNet_tinyimagenet_accuracy.svg
+16:18:01 [INFO] [FIG1] Saved params plot for XceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/XceptionNet_tinyimagenet_params.svg
+16:18:01 [INFO] [FIG1] Saved flops plot for XceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/XceptionNet_tinyimagenet_flops.svg
+16:18:05 [INFO] [FIG1] Saved memory plot for XceptionNet/tinyimagenet at outputs/figures/ep100_pre300/individual_plots/XceptionNet_tinyimagenet_memory.svg
+16:18:05 [INFO] Starting FIG2 generation. Target epochs: 100, pretrain: 300
+16:18:05 [ERROR] No Layer_Statistics directories found matching **/epochs100_pretrain300/**/Layer_Statistics
+16:18:05 [DEBUG] [FIG3] No valid variance CSV found for ConvNeXt/cifar100_
+16:18:05 [DEBUG] [FIG3] No valid variance CSV found for MobileNet/cifar100_
+16:18:05 [DEBUG] [FIG3] No valid variance CSV found for RegNetX_400MF/cifar100_
+16:18:05 [DEBUG] [FIG3] No valid variance CSV found for VGG16/cifar100_
+16:18:05 [DEBUG] [FIG3] No valid variance CSV found for ConvNeXt/cifar10_
+16:18:05 [DEBUG] [FIG3] No valid variance CSV found for VGG16/cifar10_
+16:18:05 [DEBUG] [FIG3] No valid variance CSV found for InceptionNet/tinyimagenet
+16:18:05 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+16:18:05 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar100_
+16:18:23 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/hardware_efficiency/ConvNeXt_cifar100__hardware_profile.svg
+16:18:23 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar100_
+16:18:23 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar100_
+16:19:16 [INFO] [FIG5] Saved hardware profile plot for MobileNet/cifar100_ at outputs/figures/ep100_pre300/hardware_efficiency/MobileNet_cifar100__hardware_profile.svg
+16:19:16 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar100_
+16:20:00 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/hardware_efficiency/RegNetX_400MF_cifar100__hardware_profile.svg
+16:20:00 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar100_
+16:20:00 [INFO] [FIG5] Saved hardware profile plot for VGG16/cifar100_ at outputs/figures/ep100_pre300/hardware_efficiency/VGG16_cifar100__hardware_profile.svg
+16:20:00 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar100_
+16:20:00 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
+16:20:17 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/hardware_efficiency/ConvNeXt_cifar10__hardware_profile.svg
+16:20:17 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
+16:20:17 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
+16:20:17 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
+16:20:17 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
+16:20:17 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar10_
+16:20:17 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/tinyimagenet
+16:20:17 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
+16:20:17 [INFO] [FIG5] Processing Hardware Profiles for VGG16/tinyimagenet
+16:20:17 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/tinyimagenet
+16:20:17 [INFO] [FIG5] Saved unified best_candidates plot at outputs/figures/ep100_pre300/hardware_efficiency/unified_best_candidates.svg
+16:20:19 [INFO] [FIG5] Saved unified worst_candidates plot at outputs/figures/ep100_pre300/hardware_efficiency/unified_worst_candidates.svg
+16:20:25 [INFO] [FIG5] Saved global trade-off scatter plot at outputs/figures/ep100_pre300/hardware_efficiency/global_tradeoff_scatter.svg
+16:20:25 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+16:20:25 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
+16:20:42 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at outputs/figures/ep100_pre300/learning_curves/InceptionNet_cifar100_training_curves.svg
+16:20:42 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at outputs/figures/ep100_pre300/learning_curves/InceptionNet_tinyimagenet_training_curves.svg
+16:20:43 [INFO] [FIG6] Saved sequential training curves for XceptionNet/tinyimagenet at outputs/figures/ep100_pre300/learning_curves/XceptionNet_tinyimagenet_training_curves.svg
+16:20:55 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at outputs/figures/ep100_pre300/learning_curves/InceptionNet_cifar10_training_curves.svg
+16:20:55 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at outputs/figures/ep100_pre300/learning_curves/ConvNeXt_tinyimagenet_training_curves.svg
+16:20:56 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at outputs/figures/ep100_pre300/learning_curves/XceptionNet_cifar10_training_curves.svg
+16:20:56 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/learning_curves/ConvNeXt_cifar100_training_curves.svg
+16:20:57 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at outputs/figures/ep100_pre300/learning_curves/InceptionNet_tinyimagenet_training_curves.svg
+16:21:07 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/learning_curves/ConvNeXt_cifar10_training_curves.svg
+16:21:10 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at outputs/figures/ep100_pre300/learning_curves/VGG16_cifar10_training_curves.svg
+16:21:16 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/learning_curves/RegNetX_400MF_cifar100_training_curves.svg
+16:21:16 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/learning_curves/RegNetX_400MF_cifar100_training_curves.svg
+16:21:21 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at outputs/figures/ep100_pre300/learning_curves/RegNetX_400MF_cifar10_training_curves.svg
+16:21:33 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at outputs/figures/ep100_pre300/learning_curves/XceptionNet_cifar100_training_curves.svg
+16:22:07 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at outputs/figures/ep100_pre300/learning_curves/MobileNet_cifar100_training_curves.svg
+16:22:40 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at outputs/figures/ep100_pre300/learning_curves/InceptionNet_cifar10_training_curves.svg
+16:22:50 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at outputs/figures/ep100_pre300/learning_curves/ConvNeXt_tinyimagenet_training_curves.svg
+16:22:51 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at outputs/figures/ep100_pre300/learning_curves/MobileNet_cifar10_training_curves.svg
+16:22:53 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at outputs/figures/ep100_pre300/learning_curves/VGG16_cifar100_training_curves.svg
+16:22:59 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at outputs/figures/ep100_pre300/learning_curves/XceptionNet_cifar100_training_curves.svg
+16:23:06 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar100_ at outputs/figures/ep100_pre300/learning_curves/VGG16_cifar100_training_curves.svg
+16:23:14 [INFO] [FIG6] Saved sequential training curves for VGG16/tinyimagenet at outputs/figures/ep100_pre300/learning_curves/VGG16_tinyimagenet_training_curves.svg
+16:23:16 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at outputs/figures/ep100_pre300/learning_curves/RegNetX_400MF_cifar10_training_curves.svg
+16:23:17 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at outputs/figures/ep100_pre300/learning_curves/MobileNet_cifar100_training_curves.svg
+16:23:22 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/learning_curves/ConvNeXt_cifar100_training_curves.svg
+16:23:29 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/learning_curves/ConvNeXt_cifar10_training_curves.svg
+16:23:32 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at outputs/figures/ep100_pre300/learning_curves/VGG16_cifar10_training_curves.svg
+16:23:39 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at outputs/figures/ep100_pre300/learning_curves/MobileNet_cifar10_training_curves.svg
+16:23:46 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at outputs/figures/ep100_pre300/learning_curves/InceptionNet_cifar100_training_curves.svg
+16:23:51 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar100_ at outputs/figures/ep100_pre300/convergence/ConvNeXt_cifar100_convergence_metrics.svg
+16:24:19 [INFO] [FIG7] Saved convergence metrics plot for MobileNet/cifar100_ at outputs/figures/ep100_pre300/convergence/MobileNet_cifar100_convergence_metrics.svg
+16:24:19 [INFO] [FIG7] Saved convergence metrics plot for RegNetX_400MF/cifar100_ at outputs/figures/ep100_pre300/convergence/RegNetX_400MF_cifar100_convergence_metrics.svg
+16:24:22 [INFO] [FIG7] Saved convergence metrics plot for VGG16/cifar100_ at outputs/figures/ep100_pre300/convergence/VGG16_cifar100_convergence_metrics.svg
+16:24:29 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar10_ at outputs/figures/ep100_pre300/convergence/ConvNeXt_cifar10_convergence_metrics.svg
+16:24:29 [INFO] [FIG8] Saved accuracy vs params plot at outputs/figures/ep100_pre300/accuracy_vs_params/accuracy_vs_params.svg
+16:24:34 [INFO] [FIG9] Saved FLOPs vs memory heat‑map at outputs/figures/ep100_pre300/flops_vs_memory/flops_vs_memory.svg
+16:24:34 [INFO] [SUMMARY] Generating master lookup JSON...
+16:24:38 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/outputs/tables/ep100_pre300/master_results_summary.json
+16:26:46 [INFO] Script completed.
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep100_pre300/scorer_ablation

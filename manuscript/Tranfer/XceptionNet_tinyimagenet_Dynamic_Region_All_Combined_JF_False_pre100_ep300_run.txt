@@ -1,0 +1,694 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='XceptionNet', dataset='tinyimagenet', pretrain=100, epochs=300, experiment='Dynamic_Region_All_Combined', quant=False, scorer='local_dev')
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading Tiny ImageNet data for XceptionNet...
+Loading Tiny ImageNet data for XceptionNet...
+[DEBUG] Base checkpoint path resolved: None
+[INFO] Legacy regions JSON absent; using ablation map: XceptionNet_tinyimagenet_epochs300_pretrain100_scorerlocal_dev_JF_discovered_regions.json
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Dynamic_Region_All_Combined'
+============================================================
+
+[INFO] Validating JSON configuration map at: XceptionNet_tinyimagenet_epochs300_pretrain100_scorerlocal_dev_JF_discovered_regions.json
+[DEBUG] Loaded 8 configurations from map.
+[WARN] Trained baseline NOT found at XceptionNet_tinyimagenet_None_epochs300_pretrain100/checkpoints/final_JF_Control.pt. Falling back to initial un-finetuned checkpoint.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Dynamic_Region_All_Combined ---
+    Budget allocated: 300 epochs
+
+=== Running JF experiment ===
+[•] Collapsing ranges [('middle_flow.0.rep.4.depthwise', 'middle_flow.0.rep.7.depthwise'), ('middle_flow.1.rep.4.depthwise', 'middle_flow.1.rep.7.depthwise'), ('middle_flow.3.rep.4.depthwise', 'middle_flow.3.rep.7.depthwise'), ('middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.pointwise'), ('block4.rep.1.depthwise', 'conv3.depthwise')] for Dynamic_Region_All_Combined
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (XceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as sequence with 5 pairs.
+[DEBUG] Total collapse targets: 5
+[INFO] Model parameter count before collapsing: 21,216,752
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'collapse_0': middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.0.rep.4.depthwise', 'middle_flow.0.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.0.rep.4.depthwise
+[INFO] End Target   : middle_flow.0.rep.7.depthwise
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.0.rep.4.depthwise' -> 'middle_flow.0.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.0.rep' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'middle_flow.0.rep'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 7
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 4 -> SeparableConv2d
+    [LAYER MAP] 5 -> BatchNorm2d
+    [LAYER MAP] 6 -> ReLU
+    [LAYER MAP] 7 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'middle_flow.0.rep.4'
+[DEBUG] Hooking End Node   : 'middle_flow.0.rep.7'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'middle_flow.0.rep.4' -> 'middle_flow.0.rep.7'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 728, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 728, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 21,216,752
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.0.rep.7.depthwise'...
+
+[STEP] Searching for next nn.Linear after 'middle_flow.0.rep.7.depthwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 69 -> 231)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] Final block output shape: (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 728, 4, 4)
+         out_channels=728
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 728, 4, 4)
+    - out_channels             : 728
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.0.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'middle_flow.0.rep'
+[DEBUG] Layer Indices    : 4 -> 7
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 728 (in) -> 728 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 728, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(728, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'middle_flow.0.rep'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 21,216,752
+[INFO] Post-collapse : 20,673,664
+[INFO] Net Change    : -543,088
+[DEBUG] Local validation candidate selected from replacement slot: '4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 728, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.0.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.0.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 728, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'middle_flow.0.rep.5' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.0.rep.5' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.0.rep.6' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.0.rep.6' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.0.rep.7' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.0.rep.7' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.0.rep.8' (BatchNorm2d) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.0.rep.8' executed successfully, output shape: (64, 728, 4, 4)
+[RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'middle_flow.0.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'collapse_0' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.30s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_1': middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.1.rep.4.depthwise', 'middle_flow.1.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.1.rep.4.depthwise
+[INFO] End Target   : middle_flow.1.rep.7.depthwise
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.1.rep.4.depthwise' -> 'middle_flow.1.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.1.rep' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'middle_flow.1.rep'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 7
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 4 -> SeparableConv2d
+    [LAYER MAP] 5 -> BatchNorm2d
+    [LAYER MAP] 6 -> ReLU
+    [LAYER MAP] 7 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'middle_flow.1.rep.4'
+[DEBUG] Hooking End Node   : 'middle_flow.1.rep.7'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'middle_flow.1.rep.4' -> 'middle_flow.1.rep.7'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 728, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 728, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 20,673,664
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.1.rep.7.depthwise'...
+
+[STEP] Searching for next nn.Linear after 'middle_flow.1.rep.7.depthwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 87 -> 231)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] Final block output shape: (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 728, 4, 4)
+         out_channels=728
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 728, 4, 4)
+    - out_channels             : 728
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.1.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'middle_flow.1.rep'
+[DEBUG] Layer Indices    : 4 -> 7
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 728 (in) -> 728 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 728, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(728, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'middle_flow.1.rep'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 20,673,664
+[INFO] Post-collapse : 20,130,576
+[INFO] Net Change    : -543,088
+[DEBUG] Local validation candidate selected from replacement slot: '4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 728, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.1.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.1.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 728, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'middle_flow.1.rep.5' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.1.rep.5' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.1.rep.6' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.1.rep.6' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.1.rep.7' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.1.rep.7' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.1.rep.8' (BatchNorm2d) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.1.rep.8' executed successfully, output shape: (64, 728, 4, 4)
+[RESULT] ✅ Downstream validation for 'middle_flow.1.rep' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'middle_flow.1.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'middle_flow.1.rep.4.depthwise' → 'middle_flow.1.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'collapse_1' (middle_flow.1.rep.4.depthwise → middle_flow.1.rep.7.depthwise) in 0.05s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_2': middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.3.rep.4.depthwise', 'middle_flow.3.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.3.rep.4.depthwise
+[INFO] End Target   : middle_flow.3.rep.7.depthwise
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.3.rep.4.depthwise' -> 'middle_flow.3.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.3.rep' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'middle_flow.3.rep'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 7
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 4 -> SeparableConv2d
+    [LAYER MAP] 5 -> BatchNorm2d
+    [LAYER MAP] 6 -> ReLU
+    [LAYER MAP] 7 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'middle_flow.3.rep.4'
+[DEBUG] Hooking End Node   : 'middle_flow.3.rep.7'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'middle_flow.3.rep.4' -> 'middle_flow.3.rep.7'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 728, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 728, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 20,130,576
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.3.rep.7.depthwise'...
+
+[STEP] Searching for next nn.Linear after 'middle_flow.3.rep.7.depthwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 123 -> 231)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] Final block output shape: (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 728, 4, 4)
+         out_channels=728
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 728, 4, 4)
+    - out_channels             : 728
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.3.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'middle_flow.3.rep'
+[DEBUG] Layer Indices    : 4 -> 7
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 728 (in) -> 728 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 728, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(728, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'middle_flow.3.rep'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 20,130,576
+[INFO] Post-collapse : 19,587,488
+[INFO] Net Change    : -543,088
+[DEBUG] Local validation candidate selected from replacement slot: '4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 728, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.3.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.3.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 728, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'middle_flow.3.rep.5' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.3.rep.5' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.3.rep.6' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.3.rep.6' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.3.rep.7' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.3.rep.7' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.3.rep.8' (BatchNorm2d) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.3.rep.8' executed successfully, output shape: (64, 728, 4, 4)
+[RESULT] ✅ Downstream validation for 'middle_flow.3.rep' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'middle_flow.3.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'middle_flow.3.rep.4.depthwise' → 'middle_flow.3.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'collapse_2' (middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.depthwise) in 0.05s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_3': middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise
+[STEP] Calling _collapse_block('middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.pointwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.7.rep.4.depthwise
+[INFO] End Target   : middle_flow.7.rep.7.pointwise
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.7.rep.4.depthwise' -> 'middle_flow.7.rep.7.pointwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.7.rep' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'middle_flow.7.rep'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 7
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 4 -> SeparableConv2d
+    [LAYER MAP] 5 -> BatchNorm2d
+    [LAYER MAP] 6 -> ReLU
+    [LAYER MAP] 7 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'middle_flow.7.rep.4'
+[DEBUG] Hooking End Node   : 'middle_flow.7.rep.7'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'middle_flow.7.rep.4' -> 'middle_flow.7.rep.7'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 728, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 728, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 19,587,488
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.7.rep.7.pointwise'...
+
+[STEP] Searching for next nn.Linear after 'middle_flow.7.rep.7.pointwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 196 -> 231)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] Final block output shape: (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 728, 4, 4)
+         out_channels=728
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 728, 4, 4)
+    - out_channels             : 728
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.7.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'middle_flow.7.rep'
+[DEBUG] Layer Indices    : 4 -> 7
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 728 (in) -> 728 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 728, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(728, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'middle_flow.7.rep'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 19,587,488
+[INFO] Post-collapse : 19,044,400
+[INFO] Net Change    : -543,088
+[DEBUG] Local validation candidate selected from replacement slot: '4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 728, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.7.rep' =====
+[DEBUG] start_idx=4, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.7.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 728, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'middle_flow.7.rep.5' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.7.rep.5' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.7.rep.6' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.7.rep.6' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.7.rep.7' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.7.rep.7' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.7.rep.8' (BatchNorm2d) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.7.rep.8' executed successfully, output shape: (64, 728, 4, 4)
+[RESULT] ✅ Downstream validation for 'middle_flow.7.rep' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'middle_flow.7.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'middle_flow.7.rep.4.depthwise' → 'middle_flow.7.rep.7.pointwise'
+[INFO] ✅ Successfully collapsed block 'collapse_3' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise) in 0.05s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[INFO] Processing collapse task 'collapse_4': block4.rep.1.depthwise → conv3.depthwise
+[STEP] Calling _collapse_block('block4.rep.1.depthwise', 'conv3.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : block4.rep.1.depthwise
+[INFO] End Target   : conv3.depthwise
+[DEBUG] Target Device Allocation: cuda
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'block4.rep.1.depthwise' -> 'conv3.depthwise'
+[DEBUG] [LCA] Resolved Container: '' | Type: XceptionNet
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : ''
+[DEBUG] Container Type  : XceptionNet
+[DEBUG] Slice Indices   : 5 to 6
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] block4 -> XceptionBlock
+    [LAYER MAP] conv3 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'block4'
+[DEBUG] Hooking End Node   : 'conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'block4' -> 'conv3'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 1536, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 1536, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 19,044,400
+
+[STEP 3] Probing graph for downstream classifier after 'conv3.depthwise'...
+
+[STEP] Searching for next nn.Linear after 'conv3.depthwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 219 -> 231)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 1536, 2, 2)
+[DEBUG] Determined out_channels=1536
+[DEBUG] Final block output shape: (64, 1536, 2, 2)
+[DEBUG] Determined out_channels=1536
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 1536, 2, 2)
+         out_channels=1536
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 1536, 2, 2)
+    - out_channels             : 1536
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'block4.rep.1.depthwise'
+============================================================
+[DEBUG] Target device    : cuda
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : ''
+[DEBUG] Layer Indices    : 5 -> 6
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 728 (in) -> 1536 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 1536, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(1536, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container '<root>'...
+[DEBUG] Updating root container in-place (Preserving attribute names).
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 19,044,400
+[INFO] Post-collapse : 16,544,016
+[INFO] Net Change    : -2,500,384
+[DEBUG] Local validation candidate selected from replacement slot: 'block4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 1536, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for '' =====
+[DEBUG] start_idx=5, device=cuda, has_next_linear=True
+[STEP] Searching for inserted collapsed module within ''...
+[DEBUG] Found inserted block candidate at index 5: 'block4'
+[STEP] Validating inserted module 'Sequential' at index 5...
+[DEBUG] Inserted module forward successful, output shape: (64, 1536, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module '.conv3' (SmartIdentity) with input shape (64, 1536, 2, 2)
+[DEBUG] Downstream '.conv3' executed successfully, output shape: (64, 1536, 2, 2)
+[DEBUG] Running downstream module '.bn3' (BatchNorm2d) with input shape (64, 1536, 2, 2)
+[DEBUG] Downstream '.bn3' executed successfully, output shape: (64, 1536, 2, 2)
+[DEBUG] Running downstream module '.relu3' (ReLU) with input shape (64, 1536, 2, 2)
+[DEBUG] Downstream '.relu3' executed successfully, output shape: (64, 1536, 2, 2)
+[DEBUG] Running downstream module '.conv4' (SeparableConv2d) with input shape (64, 1536, 2, 2)
+[DEBUG] Downstream '.conv4' executed successfully, output shape: (64, 2048, 2, 2)
+[DEBUG] Running downstream module '.bn4' (BatchNorm2d) with input shape (64, 2048, 2, 2)
+[DEBUG] Downstream '.bn4' executed successfully, output shape: (64, 2048, 2, 2)
+[DEBUG] Running downstream module '.relu4' (ReLU) with input shape (64, 2048, 2, 2)
+[DEBUG] Downstream '.relu4' executed successfully, output shape: (64, 2048, 2, 2)
+[DEBUG] Running downstream module '.pool' (_SafePool) with input shape (64, 2048, 2, 2)
+[DEBUG] Downstream '.pool' executed successfully, output shape: (64, 2048, 1, 1)
+[DEBUG] Running downstream module '.fc' (Linear) with input shape (64, 2048, 1, 1)
+[WARN] Downstream module '.fc' raised exception: mat1 and mat2 shapes cannot be multiplied (131072x1 and 2048x200)
+[INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'block4.rep.1.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'conv3.depthwise'
+[INFO] ✅ Successfully collapsed block 'collapse_4' (block4.rep.1.depthwise → conv3.depthwise) in 0.06s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 21,216,752
+[INFO] Parameters after : 16,544,016
+[INFO] ΔParams = +4,672,736 (expected ≤ 0)
+[INFO] Collapse counts: success=5, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.67s
+[RESULT] ✅ collapse_only complete. Total targets: 5 | success=5 | failed=0 | skipped=0
+[•] Starting experiment 'Dynamic_Region_All_Combined' in workflow 'JF' | Epoch Target: 300
+[•] No intermediate checkpoint found — starting fresh or inheriting from base.
+JF/Dynamic_Region_All_Combined:   0%|          | 0/300 [00:00<?, ?it/s]JF/Dynamic_Region_All_Combined:   0%|          | 0/300 [02:23<?, ?it/s, loss=4.6160, acc=6.45%, best=6.45%]JF/Dynamic_Region_All_Combined:   0%|          | 1/300 [02:25<12:05:06, 145.51s/it, loss=4.6160, acc=6.45%, best=6.45%]JF/Dynamic_Region_All_Combined:   0%|          | 1/300 [06:12<12:05:06, 145.51s/it, loss=4.0884, acc=12.98%, best=12.98%]JF/Dynamic_Region_All_Combined:   1%|          | 2/300 [06:26<16:41:05, 201.56s/it, loss=4.0884, acc=12.98%, best=12.98%]JF/Dynamic_Region_All_Combined:   1%|          | 2/300 [09:37<16:41:05, 201.56s/it, loss=3.8265, acc=16.97%, best=16.97%]JF/Dynamic_Region_All_Combined:   1%|          | 3/300 [09:58<17:01:01, 206.27s/it, loss=3.8265, acc=16.97%, best=16.97%]JF/Dynamic_Region_All_Combined:   1%|          | 3/300 [12:18<17:01:01, 206.27s/it, loss=3.6200, acc=20.32%, best=20.32%]JF/Dynamic_Region_All_Combined:   1%|▏         | 4/300 [12:29<15:10:09, 184.49s/it, loss=3.6200, acc=20.32%, best=20.32%]JF/Dynamic_Region_All_Combined:   1%|▏         | 4/300 [16:06<15:10:09, 184.49s/it, loss=3.4382, acc=23.48%, best=23.48%]JF/Dynamic_Region_All_Combined:   2%|▏         | 5/300 [16:36<16:57:37, 206.97s/it, loss=3.4382, acc=23.48%, best=23.48%]JF/Dynamic_Region_All_Combined:   2%|▏         | 5/300 [18:59<16:57:37, 206.97s/it, loss=3.3008, acc=25.98%, best=25.98%]JF/Dynamic_Region_All_Combined:   2%|▏         | 6/300 [19:47<16:28:30, 201.74s/it, loss=3.3008, acc=25.98%, best=25.98%]JF/Dynamic_Region_All_Combined:   2%|▏         | 6/300 [23:59<16:28:30, 201.74s/it, loss=3.1177, acc=29.10%, best=29.10%]JF/Dynamic_Region_All_Combined:   2%|▏         | 7/300 [24:14<18:08:54, 222.99s/it, loss=3.1177, acc=29.10%, best=29.10%]JF/Dynamic_Region_All_Combined:   2%|▏         | 7/300 [26:43<18:08:54, 222.99s/it, loss=2.9949, acc=31.38%, best=31.38%]JF/Dynamic_Region_All_Combined:   3%|▎         | 8/300 [26:59<16:35:02, 204.46s/it, loss=2.9949, acc=31.38%, best=31.38%]JF/Dynamic_Region_All_Combined:   3%|▎         | 8/300 [30:29<16:35:02, 204.46s/it, loss=2.8746, acc=33.70%, best=33.70%]JF/Dynamic_Region_All_Combined:   3%|▎         | 9/300 [30:40<16:56:25, 209.57s/it, loss=2.8746, acc=33.70%, best=33.70%]JF/Dynamic_Region_All_Combined:   3%|▎         | 9/300 [34:37<16:56:25, 209.57s/it, loss=2.7732, acc=35.69%, best=35.69%]JF/Dynamic_Region_All_Combined:   3%|▎         | 10/300 [36:02<19:40:55, 244.33s/it, loss=2.7732, acc=35.69%, best=35.69%]JF/Dynamic_Region_All_Combined:   3%|▎         | 10/300 [38:26<19:40:55, 244.33s/it, loss=2.6672, acc=37.59%, best=37.59%]JF/Dynamic_Region_All_Combined:   4%|▎         | 11/300 [38:41<17:30:59, 218.20s/it, loss=2.6672, acc=37.59%, best=37.59%]JF/Dynamic_Region_All_Combined:   4%|▎         | 11/300 [41:04<17:30:59, 218.20s/it, loss=2.5690, acc=39.40%, best=39.40%]JF/Dynamic_Region_All_Combined:   4%|▍         | 12/300 [41:34<16:21:26, 204.47s/it, loss=2.5690, acc=39.40%, best=39.40%]JF/Dynamic_Region_All_Combined:   4%|▍         | 12/300 [43:59<16:21:26, 204.47s/it, loss=2.4850, acc=41.18%, best=41.18%]JF/Dynamic_Region_All_Combined:   4%|▍         | 13/300 [44:22<15:26:12, 193.63s/it, loss=2.4850, acc=41.18%, best=41.18%]JF/Dynamic_Region_All_Combined:   4%|▍         | 13/300 [46:46<15:26:12, 193.63s/it, loss=2.3996, acc=42.71%, best=42.71%]JF/Dynamic_Region_All_Combined:   5%|▍         | 14/300 [47:24<15:04:57, 189.85s/it, loss=2.3996, acc=42.71%, best=42.71%]JF/Dynamic_Region_All_Combined:   5%|▍         | 14/300 [49:34<15:04:57, 189.85s/it, loss=2.3216, acc=44.38%, best=44.38%]JF/Dynamic_Region_All_Combined:   5%|▌         | 15/300 [50:06<14:22:37, 181.61s/it, loss=2.3216, acc=44.38%, best=44.38%]JF/Dynamic_Region_All_Combined:   5%|▌         | 15/300 [52:36<14:22:37, 181.61s/it, loss=2.2449, acc=45.82%, best=45.82%]JF/Dynamic_Region_All_Combined:   5%|▌         | 16/300 [52:44<13:46:24, 174.59s/it, loss=2.2449, acc=45.82%, best=45.82%]JF/Dynamic_Region_All_Combined:   5%|▌         | 16/300 [55:04<13:46:24, 174.59s/it, loss=2.1824, acc=47.15%, best=47.15%]JF/Dynamic_Region_All_Combined:   6%|▌         | 17/300 [56:16<14:35:42, 185.66s/it, loss=2.1824, acc=47.15%, best=47.15%]JF/Dynamic_Region_All_Combined:   6%|▌         | 17/300 [58:47<14:35:42, 185.66s/it, loss=2.1205, acc=48.54%, best=48.54%]JF/Dynamic_Region_All_Combined:   6%|▌         | 18/300 [58:49<13:46:48, 175.92s/it, loss=2.1205, acc=48.54%, best=48.54%]JF/Dynamic_Region_All_Combined:   6%|▌         | 18/300 [1:01:16<13:46:48, 175.92s/it, loss=2.0456, acc=49.85%, best=49.85%]JF/Dynamic_Region_All_Combined:   6%|▋         | 19/300 [1:01:59<14:03:54, 180.20s/it, loss=2.0456, acc=49.85%, best=49.85%]JF/Dynamic_Region_All_Combined:   6%|▋         | 19/300 [1:04:36<14:03:54, 180.20s/it, loss=1.9983, acc=51.00%, best=51.00%]JF/Dynamic_Region_All_Combined:   7%|▋         | 20/300 [1:04:56<13:55:46, 179.09s/it, loss=1.9983, acc=51.00%, best=51.00%]JF/Dynamic_Region_All_Combined:   7%|▋         | 20/300 [1:07:50<13:55:46, 179.09s/it, loss=1.9388, acc=52.24%, best=52.24%]JF/Dynamic_Region_All_Combined:   7%|▋         | 21/300 [1:08:24<14:32:59, 187.74s/it, loss=1.9388, acc=52.24%, best=52.24%]JF/Dynamic_Region_All_Combined:   7%|▋         | 21/300 [1:11:40<14:32:59, 187.74s/it, loss=1.8888, acc=53.30%, best=53.30%]JF/Dynamic_Region_All_Combined:   7%|▋         | 22/300 [1:13:09<16:45:37, 217.04s/it, loss=1.8888, acc=53.30%, best=53.30%]JF/Dynamic_Region_All_Combined:   7%|▋         | 22/300 [1:16:11<16:45:37, 217.04s/it, loss=1.8256, acc=54.73%, best=54.73%]JF/Dynamic_Region_All_Combined:   8%|▊         | 23/300 [1:17:12<17:18:11, 224.88s/it, loss=1.8256, acc=54.73%, best=54.73%]JF/Dynamic_Region_All_Combined:   8%|▊         | 23/300 [1:20:50<17:18:11, 224.88s/it, loss=1.7762, acc=55.83%, best=55.83%]JF/Dynamic_Region_All_Combined:   8%|▊         | 24/300 [1:21:28<17:57:19, 234.20s/it, loss=1.7762, acc=55.83%, best=55.83%]JF/Dynamic_Region_All_Combined:   8%|▊         | 24/300 [1:24:11<17:57:19, 234.20s/it, loss=1.7365, acc=56.66%, best=56.66%]JF/Dynamic_Region_All_Combined:   8%|▊         | 25/300 [1:24:53<17:13:38, 225.52s/it, loss=1.7365, acc=56.66%, best=56.66%]JF/Dynamic_Region_All_Combined:   8%|▊         | 25/300 [1:27:19<17:13:38, 225.52s/it, loss=1.6849, acc=57.92%, best=57.92%]JF/Dynamic_Region_All_Combined:   9%|▊         | 26/300 [1:27:30<15:35:07, 204.77s/it, loss=1.6849, acc=57.92%, best=57.92%]JF/Dynamic_Region_All_Combined:   9%|▊         | 26/300 [1:30:16<15:35:07, 204.77s/it, loss=1.6452, acc=58.71%, best=58.71%]JF/Dynamic_Region_All_Combined:   9%|▉         | 27/300 [1:30:35<15:04:46, 198.85s/it, loss=1.6452, acc=58.71%, best=58.71%]JF/Dynamic_Region_All_Combined:   9%|▉         | 27/300 [1:32:47<15:04:46, 198.85s/it, loss=1.5910, acc=60.10%, best=60.10%]JF/Dynamic_Region_All_Combined:   9%|▉         | 28/300 [1:33:01<13:49:25, 182.96s/it, loss=1.5910, acc=60.10%, best=60.10%]JF/Dynamic_Region_All_Combined:   9%|▉         | 28/300 [1:36:59<13:49:25, 182.96s/it, loss=1.5604, acc=60.60%, best=60.60%]JF/Dynamic_Region_All_Combined:  10%|▉         | 29/300 [1:37:22<15:33:06, 206.59s/it, loss=1.5604, acc=60.60%, best=60.60%]JF/Dynamic_Region_All_Combined:  10%|▉         | 29/300 [1:39:32<15:33:06, 206.59s/it, loss=1.5187, acc=61.66%, best=61.66%]JF/Dynamic_Region_All_Combined:  10%|█         | 30/300 [1:39:39<13:55:19, 185.63s/it, loss=1.5187, acc=61.66%, best=61.66%]JF/Dynamic_Region_All_Combined:  10%|█         | 30/300 [1:41:50<13:55:19, 185.63s/it, loss=1.4827, acc=62.44%, best=62.44%]JF/Dynamic_Region_All_Combined:  10%|█         | 31/300 [1:41:52<12:41:18, 169.81s/it, loss=1.4827, acc=62.44%, best=62.44%]JF/Dynamic_Region_All_Combined:  10%|█         | 31/300 [1:44:04<12:41:18, 169.81s/it, loss=1.4410, acc=63.33%, best=63.33%]JF/Dynamic_Region_All_Combined:  11%|█         | 32/300 [1:44:05<11:49:23, 158.82s/it, loss=1.4410, acc=63.33%, best=63.33%]JF/Dynamic_Region_All_Combined:  11%|█         | 32/300 [1:46:46<11:49:23, 158.82s/it, loss=1.4196, acc=64.13%, best=64.13%]JF/Dynamic_Region_All_Combined:  11%|█         | 33/300 [1:47:04<12:13:21, 164.80s/it, loss=1.4196, acc=64.13%, best=64.13%]JF/Dynamic_Region_All_Combined:  11%|█         | 33/300 [1:51:24<12:13:21, 164.80s/it, loss=1.3819, acc=64.97%, best=64.97%]JF/Dynamic_Region_All_Combined:  11%|█▏        | 34/300 [1:52:07<15:14:33, 206.29s/it, loss=1.3819, acc=64.97%, best=64.97%]JF/Dynamic_Region_All_Combined:  11%|█▏        | 34/300 [1:54:25<15:14:33, 206.29s/it, loss=1.3605, acc=65.50%, best=65.50%]JF/Dynamic_Region_All_Combined:  12%|█▏        | 35/300 [1:54:47<14:09:46, 192.40s/it, loss=1.3605, acc=65.50%, best=65.50%]

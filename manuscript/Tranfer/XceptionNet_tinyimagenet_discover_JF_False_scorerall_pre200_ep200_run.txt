@@ -1,0 +1,2052 @@
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='XceptionNet', dataset='tinyimagenet', pretrain=200, epochs=200, experiment='discover', quant=False, scorer='all')
+============================================================
+
+[INFO] Hardware detected: CUDA (CUDA Available: True)
+Loading Tiny ImageNet data for XceptionNet...
+Loading Tiny ImageNet data for XceptionNet...
+2026-10-26 14:42:18,854 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+middle_flow.0.rep.5, middle_flow.0.rep.6, middle_flow.0.rep.7
+2026-10-26 14:42:19,265 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+middle_flow.2
+2026-10-26 14:42:19,631 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+middle_flow.2.rep.5, middle_flow.2.rep.6, middle_flow.2.rep.7
+2026-10-26 14:42:19,999 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+middle_flow.3.rep.5, middle_flow.3.rep.6, middle_flow.3.rep.7
+2026-10-26 14:42:20,371 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+middle_flow.7.rep.5, middle_flow.7.rep.6, middle_flow.7.rep.7
+2026-10-26 14:42:20,770 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+conv3
+2026-10-26 14:42:24,813 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+bn3, conv3, conv4, relu3
+2026-10-26 14:42:25,560 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+middle_flow.4.rep.5, middle_flow.4.rep.6, middle_flow.4.rep.7
+2026-10-26 14:42:25,932 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+middle_flow.5.rep.5, middle_flow.5.rep.6, middle_flow.5.rep.7
+2026-10-26 14:42:26,301 - WARNING - The following submodules of the model were never called during the trace of the graph. They may be unused, or they were accessed by direct calls to .forward() or via other python methods. In the latter case they will have zeros for statistics, though their statistics will still contribute to their parent calling module.
+middle_flow.7.rep.5, middle_flow.7.rep.6, middle_flow.7.rep.7
+[DEBUG] Base checkpoint path resolved: None
+
+============================================================
+[MODE] STAGE 1: DISCOVERY & PRE-FLIGHT PROBE
+       Model: XceptionNet | Dataset: tinyimagenet
+============================================================
+
+[INFO] Phase 1: Validating/Training 'Control' Baseline...
+
+--- Running experiment: Control ---
+    Budget allocated: 200 epochs
+
+=== Running JF experiment ===
+[•] Resumption detected. Architecture will be prepared for checkpoint loading.
+[•] Starting experiment 'Control' in workflow 'JF' | Epoch Target: 200
+[✓] Experiment 'Control' already completed. Found: final_JF_Control.pt
+    Skipping training and reloading metrics...
+
+[INFO] Phase 2: Loading Finalized Baseline Weights...
+[INFO] Found existing change stats at outputs/discovery/XceptionNet/tinyimagenet/epochs200_pretrain200/change_stats.json. Skipping probe.
+
+[INFO] === Scorer ablation ('all'): local_dev vs change vs cka ===
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator (scorer=local_dev) ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 21,216,752 | Base FLOPs: 377,290,496
+
+[DEBUG] --- Phase 2A: Scanning 75 layers for Raw Candidates ---
+[DEBUG] [SCAN] Layer 00 | stem.0                                        | h=-0.737081 | status=Veto     | reason=veto window (idx=0, cutoff=18)
+[DEBUG] [SCAN] Layer 01 | stem.3                                        | h=1.000000 | status=Veto     | reason=veto window (idx=1, cutoff=18)
+[DEBUG] [SCAN] Layer 02 | block1.skip.0                                 | h=-0.207023 | status=Veto     | reason=veto window (idx=2, cutoff=18)
+[DEBUG] [SCAN] Layer 03 | block1.rep.0.depthwise                        | h=-0.969964 | status=Veto     | reason=veto window (idx=3, cutoff=18)
+[DEBUG] [SCAN] Layer 04 | block1.rep.0.pointwise                        | h=-0.823183 | status=Veto     | reason=veto window (idx=4, cutoff=18)
+[DEBUG] [SCAN] Layer 05 | block1.rep.3.depthwise                        | h=-0.964640 | status=Veto     | reason=veto window (idx=5, cutoff=18)
+[DEBUG] [SCAN] Layer 06 | block1.rep.3.pointwise                        | h=-0.175391 | status=Veto     | reason=veto window (idx=6, cutoff=18)
+[DEBUG] [SCAN] Layer 07 | block2.skip.0                                 | h=1.000000 | status=Veto     | reason=veto window (idx=7, cutoff=18)
+[DEBUG] [SCAN] Layer 08 | block2.rep.1.depthwise                        | h=-0.944801 | status=Veto     | reason=veto window (idx=8, cutoff=18)
+[DEBUG] [SCAN] Layer 09 | block2.rep.1.pointwise                        | h=-0.110787 | status=Veto     | reason=veto window (idx=9, cutoff=18)
+[DEBUG] [SCAN] Layer 10 | block2.rep.4.depthwise                        | h=-0.989384 | status=Veto     | reason=veto window (idx=10, cutoff=18)
+[DEBUG] [SCAN] Layer 11 | block2.rep.4.pointwise                        | h=-0.369563 | status=Veto     | reason=veto window (idx=11, cutoff=18)
+[DEBUG] [SCAN] Layer 12 | block3.skip.0                                 | h=1.000000 | status=Veto     | reason=veto window (idx=12, cutoff=18)
+[DEBUG] [SCAN] Layer 13 | block3.rep.1.depthwise                        | h=-0.973159 | status=Veto     | reason=veto window (idx=13, cutoff=18)
+[DEBUG] [SCAN] Layer 14 | block3.rep.1.pointwise                        | h=0.886323 | status=Veto     | reason=veto window (idx=14, cutoff=18)
+[DEBUG] [SCAN] Layer 15 | block3.rep.4.depthwise                        | h=-0.998762 | status=Veto     | reason=veto window (idx=15, cutoff=18)
+[DEBUG] [SCAN] Layer 16 | block3.rep.4.pointwise                        | h=-0.642587 | status=Veto     | reason=veto window (idx=16, cutoff=18)
+[DEBUG] [SCAN] Layer 17 | middle_flow.0.rep.1.depthwise                 | h=-0.992789 | status=Veto     | reason=veto window (idx=17, cutoff=18)
+[DEBUG] [SCAN] Layer 18 | middle_flow.0.rep.1.pointwise                 | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [SCAN] Layer 22 | middle_flow.0.rep.7.pointwise                 | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Accepted raw candidate middle_flow.0.rep.4.depthwise -> middle_flow.0.rep.7.depthwise | layers=3 | parametric=3
+[DEBUG] [SCAN] Layer 24 | middle_flow.1.rep.1.pointwise                 | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment middle_flow.1.rep.1.depthwise -> middle_flow.1.rep.1.depthwise | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 30 | middle_flow.2.rep.1.pointwise                 | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Accepted raw candidate middle_flow.1.rep.4.depthwise -> middle_flow.2.rep.1.depthwise | layers=5 | parametric=5
+[DEBUG] [SCAN] Layer 34 | middle_flow.2.rep.7.pointwise                 | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Accepted raw candidate middle_flow.2.rep.4.depthwise -> middle_flow.2.rep.7.depthwise | layers=3 | parametric=3
+[DEBUG] [SCAN] Layer 36 | middle_flow.3.rep.1.pointwise                 | h=0.306382 | status=Rejected | reason=non-negative or NaN h=0.306382
+[DEBUG] [RAW] Discarding short fragment middle_flow.3.rep.1.depthwise -> middle_flow.3.rep.1.depthwise | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 40 | middle_flow.3.rep.7.pointwise                 | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Accepted raw candidate middle_flow.3.rep.4.depthwise -> middle_flow.3.rep.7.depthwise | layers=3 | parametric=3
+[DEBUG] [SCAN] Layer 42 | middle_flow.4.rep.1.pointwise                 | h=0.826808 | status=Rejected | reason=non-negative or NaN h=0.826808
+[DEBUG] [RAW] Discarding short fragment middle_flow.4.rep.1.depthwise -> middle_flow.4.rep.1.depthwise | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 44 | middle_flow.4.rep.4.pointwise                 | h=0.465241 | status=Rejected | reason=non-negative or NaN h=0.465241
+[DEBUG] [RAW] Discarding short fragment middle_flow.4.rep.4.depthwise -> middle_flow.4.rep.4.depthwise | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 46 | middle_flow.4.rep.7.pointwise                 | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment middle_flow.4.rep.7.depthwise -> middle_flow.4.rep.7.depthwise | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 48 | middle_flow.5.rep.1.pointwise                 | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment middle_flow.5.rep.1.depthwise -> middle_flow.5.rep.1.depthwise | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 50 | middle_flow.5.rep.4.pointwise                 | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment middle_flow.5.rep.4.depthwise -> middle_flow.5.rep.4.depthwise | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 52 | middle_flow.5.rep.7.pointwise                 | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment middle_flow.5.rep.7.depthwise -> middle_flow.5.rep.7.depthwise | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 54 | middle_flow.6.rep.1.pointwise                 | h=0.567648 | status=Rejected | reason=non-negative or NaN h=0.567648
+[DEBUG] [RAW] Discarding short fragment middle_flow.6.rep.1.depthwise -> middle_flow.6.rep.1.depthwise | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 56 | middle_flow.6.rep.4.pointwise                 | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment middle_flow.6.rep.4.depthwise -> middle_flow.6.rep.4.depthwise | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 58 | middle_flow.6.rep.7.pointwise                 | h=0.566195 | status=Rejected | reason=non-negative or NaN h=0.566195
+[DEBUG] [RAW] Discarding short fragment middle_flow.6.rep.7.depthwise -> middle_flow.6.rep.7.depthwise | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 60 | middle_flow.7.rep.1.pointwise                 | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Discarding short fragment middle_flow.7.rep.1.depthwise -> middle_flow.7.rep.1.depthwise | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 65 | block4.skip.0                                 | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Accepted raw candidate middle_flow.7.rep.4.depthwise -> middle_flow.7.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [SCAN] Layer 71 | conv3.pointwise                               | h=1.000000 | status=Rejected | reason=non-negative or NaN h=1.000000
+[DEBUG] [RAW] Accepted raw candidate block4.rep.1.depthwise -> conv3.depthwise | layers=5 | parametric=5
+[DEBUG] [SCAN] Layer 74 | fc                                            | h=1.000000 | status=Rejected | reason=invalid target type=Linear
+[DEBUG] [RAW] Accepted raw candidate conv4.depthwise -> conv4.pointwise | layers=2 | parametric=2
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [EXPAND] Starting from raw region middle_flow.0.rep.4.depthwise -> middle_flow.0.rep.7.depthwise | layers=3 | parametric=3
+[DEBUG] [EXPAND] Final candidate middle_flow.0.rep.4.depthwise -> middle_flow.0.rep.7.depthwise | layers=3 | parametric=3
+[DEBUG] [EXPAND] Starting from raw region middle_flow.1.rep.4.depthwise -> middle_flow.2.rep.1.depthwise | layers=5 | parametric=5
+[DEBUG] [EXPAND] Final candidate middle_flow.1.rep.4.depthwise -> middle_flow.2.rep.1.depthwise | layers=5 | parametric=5
+[DEBUG] [EXPAND] Starting from raw region middle_flow.2.rep.4.depthwise -> middle_flow.2.rep.7.depthwise | layers=3 | parametric=3
+[DEBUG] [EXPAND] Final candidate middle_flow.2.rep.4.depthwise -> middle_flow.2.rep.7.depthwise | layers=3 | parametric=3
+[DEBUG] [EXPAND] Starting from raw region middle_flow.3.rep.4.depthwise -> middle_flow.3.rep.7.depthwise | layers=3 | parametric=3
+[DEBUG] [EXPAND] Final candidate middle_flow.3.rep.4.depthwise -> middle_flow.3.rep.7.depthwise | layers=3 | parametric=3
+[DEBUG] [EXPAND] Starting from raw region middle_flow.7.rep.4.depthwise -> middle_flow.7.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [EXPAND] Final candidate middle_flow.7.rep.4.depthwise -> middle_flow.7.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [EXPAND] Starting from raw region block4.rep.1.depthwise -> conv3.depthwise | layers=5 | parametric=5
+[DEBUG] [EXPAND] Final candidate block4.rep.1.depthwise -> conv3.depthwise | layers=5 | parametric=5
+[DEBUG] [EXPAND] Starting from raw region conv4.depthwise -> conv4.pointwise | layers=2 | parametric=2
+[DEBUG] [-] Trapped region: conv4.depthwise. Marking as Gap.
+
+[INFO] Phase 3: Evaluating 6 Candidate Regions (with Smart Boundary Shaving)...
+    [STEP] Testing sequence: middle_flow.0.rep.4.depthwise -> middle_flow.0.rep.7.depthwise (Length: 3)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (XceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 21,216,752
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.0.rep.4.depthwise', 'middle_flow.0.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.0.rep.4.depthwise
+[INFO] End Target   : middle_flow.0.rep.7.depthwise
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.0.rep.4.depthwise' -> 'middle_flow.0.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.0.rep' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'middle_flow.0.rep'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 7
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 4 -> SeparableConv2d
+    [LAYER MAP] 5 -> BatchNorm2d
+    [LAYER MAP] 6 -> ReLU
+    [LAYER MAP] 7 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'middle_flow.0.rep.4'
+[DEBUG] Hooking End Node   : 'middle_flow.0.rep.7'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'middle_flow.0.rep.4' -> 'middle_flow.0.rep.7'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 728, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 728, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 21,216,752
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.0.rep.7.depthwise'...
+
+[STEP] Searching for next nn.Linear after 'middle_flow.0.rep.7.depthwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 66 -> 226)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] Final block output shape: (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 728, 4, 4)
+         out_channels=728
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 728, 4, 4)
+    - out_channels             : 728
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.0.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'middle_flow.0.rep'
+[DEBUG] Layer Indices    : 4 -> 7
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 728 (in) -> 728 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 728, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(728, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'middle_flow.0.rep'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 21,216,752
+[INFO] Post-collapse : 20,673,664
+[INFO] Net Change    : -543,088
+[DEBUG] Local validation candidate selected from replacement slot: '4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 728, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.0.rep' =====
+[DEBUG] start_idx=4, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.0.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 728, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'middle_flow.0.rep.5' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.0.rep.5' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.0.rep.6' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.0.rep.6' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.0.rep.7' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.0.rep.7' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.0.rep.8' (BatchNorm2d) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.0.rep.8' executed successfully, output shape: (64, 728, 4, 4)
+[RESULT] ✅ Downstream validation for 'middle_flow.0.rep' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'middle_flow.0.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'middle_flow.0.rep.4.depthwise' → 'middle_flow.0.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'test' (middle_flow.0.rep.4.depthwise → middle_flow.0.rep.7.depthwise) in 0.22s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 21,216,752
+[INFO] Parameters after : 20,673,664
+[INFO] ΔParams = +543,088 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.34s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=middle_flow.0.rep.4.depthwise -> middle_flow.0.rep.7.depthwise | Params (21,216,752 -> 20,673,664, saved 543,088, 2.5597%) | FLOPs (377,290,496 -> 368,612,736, saved 8,677,760, 2.3000%)
+    [STEP] Testing sequence: middle_flow.1.rep.4.depthwise -> middle_flow.2.rep.1.depthwise (Length: 5)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (XceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 21,216,752
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': middle_flow.1.rep.4.depthwise → middle_flow.2.rep.1.depthwise
+[STEP] Calling _collapse_block('middle_flow.1.rep.4.depthwise', 'middle_flow.2.rep.1.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.1.rep.4.depthwise
+[INFO] End Target   : middle_flow.2.rep.1.depthwise
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.1.rep.4.depthwise' -> 'middle_flow.2.rep.1.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'middle_flow'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 1 to 2
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] 1 -> XceptionBlock
+    [LAYER MAP] 2 -> XceptionBlock
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'middle_flow.1'
+[DEBUG] Hooking End Node   : 'middle_flow.2'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'middle_flow.1' -> 'middle_flow.2'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 728, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 728, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 21,216,752
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.2.rep.1.depthwise'...
+
+[STEP] Searching for next nn.Linear after 'middle_flow.2.rep.1.depthwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 92 -> 226)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] Final block output shape: (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 728, 4, 4)
+         out_channels=728
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 728, 4, 4)
+    - out_channels             : 728
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.1.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'middle_flow'
+[DEBUG] Layer Indices    : 1 -> 2
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 728 (in) -> 728 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 728, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(728, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'middle_flow'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 21,216,752
+[INFO] Post-collapse : 18,520,240
+[INFO] Net Change    : -2,696,512
+[DEBUG] Local validation candidate selected from replacement slot: '1'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 728, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow' =====
+[DEBUG] start_idx=1, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow'...
+[DEBUG] Found inserted block candidate at index 1: '1'
+[STEP] Validating inserted module 'Sequential' at index 1...
+[DEBUG] Inserted module forward successful, output shape: (64, 728, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'middle_flow.2' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.2' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.3' (XceptionBlock) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.3' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.4' (XceptionBlock) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.4' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.5' (XceptionBlock) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.5' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.6' (XceptionBlock) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.6' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.7' (XceptionBlock) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.7' executed successfully, output shape: (64, 728, 4, 4)
+[RESULT] ✅ Downstream validation for 'middle_flow' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'middle_flow.1.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'middle_flow.1.rep.4.depthwise' → 'middle_flow.2.rep.1.depthwise'
+[INFO] ✅ Successfully collapsed block 'test' (middle_flow.1.rep.4.depthwise → middle_flow.2.rep.1.depthwise) in 0.04s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 20 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 21,216,752
+[INFO] Parameters after : 18,520,240
+[INFO] ΔParams = +2,696,512 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.07s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=middle_flow.1.rep.4.depthwise -> middle_flow.2.rep.1.depthwise | Params (21,216,752 -> 18,520,240, saved 2,696,512, 12.7094%) | FLOPs (377,290,496 -> 334,157,952, saved 43,132,544, 11.4322%)
+    [STEP] Testing sequence: middle_flow.2.rep.4.depthwise -> middle_flow.2.rep.7.depthwise (Length: 3)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (XceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 21,216,752
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.2.rep.4.depthwise', 'middle_flow.2.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.2.rep.4.depthwise
+[INFO] End Target   : middle_flow.2.rep.7.depthwise
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.2.rep.4.depthwise' -> 'middle_flow.2.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.2.rep' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'middle_flow.2.rep'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 7
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 4 -> SeparableConv2d
+    [LAYER MAP] 5 -> BatchNorm2d
+    [LAYER MAP] 6 -> ReLU
+    [LAYER MAP] 7 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'middle_flow.2.rep.4'
+[DEBUG] Hooking End Node   : 'middle_flow.2.rep.7'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'middle_flow.2.rep.4' -> 'middle_flow.2.rep.7'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 728, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 728, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 21,216,752
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.2.rep.7.depthwise'...
+
+[STEP] Searching for next nn.Linear after 'middle_flow.2.rep.7.depthwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 102 -> 226)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] Final block output shape: (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 728, 4, 4)
+         out_channels=728
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 728, 4, 4)
+    - out_channels             : 728
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.2.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'middle_flow.2.rep'
+[DEBUG] Layer Indices    : 4 -> 7
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 728 (in) -> 728 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 728, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(728, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'middle_flow.2.rep'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 21,216,752
+[INFO] Post-collapse : 20,673,664
+[INFO] Net Change    : -543,088
+[DEBUG] Local validation candidate selected from replacement slot: '4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 728, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.2.rep' =====
+[DEBUG] start_idx=4, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.2.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 728, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'middle_flow.2.rep.5' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.2.rep.5' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.2.rep.6' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.2.rep.6' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.2.rep.7' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.2.rep.7' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.2.rep.8' (BatchNorm2d) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.2.rep.8' executed successfully, output shape: (64, 728, 4, 4)
+[RESULT] ✅ Downstream validation for 'middle_flow.2.rep' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'middle_flow.2.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'middle_flow.2.rep.4.depthwise' → 'middle_flow.2.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'test' (middle_flow.2.rep.4.depthwise → middle_flow.2.rep.7.depthwise) in 0.03s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 21,216,752
+[INFO] Parameters after : 20,673,664
+[INFO] ΔParams = +543,088 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.07s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=middle_flow.2.rep.4.depthwise -> middle_flow.2.rep.7.depthwise | Params (21,216,752 -> 20,673,664, saved 543,088, 2.5597%) | FLOPs (377,290,496 -> 368,612,736, saved 8,677,760, 2.3000%)
+    [STEP] Testing sequence: middle_flow.3.rep.4.depthwise -> middle_flow.3.rep.7.depthwise (Length: 3)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (XceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 21,216,752
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.depthwise
+[STEP] Calling _collapse_block('middle_flow.3.rep.4.depthwise', 'middle_flow.3.rep.7.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.3.rep.4.depthwise
+[INFO] End Target   : middle_flow.3.rep.7.depthwise
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.3.rep.4.depthwise' -> 'middle_flow.3.rep.7.depthwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.3.rep' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'middle_flow.3.rep'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 7
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 4 -> SeparableConv2d
+    [LAYER MAP] 5 -> BatchNorm2d
+    [LAYER MAP] 6 -> ReLU
+    [LAYER MAP] 7 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'middle_flow.3.rep.4'
+[DEBUG] Hooking End Node   : 'middle_flow.3.rep.7'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'middle_flow.3.rep.4' -> 'middle_flow.3.rep.7'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 728, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 728, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 21,216,752
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.3.rep.7.depthwise'...
+
+[STEP] Searching for next nn.Linear after 'middle_flow.3.rep.7.depthwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 120 -> 226)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] Final block output shape: (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 728, 4, 4)
+         out_channels=728
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 728, 4, 4)
+    - out_channels             : 728
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.3.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'middle_flow.3.rep'
+[DEBUG] Layer Indices    : 4 -> 7
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 728 (in) -> 728 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 728, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(728, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'middle_flow.3.rep'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 21,216,752
+[INFO] Post-collapse : 20,673,664
+[INFO] Net Change    : -543,088
+[DEBUG] Local validation candidate selected from replacement slot: '4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 728, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.3.rep' =====
+[DEBUG] start_idx=4, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.3.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 728, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'middle_flow.3.rep.5' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.3.rep.5' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.3.rep.6' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.3.rep.6' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.3.rep.7' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.3.rep.7' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.3.rep.8' (BatchNorm2d) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.3.rep.8' executed successfully, output shape: (64, 728, 4, 4)
+[RESULT] ✅ Downstream validation for 'middle_flow.3.rep' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'middle_flow.3.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'middle_flow.3.rep.4.depthwise' → 'middle_flow.3.rep.7.depthwise'
+[INFO] ✅ Successfully collapsed block 'test' (middle_flow.3.rep.4.depthwise → middle_flow.3.rep.7.depthwise) in 0.04s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 21,216,752
+[INFO] Parameters after : 20,673,664
+[INFO] ΔParams = +543,088 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.07s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=middle_flow.3.rep.4.depthwise -> middle_flow.3.rep.7.depthwise | Params (21,216,752 -> 20,673,664, saved 543,088, 2.5597%) | FLOPs (377,290,496 -> 368,612,736, saved 8,677,760, 2.3000%)
+    [STEP] Testing sequence: middle_flow.7.rep.4.depthwise -> middle_flow.7.rep.7.pointwise (Length: 4)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (XceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 21,216,752
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise
+[STEP] Calling _collapse_block('middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.pointwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.7.rep.4.depthwise
+[INFO] End Target   : middle_flow.7.rep.7.pointwise
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.7.rep.4.depthwise' -> 'middle_flow.7.rep.7.pointwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.7.rep' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'middle_flow.7.rep'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 7
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 4 -> SeparableConv2d
+    [LAYER MAP] 5 -> BatchNorm2d
+    [LAYER MAP] 6 -> ReLU
+    [LAYER MAP] 7 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'middle_flow.7.rep.4'
+[DEBUG] Hooking End Node   : 'middle_flow.7.rep.7'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'middle_flow.7.rep.4' -> 'middle_flow.7.rep.7'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 728, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 728, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 21,216,752
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.7.rep.7.pointwise'...
+
+[STEP] Searching for next nn.Linear after 'middle_flow.7.rep.7.pointwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 193 -> 226)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] Final block output shape: (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 728, 4, 4)
+         out_channels=728
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 728, 4, 4)
+    - out_channels             : 728
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.7.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'middle_flow.7.rep'
+[DEBUG] Layer Indices    : 4 -> 7
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 728 (in) -> 728 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 728, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(728, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'middle_flow.7.rep'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 21,216,752
+[INFO] Post-collapse : 20,673,664
+[INFO] Net Change    : -543,088
+[DEBUG] Local validation candidate selected from replacement slot: '4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 728, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.7.rep' =====
+[DEBUG] start_idx=4, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.7.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 728, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'middle_flow.7.rep.5' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.7.rep.5' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.7.rep.6' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.7.rep.6' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.7.rep.7' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.7.rep.7' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.7.rep.8' (BatchNorm2d) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.7.rep.8' executed successfully, output shape: (64, 728, 4, 4)
+[RESULT] ✅ Downstream validation for 'middle_flow.7.rep' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'middle_flow.7.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'middle_flow.7.rep.4.depthwise' → 'middle_flow.7.rep.7.pointwise'
+[INFO] ✅ Successfully collapsed block 'test' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise) in 0.03s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 21,216,752
+[INFO] Parameters after : 20,673,664
+[INFO] ΔParams = +543,088 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.07s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=middle_flow.7.rep.4.depthwise -> middle_flow.7.rep.7.pointwise | Params (21,216,752 -> 20,673,664, saved 543,088, 2.5597%) | FLOPs (377,290,496 -> 368,612,736, saved 8,677,760, 2.3000%)
+    [STEP] Testing sequence: block4.rep.1.depthwise -> conv3.depthwise (Length: 5)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (XceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 21,216,752
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': block4.rep.1.depthwise → conv3.depthwise
+[STEP] Calling _collapse_block('block4.rep.1.depthwise', 'conv3.depthwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : block4.rep.1.depthwise
+[INFO] End Target   : conv3.depthwise
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'block4.rep.1.depthwise' -> 'conv3.depthwise'
+[DEBUG] [LCA] Resolved Container: '' | Type: XceptionNet
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : ''
+[DEBUG] Container Type  : XceptionNet
+[DEBUG] Slice Indices   : 5 to 6
+[DEBUG] Captured Layers : 2 total
+    [LAYER MAP] block4 -> XceptionBlock
+    [LAYER MAP] conv3 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'block4'
+[DEBUG] Hooking End Node   : 'conv3'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'block4' -> 'conv3'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 1536, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 1536, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 21,216,752
+
+[STEP 3] Probing graph for downstream classifier after 'conv3.depthwise'...
+
+[STEP] Searching for next nn.Linear after 'conv3.depthwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 215 -> 226)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (2 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 1536, 2, 2)
+[DEBUG] Determined out_channels=1536
+[DEBUG] Final block output shape: (64, 1536, 2, 2)
+[DEBUG] Determined out_channels=1536
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 1536, 2, 2)
+         out_channels=1536
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 1536, 2, 2)
+    - out_channels             : 1536
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'block4.rep.1.depthwise'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : ''
+[DEBUG] Layer Indices    : 5 -> 6
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 728 (in) -> 1536 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 1536, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(1536, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container '<root>'...
+[DEBUG] Updating root container in-place (Preserving attribute names).
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 21,216,752
+[INFO] Post-collapse : 18,716,368
+[INFO] Net Change    : -2,500,384
+[DEBUG] Local validation candidate selected from replacement slot: 'block4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 1536, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for '' =====
+[DEBUG] start_idx=5, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within ''...
+[DEBUG] Found inserted block candidate at index 5: 'block4'
+[STEP] Validating inserted module 'Sequential' at index 5...
+[DEBUG] Inserted module forward successful, output shape: (64, 1536, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module '.conv3' (SmartIdentity) with input shape (64, 1536, 2, 2)
+[DEBUG] Downstream '.conv3' executed successfully, output shape: (64, 1536, 2, 2)
+[DEBUG] Running downstream module '.bn3' (BatchNorm2d) with input shape (64, 1536, 2, 2)
+[DEBUG] Downstream '.bn3' executed successfully, output shape: (64, 1536, 2, 2)
+[DEBUG] Running downstream module '.relu3' (ReLU) with input shape (64, 1536, 2, 2)
+[DEBUG] Downstream '.relu3' executed successfully, output shape: (64, 1536, 2, 2)
+[DEBUG] Running downstream module '.conv4' (SeparableConv2d) with input shape (64, 1536, 2, 2)
+[DEBUG] Downstream '.conv4' executed successfully, output shape: (64, 2048, 2, 2)
+[DEBUG] Running downstream module '.bn4' (BatchNorm2d) with input shape (64, 2048, 2, 2)
+[DEBUG] Downstream '.bn4' executed successfully, output shape: (64, 2048, 2, 2)
+[DEBUG] Running downstream module '.relu4' (ReLU) with input shape (64, 2048, 2, 2)
+[DEBUG] Downstream '.relu4' executed successfully, output shape: (64, 2048, 2, 2)
+[DEBUG] Running downstream module '.pool' (AdaptiveAvgPool2d) with input shape (64, 2048, 2, 2)
+[DEBUG] Downstream '.pool' executed successfully, output shape: (64, 2048, 1, 1)
+[DEBUG] Running downstream module '.fc' (Linear) with input shape (64, 2048, 1, 1)
+[WARN] Downstream module '.fc' raised exception: mat1 and mat2 shapes cannot be multiplied (131072x1 and 2048x200)
+[INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'block4.rep.1.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'block4.rep.1.depthwise' → 'conv3.depthwise'
+[INFO] ✅ Successfully collapsed block 'test' (block4.rep.1.depthwise → conv3.depthwise) in 0.07s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 21,216,752
+[INFO] Parameters after : 18,716,368
+[INFO] ΔParams = +2,500,384 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.10s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=block4.rep.1.depthwise -> conv3.depthwise | Params (21,216,752 -> 18,716,368, saved 2,500,384, 11.7850%) | FLOPs (377,290,496 -> 365,264,128, saved 12,026,368, 3.1876%)
+[INFO] Forced 6 sets into 'Dynamic_Region_All_Combined'.
+
+[DEBUG] --- Final Accepted Regions Summary ---
+[DEBUG] [FINAL] Set_0: middle_flow.0.rep.4.depthwise -> middle_flow.0.rep.7.depthwise | layers=3 | parametric=3
+[DEBUG] [FINAL] Set_1: middle_flow.1.rep.4.depthwise -> middle_flow.2.rep.1.depthwise | layers=5 | parametric=5
+[DEBUG] [FINAL] Set_2: middle_flow.2.rep.4.depthwise -> middle_flow.2.rep.7.depthwise | layers=3 | parametric=3
+[DEBUG] [FINAL] Set_3: middle_flow.3.rep.4.depthwise -> middle_flow.3.rep.7.depthwise | layers=3 | parametric=3
+[DEBUG] [FINAL] Set_4: middle_flow.7.rep.4.depthwise -> middle_flow.7.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [FINAL] Set_5: block4.rep.1.depthwise -> conv3.depthwise | layers=5 | parametric=5
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[✓] scorer=local_dev: 9 targets -> XceptionNet_tinyimagenet_epochs200_pretrain200_scorerlocal_dev_JF_discovered_regions.json
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator (scorer=change) ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 21,216,752 | Base FLOPs: 377,290,496
+[DEBUG] Scorer 'change': active threshold change <= 4.67827 (bottom 25%)
+
+[DEBUG] --- Phase 2A: Scanning 75 layers for Raw Candidates ---
+[DEBUG] [SCAN] Layer 00 | stem.0                                        | change=0.920261 | status=Veto     | reason=veto window (idx=0, cutoff=18)
+[DEBUG] [SCAN] Layer 01 | stem.3                                        | change=0.920261 | status=Veto     | reason=veto window (idx=1, cutoff=18)
+[DEBUG] [SCAN] Layer 02 | block1.skip.0                                 | change=0.317049 | status=Veto     | reason=veto window (idx=2, cutoff=18)
+[DEBUG] [SCAN] Layer 03 | block1.rep.0.depthwise                        | change=0.427532 | status=Veto     | reason=veto window (idx=3, cutoff=18)
+[DEBUG] [SCAN] Layer 04 | block1.rep.0.pointwise                        | change=0.427532 | status=Veto     | reason=veto window (idx=4, cutoff=18)
+[DEBUG] [SCAN] Layer 05 | block1.rep.3.depthwise                        | change=8.43628 | status=Veto     | reason=veto window (idx=5, cutoff=18)
+[DEBUG] [SCAN] Layer 06 | block1.rep.3.pointwise                        | change=8.43628 | status=Veto     | reason=veto window (idx=6, cutoff=18)
+[DEBUG] [SCAN] Layer 07 | block2.skip.0                                 | change=0.446781 | status=Veto     | reason=veto window (idx=7, cutoff=18)
+[DEBUG] [SCAN] Layer 08 | block2.rep.1.depthwise                        | change=0.354117 | status=Veto     | reason=veto window (idx=8, cutoff=18)
+[DEBUG] [SCAN] Layer 09 | block2.rep.1.pointwise                        | change=0.354117 | status=Veto     | reason=veto window (idx=9, cutoff=18)
+[DEBUG] [SCAN] Layer 10 | block2.rep.4.depthwise                        | change=13.7319 | status=Veto     | reason=veto window (idx=10, cutoff=18)
+[DEBUG] [SCAN] Layer 11 | block2.rep.4.pointwise                        | change=13.7319 | status=Veto     | reason=veto window (idx=11, cutoff=18)
+[DEBUG] [SCAN] Layer 12 | block3.skip.0                                 | change=0.46991 | status=Veto     | reason=veto window (idx=12, cutoff=18)
+[DEBUG] [SCAN] Layer 13 | block3.rep.1.depthwise                        | change=0.287905 | status=Veto     | reason=veto window (idx=13, cutoff=18)
+[DEBUG] [SCAN] Layer 14 | block3.rep.1.pointwise                        | change=0.287905 | status=Veto     | reason=veto window (idx=14, cutoff=18)
+[DEBUG] [SCAN] Layer 15 | block3.rep.4.depthwise                        | change=28.2922 | status=Veto     | reason=veto window (idx=15, cutoff=18)
+[DEBUG] [SCAN] Layer 16 | block3.rep.4.pointwise                        | change=28.2922 | status=Veto     | reason=veto window (idx=16, cutoff=18)
+[DEBUG] [SCAN] Layer 17 | middle_flow.0.rep.1.depthwise                 | change=33.5483 | status=Veto     | reason=veto window (idx=17, cutoff=18)
+[DEBUG] [SCAN] Layer 18 | middle_flow.0.rep.1.pointwise                 | change=33.5483 | status=Rejected | reason=change above active threshold (change=33.5483 > 4.67827)
+[DEBUG] [SCAN] Layer 19 | middle_flow.0.rep.4.depthwise                 | change=23.7455 | status=Rejected | reason=change above active threshold (change=23.7455 > 4.67827)
+[DEBUG] [SCAN] Layer 20 | middle_flow.0.rep.4.pointwise                 | change=23.7455 | status=Rejected | reason=change above active threshold (change=23.7455 > 4.67827)
+[DEBUG] [SCAN] Layer 21 | middle_flow.0.rep.7.depthwise                 | change=42.5719 | status=Rejected | reason=change above active threshold (change=42.5719 > 4.67827)
+[DEBUG] [SCAN] Layer 22 | middle_flow.0.rep.7.pointwise                 | change=42.5719 | status=Rejected | reason=change above active threshold (change=42.5719 > 4.67827)
+[DEBUG] [SCAN] Layer 23 | middle_flow.1.rep.1.depthwise                 | change=19.5275 | status=Rejected | reason=change above active threshold (change=19.5275 > 4.67827)
+[DEBUG] [SCAN] Layer 24 | middle_flow.1.rep.1.pointwise                 | change=19.5275 | status=Rejected | reason=change above active threshold (change=19.5275 > 4.67827)
+[DEBUG] [SCAN] Layer 25 | middle_flow.1.rep.4.depthwise                 | change=17.3546 | status=Rejected | reason=change above active threshold (change=17.3546 > 4.67827)
+[DEBUG] [SCAN] Layer 26 | middle_flow.1.rep.4.pointwise                 | change=17.3546 | status=Rejected | reason=change above active threshold (change=17.3546 > 4.67827)
+[DEBUG] [SCAN] Layer 27 | middle_flow.1.rep.7.depthwise                 | change=17.4959 | status=Rejected | reason=change above active threshold (change=17.4959 > 4.67827)
+[DEBUG] [SCAN] Layer 28 | middle_flow.1.rep.7.pointwise                 | change=17.4959 | status=Rejected | reason=change above active threshold (change=17.4959 > 4.67827)
+[DEBUG] [SCAN] Layer 29 | middle_flow.2.rep.1.depthwise                 | change=25.4495 | status=Rejected | reason=change above active threshold (change=25.4495 > 4.67827)
+[DEBUG] [SCAN] Layer 30 | middle_flow.2.rep.1.pointwise                 | change=25.4495 | status=Rejected | reason=change above active threshold (change=25.4495 > 4.67827)
+[DEBUG] [SCAN] Layer 31 | middle_flow.2.rep.4.depthwise                 | change=40.3598 | status=Rejected | reason=change above active threshold (change=40.3598 > 4.67827)
+[DEBUG] [SCAN] Layer 32 | middle_flow.2.rep.4.pointwise                 | change=40.3598 | status=Rejected | reason=change above active threshold (change=40.3598 > 4.67827)
+[DEBUG] [SCAN] Layer 33 | middle_flow.2.rep.7.depthwise                 | change=131.122 | status=Rejected | reason=change above active threshold (change=131.122 > 4.67827)
+[DEBUG] [SCAN] Layer 34 | middle_flow.2.rep.7.pointwise                 | change=131.122 | status=Rejected | reason=change above active threshold (change=131.122 > 4.67827)
+[DEBUG] [SCAN] Layer 35 | middle_flow.3.rep.1.depthwise                 | change=28.5143 | status=Rejected | reason=change above active threshold (change=28.5143 > 4.67827)
+[DEBUG] [SCAN] Layer 36 | middle_flow.3.rep.1.pointwise                 | change=28.5143 | status=Rejected | reason=change above active threshold (change=28.5143 > 4.67827)
+[DEBUG] [SCAN] Layer 37 | middle_flow.3.rep.4.depthwise                 | change=37.2312 | status=Rejected | reason=change above active threshold (change=37.2312 > 4.67827)
+[DEBUG] [SCAN] Layer 38 | middle_flow.3.rep.4.pointwise                 | change=37.2312 | status=Rejected | reason=change above active threshold (change=37.2312 > 4.67827)
+[DEBUG] [SCAN] Layer 39 | middle_flow.3.rep.7.depthwise                 | change=132.254 | status=Rejected | reason=change above active threshold (change=132.254 > 4.67827)
+[DEBUG] [SCAN] Layer 40 | middle_flow.3.rep.7.pointwise                 | change=132.254 | status=Rejected | reason=change above active threshold (change=132.254 > 4.67827)
+[DEBUG] [SCAN] Layer 41 | middle_flow.4.rep.1.depthwise                 | change=29.6632 | status=Rejected | reason=change above active threshold (change=29.6632 > 4.67827)
+[DEBUG] [SCAN] Layer 42 | middle_flow.4.rep.1.pointwise                 | change=29.6632 | status=Rejected | reason=change above active threshold (change=29.6632 > 4.67827)
+[DEBUG] [SCAN] Layer 43 | middle_flow.4.rep.4.depthwise                 | change=51.6366 | status=Rejected | reason=change above active threshold (change=51.6366 > 4.67827)
+[DEBUG] [SCAN] Layer 44 | middle_flow.4.rep.4.pointwise                 | change=51.6366 | status=Rejected | reason=change above active threshold (change=51.6366 > 4.67827)
+[DEBUG] [SCAN] Layer 45 | middle_flow.4.rep.7.depthwise                 | change=84.3838 | status=Rejected | reason=change above active threshold (change=84.3838 > 4.67827)
+[DEBUG] [SCAN] Layer 46 | middle_flow.4.rep.7.pointwise                 | change=84.3838 | status=Rejected | reason=change above active threshold (change=84.3838 > 4.67827)
+[DEBUG] [SCAN] Layer 47 | middle_flow.5.rep.1.depthwise                 | change=31.4141 | status=Rejected | reason=change above active threshold (change=31.4141 > 4.67827)
+[DEBUG] [SCAN] Layer 48 | middle_flow.5.rep.1.pointwise                 | change=31.4141 | status=Rejected | reason=change above active threshold (change=31.4141 > 4.67827)
+[DEBUG] [SCAN] Layer 49 | middle_flow.5.rep.4.depthwise                 | change=55.8869 | status=Rejected | reason=change above active threshold (change=55.8869 > 4.67827)
+[DEBUG] [SCAN] Layer 50 | middle_flow.5.rep.4.pointwise                 | change=55.8869 | status=Rejected | reason=change above active threshold (change=55.8869 > 4.67827)
+[DEBUG] [SCAN] Layer 51 | middle_flow.5.rep.7.depthwise                 | change=66.2639 | status=Rejected | reason=change above active threshold (change=66.2639 > 4.67827)
+[DEBUG] [SCAN] Layer 52 | middle_flow.5.rep.7.pointwise                 | change=66.2639 | status=Rejected | reason=change above active threshold (change=66.2639 > 4.67827)
+[DEBUG] [SCAN] Layer 53 | middle_flow.6.rep.1.depthwise                 | change=30.7051 | status=Rejected | reason=change above active threshold (change=30.7051 > 4.67827)
+[DEBUG] [SCAN] Layer 54 | middle_flow.6.rep.1.pointwise                 | change=30.7051 | status=Rejected | reason=change above active threshold (change=30.7051 > 4.67827)
+[DEBUG] [SCAN] Layer 55 | middle_flow.6.rep.4.depthwise                 | change=47.6311 | status=Rejected | reason=change above active threshold (change=47.6311 > 4.67827)
+[DEBUG] [SCAN] Layer 56 | middle_flow.6.rep.4.pointwise                 | change=47.6311 | status=Rejected | reason=change above active threshold (change=47.6311 > 4.67827)
+[DEBUG] [SCAN] Layer 57 | middle_flow.6.rep.7.depthwise                 | change=83.6705 | status=Rejected | reason=change above active threshold (change=83.6705 > 4.67827)
+[DEBUG] [SCAN] Layer 58 | middle_flow.6.rep.7.pointwise                 | change=83.6705 | status=Rejected | reason=change above active threshold (change=83.6705 > 4.67827)
+[DEBUG] [SCAN] Layer 59 | middle_flow.7.rep.1.depthwise                 | change=31.6227 | status=Rejected | reason=change above active threshold (change=31.6227 > 4.67827)
+[DEBUG] [SCAN] Layer 60 | middle_flow.7.rep.1.pointwise                 | change=31.6227 | status=Rejected | reason=change above active threshold (change=31.6227 > 4.67827)
+[DEBUG] [SCAN] Layer 61 | middle_flow.7.rep.4.depthwise                 | change=30.2783 | status=Rejected | reason=change above active threshold (change=30.2783 > 4.67827)
+[DEBUG] [SCAN] Layer 62 | middle_flow.7.rep.4.pointwise                 | change=30.2783 | status=Rejected | reason=change above active threshold (change=30.2783 > 4.67827)
+[DEBUG] [SCAN] Layer 63 | middle_flow.7.rep.7.depthwise                 | change=47.405 | status=Rejected | reason=change above active threshold (change=47.405 > 4.67827)
+[DEBUG] [SCAN] Layer 64 | middle_flow.7.rep.7.pointwise                 | change=47.405 | status=Rejected | reason=change above active threshold (change=47.405 > 4.67827)
+[DEBUG] [SCAN] Layer 66 | block4.rep.1.depthwise                        | change=18.8332 | status=Rejected | reason=change above active threshold (change=18.8332 > 4.67827)
+[DEBUG] [RAW] Discarding short fragment block4.skip.0 -> block4.skip.0 | layers=1 | parametric=1
+[DEBUG] [SCAN] Layer 67 | block4.rep.1.pointwise                        | change=18.8332 | status=Rejected | reason=change above active threshold (change=18.8332 > 4.67827)
+[DEBUG] [SCAN] Layer 74 | fc                                            | change=0.000107779 | status=Rejected | reason=invalid target type=Linear
+[DEBUG] [RAW] Accepted raw candidate block4.rep.4.depthwise -> conv4.pointwise | layers=6 | parametric=6
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [EXPAND] Starting from raw region block4.rep.4.depthwise -> conv4.pointwise | layers=6 | parametric=6
+[DEBUG] [EXPAND] Final candidate block4.rep.4.depthwise -> conv4.pointwise | layers=6 | parametric=6
+
+[INFO] Phase 3: Evaluating 1 Candidate Regions (with Smart Boundary Shaving)...
+    [STEP] Testing sequence: block4.rep.4.depthwise -> conv4.pointwise (Length: 6)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (XceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 21,216,752
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': block4.rep.4.depthwise → conv4.pointwise
+[STEP] Calling _collapse_block('block4.rep.4.depthwise', 'conv4.pointwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : block4.rep.4.depthwise
+[INFO] End Target   : conv4.pointwise
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'block4.rep.4.depthwise' -> 'conv4.pointwise'
+[DEBUG] [LCA] Resolved Container: '' | Type: XceptionNet
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : ''
+[DEBUG] Container Type  : XceptionNet
+[DEBUG] Slice Indices   : 5 to 9
+[DEBUG] Captured Layers : 5 total
+    [LAYER MAP] block4 -> XceptionBlock
+    [LAYER MAP] conv3 -> SeparableConv2d
+    [LAYER MAP] bn3 -> BatchNorm2d
+    [LAYER MAP] relu3 -> ReLU
+    [LAYER MAP] conv4 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'block4'
+[DEBUG] Hooking End Node   : 'conv4'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'block4' -> 'conv4'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 2048, 2, 2)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 2048, 2, 2)
+[DEBUG] Pre-collapse Parameter Count   : 21,216,752
+
+[STEP 3] Probing graph for downstream classifier after 'conv4.pointwise'...
+
+[STEP] Searching for next nn.Linear after 'conv4.pointwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 221 -> 226)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (5 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 2048, 2, 2)
+[DEBUG] Determined out_channels=2048
+[DEBUG] Final block output shape: (64, 2048, 2, 2)
+[DEBUG] Determined out_channels=2048
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 2048, 2, 2)
+         out_channels=2048
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 2048, 2, 2)
+    - out_channels             : 2048
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'block4.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : ''
+[DEBUG] Layer Indices    : 5 -> 9
+[DEBUG] Spatial Target   : H=2 x W=2
+[DEBUG] Channel Mapping  : 728 (in) -> 2048 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 2048, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(2048, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(2, 2))
+
+[STEP] Patching container '<root>'...
+[DEBUG] Updating root container in-place (Preserving attribute names).
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 21,216,752
+[INFO] Post-collapse : 15,927,504
+[INFO] Net Change    : -5,289,248
+[DEBUG] Local validation candidate selected from replacement slot: 'block4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 2048, 2, 2)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for '' =====
+[DEBUG] start_idx=5, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within ''...
+[DEBUG] Found inserted block candidate at index 5: 'block4'
+[STEP] Validating inserted module 'Sequential' at index 5...
+[DEBUG] Inserted module forward successful, output shape: (64, 2048, 2, 2)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module '.conv3' (SmartIdentity) with input shape (64, 2048, 2, 2)
+[DEBUG] Downstream '.conv3' executed successfully, output shape: (64, 2048, 2, 2)
+[DEBUG] Running downstream module '.bn3' (SmartIdentity) with input shape (64, 2048, 2, 2)
+[DEBUG] Downstream '.bn3' executed successfully, output shape: (64, 2048, 2, 2)
+[DEBUG] Running downstream module '.relu3' (SmartIdentity) with input shape (64, 2048, 2, 2)
+[DEBUG] Downstream '.relu3' executed successfully, output shape: (64, 2048, 2, 2)
+[DEBUG] Running downstream module '.conv4' (SmartIdentity) with input shape (64, 2048, 2, 2)
+[DEBUG] Downstream '.conv4' executed successfully, output shape: (64, 2048, 2, 2)
+[DEBUG] Running downstream module '.bn4' (BatchNorm2d) with input shape (64, 2048, 2, 2)
+[DEBUG] Downstream '.bn4' executed successfully, output shape: (64, 2048, 2, 2)
+[DEBUG] Running downstream module '.relu4' (ReLU) with input shape (64, 2048, 2, 2)
+[DEBUG] Downstream '.relu4' executed successfully, output shape: (64, 2048, 2, 2)
+[DEBUG] Running downstream module '.pool' (AdaptiveAvgPool2d) with input shape (64, 2048, 2, 2)
+[DEBUG] Downstream '.pool' executed successfully, output shape: (64, 2048, 1, 1)
+[DEBUG] Running downstream module '.fc' (Linear) with input shape (64, 2048, 1, 1)
+[WARN] Downstream module '.fc' raised exception: mat1 and mat2 shapes cannot be multiplied (131072x1 and 2048x200)
+[INFO] Target module 'fc' is nn.Linear. Allowing Corrective Pooling to handle it natively.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'block4.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'block4.rep.4.depthwise' → 'conv4.pointwise'
+[INFO] ✅ Successfully collapsed block 'test' (block4.rep.4.depthwise → conv4.pointwise) in 0.05s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 22 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 21,216,752
+[INFO] Parameters after : 15,927,504
+[INFO] ΔParams = +5,289,248 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.08s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=block4.rep.4.depthwise -> conv4.pointwise | Params (21,216,752 -> 15,927,504, saved 5,289,248, 24.9296%) | FLOPs (377,290,496 -> 358,601,984, saved 18,688,512, 4.9533%)
+
+[DEBUG] --- Final Accepted Regions Summary ---
+[DEBUG] [FINAL] Set_0: block4.rep.4.depthwise -> conv4.pointwise | layers=6 | parametric=6
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[✓] scorer=change: 3 targets -> XceptionNet_tinyimagenet_epochs200_pretrain200_scorerchange_JF_discovered_regions.json
+
+[DEBUG] ========================================
+[DEBUG] === Starting Dynamic Config Generator (scorer=cka) ===
+[DEBUG] ========================================
+[DEBUG] Base model parameters: 21,216,752 | Base FLOPs: 377,290,496
+[DEBUG] Scorer 'cka': active threshold cka >= 0.975833 (top 25%)
+
+[DEBUG] --- Phase 2A: Scanning 75 layers for Raw Candidates ---
+[DEBUG] [SCAN] Layer 00 | stem.0                                        | cka=0.628664 | status=Veto     | reason=veto window (idx=0, cutoff=18)
+[DEBUG] [SCAN] Layer 01 | stem.3                                        | cka=0.628664 | status=Veto     | reason=veto window (idx=1, cutoff=18)
+[DEBUG] [SCAN] Layer 02 | block1.skip.0                                 | cka=0.836054 | status=Veto     | reason=veto window (idx=2, cutoff=18)
+[DEBUG] [SCAN] Layer 03 | block1.rep.0.depthwise                        | cka=0.163632 | status=Veto     | reason=veto window (idx=3, cutoff=18)
+[DEBUG] [SCAN] Layer 04 | block1.rep.0.pointwise                        | cka=0.163632 | status=Veto     | reason=veto window (idx=4, cutoff=18)
+[DEBUG] [SCAN] Layer 05 | block1.rep.3.depthwise                        | cka=0.949722 | status=Veto     | reason=veto window (idx=5, cutoff=18)
+[DEBUG] [SCAN] Layer 06 | block1.rep.3.pointwise                        | cka=0.949722 | status=Veto     | reason=veto window (idx=6, cutoff=18)
+[DEBUG] [SCAN] Layer 07 | block2.skip.0                                 | cka=0.833807 | status=Veto     | reason=veto window (idx=7, cutoff=18)
+[DEBUG] [SCAN] Layer 08 | block2.rep.1.depthwise                        | cka=0.620951 | status=Veto     | reason=veto window (idx=8, cutoff=18)
+[DEBUG] [SCAN] Layer 09 | block2.rep.1.pointwise                        | cka=0.620951 | status=Veto     | reason=veto window (idx=9, cutoff=18)
+[DEBUG] [SCAN] Layer 10 | block2.rep.4.depthwise                        | cka=0.885626 | status=Veto     | reason=veto window (idx=10, cutoff=18)
+[DEBUG] [SCAN] Layer 11 | block2.rep.4.pointwise                        | cka=0.885626 | status=Veto     | reason=veto window (idx=11, cutoff=18)
+[DEBUG] [SCAN] Layer 12 | block3.skip.0                                 | cka=0.888021 | status=Veto     | reason=veto window (idx=12, cutoff=18)
+[DEBUG] [SCAN] Layer 13 | block3.rep.1.depthwise                        | cka=0.859301 | status=Veto     | reason=veto window (idx=13, cutoff=18)
+[DEBUG] [SCAN] Layer 14 | block3.rep.1.pointwise                        | cka=0.859301 | status=Veto     | reason=veto window (idx=14, cutoff=18)
+[DEBUG] [SCAN] Layer 15 | block3.rep.4.depthwise                        | cka=0.880624 | status=Veto     | reason=veto window (idx=15, cutoff=18)
+[DEBUG] [SCAN] Layer 16 | block3.rep.4.pointwise                        | cka=0.880624 | status=Veto     | reason=veto window (idx=16, cutoff=18)
+[DEBUG] [SCAN] Layer 17 | middle_flow.0.rep.1.depthwise                 | cka=0.497515 | status=Veto     | reason=veto window (idx=17, cutoff=18)
+[DEBUG] [SCAN] Layer 18 | middle_flow.0.rep.1.pointwise                 | cka=0.497515 | status=Rejected | reason=cka below active threshold (cka=0.497515 < 0.975833)
+[DEBUG] [SCAN] Layer 19 | middle_flow.0.rep.4.depthwise                 | cka=0.857151 | status=Rejected | reason=cka below active threshold (cka=0.857151 < 0.975833)
+[DEBUG] [SCAN] Layer 20 | middle_flow.0.rep.4.pointwise                 | cka=0.857151 | status=Rejected | reason=cka below active threshold (cka=0.857151 < 0.975833)
+[DEBUG] [SCAN] Layer 23 | middle_flow.1.rep.1.depthwise                 | cka=0.755073 | status=Rejected | reason=cka below active threshold (cka=0.755073 < 0.975833)
+[DEBUG] [RAW] Accepted raw candidate middle_flow.0.rep.7.depthwise -> middle_flow.0.rep.7.pointwise | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 24 | middle_flow.1.rep.1.pointwise                 | cka=0.755073 | status=Rejected | reason=cka below active threshold (cka=0.755073 < 0.975833)
+[DEBUG] [SCAN] Layer 25 | middle_flow.1.rep.4.depthwise                 | cka=0.861939 | status=Rejected | reason=cka below active threshold (cka=0.861939 < 0.975833)
+[DEBUG] [SCAN] Layer 26 | middle_flow.1.rep.4.pointwise                 | cka=0.861939 | status=Rejected | reason=cka below active threshold (cka=0.861939 < 0.975833)
+[DEBUG] [SCAN] Layer 27 | middle_flow.1.rep.7.depthwise                 | cka=0.7734 | status=Rejected | reason=cka below active threshold (cka=0.7734 < 0.975833)
+[DEBUG] [SCAN] Layer 28 | middle_flow.1.rep.7.pointwise                 | cka=0.7734 | status=Rejected | reason=cka below active threshold (cka=0.7734 < 0.975833)
+[DEBUG] [SCAN] Layer 29 | middle_flow.2.rep.1.depthwise                 | cka=0.584642 | status=Rejected | reason=cka below active threshold (cka=0.584642 < 0.975833)
+[DEBUG] [SCAN] Layer 30 | middle_flow.2.rep.1.pointwise                 | cka=0.584642 | status=Rejected | reason=cka below active threshold (cka=0.584642 < 0.975833)
+[DEBUG] [SCAN] Layer 31 | middle_flow.2.rep.4.depthwise                 | cka=0.950367 | status=Rejected | reason=cka below active threshold (cka=0.950367 < 0.975833)
+[DEBUG] [SCAN] Layer 32 | middle_flow.2.rep.4.pointwise                 | cka=0.950367 | status=Rejected | reason=cka below active threshold (cka=0.950367 < 0.975833)
+[DEBUG] [SCAN] Layer 35 | middle_flow.3.rep.1.depthwise                 | cka=0.640702 | status=Rejected | reason=cka below active threshold (cka=0.640702 < 0.975833)
+[DEBUG] [RAW] Accepted raw candidate middle_flow.2.rep.7.depthwise -> middle_flow.2.rep.7.pointwise | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 36 | middle_flow.3.rep.1.pointwise                 | cka=0.640702 | status=Rejected | reason=cka below active threshold (cka=0.640702 < 0.975833)
+[DEBUG] [SCAN] Layer 37 | middle_flow.3.rep.4.depthwise                 | cka=0.75382 | status=Rejected | reason=cka below active threshold (cka=0.75382 < 0.975833)
+[DEBUG] [SCAN] Layer 38 | middle_flow.3.rep.4.pointwise                 | cka=0.75382 | status=Rejected | reason=cka below active threshold (cka=0.75382 < 0.975833)
+[DEBUG] [SCAN] Layer 41 | middle_flow.4.rep.1.depthwise                 | cka=0.533833 | status=Rejected | reason=cka below active threshold (cka=0.533833 < 0.975833)
+[DEBUG] [RAW] Accepted raw candidate middle_flow.3.rep.7.depthwise -> middle_flow.3.rep.7.pointwise | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 42 | middle_flow.4.rep.1.pointwise                 | cka=0.533833 | status=Rejected | reason=cka below active threshold (cka=0.533833 < 0.975833)
+[DEBUG] [SCAN] Layer 47 | middle_flow.5.rep.1.depthwise                 | cka=0.660406 | status=Rejected | reason=cka below active threshold (cka=0.660406 < 0.975833)
+[DEBUG] [RAW] Accepted raw candidate middle_flow.4.rep.4.depthwise -> middle_flow.4.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [SCAN] Layer 48 | middle_flow.5.rep.1.pointwise                 | cka=0.660406 | status=Rejected | reason=cka below active threshold (cka=0.660406 < 0.975833)
+[DEBUG] [SCAN] Layer 53 | middle_flow.6.rep.1.depthwise                 | cka=0.724842 | status=Rejected | reason=cka below active threshold (cka=0.724842 < 0.975833)
+[DEBUG] [RAW] Accepted raw candidate middle_flow.5.rep.4.depthwise -> middle_flow.5.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [SCAN] Layer 54 | middle_flow.6.rep.1.pointwise                 | cka=0.724842 | status=Rejected | reason=cka below active threshold (cka=0.724842 < 0.975833)
+[DEBUG] [SCAN] Layer 55 | middle_flow.6.rep.4.depthwise                 | cka=0.940234 | status=Rejected | reason=cka below active threshold (cka=0.940234 < 0.975833)
+[DEBUG] [SCAN] Layer 56 | middle_flow.6.rep.4.pointwise                 | cka=0.940234 | status=Rejected | reason=cka below active threshold (cka=0.940234 < 0.975833)
+[DEBUG] [SCAN] Layer 59 | middle_flow.7.rep.1.depthwise                 | cka=0.591568 | status=Rejected | reason=cka below active threshold (cka=0.591568 < 0.975833)
+[DEBUG] [RAW] Accepted raw candidate middle_flow.6.rep.7.depthwise -> middle_flow.6.rep.7.pointwise | layers=2 | parametric=2
+[DEBUG] [SCAN] Layer 60 | middle_flow.7.rep.1.pointwise                 | cka=0.591568 | status=Rejected | reason=cka below active threshold (cka=0.591568 < 0.975833)
+[DEBUG] [SCAN] Layer 65 | block4.skip.0                                 | cka=0.767939 | status=Rejected | reason=cka below active threshold (cka=0.767939 < 0.975833)
+[DEBUG] [RAW] Accepted raw candidate middle_flow.7.rep.4.depthwise -> middle_flow.7.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [SCAN] Layer 66 | block4.rep.1.depthwise                        | cka=0.864431 | status=Rejected | reason=cka below active threshold (cka=0.864431 < 0.975833)
+[DEBUG] [SCAN] Layer 67 | block4.rep.1.pointwise                        | cka=0.864431 | status=Rejected | reason=cka below active threshold (cka=0.864431 < 0.975833)
+[DEBUG] [SCAN] Layer 68 | block4.rep.4.depthwise                        | cka=0.846234 | status=Rejected | reason=cka below active threshold (cka=0.846234 < 0.975833)
+[DEBUG] [SCAN] Layer 69 | block4.rep.4.pointwise                        | cka=0.846234 | status=Rejected | reason=cka below active threshold (cka=0.846234 < 0.975833)
+[DEBUG] [SCAN] Layer 70 | conv3.depthwise                               | cka=0.913124 | status=Rejected | reason=cka below active threshold (cka=0.913124 < 0.975833)
+[DEBUG] [SCAN] Layer 71 | conv3.pointwise                               | cka=0.913124 | status=Rejected | reason=cka below active threshold (cka=0.913124 < 0.975833)
+[DEBUG] [SCAN] Layer 72 | conv4.depthwise                               | cka=0.851125 | status=Rejected | reason=cka below active threshold (cka=0.851125 < 0.975833)
+[DEBUG] [SCAN] Layer 73 | conv4.pointwise                               | cka=0.851125 | status=Rejected | reason=cka below active threshold (cka=0.851125 < 0.975833)
+[DEBUG] [SCAN] Layer 74 | fc                                            | cka=0.404575 | status=Rejected | reason=invalid target type=Linear
+
+[DEBUG] --- Phase 2B: Starting Structural LCA Expansion ---
+[DEBUG] [EXPAND] Starting from raw region middle_flow.0.rep.7.depthwise -> middle_flow.0.rep.7.pointwise | layers=2 | parametric=2
+[DEBUG] [-] Trapped region: middle_flow.0.rep.7.depthwise. Marking as Gap.
+[DEBUG] [EXPAND] Starting from raw region middle_flow.2.rep.7.depthwise -> middle_flow.2.rep.7.pointwise | layers=2 | parametric=2
+[DEBUG] [-] Trapped region: middle_flow.2.rep.7.depthwise. Marking as Gap.
+[DEBUG] [EXPAND] Starting from raw region middle_flow.3.rep.7.depthwise -> middle_flow.3.rep.7.pointwise | layers=2 | parametric=2
+[DEBUG] [-] Trapped region: middle_flow.3.rep.7.depthwise. Marking as Gap.
+[DEBUG] [EXPAND] Starting from raw region middle_flow.4.rep.4.depthwise -> middle_flow.4.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [EXPAND] Final candidate middle_flow.4.rep.4.depthwise -> middle_flow.4.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [EXPAND] Starting from raw region middle_flow.5.rep.4.depthwise -> middle_flow.5.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [EXPAND] Final candidate middle_flow.5.rep.4.depthwise -> middle_flow.5.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [EXPAND] Starting from raw region middle_flow.6.rep.7.depthwise -> middle_flow.6.rep.7.pointwise | layers=2 | parametric=2
+[DEBUG] [-] Trapped region: middle_flow.6.rep.7.depthwise. Marking as Gap.
+[DEBUG] [EXPAND] Starting from raw region middle_flow.7.rep.4.depthwise -> middle_flow.7.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [EXPAND] Final candidate middle_flow.7.rep.4.depthwise -> middle_flow.7.rep.7.pointwise | layers=4 | parametric=4
+
+[INFO] Phase 3: Evaluating 3 Candidate Regions (with Smart Boundary Shaving)...
+    [STEP] Testing sequence: middle_flow.4.rep.4.depthwise -> middle_flow.4.rep.7.pointwise (Length: 4)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (XceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 21,216,752
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.pointwise
+[STEP] Calling _collapse_block('middle_flow.4.rep.4.depthwise', 'middle_flow.4.rep.7.pointwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.4.rep.4.depthwise
+[INFO] End Target   : middle_flow.4.rep.7.pointwise
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.4.rep.4.depthwise' -> 'middle_flow.4.rep.7.pointwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.4.rep' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'middle_flow.4.rep'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 7
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 4 -> SeparableConv2d
+    [LAYER MAP] 5 -> BatchNorm2d
+    [LAYER MAP] 6 -> ReLU
+    [LAYER MAP] 7 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'middle_flow.4.rep.4'
+[DEBUG] Hooking End Node   : 'middle_flow.4.rep.7'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'middle_flow.4.rep.4' -> 'middle_flow.4.rep.7'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 728, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 728, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 21,216,752
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.4.rep.7.pointwise'...
+
+[STEP] Searching for next nn.Linear after 'middle_flow.4.rep.7.pointwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 139 -> 226)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] Final block output shape: (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 728, 4, 4)
+         out_channels=728
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 728, 4, 4)
+    - out_channels             : 728
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.4.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'middle_flow.4.rep'
+[DEBUG] Layer Indices    : 4 -> 7
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 728 (in) -> 728 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 728, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(728, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'middle_flow.4.rep'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 21,216,752
+[INFO] Post-collapse : 20,673,664
+[INFO] Net Change    : -543,088
+[DEBUG] Local validation candidate selected from replacement slot: '4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 728, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.4.rep' =====
+[DEBUG] start_idx=4, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.4.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 728, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'middle_flow.4.rep.5' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.4.rep.5' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.4.rep.6' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.4.rep.6' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.4.rep.7' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.4.rep.7' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.4.rep.8' (BatchNorm2d) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.4.rep.8' executed successfully, output shape: (64, 728, 4, 4)
+[RESULT] ✅ Downstream validation for 'middle_flow.4.rep' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'middle_flow.4.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'middle_flow.4.rep.4.depthwise' → 'middle_flow.4.rep.7.pointwise'
+[INFO] ✅ Successfully collapsed block 'test' (middle_flow.4.rep.4.depthwise → middle_flow.4.rep.7.pointwise) in 0.03s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 21,216,752
+[INFO] Parameters after : 20,673,664
+[INFO] ΔParams = +543,088 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.06s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=middle_flow.4.rep.4.depthwise -> middle_flow.4.rep.7.pointwise | Params (21,216,752 -> 20,673,664, saved 543,088, 2.5597%) | FLOPs (377,290,496 -> 368,612,736, saved 8,677,760, 2.3000%)
+    [STEP] Testing sequence: middle_flow.5.rep.4.depthwise -> middle_flow.5.rep.7.pointwise (Length: 4)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (XceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 21,216,752
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.pointwise
+[STEP] Calling _collapse_block('middle_flow.5.rep.4.depthwise', 'middle_flow.5.rep.7.pointwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.5.rep.4.depthwise
+[INFO] End Target   : middle_flow.5.rep.7.pointwise
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.5.rep.4.depthwise' -> 'middle_flow.5.rep.7.pointwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.5.rep' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'middle_flow.5.rep'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 7
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 4 -> SeparableConv2d
+    [LAYER MAP] 5 -> BatchNorm2d
+    [LAYER MAP] 6 -> ReLU
+    [LAYER MAP] 7 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'middle_flow.5.rep.4'
+[DEBUG] Hooking End Node   : 'middle_flow.5.rep.7'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'middle_flow.5.rep.4' -> 'middle_flow.5.rep.7'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 728, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 728, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 21,216,752
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.5.rep.7.pointwise'...
+
+[STEP] Searching for next nn.Linear after 'middle_flow.5.rep.7.pointwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 157 -> 226)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] Final block output shape: (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 728, 4, 4)
+         out_channels=728
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 728, 4, 4)
+    - out_channels             : 728
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.5.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'middle_flow.5.rep'
+[DEBUG] Layer Indices    : 4 -> 7
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 728 (in) -> 728 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 728, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(728, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'middle_flow.5.rep'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 21,216,752
+[INFO] Post-collapse : 20,673,664
+[INFO] Net Change    : -543,088
+[DEBUG] Local validation candidate selected from replacement slot: '4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 728, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.5.rep' =====
+[DEBUG] start_idx=4, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.5.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 728, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'middle_flow.5.rep.5' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.5.rep.5' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.5.rep.6' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.5.rep.6' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.5.rep.7' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.5.rep.7' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.5.rep.8' (BatchNorm2d) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.5.rep.8' executed successfully, output shape: (64, 728, 4, 4)
+[RESULT] ✅ Downstream validation for 'middle_flow.5.rep' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'middle_flow.5.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'middle_flow.5.rep.4.depthwise' → 'middle_flow.5.rep.7.pointwise'
+[INFO] ✅ Successfully collapsed block 'test' (middle_flow.5.rep.4.depthwise → middle_flow.5.rep.7.pointwise) in 0.04s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 21,216,752
+[INFO] Parameters after : 20,673,664
+[INFO] ΔParams = +543,088 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.07s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=middle_flow.5.rep.4.depthwise -> middle_flow.5.rep.7.pointwise | Params (21,216,752 -> 20,673,664, saved 543,088, 2.5597%) | FLOPs (377,290,496 -> 368,612,736, saved 8,677,760, 2.3000%)
+    [STEP] Testing sequence: middle_flow.7.rep.4.depthwise -> middle_flow.7.rep.7.pointwise (Length: 4)
+
+[STEP] ===== Starting collapse_only process =====
+[DEBUG] Device=cuda:0, dry_run=False, handle_skips=True, safe_param_reduction=True, init=random
+[STEP] Using provided in-memory model instance (XceptionNet)
+
+Layer-wise zero parameter stats:
+
+[DEBUG] Model layer statistics before collapse:
+None
+[STEP] Creating deepcopy of model for safe modification...
+[STEP] Parsing compression set...
+[DEBUG] Detected compression_set as dict with 1 entries.
+[DEBUG] Total collapse targets: 1
+[INFO] Model parameter count before collapsing: 21,216,752
+[STEP] Beginning block-wise collapsing...
+
+[INFO] Processing collapse task 'test': middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise
+[STEP] Calling _collapse_block('middle_flow.7.rep.4.depthwise', 'middle_flow.7.rep.7.pointwise')
+
+[INFO] ==================== Collapsing Block ====================
+[INFO] Start Target : middle_flow.7.rep.4.depthwise
+[INFO] End Target   : middle_flow.7.rep.7.pointwise
+[DEBUG] Target Device Allocation: cuda:0
+
+[STEP 1] Locating block boundaries and Lowest Common Ancestor (LCA)...
+[DEBUG] [LCA] Locating block boundaries: 'middle_flow.7.rep.4.depthwise' -> 'middle_flow.7.rep.7.pointwise'
+[DEBUG] [LCA] Resolved Container: 'middle_flow.7.rep' | Type: Sequential
+[DEBUG] --- LCA Resolution Results ---
+[DEBUG] Container Path  : 'middle_flow.7.rep'
+[DEBUG] Container Type  : Sequential
+[DEBUG] Slice Indices   : 4 to 7
+[DEBUG] Captured Layers : 4 total
+    [LAYER MAP] 4 -> SeparableConv2d
+    [LAYER MAP] 5 -> BatchNorm2d
+    [LAYER MAP] 6 -> ReLU
+    [LAYER MAP] 7 -> SeparableConv2d
+
+[STEP 2] Simulating Forward Pass & Capturing LCA Activations...
+[DEBUG] Hooking Start Node : 'middle_flow.7.rep.4'
+[DEBUG] Hooking End Node   : 'middle_flow.7.rep.7'
+[DEBUG] Dummy Input Shape  : torch.Size([64, 3, 64, 64])
+[DEBUG] Capturing I/O hooks for 'middle_flow.7.rep.4' -> 'middle_flow.7.rep.7'...
+[DEBUG] Captured input shape: (64, 728, 4, 4), output shape: (64, 728, 4, 4)
+[DEBUG] --- Activation Capture Success ---
+[DEBUG] Input (x) shape entering LCA   : (64, 728, 4, 4)
+[DEBUG] Output (y) shape exiting LCA   : (64, 728, 4, 4)
+[DEBUG] Pre-collapse Parameter Count   : 21,216,752
+
+[STEP 3] Probing graph for downstream classifier after 'middle_flow.7.rep.7.pointwise'...
+
+[STEP] Searching for next nn.Linear after 'middle_flow.7.rep.7.pointwise'...
+[DEBUG] Execution-order match: next Linear is 'fc' (exec idx 193 -> 226)
+[DEBUG] --- Downstream Probe Results ---
+[DEBUG] Next Linear Name : 'fc'
+[DEBUG] Next Linear Type : Linear
+
+[STEP 4] Analyzing topological characteristics for replacement...
+
+[STEP] Analyzing output of collapsed block (4 layers)...
+[DEBUG] Input tensor shape before block: (64, 728, 4, 4)
+[DEBUG] Running forward pass through block layers:
+[DEBUG] Final block output shape (via hook): (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] Final block output shape: (64, 728, 4, 4)
+[DEBUG] Determined out_channels=728
+[DEBUG] No explicit pooling layer detected inside block.
+[DEBUG] Heuristic next linear in_features = 2048
+[RESULT] Block analysis complete:
+         out_shape=(64, 728, 4, 4)
+         out_channels=728
+         has_pool=False
+         shortcut_out_channels=None
+[DEBUG] --- Feature Map Strategy ---
+    - out_shape                : (64, 728, 4, 4)
+    - out_channels             : 728
+    - pool_layer               : None
+    - shortcut_out_channels    : None
+    - linear_in_features_heuristic: 2048
+
+[STEP 5] Synthesizing surrogate block and fusing into computational graph...
+
+============================================================
+[STEP] COLLAPSE REPLACEMENT INIT: 'middle_flow.7.rep.4.depthwise'
+============================================================
+[DEBUG] Target device    : cuda:0
+[DEBUG] Info keys found  : ['container', 'container_name', 'named_layers', 'start_idx', 'end_idx', 'full_block', 'layer_type', 'conv_layers', 'collapse_mode', 'first_layer_name', 'last_layer_name']
+[DEBUG] Container Name   : 'middle_flow.7.rep'
+[DEBUG] Layer Indices    : 4 -> 7
+[DEBUG] Spatial Target   : H=4 x W=4
+[DEBUG] Channel Mapping  : 728 (in) -> 728 (out)
+[DEBUG] ➔ Strategy: POINTWISE Conv (kernel_size=1)
+
+[DEBUG] Built replacement module for xceptionnet:
+        - conv_1x1: Conv2d(728, 728, kernel_size=(1, 1), stride=(1, 1), bias=False)
+        - bn: BatchNorm2d(728, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+        - relu: ReLU()
+        - adaptive_pool: AdaptiveAvgPool2d(output_size=(4, 4))
+
+[STEP] Patching container 'middle_flow.7.rep'...
+
+[INFO] --- Parameter Delta ---
+[INFO] Pre-collapse  : 21,216,752
+[INFO] Post-collapse : 20,673,664
+[INFO] Net Change    : -543,088
+[DEBUG] Local validation candidate selected from replacement slot: '4'
+[DEBUG] ✓ Replacement local validation OK. Output shape: (64, 728, 4, 4)
+
+[STEP] Evaluating corrective pooling necessity...
+[DEBUG] [POOL] Target Linear: 'fc'
+[DEBUG] [POOL] Entering shape: (64, 2048) | Flat size: 2048
+[INFO] ✅ Pool check: Shapes match seamlessly.
+[STEP] Triggering downstream validation...
+
+[STEP] ===== Starting _validate_downstream for 'middle_flow.7.rep' =====
+[DEBUG] start_idx=4, device=cuda:0, has_next_linear=True
+[STEP] Searching for inserted collapsed module within 'middle_flow.7.rep'...
+[DEBUG] Found inserted block candidate at index 4: '4'
+[STEP] Validating inserted module 'Sequential' at index 4...
+[DEBUG] Inserted module forward successful, output shape: (64, 728, 4, 4)
+[STEP] Scanning immediate downstream modules for shape or runtime errors...
+[DEBUG] Running downstream module 'middle_flow.7.rep.5' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.7.rep.5' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.7.rep.6' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.7.rep.6' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.7.rep.7' (SmartIdentity) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.7.rep.7' executed successfully, output shape: (64, 728, 4, 4)
+[DEBUG] Running downstream module 'middle_flow.7.rep.8' (BatchNorm2d) with input shape (64, 728, 4, 4)
+[DEBUG] Downstream 'middle_flow.7.rep.8' executed successfully, output shape: (64, 728, 4, 4)
+[RESULT] ✅ Downstream validation for 'middle_flow.7.rep' completed successfully.
+[DEBUG] ✓ Downstream validation successful.
+============================================================
+[RESULT] Block replacement complete for 'middle_flow.7.rep.4.depthwise'.
+============================================================
+
+
+[INFO] ✅ Framework successfully merged 'middle_flow.7.rep.4.depthwise' → 'middle_flow.7.rep.7.pointwise'
+[INFO] ✅ Successfully collapsed block 'test' (middle_flow.7.rep.4.depthwise → middle_flow.7.rep.7.pointwise) in 0.03s
+[STEP] Patching skip connections (if any)...
+[DEBUG] Skip connections patched successfully.
+[STEP] Disabling in-place ReLUs for autograd safety...
+[INFO] Replaced 23 in-place ReLU(s) with out-of-place variants.
+[DEBUG] In-place ReLUs converted to out-of-place versions.
+
+[STEP] Wrapping pooling layers safely...
+[DEBUG] All pooling layers wrapped with _SafePool to prevent underflow errors.
+
+[STEP] ===== Collapse summary =====
+[INFO] Parameters before: 21,216,752
+[INFO] Parameters after : 20,673,664
+[INFO] ΔParams = +543,088 (expected ≤ 0)
+[INFO] Collapse counts: success=1, failed=0, skipped=0
+[INFO] Total collapse runtime: 0.07s
+[RESULT] ✅ collapse_only complete. Total targets: 1 | success=1 | failed=0 | skipped=0
+        [✓] ACCEPTED: region=middle_flow.7.rep.4.depthwise -> middle_flow.7.rep.7.pointwise | Params (21,216,752 -> 20,673,664, saved 543,088, 2.5597%) | FLOPs (377,290,496 -> 368,612,736, saved 8,677,760, 2.3000%)
+[INFO] Forced 3 sets into 'Dynamic_Region_All_Combined'.
+
+[DEBUG] --- Final Accepted Regions Summary ---
+[DEBUG] [FINAL] Set_0: middle_flow.4.rep.4.depthwise -> middle_flow.4.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [FINAL] Set_1: middle_flow.5.rep.4.depthwise -> middle_flow.5.rep.7.pointwise | layers=4 | parametric=4
+[DEBUG] [FINAL] Set_2: middle_flow.7.rep.4.depthwise -> middle_flow.7.rep.7.pointwise | layers=4 | parametric=4
+
+[DEBUG] === Finished Dynamic Config Generator ===
+[✓] scorer=cka: 6 targets -> XceptionNet_tinyimagenet_epochs200_pretrain200_scorercka_JF_discovered_regions.json
+[✓] Combined ablation (regions + stats) -> XceptionNet_tinyimagenet_epochs200_pretrain200_scorer_ablation.json
+[✓] Change profile figure saved under outputs/discovery/XceptionNet/tinyimagenet/epochs200_pretrain200
+14:42:44 [INFO] Scanning for metrics files matching epochs=200, pretrain=200
+14:42:44 [INFO] Successfully parsed 57 experiment rows.
+14:42:48 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar100_ at outputs/figures/ep200_pre200/individual_plots/ConvNeXt_cifar100__accuracy.svg
+14:42:48 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar100_ at outputs/figures/ep200_pre200/individual_plots/ConvNeXt_cifar100__params.svg
+14:42:49 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar100_ at outputs/figures/ep200_pre200/individual_plots/ConvNeXt_cifar100__flops.svg
+14:42:57 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar100_ at outputs/figures/ep200_pre200/individual_plots/ConvNeXt_cifar100__memory.svg
+14:42:58 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/cifar10_ at outputs/figures/ep200_pre200/individual_plots/ConvNeXt_cifar10__accuracy.svg
+14:43:04 [INFO] [FIG1] Saved params plot for ConvNeXt/cifar10_ at outputs/figures/ep200_pre200/individual_plots/ConvNeXt_cifar10__params.svg
+14:43:04 [INFO] [FIG1] Saved flops plot for ConvNeXt/cifar10_ at outputs/figures/ep200_pre200/individual_plots/ConvNeXt_cifar10__flops.svg
+14:43:04 [INFO] [FIG1] Saved memory plot for ConvNeXt/cifar10_ at outputs/figures/ep200_pre200/individual_plots/ConvNeXt_cifar10__memory.svg
+14:43:05 [INFO] [FIG1] Saved accuracy plot for ConvNeXt/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/ConvNeXt_tinyimagenet_accuracy.svg
+14:43:08 [INFO] [FIG1] Saved params plot for ConvNeXt/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/ConvNeXt_tinyimagenet_params.svg
+14:43:08 [INFO] [FIG1] Saved flops plot for ConvNeXt/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/ConvNeXt_tinyimagenet_flops.svg
+14:43:19 [INFO] [FIG1] Saved memory plot for ConvNeXt/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/ConvNeXt_tinyimagenet_memory.svg
+14:43:19 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar100_ at outputs/figures/ep200_pre200/individual_plots/InceptionNet_cifar100__accuracy.svg
+14:43:34 [INFO] [FIG1] Saved params plot for InceptionNet/cifar100_ at outputs/figures/ep200_pre200/individual_plots/InceptionNet_cifar100__params.svg
+14:43:46 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar100_ at outputs/figures/ep200_pre200/individual_plots/InceptionNet_cifar100__flops.svg
+14:43:46 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar100_ at outputs/figures/ep200_pre200/individual_plots/InceptionNet_cifar100__memory.svg
+14:43:47 [INFO] [FIG1] Saved accuracy plot for InceptionNet/cifar10_ at outputs/figures/ep200_pre200/individual_plots/InceptionNet_cifar10__accuracy.svg
+14:43:47 [INFO] [FIG1] Saved params plot for InceptionNet/cifar10_ at outputs/figures/ep200_pre200/individual_plots/InceptionNet_cifar10__params.svg
+14:43:47 [INFO] [FIG1] Saved flops plot for InceptionNet/cifar10_ at outputs/figures/ep200_pre200/individual_plots/InceptionNet_cifar10__flops.svg
+14:43:48 [INFO] [FIG1] Saved memory plot for InceptionNet/cifar10_ at outputs/figures/ep200_pre200/individual_plots/InceptionNet_cifar10__memory.svg
+14:43:48 [INFO] [FIG1] Saved accuracy plot for InceptionNet/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/InceptionNet_tinyimagenet_accuracy.svg
+14:43:48 [INFO] [FIG1] Saved params plot for InceptionNet/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/InceptionNet_tinyimagenet_params.svg
+14:43:49 [INFO] [FIG1] Saved flops plot for InceptionNet/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/InceptionNet_tinyimagenet_flops.svg
+14:43:49 [INFO] [FIG1] Saved memory plot for InceptionNet/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/InceptionNet_tinyimagenet_memory.svg
+14:43:49 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar100_ at outputs/figures/ep200_pre200/individual_plots/MobileNet_cifar100__accuracy.svg
+14:43:50 [INFO] [FIG1] Saved params plot for MobileNet/cifar100_ at outputs/figures/ep200_pre200/individual_plots/MobileNet_cifar100__params.svg
+14:43:50 [INFO] [FIG1] Saved flops plot for MobileNet/cifar100_ at outputs/figures/ep200_pre200/individual_plots/MobileNet_cifar100__flops.svg
+14:43:54 [INFO] [FIG1] Saved memory plot for MobileNet/cifar100_ at outputs/figures/ep200_pre200/individual_plots/MobileNet_cifar100__memory.svg
+14:43:54 [INFO] [FIG1] Saved accuracy plot for MobileNet/cifar10_ at outputs/figures/ep200_pre200/individual_plots/MobileNet_cifar10__accuracy.svg
+14:43:59 [INFO] [FIG1] Saved params plot for MobileNet/cifar10_ at outputs/figures/ep200_pre200/individual_plots/MobileNet_cifar10__params.svg
+14:44:01 [INFO] [FIG1] Saved flops plot for MobileNet/cifar10_ at outputs/figures/ep200_pre200/individual_plots/MobileNet_cifar10__flops.svg
+14:44:05 [INFO] [FIG1] Saved memory plot for MobileNet/cifar10_ at outputs/figures/ep200_pre200/individual_plots/MobileNet_cifar10__memory.svg
+14:44:07 [INFO] [FIG1] Saved accuracy plot for MobileNet/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/MobileNet_tinyimagenet_accuracy.svg
+14:44:07 [INFO] [FIG1] Saved params plot for MobileNet/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/MobileNet_tinyimagenet_params.svg
+14:44:07 [INFO] [FIG1] Saved flops plot for MobileNet/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/MobileNet_tinyimagenet_flops.svg
+14:44:08 [INFO] [FIG1] Saved memory plot for MobileNet/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/MobileNet_tinyimagenet_memory.svg
+14:44:08 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar100_ at outputs/figures/ep200_pre200/individual_plots/RegNetX_400MF_cifar100__accuracy.svg
+14:44:10 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar100_ at outputs/figures/ep200_pre200/individual_plots/RegNetX_400MF_cifar100__params.svg
+14:44:11 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar100_ at outputs/figures/ep200_pre200/individual_plots/RegNetX_400MF_cifar100__flops.svg
+14:44:11 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar100_ at outputs/figures/ep200_pre200/individual_plots/RegNetX_400MF_cifar100__memory.svg
+14:44:12 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/cifar10_ at outputs/figures/ep200_pre200/individual_plots/RegNetX_400MF_cifar10__accuracy.svg
+14:44:12 [INFO] [FIG1] Saved params plot for RegNetX_400MF/cifar10_ at outputs/figures/ep200_pre200/individual_plots/RegNetX_400MF_cifar10__params.svg
+14:44:13 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/cifar10_ at outputs/figures/ep200_pre200/individual_plots/RegNetX_400MF_cifar10__flops.svg
+14:44:13 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/cifar10_ at outputs/figures/ep200_pre200/individual_plots/RegNetX_400MF_cifar10__memory.svg
+14:44:13 [INFO] [FIG1] Saved accuracy plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/RegNetX_400MF_tinyimagenet_accuracy.svg
+14:44:14 [INFO] [FIG1] Saved params plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/RegNetX_400MF_tinyimagenet_params.svg
+14:44:14 [INFO] [FIG1] Saved flops plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/RegNetX_400MF_tinyimagenet_flops.svg
+14:44:14 [INFO] [FIG1] Saved memory plot for RegNetX_400MF/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/RegNetX_400MF_tinyimagenet_memory.svg
+14:44:14 [INFO] [FIG1] Saved accuracy plot for VGG16/cifar10_ at outputs/figures/ep200_pre200/individual_plots/VGG16_cifar10__accuracy.svg
+14:44:15 [INFO] [FIG1] Saved params plot for VGG16/cifar10_ at outputs/figures/ep200_pre200/individual_plots/VGG16_cifar10__params.svg
+14:44:15 [INFO] [FIG1] Saved flops plot for VGG16/cifar10_ at outputs/figures/ep200_pre200/individual_plots/VGG16_cifar10__flops.svg
+14:44:15 [INFO] [FIG1] Saved memory plot for VGG16/cifar10_ at outputs/figures/ep200_pre200/individual_plots/VGG16_cifar10__memory.svg
+14:44:16 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar100_ at outputs/figures/ep200_pre200/individual_plots/XceptionNet_cifar100__accuracy.svg
+14:44:18 [INFO] [FIG1] Saved params plot for XceptionNet/cifar100_ at outputs/figures/ep200_pre200/individual_plots/XceptionNet_cifar100__params.svg
+14:44:18 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar100_ at outputs/figures/ep200_pre200/individual_plots/XceptionNet_cifar100__flops.svg
+14:44:18 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar100_ at outputs/figures/ep200_pre200/individual_plots/XceptionNet_cifar100__memory.svg
+14:44:18 [INFO] [FIG1] Saved accuracy plot for XceptionNet/cifar10_ at outputs/figures/ep200_pre200/individual_plots/XceptionNet_cifar10__accuracy.svg
+14:44:19 [INFO] [FIG1] Saved params plot for XceptionNet/cifar10_ at outputs/figures/ep200_pre200/individual_plots/XceptionNet_cifar10__params.svg
+14:44:19 [INFO] [FIG1] Saved flops plot for XceptionNet/cifar10_ at outputs/figures/ep200_pre200/individual_plots/XceptionNet_cifar10__flops.svg
+14:44:19 [INFO] [FIG1] Saved memory plot for XceptionNet/cifar10_ at outputs/figures/ep200_pre200/individual_plots/XceptionNet_cifar10__memory.svg
+14:44:20 [INFO] [FIG1] Saved accuracy plot for XceptionNet/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/XceptionNet_tinyimagenet_accuracy.svg
+14:44:20 [INFO] [FIG1] Saved params plot for XceptionNet/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/XceptionNet_tinyimagenet_params.svg
+14:44:23 [INFO] [FIG1] Saved flops plot for XceptionNet/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/XceptionNet_tinyimagenet_flops.svg
+14:44:23 [INFO] [FIG1] Saved memory plot for XceptionNet/tinyimagenet at outputs/figures/ep200_pre200/individual_plots/XceptionNet_tinyimagenet_memory.svg
+14:44:23 [INFO] Starting FIG2 generation. Target epochs: 200, pretrain: 200
+14:44:24 [ERROR] No Layer_Statistics directories found matching **/epochs200_pretrain200/**/Layer_Statistics
+14:44:24 [DEBUG] [FIG3] No valid variance CSV found for ConvNeXt/cifar100_
+14:44:24 [DEBUG] [FIG3] No valid variance CSV found for MobileNet/cifar100_
+14:44:24 [DEBUG] [FIG3] No valid variance CSV found for RegNetX_400MF/cifar100_
+14:44:24 [DEBUG] [FIG3] No valid variance CSV found for ConvNeXt/cifar10_
+14:44:24 [DEBUG] [FIG3] No valid variance CSV found for RegNetX_400MF/cifar10_
+14:44:24 [INFO] [FIG4] Candidate/Sidebar plots generated successfully.
+14:44:24 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar100_
+14:45:05 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar100_ at outputs/figures/ep200_pre200/hardware_efficiency/ConvNeXt_cifar100__hardware_profile.svg
+14:45:05 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar100_
+14:45:05 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar100_
+14:45:05 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar100_
+14:45:05 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar100_
+14:45:05 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/cifar10_
+14:45:06 [INFO] [FIG5] Saved hardware profile plot for ConvNeXt/cifar10_ at outputs/figures/ep200_pre200/hardware_efficiency/ConvNeXt_cifar10__hardware_profile.svg
+14:45:06 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/cifar10_
+14:45:06 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/cifar10_
+14:45:06 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/cifar10_
+14:45:07 [INFO] [FIG5] Saved hardware profile plot for RegNetX_400MF/cifar10_ at outputs/figures/ep200_pre200/hardware_efficiency/RegNetX_400MF_cifar10__hardware_profile.svg
+14:45:07 [INFO] [FIG5] Processing Hardware Profiles for VGG16/cifar10_
+14:45:07 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/cifar10_
+14:45:07 [INFO] [FIG5] Processing Hardware Profiles for ConvNeXt/tinyimagenet
+14:45:07 [INFO] [FIG5] Processing Hardware Profiles for InceptionNet/tinyimagenet
+14:45:07 [INFO] [FIG5] Processing Hardware Profiles for MobileNet/tinyimagenet
+14:45:07 [INFO] [FIG5] Processing Hardware Profiles for RegNetX_400MF/tinyimagenet
+14:45:07 [INFO] [FIG5] Processing Hardware Profiles for XceptionNet/tinyimagenet
+14:45:08 [INFO] [FIG5] Saved unified best_candidates plot at outputs/figures/ep200_pre200/hardware_efficiency/unified_best_candidates.svg
+14:45:08 [INFO] [FIG5] Saved unified worst_candidates plot at outputs/figures/ep200_pre200/hardware_efficiency/unified_worst_candidates.svg
+14:45:08 [INFO] [FIG5] Saved global trade-off scatter plot at outputs/figures/ep200_pre200/hardware_efficiency/global_tradeoff_scatter.svg
+14:45:08 [INFO] [FIG5] All 6 hardware deliverables generated successfully.
+14:45:08 [INFO] [FIG6] Scanning for metrics files in /old_Users/jgafur/LTH/manuscript/Tranfer for training curves
+14:45:10 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar100_ at outputs/figures/ep200_pre200/learning_curves/XceptionNet_cifar100_training_curves.svg
+14:45:10 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at outputs/figures/ep200_pre200/learning_curves/MobileNet_cifar10_training_curves.svg
+14:45:10 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at outputs/figures/ep200_pre200/learning_curves/InceptionNet_cifar10_training_curves.svg
+14:45:11 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/tinyimagenet at outputs/figures/ep200_pre200/learning_curves/ConvNeXt_tinyimagenet_training_curves.svg
+14:45:12 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at outputs/figures/ep200_pre200/learning_curves/MobileNet_cifar100_training_curves.svg
+14:45:12 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar10_ at outputs/figures/ep200_pre200/learning_curves/MobileNet_cifar10_training_curves.svg
+14:45:12 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at outputs/figures/ep200_pre200/learning_curves/XceptionNet_cifar10_training_curves.svg
+14:45:13 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at outputs/figures/ep200_pre200/learning_curves/VGG16_cifar10_training_curves.svg
+14:45:16 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at outputs/figures/ep200_pre200/learning_curves/ConvNeXt_cifar10_training_curves.svg
+14:45:24 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at outputs/figures/ep200_pre200/learning_curves/ConvNeXt_cifar100_training_curves.svg
+14:45:26 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at outputs/figures/ep200_pre200/learning_curves/RegNetX_400MF_cifar10_training_curves.svg
+14:45:27 [INFO] [FIG6] Saved sequential training curves for MobileNet/cifar100_ at outputs/figures/ep200_pre200/learning_curves/MobileNet_cifar100_training_curves.svg
+14:45:27 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at outputs/figures/ep200_pre200/learning_curves/MobileNet_tinyimagenet_training_curves.svg
+14:45:27 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/tinyimagenet at outputs/figures/ep200_pre200/learning_curves/RegNetX_400MF_tinyimagenet_training_curves.svg
+14:45:28 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar10_ at outputs/figures/ep200_pre200/learning_curves/ConvNeXt_cifar10_training_curves.svg
+14:45:32 [INFO] [FIG6] Saved sequential training curves for InceptionNet/tinyimagenet at outputs/figures/ep200_pre200/learning_curves/InceptionNet_tinyimagenet_training_curves.svg
+14:45:32 [INFO] [FIG6] Saved sequential training curves for ConvNeXt/cifar100_ at outputs/figures/ep200_pre200/learning_curves/ConvNeXt_cifar100_training_curves.svg
+14:45:33 [INFO] [FIG6] Saved sequential training curves for XceptionNet/cifar10_ at outputs/figures/ep200_pre200/learning_curves/XceptionNet_cifar10_training_curves.svg
+14:45:33 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar10_ at outputs/figures/ep200_pre200/learning_curves/InceptionNet_cifar10_training_curves.svg
+14:45:33 [INFO] [FIG6] Saved sequential training curves for XceptionNet/tinyimagenet at outputs/figures/ep200_pre200/learning_curves/XceptionNet_tinyimagenet_training_curves.svg
+14:45:34 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/tinyimagenet at outputs/figures/ep200_pre200/learning_curves/RegNetX_400MF_tinyimagenet_training_curves.svg
+14:45:34 [INFO] [FIG6] Saved sequential training curves for InceptionNet/cifar100_ at outputs/figures/ep200_pre200/learning_curves/InceptionNet_cifar100_training_curves.svg
+14:45:35 [INFO] [FIG6] Saved sequential training curves for MobileNet/tinyimagenet at outputs/figures/ep200_pre200/learning_curves/MobileNet_tinyimagenet_training_curves.svg
+14:45:38 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar10_ at outputs/figures/ep200_pre200/learning_curves/RegNetX_400MF_cifar10_training_curves.svg
+14:45:41 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at outputs/figures/ep200_pre200/learning_curves/RegNetX_400MF_cifar100_training_curves.svg
+14:45:41 [INFO] [FIG6] Saved sequential training curves for RegNetX_400MF/cifar100_ at outputs/figures/ep200_pre200/learning_curves/RegNetX_400MF_cifar100_training_curves.svg
+14:45:42 [INFO] [FIG6] Saved sequential training curves for VGG16/cifar10_ at outputs/figures/ep200_pre200/learning_curves/VGG16_cifar10_training_curves.svg
+14:45:43 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar100_ at outputs/figures/ep200_pre200/convergence/ConvNeXt_cifar100_convergence_metrics.svg
+14:45:43 [INFO] [FIG7] Saved convergence metrics plot for ConvNeXt/cifar10_ at outputs/figures/ep200_pre200/convergence/ConvNeXt_cifar10_convergence_metrics.svg
+14:45:44 [INFO] [FIG7] Saved convergence metrics plot for RegNetX_400MF/cifar10_ at outputs/figures/ep200_pre200/convergence/RegNetX_400MF_cifar10_convergence_metrics.svg
+14:45:44 [INFO] [FIG8] Saved accuracy vs params plot at outputs/figures/ep200_pre200/accuracy_vs_params/accuracy_vs_params.svg
+14:45:46 [INFO] [FIG9] Saved FLOPs vs memory heat‑map at outputs/figures/ep200_pre200/flops_vs_memory/flops_vs_memory.svg
+14:45:46 [INFO] [SUMMARY] Generating master lookup JSON...
+14:45:46 [INFO] [SUMMARY] Master JSON successfully exported to /old_Users/jgafur/LTH/manuscript/Tranfer/outputs/tables/ep200_pre200/master_results_summary.json
+14:47:35 [INFO] Script completed.
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation
+[✓] Scorer ablation figure saved under outputs/figures/ep200_pre200/scorer_ablation

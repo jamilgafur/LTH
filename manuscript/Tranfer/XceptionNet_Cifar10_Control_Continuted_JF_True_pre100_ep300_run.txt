@@ -1,0 +1,37 @@
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
+  return torch._C._cuda_getDeviceCount() > 0
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='XceptionNet', dataset='Cifar10', pretrain=100, epochs=300, experiment='Control_Continuted', quant=True, scorer='local_dev')
+============================================================
+
+[INFO] Hardware detected: CPU (CUDA Available: False)
+Loading CIFAR-10 data for XceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+Loading CIFAR-10 data for XceptionNet...
+CIFAR-10 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] Base checkpoint path resolved: None
+[INFO] Legacy regions JSON absent; using ablation map: XceptionNet_Cifar10_epochs300_pretrain100_scorerlocal_dev_JF_discovered_regions.json
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Control_Continuted'
+============================================================
+
+[INFO] Validating JSON configuration map at: XceptionNet_Cifar10_epochs300_pretrain100_scorerlocal_dev_JF_discovered_regions.json
+[DEBUG] Loaded 2 configurations from map.
+[WARN] Trained baseline NOT found at XceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/final_JF_Control_quant.pt. Falling back to initial un-finetuned checkpoint.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Control_Continuted ---
+    Budget allocated: 300 epochs
+
+=== Running JF experiment ===
+[•] Resumption detected. Architecture will be prepared for checkpoint loading.
+[•] Starting experiment 'Control_Continuted_quant' in workflow 'JF' | Epoch Target: 300
+[•] Loading intermediate checkpoint: XceptionNet_Cifar10_None_epochs300_pretrain100/checkpoints/JF_Control_Continuted_quant_epoch105.pt
+[✓] Resumed at epoch 106
+JF/Control_Continuted_quant:   0%|          | 0/194 [00:00<?, ?it/s]/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/amp/autocast_mode.py:266: UserWarning: User provided device_type of 'cuda', but CUDA is not available. Disabling
+  warnings.warn(
+JF/Control_Continuted_quant:   0%|          | 0/194 [25:00<?, ?it/s, loss=0.0483, acc=98.25%, best=98.24%]JF/Control_Continuted_quant:   1%|          | 1/194 [25:08<80:53:31, 1508.87s/it, loss=0.0483, acc=98.25%, best=98.24%]JF/Control_Continuted_quant:   1%|          | 1/194 [51:30<80:53:31, 1508.87s/it, loss=0.0457, acc=98.39%, best=98.39%]JF/Control_Continuted_quant:   1%|          | 2/194 [51:50<83:23:35, 1563.62s/it, loss=0.0457, acc=98.39%, best=98.39%]JF/Control_Continuted_quant:   1%|          | 2/194 [1:16:39<83:23:35, 1563.62s/it, loss=0.0450, acc=98.44%, best=98.44%]JF/Control_Continuted_quant:   2%|▏         | 3/194 [1:16:47<81:20:22, 1533.10s/it, loss=0.0450, acc=98.44%, best=98.44%]JF/Control_Continuted_quant:   2%|▏         | 3/194 [1:41:52<81:20:22, 1533.10s/it, loss=0.0438, acc=98.46%, best=98.44%]JF/Control_Continuted_quant:   2%|▏         | 4/194 [1:42:09<80:41:00, 1528.74s/it, loss=0.0438, acc=98.46%, best=98.44%]

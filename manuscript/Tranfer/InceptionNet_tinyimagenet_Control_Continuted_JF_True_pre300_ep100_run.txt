@@ -1,0 +1,33 @@
+/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/cuda/__init__.py:129: UserWarning: CUDA initialization: CUDA unknown error - this may be due to an incorrectly set up environment, e.g. changing env variable CUDA_VISIBLE_DEVICES after program start. Setting the available devices to be zero. (Triggered internally at /pytorch/c10/cuda/CUDAFunctions.cpp:109.)
+  return torch._C._cuda_getDeviceCount() > 0
+
+============================================================
+[INIT] PyPrune Transfer Learning Framework
+[INIT] Arguments: Namespace(model='InceptionNet', dataset='tinyimagenet', pretrain=300, epochs=100, experiment='Control_Continuted', quant=True, scorer='local_dev')
+============================================================
+
+[INFO] Hardware detected: CPU (CUDA Available: False)
+Loading Tiny ImageNet data for InceptionNet...
+Loading Tiny ImageNet data for InceptionNet...
+[DEBUG] Base checkpoint path resolved: ../structured_study/pruning_checkpoints/InceptionNet_datasettinyimagenet_pretrain10_finetune30_steps21_batch128_devicecuda_strategy_magnitude/
+[INFO] Legacy regions JSON absent; using ablation map: InceptionNet_tinyimagenet_epochs100_pretrain300_scorerlocal_dev_JF_discovered_regions.json
+
+============================================================
+[MODE] STAGE 2: HPC EXPERIMENT EXECUTION
+       Targeting: 'Control_Continuted'
+============================================================
+
+[INFO] Validating JSON configuration map at: InceptionNet_tinyimagenet_epochs100_pretrain300_scorerlocal_dev_JF_discovered_regions.json
+[DEBUG] Loaded 14 configurations from map.
+[WARN] Trained baseline NOT found at InceptionNet_tinyimagenet_None_epochs100_pretrain300/checkpoints/final_JF_Control_quant.pt. Falling back to initial un-finetuned checkpoint.
+[INFO] Handoff to PyPrune Experiment Framework...
+
+--- Running experiment: Control_Continuted ---
+    Budget allocated: 100 epochs
+
+=== Running JF experiment ===
+[•] Starting experiment 'Control_Continuted_quant' in workflow 'JF' | Epoch Target: 100
+[•] No intermediate checkpoint found — starting fresh or inheriting from base.
+JF/Control_Continuted_quant:   0%|          | 0/100 [00:00<?, ?it/s]/Users/jgafur/env/lth_env/lib/python3.11/site-packages/torch/amp/autocast_mode.py:266: UserWarning: User provided device_type of 'cuda', but CUDA is not available. Disabling
+  warnings.warn(
+JF/Control_Continuted_quant:   0%|          | 0/100 [33:56<?, ?it/s, loss=4.8806, acc=3.27%, best=3.27%]JF/Control_Continuted_quant:   1%|          | 1/100 [34:24<56:46:20, 2064.45s/it, loss=4.8806, acc=3.27%, best=3.27%]JF/Control_Continuted_quant:   1%|          | 1/100 [1:09:19<56:46:20, 2064.45s/it, loss=4.4355, acc=7.30%, best=7.30%]JF/Control_Continuted_quant:   2%|▏         | 2/100 [1:09:20<56:42:45, 2083.32s/it, loss=4.4355, acc=7.30%, best=7.30%]JF/Control_Continuted_quant:   2%|▏         | 2/100 [1:43:45<56:42:45, 2083.32s/it, loss=4.2072, acc=10.24%, best=10.24%]JF/Control_Continuted_quant:   3%|▎         | 3/100 [1:43:51<55:58:45, 2077.58s/it, loss=4.2072, acc=10.24%, best=10.24%]
