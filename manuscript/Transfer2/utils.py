@@ -566,14 +566,16 @@ def find_experiment_checkpoints(model_name, dataset_name, pre_epochs=None, post_
     # 'before' fallback: default-scorer dirs never trained Control (stage-2 subset
     # mode skips the Control experiment), but the scorerall sibling's Control is the
     # same training — the scorer only affects region discovery, not plain Control.
-    # Use it when the default dir itself has none.
+    # Use it when the default dir itself has none. Dataset patterns keep donors
+    # from other datasets (different head sizes) out of the wildcard.
     have_before = {p.split("/checkpoints/")[0] for p in before_ckpts}
-    for p in glob.glob(f"../Tranfer/{model_name}_*_scorerall_*/checkpoints/final_JF_Control{qs}.pt"):
-        default_dir = p.split("/checkpoints/")[0].replace("_scorerall", "")
-        if os.path.isdir(default_dir) and default_dir not in have_before and allowed(p):
-            print(f"[INFO] Borrowing scorerall Control as 'before' for {default_dir}")
-            before_ckpts.append(p)
-            have_before.add(default_dir)
+    for d_name in set(dataset_patterns):
+        for p in glob.glob(f"../Tranfer/{model_name}_{d_name}_*_scorerall_*/checkpoints/final_JF_Control{qs}.pt"):
+            default_dir = p.split("/checkpoints/")[0].replace("_scorerall", "")
+            if os.path.isdir(default_dir) and default_dir not in have_before and allowed(p):
+                print(f"[INFO] Borrowing scorerall Control as 'before' for {default_dir}")
+                before_ckpts.append(p)
+                have_before.add(default_dir)
 
     collapsed_ckpts = [
         entry.get("combined") or entry["set0"]
