@@ -73,7 +73,18 @@ for model in "${models[@]}"; do
                             continue
                         fi
                     fi
-                    
+
+                    # --- Skip completed experiments: same marker transfer.py checks at runtime
+                    #     (also keeps resubmits from truncating finished runs' logs) ---
+                    qtag=""
+                    if [ "$quant_flag" == "True" ]; then
+                        qtag="_quant"
+                    fi
+                    if compgen -G "${model}_${dataset}_*_epochs${EPOCHS}_pretrain${PRETRAIN}/checkpoints/final_JF_${experiment}${qtag}.pt" > /dev/null; then
+                        echo "[SKIP] $model/$dataset/$experiment quant=$quant_flag — final artifact exists"
+                        continue
+                    fi
+
                     # Fire off the true parallel compute jobs
                     command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"$experiment\",FLAG=\"$flag\",QUANT=\"$quant_flag\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",SCORER=\"$SCORER\" submit_job.pbs"
                     

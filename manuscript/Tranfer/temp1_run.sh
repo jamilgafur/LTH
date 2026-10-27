@@ -35,6 +35,19 @@ for model in "${models[@]}"; do
         for quant_flag in "${quant[@]}"; do
             for flag in "JF"; do
 
+                # --- Skip completed discovery: the deliverable is the region-map JSON ---
+                if [ "$SCORER" = "local_dev" ]; then
+                    json_done="${model}_${dataset}_epochs${EPOCHS}_pretrain${PRETRAIN}_${flag}_discovered_regions.json"
+                    suffixed_done="${model}_${dataset}_epochs${EPOCHS}_pretrain${PRETRAIN}_scorer${SCORER}_${flag}_discovered_regions.json"
+                else
+                    json_done="${model}_${dataset}_epochs${EPOCHS}_pretrain${PRETRAIN}_scorer${SCORER}_${flag}_discovered_regions.json"
+                    suffixed_done=""
+                fi
+                if [ -f "$json_done" ] || { [ -n "$suffixed_done" ] && [ -f "$suffixed_done" ]; }; then
+                    echo "[SKIP] $model/$dataset discovery map already exists: $json_done"
+                    continue
+                fi
+
                 # Submit discovery job. Will train/inherit Control if needed, then dump JSON
                 command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"discover\",FLAG=\"$flag\",QUANT=\"$quant_flag\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",SCORER=\"$SCORER\" submit_job.pbs"
                 

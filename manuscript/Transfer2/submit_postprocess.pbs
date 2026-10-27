@@ -20,10 +20,12 @@ QUANT="${QUANT:-False}"
 echo "MODEL=$MODEL"
 echo "DATASET=$DATASET"
 echo "QUANT=$QUANT"
+echo "PRETRAIN=$PRETRAIN"
+echo "EPOCHS=$EPOCHS"
 
 # --- Check for required variables ---
-if [ -z "$MODEL" ] || [ -z "$DATASET" ]; then
-    echo "Error: One or more required environment variables (MODEL, DATASET) are not set." >&2
+if [ -z "$MODEL" ] || [ -z "$DATASET" ] || [ -z "$PRETRAIN" ] || [ -z "$EPOCHS" ]; then
+    echo "Error: One or more required environment variables (MODEL, DATASET, PRETRAIN, EPOCHS) are not set." >&2
     exit 1
 fi
 
@@ -34,14 +36,16 @@ if [ "$QUANT" == "True" ]; then
 fi
 
 # --- Prepare output file ---
-OUTPUT_FILE="postprocess_${MODEL}_${DATASET}_quant${QUANT}.log"
+OUTPUT_FILE="postprocess_${MODEL}_${DATASET}_pre${PRETRAIN}_ep${EPOCHS}_quant${QUANT}.log"
 
-# --- Run the Python script (epoch configs are derived from checkpoint directory names) ---
-echo "Executing: ~/env/lth_env/bin/python main.py --model $MODEL --dataset $DATASET $QUANT_FLAG"
+# --- Run the Python script (single epoch config per job; --pre/--post filter discovery) ---
+echo "Executing: ~/env/lth_env/bin/python main.py --model $MODEL --dataset $DATASET --pre $PRETRAIN --post $EPOCHS $QUANT_FLAG"
 
 time ~/env/lth_env/bin/python main.py \
     --model "$MODEL" \
     --dataset "$DATASET" \
+    --pre "$PRETRAIN" \
+    --post "$EPOCHS" \
     $QUANT_FLAG > "$OUTPUT_FILE" 2>&1
 
 echo "Job finished."
