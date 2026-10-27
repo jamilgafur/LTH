@@ -41,11 +41,13 @@ Per processed `final_JF_Control.pt` ("before") checkpoint:
 | `--power-interval` | `1` | Power sampling interval (s) for the energy measurements |
 | `--analysis` | `standard` | `standard` = historical behavior; `full` adds adversarial ε-sweeps, calibration, OOD, and corruptions |
 | `--corruptions-dir` | unset | CIFAR-C data root (stage via `download_corruptions.sh` on a login node); enables corruption evaluation under `--analysis full` |
+| `--quant` | off | Analyze the quantized universe: discovers the `*_quant.pt` / `*_quant_whole.pt` artifacts written by Tranfer `QUANT=True` runs; baselines and CSV outputs get a `_quant` infix so both universes coexist per directory |
 
 ## Checkpoint Discovery & Matching
 
 - Discovery globs `../Tranfer/{model}_{dataset}_*/checkpoints/` for the three buckets
-  (`before`, `after/Continuted`, `collapsed *_whole.pt`) — epoch tokens are **not** baked into
+  (`before`, `after/Continuted`, `collapsed *_whole.pt`; with `--quant`, the same names with a
+  `_quant` infix, matching how Tranfer's `experiments.py` names quantized artifacts) — epoch tokens are **not** baked into
   the glob, so multiple configs (`epochs100_pretrain300`, `epochs300_pretrain100`, …) coexist.
 - Each before-checkpoint is matched to artifacts **in its own base directory**
   (`find_matching_checkpoint`) — epoch tokens come from `parse_epoch_tokens(path)`
@@ -54,6 +56,16 @@ Per processed `final_JF_Control.pt` ("before") checkpoint:
   override only).
 - Scorer universes (`{tag}_scorer{S}_epochs{E}_pretrain{P}`) are handled by the same rules —
   the scorer token is just part of the directory identity.
+- **Missing-Control fallback:** default-scorer dirs that never ran the Control experiment
+  borrow the `scorerall` sibling's `final_JF_Control{,_quant}.pt` as their `before`
+  (the scorer affects only region discovery, not Control training); matching then looks in
+  the default sibling dir for the collapsed/after artifacts, and derived baselines
+  (IMP/structural) are saved into the default dir.
+- **Optional `after`:** when `final_JF_Control_Continuted*.pt` does not exist yet (still
+  training), the pipeline runs a baseline-only pass — sparsity, IMP/structural training,
+  and the collapsed-variant metrics — writing a partial row with `None` for the
+  `*_original*` / `cka_*` columns. Re-running after the artifact lands overwrites the same
+  CSV with the full row; the expensive baselines are reused from disk.
 
 ## Scorer-Independent Baselines
 

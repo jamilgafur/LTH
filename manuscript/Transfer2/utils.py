@@ -67,15 +67,23 @@ def parse_directory_context(filepath: str, expected_model: str, expected_dataset
     return expected_model, expected_dataset, epochs_str, pretrain_str, ckpt_epoch, base_dir
 
 def find_matching_checkpoint(before_path: str, candidate_paths: list) -> str:
-    """Matches the corresponding checkpoint within the same base experiment directory."""
+    """Matches the corresponding checkpoint within the same base experiment directory.
+
+    When `before_path` is a borrowed scorerall Control, its artifacts (collapsed,
+    after) live in the default-scorer sibling dir, so that dir is searched second.
+    """
     base_dir = before_path.split("/checkpoints/")[0]
+    dirs = [base_dir]
+    if "_scorerall" in base_dir:
+        dirs.append(base_dir.replace("_scorerall", ""))
 
     print(f"[INFO] Searching for checkpoint matching: {base_dir}")
 
-    for candidate in candidate_paths:
-        if candidate.startswith(base_dir):
-            print(f"[INFO] Found matching checkpoint: {candidate}")
-            return candidate
+    for d in dirs:
+        for candidate in candidate_paths:
+            if candidate.startswith(d):
+                print(f"[INFO] Found matching checkpoint: {candidate}")
+                return candidate
 
     raise FileNotFoundError(f"No matching checkpoint found for {base_dir}")
 
@@ -504,11 +512,14 @@ def inherit_from_default_universe(ckpt_path):
     return ckpt_path
 
 
-def find_experiment_checkpoints(model_name, dataset_name, pre_epochs=None, post_epochs=None):
+def find_experiment_checkpoints(model_name, dataset_name, pre_epochs=None, post_epochs=None, quant=False):
     """
     Finds model checkpoints across varied directory conventions (handles optional _None_ tags
     and case-insensitive dataset matching). Automatically falls back to Set_0 per base directory
     if Dynamic_Region_All_Combined is not present.
+
+    quant=True discovers the quantized universe: Tranfer writes `*_quant.pt` /
+    `*_quant_whole.pt` artifacts for QUANT=True runs (see experiments.py).
 
     Epoch configuration (epochsN / pretrainM tokens) is derived from the directory names
     themselves, so multiple training configurations can coexist: each before-checkpoint is
@@ -535,21 +546,34 @@ def find_experiment_checkpoints(model_name, dataset_name, pre_epochs=None, post_
     before_ckpts = []
     after_ckpts = []
     collapsed_by_dir = {}
+    qs = "_quant" if quant else ""
 
     for d_name in set(dataset_patterns):
         base_pattern = f"../Tranfer/{model_name}_{d_name}_*"
 
         # Original and Control check
-        before_ckpts.extend(p for p in glob.glob(f"{base_pattern}/checkpoints/final_JF_Control.pt") if allowed(p))
-        after_ckpts.extend(p for p in glob.glob(f"{base_pattern}/checkpoints/final_JF_Control_Continuted.pt") if allowed(p))
+        before_ckpts.extend(p for p in glob.glob(f"{base_pattern}/checkpoints/final_JF_Control{qs}.pt") if allowed(p))
+        after_ckpts.extend(p for p in glob.glob(f"{base_pattern}/checkpoints/final_JF_Control_Continuted{qs}.pt") if allowed(p))
 
         # Collapsed whole-model artifacts; Combined preferred over Set_0 per base dir.
-        for p in glob.glob(f"{base_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt"):
+        for p in glob.glob(f"{base_pattern}/checkpoints/final_JF_Dynamic_Region_All_Combined{qs}_whole.pt"):
             if allowed(p):
                 collapsed_by_dir.setdefault(p.split("/checkpoints/")[0], {})["combined"] = p
-        for p in glob.glob(f"{base_pattern}/checkpoints/final_JF_Set_0_whole.pt"):
+        for p in glob.glob(f"{base_pattern}/checkpoints/final_JF_Set_0{qs}_whole.pt"):
             if allowed(p):
                 collapsed_by_dir.setdefault(p.split("/checkpoints/")[0], {})["set0"] = p
+
+    # 'before' fallback: default-scorer dirs never trained Control (stage-2 subset
+    # mode skips the Control experiment), but the scorerall sibling's Control is the
+    # same training — the scorer only affects region discovery, not plain Control.
+    # Use it when the default dir itself has none.
+    have_before = {p.split("/checkpoints/")[0] for p in before_ckpts}
+    for p in glob.glob(f"../Tranfer/{model_name}_*_scorerall_*/checkpoints/final_JF_Control{qs}.pt"):
+        default_dir = p.split("/checkpoints/")[0].replace("_scorerall", "")
+        if os.path.isdir(default_dir) and default_dir not in have_before and allowed(p):
+            print(f"[INFO] Borrowing scorerall Control as 'before' for {default_dir}")
+            before_ckpts.append(p)
+            have_before.add(default_dir)
 
     collapsed_ckpts = [
         entry.get("combined") or entry["set0"]

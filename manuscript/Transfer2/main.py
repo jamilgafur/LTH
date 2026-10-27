@@ -189,11 +189,18 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     base_model, train_loader, test_loader, _ = initialize_architecture(model_name, dataset_name)
     model_before = load_weights(base_model, model_before_path, device)
 
-    # 2. Load Original Post-Finetuning Model
+    # 2. Load Original Post-Finetuning Model (optional). When Control_Continuted is
+    #    still training, run a baseline-only pass: sparsity/IMP/structural and the
+    #    collapsed-variant metrics don't need it; after-columns come out None and a
+    #    later rerun (IMP/structural artifacts persist on disk) fills them in.
     print("[INFO] Loading original post-finetuning model...")
-    model_after_path = find_matching_checkpoint(model_before_path, checkpoints["after"])
-    original_after_base, _, _, _ = initialize_architecture(model_name, dataset_name)
-    original_after_model = load_weights(original_after_base, model_after_path, device)
+    try:
+        model_after_path = find_matching_checkpoint(model_before_path, checkpoints["after"])
+        original_after_base, _, _, _ = initialize_architecture(model_name, dataset_name)
+        original_after_model = load_weights(original_after_base, model_after_path, device)
+    except FileNotFoundError:
+        print("[WARN] No Control_Continuted artifact for this dir yet — baseline-only pass.")
+        original_after_model = None
 
     # 3. Load the collapsed model as a whole artifact (architecture + weights).
     #    The Tranfer experiments persist `*_whole.pt` files, so analysis no
@@ -221,7 +228,8 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
     # Move models to CPU to free VRAM for IMP training and avoid OOM during evaluation.
     model_before.to("cpu")
-    original_after_model.to("cpu")
+    if original_after_model is not None:
+        original_after_model.to("cpu")
     full_collapsed_model_ready.to("cpu")
     torch.cuda.empty_cache()
     
@@ -238,7 +246,11 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         )
 
     checkpoint_dir = os.path.dirname(model_before_path)
-    unstructured_ckpt_path = os.path.join(checkpoint_dir, f"final_JF_Unstructured_IMP_post{imp_epochs}.pt")
+    if "_scorerall" in checkpoint_dir and os.path.isdir(checkpoint_dir.replace("_scorerall", "")):
+        # borrowed scorerall before: keep derived baselines (IMP/structural) in the default universe
+        checkpoint_dir = checkpoint_dir.replace("_scorerall", "")
+    qs = "_quant" if args.quant else ""  # keep quant-universe baselines from clobbering non-quant artifacts
+    unstructured_ckpt_path = os.path.join(checkpoint_dir, f"final_JF_Unstructured_IMP{qs}_post{imp_epochs}.pt")
 
     # IMP retrains from the (inherited) 'before' model -> scorer-independent:
     # copy a finished artifact from the default universe instead of retraining.
@@ -268,7 +280,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     #     Unlike IMP, this actually shrinks the compute graph, so its measured
     #     FLOPs/energy are the fair comparator for the collapse claim.
     structural_model = None
-    structural_ckpt_path = os.path.join(checkpoint_dir, f"final_JF_Structural_L1_post{imp_epochs}.pt")
+    structural_ckpt_path = os.path.join(checkpoint_dir, f"final_JF_Structural_L1{qs}_post{imp_epochs}.pt")
     # Same scorer-independence argument as IMP: inherit from the default universe.
     inherit_from_default_universe(structural_ckpt_path)
     if os.path.exists(structural_ckpt_path):
@@ -311,21 +323,24 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     model_before = model_before.to("cpu")
     torch.cuda.empty_cache()
     
-    print("       -> Evaluating Original After Finetuning")
-    original_after_model = original_after_model.to(device)
-    acc_original, power_original, energy_original = evaluate_accuracy(
-        original_after_model, test_loader, device, power_interval=args.power_interval
-    )
-    if acc_before > (acc_original + 0.20):
-        print(f"\n[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting ({acc_original*100:.2f}%).")
-        print(f"[CRITICAL WARNING] Re-evaluating healthy 'model_before' ({acc_before*100:.2f}%) on warm cache as the true baseline...")
-        model_before = model_before.to(device)
+    if original_after_model is not None:
+        print("       -> Evaluating Original After Finetuning")
+        original_after_model = original_after_model.to(device)
         acc_original, power_original, energy_original = evaluate_accuracy(
-            model_before, test_loader, device, power_interval=args.power_interval
+            original_after_model, test_loader, device, power_interval=args.power_interval
         )
-        model_before = model_before.to("cpu")
-    original_after_model = original_after_model.to("cpu")
-    torch.cuda.empty_cache()
+        if acc_before > (acc_original + 0.20):
+            print(f"\n[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting ({acc_original*100:.2f}%).")
+            print(f"[CRITICAL WARNING] Re-evaluating healthy 'model_before' ({acc_before*100:.2f}%) on warm cache as the true baseline...")
+            model_before = model_before.to(device)
+            acc_original, power_original, energy_original = evaluate_accuracy(
+                model_before, test_loader, device, power_interval=args.power_interval
+            )
+            model_before = model_before.to("cpu")
+        original_after_model = original_after_model.to("cpu")
+        torch.cuda.empty_cache()
+    else:
+        acc_original = power_original = energy_original = None
 
     print("       -> Evaluating Unstructured Pruned Model")
     unstructured_pruning_model = unstructured_pruning_model.to(device)
@@ -353,7 +368,8 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         structural_model = structural_model.to("cpu")
         torch.cuda.empty_cache()
 
-    print(f"[RESULT] Accuracy Original:     {acc_original:.4f} | Power: {power_original:.2f}W | Energy: {energy_original:.2f}J")
+    if acc_original is not None:
+        print(f"[RESULT] Accuracy Original:     {acc_original:.4f} | Power: {power_original:.2f}W | Energy: {energy_original:.2f}J")
     print(f"[RESULT] Accuracy Unstructured: {acc_unstructured:.4f} | Power: {power_unstructured:.2f}W | Energy: {energy_unstructured:.2f}J")
     print(f"[RESULT] Accuracy Collapsed:    {acc_collapsed:.4f} | Power: {power_collapsed:.2f}W | Energy: {energy_collapsed:.2f}J")
     if structural_model is not None:
@@ -362,8 +378,10 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     # 7. Benchmark Efficiency: FLOPs, Latency, Throughput, Memory (SEQUENTIAL GPU ALLOCATION)
     print("\n[INFO] Benchmarking efficiency (FLOPs, latency, throughput, peak memory)...")
 
-    bench_variants = [
-        ("original", original_after_model),
+    bench_variants = []
+    if original_after_model is not None:
+        bench_variants.append(("original", original_after_model))
+    bench_variants += [
         ("unstructured", unstructured_pruning_model),
         ("collapsed", full_collapsed_model_ready),
     ]
@@ -377,15 +395,16 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         bench_model = bench_model.to("cpu")
         torch.cuda.empty_cache()
 
-    bench_original = benchmarks["original"]
+    bench_original = benchmarks.get("original")
     bench_unstructured = benchmarks["unstructured"]
     bench_collapsed = benchmarks["collapsed"]
 
-    flops_original = bench_original["flops"]
+    flops_original = bench_original["flops"] if bench_original is not None else None
     flops_collapsed = bench_collapsed["flops"]
     # IMP zeroes weights but keeps the dense graph: measured FLOPs should ~match the
     # original. flops_unstructured keeps the old theoretical column for back-compat.
-    flops_unstructured = flops_original * (1.0 - float(target_sparsity))
+    flops_unstructured = (flops_original * (1.0 - float(target_sparsity))
+                          if flops_original is not None else None)
 
     for bench_name, bench in benchmarks.items():
         mem_str = f"{bench['peak_mem_mb']:.1f} MiB" if bench["peak_mem_mb"] is not None else "n/a (CPU)"
@@ -395,65 +414,73 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
             f"throughput={bench['throughput_imgs']:.1f} img/s | peak_mem={mem_str} | "
             f"feature_maps={bench['feature_map_mb']:.1f} MiB"
         )
-    print(f"[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): {flops_unstructured:.2e}")
+    if flops_unstructured is not None:
+        print(f"[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): {flops_unstructured:.2e}")
 
     def _state_dict_mb(m):
         buf = io.BytesIO()
         torch.save(m.state_dict(), buf)
         return buf.getbuffer().nbytes / (1024 ** 2)
 
-    storage_mb = {
-        "original": _state_dict_mb(original_after_model),
+    storage_mb = {}
+    if original_after_model is not None:
+        storage_mb["original"] = _state_dict_mb(original_after_model)
+    storage_mb.update({
         "unstructured": _state_dict_mb(unstructured_pruning_model),
         "collapsed": _state_dict_mb(full_collapsed_model_ready),
-    }
+    })
     if structural_model is not None:
         storage_mb["structural"] = _state_dict_mb(structural_model)
     storage_str = ", ".join(f"{k}={v:.1f}" for k, v in storage_mb.items())
     print(f"[RESULT] Storage (state_dict MiB): {storage_str}")
 
     # 8. Extract Features & Compute CKA (SEQUENTIAL GPU ALLOCATION)
-    print("\n[INFO] Extracting features and computing CKA...")
-    
-    original_after_model = original_after_model.to(device)
-    features_original = extract_features(original_after_model, test_loader, device)
-    original_after_model = original_after_model.to("cpu")
-    torch.cuda.empty_cache()
+    cka_unstructured = cka_collapsed = cka_structural = None
+    if original_after_model is not None:
+        print("\n[INFO] Extracting features and computing CKA...")
 
-    unstructured_pruning_model = unstructured_pruning_model.to(device)
-    features_unstructured = extract_features(unstructured_pruning_model, test_loader, device)
-    unstructured_pruning_model = unstructured_pruning_model.to("cpu")
-    torch.cuda.empty_cache()
-
-    full_collapsed_model_ready = full_collapsed_model_ready.to(device)
-    features_collapsed = extract_features(full_collapsed_model_ready, test_loader, device)
-    full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
-    torch.cuda.empty_cache()
-
-    cka_unstructured = compare_CKA(features_original, features_unstructured)
-    cka_collapsed = compare_CKA(features_original, features_collapsed)
-
-    cka_structural = None
-    if structural_model is not None:
-        structural_model = structural_model.to(device)
-        features_structural = extract_features(structural_model, test_loader, device)
-        structural_model = structural_model.to("cpu")
+        original_after_model = original_after_model.to(device)
+        features_original = extract_features(original_after_model, test_loader, device)
+        original_after_model = original_after_model.to("cpu")
         torch.cuda.empty_cache()
-        cka_structural = compare_CKA(features_original, features_structural)
+
+        unstructured_pruning_model = unstructured_pruning_model.to(device)
+        features_unstructured = extract_features(unstructured_pruning_model, test_loader, device)
+        unstructured_pruning_model = unstructured_pruning_model.to("cpu")
+        torch.cuda.empty_cache()
+
+        full_collapsed_model_ready = full_collapsed_model_ready.to(device)
+        features_collapsed = extract_features(full_collapsed_model_ready, test_loader, device)
+        full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
+        torch.cuda.empty_cache()
+
+        cka_unstructured = compare_CKA(features_original, features_unstructured)
+        cka_collapsed = compare_CKA(features_original, features_collapsed)
+
+        if structural_model is not None:
+            structural_model = structural_model.to(device)
+            features_structural = extract_features(structural_model, test_loader, device)
+            structural_model = structural_model.to("cpu")
+            torch.cuda.empty_cache()
+            cka_structural = compare_CKA(features_original, features_structural)
+    else:
+        print("\n[INFO] Skipping CKA (no 'original' reference until Control_Continuted finishes).")
 
     # 9. Evaluate Adversarial Robustness (+ full-analysis extras when enabled)
     print("\n[INFO] Evaluating Adversarial Robustness...")
     data_batch = next(iter(test_loader))
 
-    original_after_model = original_after_model.to(device)
     unstructured_pruning_model = unstructured_pruning_model.to(device)
     full_collapsed_model_ready = full_collapsed_model_ready.to(device)
 
-    models_dict = {
-        "original": original_after_model,
+    models_dict = {}
+    if original_after_model is not None:
+        original_after_model = original_after_model.to(device)
+        models_dict["original"] = original_after_model
+    models_dict.update({
         "unstructured": unstructured_pruning_model,
         "collapsed": full_collapsed_model_ready
-    }
+    })
     if structural_model is not None:
         structural_model = structural_model.to(device)
         models_dict["structural"] = structural_model
@@ -512,7 +539,8 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
                              ["model", "corruption", "severity", "acc"])
 
     # Final cleanup to prevent cross-experiment bleed
-    original_after_model = original_after_model.to("cpu")
+    if original_after_model is not None:
+        original_after_model = original_after_model.to("cpu")
     unstructured_pruning_model = unstructured_pruning_model.to("cpu")
     full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
     if structural_model is not None:
@@ -538,29 +566,29 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         "acc_original_after": acc_original,
         "acc_unstructured": acc_unstructured,
         "acc_collapsed": acc_collapsed,
-        "power_watts_original": round(power_original, 2),
-        "energy_joules_original": round(energy_original, 2),
+        "power_watts_original": round(power_original, 2) if power_original is not None else None,
+        "energy_joules_original": round(energy_original, 2) if energy_original is not None else None,
         "power_watts_unstructured": round(power_unstructured, 2),
         "energy_joules_unstructured": round(energy_unstructured, 2),
         "power_watts_collapsed": round(power_collapsed, 2),
         "energy_joules_collapsed": round(energy_collapsed, 2),
-        "flops_original": float(flops_original),
-        "flops_unstructured": float(flops_unstructured),
+        "flops_original": float(flops_original) if flops_original is not None else None,
+        "flops_unstructured": float(flops_unstructured) if flops_unstructured is not None else None,
         "flops_collapsed": float(flops_collapsed),
         "flops_unstructured_measured": float(bench_unstructured["flops"]),
-        "latency_ms_original": bench_original["latency_ms"],
+        "latency_ms_original": _bench_field("original", "latency_ms"),
         "latency_ms_unstructured": bench_unstructured["latency_ms"],
         "latency_ms_collapsed": bench_collapsed["latency_ms"],
-        "throughput_imgs_original": bench_original["throughput_imgs"],
+        "throughput_imgs_original": _bench_field("original", "throughput_imgs"),
         "throughput_imgs_unstructured": bench_unstructured["throughput_imgs"],
         "throughput_imgs_collapsed": bench_collapsed["throughput_imgs"],
-        "peak_mem_mb_original": bench_original["peak_mem_mb"],
+        "peak_mem_mb_original": _bench_field("original", "peak_mem_mb"),
         "peak_mem_mb_unstructured": bench_unstructured["peak_mem_mb"],
         "peak_mem_mb_collapsed": bench_collapsed["peak_mem_mb"],
-        "feature_maps_mb_original": bench_original["feature_map_mb"],
+        "feature_maps_mb_original": _bench_field("original", "feature_map_mb"),
         "feature_maps_mb_unstructured": bench_unstructured["feature_map_mb"],
         "feature_maps_mb_collapsed": bench_collapsed["feature_map_mb"],
-        "storage_mb_original": storage_mb["original"],
+        "storage_mb_original": storage_mb.get("original"),
         "storage_mb_unstructured": storage_mb["unstructured"],
         "storage_mb_collapsed": storage_mb["collapsed"],
         "cka_unstructured": cka_unstructured,
@@ -603,6 +631,9 @@ def main():
     parser.add_argument("--corruptions-dir", default=None,
                         help="Directory containing CIFAR-10-C / CIFAR-100-C (see download_corruptions.sh). "
                              "Enables corruption evaluation under --analysis full.")
+    parser.add_argument("--quant", action="store_true",
+                        help="Analyze the quantized universe: discovers the *_quant.pt / *_quant_whole.pt "
+                             "artifacts written by Tranfer QUANT=True runs.")
     args = parser.parse_args()
 
     total_start_time = time.time()
@@ -611,20 +642,21 @@ def main():
     # 1. Discover Checkpoints (epoch config is derived from directory names;
     #    --pre/--post act only as explicit filters)
     print("[INFO] Searching for model checkpoints...")
-    checkpoints = find_experiment_checkpoints(args.model, args.dataset, args.pre, args.post)
+    checkpoints = find_experiment_checkpoints(args.model, args.dataset, args.pre, args.post, quant=args.quant)
     print(f"[INFO] Found {len(checkpoints['before'])} 'before' checkpoints.")
     print(f"[INFO] Found {len(checkpoints['collapsed'])} collapsed checkpoints.")
     print(f"[INFO] Found {len(checkpoints['after'])} 'after' checkpoints.")
 
     # Automatically format unique output path if 'auto' or default to prevent overwrite collisions
+    quant_tag = "_quant" if args.quant else ""
     if args.output == "auto" or args.output == "cka_comparison_results.csv":
         if args.pre is not None or args.post is not None:
-            args.output = f"cka_results_{args.model}_{args.dataset}_pre{args.pre}_post{args.post}.csv"
+            args.output = f"cka_results_{args.model}_{args.dataset}{quant_tag}_pre{args.pre}_post{args.post}.csv"
         elif checkpoints["before"]:
             post, pre = parse_epoch_tokens(checkpoints["before"][0])
-            args.output = f"cka_results_{args.model}_{args.dataset}_pre{pre}_post{post}.csv"
+            args.output = f"cka_results_{args.model}_{args.dataset}{quant_tag}_pre{pre}_post{post}.csv"
         else:
-            args.output = f"cka_results_{args.model}_{args.dataset}.csv"
+            args.output = f"cka_results_{args.model}_{args.dataset}{quant_tag}.csv"
 
     print("=" * 70)
     print("Starting Comparison Post-Processing Pipeline")
