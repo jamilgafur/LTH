@@ -249,7 +249,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     if "_scorerall" in checkpoint_dir and os.path.isdir(checkpoint_dir.replace("_scorerall", "")):
         # borrowed scorerall before: keep derived baselines (IMP/structural) in the default universe
         checkpoint_dir = checkpoint_dir.replace("_scorerall", "")
-    qs = "_quant" if args.quant else ""  # keep quant-universe baselines from clobbering non-quant artifacts
+    qs = ""  # PTQ: IMP/structural baselines are shared across fp32/fp16 — quant converts at measurement time
     unstructured_ckpt_path = os.path.join(checkpoint_dir, f"final_JF_Unstructured_IMP{qs}_post{imp_epochs}.pt")
 
     # IMP retrains from the (inherited) 'before' model -> scorer-independent:
@@ -318,7 +318,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     print("       -> Evaluating Baseline")
     model_before = model_before.to(device)
     acc_before, power_before, energy_before = evaluate_accuracy(
-        model_before, test_loader, device, power_interval=args.power_interval
+        model_before, test_loader, device, power_interval=args.power_interval, quant=args.quant
     )
     model_before = model_before.to("cpu")
     torch.cuda.empty_cache()
@@ -327,14 +327,14 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         print("       -> Evaluating Original After Finetuning")
         original_after_model = original_after_model.to(device)
         acc_original, power_original, energy_original = evaluate_accuracy(
-            original_after_model, test_loader, device, power_interval=args.power_interval
+            original_after_model, test_loader, device, power_interval=args.power_interval, quant=args.quant
         )
         if acc_before > (acc_original + 0.20):
             print(f"\n[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting ({acc_original*100:.2f}%).")
             print(f"[CRITICAL WARNING] Re-evaluating healthy 'model_before' ({acc_before*100:.2f}%) on warm cache as the true baseline...")
             model_before = model_before.to(device)
             acc_original, power_original, energy_original = evaluate_accuracy(
-                model_before, test_loader, device, power_interval=args.power_interval
+                model_before, test_loader, device, power_interval=args.power_interval, quant=args.quant
             )
             model_before = model_before.to("cpu")
         original_after_model = original_after_model.to("cpu")
@@ -345,7 +345,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     print("       -> Evaluating Unstructured Pruned Model")
     unstructured_pruning_model = unstructured_pruning_model.to(device)
     acc_unstructured, power_unstructured, energy_unstructured = evaluate_accuracy(
-        unstructured_pruning_model, test_loader, device, power_interval=args.power_interval
+        unstructured_pruning_model, test_loader, device, power_interval=args.power_interval, quant=args.quant
     )
     unstructured_pruning_model = unstructured_pruning_model.to("cpu")
     torch.cuda.empty_cache()
@@ -353,7 +353,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     print("       -> Evaluating Collapsed Model")
     full_collapsed_model_ready = full_collapsed_model_ready.to(device)
     acc_collapsed, power_collapsed, energy_collapsed = evaluate_accuracy(
-        full_collapsed_model_ready, test_loader, device, power_interval=args.power_interval
+        full_collapsed_model_ready, test_loader, device, power_interval=args.power_interval, quant=args.quant
     )
     full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
     torch.cuda.empty_cache()
@@ -363,7 +363,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         print("       -> Evaluating Structural L1 Pruned Model")
         structural_model = structural_model.to(device)
         acc_structural, power_structural, energy_structural = evaluate_accuracy(
-            structural_model, test_loader, device, power_interval=args.power_interval
+            structural_model, test_loader, device, power_interval=args.power_interval, quant=args.quant
         )
         structural_model = structural_model.to("cpu")
         torch.cuda.empty_cache()
@@ -391,7 +391,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     benchmarks = {}
     for bench_name, bench_model in bench_variants:
         bench_model = bench_model.to(device)
-        benchmarks[bench_name] = benchmark_model(bench_model, test_loader, device, num_batches=20)
+        benchmarks[bench_name] = benchmark_model(bench_model, test_loader, device, num_batches=20, quant=args.quant)
         bench_model = bench_model.to("cpu")
         torch.cuda.empty_cache()
 
@@ -418,8 +418,12 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         print(f"[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): {flops_unstructured:.2e}")
 
     def _state_dict_mb(m):
+        sd = m.state_dict()
+        if args.quant:
+            # PTQ storage: the fp16 artifact is what would be shipped/measured
+            sd = {k: (v.half() if v.is_floating_point() else v) for k, v in sd.items()}
         buf = io.BytesIO()
-        torch.save(m.state_dict(), buf)
+        torch.save(sd, buf)
         return buf.getbuffer().nbytes / (1024 ** 2)
 
     storage_mb = {}
@@ -493,6 +497,9 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     full_analysis = getattr(args, "analysis", "standard") == "full"
     adv_epsilons = (0.005, 0.01, 0.02, 0.03, 0.05) if full_analysis else (0.03,)
     curve_rows = [] if full_analysis else None
+    # shortcut: adversarial eval stays fp32 even under --quant — fp16 gradients
+    # underflow at eps~0.03 and poison the attack; upgrade if quant adv numbers
+    # are ever needed for the paper.
     adv_metrics = evaluate_adversarial_robustness(
         models_dict, data_batch, device, epsilons=adv_epsilons, curve_rows=curve_rows
     )
@@ -637,8 +644,11 @@ def main():
                         help="Directory containing CIFAR-10-C / CIFAR-100-C (see download_corruptions.sh). "
                              "Enables corruption evaluation under --analysis full.")
     parser.add_argument("--quant", action="store_true",
-                        help="Analyze the quantized universe: discovers the *_quant.pt / *_quant_whole.pt "
-                             "artifacts written by Tranfer QUANT=True runs.")
+                        help="Analyze the fp16-quantized (PTQ) universe: loads the SAME fp32 "
+                             "artifacts as the default run and measures them converted to fp16 "
+                             "(autocast inference, fp16 storage estimate). Results are written "
+                             "to *_quant_*.csv. No retraining is involved — *_quant.pt files "
+                             "(legacy QAT) are not read.")
     args = parser.parse_args()
 
     total_start_time = time.time()

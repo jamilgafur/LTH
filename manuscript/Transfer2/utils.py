@@ -225,19 +225,28 @@ def apply_unstructured_pruning(model: nn.Module, amount: float = 0.2) -> nn.Modu
 # Model Evaluation with Energy Tracking
 # =========================================================
 
-def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_interval: int = 1):
-    """Evaluates top-1 accuracy while profiling power draw (W) and energy (J)."""
+def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_interval: int = 1, quant: bool = False):
+    """Evaluates top-1 accuracy while profiling power draw (W) and energy (J).
+
+    quant=True runs the forward pass under fp16 autocast (CUDA only) — the
+    PTQ conversion path: the model is the same fp32 artifact, measured as fp16.
+    """
     print("[INFO] Starting accuracy and energy evaluation...")
     model.to(device)
     model.eval()
     correct = 0
     total = 0
+    use_autocast = quant and device.type == 'cuda'
 
     with PowerTracker(device=device, interval_s=power_interval) as tracker:
         with torch.no_grad():
             for batch_idx, (inputs, targets) in enumerate(dataloader):
                 inputs, targets = inputs.to(device), targets.to(device)
-                outputs = model(inputs)
+                if use_autocast:
+                    with torch.cuda.amp.autocast():
+                        outputs = model(inputs)
+                else:
+                    outputs = model(inputs)
                 _, predicted = outputs.max(1)
                 total += targets.size(0)
                 correct += predicted.eq(targets).sum().item()
@@ -515,8 +524,10 @@ def find_experiment_checkpoints(model_name, dataset_name, pre_epochs=None, post_
     and case-insensitive dataset matching). Automatically falls back to Set_0 per base directory
     if Dynamic_Region_All_Combined is not present.
 
-    quant=True discovers the quantized universe: Tranfer writes `*_quant.pt` /
-    `*_quant_whole.pt` artifacts for QUANT=True runs (see experiments.py).
+    quant=True analyzes the fp16-quantized universe: the SAME FP artifacts as
+    the fp32 run, converted at measurement time (autocast fp16 inference,
+    fp16 storage estimate). Separate `*_quant.pt` artifacts (QAT-trained)
+    are no longer consulted.
 
     Epoch configuration (epochsN / pretrainM tokens) is derived from the directory names
     themselves, so multiple training configurations can coexist: each before-checkpoint is
@@ -543,7 +554,9 @@ def find_experiment_checkpoints(model_name, dataset_name, pre_epochs=None, post_
     before_ckpts = []
     after_ckpts = []
     collapsed_by_dir = {}
-    qs = "_quant" if quant else ""
+    # PTQ semantics: quant rows are measured from the FP artifacts, converted to
+    # fp16 at measurement time; `*_quant.pt` (legacy QAT) files are ignored.
+    qs = ""
 
     for d_name in set(dataset_patterns):
         base_pattern = f"../Tranfer/{model_name}_{d_name}_*"
