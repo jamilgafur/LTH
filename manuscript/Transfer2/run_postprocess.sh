@@ -20,15 +20,18 @@ for model in "${models[@]}"; do
                 CSV="cka_results_${model}_${dataset}${QTAG}_pre${PRETRAIN}_post${EPOCHS}.csv"
 
                 # Skip only when a non-CPU row already exists; CPU-only rows (bad
-                # node) and missing files get (re)submitted.
+                # node), 1-byte placeholders and missing files get (re)submitted.
                 if python3 - "$CSV" <<'PY'
 import csv, sys
 try:
-    rows = list(csv.reader(open(sys.argv[1])))
-    hdr = rows[0]; gi = hdr.index("gpu_name")
-    sys.exit(0 if any(r[gi].strip().upper() != "CPU" for r in rows[1:] if len(r) > gi) else 1)
-except FileNotFoundError:
-    sys.exit(1)
+    with open(sys.argv[1]) as f:
+        rows = [r for r in csv.reader(f) if r]
+    gi = rows[0].index("gpu_name")
+    ok = any(len(r) > gi and r[gi].strip() and r[gi].strip().upper() != "CPU"
+             for r in rows[1:])
+    sys.exit(0 if ok else 1)
+except Exception:
+    sys.exit(1)   # unreadable / no column / empty placeholder => run
 PY
                 then
                     echo "SKIP (GPU row exists): $CSV"
