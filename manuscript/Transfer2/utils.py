@@ -228,15 +228,32 @@ def apply_unstructured_pruning(model: nn.Module, amount: float = 0.2) -> nn.Modu
 def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_interval: int = 1, quant: bool = False):
     """Evaluates top-1 accuracy while profiling power draw (W) and energy (J).
 
+    One warmup pass runs untracked first: fills the disk/page cache and autotuner
+    so the tracked pass measures compute, not dataloader I/O stalls (this was the
+    dominant source of 2-4x energy variance across identical runs).
     quant=True runs the forward pass under fp16 autocast (CUDA only) — the
     PTQ conversion path: the model is the same fp32 artifact, measured as fp16.
+    Returns (accuracy, avg_watts, total_joules, gpu_util_pct, gpu_clock_mhz).
     """
-    print("[INFO] Starting accuracy and energy evaluation...")
-    model.to(device)
+    print("[INFO] Starting accuracy and energy evaluation (warmup pass first)...")
     model.eval()
+    model.to(device)
+    device_type = getattr(device, "type", None) or ("cuda" if torch.cuda.is_available() else "cpu")
+    use_autocast = quant and device_type == 'cuda'
+
+    with torch.no_grad():
+        for inputs, _ in dataloader:
+            inputs = inputs.to(device)
+            if use_autocast:
+                with torch.cuda.amp.autocast():
+                    model(inputs)
+            else:
+                model(inputs)
+        if device_type == "cuda":
+            torch.cuda.synchronize()
+
     correct = 0
     total = 0
-    use_autocast = quant and device.type == 'cuda'
 
     with PowerTracker(device=device, interval_s=power_interval) as tracker:
         with torch.no_grad():
@@ -254,14 +271,14 @@ def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_
                 if (batch_idx + 1) % 50 == 0:
                     print(f"[INFO] Accuracy evaluation: batch={batch_idx + 1}, samples={total}")
 
-    avg_watts, total_joules, elapsed_sec = tracker.get_results()
+    avg_watts, total_joules, elapsed_sec, gpu_util, gpu_clock = tracker.get_results()
     accuracy = correct / total if total > 0 else 0.0
 
     print(
         f"[INFO] Evaluation complete: acc={accuracy:.4f}, "
         f"power={avg_watts:.2f}W, energy={total_joules:.2f}J, time={elapsed_sec:.2f}s"
     )
-    return accuracy, avg_watts, total_joules
+    return accuracy, avg_watts, total_joules, gpu_util, gpu_clock
 
 # =========================================================
 # Iterative Magnitude Pruning (IMP) Training Loop

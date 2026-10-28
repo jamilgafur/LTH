@@ -387,26 +387,40 @@ class NvidiaSmiParser(ResourceParser):
         self.header_read = False
         self.gpu_id = os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(",")[0]
         self.num_gpus = 1
+        self.total_util = 0.0
+        self.total_clocks = 0.0
 
     def start_monitoring(self, interval_s: int):
-        cmd = f"nvidia-smi -i {self.gpu_id} --query-gpu=power.draw --format=csv,noheader,nounits --loop={interval_s}".split()
+        cmd = f"nvidia-smi -i {self.gpu_id} --query-gpu=power.draw,utilization.gpu,clocks.sm --format=csv,noheader,nounits --loop={interval_s}".split()
         return subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True, shell=False)
 
     def parse(self, line):
-        r = self.DATA_REGEXP.match(line.strip())
-        if not r:
+        # expected: "<watts>, <util%>, <clock MHz>" ([Not Supported] possible)
+        vals = re.findall(r"\d+\.?\d+", line)
+        if not vals:
             return
-        val = float(r.group(1))
+        val = float(vals[0])
         if self.max_watts and val > self.max_watts:
             return
         self.total_watts += val
         self.num_intervals += 1
+        if len(vals) > 1:
+            self.total_util += float(vals[1])
+        if len(vals) > 2:
+            self.total_clocks += float(vals[2])
 
     def get_results(self):
         if self.num_gpus == 0 or self.num_intervals == 0:
             return 0.0, 0
         scaled_watts = self.total_watts / self.num_intervals
         return scaled_watts, self.num_intervals
+
+    def get_extras(self):
+        """Average GPU utilization (%) and SM clock (MHz) over sampled intervals."""
+        if self.num_intervals == 0:
+            return None, None
+        return (round(self.total_util / self.num_intervals, 1),
+                round(self.total_clocks / self.num_intervals, 1))
     
 def background_action(action: str):
     """ Starts or stop a monitoring process in background mode"""

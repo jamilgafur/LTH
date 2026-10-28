@@ -101,26 +101,31 @@ class PowerTracker:
 
     def get_results(self):
         if not self.parser:
-            return 0.0, 0.0, self.elapsed_time
+            return 0.0, 0.0, self.elapsed_time, None, None
 
         avg_watts, _ = self.parser.get_results()
+        gpu_util = gpu_clock = None
+        if hasattr(self.parser, "get_extras"):
+            gpu_util, gpu_clock = self.parser.get_extras()
 
         # Fallback for fast inference batches (isolated to assigned GPU)
         if avg_watts == 0.0 and torch.cuda.is_available():
             try:
                 gpu_id = os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(",")[0]
                 res = subprocess.run(
-                    f"nvidia-smi -i {gpu_id} --query-gpu=power.draw --format=csv,noheader,nounits".split(),
+                    f"nvidia-smi -i {gpu_id} --query-gpu=power.draw,utilization.gpu,clocks.sm --format=csv,noheader,nounits".split(),
                     capture_output=True, text=True, check=True
                 )
-                vals = [float(x.strip()) for x in res.stdout.strip().splitlines() if x.strip()]
-                if vals:
-                    avg_watts = vals[0]
+                nums = [float(x) for x in re.findall(r"\d+\.?\d+", res.stdout)]
+                if nums:
+                    avg_watts = nums[0]
+                    gpu_util = nums[1] if len(nums) > 1 else None
+                    gpu_clock = nums[2] if len(nums) > 2 else None
             except Exception:
                 pass
 
         total_joules = avg_watts * self.elapsed_time
-        return float(avg_watts), float(total_joules), float(self.elapsed_time)
+        return float(avg_watts), float(total_joules), float(self.elapsed_time), gpu_util, gpu_clock
 
 # =========================================================
 # Adversarial Attack Robustness
@@ -317,7 +322,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     
     print("       -> Evaluating Baseline")
     model_before = model_before.to(device)
-    acc_before, power_before, energy_before = evaluate_accuracy(
+    acc_before, power_before, energy_before, util_before, clock_before = evaluate_accuracy(
         model_before, test_loader, device, power_interval=args.power_interval, quant=args.quant
     )
     model_before = model_before.to("cpu")
@@ -326,25 +331,25 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     if original_after_model is not None:
         print("       -> Evaluating Original After Finetuning")
         original_after_model = original_after_model.to(device)
-        acc_original, power_original, energy_original = evaluate_accuracy(
+        acc_original, power_original, energy_original, util_original, clock_original = evaluate_accuracy(
             original_after_model, test_loader, device, power_interval=args.power_interval, quant=args.quant
         )
         if acc_before > (acc_original + 0.20):
             print(f"\n[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting ({acc_original*100:.2f}%).")
             print(f"[CRITICAL WARNING] Re-evaluating healthy 'model_before' ({acc_before*100:.2f}%) on warm cache as the true baseline...")
             model_before = model_before.to(device)
-            acc_original, power_original, energy_original = evaluate_accuracy(
+            acc_original, power_original, energy_original, util_original, clock_original = evaluate_accuracy(
                 model_before, test_loader, device, power_interval=args.power_interval, quant=args.quant
             )
             model_before = model_before.to("cpu")
         original_after_model = original_after_model.to("cpu")
         torch.cuda.empty_cache()
     else:
-        acc_original = power_original = energy_original = None
+        acc_original = power_original = energy_original = util_original = clock_original = None
 
     print("       -> Evaluating Unstructured Pruned Model")
     unstructured_pruning_model = unstructured_pruning_model.to(device)
-    acc_unstructured, power_unstructured, energy_unstructured = evaluate_accuracy(
+    acc_unstructured, power_unstructured, energy_unstructured, util_unstructured, clock_unstructured = evaluate_accuracy(
         unstructured_pruning_model, test_loader, device, power_interval=args.power_interval, quant=args.quant
     )
     unstructured_pruning_model = unstructured_pruning_model.to("cpu")
@@ -352,17 +357,18 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
     print("       -> Evaluating Collapsed Model")
     full_collapsed_model_ready = full_collapsed_model_ready.to(device)
-    acc_collapsed, power_collapsed, energy_collapsed = evaluate_accuracy(
+    acc_collapsed, power_collapsed, energy_collapsed, util_collapsed, clock_collapsed = evaluate_accuracy(
         full_collapsed_model_ready, test_loader, device, power_interval=args.power_interval, quant=args.quant
     )
     full_collapsed_model_ready = full_collapsed_model_ready.to("cpu")
     torch.cuda.empty_cache()
 
     acc_structural = power_structural = energy_structural = float("nan")
+    util_structural = clock_structural = None
     if structural_model is not None:
         print("       -> Evaluating Structural L1 Pruned Model")
         structural_model = structural_model.to(device)
-        acc_structural, power_structural, energy_structural = evaluate_accuracy(
+        acc_structural, power_structural, energy_structural, util_structural, clock_structural = evaluate_accuracy(
             structural_model, test_loader, device, power_interval=args.power_interval, quant=args.quant
         )
         structural_model = structural_model.to("cpu")
@@ -619,6 +625,16 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         "params_structural": structural_param_count,
         "sparsity_structural": (1.0 - structural_param_count / original_param_count)
                                if structural_param_count is not None else None,
+        # SM utilization / clocks during the tracked eval — diagnostic for the
+        # "collapsed draws more power" effect; None on CPU.
+        "gpu_util_original": util_original,
+        "gpu_clock_mhz_original": clock_original,
+        "gpu_util_unstructured": util_unstructured,
+        "gpu_clock_mhz_unstructured": clock_unstructured,
+        "gpu_util_collapsed": util_collapsed,
+        "gpu_clock_mhz_collapsed": clock_collapsed,
+        "gpu_util_structural": util_structural,
+        "gpu_clock_mhz_structural": clock_structural,
     }
     result_dict.update(adv_metrics)
     result_dict.update(analysis_metrics)

@@ -41,14 +41,15 @@ Per processed `final_JF_Control.pt` ("before") checkpoint:
 | `--power-interval` | `1` | Power sampling interval (s) for the energy measurements |
 | `--analysis` | `standard` | `standard` = historical behavior; `full` adds adversarial ε-sweeps, calibration, OOD, and corruptions |
 | `--corruptions-dir` | unset | CIFAR-C data root (stage via `download_corruptions.sh` on a login node); enables corruption evaluation under `--analysis full` |
-| `--quant` | off | Analyze the quantized universe: discovers the `*_quant.pt` / `*_quant_whole.pt` artifacts written by Tranfer `QUANT=True` runs; baselines and CSV outputs get a `_quant` infix so both universes coexist per directory |
+| `--quant` | off | Analyze the fp16-quantized (PTQ) universe: loads the **same fp32 artifacts** as the default run and measures them converted to fp16 (autocast inference, fp16 storage estimate); no retraining involved. CSV outputs get a `_quant` infix so both universes coexist per directory. Legacy `*_quant.pt` artifacts (QAT-trained) are not read |
 
 ## Checkpoint Discovery & Matching
 
 - Discovery globs `../Tranfer/{model}_{dataset}_*/checkpoints/` for the three buckets
-  (`before`, `after/Continuted`, `collapsed *_whole.pt`; with `--quant`, the same names with a
-  `_quant` infix, matching how Tranfer's `experiments.py` names quantized artifacts) — epoch tokens are **not** baked into
-  the glob, so multiple configs (`epochs100_pretrain300`, `epochs300_pretrain100`, …) coexist.
+  (`before`, `after/Continuted`, `collapsed *_whole.pt`) — with `--quant` the **same FP
+  files** are discovered (PTQ conversion happens at measurement time). Epoch tokens are
+  **not** baked into the glob, so multiple configs (`epochs100_pretrain300`,
+  `epochs300_pretrain100`, …) coexist.
 - Each before-checkpoint is matched to artifacts **in its own base directory**
   (`find_matching_checkpoint`) — epoch tokens come from `parse_epoch_tokens(path)`
   (`post ↔ epochs{N}`, `pre ↔ pretrain{M}`). The IMP training length and IMP/structural
@@ -88,7 +89,10 @@ Result-dict columns (wide CSV), grouped by family:
 when the optional dep runs):
 `acc_{variant}` (variants use names `acc_original_after`, `acc_unstructured`, `acc_collapsed`,
 `acc_structural`), `power_watts_{variant}`, `energy_joules_{variant}` — measured with a
-`PowerTracker` during full test-set evaluation.
+`PowerTracker` during full test-set evaluation, after **one untracked warmup pass** (warms the
+disk/page cache and autotuner so the tracked joules reflect compute, not dataloader I/O).
+`gpu_util_{variant}` / `gpu_clock_mhz_{variant}` record average SM utilization/clock during the
+tracked pass (None on CPU) — diagnostics for the "collapsed draws more watts" effect.
 
 **Efficiency tetrad** (`benchmark_model`, CUDA-event timed, 20 batches):
 `flops_{variant}` (fvcore measured; `flops_unstructured` keeps the legacy *theoretical*
@@ -124,6 +128,14 @@ severities; raises a loud `FileNotFoundError` with staging instructions if the d
 
 `stem` = the results CSV's basename without extension, so per-config tidy files accumulate
 alongside the wide table.
+
+Sibling tooling:
+
+| File | Purpose |
+|---|---|
+| `aggregate_results.py` | pools every `cka_results_*.csv` (both header variants), drops CPU rows when a GPU twin exists, adds within-row variant/original ratios + J/img, writes `aggregated_rows.csv` / `aggregated_median.csv` — the cross-GPU apples-to-apples tables |
+| `diagnose_cka.py` | audits why a config's CKA is ~0: logs which layer each variant's feature extractor strips, plus drift-reference CKAs (extraction bug vs genuine divergence) |
+| `run_postprocess.sh` | submits the config grid but **skips configs whose CSV already has a GPU (non-CPU) row**; CPU-only and missing configs (re)run |
 
 ### Corruption data staging
 
