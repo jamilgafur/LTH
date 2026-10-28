@@ -444,6 +444,11 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         original_after_model = original_after_model.to("cpu")
         torch.cuda.empty_cache()
 
+        # Sanity: CKA(f, f) must be ~1.0; if not, the feature pipeline is broken
+        cka_self = compare_CKA(features_original, features_original)
+        print(f"[INFO] CKA self-check (expect ~1.0): {cka_self:.6f}")
+        assert 0.99 <= cka_self <= 1.01, f"CKA self-check failed: {cka_self}"
+
         unstructured_pruning_model = unstructured_pruning_model.to(device)
         features_unstructured = extract_features(unstructured_pruning_model, test_loader, device)
         unstructured_pruning_model = unstructured_pruning_model.to("cpu")
