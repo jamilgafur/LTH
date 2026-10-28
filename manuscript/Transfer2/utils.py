@@ -322,7 +322,6 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, c
             epoch_pbar = tqdm(
                 range(start_epoch, epochs),
                 desc="IMP",
-                disable=not interactive,
             )
             for epoch in epoch_pbar:
                 if epoch < pruning_steps:
@@ -337,8 +336,6 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, c
                     train_loader,
                     total=len(train_loader),
                     desc=f"Epoch {epoch + 1}/{epochs}",
-                    leave=False,
-                    disable=not interactive,
                 )
                 for step, (inputs, targets) in enumerate(batch_pbar):
                     inputs = inputs.to(device, non_blocking=True)
@@ -1363,7 +1360,7 @@ def train_structural(model, train_loader, device, epochs, target_sparsity, save_
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
 
     interactive = sys.stderr.isatty()
-    epoch_pbar = tqdm(range(epochs), desc="StructuralL1", disable=not interactive)
+    epoch_pbar = tqdm(range(epochs), desc="StructuralL1")
     prune_rounds = 0
     for epoch in epoch_pbar:
         current_params = sum(p.numel() for p in model.parameters())
