@@ -21,11 +21,11 @@ esac
 # 1. Clean up previous submissions
 rm ~/submit* 2>/dev/null
 
-#models=("VGG16" "RegNetX_400MF" "XceptionNet" "InceptionNet" "MobileNet" "ConvNeXt")
-models=("MobileNet")
+models=("VGG16" "RegNetX_400MF" "XceptionNet" "InceptionNet" "MobileNet" "ConvNeXt")
+#models=("MobileNet")
 #"ConvNeXt" "MobileNet" "InceptionNet" "XceptionNet" "RegNetX_400MF" "VGG16")
 datasets=("tinyimagenet" "Cifar100" "Cifar10")
-quant=("False")
+quant=("False" "True")
 
 echo "=== Submitting Stage 1: Discovery Jobs ==="
 echo "    Discovery Budget (Epochs): $EPOCHS | HPC Target (Pretrain): $PRETRAIN | Scorer: $SCORER"
@@ -49,7 +49,7 @@ for model in "${models[@]}"; do
                 fi
 
                 # Submit discovery job. Will train/inherit Control if needed, then dump JSON
-                command="qsub -q all.q -l ngpus=1 -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"discover\",FLAG=\"$flag\",QUANT=\"$quant_flag\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",SCORER=\"$SCORER\" submit_job.pbs"
+                command="qsub -q all.q -l ngpus=1,gpu=TRUE -v MODEL=\"$model\",DATASET=\"$dataset\",EXPERIMENT=\"discover\",FLAG=\"$flag\",QUANT=\"$quant_flag\",EPOCHS=\"$EPOCHS\",PRETRAIN=\"$PRETRAIN\",SCORER=\"$SCORER\" submit_job.pbs"
                 
                 echo "Executing: $command"
                 eval "$command"

@@ -289,7 +289,6 @@ def run_experiment(
     epoch_pbar = tqdm.tqdm(
         range(start_epoch, epochs),
         desc=f"{workflow}/{exp_name}",
-        disable=not sys.stderr.isatty(),
     )
     for epoch in epoch_pbar:
         if epoch_pbar.disable:

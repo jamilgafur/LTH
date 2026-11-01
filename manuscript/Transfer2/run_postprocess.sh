@@ -7,7 +7,8 @@ datasets=("tinyimagenet" "Cifar100" "Cifar10")
 echo "=== Submitting CKA Post-Processing Jobs ==="
 
 # Epoch configs as "EPOCHS PRETRAIN" pairs (matches temp1/temp2 arg order)
-configs=("100 300" "200 200" "300 100")
+configs=("100 300")
+#"200 200" "300 100")
 
 for model in "${models[@]}"; do
     for dataset in "${datasets[@]}"; do

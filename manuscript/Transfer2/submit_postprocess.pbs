@@ -1,4 +1,5 @@
 #!/bin/bash
+#$ -l mem_free=64G
 
 # --- Environment Setup ---
 echo "Activating conda environment..."
@@ -11,6 +12,11 @@ module load gcc/9.3.0
 cd ~/LTH/manuscript/Transfer2/ || {
     echo "Failed to change directory to ~/LTH/manuscript/Transfer2/"
     exit 1
+}
+
+python -c "import torch;raise SystemExit(0 if torch.cuda.is_available() else 1)" || {
+  echo "[FATAL] $(hostname): no usable GPU — exiting fast instead of training 3 days on CPU" >&2
+  exit 99
 }
 
 # --- Default quant flag (analyzes the non-quant universe when unset) ---
