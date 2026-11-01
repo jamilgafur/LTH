@@ -391,8 +391,11 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, c
                 _, session_joules, session_time, _, _ = tracker.get_results()
                 
                 # Save atomic checkpoint at the end of every epoch
-                # Writing to a temp file first prevents corrupt checkpoints if SLURM kills the job mid-save
-                temp_ckpt_path = checkpoint_path + ".tmp"
+                # Writing to a temp file first prevents corrupt checkpoints if SLURM kills the job mid-save.
+                # Per-pid temp name: fp32+quant jobs share the resume path by design (PTQ converts
+                # at measurement time), so a shared .tmp got renamed away by the other job and the
+                # slow job's os.replace died with ENOENT.
+                temp_ckpt_path = f"{checkpoint_path}.{os.getpid()}.tmp"
                 torch.save({
                     'epoch': epoch,
                     'model_state_dict': model.state_dict(),
