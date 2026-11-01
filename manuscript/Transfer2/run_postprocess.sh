@@ -43,7 +43,9 @@ try:
                   for r in rows[1:])
     artifact = glob.glob(
         f"../Tranfer/{model}_{dataset}_*epochs{epochs}_pretrain{pretrain}"
-        f"/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt")
+        f"/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt") or glob.glob(
+        f"../Tranfer/{model}_{dataset}_*epochs{epochs}_pretrain{pretrain}"
+        f"/checkpoints/final_JF_Set_*_whole.pt")
     sys.exit(0 if real_gpu or (verdict and not artifact) else 1)
 except Exception:
     sys.exit(1)   # unreadable / no column / empty placeholder => run

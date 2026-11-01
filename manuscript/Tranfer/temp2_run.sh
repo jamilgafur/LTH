@@ -63,14 +63,28 @@ for model in "${models[@]}"; do
             # Read the dynamic experiment names out of the JSON file directly (will inherently include 'Control')
             mapfile -t dynamic_experiments < <(python -c "import json; print('\n'.join(json.load(open('$json_file')).keys()))")
 
+            # Legacy single-set maps carry no Dynamic_Region_All_Combined key
+            # (discovery only exported it for >1 sets). With exactly one Set,
+            # Set_0 *is* the combined target: let it through the subset filter.
+            # It writes final_JF_Set_0*_whole.pt, which Transfer2's Set_0
+            # fallback consumes. Status_Map stays filtered below.
+            single_set_target=0
+            if ! printf '%s\n' "${dynamic_experiments[@]}" | grep -qx "Dynamic_Region_All_Combined"; then
+                n_sets=$(printf '%s\n' "${dynamic_experiments[@]}" | grep -c '^Set_' || true)
+                if [ "$n_sets" -eq 1 ]; then
+                    single_set_target=1
+                    echo "[INFO] Single-set map without All_Combined — subset will submit Set_0 as the combined target"
+                fi
+            fi
+
             for quant_flag in "${quant[@]}"; do
                 for experiment in "${dynamic_experiments[@]}"; do
                     
                     # --- Mode Filtering Logic ---
                     if [ "$MODE" = "subset" ]; then
                         if [[ "$experiment" != "Control_Continuted" && "$experiment" != "Dynamic_Region_All_Combined" ]]; then
-                            # Skip this iteration if it's not one of our target subset experiments
-                            continue
+                            # Single-set maps: Set_0 stands in as the combined target
+                            [[ "$single_set_target" == "1" && "$experiment" == "Set_0" ]] || continue
                         fi
                     fi
 

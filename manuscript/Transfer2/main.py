@@ -184,14 +184,13 @@ def _append_long_csv(path, rows, fieldnames):
     print(f"[INFO] Appended {len(rows)} rows to {path}")
 
 
-def no_collapsed_artifact_planned(args, model_before_path):
-    """True when the combo's discovery map exists but contains no
-    Dynamic_Region_All_Combined key: discovery found nothing to collapse, so no
-    collapsed artifact can ever exist for this combo. Mirrors temp2_run.sh's map
-    lookup (legacy name, then scorerlocal_dev-suffixed ablation map)."""
+def _load_region_map_keys(args, model_before_path):
+    """Key set of the combo's discovery map (legacy name first, then
+    scorerlocal_dev-suffixed ablation map — temp2_run.sh's lookup order).
+    Returns None when no map file exists."""
     post, pre = parse_epoch_tokens(model_before_path)
     if post is None or pre is None:
-        return False  # cannot resolve the map name; keep the loud missing-artifact error
+        return None
     stem = os.path.join("..", "Tranfer",
                         f"{args.model}_{args.dataset}_epochs{post}_pretrain{pre}")
     for suffix in ("_JF_discovered_regions.json", "_scorerlocal_dev_JF_discovered_regions.json"):
@@ -199,10 +198,22 @@ def no_collapsed_artifact_planned(args, model_before_path):
         if os.path.exists(path):
             try:
                 with open(path) as f:
-                    return "Dynamic_Region_All_Combined" not in json.load(f)
+                    return set(json.load(f))
             except Exception:
-                return False  # unreadable map; keep the loud missing-artifact error
-    return False  # no map at all: discovery has not run yet, artifact may still be coming
+                return None  # unreadable map; behave as if absent
+    return None
+
+
+def no_collapsed_artifact_planned(args, model_before_path):
+    """True when the combo's discovery map contains no collapsible regions at
+    all (no Dynamic_Region_All_Combined AND no Set_* spans): discovery found
+    nothing to collapse, so no collapsed artifact can ever exist for this
+    combo. Single-set maps (Set_0 only) are NOT verdicts — their collapse is
+    merely untrained (temp2 subset's Set_0 stand-in)."""
+    keys = _load_region_map_keys(args, model_before_path)
+    if keys is None:
+        return False  # no map at all: discovery has not run yet, artifact may still be coming
+    return "Dynamic_Region_All_Combined" not in keys and not any(k.startswith("Set_") for k in keys)
 
 
 def no_regions_row(args, model_before_path):
@@ -251,9 +262,16 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     try:
         collapsed_model_path = find_matching_checkpoint(model_before_path, checkpoints["collapsed"])
     except FileNotFoundError as e:
+        keys = _load_region_map_keys(args, model_before_path)
+        sets = sorted(k for k in (keys or ()) if k.startswith("Set_"))
+        if sets and "Dynamic_Region_All_Combined" not in (keys or ()):
+            hint = (f"This combo's regions map has no Dynamic_Region_All_Combined key; "
+                    f"train the single span {sets[0]} (temp2_run.sh subset submits it "
+                    f"automatically) to produce `final_JF_{sets[0]}_whole.pt`.")
+        else:
+            hint = "Re-run the Tranfer experiments to generate `final_*_whole.pt` artifacts."
         raise FileNotFoundError(
-            f"{e}\n[HINT] No `*_whole.pt` collapsed artifact found for this experiment. "
-            f"Re-run the Tranfer experiments to generate `final_*_whole.pt` artifacts."
+            f"{e}\n[HINT] No `*_whole.pt` collapsed artifact found for this experiment. {hint}"
         ) from e
 
     load_start_time = time.time()

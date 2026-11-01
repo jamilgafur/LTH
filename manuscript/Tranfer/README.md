@@ -84,7 +84,7 @@ region experiments) + `epochs` fine-tuning + metrics/figures + whole-model persi
 | Script | Purpose | Usage |
 |---|---|---|
 | `temp1_run.sh` | Submit Stage-1 discovery jobs over model×dataset×quant loops | `./temp1_run.sh <epochs> <pretrain> [scorer]` — e.g. `./temp1_run.sh 300 100 all` |
-| `temp2_run.sh` | Submit Stage-2 jobs per experiment read from the regions JSON | `./temp2_run.sh <epochs> <pretrain> [mode] [scorer]` — `mode`: `all` or `subset` (only `Control_Continuted` + `Dynamic_Region_All_Combined`); scorer `all` is rejected by design (discovery-only) |
+| `temp2_run.sh` | Submit Stage-2 jobs per experiment read from the regions JSON | `./temp2_run.sh <epochs> <pretrain> [mode] [scorer]` — `mode`: `all` or `subset` (only `Control_Continuted` + `Dynamic_Region_All_Combined`; for legacy single-Set maps with no All_Combined key, `Set_0` stands in as the combined target); scorer `all` is rejected by design (discovery-only) |
 | `submit_job.pbs` | PBS payload: env setup → `transfer.py … --scorer "$SCORER"` → `Journal_plot.py --epoch … --pretrain … --scorer …`. `SCORER` defaults to `local_dev`; log file names get a scorer tag for non-default scorers | submitted via `qsub -v …` by the wrappers |
 
 ## Artifact Inheritance

@@ -121,7 +121,7 @@ severities; raises a loud `FileNotFoundError` with staging instructions if the d
 
 | File | Format | Contents |
 |---|---|---|
-| `cka_results_{model}_{dataset}[ _pre{P}_post{E}].csv` | wide, one row per before-checkpoint | the full metric catalog above; combos whose discovery map has no `Dynamic_Region_All_Combined` (nothing collapsible found) instead get a verdict row with `status="no_collapsed_regions"` and metric columns empty |
+| `cka_results_{model}_{dataset}[ _pre{P}_post{E}].csv` | wide, one row per before-checkpoint | the full metric catalog above; combos whose discovery map has no collapsible regions at all (no `Dynamic_Region_All_Combined` and no `Set_*` spans) instead get a verdict row with `status="no_collapsed_regions"` and metric columns empty. Single-set maps are not verdicts — their `final_JF_Set_0_whole.pt` artifact is consumed by the same collapsed-artifact fallback that prefers `Dynamic_Region_All_Combined` |
 
 **Never-clobber rule:** if every checkpoint in a run fails, the existing CSV is left
 untouched and the failure is logged with a full traceback — an empty DataFrame is
