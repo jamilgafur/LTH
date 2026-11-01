@@ -26,8 +26,8 @@ esac
 
 echo "    Scorer universe: $SCORER"
 
-models=("MobileNet")
-#models=("ConvNeXt" "MobileNet" "InceptionNet" "XceptionNet" "RegNetX_400MF" "VGG16")
+#models=("MobileNet")
+models=("ConvNeXt" "MobileNet" "InceptionNet" "XceptionNet" "RegNetX_400MF" "VGG16")
 datasets=("tinyimagenet" "Cifar10" "Cifar100")
 quant=("False" "True")
 
