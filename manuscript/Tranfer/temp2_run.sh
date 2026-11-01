@@ -94,7 +94,7 @@ for model in "${models[@]}"; do
                     if [ "$quant_flag" == "True" ]; then
                         qtag="_quant"
                     fi
-                    if compgen -G "${model}_${dataset}_*_epochs${EPOCHS}_pretrain${PRETRAIN}/checkpoints/final_JF_${experiment}${qtag}.pt" > /dev/null; then
+                    if compgen -G "${model}_${dataset}_*_epochs${EPOCHS}_pretrain${PRETRAIN}/checkpoints/final_JF_${experiment}${qtag}.pt" | grep -qv "_scorerall_"; then
                         echo "[SKIP] $model/$dataset/$experiment quant=$quant_flag — final artifact exists"
                         continue
                     fi

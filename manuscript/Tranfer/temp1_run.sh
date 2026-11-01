@@ -18,8 +18,8 @@ case "$SCORER" in
     *) echo "Error: unknown scorer '$SCORER' (expected local_dev|percentile|cv|change|cka|all)"; exit 1 ;;
 esac
 
-# 1. Clean up previous submissions
-rm ~/submit* 2>/dev/null
+# 1. Keep previous SGE stdout/stderr (~/submit*) — they are the only evidence
+#    when the node SIGKILLs a job (qacct is unavailable here).
 
 models=("VGG16" "RegNetX_400MF" "XceptionNet" "InceptionNet" "MobileNet" "ConvNeXt")
 #models=("MobileNet")
@@ -39,11 +39,22 @@ for model in "${models[@]}"; do
                 if [ "$SCORER" = "local_dev" ]; then
                     json_done="${model}_${dataset}_epochs${EPOCHS}_pretrain${PRETRAIN}_${flag}_discovered_regions.json"
                     suffixed_done="${model}_${dataset}_epochs${EPOCHS}_pretrain${PRETRAIN}_scorer${SCORER}_${flag}_discovered_regions.json"
+                elif [ "$SCORER" = "all" ]; then
+                    # 'all' never writes a _scorerall_ map; its deliverable is the ablation JSON
+                    json_done="${model}_${dataset}_epochs${EPOCHS}_pretrain${PRETRAIN}_scorer_ablation.json"
+                    suffixed_done=""
                 else
                     json_done="${model}_${dataset}_epochs${EPOCHS}_pretrain${PRETRAIN}_scorer${SCORER}_${flag}_discovered_regions.json"
                     suffixed_done=""
                 fi
-                if [ -f "$json_done" ] || { [ -n "$suffixed_done" ] && [ -f "$suffixed_done" ]; }; then
+                qtag=""; [ "$quant_flag" = "True" ] && qtag="_quant"
+                map_done=false
+                [ -f "$json_done" ] && map_done=true
+                { [ -n "$suffixed_done" ] && [ -f "$suffixed_done" ]; } && map_done=true
+                # Control is scorer-independent: any universe's final counts (Transfer2 borrows it)
+                control_done=false
+                compgen -G "${model}_${dataset}_*_epochs${EPOCHS}_pretrain${PRETRAIN}/checkpoints/final_JF_Control${qtag}.pt" > /dev/null && control_done=true
+                if $map_done && $control_done; then
                     echo "[SKIP] $model/$dataset discovery map already exists: $json_done"
                     continue
                 fi
