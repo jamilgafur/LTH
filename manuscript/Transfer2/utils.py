@@ -388,7 +388,7 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, c
                     print(f"[INFO] Epoch {epoch + 1}/{epochs} | Train Loss: {epoch_loss:.4f}")
                 
                 # Query current energy statistics so far in this session
-                _, session_joules, session_time = tracker.get_results()
+                _, session_joules, session_time, _, _ = tracker.get_results()
                 
                 # Save atomic checkpoint at the end of every epoch
                 # Writing to a temp file first prevents corrupt checkpoints if SLURM kills the job mid-save
@@ -406,7 +406,7 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, c
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
 
-        _, session_joules, session_time = tracker.get_results()
+        _, session_joules, session_time, _, _ = tracker.get_results()
         total_joules = prev_joules + session_joules
         total_time = prev_time + session_time
         avg_watts = total_joules / total_time if total_time > 0 else 0.0

@@ -110,7 +110,8 @@ Scorer-independent artifacts are **copied, not retrained**, into scorer universe
 ```
 
 `Set_*` values are single `[start, end]` collapsible spans;
-`Dynamic_Region_All_Combined` is the greedy union of non-overlapping spans (the headline target);
+`Dynamic_Region_All_Combined` is the forced union of all certified spans (the headline target;
+exported even for a single span, since stage-2 `subset` submits only this key);
 `Status_Map`/`Control_Continuted` are diagnostics/convention keys that stage 2 skips as
 non-experiments where applicable. See
 [collapse/README.md § output schema](../../pyPrune/collapse/README.md#output-schema) for how

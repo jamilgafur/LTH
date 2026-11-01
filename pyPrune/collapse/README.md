@@ -323,7 +323,8 @@ sub-regions are salvaged. Test cost dominates discovery (§9).
 ### 5.5 Phase 4 — Integration
 
 The headline artifact `Dynamic_Region_All_Combined` is the list of **all** accepted Sets
-(forced verbatim when ≥ 2 Sets exist). An older combinatorial variant — re-collapsing
+(forced verbatim, including the single-Set case — stage 2 only ever submits this key, so a
+one-Set discovery without it is silently un-runnable). An older combinatorial variant — re-collapsing
 combinations to hunt for diminishing returns — exists commented out in the source; the active
 semantics is "union of every certified region". (Earlier documentation describing a "greedy
 union of non-overlapping sets" referred to the retired variant.)

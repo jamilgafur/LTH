@@ -6,6 +6,7 @@ import re
 import json
 import time
 import threading
+import traceback
 import subprocess
 import argparse
 from copy import deepcopy
@@ -181,6 +182,42 @@ def _append_long_csv(path, rows, fieldnames):
             writer.writeheader()
         writer.writerows(rows)
     print(f"[INFO] Appended {len(rows)} rows to {path}")
+
+
+def no_collapsed_artifact_planned(args, model_before_path):
+    """True when the combo's discovery map exists but contains no
+    Dynamic_Region_All_Combined key: discovery found nothing to collapse, so no
+    collapsed artifact can ever exist for this combo. Mirrors temp2_run.sh's map
+    lookup (legacy name, then scorerlocal_dev-suffixed ablation map)."""
+    post, pre = parse_epoch_tokens(model_before_path)
+    if post is None or pre is None:
+        return False  # cannot resolve the map name; keep the loud missing-artifact error
+    stem = os.path.join("..", "Tranfer",
+                        f"{args.model}_{args.dataset}_epochs{post}_pretrain{pre}")
+    for suffix in ("_JF_discovered_regions.json", "_scorerlocal_dev_JF_discovered_regions.json"):
+        path = stem + suffix
+        if os.path.exists(path):
+            try:
+                with open(path) as f:
+                    return "Dynamic_Region_All_Combined" not in json.load(f)
+            except Exception:
+                return False  # unreadable map; keep the loud missing-artifact error
+    return False  # no map at all: discovery has not run yet, artifact may still be coming
+
+
+def no_regions_row(args, model_before_path):
+    """Verdict row for a combo whose discovery found no collapsible regions."""
+    post, pre = parse_epoch_tokens(model_before_path)
+    return {
+        "model": args.model,
+        "dataset": args.dataset,
+        "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU",
+        "pre_epochs": pre,
+        "post_epochs": post,
+        "model_before": model_before_path,
+        "intermediate_epoch": 0,
+        "status": "no_collapsed_regions",
+    }
 
 
 def process_checkpoint(model_before_path, checkpoints, args, device):
@@ -713,16 +750,35 @@ def main():
         try:
             result_metrics = process_checkpoint(model_before_path, checkpoints, args, device)
             results.append(result_metrics)
+        except FileNotFoundError as e:
+            if no_collapsed_artifact_planned(args, model_before_path):
+                # Discovery found no collapsible regions for this combo: record an
+                # explicit verdict row so the grid reads "no regions" (and
+                # run_postprocess.sh stops resubmitting it) instead of an empty CSV.
+                print(f"[INFO] No collapsible regions for this combo — writing status row. ({e})")
+                results.append(no_regions_row(args, model_before_path))
+            else:
+                print(f"[ERROR] Failed processing checkpoint: {model_before_path}")
+                print(f"[ERROR] {type(e).__name__}: {e}")
+                traceback.print_exc()
         except Exception as e:
             print(f"[ERROR] Failed processing checkpoint: {model_before_path}")
             print(f"[ERROR] {type(e).__name__}: {e}")
+            traceback.print_exc()
 
-    # 3. Save Results
+    # 3. Save Results — never overwrite an existing CSV with an empty frame; a
+    #    fully-failed run leaves a previous good file intact (run_postprocess.sh
+    #    still resubmits 1-byte placeholders/missing files).
     print("\n" + "=" * 70)
     print("[INFO] Saving final results...")
-    df = pd.DataFrame(results)
-    df.to_csv(args.output, index=False)
-    print(f"[INFO] Results successfully saved to '{args.output}'")
+    if not results:
+        print(f"[ERROR] 0 successful experiments — NOT overwriting '{args.output}'. "
+              f"Fix the errors above and rerun.")
+        df = pd.DataFrame()
+    else:
+        df = pd.DataFrame(results)
+        df.to_csv(args.output, index=False)
+        print(f"[INFO] Results successfully saved to '{args.output}'")
     print(f"[INFO] Total successful experiments: {len(results)}")
     print(f"[INFO] Total runtime: {time.time() - total_start_time:.2f}s")
     

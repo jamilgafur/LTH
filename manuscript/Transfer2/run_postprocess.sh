@@ -19,17 +19,32 @@ for model in "${models[@]}"; do
                 QTAG=""; [ "$quant" == "True" ] && QTAG="_quant"
                 CSV="cka_results_${model}_${dataset}${QTAG}_pre${PRETRAIN}_post${EPOCHS}.csv"
 
-                # Skip only when a non-CPU row already exists; CPU-only rows (bad
-                # node), 1-byte placeholders and missing files get (re)submitted.
-                if python3 - "$CSV" <<'PY'
-import csv, sys
+                # Skip when a real non-CPU measurement row already exists, or when
+                # a 'no_collapsed_regions' verdict row exists AND the collapsed
+                # artifact is still untrained (nothing to measure; rerun once the
+                # artifact lands). CPU-only rows (bad node), 1-byte placeholders
+                # and missing files get (re)submitted.
+                if python3 - "$CSV" "$model" "$dataset" "$EPOCHS" "$PRETRAIN" <<'PY'
+import csv, glob, sys
+# NB: --quant measures the same fp32 collapsed artifact converted to fp16, so the
+# existence check is quant-independent (final_..._All_Combined_whole.pt).
+csv_path, model, dataset, epochs, pretrain = sys.argv[1:6]
 try:
-    with open(sys.argv[1]) as f:
+    with open(csv_path) as f:
         rows = [r for r in csv.reader(f) if r]
-    gi = rows[0].index("gpu_name")
-    ok = any(len(r) > gi and r[gi].strip() and r[gi].strip().upper() != "CPU"
-             for r in rows[1:])
-    sys.exit(0 if ok else 1)
+    hdr = rows[0]
+    gi = hdr.index("gpu_name")
+    si = hdr.index("status") if "status" in hdr else -1
+    real_gpu = any(
+        len(r) > gi and r[gi].strip() and r[gi].strip().upper() != "CPU"
+        and (si < 0 or len(r) <= si or r[si] != "no_collapsed_regions")
+        for r in rows[1:])
+    verdict = any(si >= 0 and len(r) > si and r[si] == "no_collapsed_regions"
+                  for r in rows[1:])
+    artifact = glob.glob(
+        f"../Tranfer/{model}_{dataset}_*epochs{epochs}_pretrain{pretrain}"
+        f"/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt")
+    sys.exit(0 if real_gpu or (verdict and not artifact) else 1)
 except Exception:
     sys.exit(1)   # unreadable / no column / empty placeholder => run
 PY

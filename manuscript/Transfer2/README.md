@@ -121,7 +121,12 @@ severities; raises a loud `FileNotFoundError` with staging instructions if the d
 
 | File | Format | Contents |
 |---|---|---|
-| `cka_results_{model}_{dataset}[ _pre{P}_post{E}].csv` | wide, one row per before-checkpoint | the full metric catalog above |
+| `cka_results_{model}_{dataset}[ _pre{P}_post{E}].csv` | wide, one row per before-checkpoint | the full metric catalog above; combos whose discovery map has no `Dynamic_Region_All_Combined` (nothing collapsible found) instead get a verdict row with `status="no_collapsed_regions"` and metric columns empty |
+
+**Never-clobber rule:** if every checkpoint in a run fails, the existing CSV is left
+untouched and the failure is logged with a full traceback — an empty DataFrame is
+never saved over real data. Marker/verdict rows are overwritten by a successful rerun
+once the combo's collapsed artifact exists.
 | `robustness_curves_{stem}.csv` | tidy long | `attack,epsilon,model,adv_acc` |
 | `calibration_{stem}.csv` | tidy long | `model,bin_lo,bin_hi,n,acc,conf` (reliability diagrams) |
 | `corruption_{stem}.csv` | tidy long | `model,corruption,severity,acc` |
@@ -135,7 +140,7 @@ Sibling tooling:
 |---|---|
 | `aggregate_results.py` | pools every `cka_results_*.csv` (both header variants), drops CPU rows when a GPU twin exists, adds within-row variant/original ratios + J/img, writes `aggregated_rows.csv` / `aggregated_median.csv` — the cross-GPU apples-to-apples tables |
 | `diagnose_cka.py` | audits why a config's CKA is ~0: logs which layer each variant's feature extractor strips, plus drift-reference CKAs (extraction bug vs genuine divergence) |
-| `run_postprocess.sh` | submits the config grid but **skips configs whose CSV already has a GPU (non-CPU) row**; CPU-only and missing configs (re)run |
+| `run_postprocess.sh` | submits the config grid but **skips configs whose CSV already has a GPU (non-CPU) measurement row**, or a `no_collapsed_regions` verdict row while the collapsed artifact is still untrained; CPU-only, marker-with-artifact-now-trained, and missing configs (re)run |
 
 ### Corruption data staging
 

@@ -824,8 +824,11 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
     # HELPER 5: Phase 4 - Greedy Integration
     # =====================================================================
     def greedy_integration(R_final, experiment_regions, base_params, base_flops, check_flops, dummy_input):
-        if len(R_final) > 1:
-            # Force the combined region to be the literal set of all valid sets
+        if len(R_final) >= 1:
+            # Force the combined region to be the literal set of all valid sets.
+            # Also export for a single set: the stage-2 subset pipeline only ever
+            # submits Dynamic_Region_All_Combined, so without the key a one-set
+            # discovery is silently un-runnable.
             experiment_regions["Dynamic_Region_All_Combined"] = R_final
             print(f"[INFO] Forced {len(R_final)} sets into 'Dynamic_Region_All_Combined'.")
             
