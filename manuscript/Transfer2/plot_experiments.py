@@ -10,7 +10,10 @@ CANONICAL_MODELS = ['ConvNeXt', 'InceptionNet', 'MobileNet', 'RegNetX_400MF', 'V
 
 def load_and_compute_deltas():
     """Reads CSVs, skips empty files, and computes hardware-normalized deltas."""
-    csv_files = glob.glob("*.csv")
+    # Only result CSVs: aggregated_*.csv and tidy files (robustness_curves_*,
+    # calibration_*, corruption_*) would inject duplicate model rows / NaN epochs.
+    # sorted(): fp32 sorts before _quant, so drop_duplicates(keep='first') keeps fp32.
+    csv_files = sorted(glob.glob("cka_results_*.csv"))
     if not csv_files:
         print("No CSV files found.")
         return None, []
@@ -91,8 +94,10 @@ def plot_bar_chart(df, all_models, columns, labels, title, ylabel, filename, zer
     """Helper function to plot standard grouped bar charts with fixed x-axis and missing indicators."""
     plt.figure(figsize=(13, 7))
     sns.set_theme(style="whitegrid")
-    
-    # Reindex against all_models to ensure exact same x-axis order everywhere
+
+    # Reindex against all_models to ensure exact same x-axis order everywhere.
+    # Duplicate model rows (e.g. multiple GPUs per config) break reindex — keep first.
+    df = df.drop_duplicates(subset='model', keep='first')
     df_reindexed = df.set_index('model').reindex(all_models)
     missing_models = set(df_reindexed[df_reindexed[columns].isna().all(axis=1)].index)
     
@@ -146,6 +151,7 @@ def plot_adversarial_subplots(df, all_models, title, ylabel, filename):
     fig, axes = plt.subplots(1, 2, figsize=(16, 7), sharey=True)
     sns.set_theme(style="whitegrid")
 
+    df = df.drop_duplicates(subset='model', keep='first')
     df_reindexed = df.set_index('model').reindex(all_models)
     
     # Identify missing models

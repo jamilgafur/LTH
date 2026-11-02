@@ -156,9 +156,7 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name, debug=Fal
                 "start_idx": esc_idx,
                 "end_idx": esc_idx,
                 "full_block": [(subname, container)],
-                "layer_type": nn.Conv2d,
                 "conv_layers": [m for m in container.modules() if isinstance(m, nn.Conv2d)],
-                "collapse_mode": "conv",
                 "first_layer_name": subname,
                 "last_layer_name": subname,
             }
@@ -206,9 +204,7 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name, debug=Fal
                 "start_idx": esc_idx,
                 "end_idx": esc_idx,
                 "full_block": [(subname, container)],
-                "layer_type": nn.Conv2d,
                 "conv_layers": [m for m in container.modules() if isinstance(m, nn.Conv2d)],
-                "collapse_mode": "conv",
                 "first_layer_name": subname,
                 "last_layer_name": subname,
             }
@@ -222,9 +218,7 @@ def _locate_and_prepare_block(model, start_layer_name, end_layer_name, debug=Fal
         "start_idx": start_idx,
         "end_idx": end_idx,
         "full_block": full_block,
-        "layer_type": nn.Conv2d,
         "conv_layers": [m for _, m in full_block if isinstance(m, nn.Conv2d)],
-        "collapse_mode": "conv",
         "first_layer_name": named_layers[start_idx][0],
         "last_layer_name": named_layers[end_idx][0],
     }
@@ -591,6 +585,7 @@ def _insert_corrective_pool(model, next_linear_name, input_shape, debug):
             if child_mod is next_linear_mod:
                 wrapped_linear = nn.Sequential(
                     nn.AdaptiveAvgPool2d((target_hw, target_hw)),
+                    nn.Flatten(1),
                     next_linear_mod
                 )
                 setattr(parent_mod, child_name, wrapped_linear)
@@ -637,7 +632,7 @@ def _find_next_linear(model, end_layer_name, debug, order=None):
 
     if idx_end_global is None:
         for i, (n, m) in enumerate(modules_list):
-            if n.endswith(end_layer_name):
+            if n.split('.')[-1] == end_layer_name:
                 idx_end_global = i
                 if debug:
                     print(f"[DEBUG] Fallback: found partial match at index {i}: {n}")
@@ -666,78 +661,25 @@ def _find_next_linear(model, end_layer_name, debug, order=None):
             
     return next_linear_name, next_linear_mod
 
-def _analyze_block_output(
-    model, full_block, conv_layers, named_layers, end_idx, layer_type, x, y_out, next_linear_mod, debug
-):
+def _analyze_block_output(model, full_block, x, y_out, next_linear_mod, debug):
     if debug:
         print(f"\n[STEP] Analyzing output of collapsed block ({len(full_block)} layers)...")
         print(f"[DEBUG] Input tensor shape before block: {tuple(x.shape)}")
         print(f"[DEBUG] Running forward pass through block layers:")
 
-    out_shape = tuple(y_out.shape)
-    out_channels = y_out.shape[1] if y_out.ndim >= 2 else None
-
-    if debug:
-        print(f"[DEBUG] Final block output shape (via hook): {out_shape}")
-        print(f"[DEBUG] Determined out_channels={out_channels}")
     # --- Ground-truth output characteristics ---
-    out_shape = tuple(y_out.shape)
-
     # 🔧 CRITICAL FIX:
     # Infer channels from actual tensor, not from layer attributes
+    out_shape = tuple(y_out.shape)
     out_channels = y_out.shape[1] if y_out.ndim >= 2 else None
 
     if debug:
         print(f"[DEBUG] Final block output shape: {out_shape}")
         print(f"[DEBUG] Determined out_channels={out_channels}")
 
-    # --- Detect pooling inside original block (informational) ---
-    pool_layer = next(
-        (
-            m for _, m in reversed(full_block)
-            if isinstance(m, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d))
-        ),
-        None,
-    )
-
-    if debug:
-        if pool_layer is not None:
-            print(f"[DEBUG] Detected pool in original block: {type(pool_layer).__name__}")
-        else:
-            print(f"[DEBUG] No explicit pooling layer detected inside block.")
-
-    # --- Linear compatibility heuristic ---
-    linear_in_features_heuristic = next_linear_mod.in_features if next_linear_mod else None
-    if debug:
-        print(f"[DEBUG] Heuristic next linear in_features = {linear_in_features_heuristic}")
-
-    # --- Shortcut detection (unchanged) ---
-    shortcut_out_channels = None
-    for nm, mod in model.named_modules():
-        if hasattr(mod, "shortcut") and isinstance(mod.shortcut, nn.Module):
-            first_conv = next(
-                (m for m in mod.shortcut.modules() if isinstance(m, nn.Conv2d)),
-                None,
-            )
-            if first_conv is not None:
-                shortcut_out_channels = first_conv.out_channels
-                if debug:
-                    print(f"[DEBUG] Found shortcut conv → out_channels={shortcut_out_channels}")
-                break
-
-    if debug:
-        print(f"[RESULT] Block analysis complete:")
-        print(f"         out_shape={out_shape}")
-        print(f"         out_channels={out_channels}")
-        print(f"         has_pool={pool_layer is not None}")
-        print(f"         shortcut_out_channels={shortcut_out_channels}")
-
     return {
         "out_shape": out_shape,
         "out_channels": out_channels,
-        "pool_layer": pool_layer,
-        "shortcut_out_channels": shortcut_out_channels,
-        "linear_in_features_heuristic": linear_in_features_heuristic,
     }
 
 def _validate_downstream(
@@ -805,6 +747,13 @@ def _validate_downstream(
         print(f"[ERROR] Forward pass through inserted module failed: {e}")
         raise RuntimeError(f"Structural collapse replacement validation failed: {e}")
 
+    # The repair replay below linearly replays container children, which is only
+    # sound for pure sequence composition (nn.Sequential); custom-forward
+    # containers must not be mutated and are returned unrepaired.
+    if not isinstance(container, nn.Sequential):
+        print(f"[INFO] Container '{start_container_name}' is not nn.Sequential; skipping downstream auto-repair.")
+        return
+
     print(f"[STEP] Scanning immediate downstream modules for shape or runtime errors...")
     for nm, mod in children[collapsed_idx + 1:]:
         try:
@@ -826,18 +775,15 @@ def _validate_downstream(
 
             if isinstance(mod, (nn.MaxPool2d, nn.AvgPool2d, nn.AdaptiveAvgPool2d, getattr(nn, "AdaptiveMaxPool2d", nn.AdaptiveAvgPool2d))):
                 safe = _SafePool(mod)
-                print(f"[INFO] Replaced with _SafePool wrapper.") 
+                print(f"[INFO] Replaced with _SafePool wrapper.")
             else:
                 safe = nn.Identity()
                 print(f"[INFO] Replaced with Identity() to bypass invalid operation.")
 
-            if isinstance(container, nn.Sequential) or type(container).__name__ == 'SmartIdentity':
-                new_od = OrderedDict()
-                for j, (n2, m2) in enumerate(children):
-                    new_od[n2] = safe if n2 == nm else m2
-                _update_container(model, start_container_name, nn.Sequential(new_od))
-            else:
-                setattr(container, nm, safe)
+            new_od = OrderedDict()
+            for j, (n2, m2) in enumerate(children):
+                new_od[n2] = safe if n2 == nm else m2
+            _update_container(model, start_container_name, nn.Sequential(new_od))
 
             print(f"[DEBUG] Replacement applied to '{start_container_name}.{nm}' ({safe.__class__.__name__}).")
             return
@@ -845,13 +791,10 @@ def _validate_downstream(
         if t.ndim >= 4 and (t.shape[-2] == 0 or t.shape[-1] == 0):
             print(f"[WARN] Module '{start_container_name}.{nm}' produced zero spatial dimensions. Wrapping with _SafePool.")
             safe = _SafePool(mod)
-            if isinstance(container, nn.Sequential) or type(container).__name__ == 'SmartIdentity':
-                new_od = OrderedDict()
-                for j, (n2, m2) in enumerate(children):
-                    new_od[n2] = safe if n2 == nm else m2
-                _update_container(model, start_container_name, nn.Sequential(new_od))
-            else:
-                setattr(container, nm, safe)
+            new_od = OrderedDict()
+            for j, (n2, m2) in enumerate(children):
+                new_od[n2] = safe if n2 == nm else m2
+            _update_container(model, start_container_name, nn.Sequential(new_od))
             return
 
     print(f"[RESULT] ✅ Downstream validation for '{start_container_name}' completed successfully.")

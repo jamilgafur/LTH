@@ -200,8 +200,6 @@ def run_experiment(
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
-    # Fixed input shapes per experiment -> let cuDNN autotune conv algorithms.
-    torch.backends.cudnn.benchmark = True
 
     base_ckpt_name = f"{workflow}_{exp_name}"
 
@@ -350,7 +348,14 @@ def run_experiment(
     torch.save(model, whole_path)
 
     param_count = count_trainable_params(model)
-    infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device, quant=quant)
+    # Let cuDNN autotune conv algorithms for the fixed-shape timing run only;
+    # restore afterwards so training determinism (transfer.py) is kept.
+    prev_benchmark = torch.backends.cudnn.benchmark
+    torch.backends.cudnn.benchmark = True
+    try:
+        infer_time, flops, total_size_mb = benchmark_model(model, test_loader, device, quant=quant)
+    finally:
+        torch.backends.cudnn.benchmark = prev_benchmark
 
     all_data.update({
         "param_count": param_count,

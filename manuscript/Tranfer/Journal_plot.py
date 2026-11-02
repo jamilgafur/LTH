@@ -233,10 +233,22 @@ def load_results() -> pd.DataFrame:
 
     # Find all candidate JSON files once.
     all_metrics = list(Path(".").rglob("*merged_metrics.json"))
+
+    # Strict regex matching: (?!\d) stops "pretrain10" from matching "pretrain100"
+    epoch_re = re.compile(rf"epochs{epochs}(?!\d)")
+    pretrain_re = re.compile(rf"pretrain{pretrain}(?!\d)")
+
+    def _scorer_ok(p: Path) -> bool:
+        # Default-scorer runs must not ingest _scorer* universe dirs
+        s = str(p)
+        if scorer in ("local_dev", "all"):
+            return "_scorer" not in s
+        return f"_scorer{scorer}_" in s
+
     files = [
         p
         for p in all_metrics
-        if f"epochs{epochs}" in str(p) and f"pretrain{pretrain}" in str(p)
+        if epoch_re.search(str(p)) and pretrain_re.search(str(p)) and _scorer_ok(p)
     ]
 
     if not files:
@@ -295,6 +307,22 @@ def load_results() -> pd.DataFrame:
 
     logger.info(f"Successfully parsed {len(rows)} experiment rows.")
     return pd.DataFrame(rows)
+
+def _pick_run_json(candidates):
+    """Pick the discovered-regions JSON for this run's scorer universe.
+
+    rglob matches every scorer universe; [0] would pick an arbitrary one.
+    Prefer the file matching the run's scorer, fall back to the legacy
+    unsuffixed (default local_dev) name.
+    """
+    if not candidates:
+        return None
+    legacy = [p for p in candidates if "_scorer" not in p.name]
+    if scorer in ("local_dev", "all"):
+        return (legacy or candidates)[0]
+    tagged = [p for p in candidates if f"_scorer{scorer}_" in p.name]
+    return (tagged or legacy or candidates)[0]
+
 
 def find_baseline(df: pd.DataFrame):
     # Matches transfer.py phases (including "control")
@@ -469,13 +497,14 @@ def fig2_methodology_bav_regions(epochs, pretrain, out_dir=figures_dir() / "meth
         
         # [BUG FIX] Add underscores to enforce strict matching so "cifar10" doesn't match "cifar100"
         json_files = [p for p in potential_jsons if f"_{clean_ds}_" in p.name.lower()]
-        
+        run_json = _pick_run_json(json_files)
+
         verified_idx_ranges = []
-        
-        if json_files:
-            logger.info(f"[DEBUG] [{arch}/{dataset}] Loading JSON file: {json_files[0].name}")
+
+        if run_json is not None:
+            logger.info(f"[DEBUG] [{arch}/{dataset}] Loading JSON file: {run_json.name}")
             try:
-                with open(json_files[0], 'r') as f:
+                with open(run_json, 'r') as f:
                     config = json.load(f)
                 
                 def extract_regions(d):
@@ -805,12 +834,13 @@ def fig4_comprehensive_search_space_map(
 
         potential_jsons = list(Path(".").rglob(f"{arch}*epochs{epochs}_pretrain{pretrain}*_discovered_regions.json"))
         all_jsons = [p for p in potential_jsons if f"_{clean_ds}_" in p.name.lower()]
-        
-        if not all_jsons: 
+        run_json = _pick_run_json(all_jsons)
+
+        if run_json is None:
             continue
-            
+
         try:
-            with open(all_jsons[0], 'r') as f:
+            with open(run_json, 'r') as f:
                 model_exps = json.load(f)
         except Exception: continue
         if not model_exps: continue

@@ -200,7 +200,7 @@ class RemoteChildProcess():
             if m:
                 self.pid = int(m.group(1))
         if self.pid == -1:
-            print("Could not find PID for child process on {self.hostname}")
+            print(f"Could not find PID for child process on {self.hostname}")
             return
         cmdline = f'ssh {self.hostname} kill -{sig} {self.pid}'
         subprocess.Popen(cmdline.split(), text=True, shell=False)
@@ -275,7 +275,7 @@ class ResourceParser():
         val = self.parse_internal(line)
         if not val:
             return
-        if val > self.max_watts:
+        if self.max_watts is not None and val > self.max_watts:
             print(f"Ignoring invalid value {val}", file=sys.stderr)
             return
         self.total_watts += val
@@ -306,10 +306,9 @@ class TurbostatParser(ResourceParser):
     #109.21  19.32
     def start_monitoring(self, interval_s: int):
         cmd = f"turbostat --Summary --quiet --show power --interval {interval_s}".split()
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=False)
-        os.set_blocking(p.stdout.fileno(), False)
-        os.set_blocking(p.stderr.fileno(), False)
-        return p
+        # Keep stdout blocking: PowerTracker._reader does blocking readline and treats
+        # a non-blocking empty read as EOF, which silently kills sampling (0 J).
+        return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=False)
 
     #IMPORTANT: can have up to three columns with RAMWatt SysWatt
     def parse(self, line):
@@ -424,17 +423,6 @@ class NvidiaSmiParser(ResourceParser):
     
 def background_action(action: str):
     """ Starts or stop a monitoring process in background mode"""
-    def pid_exists(pid):
-        """Check whether pid exists in the current process table."""
-        if pid < 0:
-            return False
-        try:
-            os.kill(pid, 0)
-        except OSError as e:
-            return e.errno == errno.EPERM
-        else:
-            return True
-
     pid_file = "/tmp/.watts_master.pid"
     if action == 'start':
         pid = os.fork()

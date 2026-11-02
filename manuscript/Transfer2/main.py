@@ -1,5 +1,4 @@
 import os
-import glob
 import csv
 import io
 import re
@@ -12,8 +11,6 @@ import argparse
 from copy import deepcopy
 
 import torch
-import torch.nn as nn
-import torch.nn.utils.prune as prune
 import pandas as pd
 
 # Import architectures and utilities from your framework
@@ -173,8 +170,24 @@ def evaluate_adversarial_robustness(models_dict, data_batch, device, epsilons=(0
 # Main Processing Pipeline
 # =========================================================
 
-def _append_long_csv(path, rows, fieldnames):
-    """Append long-format (tidy) rows to a CSV, writing the header on first creation."""
+def _append_long_csv(path, rows, fieldnames, key_cols=None):
+    """Append long-format (tidy) rows to a CSV, writing the header on first creation.
+
+    When key_cols is given, existing rows whose key matches an incoming row are
+    dropped first, so rerunning a checkpoint replaces its rows instead of
+    double-counting them."""
+    if key_cols and os.path.exists(path):
+        new_keys = {tuple(str(r.get(k)) for k in key_cols) for r in rows}
+        with open(path, newline="") as f:
+            kept = [r for r in csv.DictReader(f)
+                    if tuple(str(r.get(k)) for k in key_cols) not in new_keys]
+        rows = kept + rows
+        with open(path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+            writer.writeheader()
+            writer.writerows(rows)
+        print(f"[INFO] Wrote {len(rows)} rows ({len(kept)} pre-existing kept) to {path}")
+        return
     write_header = not os.path.exists(path)
     with open(path, "a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
@@ -227,6 +240,8 @@ def no_regions_row(args, model_before_path):
         "post_epochs": post,
         "model_before": model_before_path,
         "intermediate_epoch": 0,
+        "cf_substituted": 0,
+        "dropped_keys_count": 0,
         "status": "no_collapsed_regions",
     }
 
@@ -239,7 +254,9 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     model_name, dataset_name, epochs_str, pre_str, ckpt_epoch, base_dir = parse_directory_context(model_before_path, args.model, args.dataset)
     
     print("[INFO] Initializing baseline model...")
-    base_model, train_loader, test_loader, _ = initialize_architecture(model_name, dataset_name)
+    # Load the (model, dataset) pair once; the before/after/IMP initialize calls reuse it.
+    dataset_info = load_dataset(dataset_name, model_name)
+    base_model, train_loader, test_loader, _ = initialize_architecture(model_name, dataset_name, dataset_info)
     model_before = load_weights(base_model, model_before_path, device)
 
     # 2. Load Original Post-Finetuning Model (optional). When Control_Continuted is
@@ -249,7 +266,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     print("[INFO] Loading original post-finetuning model...")
     try:
         model_after_path = find_matching_checkpoint(model_before_path, checkpoints["after"])
-        original_after_base, _, _, _ = initialize_architecture(model_name, dataset_name)
+        original_after_base, _, _, _ = initialize_architecture(model_name, dataset_name, dataset_info)
         original_after_model = load_weights(original_after_base, model_after_path, device)
     except FileNotFoundError:
         print("[WARN] No Control_Continuted artifact for this dir yet — baseline-only pass.")
@@ -318,7 +335,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
 
     if os.path.exists(unstructured_ckpt_path):
         print(f"[INFO] Loading existing IMP unstructured checkpoint: {unstructured_ckpt_path}")
-        unstructured_base, _, _, _ = initialize_architecture(model_name, dataset_name)
+        unstructured_base, _, _, _ = initialize_architecture(model_name, dataset_name, dataset_info)
         unstructured_pruning_model = load_weights(unstructured_base, unstructured_ckpt_path, device)
         unstructured_pruning_model.to("cpu")
     else:
@@ -383,6 +400,7 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
     model_before = model_before.to("cpu")
     torch.cuda.empty_cache()
     
+    cf_substituted = 0
     if original_after_model is not None:
         print("       -> Evaluating Original After Finetuning")
         original_after_model = original_after_model.to(device)
@@ -390,13 +408,11 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
             original_after_model, test_loader, device, power_interval=args.power_interval, quant=args.quant
         )
         if acc_before > (acc_original + 0.20):
-            print(f"\n[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting ({acc_original*100:.2f}%).")
-            print(f"[CRITICAL WARNING] Re-evaluating healthy 'model_before' ({acc_before*100:.2f}%) on warm cache as the true baseline...")
-            model_before = model_before.to(device)
-            acc_original, power_original, energy_original, util_original, clock_original = evaluate_accuracy(
-                model_before, test_loader, device, power_interval=args.power_interval, quant=args.quant
-            )
-            model_before = model_before.to("cpu")
+            cf_substituted = 1
+            print(f"\n[CRITICAL WARNING] 'original_after_model' suffered catastrophic forgetting ({acc_original*100:.2f}%) "
+                  f"vs healthy 'model_before' ({acc_before*100:.2f}%).")
+            print("[CRITICAL WARNING] Original baseline columns left untouched (deltas reflect the forgotten model); "
+                  "row flagged with cf_substituted=1.")
         original_after_model = original_after_model.to("cpu")
         torch.cuda.empty_cache()
     else:
@@ -603,13 +619,16 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         stem = os.path.splitext(os.path.basename(args.output))[0]
         if curve_rows:
             _append_long_csv(f"robustness_curves_{stem}.csv", curve_rows,
-                             ["attack", "epsilon", "model", "adv_acc"])
+                             ["attack", "epsilon", "model", "adv_acc"],
+                             key_cols=["attack", "epsilon", "model"])
         if calibration_rows:
             _append_long_csv(f"calibration_{stem}.csv", calibration_rows,
-                             ["model", "bin_lo", "bin_hi", "n", "acc", "conf"])
+                             ["model", "bin_lo", "bin_hi", "n", "acc", "conf"],
+                             key_cols=["model", "bin_lo", "bin_hi"])
         if corruption_rows:
             _append_long_csv(f"corruption_{stem}.csv", corruption_rows,
-                             ["model", "corruption", "severity", "acc"])
+                             ["model", "corruption", "severity", "acc"],
+                             key_cols=["model", "corruption", "severity"])
 
     # Final cleanup to prevent cross-experiment bleed
     if original_after_model is not None:
@@ -628,6 +647,12 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         b = benchmarks.get(name)
         return b[field] if b is not None else None
 
+    dropped_keys_count = sum(
+        getattr(m, "dropped_keys_count", 0)
+        for m in (model_before, original_after_model, unstructured_pruning_model)
+        if m is not None
+    )
+
     result_dict = {
         "model": model_name,
         "dataset": dataset_name,
@@ -636,6 +661,12 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         "post_epochs": imp_epochs,
         "model_before": model_before_path,
         "intermediate_epoch": ckpt_epoch,
+        # cf_substituted: 1 when the catastrophic-forgetting heuristic fired on the
+        # after-model (baseline columns kept as measured — deltas reflect the forgotten
+        # after-model, not a rewritten warm-cache baseline). dropped_keys_count: weight
+        # keys silently dropped by load_weights across this row's model loads.
+        "cf_substituted": cf_substituted,
+        "dropped_keys_count": dropped_keys_count,
         "acc_original_after": acc_original,
         "acc_unstructured": acc_unstructured,
         "acc_collapsed": acc_collapsed,

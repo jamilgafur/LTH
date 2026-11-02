@@ -3,7 +3,6 @@
 Public API:
     collapse_only                  -- collapse (start, end) layer spans into surrogate blocks
     discover_regions               -- find collapsible regions from activation variances
-    get_dynamic_experiment_config  -- deprecated alias of discover_regions
     get_layer_variances            -- per-layer activation variance probe
     calibrate_layer_variances      -- multi-batch variance calibration (mean + drift)
     collect_change_stats           -- one-pass variance + L2-change + CKA probe (layers & blocks)
@@ -14,7 +13,6 @@ Public API:
     SmartIdentity                  -- pass-through module used for excised layers
     get_layer                      -- dotted-path module access
     count_trainable_params         -- trainable parameter count
-    layer_stats                    -- per-layer zero-weight statistics
 """
 
 from .core import collapse_only
@@ -23,14 +21,12 @@ from .discovery import (
     calibrate_layer_variances,
     collect_change_stats,
     discover_regions,
-    get_dynamic_experiment_config,
     get_layer_variances,
 )
 from .graph_utils import (
     count_trainable_params,
     disable_inplace_relu,
     get_layer,
-    layer_stats,
 )
 from .identity import (
     SmartIdentity,
@@ -43,7 +39,6 @@ from .patching import patch_skip_connections
 __all__ = [
     "collapse_only",
     "discover_regions",
-    "get_dynamic_experiment_config",
     "get_layer_variances",
     "calibrate_layer_variances",
     "collect_change_stats",
@@ -56,5 +51,4 @@ __all__ = [
     "_SafePool",
     "get_layer",
     "count_trainable_params",
-    "layer_stats",
 ]

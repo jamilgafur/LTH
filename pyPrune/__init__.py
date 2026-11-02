@@ -1,6 +1,5 @@
-from .pruneMethods.Pruner import *
-from .pruneMethods import *
-from .pruneMethods.Trainer import *
-from .utils import *
-from .models import *
-from .strategies.PruningStrategy import *
+"""pyPrune: structural layer collapse for deep neural networks.
+
+Use the submodules directly (e.g. ``from pyPrune.collapse import
+discover_regions``, ``from pyPrune.utils import load_cifar10``).
+"""

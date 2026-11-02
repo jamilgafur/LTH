@@ -26,6 +26,13 @@ esac
 
 echo "    Scorer universe: $SCORER"
 
+# Scorer directory infix, mirroring transfer.py's scorer_suffix():
+# default scorer keeps the legacy unsuffixed universe; others use _scorer{S}.
+SCORER_INFIX=""
+if [ "$SCORER" != "local_dev" ]; then
+    SCORER_INFIX="_scorer${SCORER}"
+fi
+
 #models=("MobileNet")
 models=("ConvNeXt" "MobileNet" "InceptionNet" "XceptionNet" "RegNetX_400MF" "VGG16")
 datasets=("tinyimagenet" "Cifar10" "Cifar100")
@@ -63,6 +70,11 @@ for model in "${models[@]}"; do
             # Read the dynamic experiment names out of the JSON file directly (will inherently include 'Control')
             mapfile -t dynamic_experiments < <(python -c "import json; print('\n'.join(json.load(open('$json_file')).keys()))")
 
+            # Status_Map is display metadata (a dict, not a layer range) and Control
+            # is trained during Stage 1 — neither is a valid stage-2 collapse target;
+            # Status_Map would pass the membership check then crash _make_compression_set.
+            mapfile -t dynamic_experiments < <(printf '%s\n' "${dynamic_experiments[@]}" | grep -vx -e "Status_Map" -e "Control" || true)
+
             # Legacy single-set maps carry no Dynamic_Region_All_Combined key
             # (discovery only exported it for >1 sets). With exactly one Set,
             # Set_0 *is* the combined target: let it through the subset filter.
@@ -89,12 +101,19 @@ for model in "${models[@]}"; do
                     fi
 
                     # --- Skip completed experiments: same marker transfer.py checks at runtime
-                    #     (also keeps resubmits from truncating finished runs' logs) ---
+                    #     (glob the exact scorer universe's checkpoints dir so a finished
+                    #     default universe cannot suppress scorer universes or vice versa) ---
                     qtag=""
                     if [ "$quant_flag" == "True" ]; then
                         qtag="_quant"
                     fi
-                    if compgen -G "${model}_${dataset}_*_epochs${EPOCHS}_pretrain${PRETRAIN}/checkpoints/final_JF_${experiment}${qtag}.pt" | grep -qv "_scorerall_"; then
+                    if [ -n "$SCORER_INFIX" ]; then
+                        done_match=$(compgen -G "${model}_${dataset}_*${SCORER_INFIX}_epochs${EPOCHS}_pretrain${PRETRAIN}/checkpoints/final_JF_${experiment}${qtag}.pt" | head -n1)
+                    else
+                        # Default universe has no _scorer infix — exclude suffixed dirs explicitly
+                        done_match=$(compgen -G "${model}_${dataset}_*_epochs${EPOCHS}_pretrain${PRETRAIN}/checkpoints/final_JF_${experiment}${qtag}.pt" | grep -v "_scorer" | head -n1)
+                    fi
+                    if [ -n "$done_match" ]; then
                         echo "[SKIP] $model/$dataset/$experiment quant=$quant_flag — final artifact exists"
                         continue
                     fi

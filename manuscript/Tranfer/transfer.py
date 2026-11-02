@@ -40,47 +40,25 @@ cudnn.deterministic = True
 cudnn.benchmark = False
        
 def safe_glob(path_pattern):
-    matches = glob.glob(path_pattern)
-    return matches[0] + "/" if matches else "None"
+    matches = sorted(glob.glob(path_pattern))
+    if not matches:
+        raise FileNotFoundError(f"Pretrain base directory not found for pattern: {path_pattern}")
+    return matches[0] + "/"
 
-CHECKPOINT_BASES = {
-    "VGG16": {
-        "Cifar10": safe_glob("../structured_study/pruning_checkpoints/*Vgg16*cifar10_*"),
-        "Cifar100": safe_glob("../structured_study/pruning_checkpoints/*Vgg16*cifar100_*"),
-        "imagenet": safe_glob("../structured_study/pruning_checkpoints/*Vgg16*datasetimagenet_*"),
-        "tinyimagenet": safe_glob("../structured_study/pruning_checkpoints/*Vgg16*datasettinyimagenet_*"),
-    },
-    "RegNetX_400MF": {
-        "Cifar10": safe_glob("../structured_study/pruning_checkpoints/*RegNetX*cifar10_*"),
-        "Cifar100": safe_glob("../structured_study/pruning_checkpoints/*RegNetX*cifar100_*"),
-        "imagenet": safe_glob("../structured_study/pruning_checkpoints/*RegNetX*datasetimagenet_*"),
-        "tinyimagenet": safe_glob("../structured_study/pruning_checkpoints/*RegNetX*datasettinyimagenet_*"),
-    },
-    "InceptionNet": {
-        "Cifar10": safe_glob("../structured_study/pruning_checkpoints/*InceptionNet*cifar10_*"),
-        "Cifar100": safe_glob("../structured_study/pruning_checkpoints/*InceptionNet*cifar100_*"),
-        "imagenet": safe_glob("../structured_study/pruning_checkpoints/*InceptionNet*datasetimagenet_*"),
-        "tinyimagenet": safe_glob("../structured_study/pruning_checkpoints/*InceptionNet*datasettinyimagenet_*"),
-    },
-    "MobileNet": {
-        "Cifar10": safe_glob("../structured_study/pruning_checkpoints/*MobileNet*cifar10_*"),
-        "Cifar100": safe_glob("../structured_study/pruning_checkpoints/*MobileNet*cifar100_*"),
-        "imagenet": safe_glob("../structured_study/pruning_checkpoints/*MobileNet*datasetimagenet_*"),
-        "tinyimagenet": safe_glob("../structured_study/pruning_checkpoints/*MobileNet*datasettinyimagenet_*"),
-    },
-    "XceptionNet": {
-        "Cifar10": safe_glob("../structured_study/pruning_checkpoints/*XceptionNet*cifar10_*"),
-        "Cifar100": safe_glob("../structured_study/pruning_checkpoints/*XceptionNet*cifar100_*"),
-        "imagenet": safe_glob("../structured_study/pruning_checkpoints/*XceptionNet*datasetimagenet_*"),
-        "tinyimagenet": safe_glob("../structured_study/pruning_checkpoints/*XceptionNet*datasettinyimagenet_*"),
-    },
-    "ConvNeXt": {
-        "Cifar10": safe_glob("../structured_study/pruning_checkpoints/*ConvNeXt*cifar10_*"),
-        "Cifar100": safe_glob("../structured_study/pruning_checkpoints/*ConvNeXt*cifar100_*"),
-        "imagenet": safe_glob("../structured_study/pruning_checkpoints/*ConvNeXt*datasetimagenet_*"),
-        "tinyimagenet": safe_glob("../structured_study/pruning_checkpoints/*ConvNeXt*datasettinyimagenet_*"),
-    },
+# Pretrain-base globs are resolved lazily: the legacy structured_study
+# checkpoints may be absent, and a missing base must raise only when a run
+# actually requests it (pairs of "None" below never load weights).
+_CHECKPOINT_BASE_MODEL_GLOBS = {
+    "VGG16": "*Vgg16*", "RegNetX_400MF": "*RegNetX*", "InceptionNet": "*InceptionNet*",
+    "MobileNet": "*MobileNet*", "XceptionNet": "*XceptionNet*", "ConvNeXt": "*ConvNeXt*",
 }
+
+
+def checkpoint_base(model, dataset):
+    ds = dataset.lower()
+    token = f"dataset{ds}_" if ds in ("imagenet", "tinyimagenet") else f"{ds}_"
+    return safe_glob(
+        f"../structured_study/pruning_checkpoints/{_CHECKPOINT_BASE_MODEL_GLOBS[model]}{token}")
 
 CHECKPOINT_FILES = {
     "VGG16": {
@@ -124,7 +102,7 @@ def initialize_model_and_data(args):
     
     train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset, model_class)
     model_kwargs["num_classes"] = num_classes
-    model_kwargs["one_batch"] = next(iter(load_dataset(dataset, model_class)[0]))[0]
+    model_kwargs["one_batch"] = next(iter(train_loader))[0]
     
     if args.model == "InceptionNet":
         model_kwargs["aux_logits"] = False
@@ -296,7 +274,7 @@ def evaluate_experiments(model, input_tensor, exp_config, layer_names, module_di
                     in_flat = t_in.flatten(start_dim=1)
                     out_flat = t_out.flatten(start_dim=1)
                     try: sim_scores.append(F.cosine_similarity(in_flat, out_flat, dim=1).mean().item())
-                    except: pass
+                    except Exception as e: print(f"[WARN] {exp_display}: similarity computation failed: {e}")
             
             global_sim = float(np.median(sim_scores)) if sim_scores else 0.0
             plot_data_sim.append({"Experiment": exp_display, "Block Redundancy": global_sim})
@@ -342,7 +320,9 @@ def evaluate_experiments(model, input_tensor, exp_config, layer_names, module_di
                         in_flat = block_in.flatten(start_dim=1)
                         out_flat = block_out.flatten(start_dim=1)
                         try: sim = F.cosine_similarity(in_flat, out_flat, dim=1).mean().item()
-                        except: sim = 0.0
+                        except Exception as e:
+                            print(f"[WARN] {exp_display}: similarity computation failed: {e}")
+                            sim = float('nan')
                     else: sim = 0.0 
                     block_sims.append(sim)
 
@@ -365,12 +345,15 @@ def evaluate_experiments(model, input_tensor, exp_config, layer_names, module_di
                     bypass_logits = model(input_tensor)
                     bypass_log_probs = F.log_softmax(bypass_logits, dim=1)
                 kl_div = F.kl_div(bypass_log_probs, baseline_probs, reduction='batchmean').item()
-            except: kl_div = 50.0 
-        
+            except Exception as e:
+                print(f"[WARN] {exp_display}: bypass KL evaluation failed: {e}")
+                kl_div = float('nan')
+
         for h in bypass_handles: h.remove()
         bypass_cache.clear()
 
-        display_kl = kl_div if kl_div < 50.0 else 50.0
+        # NaN stays NaN (no sentinel contamination); valid KL is still capped at 50.0
+        display_kl = min(kl_div, 50.0)
         plot_data_kl.append({"Experiment": exp_display, "Prediction Shift (KL)": display_kl})
         safe_rel_var = max(exp_rel_var, 1e-8)
         c_score = exp_sim / (safe_rel_var * (1.0 + display_kl))
@@ -531,13 +514,15 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=No
     else:
         metrics_data = {}
 
-    if experiment_name not in metrics_data:
-        print(f"[Auto-Heal] Missing JSON entry for '{experiment_name}'. Attempting recovery...")
-        
+    # Same key the normal run path writes: f"{exp_name}_{workflow}" (workflow="JF")
+    exp_key = f"{experiment_name}_JF"
+    if exp_key not in metrics_data and experiment_name not in metrics_data:
+        print(f"[Auto-Heal] Missing JSON entry for '{exp_key}'. Attempting recovery...")
+
         try:
             ckpt = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
             nested = ckpt.get('metrics', ckpt.get('results', ckpt.get('stats', {})))
-            
+
             acc = nested.get("final_accuracy", ckpt.get("final_accuracy", 0.0))
             params = nested.get("param_count", ckpt.get("param_count", 0))
             size_mb = nested.get("total_size_mb", ckpt.get("total_size_mb", 0.0))
@@ -545,11 +530,11 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=No
         except Exception as e:
             print(f"[!] Checkpoint load failed, preparing for full live evaluation: {e}")
             acc, params, size_mb, flops = 0.0, 0, 0.0, 0
-            
+
         if model is not None:
             model.to(device)
             model.eval()
-            
+
             if params == 0 or size_mb == 0.0:
                 print("    -> Calculating parameters live...")
                 try:
@@ -577,21 +562,31 @@ def auto_recover_metrics(checkpoint_path, experiment_name, base_folder, model=No
                         _, predicted = outputs.max(1)
                         total += targets.size(0)
                         correct += predicted.eq(targets).sum().item()
-                
-                acc = correct / total if total > 0 else 0.0
 
-        metrics_data[experiment_name] = {
+                # Percent scale to match trainer.py's 0-100 convention
+                acc = 100.0 * correct / total if total > 0 else 0.0
+
+        healed = {
             "final_accuracy": acc,
             "param_count": params,
             "total_size_mb": size_mb,
             "flops": flops,
             "timestamp_recovered": "auto_recovered_live"
         }
-        
+
+        # Write a per-job metrics file via the same writer/naming the normal run
+        # path uses, so merge_all_metrics (which rebuilds merged_metrics.json from
+        # per-job files) picks the heal up instead of dropping it on the next rebuild.
+        if model is not None and test_loader is not None:
+            model_root = f"{model.__class__.__name__}_{test_loader.dataset.__class__.__name__}"
+        else:
+            model_root = os.path.basename(base_folder.rstrip(os.sep))
+
         try:
-            with open(merged_json_path, 'w') as f:
-                json.dump(metrics_data, f, indent=4)
-            print(f"[✓] Successfully healed merged_metrics.json for {experiment_name}.")
+            json_path = safe_update_metrics_json(model_root, exp_key, healed, metrics_dir)
+            if json_path:
+                merge_all_metrics(metrics_dir)
+                print(f"[✓] Successfully healed metrics for {exp_key}.")
         except Exception as e:
             print(f"[!] Auto-Heal failed to write JSON: {e}")
 
@@ -949,11 +944,15 @@ def main():
 
     train_loader, test_loader, model_class, model_kwargs, input_size, input_channels, num_classes = initialize_model_and_data(args)
     
-    base_path = CHECKPOINT_BASES[args.model][args.dataset]
-    print(f"[DEBUG] Base checkpoint path resolved: {base_path}")
-    
-    model_path_097 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][0])
-    model_path_000 = os.path.join(base_path, CHECKPOINT_FILES[args.model][args.dataset][1])
+    ckpt_pair = CHECKPOINT_FILES[args.model][args.dataset]
+    if "None" in ckpt_pair:
+        # This model/dataset has no pretrain base; nothing gets loaded.
+        model_path_097 = model_path_000 = "None"
+    else:
+        base_path = checkpoint_base(args.model, args.dataset)
+        print(f"[DEBUG] Base checkpoint path resolved: {base_path}")
+        model_path_097 = os.path.join(base_path, ckpt_pair[0])
+        model_path_000 = os.path.join(base_path, ckpt_pair[1])
 
     json_file = discovered_json_filename(args)
 

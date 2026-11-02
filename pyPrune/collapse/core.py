@@ -13,7 +13,6 @@ from .graph_utils import (
     count_trainable_params,
     disable_inplace_relu,
     execution_order,
-    layer_stats,
 )
 from .identity import _wrap_pools_safe
 from .patching import patch_skip_connections
@@ -84,7 +83,7 @@ def _collapse_block(
         print(f"[DEBUG] Dummy Input Shape  : {input_shape}")
         
     x, y_out, pre_params = _capture_preblock_activation(
-        model, lca_start_name, lca_end_name, input_shape, info["conv_layers"], info["layer_type"], device, debug
+        model, lca_start_name, lca_end_name, input_shape, device, debug
     )
     # =========================================================# =========================================================
 
@@ -123,12 +122,8 @@ def _collapse_block(
     block_analysis = _analyze_block_output(
         model,
         info["full_block"],
-        info["conv_layers"],
-        info["named_layers"],
-        info["end_idx"],
-        info["layer_type"],
         x,
-        y_out,  
+        y_out,
         next_linear_mod,
         debug
     )
@@ -206,12 +201,6 @@ def collapse_only(
             raise RuntimeError(f"[ERROR] Failed to load model weights: {e}")
     else:
         print(f"[STEP] Using provided in-memory model instance ({model.__class__.__name__})")
-
-    if debug:
-        try:
-            print(f"[DEBUG] Model layer statistics before collapse:\n{layer_stats(model)}")
-        except Exception as e:
-            print(f"[WARN] layer_stats() failed: {e}")
 
     print(f"[STEP] Creating deepcopy of model for safe modification...")
     model = deepcopy(model).to(device)

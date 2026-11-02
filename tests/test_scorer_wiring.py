@@ -91,7 +91,15 @@ def _load_plots():
 
 
 _prestub_common()
-transfer = _load("transfer", "transfer.py")
+# safe_glob now raises when the structured_study pretrain bases are absent —
+# they don't exist on the walrus, so stub glob during module load only.
+import glob as _glob
+_real_glob = _glob.glob
+_glob.glob = lambda p: ["/nonexistent-pretrain-base"] if "structured_study" in p else _real_glob(p)
+try:
+    transfer = _load("transfer", "transfer.py")
+finally:
+    _glob.glob = _real_glob
 plots = _load_plots()
 
 

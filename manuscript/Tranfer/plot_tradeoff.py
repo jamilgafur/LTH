@@ -45,9 +45,10 @@ def parse_txt_files(file_paths):
                         if match.group(1): 
                             df['Pre_Train_Epochs'] = int(match.group(1))
                             df['Post_Collapse_Epochs'] = int(match.group(2))
-                        else: 
-                            df['Pre_Train_Epochs'] = int(match.group(3))
-                            df['Post_Collapse_Epochs'] = int(match.group(4))
+                        else:
+                            # Universe tag is epochs{stage2}_pretrain{stage1}
+                            df['Post_Collapse_Epochs'] = int(match.group(3))
+                            df['Pre_Train_Epochs'] = int(match.group(4))
                     else: continue
                 
                 df['Dataset'] = df['Dataset'].replace({'Tiny ImageNet': 'TinyImageNet', 'Tiny-ImageNet': 'TinyImageNet'})
@@ -113,8 +114,8 @@ def augment_df_with_json(df, base_path="."):
         
         ep_match = re.search(r'epochs(\d+)_pretrain(\d+)', folder_name)
         if not ep_match: continue
-        
-        pre_train_ep, post_collapse_ep = int(ep_match.group(1)), int(ep_match.group(2))
+
+        post_collapse_ep, pre_train_ep = int(ep_match.group(1)), int(ep_match.group(2))
         
         try:
             with open(filepath, 'r') as f: data = json.load(f)

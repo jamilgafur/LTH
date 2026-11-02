@@ -38,13 +38,12 @@ Everything below is re-exported from `pyPrune.collapse` (see its
 | `build_metric_series` | Build the per-layer metric series for `change`/`cka` scorers (block-primary mapping). |
 | `calibrate_layer_variances` | K-batch activation-variance calibration returning `(mean, std)` per layer. |
 | `get_layer_variances` | Legacy single-input variance probe. |
-| `get_dynamic_experiment_config` | Deprecated alias of `discover_regions`. |
 | `wrap_pools_safe` / `_wrap_pools_safe` | Wrap pooling layers with underflow-safe wrappers (required for small-input geometry, e.g. InceptionNet on CIFAR). |
 | `patch_skip_connections` | Patch residual/custom forwards to tolerate shape drift after collapse (registry-based, picklable). |
 | `disable_inplace_relu` | Replace in-place ReLUs with out-of-place ones (hook safety). |
 | `SmartIdentity` | Pass-through module replacing excised layers; attribute/index transparent. |
 | `_SafePool` | The underflow-safe pooling wrapper (warn-once diagnostics). |
-| `get_layer`, `count_trainable_params`, `layer_stats` | Graph utilities. |
+| `get_layer`, `count_trainable_params` | Graph utilities. |
 
 ## `pyPrune.models`
 

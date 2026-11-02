@@ -130,7 +130,7 @@ def _simulate_input_output_hooks(model: nn.Module, start_layer_path: str, end_la
         
     return captured['in'], captured['out']
 
-def _capture_preblock_activation(model, start_layer_name, end_layer_name, input_shape, conv_layers, layer_type, device, debug):
+def _capture_preblock_activation(model, start_layer_name, end_layer_name, input_shape, device, debug):
     print(f"[DEBUG] Capturing I/O hooks for '{start_layer_name}' -> '{end_layer_name}'...")
     try:
         x_in, y_out = _simulate_input_output_hooks(model, start_layer_name, end_layer_name, input_shape, device)
@@ -144,17 +144,8 @@ def _capture_preblock_activation(model, start_layer_name, end_layer_name, input_
     return x_in, y_out, pre_params
 
 
-def count_zeros(tensor): 
-    return torch.sum(tensor == 0).item()
 def count_trainable_params(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
-def layer_stats(model):
-    print("\nLayer-wise zero parameter stats:\n")
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            zeros = count_zeros(param)
-            total = param.numel()
-            # print(f"{name}: {zeros}/{total} zeros ({100 * zeros/total:.2f}%)")
 
 def _update_container(model: nn.Module, container_path: str, new_container: nn.Module):
     """Replace the module at `container_path` in `model` with `new_container`."""

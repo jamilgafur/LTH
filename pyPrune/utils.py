@@ -1,54 +1,14 @@
 import gc
+import os
 import random
+import shutil
+
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
-from typing import Tuple, List, Callable, Optional
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-import os
-import torchvision.transforms as transforms
 from torchvision.datasets import Imagenette
-from torch.utils.data import DataLoader
 
-import os
-from torchvision.datasets import Imagenette
-from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
-
-import shutil
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
-
-def get_pruneable_named_parameters(model: torch.nn.Module, prunable_layers: Tuple) -> Tuple[List[str], List[torch.nn.Parameter]]:
-    names = []
-    params = []
-    last_layer = list(model.modules())[-1]
-    for name, param in model.named_parameters():
-        module_name = name.rsplit('.', 1)[0]
-        module = dict(model.named_modules()).get(module_name, None)
-        if module != last_layer and 'weight' in name and module and any(isinstance(module, layer) for layer in prunable_layers):
-            names.append(name)
-            params.append(param)
-    return names, params
-
-def get_pruneable_named_modules(model: torch.nn.Module, prunable_layers: Tuple) -> Tuple[List[str], List[torch.nn.Module]]:
-    names = []
-    modules = []
-    last_layer = list(model.modules())[-1]
-    for name, module in model.named_modules():
-        if module != last_layer and any(isinstance(module, layer) for layer in prunable_layers):
-            names.append(name)
-            modules.append(module)
-    return names, modules
-
-def get_pruneable_modules(model: torch.nn.Module, prunable_layers: Tuple) -> List[torch.nn.Module]:
-    modules = []
-    last_layer = list(model.modules())[-1]
-    for module in model.modules():
-        if module != last_layer and any(isinstance(module, layer) for layer in prunable_layers):
-            modules.append(module)
-    return modules
 
 def clean_memory() -> None:
     gc.collect()
@@ -62,51 +22,6 @@ def set_seed(seed: int) -> None:
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
-
-def plot_loss_accuracy_sparsity(pruner) -> None:
-    metrics = pruner.metrics
-    accuracy = metrics['accuracy']
-    loss = metrics['loss']
-    sparsity = metrics['sparsity']
-    
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
-    
-    ax1.plot(sparsity, accuracy, 'g-', label='Accuracy', linewidth=2)
-    ax1.scatter(sparsity, accuracy, c='g', marker='o', s=50)
-    ax1.set_ylabel('Accuracy', color='g', fontsize=14)
-    ax1.grid(True, linestyle='--', alpha=0.7)
-    ax1.legend(loc='upper left', fontsize=12)
-    
-    ax2.plot(sparsity, loss, 'b-', label='Loss', linewidth=2)
-    ax2.scatter(sparsity, loss, c='b', marker='x', s=50)
-    ax2.set_xlabel('Sparsity', fontsize=14)
-    ax2.set_ylabel('Loss', color='b', fontsize=14)
-    ax2.grid(True, linestyle='--', alpha=0.7)
-    ax2.legend(loc='upper left', fontsize=12)
-    
-    plt.suptitle('Loss and Accuracy vs. Sparsity', fontsize=16)
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
-    
-    plot_path = pruner.save_dir + '/sparsity_vs_loss_and_accuracy.png'
-    plt.savefig(plot_path, dpi=300)
-    plt.show()
-
-def lr_lambda(epoch: int,experiment) -> float:
-    epoch_percentage = epoch / (experiment.pretrain_epochs+ experiment.finetune_epochs)
-    if epoch_percentage < 0.5:
-        return 1.0
-    elif epoch_percentage < 0.75:
-        return 0.1
-    else:
-        return 0.01
-
-def exponential_decay_list(decay_rate: float = 0.8, steps: int = 21) -> list[float]:
-    decay_list = [0]
-    n = 1
-    for _ in range(steps):
-        n *= decay_rate
-        decay_list.append(1 - n)
-    return decay_list
 
 def load_cifar100(batch_size: int = 512, num_workers: int = 4) -> tuple[DataLoader, DataLoader]:
     train_transform = transforms.Compose([
@@ -159,89 +74,8 @@ def load_cifar10(batch_size: int = 512, num_workers: int = 4) -> tuple[DataLoade
     print("CIFAR-10 data shape: ", next(iter(train_loader))[0].shape)
     return train_loader, test_loader
 
-def load_mnist(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
-    transform = transforms.Compose([
-        transforms.Resize((32, 32)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.1307,), (0.3081,))
-    ])
 
-    train_loader = DataLoader(
-        datasets.MNIST('data', train=True, download=True, transform=transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
-    )
-
-    test_loader = DataLoader(
-        datasets.MNIST('data', train=False, transform=transform),
-        batch_size=1000, shuffle=False, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
-    )
-
-    return train_loader, test_loader
-
-def load_fashionmnist(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.Grayscale(num_output_channels=3),
-        transforms.ToTensor(),
-        transforms.Normalize((0.2860,), (0.3530,))
-    ])
-
-    train_loader = DataLoader(
-        datasets.FashionMNIST('data', train=True, download=True, transform=transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
-    )
-
-    test_loader = DataLoader(
-        datasets.FashionMNIST('data', train=False, transform=transform),
-        batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
-    )
-
-    print("FashionMNIST data shape: ", next(iter(train_loader))[0].shape)
-    return train_loader, test_loader
-
-def load_stl10(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4467, 0.4398, 0.4066), (0.2241, 0.2215, 0.2239))
-    ])
-
-    train_loader = DataLoader(
-        datasets.STL10('data', split='train', download=True, transform=transform),
-        batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
-    )
-
-    test_loader = DataLoader(
-        datasets.STL10('data', split='test', download=True, transform=transform),
-        batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0)
-    )
-
-    print("STL10 data shape: ", next(iter(train_loader))[0].shape)
-    return train_loader, test_loader
-
-def load_caltech101(batch_size: int = 64, num_workers: int = 1) -> tuple[DataLoader, DataLoader]:
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225])
-    ])
-
-    dataset = datasets.Caltech101('data', download=True, transform=transform)
-
-    # Simple train/test split
-    split_ratio = 0.8
-    train_size = int(split_ratio * len(dataset))
-    test_size = len(dataset) - train_size
-    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
-
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0))
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True, persistent_workers=(num_workers > 0))
-
-    print("Caltech101 data shape: ", next(iter(train_loader))[0].shape)
-    return train_loader, test_loader
-
-_DATA_ROOT = os.environ.get("PYPRUNE_DATA_ROOT", "/Users/jgafur/LTH/manuscript/structured_study/.temp")
+_DATA_ROOT = os.environ.get("PYPRUNE_DATA_ROOT", os.path.join(os.path.expanduser("~"), ".cache", "pyprune"))
 
 
 def _tiny_imagenet_fixed_val_dir(val_dir: str, class_to_idx: dict) -> str:

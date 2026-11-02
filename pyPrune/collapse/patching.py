@@ -38,7 +38,6 @@ class _ResNetForwardPatch:
             if out.shape[2:] != sc.shape[2:]:
                 sc = F.adaptive_avg_pool2d(sc, out.shape[2:])
             if out.shape[1] != sc.shape[1]:
-                self.root._bypassed_residuals += 1
                 return F.relu(out)
         return F.relu(out + sc)
 
@@ -187,8 +186,6 @@ def _is_tainted(module):
 
 
 def patch_skip_connections(model: nn.Module):
-    model._bypassed_residuals = getattr(model, '_bypassed_residuals', 0)
-
     for name, module in model.named_modules():
         if isinstance(module, SmartIdentity):
             continue

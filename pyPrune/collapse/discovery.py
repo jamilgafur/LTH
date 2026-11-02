@@ -2,7 +2,6 @@
 
 import copy
 import gc
-import warnings
 
 import numpy as np
 import torch
@@ -184,12 +183,15 @@ class _UnitStats:
         self.update_failed = False
 
 
-def _layer_variance(out: torch.Tensor) -> float:
+def _layer_variance(out: torch.Tensor) -> torch.Tensor:
+    # 0-dim device tensor: the GPU sync is deferred to the finalize/summary path.
     if out.ndim == 4:
         if out.shape[2] > 1 and out.shape[3] > 1:
-            return out.var(dim=[2, 3], unbiased=False).mean().item()
-        return out.var(dim=1, unbiased=False).mean().item() if out.shape[1] > 1 else 0.0
-    return out.var(unbiased=False).item()
+            return out.var(dim=[2, 3], unbiased=False).mean()
+        if out.shape[1] > 1:
+            return out.var(dim=1, unbiased=False).mean()
+        return torch.zeros((), dtype=out.dtype, device=out.device)
+    return out.var(unbiased=False)
 
 
 def _features(t: torch.Tensor) -> torch.Tensor:
@@ -223,7 +225,7 @@ def _unit_update(u: _UnitStats, x: torch.Tensor, y: torch.Tensor,
         if x.shape == y.shape:
             xf = x.reshape(x.shape[0], -1)
             yf = y.reshape(y.shape[0], -1)
-            rel = ((yf - xf).norm(dim=1) / (xf.norm(dim=1) + eps)).sum().item()
+            rel = ((yf - xf).norm(dim=1) / (xf.norm(dim=1) + eps)).sum()
             u.rel_sum += rel
             u.rel_n += x.shape[0]
         else:
@@ -255,7 +257,7 @@ def _unit_update(u: _UnitStats, x: torch.Tensor, y: torch.Tensor,
             u.xty = torch.zeros(cin, cout, dtype=torch.float64, device=xp.device)
         u.xtx += (xp.T @ xp).to(torch.float64)
         u.xty += (xp.T @ yp).to(torch.float64)
-        u.sum_yy += yp.norm().item() ** 2
+        u.sum_yy += (yp.norm() ** 2).to(torch.float64)
         u.n_pts += xp.shape[0]
 
     # ---- CKA ------------------------------------------------------------
@@ -296,7 +298,7 @@ def _change_from_stats(u: _UnitStats, ridge: float = 1e-4, eps: float = 1e-12):
     if u.mode == 'l2':
         if u.rel_n == 0:
             return None
-        return u.rel_sum / u.rel_n
+        return float(u.rel_sum / u.rel_n)  # finalize path: single .item() sync here
     # aligned: solve ridge regression W: Cin -> Cout, report sqrt(SSE / ||Y||^2)
     if u.xtx is None or u.n_pts == 0:
         return None
@@ -307,7 +309,7 @@ def _change_from_stats(u: _UnitStats, ridge: float = 1e-4, eps: float = 1e-12):
     except Exception:
         return None
     sse = max(u.sum_yy - 2.0 * torch.trace(w.T @ u.xty).item() + torch.trace(w.T @ u.xtx @ w).item(), 0.0)
-    return (sse / (u.sum_yy + eps)) ** 0.5
+    return float((sse / (u.sum_yy + eps)) ** 0.5)
 
 
 def collect_change_stats(model, batches, k: int = 16, device=None,
@@ -457,8 +459,8 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
         for ln in cnn_layers:
             entry = variances[ln]
             if isinstance(entry, dict):
-                means.append(float(entry.get('mean', 0.0)))
-                var_stds.append(float(entry.get('std', 0.0)))
+                means.append(float(entry.get('var_mean', entry.get('mean', 0.0))))
+                var_stds.append(float(entry.get('var_std', entry.get('std', 0.0))))
             elif isinstance(entry, (tuple, list)) and len(entry) == 2:
                 means.append(float(entry[0]))
                 var_stds.append(float(entry[1]))
@@ -823,7 +825,7 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
     # =====================================================================
     # HELPER 5: Phase 4 - Greedy Integration
     # =====================================================================
-    def greedy_integration(R_final, experiment_regions, base_params, base_flops, check_flops, dummy_input):
+    def greedy_integration(R_final, experiment_regions):
         if len(R_final) >= 1:
             # Force the combined region to be the literal set of all valid sets.
             # Also export for a single set: the stage-2 subset pipeline only ever
@@ -833,57 +835,6 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
             print(f"[INFO] Forced {len(R_final)} sets into 'Dynamic_Region_All_Combined'.")
             
         return experiment_regions
-    # def greedy_integration(R_final, experiment_regions, base_params, base_flops, check_flops, dummy_input):
-    #     if len(R_final) <= 1: return experiment_regions
-        
-    #     print(f"\n[INFO] Phase 4: Validating 'Dynamic_Region_All_Combined' (Greedy Integration)...")
-    #     safe_combined_regions = []
-    #     current_best_params = base_params
-    #     current_best_flops = base_flops
-        
-    #     for region_tuple in R_final:
-    #         candidate_combo = safe_combined_regions + [region_tuple]
-    #         try:
-    #             test_model = copy.deepcopy(model).to(device)
-    #             combo_dict = {f"comb_{i}": reg for i, reg in enumerate(candidate_combo)}
-                
-    #             collapsed_combined = collapse_only(
-    #                 model=test_model, compression_set=combo_dict,
-    #                 input_shape=input_shape, device=device, dry_run=False 
-    #             )
-                
-    #             collapsed_combined.eval()
-    #             with torch.no_grad(): _ = collapsed_combined(dummy_input)
-                    
-    #             new_params_combo = count_trainable_params(collapsed_combined)
-    #             try:
-    #                 new_flops_combo = FlopCountAnalysis(collapsed_combined, dummy_input).unsupported_ops_warnings(False).total()
-    #             except Exception:
-    #                 new_flops_combo = float('inf')
-
-    #             param_decreased = new_params_combo < current_best_params
-    #             flop_decreased = check_flops and new_flops_combo < current_best_flops
-                
-    #             if not (param_decreased or flop_decreased):
-    #                 raise ValueError(f"Diminishing returns.")
-                
-    #             print(f"        [+] Merged safely: {region_tuple[0]} -> {region_tuple[1]}")
-    #             current_best_params = new_params_combo
-    #             current_best_flops = new_flops_combo
-    #             safe_combined_regions.append(region_tuple)
-                
-    #         except Exception as e:
-    #             print(f"        [-] Merge rejected: Adding {region_tuple[0]} -> {region_tuple[1]} broke constraint")
-    #         finally:
-    #             if 'test_model' in locals(): del test_model
-    #             if 'collapsed_combined' in locals(): del collapsed_combined
-    #             gc.collect()
-    #             if torch.cuda.is_available(): torch.cuda.empty_cache()
-                
-    #     if len(safe_combined_regions) > 1:
-    #         experiment_regions["Dynamic_Region_All_Combined"] = safe_combined_regions
-            
-    #     return experiment_regions
 
     # =====================================================================
     # MAIN EXECUTION FLOW
@@ -896,7 +847,7 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
     print(f"\n[INFO] Phase 3: Evaluating {len(R_candidates)} Candidate Regions (with Smart Boundary Shaving)...")
     experiment_regions, R_final = evaluate_candidates(R_candidates, base_params, base_flops, check_flops, dummy_input)
     
-    experiment_regions = greedy_integration(R_final, experiment_regions, base_params, base_flops, check_flops, dummy_input)
+    experiment_regions = greedy_integration(R_final, experiment_regions)
 
     print(f"\n[DEBUG] --- Final Accepted Regions Summary ---")
     if R_final:
@@ -915,13 +866,3 @@ def discover_regions(model, cnn_layers, variances, input_shape=(1, 3, 224, 224),
     experiment_regions["Control_Continuted"] = None
     print(f"\n[DEBUG] === Finished Dynamic Config Generator ===")
     return experiment_regions
-
-
-def get_dynamic_experiment_config(*args, **kwargs):
-    """Deprecated alias for :func:`discover_regions`."""
-    warnings.warn(
-        "get_dynamic_experiment_config is deprecated; use discover_regions instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    return discover_regions(*args, **kwargs)

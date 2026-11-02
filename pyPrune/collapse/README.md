@@ -325,7 +325,7 @@ sub-regions are salvaged. Test cost dominates discovery (§9).
 The headline artifact `Dynamic_Region_All_Combined` is the list of **all** accepted Sets
 (forced verbatim, including the single-Set case — stage 2 only ever submits this key, so a
 one-Set discovery without it is silently un-runnable). An older combinatorial variant — re-collapsing
-combinations to hunt for diminishing returns — exists commented out in the source; the active
+combinations to hunt for diminishing returns — was retired; the active
 semantics is "union of every certified region". (Earlier documentation describing a "greedy
 union of non-overlapping sets" referred to the retired variant.)
 
@@ -562,8 +562,7 @@ discovery for a different scorer on the same universe reuses identical measureme
    *dummy* forward, so `init='lsq'` fits the surrogate to noise distribution, not data.
    Closing this (data-driven capture using the §3 machinery) is known future work.
 2. **Phase-4 union is forced, not greedy.** `Dynamic_Region_All_Combined` takes all certified
-   Sets verbatim (§5.5); interaction effects between regions are not validated combinatorially
-   (retired variant documented in source).
+   Sets verbatim (§5.5); interaction effects between regions are not validated combinatorially.
 3. **Two name-based heuristics** exist despite the model-agnostic design goal: the
    `is_valid_lca` class-name whitelist (§5.3) and the escalation class list (§6.1). Both are
    fail-open (unknown classes escalate to parent or reject loudly), work on every architecture
@@ -634,7 +633,6 @@ config = discover_regions(model=model, cnn_layers=list(var.keys()), variances=va
 | `build_metric_series` | discovery.py | block-primary per-layer metric series (§4.1) |
 | `calibrate_layer_variances` | discovery.py | K-batch Welford variance probe (§3.7) |
 | `get_layer_variances` | discovery.py | legacy single-input variance probe (§3.7) |
-| `get_dynamic_experiment_config` | discovery.py | deprecated alias of `discover_regions` |
 | `_locate_and_prepare_block` | replace.py | collapse-time LCA: prefix algorithm + escalation (§6.1) |
 | `_build_and_replace_block` | replace.py | surrogate assembly + graph splice (§6.2) |
 | `_init_surrogate_lsq` | replace.py | ridge LSQ surrogate init (§6.3) |
@@ -645,7 +643,7 @@ config = discover_regions(model=model, cnn_layers=list(var.keys()), variances=va
 | `patch_skip_connections` | patching.py | signature-registry forward patching (§7.3) |
 | `execution_order` / `get_layer` / `_update_container` | graph_utils.py | true call-order probing + path access |
 | `disable_inplace_relu` | graph_utils.py | in-place ReLU → out-of-place (hook safety) |
-| `count_trainable_params` / `layer_stats` | graph_utils.py | measurement utilities |
+| `count_trainable_params` | graph_utils.py | measurement utilities |
 
 ---
 

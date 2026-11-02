@@ -1,40 +1,21 @@
-# utils.pt
+# utils.py
 import torch
 import torch.nn as nn
-from collections import OrderedDict
+import torch.nn.functional as F
+import torch.nn.utils.prune as prune
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-import torch.nn.functional as F
-import matplotlib.pyplot as plt
+from copy import deepcopy
 import os
 import shutil
 import sys
-import json
-from tqdm import tqdm
-from fvcore.nn import FlopCountAnalysis
-import time
-from torchinfo import summary
-import numpy as np
-from pyPrune.utils import load_cifar10, load_cifar100, load_tiny_imagenet, load_imagenet
-from copy import deepcopy
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-import torch.nn.utils.prune as prune
-import torch
-import os
 import glob
 import re
-import json
 import time
-import torch
-import torch.nn as nn
-import torch.nn.utils.prune as prune
-import pandas as pd
-import torch.nn as nn
+import numpy as np
+from tqdm import tqdm
+from fvcore.nn import FlopCountAnalysis
+from pyPrune.utils import load_cifar10, load_cifar100, load_tiny_imagenet, load_imagenet
 
 from pyPrune.models.Vgg16 import VGG16
 from pyPrune.models.RegNetX import RegNetX_400MF
@@ -43,9 +24,6 @@ from pyPrune.models.InceptionNet import InceptionNet
 from pyPrune.models.XceptionNet import XceptionNet
 from pyPrune.models.MobileNet import MobileNet
 
-import argparse
-import glob
-import re
 from main import PowerTracker
 # =========================================================
 # Utility Functions
@@ -86,10 +64,6 @@ def find_matching_checkpoint(before_path: str, candidate_paths: list) -> str:
                 return candidate
 
     raise FileNotFoundError(f"No matching checkpoint found for {base_dir}")
-
-import re
-
-
 
 
 def load_weights(model: nn.Module, filepath: str, device: torch.device):
@@ -173,6 +147,9 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
         for k in mismatched_keys:
             del state_dict[k]
 
+    # Surfaced as the dropped_keys_count CSV column by the result-row builder in main.py.
+    model.dropped_keys_count = len(mismatched_keys)
+
     try:
         incompatible_keys = model.load_state_dict(state_dict, strict=False)
         
@@ -195,30 +172,6 @@ def load_weights(model: nn.Module, filepath: str, device: torch.device):
     print(f"[INFO] Weights loaded in {time.time() - start_time:.2f}s\n")
     return model
 
-
-
-def apply_unstructured_pruning(model: nn.Module, amount: float = 0.2) -> nn.Module:
-    """Applies L1 Unstructured Pruning globally to all convolutional and linear layers."""
-    print(f"[INFO] Applying {amount * 100:.1f}% global unstructured pruning...")
-    start_time = time.time()
-
-    parameters_to_prune = []
-    for module in model.modules():
-        if isinstance(module, (nn.Conv2d, nn.Linear)):
-            parameters_to_prune.append((module, "weight"))
-
-    print(f"[INFO] Found {len(parameters_to_prune)} Conv/Linear layers to prune.")
-
-    prune.global_unstructured(
-        parameters_to_prune, pruning_method=prune.L1Unstructured, amount=amount
-    )
-
-    for module, name in parameters_to_prune:
-        prune.remove(module, name)
-
-    print(f"[INFO] Pruning completed in {time.time() - start_time:.2f}s")
-
-    return model
 
 
 # =========================================================
@@ -442,10 +395,15 @@ def train_imp(model, train_loader, device, epochs, target_sparsity, save_path, c
 # Architecture and Region Utilities
 # =========================================================
 
-def initialize_architecture(model_name: str, dataset_name: str):
-    """Initializes architecture and returns data loaders and sample tensor."""
+def initialize_architecture(model_name: str, dataset_name: str, dataset_info=None):
+    """Initializes architecture and returns data loaders and sample tensor.
+
+    `dataset_info` is an optional pre-loaded load_dataset() result tuple; passing
+    it avoids reloading the same dataset on repeated calls for one combo."""
     print(f"[INFO] Initializing architecture: model={model_name}, dataset={dataset_name}")
-    train_loader, test_loader, input_size, input_channels, num_classes = load_dataset(dataset_name, model_name)
+    if dataset_info is None:
+        dataset_info = load_dataset(dataset_name, model_name)
+    train_loader, test_loader, input_size, input_channels, num_classes = dataset_info
     
     # Grab a batch of 2 to ensure BatchNorm doesn't crash on 1x1 spatial dimensions
     dummy_input = next(iter(train_loader))[0][0:2]
@@ -513,7 +471,7 @@ def _default_universe_donor_path(ckpt_path):
         return None
     scorer_dir = os.path.dirname(universe_dir)
     donor_dir_name = re.sub(
-        r"_scorer[^_]+(?=_epochs\d+_pretrain\d+)", "", os.path.basename(scorer_dir)
+        r"_scorer.+?(?=_epochs\d+_pretrain\d+)", "", os.path.basename(scorer_dir)
     )
     if donor_dir_name == os.path.basename(scorer_dir):
         return None  # not a scorer universe
@@ -712,326 +670,44 @@ def compare_CKA(features_x: torch.Tensor, features_y: torch.Tensor) -> float:
     return cka_score
 
 
-# =========================================================
-# Main Post-Processing Routine
-# =========================================================
-
-# -======================
-def plot_experiment_heuristics(model_name, dataset_name, stats_csv_path):
-    import pandas as pd
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    
-    # [✓] MOVED HERE: This breaks the circular import!
-    from transfer import EXPERIMENTS 
-
-    # Load the raw layer stats
-    df_layers = pd.read_csv(stats_csv_path)
-    layer_names = df_layers['Layer'].tolist()
-    variances = dict(zip(df_layers['Layer'], df_layers['Variance']))
-    activations = dict(zip(df_layers['Layer'], df_layers['Mean Activation']))
-
-    exp_dict = EXPERIMENTS[model_name][dataset_name]
-    
-    exp_names, total_vars, avg_acts = [], [], []
-
-    # Calculate Total Variance and Average Activation per experiment
-    for exp_name, layer_range in exp_dict.items():
-        if layer_range is None or exp_name == "Original Model":
-            continue
-            
-        ranges = layer_range if isinstance(layer_range, list) else [layer_range]
-        b_vars, b_acts = [], []
-        
-        for start_layer, end_layer in ranges:
-            in_range = False
-            for name in layer_names:
-                if start_layer in name: in_range = True
-                if in_range:
-                    if name in variances: b_vars.append(variances[name])
-                    if name in activations: b_acts.append(activations[name])
-                if end_layer in name: break
-                
-        if b_vars and b_acts:
-            exp_names.append(exp_name)
-            total_vars.append(np.sum(b_vars)) # SUM of variance (Total Information)
-            avg_acts.append(np.mean(b_acts))  # MEAN of activation (Average Volume)
-
-    # Generate Plot
-    sns.set_theme(style="whitegrid", context="paper", font_scale=1.2)
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
-
-    df_plot = pd.DataFrame({"Experiment": exp_names, "Total Variance": total_vars, "Mean Activation": avg_acts})
-
-    # Top Plot: Mean Activation
-    sns.barplot(data=df_plot, x="Experiment", y="Mean Activation", color="#4C72B0", edgecolor="black", ax=ax1)
-    ax1.set_title(f"Heuristic Profiling by Target Region: {model_name}", fontsize=16, fontweight='bold')
-    ax1.set_ylabel("Avg Mean Activation", fontweight='bold')
-    ax1.axhline(0, color='black', linewidth=1.5)
-
-    # Bottom Plot: Total Variance
-    sns.barplot(data=df_plot, x="Experiment", y="Total Variance", color="#C44E52", edgecolor="black", ax=ax2)
-    ax2.set_ylabel("Total Sum of Variance", fontweight='bold')
-    ax2.set_xlabel("Targeted Collapse Region", fontweight='bold')
-    
-    plt.xticks(rotation=45, ha='right')
-    sns.despine()
-    plt.tight_layout()
-    plt.savefig(f"runs/plots/{model_name}_heuristic_target_summary.png", dpi=300)
-    print(f"Saved runs/plots/{model_name}_heuristic_target_summary.png")
-
-
-
-# -------------------------
-# Helper utilities
-# -------------------------
-def ensure_dir(d):
-    os.makedirs(d, exist_ok=True)
-
-def is_dict_like(x):
-    return isinstance(x, dict)
-
-def normalize_metrics(metrics):
-    """
-    Normalize incoming metrics into a dict[str -> dict] mapping for plotting functions.
-    Accepts:
-      - dict mapping experiment_name -> metrics (ideal)
-      - list of dicts (will pick 'name'/'experiment' if present, else index-based)
-      - single dict that might contain nested dicts
-    Returns dict.
-    """
-    if is_dict_like(metrics):
-        # If it looks like {exp_name: { ... }}, keep only dict values
-        # If metrics itself is single experiment (contains final_accuracy etc), wrap it
-        contains_nested = any(isinstance(v, dict) for v in metrics.values())
-        if contains_nested:
-            result = {k: v for k, v in metrics.items() if isinstance(v, dict)}
-            # If result empty but metrics seems like one experiment record, wrap it
-            if not result and metrics and all(k in metrics for k in ("accuracies", "losses", "param_count")):
-                return {"metric_record": metrics}
-            return result
-        # fallback: treat as single experiment
-        if all(k in metrics for k in ("accuracies", "losses", "param_count")):
-            return {"metric_record": metrics}
-        return {}
-    elif isinstance(metrics, list):
-        out = {}
-        for i, entry in enumerate(metrics):
-            if not is_dict_like(entry):
-                continue
-            name = entry.get("name") or entry.get("experiment") or f"exp_{i}"
-            out[name] = entry
-        return out
-    else:
-        return {}
-
-def safe_get(d, key, default=None):
-    if not is_dict_like(d):
-        return default
-    return d.get(key, default)
-
-def timestamped_filename(base):
-    t = datetime.now().strftime("%Y%m%d_%H%M%S")
-    name, ext = os.path.splitext(base)
-    return f"{name}_{t}{ext}" if ext else f"{base}_{t}"
-
 def load_dataset(dataset_name, model_name="VGG16"):
-    if model_name == "VGG16":
-        if dataset_name == "TinyImageNet" or dataset_name == "tinyimagenet":
-            print("Loading Tiny ImageNet data...")
-            train_loader, test_loader = load_tiny_imagenet()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 200
+    """Returns (train_loader, test_loader, input_size, input_channels, num_classes).
 
-        elif dataset_name == "Cifar100":
-            print("Loading CIFAR-100 data...")
-            train_loader, test_loader = load_cifar100()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 100
-
-        elif dataset_name == "Cifar10":
-            print("Loading CIFAR-10 data...")
-            train_loader, test_loader = load_cifar10()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 10
-
-        elif dataset_name == "ImageNet" or dataset_name == "imagenet":
-            print("Loading ImageNet data...")
-            train_loader, test_loader = load_imagenet()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 1000  # ImageNet has 1000 classes
-
-        else:
-            raise ValueError(f"Unsupported dataset: {dataset_name}")
-
-    elif model_name == "RegNetX_400MF":
-        if dataset_name == "TinyImageNet" or dataset_name == "tinyimagenet":
-            print("Loading Tiny ImageNet data for RegNetX_400MF...")
-            train_loader, test_loader = load_tiny_imagenet()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 200
-
-        elif dataset_name == "Cifar100":
-            print("Loading CIFAR-100 data for RegNetX_400MF...")
-            train_loader, test_loader = load_cifar100()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 100
-
-        elif dataset_name == "Cifar10":
-            print("Loading CIFAR-10 data for RegNetX_400MF...")
-            train_loader, test_loader = load_cifar10()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 10
-
-        elif dataset_name == "ImageNet" or dataset_name == "imagenet":
-            print("Loading ImageNet data for RegNetX_400MF...")
-            train_loader, test_loader = load_imagenet()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 1000  # ImageNet has 1000 classes
-
-        else:
-            raise ValueError(f"Unsupported dataset for {model_name}: {dataset_name}")
-    
-    elif model_name == "InceptionNet":
-        if dataset_name == "TinyImageNet" or dataset_name == "tinyimagenet":
-            print("Loading Tiny ImageNet data for InceptionNet...")
-            train_loader, test_loader = load_tiny_imagenet()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 200
-
-        elif dataset_name == "Cifar100":
-            print("Loading CIFAR-100 data for InceptionNet...")
-            train_loader, test_loader = load_cifar100()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 100
-
-        elif dataset_name == "Cifar10":
-            print("Loading CIFAR-10 data for InceptionNet...")
-            train_loader, test_loader = load_cifar10()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 10
-
-        elif dataset_name == "ImageNet" or dataset_name == "imagenet":
-            print("Loading ImageNet data for InceptionNet...")
-            train_loader, test_loader = load_imagenet()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 1000  # ImageNet has 1000 classes
-
-        else:
-            raise ValueError(f"Unsupported dataset for {model_name}: {dataset_name}")
-    
-    elif model_name == "XceptionNet":
-        if dataset_name == "Cifar10":
-            print("Loading CIFAR-10 data for XceptionNet...")
-            train_loader, test_loader = load_cifar10()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 10
-        elif dataset_name == "Cifar100":
-            print("Loading CIFAR-100 data for XceptionNet...")
-            train_loader, test_loader = load_cifar100()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 100
-        elif dataset_name == "TinyImageNet" or dataset_name == "tinyimagenet":
-            print("Loading Tiny ImageNet data for XceptionNet...")
-            train_loader, test_loader = load_tiny_imagenet()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 200
-
-    elif model_name == "MobileNet":
-        if dataset_name == "Cifar10":
-            print("Loading CIFAR-10 data for MobileNet...")
-            train_loader, test_loader = load_cifar10()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 10
-        elif dataset_name == "Cifar100":
-            print("Loading CIFAR-100 data for MobileNet...")
-            train_loader, test_loader = load_cifar100()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 100
-        elif dataset_name == "TinyImageNet" or dataset_name == "tinyimagenet":
-            print("Loading Tiny ImageNet data for MobileNet...")
-            train_loader, test_loader = load_tiny_imagenet()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 200
-    elif model_name == "ConvNeXt":
-        if dataset_name == "Cifar10":
-            print("Loading CIFAR-10 data for ConvNeXt...")
-            train_loader, test_loader = load_cifar10()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 10
-        elif dataset_name == "Cifar100":
-            print("Loading CIFAR-100 data for ConvNeXt...")
-            train_loader, test_loader = load_cifar100()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 100
-        elif dataset_name == "TinyImageNet" or dataset_name == "tinyimagenet":
-            print("Loading Tiny ImageNet data for ConvNeXt...")
-            train_loader, test_loader = load_tiny_imagenet()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 200
-        elif dataset_name == "ImageNet" or dataset_name == "imagenet":
-            print("Loading ImageNet data for ConvNeXt...")
-            train_loader, test_loader = load_imagenet()
-            sample_input = next(iter(train_loader))[0]
-            input_size = sample_input.shape[-2:]
-            input_channels = sample_input.shape[1]
-            num_classes = 1000  # ImageNet has 1000 classes
-    else:
+    Dataset names are matched case-insensitively ('Cifar10', 'cifar10',
+    'TinyImageNet', 'tinyimagenet' all work). Unknown model or dataset raises
+    ValueError instead of falling through to an unbound local.
+    """
+    supported = {
+        "VGG16":         {"cifar10", "cifar100", "tinyimagenet", "imagenet"},
+        "RegNetX_400MF": {"cifar10", "cifar100", "tinyimagenet", "imagenet"},
+        "InceptionNet":  {"cifar10", "cifar100", "tinyimagenet", "imagenet"},
+        "XceptionNet":   {"cifar10", "cifar100", "tinyimagenet"},
+        "MobileNet":     {"cifar10", "cifar100", "tinyimagenet"},
+        "ConvNeXt":      {"cifar10", "cifar100", "tinyimagenet", "imagenet"},
+    }
+    loaders = {
+        "cifar10": (load_cifar10, 10),
+        "cifar100": (load_cifar100, 100),
+        "tinyimagenet": (load_tiny_imagenet, 200),
+        "imagenet": (load_imagenet, 1000),
+    }
+    if model_name not in supported:
         raise ValueError(f"Unsupported model: {model_name}")
-
+    key = dataset_name.lower().replace("_", "")
+    if key not in supported[model_name]:
+        raise ValueError(f"Unsupported dataset for {model_name}: {dataset_name}")
+    print(f"Loading {dataset_name} data for {model_name}...")
+    loader_fn, num_classes = loaders[key]
+    train_loader, test_loader = loader_fn()
+    sample_input = next(iter(train_loader))[0]
+    input_size = sample_input.shape[-2:]
+    input_channels = sample_input.shape[1]
     return train_loader, test_loader, input_size, input_channels, num_classes
+
  
 # -------------------------
 # Benchmark Inference
 # -------------------------
-import torch
-import time
-from copy import deepcopy
-from fvcore.nn import FlopCountAnalysis
-from torch.utils.data import DataLoader
 
 def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5, quant=False):
     """
@@ -1206,126 +882,6 @@ def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5, qua
         "feature_map_mb": total_feature_map_size_mb,
         "peak_mem_mb": peak_mem_mb,
     }
-
-def describe_model(model, loader, device='cpu'):
-    print("=" * 60)
-    print("🔍 Model Summary (via torchinfo)")
-    print("=" * 60)
-    # summary(model, input_size=next(iter(loader))[0].shape, device=device)
-    # layer_stats(model)
-    print("=" * 60)
-
-
-def calibrate_hyperparameters(df):
-    """
-    Analyzes the heuristic DataFrame to find optimal scaling factors.
-    Returns a dict of tuned parameters: {'lambda_v', 'd_0'}
-    """
-    # 1. Calibrate Lambda (Variance Sensitivity)
-    # We want the bottom 20% of layers (by variance) to have a Silence Score > 0.5
-    # Formula: exp(-lambda * var_20th) = 0.5
-    # Solve for lambda: lambda = -ln(0.5) / var_20th
-    
-    # Filter for valid variances (conv/linear layers only)
-    variances = df[df['act_var'] > 0]['act_var']
-    
-    if variances.empty:
-        return {'lambda_v': 10.0, 'd_0': 0.15} # Fallback defaults
-        
-    var_20th_percentile = np.percentile(variances, 20)
-    
-    # Avoid division by zero if variance is extremely small
-    var_threshold = max(var_20th_percentile, 1e-6)
-    
-    lambda_v = -np.log(0.5) / var_threshold
-    
-    # 2. Calibrate Depth Gate (d_0)
-    # We assume the "Stem" is roughly the first 10% of layers, 
-    # but at least the first 5 layers.
-    total_layers = len(df)
-    stem_layers = max(5, int(total_layers * 0.10))
-    d_0 = stem_layers / total_layers
-    
-    print(f"[Auto-Calibrate] Tuned lambda_v: {lambda_v:.4f} (based on p20 var: {var_threshold:.4e})")
-    print(f"[Auto-Calibrate] Tuned d_0: {d_0:.4f} (Protecting first {stem_layers} layers)")
-    
-    return {'lambda_v': lambda_v, 'd_0': d_0}
-
-def calculate_adaptive_score(row, total_layers, tuned_params):
-    """
-    Calculates CS using the auto-calibrated parameters.
-    """
-    # Unpack tuned params
-    lambda_v = tuned_params['lambda_v']
-    d_0 = tuned_params['d_0']
-    
-    # Fixed params (these are generally robust)
-    k = 20.0       # Steepness of depth gate (20 makes it a sharp wall)
-    gamma = 0.2    # Residual bonus
-    
-    # --- Metrics from Dataframe ---
-    variance = row['act_var']
-    identity = row['identity_score']
-    # We approximate 'has_residual' by checking layer name or using a passed flag
-    # For now, we'll assume False or you can map it from your model graph
-    has_residual = False 
-    
-    # Calculate Relative Depth (0.0 to 1.0)
-    # Assuming the dataframe index corresponds to depth
-    relative_depth = (row.name + 1) / total_layers
-    
-    # 1. Depth Gating
-    depth_gate = 1 / (1 + np.exp(-k * (relative_depth - d_0)))
-    
-    # 2. Functional Score
-    silence_score = np.exp(-lambda_v * variance)
-    redundancy_score = identity
-    
-    # Weighted average (favoring silence slightly as it's a stronger signal)
-    functional_score = 0.6 * silence_score + 0.4 * redundancy_score
-    
-    # 3. Residual Bonus
-    residual_multiplier = 1.0 + (gamma if has_residual else 0.0)
-    
-    final_score = depth_gate * functional_score * residual_multiplier
-    
-    return final_score
-# ===============================
-# Basic Counting Utilities
-# ===============================
-
-def count_zeros(tensor): 
-    return torch.sum(tensor == 0).item()
-
-def count_trainable_params(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-
-# ===============================
-# Model Statistics
-# ===============================
-
-def layer_stats(model):
-    print("\nLayer-wise zero parameter stats:\n")
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            zeros = count_zeros(param)
-            total = param.numel()
-            # print(f"{name}: {zeros}/{total} zeros ({100 * zeros/total:.2f}%)")
-
-
-
-# ===============================
-# Cloning Utility
-# ===============================
-
-def clone_model(model, model_class):
-    """Utility to clone a model and load weights to keep experiments isolated."""
-    new_model = model_class()
-    new_model.load_state_dict(model.state_dict())
-    return new_model
-
-
 
 # =========================================================
 # Structural Pruning Baseline (torch-pruning, optional dep)

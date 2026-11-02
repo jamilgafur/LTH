@@ -218,6 +218,44 @@ def test_append_long_csv(tmp_path):
     assert lines == ["a,b", "1,2", "3,4"]
 
 
+def test_append_long_csv_dedups_on_key_cols(tmp_path):
+    """Rerunning a checkpoint replaces its rows instead of double-counting."""
+    path = tmp_path / "rows.csv"
+    cols = ["attack", "epsilon", "model", "adv_acc"]
+    keys = ["attack", "epsilon", "model"]
+    m2._append_long_csv(str(path), [{"attack": "FGSM", "epsilon": 0.03, "model": "collapsed", "adv_acc": 0.5}], cols, keys)
+    m2._append_long_csv(str(path), [{"attack": "FGSM", "epsilon": 0.03, "model": "collapsed", "adv_acc": 0.6},
+                                    {"attack": "FGSM", "epsilon": 0.05, "model": "collapsed", "adv_acc": 0.4}], cols, keys)
+    lines = path.read_text().strip().splitlines()
+    assert lines == ["attack,epsilon,model,adv_acc",
+                     "FGSM,0.03,collapsed,0.6",
+                     "FGSM,0.05,collapsed,0.4"]
+
+
+# ---------------------------------------------------------------- IMP sparsity
+
+def test_imp_compounding_rate_hits_target_sparsity():
+    """train_imp's per-step incremental_amount (1 - (1-s)^(1/steps)) applied via
+    global_unstructured L1Unstructured each step must land on the target zero
+    fraction. Tests the masking/ratio logic train_imp runs inline (the full
+    function needs data + checkpoint write paths, so this is its smallest unit)."""
+    import torch.nn.utils.prune as prune
+
+    target_sparsity = 0.8
+    epochs = 12
+    pruning_steps = max(1, int(epochs * 0.75))
+    incremental_amount = 1.0 - (1.0 - target_sparsity) ** (1.0 / pruning_steps)
+
+    model = nn.Sequential(nn.Linear(40, 40), nn.Linear(40, 10))
+    params = [(m, "weight") for m in model.modules() if isinstance(m, (nn.Conv2d, nn.Linear))]
+    for _ in range(pruning_steps):
+        prune.global_unstructured(params, pruning_method=prune.L1Unstructured, amount=incremental_amount)
+
+    zeros = sum(int((m.weight == 0).sum()) for m, _ in params)
+    total = sum(m.weight.numel() for m, _ in params)
+    assert zeros / total == pytest.approx(target_sparsity, abs=0.02)
+
+
 # ---------------------------------------------------------------- train_structural
 
 def test_train_structural_resume_path_needs_no_dependency(tmp_path):

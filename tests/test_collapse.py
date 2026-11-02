@@ -434,6 +434,59 @@ def test_signature_patch_is_class_name_agnostic():
     assert out.shape == (1, 10)
 
 
+def test_insert_corrective_pool_flattens_before_linear():
+    """The corrective wrapper must be pool -> flatten -> Linear: the pooled 4D
+    output would otherwise hit nn.Linear on the wrong (last) dim."""
+    from pyPrune.collapse.replace import _insert_corrective_pool
+
+    class _PooledHeadToy(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = nn.Conv2d(3, 8, 1)           # (1,3,2,32) -> (1,8,2,32)
+            self.fc = nn.Linear(8 * 2 * 2, 10)       # expects pooled 2x2 flattened features
+
+        def forward(self, x):
+            # Pre-repair quirk: last dim happens to equal in_features, so the
+            # probe forward succeeds and the mismatch is detected with 4D input.
+            return self.fc(self.conv(x))
+
+    model = _PooledHeadToy()
+    _insert_corrective_pool(model, "fc", (1, 3, 2, 32), False)
+    assert isinstance(model.fc, nn.Sequential)
+    assert isinstance(model.fc[0], nn.AdaptiveAvgPool2d)
+    assert isinstance(model.fc[1], nn.Flatten)
+    assert isinstance(model.fc[2], nn.Linear)
+    out = model(torch.randn(1, 3, 2, 32))
+    assert out.shape == (1, 10)
+
+
+def test_validate_downstream_does_not_mutate_custom_forward_container():
+    """Auto-repair linearly replays container children — unsound for
+    custom-forward containers, which must be returned unrepaired."""
+    from collections import OrderedDict
+    from pyPrune.collapse.identity import _SafePool
+    from pyPrune.collapse.replace import _validate_downstream
+
+    class _CustomBlock(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.rep = nn.Sequential(OrderedDict([("conv_1x1", nn.Conv2d(4, 4, 1))]))
+            # Would raise in a linear replay (kernel 8 > 4x4 map) and be replaced.
+            self.bad_pool = nn.MaxPool2d(8, stride=8)
+
+        def forward(self, x):
+            return self.rep(x)  # custom forward; bad_pool unused
+
+    model = nn.Module()
+    model.custom = _CustomBlock()
+    bad_pool_before = model.custom.bad_pool
+
+    _validate_downstream(model, "custom", 0, torch.randn(1, 4, 4, 4), (1, 3, 8, 8))
+
+    assert model.custom.bad_pool is bad_pool_before
+    assert not isinstance(model.custom.bad_pool, _SafePool)
+
+
 def test_safe_pool_warns_once_but_keeps_adapting(capsys):
     model = nn.Sequential(nn.MaxPool2d(3, stride=2))
     wrap_pools_safe(model)

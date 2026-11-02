@@ -40,13 +40,10 @@ flowchart LR
 |---|---|---|
 | `pyPrune/` | The library: collapse engine, models, data loaders, heritage pruning framework | [pyPrune/README.md](pyPrune/README.md) |
 | `pyPrune/collapse/` | **Core contribution**: region discovery + structural collapse, model-agnostic | [pyPrune/collapse/README.md](pyPrune/collapse/README.md) |
-| `pyPrune/models/` | 9 architecture families (10 classes) with dataset presets | [pyPrune/models/README.md](pyPrune/models/README.md) |
-| `pyPrune/pruneMethods/` | Heritage pruning framework (Pruner/Trainer classes) | [pyPrune/pruneMethods/README.md](pyPrune/pruneMethods/README.md) |
-| `pyPrune/strategies/` | Heritage pruning strategies (Magnitude, Optimal Brain Damage) | [pyPrune/strategies/README.md](pyPrune/strategies/README.md) |
+| `pyPrune/models/` | 6 architecture families with dataset presets | [pyPrune/models/README.md](pyPrune/models/README.md) |
 | `manuscript/Tranfer/` | Training pipeline: Stage 1 (discovery) + Stage 2 (collapse + fine-tune), HPC job scripts | [manuscript/Tranfer/README.md](manuscript/Tranfer/README.md) |
 | `manuscript/Transfer2/` | Analysis pipeline: energy, efficiency, robustness, CKA, baselines | [manuscript/Transfer2/README.md](manuscript/Transfer2/README.md) |
-| `manuscript/sparse_matrix/`, `manuscript/structured_study/` | Earlier study pipelines (legacy, superseded) | — |
-| `tests/` | Unit & wiring tests (53 tests) | — |
+| `tests/` | Unit & wiring tests | — |
 
 ## Quick Start
 
@@ -130,17 +127,14 @@ These three conventions keep every artifact findable and every universe collisio
 ## Testing
 
 ```bash
-python -m pytest tests/ --ignore=tests/test_pruning.py -q
+python -m pytest tests/ -q
 ```
 
-53 tests cover: collapse mechanics & idempotent patching (`test_collapse.py`),
-representational-change probing & scorers (`test_change_stats.py`), scorer wiring & artifact
-inheritance (`test_scorer_wiring.py`), Transfer2 path resolution (`test_transfer2_paths.py`),
-analysis math — AUROC/ECE/corruptions/benchmarks (`test_transfer2_analysis.py`), and trainer
-smoke tests.
-
-> **Known issue:** `tests/test_pruning.py` refers to the removed `pyPrune.pruning` module
-> (the heritage IMP tutorial was superseded) and fails at collection; it is excluded above.
+Tests cover: collapse mechanics & idempotent patching plus corrective-pool/downstream-safety
+repairs (`test_collapse.py`), representational-change probing & scorers (`test_change_stats.py`),
+scorer wiring & artifact inheritance (`test_scorer_wiring.py`), Transfer2 path resolution
+(`test_transfer2_paths.py`), analysis math — AUROC/ECE/corruptions/benchmarks/IMP sparsity
+(`test_transfer2_analysis.py`), and trainer smoke tests.
 
 ## Requirements
 

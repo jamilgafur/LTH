@@ -96,15 +96,20 @@ class VGG16(nn.Module):
 
     def _calculate_fc_input_size(self, one_batch):
         # This method calculates the flattened feature size after passing through the convolutional layers
+        was_training = self.features.training
+        # BN running stats must not be polluted by this probing forward.
+        self.features.eval()
         with torch.no_grad():
             if one_batch is not None:
                 batch_size, input_channels, height, width = one_batch.shape
                 dummy_input = torch.zeros(1, input_channels, height, width)
             else:
                 dummy_input = torch.zeros(1, self.input_channels, self.input_size[0], self.input_size[1])
-            
+
             feature_map = self.features(dummy_input)
             self.fc_input_size = feature_map.numel() // feature_map.size(0)
+        if was_training:
+            self.features.train()
 
     def forward(self, x):
         x = self.features(x)

@@ -2,7 +2,7 @@
 
 [← pyPrune package](../README.md) · [Top-level README](../../README.md)
 
-Nine architecture families (ten classes) with a shared construction contract used by the pipelines: dataset-driven
+Six architecture families with a shared construction contract used by the pipelines: dataset-driven
 `num_classes` / input-shape inference, and (for the experimented architectures) a one-batch
 probe tensor passed via `model_kwargs["one_batch"]` for shape discovery during collapse and
 discovery.
@@ -17,9 +17,6 @@ discovery.
 | `XceptionNet.py` | `XceptionNet` | Depthwise-separable (`skip`+`rep` blocks) | ✅ |
 | `MobileNet.py` | `MobileNet` | Depthwise-separable (inverted residuals) | ✅ |
 | `ConvNetX.py` | `ConvNeXt` | Modernized ResNet (channels-first LayerNorm) | ✅ |
-| `ResNet20.py` / `ResNet50.py` | ResNets | Classic residual | reference |
-| `LeNet.py` | LeNet | Tutorial-scale | reference (heritage IMP demos) |
-| `EfficientNet.py` | EfficientNet | Compound-scaled | reference |
 
 ## Construction contract
 
@@ -33,7 +30,7 @@ reject `one_batch` fall back to default construction with a logged warning.
 - **Residual/parallel forwards** (`RegNetX`, `InceptionNet`, `XceptionNet`, `ConvNeXt`): handled
   by the attribute-signature patching registry — see
   [pyPrune/collapse/README.md § patching](../collapse/README.md#safety-machinery).
-- **Strict sequential** (`VGG16`, `LeNet`): collapse works unpatched; the LCA machinery treats
+- **Strict sequential** (`VGG16`): collapse works unpatched; the LCA machinery treats
   the whole model as one container.
 - **InceptionNet on CIFAR inputs**: stride-2 pool chain shrinks 32×32 maps to 2×2, below its
   3×3 pool kernels — `_SafePool` adaptation is required (applied automatically by the pipeline).
