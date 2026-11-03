@@ -10,7 +10,7 @@ CANONICAL_MODELS = ['ConvNeXt', 'InceptionNet', 'MobileNet', 'RegNetX_400MF', 'V
 
 def load_and_compute_deltas():
     """Reads CSVs, skips empty files, and computes hardware-normalized deltas."""
-    csv_files = glob.glob("*.csv")
+    csv_files = glob.glob("cka_results_*.csv")
     if not csv_files:
         print("No CSV files found.")
         return None, []
@@ -24,6 +24,7 @@ def load_and_compute_deltas():
         try:
             temp_df = pd.read_csv(f)
             if not temp_df.empty:
+                temp_df['quant'] = '_quant' in f
                 df_list.append(temp_df)
         except pd.errors.EmptyDataError:
             print(f"Skipping unparsable/empty CSV data: {f}")
@@ -34,9 +35,11 @@ def load_and_compute_deltas():
         
     df = pd.concat(df_list, ignore_index=True)
     df = df[df['model'] != 'model'].reset_index(drop=True)
+    # shortcut: rerun files can hold multiple rows per config; keep the last row, upgrade to a median if that starts mattering
+    df = df.drop_duplicates(subset=['dataset', 'quant', 'pre_epochs', 'post_epochs', 'model'], keep='last').reset_index(drop=True)
 
     # Convert numeric columns (excluding string metadata columns)
-    num_cols = [col for col in df.columns if col not in ['model', 'dataset', 'model_before', 'gpu_name']]
+    num_cols = [col for col in df.columns if col not in ['model', 'dataset', 'model_before', 'gpu_name', 'quant']]
     for col in num_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
@@ -214,13 +217,14 @@ def main():
     if df is None:
         return
 
-    grouped = df.groupby(['dataset', 'pre_epochs', 'post_epochs'])
+    grouped = df.groupby(['dataset', 'quant', 'pre_epochs', 'post_epochs'])
 
-    for (dataset, pre, post), group_df in grouped:
-        print(f"\n--- Generating plots for {dataset} | Pre: {pre} | Post: {post} ---")
+    for (dataset, quant, pre, post), group_df in grouped:
+        print(f"\n--- Generating plots for {dataset} | Quant: {quant} | Pre: {pre} | Post: {post} ---")
         
-        file_suffix = f"{dataset}_pre{pre}_post{post}"
-        title_suffix = f"\n({dataset} | Pre: {pre}, Post: {post})"
+        q = 'quant' if quant else 'fp32'
+        file_suffix = f"{dataset}_{q}_pre{pre}_post{post}"
+        title_suffix = f"\n({dataset} | {q} | Pre: {pre}, Post: {post})"
 
         # Plot 1: Change in Task Accuracy
         plot_bar_chart(
