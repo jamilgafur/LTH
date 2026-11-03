@@ -151,8 +151,20 @@ def draw_uni_bars(ax, df_fp32, df_quant, all_models, columns, labels, panel_titl
     pad_shared_ylim(ax)
 
     if df_annotations is not None:
-        interleaved = pd.concat([f for acol in df_annotations for f in (rf[acol], rq[acol])], axis=1)
-        annotate_bars(ax, interleaved, anno_fmt, fontsize=8)
+        # annotate fp32 bars only: fp16 values are near-duplicates and adjacent labels collide
+        fp32_rects = [rect for i, container in enumerate(ax.containers) if i % 2 == 0
+                      for rect in container]
+        anno_vals = pd.concat([rf[a] for a in df_annotations], axis=1).values.flatten('F')
+        for p, val in zip(fp32_rects, anno_vals):
+            height = p.get_height()
+            if pd.isna(val) or pd.isna(height) or height == 0:
+                continue
+            xytext = (0, 5) if height >= 0 else (0, -15)
+            ax.annotate(anno_fmt.format(val=val),
+                        (p.get_x() + p.get_width() / 2., height),
+                        ha='center', va='bottom' if height >= 0 else 'top',
+                        xytext=xytext, textcoords='offset points',
+                        fontsize=8, fontweight='bold', color='#333333')
 
     if legend:
         handles = [Patch(facecolor=colors[i], edgecolor='black', label=labels[i]) for i in range(m)]
