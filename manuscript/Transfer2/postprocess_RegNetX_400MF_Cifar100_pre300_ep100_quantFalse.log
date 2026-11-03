@@ -1,0 +1,614 @@
+[INFO] Searching for model checkpoints...
+[INFO] Found 2 'before' checkpoints.
+[INFO] Found 1 collapsed checkpoints.
+[INFO] Found 2 'after' checkpoints.
+======================================================================
+Starting Comparison Post-Processing Pipeline
+Model: RegNetX_400MF | Dataset: Cifar100 | Device: cuda
+Epochs Config (override): pre=300, post=100
+Output File: cka_results_RegNetX_400MF_Cifar100_pre300_post100.csv
+CUDA device: NVIDIA A40
+======================================================================
+
+======================================================================
+Processing checkpoint 1/2
+Path: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory... ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=Cifar100
+Loading CIFAR-100 data for RegNetX_400MF...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 4.66s
+
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=Cifar100
+Loading CIFAR-100 data for RegNetX_400MF...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 1.40s
+
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 1.41s
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 16.19%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=Cifar100
+Loading CIFAR-100 data for RegNetX_400MF...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 0.81s
+
+[WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=92.29W, energy=45.85J, time=0.50s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=104.79W, energy=52.01J, time=0.50s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=97.95W, energy=68.33J, time=0.70s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=105.58W, energy=51.64J, time=0.49s
+[INFO] Saturated energy: power=119.42, J/img=0.0022001110969609777, samples=2
+[INFO] Saturated energy: power=115.11500000000001, J/img=0.002141130263042667, samples=2
+[INFO] Saturated energy: power=110.435, J/img=0.0021793506552581676, samples=2
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=76.68W, energy=158.86J, time=2.07s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=76.92W, energy=157.51J, time=2.05s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=74.22W, energy=150.57J, time=2.03s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=75.95W, energy=153.63J, time=2.02s
+[INFO] Saturated energy: power=117.89999999999999, J/img=0.0022057780031694697, samples=2
+[INFO] Saturated energy: power=119.20499999999998, J/img=0.0022284406173774703, samples=2
+[INFO] Saturated energy: power=116.455, J/img=0.0023080124077622336, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=77.42W, energy=161.52J, time=2.09s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=79.96W, energy=165.47J, time=2.07s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=79.81W, energy=160.30J, time=2.01s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=78.45W, energy=158.57J, time=2.02s
+[INFO] Saturated energy: power=131.55666666666664, J/img=0.0024685691035595723, samples=3
+[INFO] Saturated energy: power=116.22999999999999, J/img=0.002165174824119774, samples=2
+[INFO] Saturated energy: power=121.16499999999999, J/img=0.0023940791752559117, samples=2
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=82.97W, energy=169.82J, time=2.05s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=83.76W, energy=173.72J, time=2.07s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=83.73W, energy=171.87J, time=2.05s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=85.38W, energy=176.39J, time=2.07s
+[INFO] Saturated energy: power=117.04499999999999, J/img=0.002179841730636017, samples=2
+[INFO] Saturated energy: power=120.4, J/img=0.0022465413815884795, samples=2
+[INFO] Saturated energy: power=118.38, J/img=0.002338549710304743, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=87.50W, energy=176.26J, time=2.01s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=85.82W, energy=174.86J, time=2.04s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=88.14W, energy=183.49J, time=2.08s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=88.27W, energy=182.41J, time=2.07s
+[INFO] Saturated energy: power=115.97, J/img=0.00215703116868236, samples=2
+[INFO] Saturated energy: power=118.47, J/img=0.002201677795014226, samples=2
+[INFO] Saturated energy: power=119.92, J/img=0.0023651447884701004, samples=2
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=96.97W, energy=194.56J, time=2.01s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=98.31W, energy=199.10J, time=2.03s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=98.78W, energy=205.06J, time=2.08s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=98.54W, energy=204.31J, time=2.07s
+[INFO] Saturated energy: power=119.35, J/img=0.0022956718814796506, samples=2
+[INFO] Saturated energy: power=115.34, J/img=0.002151955879377245, samples=2
+[INFO] Saturated energy: power=114.07000000000001, J/img=0.002263176015709251, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=97.66W, energy=197.80J, time=2.03s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=92.60W, energy=188.73J, time=2.04s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=89.90W, energy=183.72J, time=2.04s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=89.90W, energy=181.25J, time=2.02s
+[INFO] Saturated energy: power=115.47999999999999, J/img=0.002143650507062392, samples=2
+[INFO] Saturated energy: power=119.02, J/img=0.0022111277681564527, samples=2
+[INFO] Saturated energy: power=119.97999999999999, J/img=0.00236965789192885, samples=2
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=81.77W, energy=168.50J, time=2.06s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=77.95W, energy=156.00J, time=2.00s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=74.69W, energy=151.49J, time=2.03s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=73.13W, energy=152.39J, time=2.08s
+[INFO] Saturated energy: power=116.82499999999999, J/img=0.002169519349355513, samples=2
+[INFO] Saturated energy: power=116.72, J/img=0.00216620325145997, samples=2
+[INFO] Saturated energy: power=118.69, J/img=0.0023504051545867695, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=73.38W, energy=148.04J, time=2.02s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=73.25W, energy=148.75J, time=2.03s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=73.29W, energy=152.74J, time=2.08s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=74.39W, energy=154.40J, time=2.08s
+[INFO] Saturated energy: power=119.88, J/img=0.0022364453011814735, samples=2
+[INFO] Saturated energy: power=118.86000000000001, J/img=0.0022193791294002566, samples=2
+[INFO] Saturated energy: power=121.31, J/img=0.002400989583248844, samples=2
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=74.97W, energy=151.78J, time=2.02s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=73.66W, energy=151.73J, time=2.06s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=73.31W, energy=147.44J, time=2.01s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=73.34W, energy=151.99J, time=2.07s
+[INFO] Saturated energy: power=119.38, J/img=0.002223194227134588, samples=2
+[INFO] Saturated energy: power=119.39500000000001, J/img=0.002221527916149753, samples=2
+[INFO] Saturated energy: power=121.75, J/img=0.0024071158478551325, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=1.82s, energy=133.47J
+[RESULT] Accuracy Original:     0.3506 | Power: 104.79W | Energy: 52.01J
+[RESULT] Accuracy Unstructured: 0.3853 | Power: 97.95W | Energy: 68.33J
+[RESULT] Accuracy Collapsed:    0.3123 | Power: 105.58W | Energy: 51.64J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=4.237e+09 | latency=9.50 ms/batch | throughput=53898.9 img/s | peak_mem=298.6 MiB | feature_maps=368.7 MiB
+[RESULT] Unstructured FLOPs=4.237e+09 | latency=9.48 ms/batch | throughput=54035.5 img/s | peak_mem=298.6 MiB | feature_maps=368.7 MiB
+[RESULT] Collapsed    FLOPs=3.665e+09 | latency=10.08 ms/batch | throughput=50780.0 img/s | peak_mem=291.3 MiB | feature_maps=342.9 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 3.55e+09
+[RESULT] Storage (state_dict MiB): original=18.6, unstructured=18.6, collapsed=15.7
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 384), time=1.27s
+[INFO] Computing CKA: features_x=(5120, 384), features_y=(5120, 384)
+[INFO] CKA complete: score=1.000000, time=0.21s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 384), time=1.69s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 384), time=1.81s
+[INFO] Computing CKA: features_x=(5120, 384), features_y=(5120, 384)
+[INFO] CKA complete: score=0.094756, time=0.00s
+[INFO] Computing CKA: features_x=(5120, 384), features_y=(5120, 384)
+[INFO] CKA complete: score=0.462718, time=0.00s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.1191
+       -> unstructured Accuracy: 0.1758
+       -> collapsed Accuracy: 0.1016
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.0684
+       -> unstructured Accuracy: 0.1152
+       -> collapsed Accuracy: 0.0488
+
+======================================================================
+Processing checkpoint 2/2
+Path: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+======================================================================
+[INFO] Parsing experiment directory... ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Initializing baseline model...
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=Cifar100
+Loading CIFAR-100 data for RegNetX_400MF...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 1.45s
+
+[INFO] Loading original post-finetuning model...
+[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=Cifar100
+Loading CIFAR-100 data for RegNetX_400MF...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control_Continuted.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 0.78s
+
+[INFO] Loading whole collapsed model artifact...
+[INFO] Searching for checkpoint matching: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300
+[INFO] Found matching checkpoint: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Dynamic_Region_All_Combined_whole.pt
+[INFO] Whole-model load completed in 0.07s
+[INFO] Calculating dynamic sparsity to match collapse...
+[INFO] Target unstructured sparsity calculated at: 16.19%
+[INFO] Loading existing IMP unstructured checkpoint: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Initializing architecture: model=RegNetX_400MF, dataset=Cifar100
+Loading CIFAR-100 data for RegNetX_400MF...
+CIFAR-100 data shape:  torch.Size([512, 3, 32, 32])
+[DEBUG] dummy_input shape generated for initialization: torch.Size([2, 3, 32, 32])
+[DEBUG] Attempting to initialize RegNetX_400MF with kwargs: dict_keys(['num_classes', 'one_batch'])
+[DEBUG] RegNetX_400MF successfully initialized WITH one_batch.
+[INFO] Loading weights: ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Unstructured_IMP_post100.pt
+[INFO] Checkpoint extracted. Candidate state dict keys: 428
+[INFO] Weights loaded in 0.13s
+
+[WARN] torch-pruning is required for the structural baseline (pip install torch-pruning). Skipping structural baseline.
+
+[INFO] Evaluating model accuracy, power draw, and energy consumption (10 rep(s))...
+
+[INFO] === Measurement rep 1/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=74.24W, energy=149.06J, time=2.01s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=79.14W, energy=157.60J, time=1.99s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=79.39W, energy=158.32J, time=1.99s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=77.12W, energy=154.41J, time=2.00s
+[INFO] Saturated energy: power=119.01, J/img=0.0022124348874731025, samples=2
+[INFO] Saturated energy: power=117.01499999999999, J/img=0.00217471541582062, samples=2
+[INFO] Saturated energy: power=121.42500000000001, J/img=0.0024010366527945737, samples=2
+
+[INFO] === Measurement rep 2/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=77.68W, energy=154.66J, time=1.99s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=76.43W, energy=151.94J, time=1.99s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=81.47W, energy=163.10J, time=2.00s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=82.35W, energy=163.61J, time=1.99s
+[INFO] Saturated energy: power=114.43, J/img=0.0021318258753849715, samples=2
+[INFO] Saturated energy: power=119.13, J/img=0.0022144307463236573, samples=2
+[INFO] Saturated energy: power=120.64, J/img=0.002383243229985237, samples=2
+
+[INFO] === Measurement rep 3/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=80.80W, energy=160.80J, time=1.99s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=84.28W, energy=163.93J, time=1.95s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=84.38W, energy=169.56J, time=2.01s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=84.78W, energy=170.75J, time=2.01s
+[INFO] Saturated energy: power=115.64500000000001, J/img=0.0021547006755267746, samples=2
+[INFO] Saturated energy: power=112.795, J/img=0.0021024616877658745, samples=2
+[INFO] Saturated energy: power=117.78999999999999, J/img=0.0023257937379414216, samples=2
+
+[INFO] === Measurement rep 4/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=88.00W, energy=175.38J, time=1.99s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=85.19W, energy=171.50J, time=2.01s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=86.17W, energy=172.58J, time=2.00s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=86.84W, energy=174.43J, time=2.01s
+[INFO] Saturated energy: power=118.285, J/img=0.0021961580159715398, samples=2
+[INFO] Saturated energy: power=119.685, J/img=0.002225028838564747, samples=2
+[INFO] Saturated energy: power=115.065, J/img=0.002267798659368418, samples=2
+
+[INFO] === Measurement rep 5/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=97.13W, energy=194.43J, time=2.00s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=96.03W, energy=191.92J, time=2.00s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=95.64W, energy=190.01J, time=1.99s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=96.92W, energy=194.74J, time=2.01s
+[INFO] Saturated energy: power=118.165, J/img=0.002195799203121701, samples=2
+[INFO] Saturated energy: power=121.68, J/img=0.0022616808450306365, samples=2
+[INFO] Saturated energy: power=118.23, J/img=0.0023303103984799235, samples=2
+
+[INFO] === Measurement rep 6/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=98.98W, energy=197.65J, time=2.00s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=94.80W, energy=187.87J, time=1.98s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=91.28W, energy=176.98J, time=1.94s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=89.95W, energy=179.94J, time=2.00s
+[INFO] Saturated energy: power=118.43, J/img=0.002200283936009619, samples=2
+[INFO] Saturated energy: power=117.53999999999999, J/img=0.002185737044148818, samples=2
+[INFO] Saturated energy: power=118.61500000000001, J/img=0.0023402125086169692, samples=2
+
+[INFO] === Measurement rep 7/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=83.56W, energy=167.34J, time=2.00s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=78.67W, energy=157.35J, time=2.00s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=76.91W, energy=153.03J, time=1.99s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=73.73W, energy=148.21J, time=2.01s
+[INFO] Saturated energy: power=117.395, J/img=0.002191328185288262, samples=2
+[INFO] Saturated energy: power=112.845, J/img=0.0021136507996956685, samples=2
+[INFO] Saturated energy: power=117.185, J/img=0.002325076909637022, samples=2
+
+[INFO] === Measurement rep 8/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=73.27W, energy=146.16J, time=1.99s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=73.15W, energy=145.09J, time=1.98s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=73.52W, energy=146.02J, time=1.99s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=73.32W, energy=147.33J, time=2.01s
+[INFO] Saturated energy: power=118.055, J/img=0.002214417146596437, samples=2
+[INFO] Saturated energy: power=118.47, J/img=0.0022151643168846413, samples=2
+[INFO] Saturated energy: power=119.535, J/img=0.0023733827313314653, samples=2
+
+[INFO] === Measurement rep 9/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=73.43W, energy=147.39J, time=2.01s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=73.34W, energy=146.39J, time=2.00s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=73.67W, energy=147.41J, time=2.00s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=74.12W, energy=147.84J, time=1.99s
+[INFO] Saturated energy: power=118.19, J/img=0.002206551309242421, samples=2
+[INFO] Saturated energy: power=118.325, J/img=0.0022128713223528826, samples=2
+[INFO] Saturated energy: power=120.195, J/img=0.0023849165763228605, samples=2
+
+[INFO] === Measurement rep 10/10 ===
+       -> Evaluating Baseline
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3758, power=74.20W, energy=149.11J, time=2.01s
+       -> Evaluating Original After Finetuning
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3506, power=74.06W, energy=148.61J, time=2.01s
+       -> Evaluating Unstructured Pruned Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3853, power=74.22W, energy=149.97J, time=2.02s
+       -> Evaluating Collapsed Model
+[INFO] Starting accuracy and energy evaluation (warmup pass first)...
+[INFO] Evaluation complete: acc=0.3123, power=74.77W, energy=150.64J, time=2.01s
+[INFO] Saturated energy: power=119.91499999999999, J/img=0.0022367853871634543, samples=2
+[INFO] Saturated energy: power=119.385, J/img=0.0022243760623046603, samples=2
+[INFO] Saturated energy: power=121.525, J/img=0.002406956341932528, samples=2
+[INFO] Measuring dataloader floor (no forward passes)...
+[INFO] Loader floor: time=1.81s, energy=132.55J
+[RESULT] Accuracy Original:     0.3506 | Power: 79.14W | Energy: 157.60J
+[RESULT] Accuracy Unstructured: 0.3853 | Power: 79.39W | Energy: 158.32J
+[RESULT] Accuracy Collapsed:    0.3123 | Power: 77.12W | Energy: 154.41J
+[INFO] 10 measurement reps completed; full per-rep values are rows in the CSV.
+[RESULT] Original     FLOPs=4.237e+09 | latency=9.54 ms/batch | throughput=53671.0 img/s | peak_mem=338.9 MiB | feature_maps=368.7 MiB
+[RESULT] Unstructured FLOPs=4.237e+09 | latency=9.50 ms/batch | throughput=53887.5 img/s | peak_mem=338.9 MiB | feature_maps=368.7 MiB
+[RESULT] Collapsed    FLOPs=3.665e+09 | latency=10.10 ms/batch | throughput=50668.0 img/s | peak_mem=332.4 MiB | feature_maps=342.9 MiB
+[RESULT] FLOPs Unstructured (theoretical/effective, kept for back-compat): 3.55e+09
+[RESULT] Storage (state_dict MiB): original=18.6, unstructured=18.6, collapsed=15.7
+
+[INFO] Extracting features and computing CKA...
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 384), time=1.32s
+[INFO] Computing CKA: features_x=(5120, 384), features_y=(5120, 384)
+[INFO] CKA complete: score=1.000000, time=0.00s
+[INFO] CKA self-check (expect ~1.0): 1.000000
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 384), time=1.71s
+[INFO] Extracting features from 10 batches (Classifier-free extraction)...
+[INFO] Feature extraction batch 1/10
+[INFO] Feature extraction batch 2/10
+[INFO] Feature extraction batch 3/10
+[INFO] Feature extraction batch 4/10
+[INFO] Feature extraction batch 5/10
+[INFO] Feature extraction batch 6/10
+[INFO] Feature extraction batch 7/10
+[INFO] Feature extraction batch 8/10
+[INFO] Feature extraction batch 9/10
+[INFO] Feature extraction batch 10/10
+[INFO] Feature extraction complete: shape=(5120, 384), time=1.80s
+[INFO] Computing CKA: features_x=(5120, 384), features_y=(5120, 384)
+[INFO] CKA complete: score=0.094756, time=0.00s
+[INFO] Computing CKA: features_x=(5120, 384), features_y=(5120, 384)
+[INFO] CKA complete: score=0.462718, time=0.00s
+
+[INFO] Evaluating Adversarial Robustness...
+[INFO] Running FGSM attack (epsilon=0.03)...
+       -> original Accuracy: 0.1191
+       -> unstructured Accuracy: 0.1758
+       -> collapsed Accuracy: 0.1016
+[INFO] Running PGD attack (epsilon=0.03)...
+       -> original Accuracy: 0.0684
+       -> unstructured Accuracy: 0.1152
+       -> collapsed Accuracy: 0.0488
+
+======================================================================
+[INFO] Saving final results...
+[INFO] Results successfully saved to 'cka_results_RegNetX_400MF_Cifar100_pre300_post100.csv'
+[INFO] Total successful experiments: 20
+[INFO] Total runtime: 669.63s
+
+======================================================================
+FINAL RESULTS
+======================================================================
+            model   dataset    gpu_name  pre_epochs  post_epochs                                                                                                                         model_before  intermediate_epoch  rep  acc_original_after  acc_unstructured  acc_collapsed  power_watts_original  energy_joules_original  power_watts_unstructured  energy_joules_unstructured  power_watts_collapsed  energy_joules_collapsed  flops_original  flops_unstructured  flops_collapsed  flops_unstructured_measured  latency_ms_original  latency_ms_unstructured  latency_ms_collapsed  throughput_imgs_original  throughput_imgs_unstructured  throughput_imgs_collapsed  peak_mem_mb_original  peak_mem_mb_unstructured  peak_mem_mb_collapsed  feature_maps_mb_original  feature_maps_mb_unstructured  feature_maps_mb_collapsed  storage_mb_original  storage_mb_unstructured  storage_mb_collapsed  cka_unstructured  cka_collapsed  acc_structural power_watts_structural energy_joules_structural flops_structural latency_ms_structural throughput_imgs_structural peak_mem_mb_structural feature_maps_mb_structural storage_mb_structural cka_structural params_structural sparsity_structural  gpu_util_original  gpu_clock_mhz_original  gpu_util_unstructured  gpu_clock_mhz_unstructured  gpu_util_collapsed  gpu_clock_mhz_collapsed gpu_util_structural gpu_clock_mhz_structural  eval_elapsed_s_original  eval_elapsed_s_unstructured  eval_elapsed_s_collapsed eval_elapsed_s_structural  n_power_samples_original  n_power_samples_unstructured  n_power_samples_collapsed n_power_samples_structural  loader_time_s  loader_joules  loader_n_samples  power_watts_saturated_original  power_watts_saturated_unstructured  power_watts_saturated_collapsed power_watts_saturated_structural  j_per_img_saturated_original  j_per_img_saturated_unstructured  j_per_img_saturated_collapsed j_per_img_saturated_structural  saturated_imgs_original  saturated_imgs_unstructured  saturated_imgs_collapsed saturated_imgs_structural  n_power_samples_saturated_original  n_power_samples_saturated_unstructured  n_power_samples_saturated_collapsed n_power_samples_saturated_structural  adv_acc_FGSM_original  adv_acc_FGSM_unstructured  adv_acc_FGSM_collapsed  adv_acc_PGD_original  adv_acc_PGD_unstructured  adv_acc_PGD_collapsed
+0   RegNetX_400MF  Cifar100  NVIDIA A40         300          100            ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    0              0.3506            0.3853         0.3123                104.79                   52.01                     97.95                       68.33                 105.58                    51.64    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.499266                 9.475256             10.082701              53898.903109                  54035.479143               50780.045081            298.593262                298.593262             291.346680                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               48.0                  1740.0                   38.0                      1740.0                43.0                   1740.0                None                     None                    0.496                        0.698                     0.489                      None                         1                             1                          1                       None          1.825         133.47                 2                          119.42                              115.12                           110.44                             None                      0.002200                          0.002141                       0.002179                           None             54521.734849                 54377.911765              50990.234910                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+1   RegNetX_400MF  Cifar100  NVIDIA A40         300          100            ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    1              0.3506            0.3853         0.3123                 76.92                  157.51                     74.22                      150.57                  75.95                   153.63    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.603126                 9.554989             10.096576              53315.970062                  53584.574131               50710.260591            314.196289                314.196289             306.949707                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1740.0                    7.0                      1740.0                13.0                   1740.0                None                     None                    2.048                        2.029                     2.023                      None                         2                             2                          2                       None          1.825         133.47                 2                          117.90                              119.20                           116.45                             None                      0.002206                          0.002228                       0.002308                           None             54211.665265                 53727.820982              50681.518118                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+2   RegNetX_400MF  Cifar100  NVIDIA A40         300          100            ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    2              0.3506            0.3853         0.3123                 79.96                  165.47                     79.81                      160.30                  78.45                   158.57    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.561074                 9.531778             10.060459              53550.471230                  53715.059154               50892.309489            329.799316                329.799316             322.552734                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                7.5                  1740.0                   18.5                      1740.0                14.0                   1740.0                None                     None                    2.069                        2.009                     2.021                      None                         2                             2                          2                       None          1.825         133.47                 2                          131.56                              116.23                           121.16                             None                      0.002469                          0.002165                       0.002394                           None             54025.453097                 54172.220788              50826.132441                      None                                   3                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+3   RegNetX_400MF  Cifar100  NVIDIA A40         300          100            ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    3              0.3506            0.3853         0.3123                 83.76                  173.72                     83.73                      171.87                  85.38                   176.39    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.524739                 9.474090             10.122642              53754.752307                  54042.131657               50579.682623            298.593262                298.593262             291.346680                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.0                  1740.0                   15.5                      1740.0                10.5                   1740.0                None                     None                    2.074                        2.053                     2.066                      None                         3                             2                          2                       None          1.825         133.47                 2                          117.04                              120.40                           118.38                             None                      0.002180                          0.002247                       0.002339                           None             54020.127067                 53835.553404              50828.724542                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+4   RegNetX_400MF  Cifar100  NVIDIA A40         300          100            ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    4              0.3506            0.3853         0.3123                 85.82                  174.86                     88.14                      183.49                  88.27                   182.41    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.493469                 9.533138             10.077661              53931.815442                  53707.396758               50805.441007            314.196289                314.196289             306.949707                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                8.5                  1740.0                   10.7                      1740.0                14.7                   1740.0                None                     None                    2.037                        2.082                     2.067                      None                         2                             3                          3                       None          1.825         133.47                 2                          115.97                              118.47                           119.92                             None                      0.002157                          0.002202                       0.002365                           None             54051.253926                 54369.689299              50914.232652                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+5   RegNetX_400MF  Cifar100  NVIDIA A40         300          100            ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    5              0.3506            0.3853         0.3123                 98.31                  199.10                     98.78                      205.06                  98.54                   204.31    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.559691                 9.590067             10.157046              53558.215138                  53388.572600               50408.355103            329.799316                329.799316             322.552734                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.0                  1740.0                   10.3                      1740.0                 8.7                   1740.0                None                     None                    2.025                        2.076                     2.073                      None                         2                             3                          3                       None          1.825         133.47                 2                          119.35                              115.34                           114.07                             None                      0.002296                          0.002152                       0.002263                           None             54045.774523                 53840.637042              50733.863569                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+6   RegNetX_400MF  Cifar100  NVIDIA A40         300          100            ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    6              0.3506            0.3853         0.3123                 92.60                  188.73                     89.90                      183.72                  89.90                   181.25    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.457336                 9.395978             10.116181              54137.867173                  54491.402971               50611.985653            298.593262                298.593262             291.346680                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               14.0                  1740.0                   13.0                      1740.0                 8.5                   1740.0                None                     None                    2.038                        2.044                     2.016                      None                         2                             2                          2                       None          1.825         133.47                 2                          115.48                              119.02                           119.98                             None                      0.002144                          0.002211                       0.002370                           None             54176.591191                 54204.242836              50841.599277                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+7   RegNetX_400MF  Cifar100  NVIDIA A40         300          100            ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    7              0.3506            0.3853         0.3123                 77.95                  156.00                     74.69                      151.49                  73.13                   152.39    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.494315                 9.451413             10.123400              53927.006791                  54171.795234               50575.893610            314.196289                314.196289             306.949707                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.0                  1740.0                   15.5                      1740.0                 8.0                   1740.0                None                     None                    2.001                        2.028                     2.084                      None                         2                             2                          3                       None          1.825         133.47                 2                          116.82                              116.72                           118.69                             None                      0.002170                          0.002166                       0.002350                           None             54329.891227                 54126.126312              51007.064282                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+8   RegNetX_400MF  Cifar100  NVIDIA A40         300          100            ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    8              0.3506            0.3853         0.3123                 73.25                  148.75                     73.29                      152.74                  74.39                   154.40    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.502128                 9.508950             10.140002              53882.667096                  53844.007715               50493.088408            329.799316                329.799316             322.552734                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               13.0                  1740.0                   11.7                      1740.0                14.3                   1740.0                None                     None                    2.031                        2.084                     2.075                      None                         2                             3                          3                       None          1.825         133.47                 2                          119.88                              118.86                           121.31                             None                      0.002236                          0.002219                       0.002401                           None             53839.619122                 53788.951107              50735.963250                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+9   RegNetX_400MF  Cifar100  NVIDIA A40         300          100            ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    9              0.3506            0.3853         0.3123                 73.66                  151.73                     73.31                      147.44                  73.34                   151.99    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.555995                 9.544386             10.085082              53578.930342                  53644.102292               50768.057240            345.402344                298.593262             291.346680                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               16.0                  1740.0                    7.5                      1740.0                10.5                   1740.0                None                     None                    2.060                        2.011                     2.072                      None                         2                             2                          2                       None          1.825         133.47                 2                          119.38                              119.40                           121.75                             None                      0.002223                          0.002222                       0.002407                           None             53954.037289                 54013.665656              50794.671848                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+10  RegNetX_400MF  Cifar100  NVIDIA A40         300          100  ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    0              0.3506            0.3853         0.3123                 79.14                  157.60                     79.39                      158.32                  77.12                   154.41    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.539606                 9.501283             10.104995              53670.977428                  53887.457701               50668.010318            338.902344                338.902344             332.405762                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.5                  1740.0                   10.5                      1740.0                 9.5                   1740.0                None                     None                    1.991                        1.994                     2.002                      None                         2                             2                          2                       None          1.813         132.55                 2                          119.01                              117.01                           121.43                             None                      0.002212                          0.002175                       0.002401                           None             54044.029993                 54198.693194              51078.080466                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+11  RegNetX_400MF  Cifar100  NVIDIA A40         300          100  ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    1              0.3506            0.3853         0.3123                 76.43                  151.94                     81.47                      163.10                  82.35                   163.61    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.527861                 9.511587             10.053136              53737.141302                  53829.081012               50929.381200            354.505371                307.843262             301.346680                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.0                  1740.0                   10.5                      1740.0                10.5                   1740.0                None                     None                    1.988                        2.002                     1.987                      None                         2                             2                          2                       None          1.813         132.55                 2                          114.43                              119.13                           120.64                             None                      0.002132                          0.002214                       0.002383                           None             53918.314551                 54054.940321              51100.033697                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+12  RegNetX_400MF  Cifar100  NVIDIA A40         300          100  ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    2              0.3506            0.3853         0.3123                 84.28                  163.93                     84.38                      169.56                  84.78                   170.75    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.541379                 9.548203             10.104046              53661.004842                  53622.654599               50672.768128            323.446289                323.446289             316.949707                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               15.5                  1740.0                   17.0                      1740.0                16.5                   1740.0                None                     None                    1.945                        2.009                     2.014                      None                         2                             2                          2                       None          1.813         132.55                 2                          115.65                              112.80                           117.79                             None                      0.002155                          0.002102                       0.002326                           None             54228.604022                 53886.082466              50957.132872                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+13  RegNetX_400MF  Cifar100  NVIDIA A40         300          100  ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    3              0.3506            0.3853         0.3123                 85.19                  171.50                     86.17                      172.58                  86.84                   174.43    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.546186                 9.540566             10.120371              53633.987385                  53665.576670               50591.029950            339.049316                339.049316             332.552734                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               15.5                  1740.0                   14.0                      1740.0                16.0                   1740.0                None                     None                    2.013                        2.003                     2.009                      None                         2                             2                          2                       None          1.813         132.55                 2                          118.28                              119.69                           115.06                             None                      0.002196                          0.002225                       0.002268                           None             54399.107480                 54025.383191              51037.943471                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+14  RegNetX_400MF  Cifar100  NVIDIA A40         300          100  ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    4              0.3506            0.3853         0.3123                 96.03                  191.92                     95.64                      190.01                  96.92                   194.74    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.487126                 9.547730             10.083464              53967.869294                  53625.314302               50776.201018            354.652344                307.843262             301.346680                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.5                  1740.0                   11.5                      1740.0                12.5                   1740.0                None                     None                    1.999                        1.987                     2.009                      None                         2                             2                          2                       None          1.813         132.55                 2                          118.17                              121.68                           118.23                             None                      0.002196                          0.002262                       0.002330                           None             54066.440345                 54135.778852              50952.161237                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+15  RegNetX_400MF  Cifar100  NVIDIA A40         300          100  ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    5              0.3506            0.3853         0.3123                 94.80                  187.87                     91.28                      176.98                  89.95                   179.94    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.582059                 9.530729             10.102139              53433.190837                  53720.966567               50682.334874            323.446289                323.446289             316.949707                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               12.5                  1740.0                   11.5                      1740.0                 9.0                   1740.0                None                     None                    1.982                        1.939                     2.000                      None                         2                             2                          2                       None          1.813         132.55                 2                          118.43                              117.54                           118.62                             None                      0.002200                          0.002186                       0.002340                           None             54207.812598                 54010.982674              51171.426770                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+16  RegNetX_400MF  Cifar100  NVIDIA A40         300          100  ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    6              0.3506            0.3853         0.3123                 78.67                  157.35                     76.91                      153.03                  73.73                   148.21    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.603094                 9.562954             10.140126              53316.147701                  53539.943892               50492.467376            339.049316                339.049316             332.552734                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               10.0                  1740.0                   11.5                      1740.0                13.5                   1740.0                None                     None                    2.000                        1.990                     2.010                      None                         2                             2                          2                       None          1.813         132.55                 2                          117.39                              112.84                           117.19                             None                      0.002191                          0.002114                       0.002325                           None             53908.146357                 53627.927083              50615.822121                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+17  RegNetX_400MF  Cifar100  NVIDIA A40         300          100  ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    7              0.3506            0.3853         0.3123                 73.15                  145.09                     73.52                      146.02                  73.32                   147.33    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.563079                 9.570318             10.122760              53539.244584                  53498.742191               50579.091148            354.652344                354.652344             301.346680                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               11.0                  1740.0                   12.0                      1740.0                12.0                   1740.0                None                     None                    1.984                        1.986                     2.009                      None                         2                             2                          2                       None          1.813         132.55                 2                          118.06                              118.47                           119.53                             None                      0.002214                          0.002215                       0.002373                           None             53551.090886                 53721.367914              50702.172614                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+18  RegNetX_400MF  Cifar100  NVIDIA A40         300          100  ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    8              0.3506            0.3853         0.3123                 73.34                  146.39                     73.67                      147.41                  74.12                   147.84    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.594109                 9.595910             10.108541              53366.082473                  53356.062584               50650.238156            323.446289                323.446289             316.949707                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None               16.5                  1740.0                   16.0                      1740.0                18.5                   1740.0                None                     None                    1.996                        2.001                     1.995                      None                         2                             2                          2                       None          1.813         132.55                 2                          118.19                              118.33                           120.19                             None                      0.002207                          0.002213                       0.002385                           None             53817.704320                 53710.477791              50724.040198                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
+19  RegNetX_400MF  Cifar100  NVIDIA A40         300          100  ../Tranfer/RegNetX_400MF_Cifar100_checkpoint_Finetuned_0.488000.pth_scorerall_epochs100_pretrain300/checkpoints/final_JF_Control.pt                   0    9              0.3506            0.3853         0.3123                 74.06                  148.61                     74.22                      149.97                  74.77                   150.64    4.236837e+09        3.551026e+09     3.665166e+09                 4.236837e+09             9.573965                 9.570013             10.216883              53478.366739                  53500.450465               50113.130711            339.049316                339.049316             332.552734                368.695312                    368.695312                 342.945312            18.634729                18.634729             15.664608          0.094756       0.462718             NaN                   None                     None             None                  None                       None                   None                       None                  None           None              None                None                9.0                  1740.0                   12.0                      1740.0                12.0                   1740.0                None                     None                    2.007                        2.021                     2.015                      None                         2                             2                          2                       None          1.813         132.55                 2                          119.91                              119.39                           121.53                             None                      0.002237                          0.002224                       0.002407                           None             54115.601918                 54089.441661              51112.816897                      None                                   2                                       2                                    2                                 None               0.119141                   0.175781                0.101562              0.068359                  0.115234               0.048828
