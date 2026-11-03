@@ -76,11 +76,17 @@ class _SafePool(nn.Module):
             if isinstance(self.pool, (nn.MaxPool2d, nn.AvgPool2d)):
                 k = self.pool.kernel_size
                 kh, kw = (k, k) if isinstance(k, int) else k
-                if kh > H or kw > W or H <= 0 or W <= 0:
+                # Only adapt when the pool would genuinely fail: padding enlarges
+                # the effective input, so k=3/p=1 on a 2x2 map is legal (1x1 out).
+                # Adapting a legal pool silently resizes feature maps downstream.
+                p = getattr(self.pool, "padding", 0) or 0
+                ph, pw = (p, p) if isinstance(p, int) else p
+                if H <= 0 or W <= 0 or (H + 2 * ph) < kh or (W + 2 * pw) < kw:
                     target_H = max(1, min(H, kh) if H > 0 else 1)
                     target_W = max(1, min(W, kw) if W > 0 else 1)
-                    self._warn_once("kernel", f"[WARN] Pool kernel ({kh}x{kw}) exceeds input spatial size ({H}x{W}). Adapting to ({target_H}x{target_W}).")
-                    return F.adaptive_avg_pool2d(x, (target_H, target_W))
+                    pool_fn = F.adaptive_max_pool2d if isinstance(self.pool, nn.MaxPool2d) else F.adaptive_avg_pool2d
+                    self._warn_once("kernel", f"[WARN] Pool kernel ({kh}x{kw}) exceeds input spatial size ({H}x{W}) even with padding ({H + 2*ph}x{W + 2*pw} effective). Adapting to ({target_H}x{target_W}).")
+                    return pool_fn(x, (target_H, target_W))
 
             out = self.pool(x)
             if out.shape[-2] < 1 or out.shape[-1] < 1:

@@ -474,6 +474,18 @@ def test_signature_patch_is_class_name_agnostic():
     assert out.shape == (1, 10)
 
 
+def test_safe_pool_respects_padding_legal_pools(capsys):
+    # Regression: a 3x3/s2 pool with padding=1 is legal on a 2x2 input (yields
+    # 1x1). Adapting it anyway silently resizes every downstream feature map
+    # (2x2 instead of 1x1), inflating real FLOPs in collapsed models.
+    model = nn.Sequential(nn.MaxPool2d(3, stride=2, padding=1))
+    wrap_pools_safe(model)
+    x = torch.randn(1, 4, 2, 2)
+    out = model(x)
+    assert out.shape == (1, 4, 1, 1)
+    assert "exceeds" not in capsys.readouterr().out  # no adaptation, no warning
+
+
 def test_safe_pool_warns_once_but_keeps_adapting(capsys):
     model = nn.Sequential(nn.MaxPool2d(3, stride=2))
     wrap_pools_safe(model)
