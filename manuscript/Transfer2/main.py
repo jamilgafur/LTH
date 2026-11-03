@@ -306,22 +306,27 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
                 print(f"[CRITICAL WARNING] Re-evaluating healthy 'model_before' ({m['before'][0]*100:.2f}%) on warm cache as the true baseline...")
                 m["original"] = _eval_one(model_before, "healthy 'model_before' (fallback baseline)")
         else:
-            m["original"] = (None,) * 5
+            m["original"] = (None,) * 7
         m["unstructured"] = _eval_one(unstructured_pruning_model, "Unstructured Pruned Model")
         m["collapsed"] = _eval_one(full_collapsed_model_ready, "Collapsed Model")
         if structural_model is not None:
             m["structural"] = _eval_one(structural_model, "Structural L1 Pruned Model")
         else:
-            m["structural"] = (float("nan"),) * 3 + (None, None)
+            m["structural"] = (float("nan"),) * 3 + (None,) * 4
         eval_reps.append(m)
 
         b = {}
         for bench_name, bench_model in bench_variants:
             bench_model = bench_model.to(device)
-            b[bench_name] = benchmark_model(bench_model, test_loader, device, num_batches=20, quant=args.quant)
+            b[bench_name] = benchmark_model(bench_model, test_loader, device, num_batches=20, quant=args.quant,
+                                            measure_energy=True, power_interval=args.power_interval)
             bench_model = bench_model.to("cpu")
             torch.cuda.empty_cache()
         bench_reps.append(b)
+
+    # Data-pipeline floor, once per config: the time/joules every variant's eval
+    # window shares. Loader state is warm by now (evals already ran).
+    loader_floor = measure_loader_floor(test_loader, device, power_interval=args.power_interval)
 
     # Console summary from rep 0 (per-rep numbers land as rows in the CSV)
     m0, b0 = eval_reps[0], bench_reps[0]
@@ -512,12 +517,16 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
         v = b.get(name)
         return v[field] if v is not None else None
 
+    def _bench_opt(b, name, field):
+        v = b.get(name)
+        return v.get(field) if v is not None else None
+
     result_rows = []
     for rep, (m, b) in enumerate(zip(eval_reps, bench_reps)):
-        acc_o, pow_o, eng_o, util_o, clk_o = m["original"]
-        acc_u, pow_u, eng_u, util_u, clk_u = m["unstructured"]
-        acc_c, pow_c, eng_c, util_c, clk_c = m["collapsed"]
-        acc_s, pow_s, eng_s, util_s, clk_s = m["structural"]
+        acc_o, pow_o, eng_o, util_o, clk_o, ela_o, npw_o = m["original"]
+        acc_u, pow_u, eng_u, util_u, clk_u, ela_u, npw_u = m["unstructured"]
+        acc_c, pow_c, eng_c, util_c, clk_c, ela_c, npw_c = m["collapsed"]
+        acc_s, pow_s, eng_s, util_s, clk_s, ela_s, npw_s = m["structural"]
 
         result_dict = {
             "model": model_name,
@@ -582,6 +591,39 @@ def process_checkpoint(model_before_path, checkpoints, args, device):
             "gpu_clock_mhz_collapsed": clk_c,
             "gpu_util_structural": util_s,
             "gpu_clock_mhz_structural": clk_s,
+            # Window audit columns: eval duration + power-sample depth per variant,
+            # so every energy row carries the evidence of what it measured.
+            "eval_elapsed_s_original": round(ela_o, 3) if ela_o is not None else None,
+            "eval_elapsed_s_unstructured": round(ela_u, 3) if ela_u is not None else None,
+            "eval_elapsed_s_collapsed": round(ela_c, 3) if ela_c is not None else None,
+            "eval_elapsed_s_structural": round(ela_s, 3) if ela_s is not None else None,
+            "n_power_samples_original": npw_o,
+            "n_power_samples_unstructured": npw_u,
+            "n_power_samples_collapsed": npw_c,
+            "n_power_samples_structural": npw_s,
+            # Data-pipeline floor (config-level; identical across reps/variants).
+            "loader_time_s": round(loader_floor["loader_time_s"], 3),
+            "loader_joules": (round(loader_floor["loader_joules"], 2)
+                              if loader_floor["loader_joules"] is not None else None),
+            "loader_n_samples": loader_floor["n_power_samples"],
+            # Saturated compute-only energy: J/img with zero data pipeline in the
+            # window — the FLOPs->joules transferability claim's numerator.
+            "power_watts_saturated_original": _bench_opt(b, "original", "power_watts_saturated"),
+            "power_watts_saturated_unstructured": _bench_opt(b, "unstructured", "power_watts_saturated"),
+            "power_watts_saturated_collapsed": _bench_opt(b, "collapsed", "power_watts_saturated"),
+            "power_watts_saturated_structural": _bench_opt(b, "structural", "power_watts_saturated"),
+            "j_per_img_saturated_original": _bench_opt(b, "original", "j_per_img_saturated"),
+            "j_per_img_saturated_unstructured": _bench_opt(b, "unstructured", "j_per_img_saturated"),
+            "j_per_img_saturated_collapsed": _bench_opt(b, "collapsed", "j_per_img_saturated"),
+            "j_per_img_saturated_structural": _bench_opt(b, "structural", "j_per_img_saturated"),
+            "saturated_imgs_original": _bench_opt(b, "original", "saturated_imgs"),
+            "saturated_imgs_unstructured": _bench_opt(b, "unstructured", "saturated_imgs"),
+            "saturated_imgs_collapsed": _bench_opt(b, "collapsed", "saturated_imgs"),
+            "saturated_imgs_structural": _bench_opt(b, "structural", "saturated_imgs"),
+            "n_power_samples_saturated_original": _bench_opt(b, "original", "n_power_samples_saturated"),
+            "n_power_samples_saturated_unstructured": _bench_opt(b, "unstructured", "n_power_samples_saturated"),
+            "n_power_samples_saturated_collapsed": _bench_opt(b, "collapsed", "n_power_samples_saturated"),
+            "n_power_samples_saturated_structural": _bench_opt(b, "structural", "n_power_samples_saturated"),
         }
         result_dict.update(adv_metrics)
         result_dict.update(analysis_metrics)

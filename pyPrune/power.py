@@ -13,8 +13,6 @@ import sys
 import threading
 import time
 
-import torch
-
 __all__ = [
     "PowerTracker",
     "ResourceParser",
@@ -119,6 +117,8 @@ class NvidiaSmiParser(ResourceParser):
         self.num_gpus = 1
         self.total_util = 0.0
         self.total_clocks = 0.0
+        self.num_util = 0
+        self.num_clock = 0
 
     def start_monitoring(self, interval_s: float):
         # Sub-second intervals use --loop-ms so short regions stay well sampled.
@@ -131,20 +131,34 @@ class NvidiaSmiParser(ResourceParser):
                "--format=csv,noheader,nounits", loop)
         return subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True, shell=False)
 
+    @staticmethod
+    def _num(field):
+        return float(field) if re.fullmatch(r"\d+\.?\d*", field) else None
+
     def parse(self, line):
-        # expected: "<watts>, <util%>, <clock MHz>" ([Not Supported] possible)
-        vals = re.findall(r"\d+\.?\d+", line)
-        if not vals:
+        # Column order is fixed by the query string; split on commas so a
+        # "[Not Supported]" placeholder keeps its slot instead of shifting the
+        # later fields left (the old whole-line regex mapped clock -> util).
+        fields = [f.strip() for f in line.split(",")]
+        watts = self._num(fields[0]) if fields else None
+        if watts is None:
             return
-        val = float(vals[0])
-        if self.max_watts and val > self.max_watts:
+        if self.max_watts and watts > self.max_watts:
             return
-        self.total_watts += val
+        self.total_watts += watts
         self.num_intervals += 1
-        if len(vals) > 1:
-            self.total_util += float(vals[1])
-        if len(vals) > 2:
-            self.total_clocks += float(vals[2])
+        # Deliberate invariants: util is a percent, SM clock a plausible MHz;
+        # anything outside is a driver artifact and is dropped, never averaged.
+        if len(fields) > 1:
+            util = self._num(fields[1])
+            if util is not None and 0.0 <= util <= 100.0:
+                self.total_util += util
+                self.num_util += 1
+        if len(fields) > 2:
+            clock = self._num(fields[2])
+            if clock is not None and 0.0 < clock <= 3000.0:
+                self.total_clocks += clock
+                self.num_clock += 1
 
     def get_results(self):
         if self.num_gpus == 0 or self.num_intervals == 0:
@@ -153,11 +167,14 @@ class NvidiaSmiParser(ResourceParser):
         return scaled_watts, self.num_intervals
 
     def get_extras(self):
-        """Average GPU utilization (%) and SM clock (MHz) over sampled intervals."""
-        if self.num_intervals == 0:
-            return None, None
-        return (round(self.total_util / self.num_intervals, 1),
-                round(self.total_clocks / self.num_intervals, 1))
+        """Average GPU utilization (%) and SM clock (MHz) over valid samples.
+
+        None when every sample for that metric was dropped (N/A or implausible)
+        — downstream columns get None rather than a fabricated reading.
+        """
+        util = round(self.total_util / self.num_util, 1) if self.num_util else None
+        clock = round(self.total_clocks / self.num_clock, 1) if self.num_clock else None
+        return util, clock
 
 
 class PowerTracker:
@@ -170,6 +187,7 @@ class PowerTracker:
     never as a fabricated reading.
     """
     def __init__(self, device=None, interval_s: float = 1, max_watts: float = None):
+        import torch  # lazy: keep the parsers importable without the GPU stack
         self.device = device
         self.interval_s = max(0.1, float(interval_s))
         self.max_watts = max_watts
@@ -231,6 +249,11 @@ class PowerTracker:
                 pass
         if self.thread and self.thread.is_alive():
             self.thread.join(timeout=1.0)
+
+    @property
+    def num_intervals(self):
+        """Power samples actually collected; audit depth for downstream CSVs."""
+        return self.parser.num_intervals if self.parser else 0
 
     def get_results(self):
         """Return (avg_watts, total_joules, elapsed_s, gpu_util, gpu_clock).

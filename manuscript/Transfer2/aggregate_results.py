@@ -74,6 +74,43 @@ def main():
         if c in df:
             df[f"j_per_img_{v}"] = pd.to_numeric(df[c], errors="coerce") / 10000.0
 
+    # Saturated (compute-only) J/img: normalize + ratios vs original.
+    for v in ["original", "unstructured", "collapsed"]:
+        c = f"j_per_img_saturated_{v}"
+        if c in df:
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+    for num, _ in RATIOS:
+        a, b = f"j_per_img_saturated_{num}", "j_per_img_saturated_original"
+        if a in df and b in df:
+            df[f"j_per_img_saturated_ratio_{num}_vs_original"] = df[a] / df[b]
+
+    # Window dilution: how much of each variant's eval window was data pipeline.
+    for v in ["original", "unstructured", "collapsed"]:
+        ej, ee = f"energy_joules_{v}", f"eval_elapsed_s_{v}"
+        if "loader_joules" in df and ej in df:
+            df[f"loader_frac_{v}"] = (pd.to_numeric(df["loader_joules"], errors="coerce")
+                                      / pd.to_numeric(df[ej], errors="coerce"))
+        if "loader_time_s" in df and ee in df:
+            df[f"loader_time_frac_{v}"] = (pd.to_numeric(df["loader_time_s"], errors="coerce")
+                                           / pd.to_numeric(df[ee], errors="coerce"))
+
+    # Energy transferability: what fraction of the removed FLOPs became removed
+    # joules (1.0 = perfect transfer, 0 = removed flops bought no energy), plus
+    # the regime label for the "fewer FLOPs but not faster" overhead signature.
+    fr_c, er_c, lr_c = ("flops_ratio_collapsed_vs_original",
+                        "energy_ratio_collapsed_vs_original",
+                        "latency_ratio_collapsed_vs_original")
+    if er_c in df and fr_c in df:
+        fr = pd.to_numeric(df[fr_c], errors="coerce")
+        er = pd.to_numeric(df[er_c], errors="coerce")
+        df["energy_transfer"] = ((1.0 - er) / (1.0 - fr)).mask((1.0 - fr).abs() < 1e-6)
+        if lr_c in df:
+            lr = pd.to_numeric(df[lr_c], errors="coerce")
+            df["regime"] = None
+            ok = fr.notna() & lr.notna()
+            df.loc[ok, "regime"] = "compute-bound"
+            df.loc[ok & (fr < 0.7) & (lr >= 1.0), "regime"] = "overhead-dominated"
+
     df.to_csv(os.path.join(d, "aggregated_rows.csv"), index=False)
 
     grp = df.groupby(keys, observed=True)

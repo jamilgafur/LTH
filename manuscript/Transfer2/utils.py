@@ -233,7 +233,10 @@ def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_
     dominant source of 2-4x energy variance across identical runs).
     quant=True runs the forward pass under fp16 autocast (CUDA only) — the
     PTQ conversion path: the model is the same fp32 artifact, measured as fp16.
-    Returns (accuracy, avg_watts, total_joules, gpu_util_pct, gpu_clock_mhz).
+    Returns (accuracy, avg_watts, total_joules, gpu_util_pct, gpu_clock_mhz,
+             elapsed_sec, n_power_samples).
+    NOTE: the tracked window still contains the data pipeline; measure_loader_floor
+    quantifies that share per config.
     """
     print("[INFO] Starting accuracy and energy evaluation (warmup pass first)...")
     model.eval()
@@ -280,7 +283,35 @@ def evaluate_accuracy(model: nn.Module, dataloader, device: torch.device, power_
         f"[INFO] Evaluation complete: acc={accuracy:.4f}, "
         f"power={power_str}, energy={energy_str}, time={elapsed_sec:.2f}s"
     )
-    return accuracy, avg_watts, total_joules, gpu_util, gpu_clock
+    return accuracy, avg_watts, total_joules, gpu_util, gpu_clock, elapsed_sec, tracker.num_intervals
+
+
+def measure_loader_floor(loader, device, power_interval: int = 1):
+    """Time/energy the data pipeline alone: iterate `loader` moving each batch to
+    `device` with NO forward pass, inside a PowerTracker (same warmup-first
+    discipline as evaluate_accuracy). One call per config — the returned
+    loader_time_s/loader_joules are the floor every variant's eval window shares,
+    so rows can say how much of their measured energy is I/O vs compute.
+    Returns {"loader_time_s", "loader_joules", "n_power_samples"}.
+    """
+    print("[INFO] Measuring dataloader floor (no forward passes)...")
+    device_type = getattr(device, "type", None) or ("cuda" if torch.cuda.is_available() else "cpu")
+    for inputs, _ in loader:  # untracked warmup: page cache + loader workers
+        inputs = inputs.to(device)
+    if device_type == "cuda":
+        torch.cuda.synchronize()
+
+    with PowerTracker(device=device, interval_s=power_interval) as tracker:
+        for inputs, _ in loader:
+            _ = inputs.to(device)
+        if device_type == "cuda":
+            torch.cuda.synchronize()
+
+    avg_watts, total_joules, elapsed_sec, _, _ = tracker.get_results()
+    energy_str = f"{total_joules:.2f}J" if total_joules is not None else "N/A"
+    print(f"[INFO] Loader floor: time={elapsed_sec:.2f}s, energy={energy_str}")
+    return {"loader_time_s": elapsed_sec, "loader_joules": total_joules,
+            "n_power_samples": tracker.num_intervals}
 
 # =========================================================
 # Iterative Magnitude Pruning (IMP) Training Loop
@@ -1037,7 +1068,8 @@ from copy import deepcopy
 from fvcore.nn import FlopCountAnalysis
 from torch.utils.data import DataLoader
 
-def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5, quant=False):
+def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5, quant=False,
+                    measure_energy=False, power_interval=1):
     """
     Returns a dict of efficiency metrics measured over `num_batches` forwards:
 
@@ -1051,6 +1083,11 @@ def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5, qua
             "peak_mem_mb":     peak CUDA memory allocated during measurement (MiB),
                                None when CUDA is unavailable,
         }
+
+    With measure_energy=True the dict additionally carries the saturated,
+    compute-only energy window (one GPU-resident batch, zero data pipeline):
+    "power_watts_saturated", "j_per_img_saturated", "saturated_imgs",
+    "n_power_samples_saturated" (None when the power sampler saw zero samples).
 
     Notes:
     - Uses a local DataLoader with num_workers=0 to ensure forward runs in the main process
@@ -1199,9 +1236,71 @@ def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5, qua
         except Exception:
             pass
 
-    del tempmodel
+    # Saturated compute-only energy (opt-in): forwards of one fixed resident
+    # batch — the window contains zero data pipeline, so J/img is the pure
+    # FLOPs->energy transfer the collapse claim is about. Loops until ~2 s of
+    # accumulated compute so the power sampler sees enough samples.
     avg_time = sum(times) / len(times) if times else 0.0
-    return {
+    sat_energy = {"power_watts_saturated": None, "j_per_img_saturated": None,
+                  "saturated_imgs": None, "n_power_samples_saturated": None}
+    if measure_energy and times:
+        sat_batch = None
+        try:
+            xb, _ = next(make_iterable())
+            sat_batch = xb.to(device)
+        except StopIteration:
+            pass
+        if sat_batch is not None:
+            sat_iters, sat_seconds = 0, 0.0
+            with torch.no_grad():
+                for _ in range(min(warmup_batches, 3)):  # untracked kernel warmup
+                    if use_autocast:
+                        with torch.cuda.amp.autocast():
+                            tempmodel(sat_batch)
+                    else:
+                        tempmodel(sat_batch)
+                if device.type == "cuda":
+                    torch.cuda.synchronize()
+                with PowerTracker(device=device, interval_s=power_interval) as sat_tracker:
+                    while sat_seconds < 2.0 and sat_iters < 5000:
+                        if device.type == "cuda":
+                            cs, ce = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+                            cs.record()
+                            if use_autocast:
+                                with torch.cuda.amp.autocast():
+                                    tempmodel(sat_batch)
+                            else:
+                                tempmodel(sat_batch)
+                            ce.record()
+                            torch.cuda.synchronize()
+                            sat_seconds += cs.elapsed_time(ce) / 1000.0
+                        else:
+                            t0 = time.time()
+                            if use_autocast:
+                                with torch.cuda.amp.autocast():
+                                    tempmodel(sat_batch)
+                            else:
+                                tempmodel(sat_batch)
+                            sat_seconds += time.time() - t0
+                        sat_iters += 1
+            sat_watts, sat_joules, _, _, _ = sat_tracker.get_results()
+            imgs = batch_size * sat_iters
+            sat_rate = imgs / sat_seconds if sat_seconds > 0 else 0.0
+            throughput_ref = (batch_size / avg_time) if avg_time > 0 else 0.0
+            if throughput_ref > 0 and not (0.5 * throughput_ref <= sat_rate <= 2.0 * throughput_ref):
+                print(f"[CHECK] saturated rate {sat_rate:.0f} img/s deviates >2x from "
+                      f"benchmark throughput {throughput_ref:.0f} img/s — inspect the window.")
+            sat_energy = {
+                "power_watts_saturated": round(sat_watts, 2) if sat_watts is not None else None,
+                "j_per_img_saturated": sat_joules / imgs if sat_joules is not None and imgs > 0 else None,
+                "saturated_imgs": sat_rate,
+                "n_power_samples_saturated": sat_tracker.num_intervals,
+            }
+            print(f"[INFO] Saturated energy: power={sat_watts if sat_watts is not None else 'N/A'}, "
+                  f"J/img={sat_energy['j_per_img_saturated']}, samples={sat_tracker.num_intervals}")
+
+    del tempmodel
+    result = {
         "avg_time_s": avg_time,
         "latency_ms": avg_time * 1000.0,
         "throughput_imgs": (batch_size / avg_time) if avg_time > 0 else 0.0,
@@ -1210,6 +1309,9 @@ def benchmark_model(model, loader, device, num_batches=20, warmup_batches=5, qua
         "feature_map_mb": total_feature_map_size_mb,
         "peak_mem_mb": peak_mem_mb,
     }
+    if measure_energy:
+        result.update(sat_energy)
+    return result
 
 def describe_model(model, loader, device='cpu'):
     print("=" * 60)
